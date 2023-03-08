@@ -42,12 +42,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/**
- * BufferedCodeBuilder
- */
 public final class BufferedCodeBuilder
         implements TerminalCodeBuilder, LabelContext {
-    private final ConstantPoolBuilder constantPool;
+    private final SplitConstantPool constantPool;
     private final List<CodeElement> elements = new ArrayList<>();
     private final LabelImpl startLabel, endLabel;
     private final CodeModel original;
@@ -56,7 +53,7 @@ public final class BufferedCodeBuilder
     private int maxLocals;
 
     public BufferedCodeBuilder(MethodInfo methodInfo,
-                               ConstantPoolBuilder constantPool,
+                               SplitConstantPool constantPool,
                                CodeModel original) {
         this.constantPool = constantPool;
         this.startLabel = new LabelImpl(this, -1);
@@ -162,7 +159,7 @@ public final class BufferedCodeBuilder
             implements CodeModel {
 
         private Model() {
-            super(elements, Kind.CODE_ATTRIBUTE);
+            super(elements);
         }
 
         @Override

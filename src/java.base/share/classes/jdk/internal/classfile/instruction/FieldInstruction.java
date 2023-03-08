@@ -104,7 +104,7 @@ public sealed interface FieldInstruction extends Instruction
                                ClassEntry owner,
                                Utf8Entry name,
                                Utf8Entry type) {
-        return of(op, owner, TemporaryConstantPool.INSTANCE.natEntry(name, type));
+        return of(op, owner, TemporaryConstantPool.INSTANCE.nameAndTypeEntry(name, type));
     }
 
     /**

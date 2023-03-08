@@ -25,7 +25,6 @@
 
 package jdk.internal.classfile.attribute;
 
-import java.util.Arrays;
 import java.util.List;
 
 import jdk.internal.classfile.Attribute;
@@ -38,7 +37,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code RuntimeVisibleTypeAnnotations} attribute (JVMS 4.7.20), which
+ * Models the {@code RuntimeVisibleTypeAnnotations} attribute {@jvms 4.7.20}, which
  * can appear on classes, methods, fields, and code attributes. Delivered as a
  * {@link jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.FieldElement},
  * {@link jdk.internal.classfile.MethodElement}, or {@link CodeElement} when traversing

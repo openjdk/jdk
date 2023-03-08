@@ -31,12 +31,12 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import java.util.List;
 
 /**
- * Models the {@code LocalVariableTable} attribute (JVMS 4.7.13), which can appear
+ * Models the {@code LocalVariableTable} attribute {@jvms 4.7.13}, which can appear
  * on a {@code Code} attribute, and records debug information about local
  * variables.
  * Delivered as a {@link jdk.internal.classfile.instruction.LocalVariable} when traversing the
  * elements of a {@link jdk.internal.classfile.CodeModel}, according to the setting of the
- * {@link jdk.internal.classfile.Classfile.Option.Key#PROCESS_DEBUG} option.
+ * {@link jdk.internal.classfile.Classfile.Option#processDebug(boolean)} option.
  */
 public sealed interface LocalVariableTableAttribute
         extends Attribute<LocalVariableTableAttribute>

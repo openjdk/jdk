@@ -31,9 +31,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/**
- * Merged implementation of MethodLow and MethodModel
- */
 public final class MethodImpl
         extends AbstractElement
         implements MethodModel, MethodInfo {
@@ -108,11 +105,6 @@ public final class MethodImpl
     }
 
     // MethodModel
-
-    @Override
-    public Kind attributedElementKind() {
-        return Kind.METHOD;
-    }
 
     @Override
     public Optional<CodeModel> code() {

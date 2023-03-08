@@ -30,7 +30,7 @@ import java.util.List;
 import jdk.internal.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.impl.ConcreteBootstrapMethodEntry;
+import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
 
 /**
  * Models an entry in the bootstrap method table.  The bootstrap method table
@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.ConcreteBootstrapMethodEntry;
  */
 public sealed interface BootstrapMethodEntry
         extends WritableElement<BootstrapMethodEntry>
-        permits ConcreteBootstrapMethodEntry {
+        permits BootstrapMethodEntryImpl {
 
     /**
      * {@return the constant pool associated with this entry}

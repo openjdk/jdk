@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: May 2022
+ * @LastModified: Jul 2022
  */
 public class XPATHErrorResources_zh_CN extends ListResourceBundle
 {
@@ -326,8 +326,8 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_PROPERTY_UNKNOWN = "ER_PROPERTY_UNKNOWN";
   public static final String ER_GETTING_NULL_PROPERTY = "ER_GETTING_NULL_PROPERTY";
   public static final String ER_GETTING_UNKNOWN_PROPERTY = "ER_GETTING_UNKNOWN_PROPERTY";
-  public static final String ER_XPATH_GROUP_LIMIT = "XPATH_GROUP_LIMIT";
-  public static final String ER_XPATH_OPERATOR_LIMIT = "XPATH_OPERATOR_LIMIT";
+  public static final String ER_XPATH_GROUP_LIMIT = "ER_XPATH_GROUP_LIMIT";
+  public static final String ER_XPATH_OPERATOR_LIMIT = "ER_XPATH_OPERATOR_LIMIT";
 
   //END: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
 

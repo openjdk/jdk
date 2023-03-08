@@ -110,12 +110,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
   OopTaskQueue*  oop_stack()       { return &_oop_stack; }
 
-  // Pushes onto the marking stack.  If the marking stack is full,
-  // pushes onto the overflow stack.
-  void stack_push(oop obj);
-  // Do not implement an equivalent stack_pop.  Deal with the
-  // marking stack and overflow stack directly.
-
  public:
   static const size_t InvalidShadow = ~0;
   static size_t  pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr);
@@ -163,16 +157,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   ParCompactionManager();
 
-  // Pushes onto the region stack at the given index.  If the
-  // region stack is full,
-  // pushes onto the region overflow stack.
-  static void verify_region_list_empty(uint stack_index);
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
-
-  // void drain_stacks();
-
-  bool should_update();
-  bool should_copy();
 
   // Save for later processing.  Must not fail.
   inline void push(oop obj);

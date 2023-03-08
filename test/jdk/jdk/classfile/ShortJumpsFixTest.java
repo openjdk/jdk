@@ -200,7 +200,7 @@ class ShortJumpsFixTest {
                 .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
-    private static byte[] generateFwd(Sample sample, boolean overflow, Classfile.Option<?>... options) {
+    private static byte[] generateFwd(Sample sample, boolean overflow, Classfile.Option... options) {
         return Classfile.build(ClassDesc.of("WhateverClass"), List.of(options),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
@@ -215,7 +215,7 @@ class ShortJumpsFixTest {
                                 })));
     }
 
-    private static byte[] generateBack(Sample sample, boolean overflow, Classfile.Option<?>... options) {
+    private static byte[] generateBack(Sample sample, boolean overflow, Classfile.Option... options) {
         return Classfile.build(ClassDesc.of("WhateverClass"), List.of(options),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {

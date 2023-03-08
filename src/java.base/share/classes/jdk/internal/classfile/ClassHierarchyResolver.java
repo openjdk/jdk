@@ -26,8 +26,6 @@ package jdk.internal.classfile;
 
 import java.io.InputStream;
 import java.lang.constant.ClassDesc;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
@@ -47,7 +45,7 @@ public interface ClassHierarchyResolver {
      * using {@link ClassLoader#getSystemResourceAsStream(String)}
      * as the {@code ClassStreamResolver}
      */
-    public static final ClassHierarchyResolver DEFAULT_CLASS_HIERARCHY_RESOLVER
+    ClassHierarchyResolver DEFAULT_CLASS_HIERARCHY_RESOLVER
             = new ClassHierarchyImpl.CachedClassHierarchyResolver(
             new Function<ClassDesc, InputStream>() {
                 @Override

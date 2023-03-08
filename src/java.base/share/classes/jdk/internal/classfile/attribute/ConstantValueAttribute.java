@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code ConstantValue} attribute (JVMS 4.7.2), which can appear on
+ * Models the {@code ConstantValue} attribute {@jvms 4.7.2}, which can appear on
  * fields and indicates that the field's value is a constant.  Delivered as a
  * {@link jdk.internal.classfile.FieldElement} when traversing the elements of a
  * {@link jdk.internal.classfile.FieldModel}.

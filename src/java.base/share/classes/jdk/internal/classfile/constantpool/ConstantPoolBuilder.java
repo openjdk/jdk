@@ -37,12 +37,11 @@ import jdk.internal.classfile.BootstrapMethodEntry;
 import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.ClassBuilder;
 import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassReader;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.Options;
-import jdk.internal.classfile.jdktypes.ModuleDesc;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 import jdk.internal.classfile.WritableElement;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -64,17 +63,17 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return a new constant pool builder}  The new constant pool builder
      * will inherit the classfile processing options of the specified class.
-     * If the processing options include {@link Classfile.Option.Key#CP_SHARING},
+     * If the processing options include {@link Classfile.Option#constantPoolSharing(boolean)},
      * (the default) the new constant pool builder will be also be pre-populated with the
      * contents of the constant pool associated with the class reader.
      *
      * @param classModel the class to copy from
      */
     static ConstantPoolBuilder of(ClassModel classModel) {
-        ClassReader reader = (ClassReader) classModel.constantPool();
-        return reader.optionValue(Classfile.Option.Key.CP_SHARING)
+        ClassReaderImpl reader = (ClassReaderImpl) classModel.constantPool();
+        return reader.options().cpSharing
           ? new SplitConstantPool(reader)
-          : new SplitConstantPool(((ClassReaderImpl) reader).options());
+          : new SplitConstantPool(reader.options());
     }
 
     /**
@@ -83,20 +82,25 @@ public sealed interface ConstantPoolBuilder
      *
      * @param options the processing options
      */
-    static ConstantPoolBuilder of(Collection<Classfile.Option<?>> options) {
+    static ConstantPoolBuilder of(Collection<Classfile.Option> options) {
         return new SplitConstantPool(new Options(options));
     }
 
     /**
-     * {@return the value of the specified option}
+     * {@return whether the provided constant pool is index-compatible with this
+     * one}  This may be because they are the same constant pool, or because this
+     * constant pool was copied from the other.
      *
-     * @param option the key of the option value
-     * @param <T> the type of the option value
+     * @param constantPool the other constant pool
      */
-    <T> T optionValue(Classfile.Option.Key option);
-
     boolean canWriteDirect(ConstantPool constantPool);
 
+    /**
+     * Writes associated bootstrap method entries to the specified writer
+     *
+     * @param buf the writer
+     * @return false when no bootstrap method entry has been written
+     */
     boolean writeBootstrapMethods(BufWriter buf);
 
     /**
@@ -153,7 +157,7 @@ public sealed interface ConstantPoolBuilder
      * @param classDesc the symbolic descriptor for the class
      */
     default ClassEntry classEntry(ClassDesc classDesc) {
-        return classEntry(utf8Entry(Util.toInternalName(classDesc)));
+        return classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
     }
 
     /**
@@ -184,7 +188,7 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return A {@link ModuleEntry} describing the module whose name
      * is encoded in the provided {@linkplain Utf8Entry}}
-     * If a Module entry in the pool already describes this class,
+     * If a module entry in the pool already describes this class,
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
@@ -195,7 +199,7 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return A {@link ModuleEntry} describing the module described by
      * provided {@linkplain ModuleDesc}}
-     * If a Module entry in the pool already describes this class,
+     * If a module entry in the pool already describes this class,
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
@@ -214,7 +218,7 @@ public sealed interface ConstantPoolBuilder
      * @param nameEntry the member name
      * @param typeEntry the member field or method descriptor
      */
-    NameAndTypeEntry natEntry(Utf8Entry nameEntry, Utf8Entry typeEntry);
+    NameAndTypeEntry nameAndTypeEntry(Utf8Entry nameEntry, Utf8Entry typeEntry);
 
     /**
      * {@return A {@link NameAndTypeEntry} describing the provided name and type}
@@ -225,8 +229,8 @@ public sealed interface ConstantPoolBuilder
      * @param name the member name
      * @param type the symbolic descriptor for a field type
      */
-    default NameAndTypeEntry natEntry(String name, ClassDesc type) {
-        return natEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
+    default NameAndTypeEntry nameAndTypeEntry(String name, ClassDesc type) {
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
     }
 
     /**
@@ -238,8 +242,8 @@ public sealed interface ConstantPoolBuilder
      * @param name the member name
      * @param type the symbolic descriptor for a method type
      */
-    default NameAndTypeEntry natEntry(String name, MethodTypeDesc type) {
-        return natEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
+    default NameAndTypeEntry nameAndTypeEntry(String name, MethodTypeDesc type) {
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
     }
 
     /**
@@ -264,7 +268,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the type of the field
      */
     default FieldRefEntry fieldRefEntry(ClassDesc owner, String name, ClassDesc type) {
-        return fieldRefEntry(classEntry(owner), natEntry(name, type));
+        return fieldRefEntry(classEntry(owner), nameAndTypeEntry(name, type));
     }
 
     /**
@@ -289,7 +293,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the type of the method
      */
     default MethodRefEntry methodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) {
-        return methodRefEntry(classEntry(owner), natEntry(name, type));
+        return methodRefEntry(classEntry(owner), nameAndTypeEntry(name, type));
     }
 
     /**
@@ -314,7 +318,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the type of the method
      */
     default InterfaceMethodRefEntry interfaceMethodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) {
-        return interfaceMethodRefEntry(classEntry(owner), natEntry(name, type));
+        return interfaceMethodRefEntry(classEntry(owner), nameAndTypeEntry(name, type));
     }
 
     /**
@@ -347,7 +351,7 @@ public sealed interface ConstantPoolBuilder
      */
     default MethodHandleEntry methodHandleEntry(DirectMethodHandleDesc descriptor) {
         var owner = classEntry(descriptor.owner());
-        var nat = natEntry(utf8Entry(descriptor.methodName()), utf8Entry(descriptor.lookupDescriptor()));
+        var nat = nameAndTypeEntry(utf8Entry(descriptor.methodName()), utf8Entry(descriptor.lookupDescriptor()));
         return methodHandleEntry(descriptor.refKind(), switch (descriptor.kind()) {
             case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER -> fieldRefEntry(owner, nat);
             case INTERFACE_STATIC, INTERFACE_VIRTUAL, INTERFACE_SPECIAL -> interfaceMethodRefEntry(owner, nat);
@@ -361,7 +365,7 @@ public sealed interface ConstantPoolBuilder
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
-     * @param refKind the reference kind of the method handle (JVMS  4.4.8)
+     * @param refKind the reference kind of the method handle {@jvms 4.4.8}
      * @param reference the constant pool entry describing the field or method
      */
     MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference);
@@ -375,7 +379,7 @@ public sealed interface ConstantPoolBuilder
      * @param dcsd the symbolic descriptor of the method handle
      */
     default InvokeDynamicEntry invokeDynamicEntry(DynamicCallSiteDesc dcsd) {
-        return invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), natEntry(dcsd.invocationName(), dcsd.invocationType()));
+        return invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), nameAndTypeEntry(dcsd.invocationName(), dcsd.invocationType()));
     }
 
     /**
@@ -399,7 +403,7 @@ public sealed interface ConstantPoolBuilder
      * @param dcd the symbolic descriptor of the constant
      */
     default ConstantDynamicEntry constantDynamicEntry(DynamicConstantDesc<?> dcd) {
-        return constantDynamicEntry(bsmEntry(dcd.bootstrapMethod(), List.of(dcd.bootstrapArgs())), natEntry(dcd.constantName(), dcd.constantType()));
+        return constantDynamicEntry(bsmEntry(dcd.bootstrapMethod(), List.of(dcd.bootstrapArgs())), nameAndTypeEntry(dcd.constantName(), dcd.constantType()));
     }
 
     /**
@@ -481,7 +485,7 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof Long l) return longEntry(l);
         if (c instanceof Float f) return floatEntry(f);
         if (c instanceof Double d) return doubleEntry(d);
-        throw new IllegalArgumentException("Illegal type: " + c.getClass());
+        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
     }
 
     /**
@@ -503,7 +507,7 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof MethodTypeDesc mtd) return methodTypeEntry(mtd);
         if (c instanceof DirectMethodHandleDesc dmhd) return methodHandleEntry(dmhd);
         if (c instanceof DynamicConstantDesc<?> dcd) return constantDynamicEntry(dcd);
-        throw new IllegalArgumentException("Illegal type: " + c.getClass());
+        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
     }
 
     /**
@@ -522,19 +526,8 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof Double d) return doubleEntry(d);
         if (c instanceof ClassDesc cd) return utf8Entry(cd);
         if (c instanceof MethodTypeDesc mtd) return utf8Entry(mtd);
-        throw new IllegalArgumentException("Illegal type: " + c.getClass());
+        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
     }
-
-    /**
-     * {@return a constant pool entry describing the same constant as the provided
-     * entry}  If the entry already corresponds to a constant in this constant
-     * pool, it is returned, otherwise the contents are copied to this
-     * constant pool.
-     *
-     * @param entry the entry
-     * @param <T> the type of the entry
-     */
-    <T extends PoolEntry> T maybeClone(T entry);
 
     /**
      * {@return a {@link BootstrapMethodEntry} describing the provided

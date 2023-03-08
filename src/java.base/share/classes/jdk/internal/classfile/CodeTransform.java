@@ -25,7 +25,6 @@
 package jdk.internal.classfile;
 
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
@@ -42,7 +41,7 @@ public non-sealed interface CodeTransform
     /**
      * A code transform that sends all elements to the builder.
      */
-    public static final CodeTransform ACCEPT_ALL = new CodeTransform() {
+    CodeTransform ACCEPT_ALL = new CodeTransform() {
         @Override
         public void accept(CodeBuilder builder, CodeElement element) {
             builder.with(element);
@@ -89,8 +88,8 @@ public non-sealed interface CodeTransform
 
     @Override
     default ResolvedTransform<CodeElement> resolve(CodeBuilder builder) {
-        return new TransformImpl.CodeTransformImpl(e -> accept(builder, e),
-                                                   () -> atEnd(builder),
-                                                   () -> atStart(builder));
+        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
+                                                         () -> atEnd(builder),
+                                                         () -> atStart(builder));
     }
 }

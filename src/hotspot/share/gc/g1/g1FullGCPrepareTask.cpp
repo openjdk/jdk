@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1FullGCPrepareTask.inline.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -96,12 +95,6 @@ void G1FullGCPrepareTask::work(uint worker_id) {
       set_has_free_compaction_targets();
     }
   }
-
-  // Clear region metadata that is invalid after GC for all regions.
-  {
-    G1ResetMetadataClosure closure(collector());
-    G1CollectedHeap::heap()->heap_region_par_iterate_from_start(&closure, &_hrclaimer);
-  }
   log_task("Prepare compaction task", worker_id, start);
 }
 
@@ -112,35 +105,6 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
   _bitmap(collector->mark_bitmap()),
   _cp(cp) { }
 
-G1FullGCPrepareTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1FullCollector* collector) :
-  _g1h(G1CollectedHeap::heap()),
-  _collector(collector) { }
-
-void G1FullGCPrepareTask::G1ResetMetadataClosure::reset_region_metadata(HeapRegion* hr) {
-  hr->rem_set()->clear();
-  hr->clear_cardtable();
-
-  G1HotCardCache* hcc = _g1h->hot_card_cache();
-  if (G1HotCardCache::use_cache()) {
-    hcc->reset_card_counts(hr);
-  }
-}
-
-bool G1FullGCPrepareTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr) {
-  uint const region_idx = hr->hrm_index();
-  if (!_collector->is_compaction_target(region_idx)) {
-    assert(!hr->is_free(), "all free regions should be compaction targets");
-    assert(_collector->is_skip_compacting(region_idx) || hr->is_closed_archive(), "must be");
-    if (hr->needs_scrubbing_during_full_gc()) {
-      scrub_skip_compacting_region(hr, hr->is_young());
-    }
-  }
-
-  // Reset data structures not valid after Full GC.
-  reset_region_metadata(hr);
-
-  return false;
-}
 
 G1FullGCPrepareTask::G1PrepareCompactLiveClosure::G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp) :
     _cp(cp) { }
@@ -155,33 +119,5 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(Hea
   if (!_collector->is_free(hr->hrm_index())) {
     G1PrepareCompactLiveClosure prepare_compact(_cp);
     hr->apply_to_marked_objects(_bitmap, &prepare_compact);
-  }
-}
-
-void G1FullGCPrepareTask::G1ResetMetadataClosure::scrub_skip_compacting_region(HeapRegion* hr, bool update_bot_for_live) {
-  assert(hr->needs_scrubbing_during_full_gc(), "must be");
-
-  HeapWord* limit = hr->top();
-  HeapWord* current_obj = hr->bottom();
-  G1CMBitMap* bitmap = _collector->mark_bitmap();
-
-  while (current_obj < limit) {
-    if (bitmap->is_marked(current_obj)) {
-      oop current = cast_to_oop(current_obj);
-      size_t size = current->size();
-      if (update_bot_for_live) {
-        hr->update_bot_for_block(current_obj, current_obj + size);
-      }
-      current_obj += size;
-      continue;
-    }
-    // Found dead object, which is potentially unloaded, scrub to next
-    // marked object.
-    HeapWord* scrub_start = current_obj;
-    HeapWord* scrub_end = bitmap->get_next_marked_addr(scrub_start, limit);
-    assert(scrub_start != scrub_end, "must advance");
-    hr->fill_range_with_dead_objects(scrub_start, scrub_end);
-
-    current_obj = scrub_end;
   }
 }

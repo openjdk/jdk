@@ -27,6 +27,7 @@
  * @summary Control Char <UNDEF> check for pty
  * @modules jdk.internal.le/jdk.internal.org.jline.terminal
  *          jdk.internal.le/jdk.internal.org.jline.terminal.impl
+ *          jdk.internal.le/jdk.internal.org.jline.terminal.spi
  * @requires (os.family == "linux") | (os.family == "aix")
  */
 
@@ -35,10 +36,11 @@ import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Attributes.ControlChar;
 import jdk.internal.org.jline.terminal.Attributes.LocalFlag;
 import jdk.internal.org.jline.terminal.impl.ExecPty;
+import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 
 public class ExecPtyGetFlagsToSetTest extends ExecPty {
-    public ExecPtyGetFlagsToSetTest(String name, boolean system) {
-        super(name, system);
+    public ExecPtyGetFlagsToSetTest(String name, TerminalProvider.Stream stream) {
+        super(name, stream);
     }
 
     @Override
@@ -48,7 +50,7 @@ public class ExecPtyGetFlagsToSetTest extends ExecPty {
 
     public static void main(String[] args) {
         ExecPtyGetFlagsToSetTest testPty =
-            new ExecPtyGetFlagsToSetTest("stty", true);
+            new ExecPtyGetFlagsToSetTest("stty", TerminalProvider.Stream.Output);
 
         Attributes attr = new Attributes();
         Attributes current = new Attributes();

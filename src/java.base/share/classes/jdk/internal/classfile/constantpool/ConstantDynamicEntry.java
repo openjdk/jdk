@@ -29,7 +29,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_Dynamic_info} constant in the constant pool of a
@@ -37,7 +37,12 @@ import jdk.internal.classfile.impl.ConcreteEntry;
  */
 public sealed interface ConstantDynamicEntry
         extends DynamicConstantPoolEntry, LoadableConstantEntry
-        permits ConcreteEntry.ConcreteConstantDynamicEntry {
+        permits AbstractPoolEntry.ConstantDynamicEntryImpl {
+
+    @Override
+    default ConstantDesc constantValue() {
+        return asSymbol();
+    }
 
     /**
      * {@return the symbolic descriptor for the {@code invokedynamic} constant}
@@ -54,6 +59,7 @@ public sealed interface ConstantDynamicEntry
     /**
      * {@return the type of the constant}
      */
+    @Override
     default TypeKind typeKind() {
         return TypeKind.fromDescriptor(type().stringValue());
     }

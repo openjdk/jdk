@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.instruction;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.classfile.CodeElement;
@@ -75,7 +74,7 @@ public sealed interface ExceptionCatch extends PseudoInstruction
      */
     static ExceptionCatch of(Label handler, Label tryStart, Label tryEnd,
                              Optional<ClassEntry> catchTypeEntry) {
-        return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, catchTypeEntry);
+        return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, catchTypeEntry.orElse(null));
     }
 
     /**

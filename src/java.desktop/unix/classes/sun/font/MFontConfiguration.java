@@ -111,18 +111,20 @@ public class MFontConfiguration extends FontConfiguration {
                     try (FileInputStream fis = new FileInputStream(f)) {
                         props.load(fis);
                     }
-                    osName = props.getProperty("DISTRIB_ID");
-                    osVersion =  props.getProperty("DISTRIB_RELEASE");
+                    osName = extractInfo(props.getProperty("DISTRIB_ID"));
+                    osVersion = extractInfo(props.getProperty("DISTRIB_RELEASE"));
                 } else if ((f = new File("/etc/os-release")).canRead()) {
                     Properties props = new Properties();
                     try (FileInputStream fis = new FileInputStream(f)) {
                         props.load(fis);
                     }
-                    osName = props.getProperty("NAME");
-                    osVersion = props.getProperty("VERSION_ID");
-                    osName = extractOsInfo(osName);
-                    if (osName.equals("SLES")) osName = "SuSE";
-                    osVersion = extractOsInfo(osVersion);
+                    osName = extractInfo(props.getProperty("NAME"));
+                    osVersion = extractInfo(props.getProperty("VERSION_ID"));
+                    if (osName.equals("SLES")) {
+                        osName = "SuSE";
+                    } else {
+                        osName = extractInfo(props.getProperty("ID"));
+                    }
                 }
             } catch (Exception e) {
             }
@@ -143,9 +145,13 @@ public class MFontConfiguration extends FontConfiguration {
         return null;
     }
 
-    private String extractOsInfo(String s) {
+    private String extractInfo(String s) {
+        if (s == null) {
+            return null;
+        }
         if (s.startsWith("\"")) s = s.substring(1);
         if (s.endsWith("\"")) s = s.substring(0, s.length()-1);
+        s = s.replace(' ', '_');
         return s;
     }
 

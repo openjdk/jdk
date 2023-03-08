@@ -58,10 +58,10 @@ class SignaturesTest {
         assertEqualsDeep(
                 ClassSignature.of(
                         ClassTypeSig.of(
-                                ClassTypeSig.of(ClassDesc.of("java.util.LinkedHashMap"), TypeVarSig.of("K"), TypeVarSig.of("V")),
+                                ClassTypeSig.of(ClassDesc.of("java.util.LinkedHashMap"), TypeArg.of(TypeVarSig.of("K")), TypeArg.of(TypeVarSig.of("V"))),
                                 ClassDesc.of("LinkedHashIterator")),
                         ClassTypeSig.of(ClassDesc.of("java.util.Iterator"),
-                                ClassTypeSig.of(ClassDesc.of("java.util.Map$Entry"), TypeVarSig.of("K"), TypeVarSig.of("V")))),
+                                TypeArg.of(ClassTypeSig.of(ClassDesc.of("java.util.Map$Entry"), TypeArg.of(TypeVarSig.of("K")), TypeArg.of(TypeVarSig.of("V")))))),
                 ClassSignature.parseFrom("Ljava/util/LinkedHashMap<TK;TV;>.LinkedHashIterator;Ljava/util/Iterator<Ljava/util/Map$Entry<TK;TV;>;>;"));
 
         assertEqualsDeep(
@@ -69,8 +69,8 @@ class SignaturesTest {
                         List.of(
                                 TypeParam.of("K", ClassTypeSig.of(CD_Object)),
                                 TypeParam.of("V", ClassTypeSig.of(CD_Object))),
-                        ClassTypeSig.of(ClassDesc.of("java.util.AbstractMap"), TypeVarSig.of("K"), TypeVarSig.of("V")),
-                        ClassTypeSig.of(ClassDesc.of("java.util.concurrent.ConcurrentMap"), TypeVarSig.of("K"), TypeVarSig.of("V")),
+                        ClassTypeSig.of(ClassDesc.of("java.util.AbstractMap"), TypeArg.of(TypeVarSig.of("K")), TypeArg.of(TypeVarSig.of("V"))),
+                        ClassTypeSig.of(ClassDesc.of("java.util.concurrent.ConcurrentMap"), TypeArg.of(TypeVarSig.of("K")), TypeArg.of(TypeVarSig.of("V"))),
                         ClassTypeSig.of(ClassDesc.of("java.io.Serializable"))),
                 ClassSignature.parseFrom("<K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/AbstractMap<TK;TV;>;Ljava/util/concurrent/ConcurrentMap<TK;TV;>;Ljava/io/Serializable;"));
 
@@ -78,11 +78,11 @@ class SignaturesTest {
                 MethodSignature.of(
                         ClassTypeSig.of(
                                 CD_Map,
-                                ClassTypeSig.of(
+                                TypeArg.of(ClassTypeSig.of(
                                         CD_Class,
                                             TypeArg.extendsOf(
-                                                    ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation")))),
-                                ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation"))),
+                                                    ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation"))))),
+                                TypeArg.of(ClassTypeSig.of(ClassDesc.of("java.lang.annotation.Annotation")))),
                         Signature.of(CD_byte.arrayType()),
                         ClassTypeSig.of(ClassDesc.of("jdk.internal.reflect.ConstantPool")),
                         ClassTypeSig.of(CD_Class, TypeArg.unbounded()),
@@ -100,7 +100,7 @@ class SignaturesTest {
                                 ClassTypeSig.of(ClassDesc.of("java.lang.IOException")),
                                 ClassTypeSig.of(ClassDesc.of("java.lang.IllegalAccessError"))),
                         ArrayTypeSig.of(TypeVarSig.of("T")),
-                        ClassTypeSig.of(CD_Class, TypeVarSig.of("T"))),
+                        ClassTypeSig.of(CD_Class, TypeArg.of(TypeVarSig.of("T")))),
                 MethodSignature.parseFrom("<T::Ljava/lang/annotation/Annotation;>(Ljava/lang/Class<TT;>;)[TT;^Ljava/lang/IOException;^Ljava/lang/IllegalAccessError;"));
 
         assertEqualsDeep(

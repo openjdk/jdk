@@ -33,9 +33,6 @@ import jdk.internal.classfile.Label;
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 
-/**
- * TransformingCodeBuilder
- */
 public final class TransformingCodeBuilder implements TerminalCodeBuilder {
 
     final CodeBuilder delegate;

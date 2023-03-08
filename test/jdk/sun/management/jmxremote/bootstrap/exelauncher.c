@@ -61,8 +61,9 @@ int main(int argc, char**argv) {
         fprintf(stderr, "Usage: %s jvm-path classpath class\n", argv[0]);
         return -1;
      }
-     cp_prop = (char*)malloc(strlen(CP_PROP)+strlen(argv[2]) +1);
-     sprintf(cp_prop, "%s%s", CP_PROP, argv[2]);
+     size_t propLen = strlen(CP_PROP) + strlen(argv[2]) + 1;
+     cp_prop = (char*)malloc(propLen);
+     snprintf(cp_prop, propLen, "%s%s", CP_PROP, argv[2]);
 
      options[0].optionString = cp_prop;
      vm_args.version = 0x00010002;

@@ -24,15 +24,15 @@
  */
 package jdk.internal.classfile.constantpool;
 
-import jdk.internal.classfile.impl.ConcreteEntry;
-import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
+import jdk.internal.classfile.java.lang.constant.PackageDesc;
 
 /**
  * Models a {@code CONSTANT_Package_info} constant in the constant pool of a
  * classfile.
  */
 public sealed interface PackageEntry extends PoolEntry
-        permits ConcreteEntry.ConcretePackageEntry {
+        permits AbstractPoolEntry.PackageEntryImpl {
     /**
      * {@return the package name}
      */
