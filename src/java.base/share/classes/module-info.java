@@ -388,7 +388,7 @@ module java.base {
         jdk.jdeps;
     exports jdk.internal.classfile.constantpool to
         jdk.jdeps;
-    exports jdk.internal.classfile.jdktypes to
+    exports jdk.internal.classfile.java.lang.constant to
         jdk.jdeps;
 
     // the service types defined by the APIs in this module

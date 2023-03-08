@@ -33,6 +33,7 @@ import jdk.internal.classfile.Classfile;
 
 import jdk.internal.classfile.Instruction;
 import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.attribute.StackMapFrameInfo;
 import jdk.internal.classfile.attribute.StackMapTableAttribute;
 
 /**
@@ -54,7 +55,6 @@ public class StackMapWriter extends InstructionDetailWriter {
     protected StackMapWriter(Context context) {
         super(context);
         context.put(StackMapWriter.class, this);
-        classWriter = ClassWriter.instance(context);
     }
 
     public void reset(CodeAttribute code) {
@@ -102,7 +102,7 @@ public class StackMapWriter extends InstructionDetailWriter {
 
     }
 
-    void print(String label, List<StackMapTableAttribute.VerificationTypeInfo> entries,
+    void print(String label, List<StackMapFrameInfo.VerificationTypeInfo> entries,
             boolean firstThis) {
         print(label);
         for (var e : entries) {
@@ -113,14 +113,14 @@ public class StackMapWriter extends InstructionDetailWriter {
         println();
     }
 
-    void print(StackMapTableAttribute.VerificationTypeInfo entry, boolean firstThis) {
+    void print(StackMapFrameInfo.VerificationTypeInfo entry, boolean firstThis) {
         if (entry == null) {
             print("ERROR");
             return;
         }
 
         switch (entry) {
-            case StackMapTableAttribute.SimpleVerificationTypeInfo s -> {
+            case StackMapFrameInfo.SimpleVerificationTypeInfo s -> {
                 switch (s) {
                     case ITEM_TOP ->
                         print("top");
@@ -145,19 +145,18 @@ public class StackMapWriter extends InstructionDetailWriter {
                 }
             }
 
-            case StackMapTableAttribute.ObjectVerificationTypeInfo o -> {
+            case StackMapFrameInfo.ObjectVerificationTypeInfo o -> {
                 String cln = o.className().asInternalName();
                 print(firstThis && cln.equals(thisClassName) ? "this" : cln);
             }
 
-            case StackMapTableAttribute.UninitializedVerificationTypeInfo u ->
+            case StackMapFrameInfo.UninitializedVerificationTypeInfo u ->
                 print(code.labelToBci(u.newTarget()));
         }
 
     }
 
-    private Map<Integer, StackMapTableAttribute.StackMapFrameInfo> map;
-    private ClassWriter classWriter;
+    private Map<Integer, StackMapFrameInfo> map;
     private String thisClassName;
     private CodeAttribute code;
 }
