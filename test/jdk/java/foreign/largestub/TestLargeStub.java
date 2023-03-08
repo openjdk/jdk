@@ -35,35 +35,23 @@ import org.testng.annotations.Test;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.StructLayout;
 import java.util.stream.Stream;
 
 public class TestLargeStub extends NativeTestHelper {
     @Test
     public void testDowncall() {
-        StructLayout doesNotFitInRegister = MemoryLayout.structLayout(
-            C_LONG_LONG,
-            C_LONG_LONG,
-            C_LONG_LONG
-        );
-
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
-                FunctionDescriptor.of(doesNotFitInRegister,
-                        Stream.generate(() -> C_DOUBLE).limit(50).toArray(MemoryLayout[]::new)));
+                FunctionDescriptor.of(C_LONG_LONG,
+                        Stream.generate(() -> C_DOUBLE).limit(50).toArray(MemoryLayout[]::new)),
+                Linker.Option.captureCallState("errno"));
     }
 
     @Test
     public void testUpcall() {
-        StructLayout doesNotFitInRegister = MemoryLayout.structLayout(
-            C_LONG_LONG,
-            C_LONG_LONG,
-            C_LONG_LONG
-        );
-
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
-                FunctionDescriptor.of(doesNotFitInRegister,
+                FunctionDescriptor.of(C_LONG_LONG,
                         Stream.generate(() -> C_DOUBLE).limit(50).toArray(MemoryLayout[]::new)));
     }
 }
