@@ -223,7 +223,7 @@ public class DebugLoggerTest {
         if (prop == null) return Set.of();
         String[] values = prop.split(",");
         if (values.length == 0) return Set.of();
-        Set<Destination> dest = new HashSet<>(3);
+        Set<Destination> dest = HashSet.newHashSet(3);
         for (var v : values) {
             v = v.trim().toLowerCase(Locale.ROOT);
             if ("log".equals(v)) dest.add(Destination.LOG);
