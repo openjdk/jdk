@@ -23,6 +23,8 @@
 
 package compiler.vectorapi;
 
+import java.util.function.BiConsumer;
+
 import compiler.lib.ir_framework.*;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
@@ -41,7 +43,8 @@ public class TestVectorSlice {
     static void testBytes() {
         int maxSize = 64;
         int diff = 70;
-        byte[][] dst = new byte[maxSize + 1][maxSize];
+        int length;
+        byte[][] dst;
         byte[] src1 = new byte[maxSize];
         byte[] src2 = new byte[maxSize];
         for (int i = 0; i < src1.length; i++) {
@@ -49,72 +52,48 @@ public class TestVectorSlice {
             src2[i] = (byte)(i + diff);
         }
 
-        int length = 8;
-        testB64(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                byte expected;
-                if (offset < length) {
-                    expected = (byte)offset;
-                } else {
-                    expected = (byte)(offset + diff - length);
+        BiConsumer<byte[][], Integer> verifier = (byte[][] tgt, Integer len) -> {
+            for (int i = 0; i <= len; i++) {
+                for (int j = 0; j < len; j++) {
+                    int offset = i + j;
+                    byte expected;
+                    if (offset < len) {
+                        expected = (byte)offset;
+                    } else {
+                        expected = (byte)(offset + diff - len);
+                    }
+                    Asserts.assertEquals(expected, tgt[i][j]);
                 }
-                Asserts.assertEquals(expected, dst[i][j]);
             }
-        }
+        };
+
+        length = 8;
+        dst = new byte[length + 1][length];
+        testB64(dst, src1, src2);
+        verifier.accept(dst, length);
 
         length = 16;
+        dst = new byte[length + 1][length];
         testB128(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                byte expected;
-                if (offset < length) {
-                    expected = (byte)offset;
-                } else {
-                    expected = (byte)(offset + diff - length);
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 32;
+        dst = new byte[length + 1][length];
         testB256(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                byte expected;
-                if (offset < length) {
-                    expected = (byte)offset;
-                } else {
-                    expected = (byte)(offset + diff - length);
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 64;
+        dst = new byte[length + 1][length];
         testB512(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                byte expected;
-                if (offset < length) {
-                    expected = (byte)offset;
-                } else {
-                    expected = (byte)(offset + diff - length);
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
     }
 
     @Run(test = {"testS64", "testS128", "testS256", "testS512"})
     static void testShorts() {
         int maxSize = 32;
-        int diff = 1234;
-        short[][] dst = new short[maxSize + 1][maxSize];
+        int diff = 70;
+        int length;
+        short[][] dst;
         short[] src1 = new short[maxSize];
         short[] src2 = new short[maxSize];
         for (int i = 0; i < src1.length; i++) {
@@ -122,72 +101,48 @@ public class TestVectorSlice {
             src2[i] = (short)(i + diff);
         }
 
-        int length = 4;
-        testS64(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                short expected;
-                if (offset < length) {
-                    expected = (short)offset;
-                } else {
-                    expected = (short)(offset + diff - length);
+        BiConsumer<short[][], Integer> verifier = (short[][] tgt, Integer len) -> {
+            for (int i = 0; i <= len; i++) {
+                for (int j = 0; j < len; j++) {
+                    int offset = i + j;
+                    short expected;
+                    if (offset < len) {
+                        expected = (short)offset;
+                    } else {
+                        expected = (short)(offset + diff - len);
+                    }
+                    Asserts.assertEquals(expected, tgt[i][j]);
                 }
-                Asserts.assertEquals(expected, dst[i][j]);
             }
-        }
+        };
+
+        length = 4;
+        dst = new short[length + 1][length];
+        testS64(dst, src1, src2);
+        verifier.accept(dst, length);
 
         length = 8;
+        dst = new short[length + 1][length];
         testS128(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                short expected;
-                if (offset < length) {
-                    expected = (short)offset;
-                } else {
-                    expected = (short)(offset + diff - length);
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 16;
+        dst = new short[length + 1][length];
         testS256(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                short expected;
-                if (offset < length) {
-                    expected = (short)offset;
-                } else {
-                    expected = (short)(offset + diff - length);
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 32;
+        dst = new short[length + 1][length];
         testS512(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                short expected;
-                if (offset < length) {
-                    expected = (short)offset;
-                } else {
-                    expected = (short)(offset + diff - length);
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
     }
 
     @Run(test = {"testI64", "testI128", "testI256", "testI512"})
     static void testInts() {
         int maxSize = 16;
         int diff = 70;
-        int[][] dst = new int[maxSize + 1][maxSize];
+        int length;
+        int[][] dst;
         int[] src1 = new int[maxSize];
         int[] src2 = new int[maxSize];
         for (int i = 0; i < src1.length; i++) {
@@ -195,72 +150,48 @@ public class TestVectorSlice {
             src2[i] = i + diff;
         }
 
-        int length = 2;
-        testI64(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                int expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
+        BiConsumer<int[][], Integer> verifier = (int[][] tgt, Integer len) -> {
+            for (int i = 0; i <= len; i++) {
+                for (int j = 0; j < len; j++) {
+                    int offset = i + j;
+                    int expected;
+                    if (offset < len) {
+                        expected = offset;
+                    } else {
+                        expected = offset + diff - len;
+                    }
+                    Asserts.assertEquals(expected, tgt[i][j]);
                 }
-                Asserts.assertEquals(expected, dst[i][j]);
             }
-        }
+        };
+
+        length = 2;
+        dst = new int[length + 1][length];
+        testI64(dst, src1, src2);
+        verifier.accept(dst, length);
 
         length = 4;
+        dst = new int[length + 1][length];
         testI128(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                int expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 8;
+        dst = new int[length + 1][length];
         testI256(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                int expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 16;
+        dst = new int[length + 1][length];
         testI512(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                int expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
     }
 
     @Run(test = {"testL128", "testL256", "testL512"})
     static void testLongs() {
         int maxSize = 8;
         int diff = 70;
-        long[][] dst = new long[maxSize + 1][maxSize];
+        int length;
+        long[][] dst;
         long[] src1 = new long[maxSize];
         long[] src2 = new long[maxSize];
         for (int i = 0; i < src1.length; i++) {
@@ -268,57 +199,43 @@ public class TestVectorSlice {
             src2[i] = i + diff;
         }
 
-        int length = 2;
-        testL128(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                long expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
+        BiConsumer<long[][], Integer> verifier = (long[][] tgt, Integer len) -> {
+            for (int i = 0; i <= len; i++) {
+                for (int j = 0; j < len; j++) {
+                    int offset = i + j;
+                    long expected;
+                    if (offset < len) {
+                        expected = offset;
+                    } else {
+                        expected = offset + diff - len;
+                    }
+                    Asserts.assertEquals(expected, tgt[i][j]);
                 }
-                Asserts.assertEquals(expected, dst[i][j]);
             }
-        }
+        };
+
+        length = 2;
+        dst = new long[length + 1][length];
+        testL128(dst, src1, src2);
+        verifier.accept(dst, length);
 
         length = 4;
+        dst = new long[length + 1][length];
         testL256(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                long expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 8;
+        dst = new long[length + 1][length];
         testL512(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                long expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
     }
 
     @Run(test = {"testF64", "testF128", "testF256", "testF512"})
     static void testFloats() {
         int maxSize = 64;
         int diff = 70;
-        float[][] dst = new float[maxSize + 1][maxSize];
+        int length;
+        float[][] dst;
         float[] src1 = new float[maxSize];
         float[] src2 = new float[maxSize];
         for (int i = 0; i < src1.length; i++) {
@@ -326,72 +243,48 @@ public class TestVectorSlice {
             src2[i] = i + diff;
         }
 
-        int length = 2;
-        testF64(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                float expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
+        BiConsumer<float[][], Integer> verifier = (float[][] tgt, Integer len) -> {
+            for (int i = 0; i <= len; i++) {
+                for (int j = 0; j < len; j++) {
+                    int offset = i + j;
+                    float expected;
+                    if (offset < len) {
+                        expected = offset;
+                    } else {
+                        expected = offset + diff - len;
+                    }
+                    Asserts.assertEquals(expected, tgt[i][j]);
                 }
-                Asserts.assertEquals(expected, dst[i][j]);
             }
-        }
+        };
+
+        length = 2;
+        dst = new float[length + 1][length];
+        testF64(dst, src1, src2);
+        verifier.accept(dst, length);
 
         length = 4;
+        dst = new float[length + 1][length];
         testF128(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                float expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 8;
+        dst = new float[length + 1][length];
         testF256(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                float expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 16;
+        dst = new float[length + 1][length];
         testF512(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                float expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
     }
 
     @Run(test = {"testD128", "testD256", "testD512"})
     static void testDoubles() {
         int maxSize = 64;
         int diff = 70;
-        double[][] dst = new double[maxSize + 1][maxSize];
+        int length;
+        double[][] dst;
         double[] src1 = new double[maxSize];
         double[] src2 = new double[maxSize];
         for (int i = 0; i < src1.length; i++) {
@@ -399,50 +292,35 @@ public class TestVectorSlice {
             src2[i] = i + diff;
         }
 
-        int length = 2;
-        testD128(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                double expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
+        BiConsumer<double[][], Integer> verifier = (double[][] tgt, Integer len) -> {
+            for (int i = 0; i <= len; i++) {
+                for (int j = 0; j < len; j++) {
+                    int offset = i + j;
+                    double expected;
+                    if (offset < len) {
+                        expected = offset;
+                    } else {
+                        expected = offset + diff - len;
+                    }
+                    Asserts.assertEquals(expected, tgt[i][j]);
                 }
-                Asserts.assertEquals(expected, dst[i][j]);
             }
-        }
+        };
+
+        length = 2;
+        dst = new double[length + 1][length];
+        testD128(dst, src1, src2);
+        verifier.accept(dst, length);
 
         length = 4;
+        dst = new double[length + 1][length];
         testD256(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                double expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
 
         length = 8;
+        dst = new double[length + 1][length];
         testD512(dst, src1, src2);
-        for (int i = 0; i <= length; i++) {
-            for (int j = 0; j < length; j++) {
-                int offset = i + j;
-                double expected;
-                if (offset < length) {
-                    expected = offset;
-                } else {
-                    expected = offset + diff - length;
-                }
-                Asserts.assertEquals(expected, dst[i][j]);
-            }
-        }
+        verifier.accept(dst, length);
     }
 
     @Test

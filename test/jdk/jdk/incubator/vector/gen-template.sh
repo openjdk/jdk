@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -528,6 +528,7 @@ gen_op_tmpl $zero_template "zero" ""
 # Slice
 gen_op_tmpl $slice_template "sliceUnary" ""
 gen_op_tmpl $slice1_template "sliceBinary" ""
+gen_op_tmpl $slice1_const_template "sliceBinaryConstant" ""
 gen_op_tmpl $slice1_masked_template "slice" ""
 
 # Unslice
