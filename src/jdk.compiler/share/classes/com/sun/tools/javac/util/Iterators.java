@@ -44,7 +44,7 @@ public class Iterators {
         return new CompoundIterator<>(inputs, converter);
     }
 
-    private static final class CompoundIterator<I, O> implements Iterator<O> {
+    private static class CompoundIterator<I, O> implements Iterator<O> {
 
         private final Iterator<I> inputs;
         private final Function<I, Iterator<O>> converter;
