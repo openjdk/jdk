@@ -289,7 +289,7 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
         goto errOut;
     }
     jmethodID jm_createKeyEntry = (*env)->GetMethodID(env, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
-    if (jm_createKeyEntry) == NULL {
+    if (jm_createKeyEntry == NULL {
         goto errOut;
     }
 
