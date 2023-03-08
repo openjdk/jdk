@@ -81,7 +81,7 @@ void ZUnmapper::run_thread() {
     ZPage* const page = dequeue();
     if (page == nullptr) {
       // Stop
-      break;
+      return;
     }
 
     do_unmap_and_destroy_page(page);
