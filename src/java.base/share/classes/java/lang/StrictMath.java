@@ -390,7 +390,7 @@ public final class StrictMath {
      *          {@code f2}.
      */
     public static double IEEEremainder(double f1, double f2) {
-        return Fdlibm.Remainder.compute(f1, f2);
+        return FdLibm.Remainder.compute(f1, f2);
     }
 
     /**

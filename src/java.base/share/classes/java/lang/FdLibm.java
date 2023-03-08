@@ -3305,7 +3305,9 @@ class FdLibm {
     static final class Remainder {
         private Remainder() {throw new UnsupportedOperationException();}
 
-        static double compute(double x) {
+        private static final double zero = 0.0;
+
+        static double compute(double x, double p) {
             int hx,hp;
             /*unsigned*/ int sx, lx, lp;
             double p_half;
@@ -3341,9 +3343,12 @@ class FdLibm {
                     if(x >= p_half) x -= p;
                 }
             }
-            __HI(x) ^= sx;
+            // __HI(x) ^= sx
+            x = __HI(x, __HI(x) ^ sx);
             return x;
         }
+
+        private static double one = 1.0, Zero[] = {0.0, -0.0,};
 
         static double fmod(double x, double y) {
             int n,hx,hy,hz,ix,iy,sx,i;
@@ -3362,7 +3367,7 @@ class FdLibm {
                ((hy|((ly | -ly) >> 31))>0x7ff00000))     /* or y is NaN */
                 return (x*y)/(x*y);
             if(hx <=hy) {
-                if((hx<hy)||(Intger.compareUnsigned(lx, ly) < 0)) return x;      /* |x|<|y| return x */
+                if((hx<hy)||(Integer.compareUnsigned(lx, ly) < 0)) return x;      /* |x|<|y| return x */
                 if(lx==ly)
                     return Zero[sx>>>31];  /* |x|=|y| return x*0*/ // unsigned shift
             }
@@ -3413,12 +3418,12 @@ class FdLibm {
 
             /* fix point fmod */
             n = ix - iy;
-            while(n--) {
+            while(n-- != 0) {
                 hz=hx-hy;lz=lx-ly; if(Integer.compareUnsigned(lx, ly) < 0 ) hz -= 1;
                 if(hz<0){hx = hx+hx+(lx>>>31); lx = lx+lx;} // unsigned shift
                 else {
                     if((hz|lz)==0)          /* return sign(x)*0 */
-                        return Zero[(unsigned)sx>>31];
+                        return Zero[sx>>>31]; // unsigned shift
                     hx = hz+hz+(lz>>>31); lx = lz+lz; // unsigned shift
                 }
             }
@@ -3427,15 +3432,17 @@ class FdLibm {
 
             /* convert back to floating value and restore the sign */
             if((hx|lx)==0)                  /* return sign(x)*0 */
-                return Zero[(unsigned)sx>>31];
+                return Zero[sx>>>31]; // unsigned shift
             while(Integer.compareUnsigned(hx, 0x00100000) < 0) {          /* normalize x */
                 hx = hx+hx+(lx>>31); lx = lx+lx;
                 iy -= 1;
             }
             if(iy>= -1022) {        /* normalize output */
                 hx = ((hx-0x00100000)|((iy+1023)<<20));
-                __HI(x) = hx|sx;
-                __LO(x) = lx;
+                // __HI(x) = hx|sx;
+                x = __HI(x, hx|sx);
+                // __LO(x) = lx;
+                x = __LO(x, lx);
             } else {                /* subnormal output */
                 n = -1022 - iy;
                 if(n<=20) {
@@ -3446,8 +3453,10 @@ class FdLibm {
                 } else {
                     lx = hx>>(n-32); hx = sx;
                 }
-                __HI(x) = hx|sx;
-                __LO(x) = lx;
+                // __HI(x) = hx|sx;
+                x = __HI(x, hx|sx);
+                // __LO(x) = lx;
+                x = __LO(x, lx);
                 x *= one;           /* create necessary signal */
             }
             return x;               /* exact output */
