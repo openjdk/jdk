@@ -25,17 +25,8 @@
 #ifndef SHARE_PRIMS_AGENT_HPP
 #define SHARE_PRIMS_AGENT_HPP
 
-#include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/ticks.hpp"
-
-struct JPLISAgentMirror;
-
-struct JPLISEnvironmentMirror {
-  jvmtiEnv* mJVMTIEnv;         // the JVMTI environment
-  JPLISAgentMirror* mAgent;    // corresponding agent
-  jboolean  mIsRetransformer;  // indicates if special environment
-};
 
 // For use by -agentlib, -agentpath and -Xrun
 // The terminology classifies -agentlib and -agentpath as "JVMTI agents".
@@ -50,7 +41,7 @@ class Agent : public CHeapObj<mtServiceability> {
   const char* _options;
   void* _os_lib;
   const char* _os_lib_path;
-  const JPLISAgentMirror* _jplis;
+  const void* _jplis;
   bool _valid;
   bool _is_absolute_path;
   bool _is_static_lib;
@@ -59,7 +50,7 @@ class Agent : public CHeapObj<mtServiceability> {
   bool _is_xrun;
 
   Agent* next() const;
-  void set_jplis(const JPLISAgentMirror* jplis);
+  void set_jplis(const void* jplis);
 
  public:
   const char* name() const;
@@ -78,7 +69,7 @@ class Agent : public CHeapObj<mtServiceability> {
   const Ticks& initialization() const;
   const Tickspan& initialization_time() const;
   bool is_jplis() const;
-  bool is_jplis(const JPLISAgentMirror* jplis) const;
+  bool is_jplis(const void* jplis) const;
   bool is_timestamped() const;
   void timestamp();
   void initialization_begin();

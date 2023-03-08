@@ -26,6 +26,7 @@
 
 #include "cds/cds_globals.hpp"
 #include "jni.h"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -218,6 +219,38 @@ static void* load_agent_from_relative_path(Agent* agent, bool vm_exit_on_error) 
   return library;
 }
 
+/*
+ * The implementation builds a mapping bewteen JVMTI envs and JPLIS agents,
+ * using internal JDK implementation knowledge about the way JPLIS agents
+ * store data in their JvmtiEnv local storage.
+ *
+ * Please see JPLISAgent.c in module java.instrument, see JPLISAgent.h and JPLISAgent.c.
+ *
+ * jvmtierror = (*jvmtienv)->SetEnvironmentLocalStorage( jvmtienv, &(agent->mNormalEnvironment));
+ *
+ * It is the pointer to the field agent->mNormalEnvironment that is stored in the jvmtiEnv local storage.
+ * It has the following type:
+ *
+ * struct _JPLISEnvironment {
+ *   jvmtiEnv*   mJVMTIEnv;              // the JVM TI environment
+ *   JPLISAgent* mAgent;                 // corresponding agent
+ *   jboolean    mIsRetransformer;       // indicates if special environment
+ * };
+ *
+ * We mirror this struct to get the mAgent field as an identifier.
+ */
+
+struct JPLISEnvironmentMirror {
+  jvmtiEnv* mJVMTIEnv; // the JVMTI environment
+  const void* mAgent;  // corresponding agent
+  jboolean mIsRetransformer; // indicates if special environment
+};
+
+static inline const JPLISEnvironmentMirror* get_env_local_storage(JvmtiEnv* env) {
+  assert(env != nullptr, "invariant");
+  return reinterpret_cast<const JPLISEnvironmentMirror*>(env->get_env_local_storage());
+}
+
 // The newest jvmtiEnvs are appended to the list, JvmtiEnvIterator order is from oldest to newest.
 static JvmtiEnv* get_last_jplis_jvmtienv() {
   JvmtiEnvIterator it;
@@ -249,7 +282,7 @@ void AgentList::link_jplis(Agent* agent) {
   assert(agent->is_instrument_lib(), "invariant");
   JvmtiEnv* const env = get_last_jplis_jvmtienv();
   assert(env != nullptr, "invariant");
-  const JPLISEnvironmentMirror* const jplis_env = reinterpret_cast<const JPLISEnvironmentMirror*>(env->get_env_local_storage());
+  const JPLISEnvironmentMirror* const jplis_env = get_env_local_storage(env);
   assert(jplis_env != nullptr, "invaiant");
   assert(reinterpret_cast<JvmtiEnv*>(jplis_env->mJVMTIEnv) == env, "invariant");
   agent->set_jplis(jplis_env->mAgent);
@@ -579,7 +612,7 @@ static bool is_env_jplis_agent(JvmtiEnv* env, const Agent* agent) {
   assert(env != nullptr, "invariant");
   assert(agent != nullptr, "invariant");
   assert(agent->is_instrument_lib(), "invariant");
-  const JPLISEnvironmentMirror* const jplis_env = reinterpret_cast<const JPLISEnvironmentMirror*>(env->get_env_local_storage());
+  const JPLISEnvironmentMirror* const jplis_env = get_env_local_storage(env);
   return jplis_env != nullptr ? agent->is_jplis(jplis_env->mAgent) : false;
 }
 

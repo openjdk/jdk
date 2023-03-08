@@ -25,71 +25,6 @@
 #include "prims/agent.hpp"
 
 #include "jvm_io.h"
-#include "runtime/os.inline.hpp"
-
-/*
-  * The implementation builds a mapping bewteen JVMTI envs and JPLIS agents,
-  * using internal JDK implementation knowledge about the way JPLIS agents
-  * store data in their JvmtiEnv local storage.
-  *
-  * Please see JPLISAgent.c in module java.instrument:
-  *
-  * jvmtierror = (*jvmtienv)->SetEnvironmentLocalStorage( jvmtienv, &(agent->mNormalEnvironment));
-  *
-  * It is the pointer to the field agent->mNormalEnvironment that is stored in the jvmtiEnv local storage.
-  *
-  * These are some types used in the JDK, java.instrument, see JPLISAgent.h and JPLISAgent.c
-  *
-  * struct _JPLISEnvironment {
-  *   jvmtiEnv*   mJVMTIEnv;              // the JVM TI environment
-  *   JPLISAgent* mAgent;                 // corresponding agent
-  *   jboolean    mIsRetransformer;       // indicates if special environment
-  * };
-  *
-  * struct _JPLISAgent {
-  *   JavaVM*                 mJVM;                   // handle to the JVM
-  *   JPLISEnvironment        mNormalEnvironment;     // for every thing but retransform stuff
-  *   JPLISEnvironment        mRetransformEnvironment;// for retransform stuff only
-  *   jobject                 mInstrumentationImpl;   // handle to the Instrumentation instance
-  *   jmethodID               mPremainCaller;         // method on the InstrumentationImpl that does the premain stuff (cached to save lots of lookups)
-  *   jmethodID               mAgentmainCaller;       // method on the InstrumentationImpl for agents loaded via attach mechanism
-  *   jmethodID               mTransform;             // method on the InstrumentationImpl that does the class file transform
-  *   jboolean                mRedefineAvailable;     // cached answer to "does this agent support redefine"
-  *   jboolean                mRedefineAdded;         // indicates if can_redefine_classes capability has been added
-  *   jboolean                mNativeMethodPrefixAvailable; // cached answer to "does this agent support prefixing"
-  *   jboolean                mNativeMethodPrefixAdded;     /// indicates if can_set_native_method_prefix capability has been added
-  *   char const* mAgentClassName; // agent class name
-  *   char const* mOptionsString;  // -javaagent options string
-  *   const char* mJarfile;        // agent jar file name
-  * };
-  *
-  * To read the JPLISAgent specfic data stored in the JvmtiEnv local storage, we model two mirror structs:
-  *
-  * struct JPLISEnvirommentMirror {
-  *   jvmtiEnv* mJVMTIEnv;         // the JVM TI environment
-  *   JPLISAgentMirror* mAgent;   // corresponding agent
-  *   jboolean  mIsRetransformer;  // indicates if special environment
-  * };
-  *
-  * Declared in agent.hpp. JPLISAgentMirror is declared here, in agent.cpp.
-  *
-  */
-struct JPLISAgentMirror {
-  JavaVM* mJVM;                   // handle to the JVM
-  JPLISEnvironmentMirror mNormalEnvironment;     // for every thing but retransform stuff
-  JPLISEnvironmentMirror mRetransformEnvironment;// for retransform stuff only
-  jobject mInstrumentationImpl;   // handle to the Instrumentation instance
-  jmethodID mPremainCaller;         // method on the InstrumentationImpl that does the premain stuff (cached to save lots of lookups)
-  jmethodID mAgentmainCaller;       // method on the InstrumentationImpl for agents loaded via attach mechanism
-  jmethodID mTransform;             // method on the InstrumentationImpl that does the class file transform
-  jboolean  mRedefineAvailable;     // cached answer to "does this agent support redefine"
-  jboolean  mRedefineAdded;         // indicates if can_redefine_classes capability has been added
-  jboolean  mNativeMethodPrefixAvailable; // cached answer to "does this agent support prefixing"
-  jboolean mNativeMethodPrefixAdded;     /// indicates if can_set_native_method_prefix capability has been added
-  char const* mAgentClassName; // agent class name
-  char const* mOptionsString;  // -javaagent options string
-  const char* mJarfile;        // agent jar file name
-};
 
 static void free_string(const char* str) {
   assert(str != nullptr, "invariant");
@@ -210,7 +145,7 @@ const Tickspan& Agent::initialization_time() const {
   return _init_time;
 }
 
-void Agent::set_jplis(const JPLISAgentMirror* jplis) {
+void Agent::set_jplis(const void* jplis) {
   assert(jplis != nullptr, "invaiant");
   assert(is_instrument_lib(), "invariant");
   assert(_jplis == nullptr, "invariant");
@@ -228,7 +163,7 @@ bool Agent::is_jplis() const {
   return _jplis != nullptr;
 }
 
-bool Agent::is_jplis(const JPLISAgentMirror* jplis) const {
+bool Agent::is_jplis(const void* jplis) const {
   assert(jplis != nullptr, "invariant");
   assert(is_instrument_lib(), "invariant");
   return jplis == _jplis;
