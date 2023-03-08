@@ -51,10 +51,6 @@
 
 package nsk.stress.strace;
 
-import nsk.share.ArgumentParser;
-import nsk.share.Log;
-
-import java.io.PrintStream;
 import java.util.Map;
 
 /**
@@ -69,42 +65,25 @@ public class strace015 extends StraceBase {
     static final int DEPTH = 100;
     static final int THRD_COUNT = 100;
 
-    static PrintStream out;
-    static long waitTime = 2;
-
     static Object lockedObject = new Object();
 
     static volatile int achivedCount = 0;
     strace015Thread[] threads;
-    static Log log;
 
     public static void main(String[] args) {
-        out = System.out;
-        int exitCode = run(args);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String[] args) {
-        ArgumentParser argHandler = new ArgumentParser(args);
-        log = new Log(out, argHandler);
-        waitTime = argHandler.getWaitTime() * 60000;
-
         strace015 test = new strace015();
-        boolean res = true;
 
         test.startThreads();
 
-        res = test.makeSnapshot();
+        boolean res = test.makeSnapshot();
 
         test.finishThreads();
 
         if (!res) {
-            complain("***>>>Test failed<<<***");
-            return 2;
+            new RuntimeException("***>>>Test failed<<<***");
         }
 
         display(">>>Test passed<<<");
-        return 0;
     }
 
     void startThreads() {
@@ -138,16 +117,12 @@ public class strace015 extends StraceBase {
 
     boolean makeSnapshot() {
 
-        Map traces = null;
-        int count = 0;
-        StackTraceElement[][] elements = null;
-
         display("making all threads snapshots...");
-        traces = Thread.getAllStackTraces();
-        count = ((StackTraceElement[]) traces.get(threads[0])).length;
+        Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
+        int count = traces.get(threads[0]).length;
 
         display("making snapshots of each thread...");
-        elements = new StackTraceElement[THRD_COUNT][];
+        StackTraceElement[][] elements = new StackTraceElement[THRD_COUNT][];
         for (int i = 0; i < THRD_COUNT; i++) {
             elements[i] = threads[i].getStackTrace();
         }
@@ -162,7 +137,7 @@ public class strace015 extends StraceBase {
         display("checking lengths of stack traces...");
         StackTraceElement[] all;
         for (int i = 1; i < THRD_COUNT; i++) {
-            all = (StackTraceElement[]) traces.get(threads[i]);
+            all = traces.get(threads[i]);
             int k = all.length;
             if (count - k > 2) {
                 complain("wrong lengths of stack traces:\n\t"
@@ -176,7 +151,7 @@ public class strace015 extends StraceBase {
         display("checking stack traces...");
         boolean res = true;
         for (int i = 0; i < THRD_COUNT; i++) {
-            all = (StackTraceElement[]) traces.get(threads[i]);
+            all = traces.get(threads[i]);
             if (!checkTraces(threads[i].getName(), elements[i], all)) {
                 res = false;
             }
@@ -220,14 +195,6 @@ public class strace015 extends StraceBase {
         } catch (InterruptedException e) {
             complain("" + e);
         }
-    }
-
-    static void display(String message) {
-        log.display(message);
-    }
-
-    static void complain(String message) {
-        log.complain(message);
     }
 
 }
