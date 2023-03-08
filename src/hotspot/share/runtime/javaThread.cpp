@@ -157,7 +157,7 @@ void JavaThread::set_threadOopHandles(oop p) {
   assert(_thread_oop_storage != nullptr, "not yet initialized");
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
-  _jvmti_vthread = OopHandle(_thread_oop_storage, nullptr);
+  _jvmti_vthread = OopHandle(_thread_oop_storage, p->is_a(vmClasses::BoundVirtualThread_klass()) ? p : nullptr);
   _scopedValueCache = OopHandle(_thread_oop_storage, nullptr);
 }
 
@@ -376,6 +376,9 @@ void JavaThread::check_possible_safepoint() {
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
+  // Don't complain if running a debugging command.
+  if (DebuggingContext::is_enabled()) return;
+
   // Check NoSafepointVerifier, which is implied by locks taken that can be
   // shared with the VM thread.  This makes sure that no locks with allow_vm_block
   // are held.

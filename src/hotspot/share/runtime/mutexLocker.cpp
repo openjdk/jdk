@@ -78,11 +78,11 @@ Mutex*   NonJavaThreadsListSync_lock  = nullptr;
 Monitor* CGC_lock                     = nullptr;
 Monitor* STS_lock                     = nullptr;
 Monitor* G1OldGCCount_lock            = nullptr;
+Mutex*   G1RareEvent_lock             = nullptr;
 Mutex*   G1DetachedRefinementStats_lock = nullptr;
 Mutex*   MarkStackFreeList_lock       = nullptr;
 Mutex*   MarkStackChunkList_lock      = nullptr;
 Mutex*   MonitoringSupport_lock       = nullptr;
-Mutex*   ParGCRareEvent_lock          = nullptr;
 Monitor* ConcurrentGCBreakpoints_lock = nullptr;
 Mutex*   Compile_lock                 = nullptr;
 Monitor* MethodCompileQueue_lock      = nullptr;
@@ -171,6 +171,7 @@ static int _num_mutex;
 
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
+  if (DebuggingContext::is_enabled()) return;
   // check if this thread owns the lock (common case)
   assert(lock != nullptr, "Need non-null lock");
   if (lock->owned_by_self()) return;
@@ -181,6 +182,7 @@ void assert_locked_or_safepoint(const Mutex* lock) {
 
 // a weaker assertion than the above
 void assert_locked_or_safepoint_weak(const Mutex* lock) {
+  if (DebuggingContext::is_enabled()) return;
   assert(lock != nullptr, "Need non-null lock");
   if (lock->is_locked()) return;
   if (SafepointSynchronize::is_at_safepoint()) return;
@@ -190,6 +192,7 @@ void assert_locked_or_safepoint_weak(const Mutex* lock) {
 
 // a stronger assertion than the above
 void assert_lock_strong(const Mutex* lock) {
+  if (DebuggingContext::is_enabled()) return;
   assert(lock != nullptr, "Need non-null lock");
   if (lock->owned_by_self()) return;
   fatal("must own lock %s", lock->name());
@@ -288,7 +291,7 @@ void mutex_init() {
 
   def(JvmtiThreadState_lock        , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
   def(EscapeBarrier_lock           , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
-  def(JvmtiVTMSTransition_lock     , PaddedMonitor, nosafepoint); // used for Virtual Thread Mount State transition management
+  def(JvmtiVTMSTransition_lock     , PaddedMonitor, safepoint);   // used for Virtual Thread Mount State transition management
   def(Management_lock              , PaddedMutex  , safepoint);   // used for JVM management
 
   def(ConcurrentGCBreakpoints_lock , PaddedMonitor, safepoint, true);
@@ -359,7 +362,7 @@ void mutex_init() {
 
   if (UseG1GC) {
     defl(G1OldGCCount_lock         , PaddedMonitor, Threads_lock, true);
-    defl(ParGCRareEvent_lock       , PaddedMutex  , Threads_lock, true);
+    defl(G1RareEvent_lock          , PaddedMutex  , Threads_lock, true);
   }
 
   defl(CompileTaskAlloc_lock       , PaddedMutex ,  MethodCompileQueue_lock);

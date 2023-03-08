@@ -1191,6 +1191,10 @@ public:
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
+
+  // Convert BootTest condition to Assembler condition.
+  // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+  Assembler::Condition to_assembler_cond(BoolTest::mask cond);
 %}
 
 source %{
@@ -2301,6 +2305,12 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       }
       break;
+    case Op_ExpandBits:
+    case Op_CompressBits:
+      if (!(UseSVE > 1 && VM_Version::supports_svebitperm())) {
+        ret_value = false;
+      }
+      break;
   }
 
   return ret_value; // Per default match rules are supported.
@@ -2519,6 +2529,50 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
     }
   }
   return true;
+}
+
+// Convert BootTest condition to Assembler condition.
+// Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
+  Assembler::Condition result;
+  switch(cond) {
+    case BoolTest::eq:
+      result = Assembler::EQ; break;
+    case BoolTest::ne:
+      result = Assembler::NE; break;
+    case BoolTest::le:
+      result = Assembler::LE; break;
+    case BoolTest::ge:
+      result = Assembler::GE; break;
+    case BoolTest::lt:
+      result = Assembler::LT; break;
+    case BoolTest::gt:
+      result = Assembler::GT; break;
+    case BoolTest::ule:
+      result = Assembler::LS; break;
+    case BoolTest::uge:
+      result = Assembler::HS; break;
+    case BoolTest::ult:
+      result = Assembler::LO; break;
+    case BoolTest::ugt:
+      result = Assembler::HI; break;
+    case BoolTest::overflow:
+      result = Assembler::VS; break;
+    case BoolTest::no_overflow:
+      result = Assembler::VC; break;
+    default:
+      ShouldNotReachHere();
+      return Assembler::Condition(-1);
+  }
+
+  // Check conversion
+  if (cond & BoolTest::unsigned_compare) {
+    assert(cmpOpUOper((BoolTest::mask)((int)cond & ~(BoolTest::unsigned_compare))).ccode() == result, "Invalid conversion");
+  } else {
+    assert(cmpOpOper(cond).ccode() == result, "Invalid conversion");
+  }
+
+  return result;
 }
 
 // Binary src (Replicate con)
@@ -4250,6 +4304,17 @@ operand immI_65535()
 operand immI_positive()
 %{
   predicate(n->get_int() > 0);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// BoolTest condition for signed compare
+operand immI_cmp_cond()
+%{
+  predicate(n->get_int() < (int)(BoolTest::unsigned_compare));
   match(ConI);
 
   op_cost(0);
@@ -8931,14 +8996,12 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
-// This section is generated from aarch64_ad_cas.m4
-
+// This section is generated from cas.m4
 
 
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8957,7 +9020,6 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8976,7 +9038,6 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8994,7 +9055,6 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9012,7 +9072,6 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9158,7 +9217,6 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9178,7 +9236,6 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9198,7 +9255,6 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9218,7 +9274,6 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9238,7 +9293,6 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -17348,6 +17402,157 @@ instruct encode_ascii_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
                         $vtmp2$$FloatRegister, $vtmp3$$FloatRegister);
   %}
   ins_pipe(pipe_class_memory);
+%}
+
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
+                           vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (CompressBits src mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "mov    $tsrc, $src\n\t"
+            "mov    $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    __ mov($tsrc$$FloatRegister, __ S, 0, $src$$Register);
+    __ mov($tmask$$FloatRegister, __ S, 0, $mask$$Register);
+    __ sve_bext($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsI_memcon(iRegINoSp dst, memory4 mem, immI mask,
+                           vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (CompressBits (LoadI mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrs   $tsrc, $mem\n\t"
+            "ldrs   $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
+    __ ldrs($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bext($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
+                           vRegD tdst, vRegD tsrc, vRegD tmask) %{
+  match(Set dst (CompressBits src mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "mov    $tsrc, $src\n\t"
+            "mov    $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    __ mov($tsrc$$FloatRegister, __ D, 0, $src$$Register);
+    __ mov($tmask$$FloatRegister, __ D, 0, $mask$$Register);
+    __ sve_bext($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsL_memcon(iRegLNoSp dst, memory8 mem, immL mask,
+                           vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (CompressBits (LoadL mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrd   $tsrc, $mem\n\t"
+            "ldrd   $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
+    __ ldrd($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bext($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct expandBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
+                         vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "mov    $tsrc, $src\n\t"
+            "mov    $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    __ mov($tsrc$$FloatRegister, __ S, 0, $src$$Register);
+    __ mov($tmask$$FloatRegister, __ S, 0, $mask$$Register);
+    __ sve_bdep($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct expandBitsI_memcon(iRegINoSp dst, memory4 mem, immI mask,
+                         vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (ExpandBits (LoadI mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrs   $tsrc, $mem\n\t"
+            "ldrs   $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
+    __ ldrs($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bdep($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct expandBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
+                         vRegD tdst, vRegD tsrc, vRegD tmask) %{
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "mov    $tsrc, $src\n\t"
+            "mov    $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    __ mov($tsrc$$FloatRegister, __ D, 0, $src$$Register);
+    __ mov($tmask$$FloatRegister, __ D, 0, $mask$$Register);
+    __ sve_bdep($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
+                         vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (ExpandBits (LoadL mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrd   $tsrc, $mem\n\t"
+            "ldrd   $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
+    __ ldrd($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bdep($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // ============================================================================

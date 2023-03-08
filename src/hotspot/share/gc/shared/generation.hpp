@@ -51,7 +51,6 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class GenerationSpec;
-class CompactibleSpace;
 class ContiguousSpace;
 class CompactPoint;
 class OopClosure;
@@ -202,7 +201,7 @@ class Generation: public CHeapObj<mtGC> {
 
   // Returns the first space, if any, in the generation that can participate
   // in compaction, or else "null".
-  virtual CompactibleSpace* first_compaction_space() const = 0;
+  virtual ContiguousSpace* first_compaction_space() const = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might

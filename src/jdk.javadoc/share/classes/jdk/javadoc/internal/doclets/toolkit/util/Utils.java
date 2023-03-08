@@ -111,7 +111,6 @@ import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
@@ -1093,22 +1092,8 @@ public class Utils {
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
-        return getFirstVisibleSuperClass(asTypeElement(type));
-    }
-
-
-    /**
-     * Given a class, return the closest visible superclass.
-     *
-     * @param te the TypeElement to be interrogated
-     * @return the closest visible superclass.  Return null if it cannot
-     *         be found.
-     */
-    public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
-        TypeMirror superType = te.getSuperclass();
-        if (isNoType(superType)) {
-            superType = getObjectType();
-        }
+        List<? extends TypeMirror> superTypes = typeUtils.directSupertypes(type);
+        TypeMirror superType = superTypes.isEmpty() ? getObjectType() : superTypes.get(0);
         TypeElement superClass = asTypeElement(superType);
         // skip "hidden" classes
         while ((superClass != null && hasHiddenTag(superClass))
@@ -1122,10 +1107,22 @@ public class Utils {
             superType = supersuperType;
             superClass = supersuperClass;
         }
-        if (typeUtils.isSameType(te.asType(), superType)) {
+        if (typeUtils.isSameType(type, superType)) {
             return null;
         }
         return superType;
+    }
+
+
+    /**
+     * Given a class, return the closest visible superclass.
+     *
+     * @param te the TypeElement to be interrogated
+     * @return the closest visible superclass.  Return null if it cannot
+     *         be found.
+     */
+    public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
+        return getFirstVisibleSuperClass(te.asType());
     }
 
     /**
@@ -1296,9 +1293,8 @@ public class Utils {
      */
     private Object getAnnotationElement(Element e, TypeMirror annotationType, String annotationElementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
-        JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
-            if (jctypes.isSameType(anno.getAnnotationType(), annotationType)) {
+            if (typeUtils.isSameType(anno.getAnnotationType(), annotationType)) {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {

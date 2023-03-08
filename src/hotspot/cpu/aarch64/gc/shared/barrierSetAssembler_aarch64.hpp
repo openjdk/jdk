@@ -48,6 +48,52 @@ public:
                                   Register src, Register dst, Register count, RegSet saved_regs) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register start, Register count, Register tmp, RegSet saved_regs) {}
+
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            Register dst1,
+                            Register dst2,
+                            Address src,
+                            Register tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             Register src1,
+                             Register src2,
+                             Register tmp1,
+                             Register tmp2,
+                             Register tmp3);
+
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            FloatRegister dst1,
+                            FloatRegister dst2,
+                            Address src,
+                            Register tmp1,
+                            Register tmp2,
+                            FloatRegister vec_tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             FloatRegister src1,
+                             FloatRegister src2,
+                             Register tmp1,
+                             Register tmp2,
+                             Register tmp3,
+                             FloatRegister vec_tmp1,
+                             FloatRegister vec_tmp2,
+                             FloatRegister vec_tmp3);
+
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register dst, Address src, Register tmp1, Register tmp2);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
@@ -71,6 +117,8 @@ public:
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
+
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 
   virtual bool supports_instruction_patching() {
     NMethodPatchingType patching_type = nmethod_patching_type();

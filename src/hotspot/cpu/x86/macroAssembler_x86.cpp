@@ -42,7 +42,6 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
@@ -403,7 +402,7 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
 
 void MacroAssembler::print_state32(int rdi, int rsi, int rbp, int rsp, int rbx, int rdx, int rcx, int rax, int eip) {
   ttyLocker ttyl;
-  FlagSetting fs(Debugging, true);
+  DebuggingContext debugging{};
   tty->print_cr("eip = 0x%08x", eip);
 #ifndef PRODUCT
   if ((WizardMode || Verbose) && PrintMiscellaneous) {
@@ -832,7 +831,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
 
 void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
   ttyLocker ttyl;
-  FlagSetting fs(Debugging, true);
+  DebuggingContext debugging{};
   tty->print_cr("rip = 0x%016lx", (intptr_t)pc);
 #ifndef PRODUCT
   tty->cr();
@@ -5130,6 +5129,11 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   } else
 #endif
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+}
+
+void MacroAssembler::load_klass_check_null(Register dst, Register src, Register tmp) {
+  null_check(src, oopDesc::klass_offset_in_bytes());
+  load_klass(dst, src, tmp);
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
