@@ -35,8 +35,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
@@ -874,9 +876,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     /**
-     * Determines if this type may have annotations. A positive result
-     * does not mean this type has annotations but a negative result guarantees
-     * this type has no annotations.
+     * Determines if this type may have annotations. A positive result does not mean this type has
+     * annotations but a negative result guarantees this type has no annotations.
      *
      * @param includingInherited if true, expand this query to include superclasses of this type
      */
@@ -1105,11 +1106,23 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public AnnotationData[] getAnnotationData(ResolvedJavaType... filter) {
+    public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
         if (!mayHaveAnnotations(true)) {
-            return AnnotationDataDecoder.NO_ANNOTATION_DATA;
+            return null;
         }
+        return getAnnotationData0(annotationType).get(0);
+    }
+
+    @Override
+    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        if (!mayHaveAnnotations(true)) {
+            return Collections.emptyList();
+        }
+        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+    }
+
+    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedClassAnnotationData(this, filter);
-        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder());
+        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
     }
 }

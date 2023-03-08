@@ -45,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.List;
 
 /*
  * Support class used by JVMCI, JVMTI and VM attach mechanism.
@@ -169,6 +170,11 @@ public class VMSupport {
                                            boolean forClass,
                                            Class<? extends Annotation>[] selectAnnotationClasses)
     {
+        for (Class<?> c : selectAnnotationClasses) {
+            if (!c.isAnnotation()) {
+                throw new IllegalArgumentException(c + " is not an annotation interface");
+            }
+        }
         Map<Class<? extends Annotation>, Annotation> annotations =
                 AnnotationParser.parseSelectAnnotations(rawAnnotations, cp, declaringClass, selectAnnotationClasses);
         if (forClass && annotations.size() != selectAnnotationClasses.length) {
@@ -400,10 +406,9 @@ public class VMSupport {
          * Creates an object representing a decoded annotation.
          *
          * @param type the annotation interface of the annotation
-         * @param names element names
-         * @param values element values
+         * @param elements elements of the annotation
          */
-        A newAnnotation(T type, String[] names, Object[] values);
+        A newAnnotation(T type, Map.Entry<String, Object>[] elements);
 
         /**
          * Creates an object representing a decoded enum constant.
@@ -412,21 +417,6 @@ public class VMSupport {
          * @param name the name of the enum constant
          */
         E newEnumValue(T enumType, String name);
-
-        /**
-         * Creates and returns an array of type {@code T}.
-         */
-        T[] newClassArray(int length);
-
-        /**
-         * Creates and returns an array of type {@code A}.
-         */
-        A[] newAnnotationArray(int length);
-
-        /**
-         * Creates and returns an array of type {@code E}.
-         */
-        E[] newEnumValues(int length);
 
         /**
          * Creates an object representing a decoded error value.
@@ -443,13 +433,14 @@ public class VMSupport {
      * @param <A> type of the object representing a decoded annotation
      * @param <E> type of the object representing a decoded enum constant
      * @param <X> type of the object representing a decoded error
+     * @return an immutable list of {@code A} objects
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static <T, A, E, X> A[] decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, X> decoder) {
+    public static <T, A, E, X> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, X> decoder) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
             DataInputStream dis = new DataInputStream(bais);
-            return readAnnotationArray(dis, decoder);
+            return (List<A>) readArray(dis, () -> decodeAnnotation(dis, decoder));
         } catch (Exception e) {
             throw new InternalError(e);
         }
@@ -460,13 +451,11 @@ public class VMSupport {
         String typeName = dis.readUTF();
         T type = decoder.resolveType(typeName);
         int n = readLength(dis);
-        String[] names = new String[n];
-        Object[] values = new Object[n];
+        Map.Entry[] elements = new Map.Entry[n];
         for (int i = 0; i < n; i++) {
             String name = dis.readUTF();
-            names[i] = name;
             byte tag = dis.readByte();
-            values[i] = switch (tag) {
+            elements[i] = Map.entry(name, switch (tag) {
                 case 'B' -> dis.readByte();
                 case 'C' -> dis.readChar();
                 case 'D' -> dis.readDouble();
@@ -482,124 +471,66 @@ public class VMSupport {
                 case '[' -> decodeArray(dis, decoder);
                 case 'x' -> decoder.newErrorValue(dis.readUTF());
                 default -> throw new InternalError("Unsupported tag: " + tag);
-            };
+            });
         }
-        return decoder.newAnnotation(type, names, values);
+        return decoder.newAnnotation(type, (Map.Entry<String, Object>[]) elements);
+    }
+    @FunctionalInterface
+    interface IOReader {
+        Object read() throws IOException;
     }
 
     private static <T, A, E, X> Object decodeArray(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder) throws IOException {
         byte componentTag = dis.readByte();
         return switch (componentTag) {
-            case 'B' -> readByteArray(dis);
-            case 'C' -> readCharArray(dis);
-            case 'D' -> readDoubleArray(dis);
-            case 'F' -> readFloatArray(dis);
-            case 'I' -> readIntArray(dis);
-            case 'J' -> readLongArray(dis);
-            case 'S' -> readShortArray(dis);
-            case 'Z' -> readBooleanArray(dis);
-            case 's' -> readStringArray(dis);
-            case 'c' -> readClassArray(dis, decoder);
-            case 'e' -> readEnumArray(dis, decoder);
-            case '@' -> readAnnotationArray(dis, decoder);
+            case 'B' -> readArray(dis, dis::readByte);
+            case 'C' -> readArray(dis, dis::readChar);
+            case 'D' -> readArray(dis, dis::readDouble);
+            case 'F' -> readArray(dis, dis::readFloat);
+            case 'I' -> readArray(dis, dis::readInt);
+            case 'J' -> readArray(dis, dis::readLong);
+            case 'S' -> readArray(dis, dis::readShort);
+            case 'Z' -> readArray(dis, dis::readBoolean);
+            case 's' -> readArray(dis, dis::readUTF);
+            case 'c' -> readArray(dis, () -> readClass(dis, decoder));
+            case 'e' -> {
+                T enumType = decoder.resolveType(dis.readUTF());
+                yield readArray(dis, () -> readEnum(dis, decoder, enumType));
+            }
+            case '@' -> readArray(dis, () -> decodeAnnotation(dis, decoder));
             default -> throw new InternalError("Unsupported component tag: " + componentTag);
         };
     }
 
-    private static <T, A, E, X> A[] readAnnotationArray(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder) throws IOException {
-        int length = readLength(dis);
-        A[] array = decoder.newAnnotationArray(length);
-        for (int i = 0; i < length; i++) {
-            array[i] = decodeAnnotation(dis, decoder);
-        }
-        return array;
+    /**
+     * Reads an enum encoded at the current read position of {@code dis} and
+     * returns it as an object of type {@code E}.
+     */
+    private static <T, A, E, X> E readEnum(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder, T enumType) throws IOException {
+        return decoder.newEnumValue(enumType, dis.readUTF());
     }
 
-    private static <T, A, E, X> E[] readEnumArray(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder) throws IOException {
-        T enumType = decoder.resolveType(dis.readUTF());
-        E[] array = decoder.newEnumValues(readLength(dis));
+    /**
+     * Reads a class encoded at the current read position of {@code dis} and
+     * returns it as an object of type {@code T}.
+     */
+    private static <T, A, E, X> T readClass(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder) throws IOException {
+        return decoder.resolveType(dis.readUTF());
+    }
+
+    /**
+     * Reads an array encoded at the current read position of {@code dis} and
+     * returns it in an immutable list.
+     *
+     * @param reader reads array elements from {@code dis}
+     * @return an immutable list of {@code A} objects
+     */
+    private static List<Object> readArray(DataInputStream dis, IOReader reader) throws IOException {
+        Object[] array = new Object[readLength(dis)];
         for (int i = 0; i < array.length; i++) {
-            array[i] = decoder.newEnumValue(enumType, dis.readUTF());
+            array[i] = reader.read();
         }
-        return array;
-    }
-
-    private static <T, A, E, X> T[] readClassArray(DataInputStream dis, AnnotationDecoder<T, A, E, X> decoder) throws IOException {
-        T[] array = decoder.newClassArray(readLength(dis));
-        for (int i = 0; i < array.length; i++) {
-            array[i] = decoder.resolveType(dis.readUTF());
-        }
-        return array;
-    }
-
-    private static String[] readStringArray(DataInputStream dis) throws IOException {
-        String[] array = new String[readLength(dis)];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = dis.readUTF();
-        }
-        return array;
-    }
-
-    private static boolean[] readBooleanArray(DataInputStream dis) throws IOException {
-        boolean[] array = new boolean[readLength(dis)];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = dis.readBoolean();
-        }
-        return array;
-    }
-
-    private static short[] readShortArray(DataInputStream dis) throws IOException {
-        short[] array = new short[readLength(dis)];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = dis.readShort();
-        }
-        return array;
-    }
-
-    private static long[] readLongArray(DataInputStream dis) throws IOException {
-        long[] array = new long[readLength(dis)];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = dis.readLong();
-        }
-        return array;
-    }
-
-    private static int[] readIntArray(DataInputStream dis) throws IOException {
-        int[] array = new int[readLength(dis)];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = dis.readInt();
-        }
-        return array;
-    }
-
-    private static float[] readFloatArray(DataInputStream dis) throws IOException {
-        float[] array = new float[readLength(dis)];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = dis.readFloat();
-        }
-        return array;
-    }
-
-    private static double[] readDoubleArray(DataInputStream dis) throws IOException {
-        double[] array = new double[readLength(dis)];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = dis.readDouble();
-        }
-        return array;
-    }
-
-    private static char[] readCharArray(DataInputStream dis) throws IOException {
-        char[] array = new char[readLength(dis)];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = dis.readChar();
-        }
-        return array;
-    }
-
-    private static byte[] readByteArray(DataInputStream dis) throws IOException {
-        byte[] array = new byte[readLength(dis)];
-        dis.readFully(array);
-        return array;
+        return List.of(array);
     }
 
     /**

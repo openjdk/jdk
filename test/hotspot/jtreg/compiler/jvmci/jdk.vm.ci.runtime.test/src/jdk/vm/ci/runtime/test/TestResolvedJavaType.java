@@ -96,9 +96,11 @@ import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.UnresolvedJavaType;
 import sun.reflect.annotation.AnnotationSupport;
 
 /**
@@ -1167,22 +1169,22 @@ public class TestResolvedJavaType extends TypeUniverse {
         ResolvedJavaType overrideType = metaAccess.lookupJavaType(Override.class);
         for (Class<?> c : prims) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            AnnotationData ad = type.getAnnotationDataFor(overrideType);
+            AnnotationData ad = type.getAnnotationData(overrideType);
             Assert.assertNull(String.valueOf(ad), ad);
-            AnnotationData[] adArray = type.getAnnotationData(overrideType);
-            Assert.assertEquals(0, adArray.length);
+            List<AnnotationData> adArray = type.getAnnotationData(overrideType, overrideType);
+            Assert.assertEquals(0, adArray.size());
         }
 
         // Test that inherited annotations are handled properly.
         ResolvedJavaType namedType = metaAccess.lookupJavaType(AnnotationTestInput.Named.class);
-        AnnotationData ad = metaAccess.lookupJavaType(AnnotationTestInput.OwnName.class).getAnnotationDataFor(namedType);
-        Assert.assertEquals("NonInheritedValue", ad.getString("value"));
-        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName1.class).getAnnotationDataFor(namedType);
-        Assert.assertEquals("Super1", ad.getString("value"));
-        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName2.class).getAnnotationDataFor(namedType);
-        Assert.assertEquals("Super2", ad.getString("value"));
-        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName3.class).getAnnotationDataFor(namedType);
-        Assert.assertEquals("Super1", ad.getString("value"));
+        AnnotationData ad = metaAccess.lookupJavaType(AnnotationTestInput.OwnName.class).getAnnotationData(namedType);
+        Assert.assertEquals("NonInheritedValue", ad.get("value", String.class));
+        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName1.class).getAnnotationData(namedType);
+        Assert.assertEquals("Super1", ad.get("value", String.class));
+        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName2.class).getAnnotationData(namedType);
+        Assert.assertEquals("Super2", ad.get("value", String.class));
+        ad = metaAccess.lookupJavaType(AnnotationTestInput.InheritedName3.class).getAnnotationData(namedType);
+        Assert.assertEquals("Super1", ad.get("value", String.class));
     }
 
     // @formatter:off
@@ -1242,28 +1244,30 @@ public class TestResolvedJavaType extends TypeUniverse {
 
     private static void testGetAnnotationData(AnnotatedElement annotated, List<Annotation> annotations) throws AssertionError {
         for (Annotation a : annotations) {
-            AnnotationData ad = toAnnotated(annotated).getAnnotationDataFor(metaAccess.lookupJavaType(a.annotationType()));
+            AnnotationData ad = toAnnotated(annotated).getAnnotationData(metaAccess.lookupJavaType(a.annotationType()));
             assertAnnotationsEquals(a, ad);
-        }
-        for (int i = 0; i < annotations.size(); i++) {
 
-            ResolvedJavaType[] filter = annotations.//
-                            subList(0, i + 1).//
+            // Check that encoding/decoding produces a stable result
+            AnnotationData ad2 = toAnnotated(annotated).getAnnotationData(metaAccess.lookupJavaType(a.annotationType()));
+            assertEquals(ad, ad2);
+        }
+        if (annotations.size() < 2) {
+            return;
+        }
+        ResolvedJavaType type1 = metaAccess.lookupJavaType(annotations.get(0).annotationType());
+        ResolvedJavaType type2 = metaAccess.lookupJavaType(annotations.get(1).annotationType());
+        for (int i = 2; i < annotations.size(); i++) {
+
+            ResolvedJavaType[] types = annotations.//
+                            subList(2, i + 1).//
                             stream().map(a -> metaAccess.lookupJavaType(a.annotationType())).//
                             toArray(ResolvedJavaType[]::new);
-            AnnotationData[] annotationData = toAnnotated(annotated).getAnnotationData(filter);
-            assertEquals(filter.length, annotationData.length);
+            List<AnnotationData> annotationData = toAnnotated(annotated).getAnnotationData(type1, type2, types);
+            assertEquals(2 + types.length, annotationData.size());
 
-            // Test typed getters in AnnotationData
-            for (int j = 0; j < filter.length; j++) {
+            for (int j = 0; j < annotationData.size(); j++) {
                 Annotation a = annotations.get(j);
-                AnnotationData ad = annotationData[j];
-                if (ad == null) {
-                    String sep = String.format("%n  ");
-                    String keys = Stream.of(annotationData).map(e -> e.getType().toString()).collect(Collectors.joining(sep));
-                    String message = String.format("%s: missing %s at index %d in:%s%s", annotated, a.annotationType(), j, sep, keys);
-                    throw new AssertionError(message);
-                }
+                AnnotationData ad = annotationData.get(j);
                 assertAnnotationsEquals(a, ad);
             }
         }
@@ -1280,170 +1284,48 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
-    private static void assertAnnotationsEquals(Annotation a, AnnotationData ad) {
-        String aString = a.toString();
-        String adString = ad.toString();
-        assertEquals(aString, adString);
+    private static UnresolvedJavaType asType(Class<?> valueType) {
+        return UnresolvedJavaType.create(MetaUtil.toInternalName(valueType.getName()));
+    }
 
+    private static void assertAnnotationsEquals(Annotation a, AnnotationData ad) {
         Map<String, Object> values = AnnotationSupport.memberValues(a);
         for (Map.Entry<String, Object> e : values.entrySet()) {
             String name = e.getKey();
-            if (ad.has(name)) {
-                Object aValue = e.getValue();
-                Object adValue;
-                try {
-                    adValue = ad.get(name);
-                } catch (IllegalArgumentException ex) {
-                    assertEquals(aValue.toString(), ex.getMessage());
-                    continue;
-                }
-                Class<?> valueType = aValue.getClass();
-                if (valueType == Byte.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getByte(name), adValue);
-                } else if (valueType == Character.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getChar(name), adValue);
-                } else if (valueType == Double.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getDouble(name), adValue);
-                } else if (valueType == Float.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getFloat(name), adValue);
-                } else if (valueType == Integer.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getInt(name), adValue);
-                } else if (valueType == Long.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getLong(name), adValue);
-                } else if (valueType == Short.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getShort(name), adValue);
-                } else if (valueType == Boolean.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getBoolean(name), adValue);
-                } else if (valueType == String.class) {
-                    assertEquals(aValue, adValue);
-                    assertEquals(ad.getString(name), adValue);
-                } else if (valueType == Class.class) {
-                    assertClassObjectsEquals(aValue, adValue);
-                    assertEquals(ad.getClass(name), adValue);
-                } else if (valueType.isEnum()) {
-                    assertEnumObjectsEquals(aValue, adValue);
-                    assertEquals(ad.getEnum(name), adValue);
-                } else if (aValue instanceof Annotation) {
-                    AnnotationData adAnnotationValue = ad.getAnnotation(name);
-                    assertEquals(adAnnotationValue, adValue);
-                    assertAnnotationObjectsEquals(aValue, adValue);
-                } else if (valueType.isArray()) {
-                    int length = Array.getLength(aValue);
-                    assertEquals(length, Array.getLength(adValue));
-                    Class<?> componentType = valueType.getComponentType();
-                    if (componentType == byte.class) {
-                        byte[] adByteArray = (byte[]) adValue;
-                        assertArrayEquals((byte[]) aValue, adByteArray);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            adByteArray[0]++;
-                            assertArrayEquals((byte[]) aValue, (byte[]) ad.get(name));
-                        }
-                    } else if (componentType == char.class) {
-                        char[] adCharArray = (char[]) adValue;
-                        assertArrayEquals((char[]) aValue, adCharArray);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            adCharArray[0]++;
-                            assertArrayEquals((char[]) aValue, (char[]) ad.get(name));
-                        }
-                    } else if (componentType == double.class) {
-                        double[] adDoubleArray = (double[]) adValue;
-                        assertArrayEquals((double[]) aValue, adDoubleArray, 0.0D);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            adDoubleArray[0]++;
-                            assertArrayEquals((double[]) aValue, (double[]) ad.get(name), 0.0D);
-                        }
-                    } else if (componentType == float.class) {
-                        float[] adFloatArray = (float[]) adValue;
-                        assertArrayEquals((float[]) aValue, adFloatArray, 0.0F);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            adFloatArray[0]++;
-                            assertArrayEquals((float[]) aValue, (float[]) ad.get(name), 0.0F);
-                        }
-                    } else if (componentType == int.class) {
-                        int[] adIntArray = (int[]) adValue;
-                        assertArrayEquals((int[]) aValue, adIntArray);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            adIntArray[0]++;
-                            assertArrayEquals((int[]) aValue, (int[]) ad.get(name));
-                        }
-                    } else if (componentType == long.class) {
-                        long[] adLongArray = (long[]) adValue;
-                        assertArrayEquals((long[]) aValue, adLongArray);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            adLongArray[0]++;
-                            assertArrayEquals((long[]) aValue, (long[]) ad.get(name));
-                        }
-                    } else if (componentType == short.class) {
-                        assertArrayEquals((short[]) aValue, (short[]) adValue);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            ((short[]) adValue)[0]++;
-                            assertArrayEquals((short[]) aValue, (short[]) ad.get(name));
-                        }
-                    } else if (componentType == boolean.class) {
-                        boolean[] adBooleanArray = (boolean[]) adValue;
-                        assertArrayEquals((boolean[]) aValue, adBooleanArray);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            adBooleanArray[0] = !adBooleanArray[0];
-                            assertArrayEquals((boolean[]) aValue, (boolean[]) ad.get(name));
-                        }
-                    } else if (componentType == String.class) {
-                        String[] adStringArray = (String[]) adValue;
-                        assertArrayEquals((String[]) aValue, adStringArray);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            adStringArray[0] = adStringArray[0] + "extra";
-                            assertArrayEquals((String[]) aValue, (String[]) ad.get(name));
-                        }
-                    } else if (componentType == Class.class) {
-                        assertArraysEqual(aValue, adValue, length, TestResolvedJavaType::assertClassObjectsEquals);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            JavaType[] adClassArray = (JavaType[]) adValue;
-                            adClassArray[0] = null;
-                            assertArraysEqual(aValue, ad.get(name), length, TestResolvedJavaType::assertClassObjectsEquals);
-                        }
-                    } else if (componentType.isEnum()) {
-                        assertArraysEqual(aValue, adValue, length, TestResolvedJavaType::assertEnumObjectsEquals);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            EnumData[] adEnumArray = (EnumData[]) adValue;
-                            adEnumArray[0] = null;
-                            assertArraysEqual(aValue, ad.get(name), length, TestResolvedJavaType::assertEnumObjectsEquals);
-                        }
-                    } else if (componentType.isAnnotation()) {
-                        assertArraysEqual(aValue, adValue, length, TestResolvedJavaType::assertAnnotationObjectsEquals);
-                        if (length != 0) {
-                            // Test for defensive copying of arrays
-                            AnnotationData[] adAnnotationArray = (AnnotationData[]) adValue;
-                            adAnnotationArray[0] = null;
-                            assertArraysEqual(aValue, ad.get(name), length, TestResolvedJavaType::assertAnnotationObjectsEquals);
-                        }
-                    } else {
-                        throw new AssertionError("Unsupported annotation element named \"" + name + "\" with type: " + valueType.getName());
-                    }
-                } else {
-                    // Error member values should have same toString representation
-                    assertEquals(aValue.toString(), adValue.toString());
-                }
-            } else {
-                throw new AssertionError("Annotation element named \"" + name + "\" not found in " + ad);
+            Object aValue = e.getValue();
+            Object adValue;
+            try {
+                adValue = ad.get(name, Object.class);
+            } catch (IllegalArgumentException ex) {
+                assertEquals(aValue.toString(), ex.getMessage());
+                continue;
             }
+            try {
+                assertAnnotationElementsEqual(aValue, adValue);
+            } catch (ClassCastException ex) {
+                throw new AssertionError(a.getClass().getName() + "." + name + " has wrong type: " + adValue.getClass().getName(), ex);
+            }
+        }
+    }
+
+    private static void assertAnnotationElementsEqual(Object aValue, Object adValue) {
+        Class<?> valueType = aValue.getClass();
+        if (valueType.isEnum()) {
+            assertEnumObjectsEquals(aValue, adValue);
+        } else if (aValue instanceof Class) {
+            assertClassObjectsEquals(aValue, adValue);
+        } else if (aValue instanceof Annotation) {
+            assertAnnotationObjectsEquals(aValue, adValue);
+        } else if (valueType.isArray()) {
+            List<?> adList = (List<?>) adValue;
+            int length = Array.getLength(aValue);
+            assertEquals(length, adList.size());
+            for (int i = 0; i < length; i++) {
+                assertAnnotationElementsEqual(Array.get(aValue, i), adList.get(i));
+            }
+        } else {
+            assertEquals(aValue.getClass(), adValue.getClass());
+            assertEquals(aValue, adValue);
         }
     }
 

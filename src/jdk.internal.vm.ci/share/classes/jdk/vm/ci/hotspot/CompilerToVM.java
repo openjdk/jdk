@@ -1345,34 +1345,45 @@ final class CompilerToVM {
                     Object filterTypes, int filterLength, long filterKlassPointers);
 
     /**
-     * Helper for passing an array of {@Klass*} values in a native buffer to native code.
+     * Helper for passing {@Klass*} values to native code.
      */
     static final class KlassPointers implements AutoCloseable {
         final ResolvedJavaType[] types;
-        final long pointers;
+        long pointersArray;
         final Unsafe unsafe = UnsafeAccess.UNSAFE;
 
         KlassPointers(ResolvedJavaType[] types) {
-            int length = types.length;
             this.types = types;
-            pointers = unsafe.allocateMemory(length * Long.BYTES);
         }
 
-        // Separate from constructor so that deallocation is ensured
-        // in the context of a ClassCastException from the cast below
+        /**
+         * Gets the buffer in which to pass the {@Klass*} values to JNI.
+         *
+         * @return a {@Klass*} value if {@code types.length == 1} otherwise the address of a native
+         *         buffer holding an array of {@Klass*} values
+         */
         long buffer() {
-            long pos = pointers;
-            for (int i = 0; i < types.length; i++) {
-                HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) types[i];
-                unsafe.putLong(pos, hsType.getKlassPointer());
-                pos += Long.BYTES;
+            int length = types.length;
+            if (length == 1) {
+                return ((HotSpotResolvedObjectTypeImpl) types[0]).getKlassPointer();
+            } else {
+                pointersArray = unsafe.allocateMemory(length * Long.BYTES);
+                long pos = pointersArray;
+                for (int i = 0; i < types.length; i++) {
+                    HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) types[i];
+                    unsafe.putLong(pos, hsType.getKlassPointer());
+                    pos += Long.BYTES;
+                }
             }
-            return pointers;
+            return pointersArray;
         }
 
         @Override
         public void close() {
-            unsafe.freeMemory(pointers);
+            if (types.length != 1 && pointersArray != 0) {
+                unsafe.freeMemory(pointersArray);
+                pointersArray = 0;
+            }
         }
     }
 }

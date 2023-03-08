@@ -44,13 +44,6 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.ALL_NUMBERS;
-import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersDE.Eins;
-import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersDE.Zwei;
-import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersEN.One;
-import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersEN.Two;
-import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersUA.Dva;
-import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersUA.Odyn;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -88,6 +81,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation1;
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation2;
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation3;
+import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersDE;
 
 /**
  * Tests for {@link ResolvedJavaMethod}.
@@ -504,31 +498,17 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         public enum NumbersEN {
             One,
             Two;
-
-            NumbersEN() {
-                ALL_NUMBERS.add(this);
-            }
         }
 
         public enum NumbersDE {
             Eins,
             Zwei;
-
-            NumbersDE() {
-                ALL_NUMBERS.add(this);
-            }
         }
 
         public enum NumbersUA {
             Odyn,
             Dva;
-
-            NumbersUA() {
-                ALL_NUMBERS.add(this);
-            }
         }
-
-        static final Set<Object> ALL_NUMBERS = new HashSet<>();
 
         @Retention(RetentionPolicy.RUNTIME)
         public @interface Annotation1 {
@@ -576,14 +556,15 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         ResolvedJavaType a2 = metaAccess.lookupJavaType(Annotation2.class);
         ResolvedJavaType a3 = metaAccess.lookupJavaType(Annotation3.class);
         ResolvedJavaType a4 = metaAccess.lookupJavaType(AnnotationDataTest.class);
+        ResolvedJavaType numbersDEType = metaAccess.lookupJavaType(NumbersDE.class);
 
         // Ensure NumbersDE is not initialized before Annotation2 is requested
-        Assert.assertEquals(2, m.getAnnotationData(a1, a3).length);
-        Assert.assertEquals(ALL_NUMBERS, Set.of(One, Two, Odyn, Dva));
+        Assert.assertFalse(numbersDEType.isInitialized());
+        Assert.assertEquals(2, m.getAnnotationData(a1, a3).size());
 
         // Ensure NumbersDE is initialized after Annotation2 is requested
-        Assert.assertEquals(1, m.getAnnotationData(a2).length);
-        Assert.assertEquals(ALL_NUMBERS, Set.of(One, Two, Odyn, Dva, Eins, Zwei));
+        Assert.assertNotNull(m.getAnnotationData(a2));
+        Assert.assertTrue(numbersDEType.isInitialized());
     }
 
     private Method findTestMethod(Method apiMethod) {

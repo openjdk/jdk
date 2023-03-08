@@ -35,6 +35,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import jdk.internal.vm.VMSupport;
@@ -763,11 +765,23 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public AnnotationData[] getAnnotationData(ResolvedJavaType... filter) {
-        if (filter.length == 0 || !hasAnnotations()) {
-            return AnnotationDataDecoder.NO_ANNOTATION_DATA;
+    public AnnotationData getAnnotationData(ResolvedJavaType type) {
+        if (!hasAnnotations()) {
+            return null;
         }
+        return getAnnotationData0(type).get(0);
+    }
+
+    @Override
+    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        if (!hasAnnotations()) {
+            return Collections.emptyList();
+        }
+        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+    }
+
+    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedExecutableAnnotationData(this, filter);
-        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder());
+        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
     }
 }

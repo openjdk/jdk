@@ -365,7 +365,7 @@ public class AnnotationTestInput {
 
     /**
      * Method with an annotation that has a member named "any"
-     * whose type is chnaged from int to String in a newer version
+     * whose type is changed from int to String in a newer version
      * of the annotation.
      */
     @MemberTypeChanged(value = "evolving", retained = -34, any = 56)

@@ -38,15 +38,19 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.AnnotationParser;
+import sun.reflect.annotation.ExceptionProxy;
 
 import jdk.internal.vm.VMSupport;
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
@@ -60,17 +64,17 @@ public class TestAnnotationEncodingDecoding {
         checkDecodedEqualsEncoded(AnnotationTestInput.AnnotatedClass.class);
 
         checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingAnnotation"));
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"), true, true);
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"), false, true);
+        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"), true);
+        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"), false);
         checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("missingMember"));
-        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"), false, true);
+        checkDecodedEqualsEncoded(AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"), false);
     }
 
-    private void checkDecodedEqualsEncoded(AnnotatedElement annotated) throws ClassNotFoundException {
-        checkDecodedEqualsEncoded(annotated, false, false);
+    private void checkDecodedEqualsEncoded(AnnotatedElement annotated) {
+        checkDecodedEqualsEncoded(annotated, false);
     }
 
-    private void checkDecodedEqualsEncoded(AnnotatedElement annotated, boolean expectNCDFE, boolean onlyStringEquality) throws ClassNotFoundException {
+    private void checkDecodedEqualsEncoded(AnnotatedElement annotated, boolean expectNCDFE) {
         Annotation[] annotations = getAnnotations(annotated, expectNCDFE);
         if (annotations == null) {
             return;
@@ -78,17 +82,11 @@ public class TestAnnotationEncodingDecoding {
 
         byte[] encoded = VMSupport.encodeAnnotations(List.of(annotations));
         MyDecoder decoder = new MyDecoder();
-        AnnotationConst[] decoded = VMSupport.decodeAnnotations(encoded, decoder);
+        List<AnnotationConst> decoded = VMSupport.decodeAnnotations(encoded, decoder);
         int i = 0;
-        for (AnnotationConst ac : decoded) {
-            Class<? extends Annotation> type = (Class<? extends Annotation>) ac.getType();
-            Map<String, Object> memberValues = new LinkedHashMap<>(ac.names.length);
-            decodeAnnotation(ac, memberValues);
-            Annotation expect = annotations[i];
-            Annotation actual = AnnotationParser.annotationForMap(type, memberValues);
-            if (!onlyStringEquality) {
-                checkEquals(actual, expect);
-            }
+        for (AnnotationConst actual : decoded) {
+            AnnotationConst expect = new AnnotationConst(annotations[i]);
+            checkEquals(actual, expect);
             checkEquals(actual.toString(), expect.toString());
             i++;
         }
@@ -115,17 +113,86 @@ public class TestAnnotationEncodingDecoding {
 
     public static final class AnnotationConst {
         final Class<?> type;
-        final String[] names;
-        final Object[] values;
+        final Map<String, Object> elements;
 
-        AnnotationConst(Class<?> type, String[] names, Object[] values) {
+        AnnotationConst(Class<?> type, Map.Entry<String, Object>[] elements) {
             this.type = type;
-            this.names = names;
-            this.values = values;
+            this.elements = Map.ofEntries(elements);
+        }
+
+        AnnotationConst(Annotation a) {
+            Map<String, Object> values = AnnotationSupport.memberValues(a);
+            this.type = a.annotationType();
+            Map.Entry[] elements = new Map.Entry[values.size()];
+            int i = 0;
+            for (Map.Entry<String, Object> e : values.entrySet()) {
+                elements[i++] = Map.entry(e.getKey(), decodeValue(e.getValue()));
+            }
+            this.elements = Map.ofEntries(elements);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof AnnotationConst) {
+                AnnotationConst that = (AnnotationConst) obj;
+                return this.type.equals(that.type) &&
+                        this.elements.equals(that.elements);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "@" + type.getName() + "(" + elements + ")";
+        }
+
+        private Object decodeValue(Object value) {
+            Class<?> valueType = value.getClass();
+            if (value instanceof Enum) {
+                return new EnumConst(valueType, ((Enum<?>) value).name());
+            } else if (value instanceof Annotation) {
+                return new AnnotationConst((Annotation) value);
+            } else if (valueType.isArray()) {
+                int len = Array.getLength(value);
+                Object[] arr = new Object[len];
+                for (int i = 0; i < len; i++) {
+                    arr[i] = decodeValue(Array.get(value, i));
+                }
+                return List.of(arr);
+            } else if (value instanceof ExceptionProxy) {
+                return new ErrorConst(value.toString());
+            } else {
+                return value;
+            }
         }
 
         public Class<?> getType() {
             return type;
+        }
+    }
+
+    public static final class ErrorConst {
+        final String desc;
+        public ErrorConst(String desc) {
+            this.desc = Objects.requireNonNull(desc);
+        }
+
+        @Override
+        public String toString() {
+            return desc;
+        }
+
+        @Override
+        public int hashCode() {
+            return desc.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof ErrorConst) {
+                return ((ErrorConst) obj).desc.equals(desc);
+            }
+            return false;
         }
     }
 
@@ -138,6 +205,21 @@ public class TestAnnotationEncodingDecoding {
             this.name = name;
         }
 
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof EnumConst) {
+                EnumConst that = (EnumConst) obj;
+                return this.type.equals(that.type) &&
+                        this.name.equals(that.name);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return type.getName() + "." + name;
+        }
+
         public Class<?> getEnumType() {
             return type;
         }
@@ -147,7 +229,7 @@ public class TestAnnotationEncodingDecoding {
         }
     }
 
-    static class MyDecoder implements AnnotationDecoder<Class<?>, AnnotationConst, EnumConst, StringBuilder> {
+    static class MyDecoder implements AnnotationDecoder<Class<?>, AnnotationConst, EnumConst, ErrorConst> {
         @Override
         public Class<?> resolveType(String name) {
             try {
@@ -158,8 +240,8 @@ public class TestAnnotationEncodingDecoding {
         }
 
         @Override
-        public AnnotationConst newAnnotation(Class<?> type, String[] names, Object[] values) {
-            return new AnnotationConst(type, names, values);
+        public AnnotationConst newAnnotation(Class<?> type, Map.Entry<String, Object>[] elements) {
+            return new AnnotationConst(type, elements);
         }
 
         @Override
@@ -168,82 +250,8 @@ public class TestAnnotationEncodingDecoding {
         }
 
         @Override
-        public Class<?>[] newClassArray(int length) {
-            return new Class<?>[length];
+        public ErrorConst newErrorValue(String description) {
+            return new ErrorConst(description);
         }
-
-        @Override
-        public AnnotationConst[] newAnnotationArray(int length) {
-            return new AnnotationConst[length];
-        }
-
-        @Override
-        public EnumConst[] newEnumValues(int length) {
-            return new EnumConst[length];
-        }
-
-        @Override
-        public StringBuilder newErrorValue(String description) {
-            return new StringBuilder(description);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void decodeAnnotation(AnnotationConst ac, Map<String, Object> memberValues) throws ClassNotFoundException {
-        for (int i = 0; i < ac.names.length; i++) {
-            String name = ac.names[i];
-            Object value = ac.values[i];
-            Class<?> valueType = value.getClass();
-            if (valueType == EnumConst.class) {
-                EnumConst enumConst = (EnumConst) value;
-                String enumName = enumConst.getName();
-                Class<? extends Enum> enumType = (Class<? extends Enum>) enumConst.getEnumType();
-                memberValues.put(name, asEnum(enumType, enumName));
-            } else if (valueType == AnnotationConst.class) {
-                AnnotationConst innerAc = (AnnotationConst) value;
-                Map<String, Object> innerAcMemberValues = new LinkedHashMap<>(innerAc.names.length);
-                decodeAnnotation(innerAc, innerAcMemberValues);
-                Class<? extends Annotation> innerAcType = (Class<? extends Annotation>) innerAc.getType();
-                Annotation innerA = AnnotationParser.annotationForMap(innerAcType, innerAcMemberValues);
-                memberValues.put(name, innerA);
-            } else if (valueType.isArray()) {
-                Class<?> componentType = valueType.getComponentType();
-                if (componentType == AnnotationConst.class) {
-                    AnnotationConst[] array = (AnnotationConst[]) value;
-                    Annotation[] dst = new Annotation[array.length];
-                    for (int j = 0; j < array.length; j++) {
-                        AnnotationConst e = array[j];
-                        Class<? extends Annotation> type = (Class<? extends Annotation>) e.getType();
-                        Map<String, Object> eValues = new LinkedHashMap<>(e.names.length);
-                        decodeAnnotation(e, eValues);
-                        dst[j] = AnnotationParser.annotationForMap(type, eValues);
-                    }
-                    memberValues.put(name, dst);
-                } else if (componentType == EnumConst.class) {
-                    EnumConst[] array = (EnumConst[]) value;
-                    if (array.length == 0) {
-                        Object[] dst = {};
-                        memberValues.put(name, dst);
-                    } else {
-                        EnumConst ec = array[0];
-                        Class<? extends Enum> enumType = (Class<? extends Enum>) ec.getEnumType();
-                        Object[] dst = (Object[]) Array.newInstance(enumType, array.length);
-                        for (int j = 0; j < array.length; j++) {
-                            ec = array[j];
-                            dst[j] = asEnum(enumType, ec.getName());
-                        }
-                        memberValues.put(name, dst);
-                    }
-                } else {
-                    memberValues.put(name, value);
-                }
-            } else {
-                memberValues.put(name, value);
-            }
-        }
-    }
-
-    private static Object asEnum(Class<? extends Enum> enumType, String enumName) {
-        return Enum.valueOf(enumType, enumName);
     }
 }

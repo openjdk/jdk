@@ -22,11 +22,15 @@
  */
 package jdk.vm.ci.hotspot;
 
+import java.util.Map;
+
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
 import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.EnumData;
+import jdk.vm.ci.meta.ErrorData;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**
@@ -34,9 +38,9 @@ import jdk.vm.ci.meta.UnresolvedJavaType;
  * and employs {@link AnnotationData} and {@link EnumData} to represent decoded annotations and enum
  * constants respectively.
  */
-class AnnotationDataDecoder implements AnnotationDecoder<JavaType, AnnotationData, EnumData, StringBuilder> {
+final class AnnotationDataDecoder implements AnnotationDecoder<JavaType, AnnotationData, EnumData, ErrorData> {
 
-    public static final AnnotationData[] NO_ANNOTATION_DATA = {};
+    static final AnnotationDataDecoder INSTANCE = new AnnotationDataDecoder();
 
     @Override
     public JavaType resolveType(String name) {
@@ -45,8 +49,8 @@ class AnnotationDataDecoder implements AnnotationDecoder<JavaType, AnnotationDat
     }
 
     @Override
-    public AnnotationData newAnnotation(JavaType type, String[] names, Object[] values) {
-        return new AnnotationData(type, names, values);
+    public AnnotationData newAnnotation(JavaType type, Map.Entry<String, Object>[] elements) {
+        return new AnnotationData(type, elements);
     }
 
     @Override
@@ -55,22 +59,15 @@ class AnnotationDataDecoder implements AnnotationDecoder<JavaType, AnnotationDat
     }
 
     @Override
-    public JavaType[] newClassArray(int length) {
-        return new JavaType[length];
+    public ErrorData newErrorValue(String description) {
+        return new ErrorData(description);
     }
 
-    @Override
-    public AnnotationData[] newAnnotationArray(int length) {
-        return new AnnotationData[length];
-    }
-
-    @Override
-    public EnumData[] newEnumValues(int length) {
-        return new EnumData[length];
-    }
-
-    @Override
-    public StringBuilder newErrorValue(String description) {
-        return new StringBuilder(description);
+    static ResolvedJavaType[] asArray(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        ResolvedJavaType[] filter = new ResolvedJavaType[2 + types.length];
+        filter[0] = type1;
+        filter[1] = type2;
+        System.arraycopy(types, 0, filter, 2, types.length);
+        return filter;
     }
 }

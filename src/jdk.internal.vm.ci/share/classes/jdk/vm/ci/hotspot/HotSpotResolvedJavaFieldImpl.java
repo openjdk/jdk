@@ -29,8 +29,8 @@ import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
-
-import jdk.internal.vm.annotation.Stable;
+import java.util.Collections;
+import java.util.List;
 
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.meta.AnnotationData;
@@ -226,11 +226,23 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     }
 
     @Override
-    public AnnotationData[] getAnnotationData(ResolvedJavaType... filter) {
+    public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
         if (!hasAnnotations()) {
-            return AnnotationDataDecoder.NO_ANNOTATION_DATA;
+            return null;
         }
+        return getAnnotationData0(annotationType).get(0);
+    }
+
+    @Override
+    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        if (!hasAnnotations()) {
+            return Collections.emptyList();
+        }
+        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+    }
+
+    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedFieldAnnotationData(holder, index, filter);
-        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder());
+        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
     }
 }

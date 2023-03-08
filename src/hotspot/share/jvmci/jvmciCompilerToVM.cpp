@@ -2645,8 +2645,8 @@ C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAI
   return JNIHandles::make_local(THREAD, reflected);
 }
 
-static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, typeArrayHandle annotations, bool for_class,
-                                              jint filter_length, InstanceKlass** filter,
+static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationArray* annotations_array, bool for_class,
+                                              jint filter_length, jlong filter_klass_pointers,
                                               JavaThread* THREAD, JVMCIEnv* JVMCIENV) {
   // Get a ConstantPool object for annotation parsing
   Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
@@ -2661,6 +2661,12 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, typeArrayHa
     vm_support->initialize(CHECK_NULL);
   }
 
+  typeArrayOop annotations_oop = Annotations::make_java_array(annotations_array, CHECK_NULL);
+  typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
+
+  InstanceKlass** filter = filter_length == 1 ?
+      (InstanceKlass**) &filter_klass_pointers:
+      (InstanceKlass**) filter_klass_pointers;
   objArrayOop filter_oop = oopFactory::new_objectArray(filter_length, CHECK_NULL);
   objArrayHandle filter_classes(THREAD, filter_oop);
   for (int i = 0; i < filter_length; i++) {
@@ -2714,33 +2720,20 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, typeArrayHa
 C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass),
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
   InstanceKlass* holder = InstanceKlass::cast(UNPACK_PAIR(Klass, klass));
-  InstanceKlass** filter_klasses = (InstanceKlass**) filter_klass_pointers;
-
-  typeArrayOop annotations_oop = Annotations::make_java_array(holder->class_annotations(), CHECK_NULL);
-  typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
-  return get_encoded_annotation_data(holder, annotations, true, filter_length, filter_klasses, THREAD, JVMCIENV);
+  return get_encoded_annotation_data(holder, holder->class_annotations(), true, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
-  InstanceKlass* holder = method->method_holder();
-  InstanceKlass** filter_klasses = (InstanceKlass**) filter_klass_pointers;
-
-  typeArrayOop annotations_oop = Annotations::make_java_array(method->annotations(), CHECK_NULL);
-  typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
-  return get_encoded_annotation_data(holder, annotations, false, filter_length, filter_klasses, THREAD, JVMCIENV);
+  return get_encoded_annotation_data(method->method_holder(), method->annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index,
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
   InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCIENV);
-  InstanceKlass** filter_klasses = (InstanceKlass**) filter_klass_pointers;
   fieldDescriptor fd(holder, index);
-
-  typeArrayOop annotations_oop = Annotations::make_java_array(fd.annotations(), CHECK_NULL);
-  typeArrayHandle annotations = typeArrayHandle(THREAD, annotations_oop);
-  return get_encoded_annotation_data(holder, annotations, false, filter_length, filter_klasses, THREAD, JVMCIENV);
+  return get_encoded_annotation_data(holder, fd.annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address, jobjectArray current))
