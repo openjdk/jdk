@@ -972,7 +972,7 @@ public final class Utils {
      * @return A logger for WebSocket internal debug traces
      */
     public static Logger getWebSocketLogger(Supplier<String> dbgTag) {
-        return DebugLogger.createWebSocketLogger(dbgTag, DEBUG_CONFIG);
+        return DebugLogger.createWebSocketLogger(dbgTag, DEBUG_WS_CONFIG);
     }
 
     /**

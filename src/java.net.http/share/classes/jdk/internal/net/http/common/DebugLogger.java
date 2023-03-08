@@ -51,11 +51,11 @@ final class DebugLogger implements Logger {
      * The three levels can be configured independently, but are
      * typically either Level.ALL or Level.OFF.
      *
-     * @param outLevel the level above which messages will be directly
+     * @param outLevel the level at or above which messages will be directly
      *                printed to {@link System#out}
-     * @param errLevel the level above which messages will be directly
+     * @param errLevel the level at or above which messages will be directly
      *                printed to {@link System#err}
-     * @param logLevel the level above which messages will be forwarded
+     * @param logLevel the level at or above which messages will be forwarded
      *               to an underlying {@link System.Logger}
      */
     public record LoggerConfig(Level outLevel, Level errLevel, Level logLevel) {
@@ -65,16 +65,18 @@ final class DebugLogger implements Logger {
             Objects.requireNonNull(logLevel);
         }
 
-        // true if at least on of the three levels is not Level.OFF
+        // true if at least one of the three levels is not Level.OFF
         public boolean on() {
-            return minSeverity() <= Level.OFF.getSeverity();
+            return minSeverity() < Level.OFF.getSeverity();
         }
+
         // The minimal severity of the three level. Messages below
         // that severity will not be logged anywhere.
         public int minSeverity() {
             return Math.min(outLevel.getSeverity(),
                     Math.min(errLevel.getSeverity(), logLevel.getSeverity()));
         }
+
         // Whether the given level can be logged with the given logger
         public boolean levelEnabledFor(Level level, System.Logger logger) {
             if (level == Level.OFF) return false;
@@ -100,11 +102,22 @@ final class DebugLogger implements Logger {
         /** Logs on {@link System#err} only, does not forward to System.Logger **/
         public static final LoggerConfig STDERR = new LoggerConfig(Level.OFF, Level.ALL, Level.OFF);
         /** Logs on {@link System#out} only, does not forward to System.Logger **/
-        public static final LoggerConfig STDOUT = new LoggerConfig(Level.OFF, Level.ALL, Level.OFF);
+        public static final LoggerConfig STDOUT = new LoggerConfig(Level.ALL, Level.OFF, Level.OFF);
         /** Forward to System.Logger, doesn't log directly to System.out or System.err **/
         public static final LoggerConfig LOG = new LoggerConfig(Level.OFF, Level.OFF, Level.ALL);
         /** does not log anywhere **/
         public static final LoggerConfig OFF = new LoggerConfig(Level.OFF, Level.OFF, Level.OFF);
+        /** logs on both System.err and System.Logger **/
+        public static final LoggerConfig ERRLOG = new LoggerConfig(Level.OFF, Level.ALL, Level.ALL);
+
+        public static LoggerConfig of(LoggerConfig config) {
+            if (config.equals(OFF)) return OFF;
+            if (config.equals(ERRLOG)) return ERRLOG;
+            if (config.equals(STDERR)) return STDERR;
+            if (config.equals(STDOUT)) return STDOUT;
+            if (config.equals(LOG)) return LOG;
+            return config;
+        }
     };
 
     // deliberately not in the same subtree than standard loggers.
@@ -117,9 +130,9 @@ final class DebugLogger implements Logger {
     private static final DebugLogger NO_HTTP_LOGGER =
             new DebugLogger(HTTP, "HTTP"::toString, LoggerConfig.OFF);
     private static final DebugLogger NO_WS_LOGGER =
-            new DebugLogger(HTTP, "WS"::toString, LoggerConfig.OFF);
+            new DebugLogger(WS, "WS"::toString, LoggerConfig.OFF);
     private static final DebugLogger NO_HPACK_LOGGER =
-            new DebugLogger(HTTP, "HPACK"::toString, LoggerConfig.OFF);
+            new DebugLogger(HPACK, "HPACK"::toString, LoggerConfig.OFF);
     static final long START_NANOS = System.nanoTime();
 
     private final Supplier<String> dbgTag;
@@ -158,11 +171,11 @@ final class DebugLogger implements Logger {
      *          use {@code new DebugLogger(logger, this::dbgTag, LoggerConfig.LOG);}.
      *
      * @param logger The internal logger to which messages will be forwarded.
-     *               This should be either {@link #WS}, {@link #HPACK}, or {@link #HTTP};
+     *               This is typically either {@link #WS}, {@link #HPACK}, or {@link #HTTP};
      *
      * @param dbgTag A lambda that returns a string that identifies the caller
      *               (e.g: "SocketTube(3)", or "Http2Connection(SocketTube(3))")
-     * @param config The levels above which messages will be printed to the
+     * @param config The levels at or above which messages will be printed to the
      *               corresponding destination.
      *
      * @return A logger for HTTP internal debug traces
@@ -171,7 +184,7 @@ final class DebugLogger implements Logger {
                 Supplier<String> dbgTag,
                 LoggerConfig config) {
         this.dbgTag = dbgTag;
-        this.config = Objects.requireNonNull(config);
+        this.config = LoggerConfig.of(Objects.requireNonNull(config));
         this.logger = Objects.requireNonNull(logger);
         this.minSeverity = config.minSeverity();
         // support only static configuration.
@@ -195,7 +208,7 @@ final class DebugLogger implements Logger {
         return debugOn;
     }
 
-    static boolean levelEnabledFor(Level level, LoggerConfig config,
+    private static boolean levelEnabledFor(Level level, LoggerConfig config,
                             System.Logger logger) {
         return config.levelEnabledFor(level, logger);
     }

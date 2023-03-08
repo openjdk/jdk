@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -82,7 +80,7 @@ public class DebugLoggerTest {
      * forwarding everything to a delegated {@link OutputStream}.
      * @apiNote
      * For instance, a {@code RecordingPrintStream} might be used as an
-     * interceptor to record anything printed on {@code }System.err}
+     * interceptor to record anything printed on {@code System.err}
      * at specific times. Recording can be started and stopped
      * at any time, and multiple times. For instance, a typical
      * usage might be:
@@ -257,16 +255,17 @@ public class DebugLoggerTest {
         assertEquals(dest, dest2);
 
         Predicate<LogRecord> matcher1 = (r) -> r.getMessage() != null && r.getMessage().contains(MESSAGE);
-        doTest(() -> debug.log(MESSAGE), logHandler, dest, MESSAGE, matcher1);
+        doTest(() -> debug.log(MESSAGE), debug, logHandler, dest, MESSAGE, matcher1);
         Exception thrown = new Exception(MESSAGE3);
         Predicate<LogRecord> matcher2 = (r) -> r.getMessage() != null
                 && r.getMessage().contains(MESSAGE2)
                 && thrown.equals(r.getThrown());
-        doTest(() -> debug.log(MESSAGE2, thrown), logHandler, dest, MESSAGE2, matcher2);
+        doTest(() -> debug.log(MESSAGE2, thrown), debug, logHandler, dest, MESSAGE2, matcher2);
         stdOut.printf("Test [\"%s\", %s] passed%n", prop, Arrays.asList(args));
     }
 
     private static void doTest(Runnable test,
+                               System.Logger logger,
                                TestHandler logHandler,
                                Set<Destination> dest,
                                String msg,
@@ -284,6 +283,11 @@ public class DebugLoggerTest {
         String errStr = err.drainRecordedData();
         List<LogRecord> logs = logHandler.logs.stream().toList();
 
+        if (!(logger instanceof jdk.internal.net.http.common.Logger debug)) {
+            throw new AssertionError("Unexpected logger type for: " + logger);
+        }
+        assertEquals(debug.on(), !dest.isEmpty(), "Unexpected debug.on() for " + dest);
+        assertEquals(debug.isLoggable(System.Logger.Level.DEBUG), !dest.isEmpty());
         if (dest.contains(Destination.ERR)) {
             if (!errStr.contains(msg)) {
                 throw new AssertionError("stderr does not contain the expected message");
@@ -313,6 +317,12 @@ public class DebugLoggerTest {
     static void assertEquals(Object o1, Object o2) {
         if (!Objects.equals(o1, o2)) {
             throw new AssertionError("Not equals: \""
+                    + o1 + "\" != \"" + o2 + "\"");
+        }
+    }
+    static void assertEquals(Object o1, Object o2, String message) {
+        if (!Objects.equals(o1, o2)) {
+            throw new AssertionError(message + ": \""
                     + o1 + "\" != \"" + o2 + "\"");
         }
     }
