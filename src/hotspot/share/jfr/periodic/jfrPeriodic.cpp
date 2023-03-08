@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/agentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -267,6 +268,44 @@ TRACE_REQUEST_FUNC(SystemProcess) {
       delete tmp;
     }
   }
+}
+
+template <typename AgentEvent>
+static void send_agent_event(AgentEvent& event, const Agent* agent) {
+  event.set_name(agent->name());
+  event.set_options(agent->options());
+  event.set_initialization(agent->initialization());
+  event.set_initializationTime(agent->initialization_time());
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(JavaAgent) {
+  const AgentList::Iterator it = AgentList::java_agents();
+  while (it.has_next()) {
+    const Agent* agent = it.next();
+    assert(agent->is_jplis(), "invariant");
+    EventJavaAgent event;
+    event.set_initializationMethod(agent->is_dynamic() ? "agentmain" : "premain");
+    send_agent_event(event, agent);
+  }
+}
+
+static void send_native_agent_events(const AgentList::Iterator& it) {
+  while (it.has_next()) {
+    const Agent* agent = it.next();
+    assert(!agent->is_jplis(), "invariant");
+    EventNativeAgent event;
+    event.set_dynamic(agent->is_dynamic());
+    event.set_path(agent->os_lib_path());
+    send_agent_event(event, agent);
+  }
+}
+
+TRACE_REQUEST_FUNC(NativeAgent) {
+  const AgentList::Iterator native_agents_it = AgentList::native_agents();
+  send_native_agent_events(native_agents_it);
+  const AgentList::Iterator xrun_agents_it = AgentList::xrun_agents();
+  send_native_agent_events(xrun_agents_it);
 }
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {

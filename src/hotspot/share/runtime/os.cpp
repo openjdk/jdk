@@ -41,6 +41,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/agent.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -534,7 +535,7 @@ void* os::native_java_library() {
  * executable if agent_lib->is_static_lib() == true or in the shared library
  * referenced by 'handle'.
  */
-void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+void* os::find_agent_function(Agent *agent_lib, bool check_lib,
                               const char *syms[], size_t syms_len) {
   assert(agent_lib != nullptr, "sanity check");
   const char *lib_name;
@@ -561,7 +562,7 @@ void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
 }
 
 // See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+bool os::find_builtin_agent(Agent *agent_lib, const char *syms[],
                             size_t syms_len) {
   void *ret;
   void *proc_handle;
@@ -580,7 +581,7 @@ bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
   if (ret != nullptr) {
     // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
     agent_lib->set_valid();
-    agent_lib->set_static_lib(true);
+    agent_lib->set_static_lib();
     return true;
   }
   agent_lib->set_os_lib(save_handle);

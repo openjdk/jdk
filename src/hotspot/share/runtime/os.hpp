@@ -34,7 +34,7 @@
 # include <mach/mach_time.h>
 #endif
 
-class AgentLibrary;
+class Agent;
 class frame;
 
 // Rules for using and implementing methods declared in the "os" class
@@ -732,11 +732,11 @@ class os: AllStatic {
   static void* get_default_process_handle();
 
   // Check for static linked agent library
-  static bool find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+  static bool find_builtin_agent(Agent *agent_lib, const char *syms[],
                                  size_t syms_len);
 
   // Find agent entry point
-  static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+  static void *find_agent_function(Agent *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
   // Provide C99 compliant versions of these functions, since some versions

@@ -128,7 +128,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   void env_dispose();
 
   void set_env_local_storage(const void* data)     { _env_local_storage = data; }
-  const void* get_env_local_storage()              { return _env_local_storage; }
 
   void record_class_file_load_hook_enabled();
   void record_first_time_class_file_load_hook_enabled();
@@ -162,6 +161,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   bool use_version_1_2_semantics();  // agent asked for version 1.2
 
   bool is_retransformable()                        { return _is_retransformable; }
+
+  const void* get_env_local_storage() { return _env_local_storage; }
 
   static ByteSize jvmti_external_offset() {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);

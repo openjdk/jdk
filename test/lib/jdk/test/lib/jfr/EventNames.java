@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,8 @@ public class EventNames {
     public static final String FinalizerStatistics = PREFIX + "FinalizerStatistics";
     public static final String NativeMemoryUsage = PREFIX + "NativeMemoryUsage";
     public static final String NativeMemoryUsageTotal = PREFIX + "NativeMemoryUsageTotal";
+    public static final String JavaAgent = PREFIX + "JavaAgent";
+    public static final String NativeAgent = PREFIX + "NativeAgent";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";

@@ -43,6 +43,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/agentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -100,9 +101,6 @@ char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
 LegacyGCLogging Arguments::_legacyGCLogging     = { 0, 0 };
-
-AgentLibraryList Arguments::_libraryList;
-AgentLibraryList Arguments::_agentList;
 
 // These are not set by the JDK's built-in launchers, but they can be set by
 // programs that embed the JVM using JNI_CreateJavaVM. See comments around
@@ -213,25 +211,6 @@ SystemProperty::SystemProperty(const char* key, const char* value, bool writeabl
   _writeable = writeable;
 }
 
-AgentLibrary::AgentLibrary(const char* name, const char* options,
-               bool is_absolute_path, void* os_lib,
-               bool instrument_lib) {
-  _name = AllocateHeap(strlen(name)+1, mtArguments);
-  strcpy(_name, name);
-  if (options == nullptr) {
-    _options = nullptr;
-  } else {
-    _options = AllocateHeap(strlen(options)+1, mtArguments);
-    strcpy(_options, options);
-  }
-  _is_absolute_path = is_absolute_path;
-  _os_lib = os_lib;
-  _next = nullptr;
-  _state = agent_invalid;
-  _is_static_lib = false;
-  _is_instrument_lib = instrument_lib;
-}
-
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
 // part of the option string.
 static bool match_option(const JavaVMOption *option, const char* name,
@@ -322,22 +301,6 @@ bool needs_module_property_warning = false;
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
 
-void Arguments::add_init_library(const char* name, char* options) {
-  _libraryList.add(new AgentLibrary(name, options, false, nullptr));
-}
-
-void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
-}
-
-void Arguments::add_instrument_agent(const char* name, char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
-}
-
-// Late-binding agents not started via arguments
-void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
-  _agentList.add(agentLib);
-}
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
@@ -2366,7 +2329,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        add_init_library(name, options);
+        AgentList::add_xrun(name, options, false);
       }
     } else if (match_option(option, "--add-reads=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addreads", tail, addreads_count++)) {
@@ -2436,7 +2399,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        add_init_agent(name, options, is_absolute_path);
+        AgentList::add(name, options, is_absolute_path);
       }
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
@@ -2449,7 +2412,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         size_t length = strlen(tail) + 1;
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
-        add_instrument_agent("instrument", options, false);
+        AgentList::add("instrument", options, false);
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
