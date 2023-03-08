@@ -44,9 +44,9 @@ class CallGenerator : public ArenaObj {
 
   void do_late_inline_helper();
 
-  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false; }
-  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return nullptr;  }
-  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false; }
+  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false;  }
+  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return nullptr;}
+  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false;  }
 
  public:
   // Accessors

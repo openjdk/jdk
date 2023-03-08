@@ -155,7 +155,7 @@ void ProjNode::dump_compact_spec(outputStream *st) const {
 //----------------------------check_con----------------------------------------
 void ProjNode::check_con() const {
   Node* n = in(0);
-  if (n == nullptr)       return;  // should be assert, but NodeHash makes bogons
+  if (n == nullptr)    return;  // should be assert, but NodeHash makes bogons
   if (n->is_Mach())    return;  // mach. projs. are not type-safe
   if (n->is_Start())   return;  // alas, starts can have mach. projs. also
   if (_con == SCMemProjNode::SCMEMPROJCON ) return;

@@ -467,7 +467,7 @@ Node* PhaseIdealLoop::loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xph
   Node *stride = incr->in(2);
   if (!stride->is_Con()) {     // Oops, swap these
     if (!xphi->is_Con()) {     // Is the other guy a constant?
-      return nullptr;             // Nope, unknown stride, bail out
+      return nullptr;          // Nope, unknown stride, bail out
     }
     Node *tmp = xphi;          // 'incr' is commutative, so ok to swap
     xphi = stride;

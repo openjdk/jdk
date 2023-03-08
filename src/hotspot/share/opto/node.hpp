@@ -525,8 +525,8 @@ private:
       if (next == nullptr) break;
       last = next;
     }
-    _in[gap] = last; // Move last slot to empty one.
-    _in[i] = nullptr;   // null out last slot.
+    _in[gap] = last;  // Move last slot to empty one.
+    _in[i] = nullptr; // null out last slot.
   }
 
 public:

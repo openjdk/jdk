@@ -834,7 +834,7 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
       if (proj != nullptr) {
         const TypeInstPtr* inst_t = phase->type(proj)->isa_instptr();
         if ((inst_t != nullptr) && (!inst_t->klass_is_exact() ||
-                                 (inst_t->instance_klass() == boxing_klass))) {
+                                   (inst_t->instance_klass() == boxing_klass))) {
           return true;
         }
       }

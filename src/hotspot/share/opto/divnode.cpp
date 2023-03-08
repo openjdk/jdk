@@ -463,8 +463,8 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( in(0) && in(0)->is_top() )  return nullptr;
 
   const Type *t = phase->type( in(2) );
-  if( t == TypeInt::ONE )       // Identity?
-    return nullptr;                // Skip it
+  if( t == TypeInt::ONE )      // Identity?
+    return nullptr;            // Skip it
 
   const TypeInt *ti = t->isa_int();
   if( !ti ) return nullptr;
@@ -479,7 +479,7 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !ti->is_con() ) return nullptr;
   jint i = ti->get_con();       // Get divisor
 
-  if (i == 0) return nullptr;      // Dividing by zero constant does not idealize
+  if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
 
   // Dividing by MININT does not optimize as a power-of-2 shift.
   if( i == min_jint ) return nullptr;
@@ -570,7 +570,7 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
 
   const Type *t = phase->type( in(2) );
   if( t == TypeLong::ONE )      // Identity?
-    return nullptr;                // Skip it
+    return nullptr;             // Skip it
 
   const TypeLong *tl = t->isa_long();
   if( !tl ) return nullptr;
@@ -578,14 +578,14 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
   // Check for useless control input
   // Check for excluding div-zero case
   if (in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
-    set_req(0, nullptr);           // Yank control input
+    set_req(0, nullptr);         // Yank control input
     return this;
   }
 
   if( !tl->is_con() ) return nullptr;
   jlong l = tl->get_con();      // Get divisor
 
-  if (l == 0) return nullptr;      // Dividing by zero constant does not idealize
+  if (l == 0) return nullptr;   // Dividing by zero constant does not idealize
 
   // Dividing by MINLONG does not optimize as a power-of-2 shift.
   if( l == min_jlong ) return nullptr;
@@ -721,7 +721,7 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   const Type *t2 = phase->type( in(2) );
   if( t2 == TypeF::ONE )         // Identity?
-    return nullptr;                // Skip it
+    return nullptr;              // Skip it
 
   const TypeF *tf = t2->isa_float_constant();
   if( !tf ) return nullptr;
@@ -813,7 +813,7 @@ Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   const Type *t2 = phase->type( in(2) );
   if( t2 == TypeD::ONE )         // Identity?
-    return nullptr;                // Skip it
+    return nullptr;              // Skip it
 
   const TypeD *td = t2->isa_double_constant();
   if( !td ) return nullptr;

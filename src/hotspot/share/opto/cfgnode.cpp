@@ -624,7 +624,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if( cnt <= 1 ) {              // Only 1 path in?
-    set_req(0, nullptr);           // Null control input for region copy
+    set_req(0, nullptr);        // Null control input for region copy
     if( cnt == 0 && !can_reshape) { // Parse phase - leave the node as it is.
       // No inputs or all inputs are null.
       return nullptr;
@@ -1773,9 +1773,9 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   }
   BasicType bt = phi->type()->basic_type();
   if( bt == T_ILLEGAL || type2size[bt] <= 0 )
-    return nullptr;                // Bail out on funny non-value stuff
+    return nullptr;             // Bail out on funny non-value stuff
   if( phi->req() <= 3 )         // Need at least 2 matched inputs and a
-    return nullptr;                // third unequal input to be worth doing
+    return nullptr;             // third unequal input to be worth doing
 
   // Scan for a constant
   uint i;

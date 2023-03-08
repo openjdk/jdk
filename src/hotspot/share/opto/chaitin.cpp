@@ -379,7 +379,7 @@ void PhaseChaitin::Register_Allocate() {
 
   {
     Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
-    _live = nullptr;                 // Mark live as being not available
+    _live = nullptr;              // Mark live as being not available
     rm.reset_to_mark();           // Reclaim working storage
     IndexSet::reset_memory(C, &live_arena);
     ifg.init(_lrg_map.max_lrg_id()); // Empty IFG

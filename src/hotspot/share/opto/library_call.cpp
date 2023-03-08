@@ -2414,7 +2414,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       if (type == T_BOOLEAN &&
           (mismatched ||
            heap_base_oop == top() ||                  // - heap_base_oop is null or
-           (can_access_non_heap && field == nullptr))    // - heap_base_oop is potentially null
+           (can_access_non_heap && field == nullptr)) // - heap_base_oop is potentially null
                                                       //   and the unsafe access is made to large offset
                                                       //   (i.e., larger than the maximum offset necessary for any
                                                       //   field access)

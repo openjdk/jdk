@@ -2289,7 +2289,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
         NOT_PRODUCT( inc_constants(); )
       } else if( n->is_Region() ) { // Unreachable region
         // Note: nn == C->top()
-        n->set_req(0, nullptr);        // Cut selfreference
+        n->set_req(0, nullptr);     // Cut selfreference
         bool progress = true;
         uint max = n->outcnt();
         DUIterator i;

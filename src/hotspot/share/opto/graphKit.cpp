@@ -175,7 +175,7 @@ void GraphKit::stop_and_kill_map() {
 //--------------------------------stopped--------------------------------------
 // Tell if _map is null, or control is top.
 bool GraphKit::stopped() {
-  if (map() == nullptr)           return true;
+  if (map() == nullptr)        return true;
   else if (control() == top()) return true;
   else                         return false;
 }

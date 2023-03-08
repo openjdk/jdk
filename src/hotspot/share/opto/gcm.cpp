@@ -280,7 +280,7 @@ static void assert_dom(Block* b1, Block* b2, Node* n, const PhaseCFG* cfg) {
 
 static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
   // Find the last input dominated by all other inputs.
-  Block* deepb           = nullptr;        // Deepest block so far
+  Block* deepb           = nullptr;     // Deepest block so far
   int    deepb_dom_depth = 0;
   for (uint k = 0; k < n->len(); k++) { // For all inputs
     Node* inn = n->in(k);               // Get input
@@ -428,7 +428,7 @@ Block* Block::dom_lca(Block* LCA) {
 // the LCA only with the phi input paths which actually use this def.
 static Block* raise_LCA_above_use(Block* LCA, Node* use, Node* def, const PhaseCFG* cfg) {
   Block* buse = cfg->get_block_for_node(use);
-  if (buse == nullptr)    return LCA;   // Unused killing Projs have no use block
+  if (buse == nullptr) return LCA;   // Unused killing Projs have no use block
   if (!use->is_Phi())  return buse->dom_lca(LCA);
   uint pmax = use->req();       // Number of Phi inputs
   // Why does not this loop just break after finding the matching input to

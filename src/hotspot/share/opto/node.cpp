@@ -1047,7 +1047,7 @@ void Node::add_prec( Node *n ) {
     if (in(i) == n) return; // Avoid spec violation: duplicated prec edge.
     i++;
   }
-  _in[i] = n;                                // Stuff prec edge over null
+  _in[i] = n;                                   // Stuff prec edge over null
   if ( n != nullptr) n->add_out((Node *)this);  // Add mirror edge
 
 #ifdef ASSERT

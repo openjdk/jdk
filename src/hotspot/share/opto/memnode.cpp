@@ -3694,7 +3694,7 @@ intptr_t InitializeNode::get_store_offset(Node* st, PhaseTransform* phase) {
   intptr_t offset = -1;
   Node* base = AddPNode::Ideal_base_and_offset(st->in(MemNode::Address),
                                                phase, offset);
-  if (base == nullptr)     return -1;  // something is dead,
+  if (base == nullptr)  return -1;  // something is dead,
   if (offset < 0)       return -1;  //        dead, dead
   return offset;
 }
@@ -3717,7 +3717,7 @@ bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
     }
 
     Node* n = worklist.at(j);
-    if (n == nullptr)      continue;   // (can this really happen?)
+    if (n == nullptr)   continue;   // (can this really happen?)
     if (n->is_Proj())   n = n->in(0);
     if (n == this)      return false;  // found a cycle
     if (n->is_Con())    continue;
@@ -3941,7 +3941,7 @@ Node* InitializeNode::find_captured_store(intptr_t start, int size_in_bytes,
   assert(stores_are_sane(phase), "");
   int i = captured_store_insertion_point(start, size_in_bytes, phase);
   if (i == 0) {
-    return nullptr;                // something is dead
+    return nullptr;              // something is dead
   } else if (i < 0) {
     return zero_memory();       // just primordial zero bits here
   } else {
@@ -3991,8 +3991,8 @@ Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
   Compile* C = phase->C;
   int size_in_bytes = st->memory_size();
   int i = captured_store_insertion_point(start, size_in_bytes, phase);
-  if (i == 0)  return nullptr;     // bail out
-  Node* prev_mem = nullptr;        // raw memory for the captured store
+  if (i == 0)  return nullptr;  // bail out
+  Node* prev_mem = nullptr;     // raw memory for the captured store
   if (i > 0) {
     prev_mem = in(i);           // there is a pre-existing store under this one
     set_req(i, C->top());       // temporarily disconnect it
@@ -4163,7 +4163,7 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
           // Undo the effects of the previous loop trip, which swallowed st:
           intcon[0] = 0;        // undo store_constant()
           set_req(i-1, st);     // undo set_req(i, zmem)
-          nodes[j] = nullptr;      // undo nodes[j] = st
+          nodes[j] = nullptr;   // undo nodes[j] = st
           --old_subword;        // undo ++old_subword
         }
         continue;               // This StoreI is already optimal.

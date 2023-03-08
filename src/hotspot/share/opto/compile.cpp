@@ -298,9 +298,9 @@ void Compile::identify_useful_nodes(Unique_Node_List &useful) {
   useful.map( estimated_worklist_size, nullptr );  // preallocate space
 
   // Initialize worklist
-  if (root() != nullptr)     { useful.push(root()); }
+  if (root() != nullptr)  { useful.push(root()); }
   // If 'top' is cached, declare it useful to preserve cached node
-  if( cached_top_node() ) { useful.push(cached_top_node()); }
+  if (cached_top_node())  { useful.push(cached_top_node()); }
 
   // Push all useful nodes onto the list, breadthfirst
   for( uint next = 0; next < useful.size(); ++next ) {
@@ -1614,7 +1614,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
   }
 
   // Handle special cases.
-  if (adr_type == nullptr)             return alias_type(AliasIdxTop);
+  if (adr_type == nullptr)          return alias_type(AliasIdxTop);
   if (adr_type == TypePtr::BOTTOM)  return alias_type(AliasIdxBot);
 
   // Do it the slow way.
@@ -1757,7 +1757,7 @@ bool Compile::have_alias_type(const TypePtr* adr_type) {
 // True if all values of the given address type are in the given alias category.
 bool Compile::must_alias(const TypePtr* adr_type, int alias_idx) {
   if (alias_idx == AliasIdxBot)         return true;  // the universal category
-  if (adr_type == nullptr)                 return true;  // null serves as TypePtr::TOP
+  if (adr_type == nullptr)              return true;  // null serves as TypePtr::TOP
   if (alias_idx == AliasIdxTop)         return false; // the empty category
   if (adr_type->base() == Type::AnyPtr) return false; // TypePtr::BOTTOM or its twins
 
@@ -1775,7 +1775,7 @@ bool Compile::must_alias(const TypePtr* adr_type, int alias_idx) {
 // True if any values of the given address type are in the given alias category.
 bool Compile::can_alias(const TypePtr* adr_type, int alias_idx) {
   if (alias_idx == AliasIdxTop)         return false; // the empty category
-  if (adr_type == nullptr)                 return false; // null serves as TypePtr::TOP
+  if (adr_type == nullptr)              return false; // null serves as TypePtr::TOP
   // Known instance doesn't alias with bottom memory
   if (alias_idx == AliasIdxBot)         return !adr_type->is_known_instance();                   // the universal category
   if (adr_type->base() == Type::AnyPtr) return !C->get_adr_type(alias_idx)->is_known_instance(); // TypePtr::BOTTOM or its twins
