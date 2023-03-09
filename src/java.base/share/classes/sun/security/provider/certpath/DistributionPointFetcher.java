@@ -482,10 +482,10 @@ public class DistributionPointFetcher {
                     // which means pointCrlIssuers is non-null; the three
                     // cannot all be missing from a certificate.
                     for (Iterator<GeneralName> t = pointCrlIssuers.iterator();
-                         !match && t.hasNext(); ) {
+                            !match && t.hasNext(); ) {
                         GeneralNameInterface crlIssuerName = t.next().getName();
                         for (Iterator<GeneralName> i = idpNames.iterator();
-                             !match && i.hasNext(); ) {
+                                !match && i.hasNext(); ) {
                             GeneralNameInterface idpName = i.next().getName();
                             match = crlIssuerName.equals(idpName);
                         }
