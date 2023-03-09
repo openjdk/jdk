@@ -118,7 +118,7 @@ public class Zip64SizeTest {
             if (rem < lim) {
                 lim = (int) rem;
             }
-            // Allows SparseOutputStream to simply  advance position
+            // Allows SparseOutputStream to simply advance position
             zos.write(EMPTY_BYTES, 0, lim);
             rem -= lim;
         }
