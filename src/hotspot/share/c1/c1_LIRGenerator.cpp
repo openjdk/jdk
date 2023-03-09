@@ -2965,6 +2965,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_fmaD:           do_FmaIntrinsic(x); break;
   case vmIntrinsics::_fmaF:           do_FmaIntrinsic(x); break;
 
+  // Use java.lang.Math intrinsics code since it works for these intrinsics too.
+  case vmIntrinsics::_floatToFloat16: // fall through
+  case vmIntrinsics::_float16ToFloat: do_MathIntrinsic(x); break;
+
   case vmIntrinsics::_Preconditions_checkIndex:
     do_PreconditionsCheckIndex(x, T_INT);
     break;
