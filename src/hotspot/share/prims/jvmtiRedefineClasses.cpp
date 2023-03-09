@@ -343,6 +343,10 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
   if (InstanceKlass::cast(k)->is_hidden()) {
     return false;
   }
+  if (InstanceKlass::cast(k) == vmClasses::Continuation_klass()) {
+    // Don't redefine Continuation class. See 8302779.
+    return false;
+  }
   return true;
 }
 
