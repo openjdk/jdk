@@ -31,7 +31,7 @@
 #include <errno.h>
 
 void MiscUtils::init_critsect(MiscUtils::critsect_t* cs) {
-  const int rc = pthread_mutex_init(cs, NULL);
+  const int rc = pthread_mutex_init(cs, nullptr);
   assert0(rc == 0);
 }
 

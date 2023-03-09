@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class LocaleISOData {
         + "mt" + "mlt"  // Maltese
         + "my" + "mya"  // Burmese
         + "na" + "nau"  // Nauru
-        + "nb" + "nob"  // Norwegian Bokm?l
+        + "nb" + "nob"  // Norwegian Bokm\u00e5l
         + "nd" + "nde"  // North Ndebele
         + "ne" + "nep"  // Nepali
         + "ng" + "ndo"  // Ndonga
@@ -209,7 +209,7 @@ class LocaleISOData {
         + "uz" + "uzb"  // Uzbek
         + "ve" + "ven"  // Venda
         + "vi" + "vie"  // Vietnamese
-        + "vo" + "vol"  // Volap?k
+        + "vo" + "vol"  // Volap\u00fck
         + "wa" + "wln"  // Walloon
         + "wo" + "wol"  // Wolof
         + "xh" + "xho"  // Xhosa
@@ -393,7 +393,7 @@ class LocaleISOData {
         + "NI" + "NIC"  // Nicaragua, Republic of
         + "NL" + "NLD"  // Netherlands, Kingdom of the
         + "NO" + "NOR"  // Norway, Kingdom of
-        + "NP" + "NPL"  // Nepal, Kingdom of
+        + "NP" + "NPL"  // Nepal, Federal Democratic Republic of
         + "NR" + "NRU"  // Nauru, Republic of
         + "NU" + "NIU"  // Niue, Republic of
         + "NZ" + "NZL"  // New Zealand
