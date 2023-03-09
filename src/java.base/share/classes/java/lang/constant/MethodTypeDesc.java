@@ -167,11 +167,12 @@ public sealed interface MethodTypeDesc
      * @jvms 4.3.3 Method Descriptors
      */
     default String descriptorString() {
-        return String.format("(%s)%s",
-                             Stream.of(parameterArray())
-                                   .map(ClassDesc::descriptorString)
-                                   .collect(Collectors.joining()),
-                             returnType().descriptorString());
+        var sb = new StringBuilder();
+        sb.append('(');
+        for (int i=0; i<parameterCount(); i++) {
+            sb.append(parameterType(i).descriptorString());
+        }
+        return sb.append(')').append(returnType().descriptorString()).toString();
     }
 
     /**
