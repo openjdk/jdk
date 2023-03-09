@@ -74,9 +74,9 @@ public class CaretBlinkTest {
         //Initialize the components
         final String INSTRUCTIONS = """
                 Instructions to Test:
-                1. The test is intended to verify the TextField's graphics state is 
-                synchronized and TextField is updated without delay.
-                2. The test verifies it by Caret Blink happens at 250ms 
+                1. The test is intended to verify the TextField's graphics state
+                is synchronized and TextField is updated without delay.
+                2. The test verifies it by Caret Blink happens at 250ms
                 rate for Linux (Xrender).
                 2. If the Caret Blinks smoothly without stopping the test PASS,
                  if caret blink stops then test FAILS.
