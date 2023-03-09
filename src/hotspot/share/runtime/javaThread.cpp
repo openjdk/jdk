@@ -376,6 +376,9 @@ void JavaThread::check_possible_safepoint() {
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
+  // Don't complain if running a debugging command.
+  if (DebuggingContext::is_enabled()) return;
+
   // Check NoSafepointVerifier, which is implied by locks taken that can be
   // shared with the VM thread.  This makes sure that no locks with allow_vm_block
   // are held.
