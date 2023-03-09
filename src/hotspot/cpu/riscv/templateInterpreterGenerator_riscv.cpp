@@ -301,6 +301,10 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   return entry_point;
 }
 
+// Not supported
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
+
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
 address TemplateInterpreterGenerator::generate_abstract_entry(void) {

@@ -1071,14 +1071,14 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type,
 
   const char* caller = verify_location_string(location);
 
-  if (VerifyDuringGC) {
+  if (VerifyDuringGC && G1HeapVerifier::should_verify(type)) {
     GCTraceTime(Debug, gc, phases) debug(caller, _gc_timer_cm);
 
     size_t const BufLen = 512;
     char buffer[BufLen];
 
     jio_snprintf(buffer, BufLen, "During GC (%s)", caller);
-    verifier->verify(type, VerifyOption::G1UseConcMarking, buffer);
+    verifier->verify(VerifyOption::G1UseConcMarking, buffer);
 
     // Only check bitmap in Remark, and not at After-Verification because the regions
     // already have their TAMS'es reset.
