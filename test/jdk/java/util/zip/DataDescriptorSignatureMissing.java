@@ -43,6 +43,10 @@ import static org.testng.Assert.assertEquals;
 
 public class DataDescriptorSignatureMissing {
 
+    /**
+     * Verify that ZipInputStream correctly parses a ZIP with a Data Descriptor without
+     * the recommended but optional signature.
+     */
     @Test
     public void shouldParseSignaturlessDescriptor() throws IOException {
         // The ZIP with a signature-less descriptor
@@ -62,6 +66,9 @@ public class DataDescriptorSignatureMissing {
 
     }
 
+    /**
+     * Produce a ZIP file where the first entry has a signature-less data descriptor
+     */
     private static byte[] makeZipWithSiglessDescriptor() throws IOException {
         // Offset of the signed data descriptor
         int sigOffset;
