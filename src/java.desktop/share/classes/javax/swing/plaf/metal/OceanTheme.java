@@ -244,8 +244,6 @@ public class OceanTheme extends DefaultMetalTheme {
 
             "List.focusCellHighlightBorder", focusBorder,
 
-            "MenuBarUI", "javax.swing.plaf.metal.MetalMenuBarUI",
-
             "OptionPane.errorIcon",
                    getIconResource("icons/ocean/error.png"),
             "OptionPane.informationIcon",

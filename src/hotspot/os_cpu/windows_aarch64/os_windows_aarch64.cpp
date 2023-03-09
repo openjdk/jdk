@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,15 +79,15 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address  epc;
   CONTEXT* uc = (CONTEXT*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = (address)uc->Pc;
     if (ret_sp) *ret_sp = (intptr_t*)uc->Sp;
     if (ret_fp) *ret_fp = (intptr_t*)uc->Fp;
   } else {
     // construct empty ExtendedPC for return value checking
-    epc = NULL;
-    if (ret_sp) *ret_sp = (intptr_t *)NULL;
-    if (ret_fp) *ret_fp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
   }
   return epc;
 }
@@ -117,7 +117,7 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
     // more complex code with compiled code
     assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
     CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+    if (cb == nullptr || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
       // Not sure where the pc points to, fallback to default
       // stack overflow handling
       return false;
@@ -161,7 +161,7 @@ frame os::current_frame() {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
@@ -207,7 +207,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
@@ -225,7 +225,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context) {
- if (context == NULL) return;
+ if (context == nullptr) return;
 
   const CONTEXT* uc = (const CONTEXT*)context;
 

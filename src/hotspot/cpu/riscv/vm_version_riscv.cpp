@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,9 @@ void VM_Version::initialize() {
 
   // check if satp.mode is supported, currently supports up to SV48(RV64)
   if (get_satp_mode() > VM_SV48) {
-    vm_exit_during_initialization(err_msg("Unsupported satp mode: %s", _vm_mode));
+    vm_exit_during_initialization(
+      err_msg("Unsupported satp mode: %s. Only satp modes up to sv48 are supported for now.",
+              _vm_mode));
   }
 
   // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
@@ -59,6 +61,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseZbb)) {
       FLAG_SET_DEFAULT(UseZbb, true);
     }
+    if (FLAG_IS_DEFAULT(UseZbs)) {
+      FLAG_SET_DEFAULT(UseZbs, true);
+    }
     if (FLAG_IS_DEFAULT(UseZic64b)) {
       FLAG_SET_DEFAULT(UseZic64b, true);
     }
@@ -70,6 +75,12 @@ void VM_Version::initialize() {
     }
     if (FLAG_IS_DEFAULT(UseZicboz)) {
       FLAG_SET_DEFAULT(UseZicboz, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZfhmin)) {
+      FLAG_SET_DEFAULT(UseZfhmin, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZihintpause)) {
+      FLAG_SET_DEFAULT(UseZihintpause, true);
     }
   }
 

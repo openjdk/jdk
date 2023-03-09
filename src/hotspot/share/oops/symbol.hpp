@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,10 +131,6 @@ class Symbol : public MetaspaceObj {
   }
 
   Symbol(const u1* name, int length, int refcount);
-  void* operator new(size_t size, int len) throw();
-  void* operator new(size_t size, int len, Arena* arena) throw();
-
-  void  operator delete(void* p);
 
   static short extract_hash(uint32_t value)   { return (short)(value >> 16); }
   static int extract_refcount(uint32_t value) { return value & 0xffff; }
@@ -143,11 +139,15 @@ class Symbol : public MetaspaceObj {
   int length() const   { return _length; }
 
  public:
+  Symbol(const Symbol& s1);
+
   // Low-level access (used with care, since not GC-safe)
   const u1* base() const { return &_body[0]; }
 
-  int size()                { return size(utf8_length()); }
-  int byte_size()           { return byte_size(utf8_length()); }
+  int size()      const     { return size(utf8_length()); }
+  int byte_size() const     { return byte_size(utf8_length()); };
+  // length without the _body
+  size_t effective_length() const { return (size_t)byte_size() - sizeof(Symbol); }
 
   // Symbols should be stored in the read-only region of CDS archive.
   static bool is_read_only_by_default() { return true; }
@@ -173,12 +173,12 @@ class Symbol : public MetaspaceObj {
   void make_permanent();
 
   static void maybe_increment_refcount(Symbol* s) {
-    if (s != NULL) {
+    if (s != nullptr) {
       s->increment_refcount();
     }
   }
   static void maybe_decrement_refcount(Symbol* s) {
-    if (s != NULL) {
+    if (s != nullptr) {
       s->decrement_refcount();
     }
   }
@@ -228,7 +228,7 @@ class Symbol : public MetaspaceObj {
   // Tests if the symbol contains the given utf8 substring
   // at the given byte position.
   bool contains_utf8_at(int position, const char* substring, int len) const {
-    assert(len >= 0 && substring != NULL, "substring must be valid");
+    assert(len >= 0 && substring != nullptr, "substring must be valid");
     if (position < 0)  return false;  // can happen with ends_with
     if (position + len > utf8_length()) return false;
     return (memcmp((char*)base() + position, substring, len) == 0);
@@ -275,12 +275,13 @@ class Symbol : public MetaspaceObj {
   // separated by ', ' to the outputStream.  Prints external names as
   //  'double' or 'java.lang.Object[][]'.
   void print_as_signature_external_parameters(outputStream *os);
+  void print_as_field_external_type(outputStream *os);
 
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return SymbolType; }
 
   // Printing
-  void print_symbol_on(outputStream* st = NULL) const;
+  void print_symbol_on(outputStream* st = nullptr) const;
   void print_utf8_on(outputStream* st) const;
   void print_on(outputStream* st) const;         // First level print
   void print_value_on(outputStream* st) const;   // Second level print.

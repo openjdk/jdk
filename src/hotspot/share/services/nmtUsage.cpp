@@ -115,7 +115,7 @@ size_t NMTUsage::total_reserved() const {
 }
 
 size_t NMTUsage::total_committed() const {
-  return _malloc_total + _vm_total.reserved;
+  return _malloc_total + _vm_total.committed;
 }
 
 size_t NMTUsage::reserved(MEMFLAGS flag) const {

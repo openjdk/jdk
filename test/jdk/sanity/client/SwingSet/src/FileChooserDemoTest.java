@@ -272,8 +272,8 @@ public class FileChooserDemoTest {
         fileChooser = new JFileChooserOperator();
         fileChooserDialog = new JDialogOperator(OPEN);
         String openButtonText = OPEN;
-        // In GTK and Motif L&F, open button text is 'OK'
-        if (LookAndFeel.isMotif() || LookAndFeel.isGTK()) {
+        // In Motif L&F, open button text is 'OK'
+        if (LookAndFeel.isMotif()) {
             openButtonText = OK;
         }
         openButton = new JButtonOperator(fileChooser, openButtonText);

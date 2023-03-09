@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1260,7 +1260,7 @@ public final class Double extends Number
      * of the integer value returned is the same as that of the
      * integer that would be returned by the call:
      * <pre>
-     *    new Double(d1).compareTo(new Double(d2))
+     *    Double.valueOf(d1).compareTo(Double.valueOf(d2))
      * </pre>
      *
      * @param   d1        the first {@code double} to compare

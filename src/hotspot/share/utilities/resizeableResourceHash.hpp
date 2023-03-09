@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,21 +98,21 @@ public:
     }
     if (BASE::number_of_entries() / int(old_size) > load_factor) {
       unsigned new_size = MIN2<unsigned>(old_size * 2, _max_size);
-      resize(old_size, new_size);
+      resize(new_size);
       return true;
     } else {
       return false;
     }
   }
 
-  void resize(unsigned old_size, unsigned new_size) {
+  void resize(unsigned new_size) {
     Node** old_table = BASE::_table;
     Node** new_table = BASE::alloc_table(new_size);
 
     Node* const* bucket = old_table;
-    while (bucket < &old_table[old_size]) {
+    while (bucket < &old_table[BASE::_table_size]) {
       Node* node = *bucket;
-      while (node != NULL) {
+      while (node != nullptr) {
         Node* next = node->_next;
         unsigned hash = HASH(node->_key);
         unsigned index = hash % new_size;

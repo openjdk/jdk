@@ -81,6 +81,7 @@ public class CustomFSVLinkTest {
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        jfc.setControlButtonsAreShown(false);
         jfc.setDialogType(JFileChooser.CUSTOM_DIALOG);
 
         frame.add(jfc, BorderLayout.CENTER);
