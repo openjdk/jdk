@@ -711,7 +711,7 @@ void JvmtiExport::post_vm_initialized() {
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMInit callback = env->callbacks()->VMInit;
       if (callback != nullptr) {
-        Agent* const agent = AgentList::lookup(env, callback);
+        Agent* const agent = AgentList::lookup(env, reinterpret_cast<void*>(callback));
         if (agent != nullptr) {
           agent->initialization_begin();
         }

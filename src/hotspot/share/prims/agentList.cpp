@@ -350,11 +350,10 @@ void AgentList::convert_xrun_agents() {
     // otherwise see if there is an Agent_OnLoad.
     if (on_load_entry == nullptr) {
       on_load_entry = lookup_Agent_OnLoad_entry_point(agent);
-      if (on_load_entry != nullptr) {
-        agent->_is_xrun = false; // promoted
-      } else {
+      if (on_load_entry == nullptr) {
         vm_exit_during_initialization("Could not find JVM_OnLoad or Agent_OnLoad function in the library", agent->name());
       }
+      agent->_is_xrun = false; // converted
     }
   }
 }
