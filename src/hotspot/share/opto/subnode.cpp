@@ -1467,20 +1467,65 @@ static bool is_counted_loop_cmp(Node *cmp) {
          n->in(0)->as_CountedLoop()->phi() == n;
 }
 
+static Node* get_reverse_cmp(int cmp_op, Node* cmp1, Node* cmp2) {
+  for (DUIterator_Fast imax, i = cmp1->fast_outs(imax); i < imax; i++) {
+    Node* u = cmp1->fast_out(i);
+    if (u->Opcode() == cmp_op && u->in(1) == cmp2 && u->in(2) == cmp1) {
+      return u;
+    }
+  }
+  return nullptr;
+}
+
+static bool is_arithmetic_cmp(Node* cmp) {
+  int cop = cmp->Opcode();
+  if (cop == Op_FastLock || cop == Op_FastUnlock ||
+      cmp->is_SubTypeCheck() || cop == Op_VectorTest) {
+    return false;
+  }
+  return true;
+}
+
+//------------------------------Identity-----------------------------------------
+Node* BoolNode::Identity(PhaseGVN* phase) {
+  // "Bool (CmpX a b)" is equivalent to "Bool (CmpX b a)"
+  Node *cmp = in(1);
+  if (!is_arithmetic_cmp(cmp)) {
+    return this;
+  }
+  Node* cmp1 = cmp->in(1);
+  Node* cmp2 = cmp->in(2);
+  Node* reverse_cmp = NULL;
+  if ((_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+      (reverse_cmp = get_reverse_cmp(cmp->Opcode(), cmp1, cmp2)) != nullptr) {
+    for (DUIterator_Fast imax, i = reverse_cmp->fast_outs(imax); i < imax; i++) {
+      Node* out = reverse_cmp->fast_out(i);
+      if (out->is_Bool() && out->as_Bool()->_test._test == _test._test &&
+          phase->type_or_null(out) != nullptr) {
+        return out;
+      }
+    }
+  }
+  return this;
+}
+
 //------------------------------Ideal------------------------------------------
 Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Change "bool tst (cmp con x)" into "bool ~tst (cmp x con)".
   // This moves the constant to the right.  Helps value-numbering.
-  Node *cmp = in(1);
-  if( !cmp->is_Sub() ) return nullptr;
-  int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock ||
-      cmp->is_SubTypeCheck() || cop == Op_VectorTest ) {
+  Node* cmp = in(1);
+  if (!cmp->is_Sub()) {
+    return nullptr;
+  }
+
+  if (!is_arithmetic_cmp(cmp)) {
     return nullptr;
   }
   Node *cmp1 = cmp->in(1);
   Node *cmp2 = cmp->in(2);
-  if( !cmp1 ) return nullptr;
+  if (!cmp1) {
+    return nullptr;
+  }
 
   if (_test._test == BoolTest::overflow || _test._test == BoolTest::no_overflow) {
     return nullptr;
@@ -1488,6 +1533,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   const int cmp1_op = cmp1->Opcode();
   const int cmp2_op = cmp2->Opcode();
+  const int cop = cmp->Opcode();
 
   // Constant on left?
   Node *con = cmp1;

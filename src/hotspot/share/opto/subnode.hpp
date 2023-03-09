@@ -346,6 +346,7 @@ public:
   // Invert sense of self, returning new Bool.
   BoolNode* negate(PhaseGVN* phase);
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }

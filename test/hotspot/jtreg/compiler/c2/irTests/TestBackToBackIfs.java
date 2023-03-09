@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +58,26 @@ public class TestBackToBackIfs {
         }
     }
 
-    @Run(test = "test")
+    @Test
+    @IR(counts = { IRNode.IF, "1" })
+    public static void test1(int a, int b) {
+        if (a == b) {
+            int_field = 0x42;
+        } else {
+            int_field = 42;
+        }
+        if (b == a) {
+            int_field = 0x42;
+        } else {
+            int_field = 42;
+        }
+    }
+
+    @Run(test = {"test", "test1"})
     public static void test_runner() {
         test(42, 0x42);
         test(0x42, 0x42);
+        test1(42, 0x42);
+        test1(0x42, 0x42);
     }
 }
