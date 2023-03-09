@@ -21,9 +21,9 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8303755
+ * @bug 8303882
  * @summary Verify that Iterators method work as expected
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @run junit IteratorsTest
