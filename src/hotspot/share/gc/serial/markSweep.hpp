@@ -26,6 +26,7 @@
 #define SHARE_GC_SERIAL_MARKSWEEP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -35,7 +36,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-class ReferenceProcessor;
 class DataLayout;
 class SerialOldTracer;
 class STWGCTimer;
@@ -104,7 +104,7 @@ class MarkSweep : AllStatic {
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;
 
-  // Reference processing (used in ...follow_contents)
+  static AlwaysTrueClosure               _always_true_closure;
   static ReferenceProcessor*             _ref_processor;
 
   static STWGCTimer*                     _gc_timer;
@@ -132,7 +132,6 @@ class MarkSweep : AllStatic {
 
   // Reference Processing
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }
-  static void set_ref_processor(ReferenceProcessor* rp);
 
   static STWGCTimer* gc_timer() { return _gc_timer; }
   static SerialOldTracer* gc_tracer() { return _gc_tracer; }
