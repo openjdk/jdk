@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
     break;
   case vmIntrinsics::_onSpinWait:
     if (!VM_Version::supports_on_spin_wait()) return false;
+    break;
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!VM_Version::supports_float16()) return false;
     break;
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_currentTimeMillis:
