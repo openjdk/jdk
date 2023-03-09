@@ -30,11 +30,16 @@
  */
 
 import com.sun.tools.javac.util.Iterators;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class IteratorsTest {
 
@@ -43,6 +48,27 @@ public class IteratorsTest {
         Iterator<?> emptyCompoundIterator = Iterators.createCompoundIterator(List.of(), Function.identity());
         Assertions.assertThrows(NoSuchElementException.class, emptyCompoundIterator::next);
         Assertions.assertThrows(NoSuchElementException.class, emptyCompoundIterator::next);
+    }
+
+    // different ways of obtaining an empty iterator are used to make sure
+    // the compound iterator doesn't depend on (checking) the identity of
+    // any one of them
+    @Test
+    public void intermediateEmptyIterators() {
+        List<Iterator<String>> inputs = List.of(
+                Collections.<String>emptyList().iterator(),
+                Collections.emptyListIterator(),
+                Collections.emptyIterator(),
+                List.of("1").iterator(),
+                List.of("2", "3").iterator(),
+                List.<String>of().iterator(),
+                Collections.<String>emptySet().iterator(),
+                List.of("4", "5").iterator(),
+                com.sun.tools.javac.util.List.<String>nil().iterator());
+        Iterator<String> emptyCompoundIterator = Iterators.createCompoundIterator(inputs, Function.identity());
+        var actual = new ArrayList<String>();
+        emptyCompoundIterator.forEachRemaining(actual::add);
+        assertEquals(List.of("1", "2", "3", "4", "5"), actual);
     }
 
     @Test
