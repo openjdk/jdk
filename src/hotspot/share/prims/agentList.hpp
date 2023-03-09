@@ -33,7 +33,7 @@ class JvmtiEnv;
 template <typename, MEMFLAGS>
 class GrowableArrayCHeap;
 
-// Maintains a single cas linked-list for -agentlib, -agentpath and -Xrun agents.
+// Maintains a single cas linked-list of Agents.
 class AgentList : AllStatic {
   friend class Iterator;
   friend class JvmtiExport;

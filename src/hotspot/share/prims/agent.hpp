@@ -28,7 +28,8 @@
 #include "memory/allocation.hpp"
 #include "utilities/ticks.hpp"
 
-// Representing an agent launched by -agentlib, -agentpath or -Xrun
+// Represents an agent launched on the command-line by -agentlib, -agentpath or -Xrun.
+// Also agents loaded dynamically during runtime, for example using the Attach API.
 class Agent : public CHeapObj<mtServiceability> {
   friend class AgentList;
  private:

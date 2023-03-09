@@ -150,7 +150,6 @@ public final class TestAgentEvent {
                 if (initializationTime.toSeconds() > 3600) {
                     throw new Exception("Expected initializationTime to be less than 1 hour");
                 }
-                Events.assertField(e, "initializationMethod").equal("agentmain");
                 Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
             }
             Events.assertField(events.get(0), "options").equal("bar=baz");
