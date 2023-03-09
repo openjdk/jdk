@@ -449,6 +449,7 @@ class SuperWord : public ResourceObj {
   BasicType velt_basic_type(Node* n)         { return velt_type(n)->array_element_basic_type(); }
   void set_velt_type(Node* n, const Type* t) { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
   bool same_velt_type(Node* n1, Node* n2);
+  bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
   // my_pack
   Node_List* my_pack(Node* n)                 { return !in_bb(n) ? NULL : _node_info.adr_at(bb_idx(n))->_my_pack; }
