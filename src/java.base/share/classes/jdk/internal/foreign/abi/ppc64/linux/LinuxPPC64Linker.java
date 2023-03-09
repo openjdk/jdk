@@ -48,11 +48,11 @@ public final class LinuxPPC64Linker extends AbstractLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
-        return CallArranger.LINUX.arrangeDowncall(inferredMethodType, function, options);
+        return CallArranger.INSTANCE.arrangeDowncall(inferredMethodType, function, options);
     }
 
     @Override
     protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, SegmentScope scope) {
-        return CallArranger.LINUX.arrangeUpcall(target, targetType, function, scope);
+        return CallArranger.INSTANCE.arrangeUpcall(target, targetType, function, scope);
     }
 }

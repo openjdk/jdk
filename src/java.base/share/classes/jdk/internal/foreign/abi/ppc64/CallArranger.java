@@ -39,7 +39,6 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64CallArranger;
 import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.SegmentScope;
@@ -63,7 +62,7 @@ import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
  * which are handled in sub-classes. Clients should access these through the provided
  * public constants CallArranger.LINUX.
  */
-public abstract class CallArranger {
+public class CallArranger {
     // Linux PPC64 Little Endian uses ABI v2.
     private static final boolean useABIv2 = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
     private static final int STACK_SLOT_SIZE = 8;
@@ -85,15 +84,12 @@ public abstract class CallArranger {
         r12  // target addr reg, otherwise used as scratch reg
     );
 
-    public record Bindings(CallingSequence callingSequence,
-                           boolean isInMemoryReturn) {
-    }
+    public record Bindings(CallingSequence callingSequence, boolean isInMemoryReturn) {}
 
     private record HfaRegs(VMStorage[] first, VMStorage[] second) {}
 
-    public static final CallArranger LINUX = new LinuxPPC64CallArranger();
-
-    protected CallArranger() {}
+    protected CallArranger() {} // Singleton
+    public static final CallArranger INSTANCE = new CallArranger();
 
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
