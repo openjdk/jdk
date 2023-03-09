@@ -25,34 +25,43 @@
 
 package java.lang.invoke;
 
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.util.Map;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.Opcode;
+import jdk.internal.classfile.TypeKind;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.Wrapper;
 import static sun.invoke.util.Wrapper.*;
 
-class TypeConvertingMethodAdapter extends MethodVisitor {
-
-    TypeConvertingMethodAdapter(MethodVisitor mv) {
-        super(Opcodes.ASM7, mv);
-    }
+class TypeConvertingMethodAdapter {
 
     private static final int NUM_WRAPPERS = Wrapper.COUNT;
 
-    private static final String NAME_OBJECT = "java/lang/Object";
+    private static final ClassDesc NAME_OBJECT = ConstantDescs.CD_Object;
     private static final String WRAPPER_PREFIX = "Ljava/lang/";
 
     // Same for all primitives; name of the boxing method
     private static final String NAME_BOX_METHOD = "valueOf";
 
     // Table of opcodes for widening primitive conversions; NOP = no conversion
-    private static final int[][] wideningOpcodes = new int[NUM_WRAPPERS][NUM_WRAPPERS];
+    private static final Opcode[][] wideningOpcodes = new Opcode[NUM_WRAPPERS][NUM_WRAPPERS];
 
     private static final Wrapper[] FROM_WRAPPER_NAME = new Wrapper[16];
 
     // Table of wrappers for primitives, indexed by ASM type sorts
-    private static final Wrapper[] FROM_TYPE_SORT = new Wrapper[12];
+    private static final Map<TypeKind, Wrapper> FROM_TYPE_SORT =
+            Map.of(TypeKind.ByteType, Wrapper.BYTE,
+                   TypeKind.ShortType, Wrapper.SHORT,
+                   TypeKind.IntType, Wrapper.INT,
+                   TypeKind.LongType, Wrapper.LONG,
+                   TypeKind.CharType, Wrapper.CHAR,
+                   TypeKind.FloatType, Wrapper.FLOAT,
+                   TypeKind.DoubleType, Wrapper.DOUBLE,
+                   TypeKind.BooleanType, Wrapper.BOOLEAN);
 
     static {
         for (Wrapper w : Wrapper.values()) {
@@ -64,27 +73,18 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         }
 
         // wideningOpcodes[][] will be NOP-initialized by default
-        assert(Opcodes.NOP == 0);
+        assert(Classfile.NOP == 0);
 
-        initWidening(LONG,   Opcodes.I2L, BYTE, SHORT, INT, CHAR);
-        initWidening(LONG,   Opcodes.F2L, FLOAT);
-        initWidening(FLOAT,  Opcodes.I2F, BYTE, SHORT, INT, CHAR);
-        initWidening(FLOAT,  Opcodes.L2F, LONG);
-        initWidening(DOUBLE, Opcodes.I2D, BYTE, SHORT, INT, CHAR);
-        initWidening(DOUBLE, Opcodes.F2D, FLOAT);
-        initWidening(DOUBLE, Opcodes.L2D, LONG);
-
-        FROM_TYPE_SORT[Type.BYTE] = Wrapper.BYTE;
-        FROM_TYPE_SORT[Type.SHORT] = Wrapper.SHORT;
-        FROM_TYPE_SORT[Type.INT] = Wrapper.INT;
-        FROM_TYPE_SORT[Type.LONG] = Wrapper.LONG;
-        FROM_TYPE_SORT[Type.CHAR] = Wrapper.CHAR;
-        FROM_TYPE_SORT[Type.FLOAT] = Wrapper.FLOAT;
-        FROM_TYPE_SORT[Type.DOUBLE] = Wrapper.DOUBLE;
-        FROM_TYPE_SORT[Type.BOOLEAN] = Wrapper.BOOLEAN;
+        initWidening(LONG,   Opcode.I2L, BYTE, SHORT, INT, CHAR);
+        initWidening(LONG,   Opcode.F2L, FLOAT);
+        initWidening(FLOAT,  Opcode.I2F, BYTE, SHORT, INT, CHAR);
+        initWidening(FLOAT,  Opcode.L2F, LONG);
+        initWidening(DOUBLE, Opcode.I2D, BYTE, SHORT, INT, CHAR);
+        initWidening(DOUBLE, Opcode.F2D, FLOAT);
+        initWidening(DOUBLE, Opcode.L2D, LONG);
     }
 
-    private static void initWidening(Wrapper to, int opcode, Wrapper... from) {
+    private static void initWidening(Wrapper to, Opcode opcode, Wrapper... from) {
         for (Wrapper f : from) {
             wideningOpcodes[f.ordinal()][to.ordinal()] = opcode;
         }
@@ -102,7 +102,7 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         return (3 * xn.charAt(1) + xn.charAt(2)) % 16;
     }
 
-    private Wrapper wrapperOrNullFromDescriptor(String desc) {
+    static private Wrapper wrapperOrNullFromDescriptor(String desc) {
         if (!desc.startsWith(WRAPPER_PREFIX)) {
             // Not a class type (array or method), so not a boxed type
             // or not in the right package
@@ -127,33 +127,33 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         return w.primitiveSimpleName() + "Value";
     }
 
-    private static String boxingDescriptor(Wrapper w) {
-        return "(" + w.basicTypeChar() + ")L" + wrapperName(w) + ";";
+    private static MethodTypeDesc boxingDescriptor(Wrapper w) {
+        return MethodTypeDesc.ofDescriptor("(" + w.basicTypeChar() + ")L" + wrapperName(w) + ";");
     }
 
-    private static String unboxingDescriptor(Wrapper w) {
-        return "()" + w.basicTypeChar();
+    private static MethodTypeDesc unboxingDescriptor(Wrapper w) {
+        return MethodTypeDesc.ofDescriptor("()" + w.basicTypeChar());
     }
 
-    void boxIfTypePrimitive(Type t) {
-        Wrapper w = FROM_TYPE_SORT[t.getSort()];
+    static void boxIfTypePrimitive(CodeBuilder cob, TypeKind tk) {
+        Wrapper w = FROM_TYPE_SORT.get(tk);
         if (w != null) {
-            box(w);
+            box(cob, w);
         }
     }
 
-    void widen(Wrapper ws, Wrapper wt) {
+    static void widen(CodeBuilder cob, Wrapper ws, Wrapper wt) {
         if (ws != wt) {
-            int opcode = wideningOpcodes[ws.ordinal()][wt.ordinal()];
-            if (opcode != Opcodes.NOP) {
-                visitInsn(opcode);
+            var opcode = wideningOpcodes[ws.ordinal()][wt.ordinal()];
+            if (opcode != null) {
+                cob.convertInstruction(opcode.primaryTypeKind(), opcode.secondaryTypeKind());
             }
         }
     }
 
-    void box(Wrapper w) {
-        visitMethodInsn(Opcodes.INVOKESTATIC,
-                wrapperName(w),
+    static void box(CodeBuilder cob, Wrapper w) {
+        cob.invokeInstruction(Opcode.INVOKESTATIC,
+                ClassDesc.ofInternalName(wrapperName(w)),
                 NAME_BOX_METHOD,
                 boxingDescriptor(w), false);
     }
@@ -163,14 +163,14 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
      * @param sname A primitive wrapper corresponding to wrapped reference source type
      * @param wt A primitive wrapper being converted to
      */
-    void unbox(String sname, Wrapper wt) {
-        visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+    static void unbox(CodeBuilder cob, ClassDesc sname, Wrapper wt) {
+        cob.invokeInstruction(Opcode.INVOKEVIRTUAL,
                 sname,
                 unboxMethod(wt),
                 unboxingDescriptor(wt), false);
     }
 
-    private String descriptorToName(String desc) {
+    static private String descriptorToName(String desc) {
         int last = desc.length() - 1;
         if (desc.charAt(0) == 'L' && desc.charAt(last) == ';') {
             // In descriptor form
@@ -181,15 +181,13 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         }
     }
 
-    void cast(String ds, String dt) {
-        String ns = descriptorToName(ds);
-        String nt = descriptorToName(dt);
-        if (!nt.equals(ns) && !nt.equals(NAME_OBJECT)) {
-            visitTypeInsn(Opcodes.CHECKCAST, nt);
+    static void cast(CodeBuilder cob, ClassDesc ds, ClassDesc dt) {
+        if (!dt.equals(ds) && !dt.equals(NAME_OBJECT)) {
+            cob.typeCheckInstruction(Opcode.CHECKCAST, dt);
         }
     }
 
-    private Wrapper toWrapper(String desc) {
+    static private Wrapper toWrapper(String desc) {
         char first = desc.charAt(0);
         if (first == '[' || first == '(') {
             first = 'L';
@@ -204,7 +202,7 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
      * @param target
      * @param functional
      */
-    void convertType(Class<?> arg, Class<?> target, Class<?> functional) {
+    static void convertType(CodeBuilder cob, Class<?> arg, Class<?> target, Class<?> functional) {
         if (arg.equals(target) && arg.equals(functional)) {
             return;
         }
@@ -215,19 +213,19 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
             Wrapper wArg = Wrapper.forPrimitiveType(arg);
             if (target.isPrimitive()) {
                 // Both primitives: widening
-                widen(wArg, Wrapper.forPrimitiveType(target));
+                widen(cob, wArg, Wrapper.forPrimitiveType(target));
             } else {
                 // Primitive argument to reference target
                 String dTarget = BytecodeDescriptor.unparse(target);
                 Wrapper wPrimTarget = wrapperOrNullFromDescriptor(dTarget);
                 if (wPrimTarget != null) {
                     // The target is a boxed primitive type, widen to get there before boxing
-                    widen(wArg, wPrimTarget);
-                    box(wPrimTarget);
+                    widen(cob, wArg, wPrimTarget);
+                    box(cob, wPrimTarget);
                 } else {
                     // Otherwise, box and cast
-                    box(wArg);
-                    cast(wrapperName(wArg), dTarget);
+                    box(cob, wArg);
+                    cast(cob, ClassDesc.ofInternalName(wrapperName(wArg)), ClassDesc.ofDescriptor(dTarget));
                 }
             }
         } else {
@@ -238,7 +236,7 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
             } else {
                 // Cast to convert to possibly more specific type, and generate CCE for invalid arg
                 dSrc = BytecodeDescriptor.unparse(functional);
-                cast(dArg, dSrc);
+                cast(cob, ClassDesc.ofDescriptor(dArg), ClassDesc.ofDescriptor(dSrc));
             }
             String dTarget = BytecodeDescriptor.unparse(target);
             if (target.isPrimitive()) {
@@ -248,48 +246,30 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
                 if (wps != null) {
                     if (wps.isSigned() || wps.isFloating()) {
                         // Boxed number to primitive
-                        unbox(wrapperName(wps), wTarget);
+                        unbox(cob, ClassDesc.ofInternalName(wrapperName(wps)), wTarget);
                     } else {
                         // Character or Boolean
-                        unbox(wrapperName(wps), wps);
-                        widen(wps, wTarget);
+                        unbox(cob, ClassDesc.ofInternalName(wrapperName(wps)), wps);
+                        widen(cob, wps, wTarget);
                     }
                 } else {
                     // Source type is reference type, but not boxed type,
                     // assume it is super type of target type
-                    String intermediate;
+                    ClassDesc intermediate;
                     if (wTarget.isSigned() || wTarget.isFloating()) {
                         // Boxed number to primitive
-                        intermediate = "java/lang/Number";
+                        intermediate = ConstantDescs.CD_Number;
                     } else {
                         // Character or Boolean
-                        intermediate = wrapperName(wTarget);
+                        intermediate = ClassDesc.ofInternalName(wrapperName(wTarget));
                     }
-                    cast(dSrc, intermediate);
-                    unbox(intermediate, wTarget);
+                    cast(cob, ClassDesc.ofDescriptor(dSrc), intermediate);
+                    unbox(cob, intermediate, wTarget);
                 }
             } else {
                 // Both reference types: just case to target type
-                cast(dSrc, dTarget);
+                cast(cob, ClassDesc.ofDescriptor(dSrc), ClassDesc.ofDescriptor(dTarget));
             }
-        }
-    }
-
-    /**
-     * The following method is copied from
-     * org.objectweb.asm.commons.InstructionAdapter. Part of ASM: a very small
-     * and fast Java bytecode manipulation framework.
-     * Copyright (c) 2000-2005 INRIA, France Telecom All rights reserved.
-     */
-    void iconst(final int cst) {
-        if (cst >= -1 && cst <= 5) {
-            mv.visitInsn(Opcodes.ICONST_0 + cst);
-        } else if (cst >= Byte.MIN_VALUE && cst <= Byte.MAX_VALUE) {
-            mv.visitIntInsn(Opcodes.BIPUSH, cst);
-        } else if (cst >= Short.MIN_VALUE && cst <= Short.MAX_VALUE) {
-            mv.visitIntInsn(Opcodes.SIPUSH, cst);
-        } else {
-            mv.visitLdcInsn(cst);
         }
     }
 }

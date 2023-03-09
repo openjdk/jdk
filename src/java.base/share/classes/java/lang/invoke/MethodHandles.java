@@ -25,14 +25,13 @@
 
 package java.lang.invoke;
 
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
@@ -2272,19 +2271,9 @@ public class MethodHandles {
                 String name;
                 int accessFlags;
                 try {
-                    ClassReader reader = new ClassReader(bytes);
-                    // ClassReader::getClassName does not check if `this_class` is CONSTANT_Class_info
-                    // workaround to read `this_class` using readConst and validate the value
-                    int thisClass = reader.readUnsignedShort(reader.header + 2);
-                    Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
-                    if (!(constant instanceof Type type)) {
-                        throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
-                    }
-                    if (!type.getDescriptor().startsWith("L")) {
-                        throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
-                    }
-                    name = type.getClassName();
-                    accessFlags = reader.readUnsignedShort(reader.header);
+                    var cm = Classfile.parse(bytes);
+                    name = cm.thisClass().name().stringValue().replace('/', '.');
+                    accessFlags = cm.flags().flagsMask();
                 } catch (RuntimeException e) {
                     // ASM exceptions are poorly specified
                     ClassFormatError cfe = new ClassFormatError();
@@ -2293,7 +2282,7 @@ public class MethodHandles {
                 }
 
                 // must be a class or interface
-                if ((accessFlags & Opcodes.ACC_MODULE) != 0) {
+                if ((accessFlags & Classfile.ACC_MODULE) != 0) {
                     throw newIllegalArgumentException("Not a class or interface: ACC_MODULE flag is set");
                 }
 
