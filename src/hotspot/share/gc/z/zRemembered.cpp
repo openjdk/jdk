@@ -27,6 +27,7 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
+#include "gc/z/zMark.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.hpp"
 #include "gc/z/zRemembered.inline.hpp"
@@ -38,12 +39,13 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetForwardingYoung("Concurrent Mark Root Remset Forw", ZGenerationId::young);
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetPageYoung("Concurrent Mark Root Remset Page", ZGenerationId::young);
-
-ZRemembered::ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZRemembered::ZRemembered(ZPageTable* page_table,
+                         const ZForwardingTable* old_forwarding_table,
+                         ZPageAllocator* page_allocator) :
     _page_table(page_table),
-    _page_allocator(page_allocator) {
+    _old_forwarding_table(old_forwarding_table),
+    _page_allocator(page_allocator),
+    _found_old() {
 }
 
 template <typename Function>
@@ -124,16 +126,18 @@ bool ZRemembered::should_scan_page(ZPage* page) const {
   return false;
 }
 
-void ZRemembered::scan_page(ZPage* page) const {
+bool ZRemembered::scan_page(ZPage* page) const {
   const bool can_trust_live_bits =
       page->is_relocatable() && !ZGeneration::old()->is_phase_mark();
+
+  bool result = false;
 
   if (!can_trust_live_bits) {
     // We don't have full liveness info - scan all remset entries
     page->log_msg(" (scan_page_remembered)");
     int count = 0;
     page->oops_do_remembered([&](volatile zpointer* p) {
-      scan_field(p);
+      result |= scan_field(p);
       count++;
     });
     page->log_msg(" (scan_page_remembered done: %d ignoring: " PTR_FORMAT " )", count, p2i(page->remset_current()));
@@ -141,12 +145,14 @@ void ZRemembered::scan_page(ZPage* page) const {
     // We have full liveness info - Only scan remset entries in live objects
     page->log_msg(" (scan_page_remembered_in_live)");
     page->oops_do_remembered_in_live([&](volatile zpointer* p) {
-      scan_field(p);
+      result |= scan_field(p);
     });
   } else {
     page->log_msg(" (scan_page_remembered_dead)");
     // All objects are dead - do nothing
   }
+
+  return result;
 }
 
 static void fill_containing(GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* array, ZPage* page) {
@@ -212,6 +218,10 @@ struct ZRememberedScanForwardingContext {
       _containing_array(),
       _where() {}
 
+  ~ZRememberedScanForwardingContext() {
+    print();
+  }
+
   void report_retained(const Tickspan& duration) {
     _where[0].report(duration);
   }
@@ -254,8 +264,9 @@ struct ZRememberedScanForwardingMeasureReleased {
   }
 };
 
-void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) const {
+bool ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) const {
   ZRememberedScanForwardingContext* const context = (ZRememberedScanForwardingContext*)context_void;
+  bool result = false;
 
   if (forwarding->retain_page(ZGeneration::old()->relocate_queue())) {
     ZRememberedScanForwardingMeasureRetained measure(context);
@@ -275,7 +286,7 @@ void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) c
     // Relocate (and mark) while page is released, to prevent
     // retain deadlock when relocation threads in-place relocate.
     oops_do_forwarded_via_containing(array, [&](volatile zpointer* p) {
-      scan_field(p);
+      result |= scan_field(p);
     });
 
   } else {
@@ -284,113 +295,292 @@ void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) c
     // The page has been released. If the page was relocated while this young
     // generation collection was running, the old generation relocation will
     // have published all addresses of fields that had a remembered set entry.
-    forwarding->relocated_remembered_fields_apply_to_published([&](volatile zpointer* p) { scan_field(p); });
+    forwarding->relocated_remembered_fields_apply_to_published([&](volatile zpointer* p) {
+      result |= scan_field(p);
+    });
   }
+
+  return result;
 }
 
-class ZRememberedScanForwardingTask : public ZRestartableTask {
+// When scanning the remembered set during the young generation marking, we
+// want to visit all old pages. And we want that to be done in parallel and
+// fast.
+//
+// Walking over the entire page table and letting the workers claim indices
+// have been shown to have scalability issues.
+//
+// So, we have the "found old" optimization, which allows us to perform much
+// fewer claims (order of old pages, instead of order of slots in the page
+// table), and it allows us to read fewer pages.
+//
+// The set of "found old pages" isn't precise, and can contain stale entries
+// referring to slots of freed pages, or even slots where young pages have
+// been installed. However, it will not lack any of the old pages.
+//
+// The data is maintained very similar to when and how we maintain the
+// remembered set bits: We keep two separates sets, one for read-only access
+// by the young marking, and a currently active set where we register new
+// pages. When pages get relocated, or die, the page table slot for that page
+// must be cleared. This clearing is done just like we do with the remset
+// scanning: The old entries are not copied to the current active set, only
+// slots that were found to actually contain old pages are registered in the
+// active set.
+
+ZRemembered::FoundOld::FoundOld() :
+    // Array initialization requires copy constructors, which CHeapBitMap
+    // doesn't provide. Instantiate two instances, and populate an array
+    // with pointers to the two instances.
+    _allocated_bitmap_0{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
+    _allocated_bitmap_1{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
+    _bitmaps{&_allocated_bitmap_0, &_allocated_bitmap_1},
+    _current{0} {}
+
+BitMap* ZRemembered::FoundOld::current_bitmap() {
+  return _bitmaps[_current];
+}
+
+BitMap* ZRemembered::FoundOld::previous_bitmap() {
+  return _bitmaps[_current ^ 1];
+}
+
+void ZRemembered::FoundOld::flip() {
+  _current ^= 1;
+}
+
+void ZRemembered::FoundOld::clear_previous() {
+  previous_bitmap()->clear_large();
+}
+
+void ZRemembered::FoundOld::register_page(ZPage* page) {
+  assert(page->is_old(), "Only register old pages");
+  current_bitmap()->par_set_bit(untype(page->start()) >> ZGranuleSizeShift, memory_order_relaxed);
+}
+
+void ZRemembered::flip_found_old_sets() {
+  _found_old.flip();
+}
+
+void ZRemembered::clear_found_old_previous_set() {
+  _found_old.clear_previous();
+}
+
+void ZRemembered::register_found_old(ZPage* page) {
+  assert(page->is_old(), "Should only register old pages");
+  _found_old.register_page(page);
+}
+
+struct ZRemsetTableEntry {
+  ZPage* _page;
+  ZForwarding* _forwarding;
+};
+
+class ZRemsetTableIterator {
 private:
-  ZRelocationSetParallelIterator _iterator;
-  const ZRemembered&             _remembered;
+  ZRemembered* const            _remembered;
+  ZPageTable* const             _page_table;
+  const ZForwardingTable* const _old_forwarding_table;
+  volatile BitMap::idx_t        _claimed;
 
 public:
-  ZRememberedScanForwardingTask(const ZRemembered& remembered) :
-      ZRestartableTask("ZRememberedScanForwardingTask"),
-      _iterator(ZGeneration::old()->relocation_set_parallel_iterator()),
-      _remembered(remembered) {}
+  ZRemsetTableIterator(ZRemembered* remembered) :
+      _remembered(remembered),
+      _page_table(remembered->_page_table),
+      _old_forwarding_table(remembered->_old_forwarding_table),
+      _claimed(0) {}
 
-  virtual void work() {
-    ZRememberedScanForwardingContext context;
+  // This iterator uses the "found old" optimization.
+  bool next(ZRemsetTableEntry* entry_addr)  {
+    BitMap* const bm = _remembered->_found_old.previous_bitmap();
 
-    for (ZForwarding* forwarding; _iterator.next(&forwarding);) {
-      _remembered.scan_forwarding(forwarding, &context);
-      ZVerify::after_scan(forwarding);
+    BitMap::idx_t prev = Atomic::load(&_claimed);
 
-      if (ZGeneration::young()->should_worker_resize()) {
-        break;
+    for (;;) {
+      if (prev == bm->size()) {
+        return false;
       }
-    };
 
-    ZHeap::heap()->mark_flush_and_free(Thread::current());
+      const BitMap::idx_t page_index = bm->get_next_one_offset(_claimed);
+      if (page_index == bm->size()) {
+        Atomic::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
+        return false;
+      }
 
-    context.print();
+      const BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
+      if (res != prev) {
+        // Someone else claimed
+        prev = res;
+        continue;
+      }
+
+      // Found bit - look around for page or forwarding to scan
+
+      ZForwarding* forwarding = nullptr;
+      if (ZGeneration::old()->is_phase_relocate()) {
+        forwarding = _old_forwarding_table->at(page_index);
+      }
+
+      ZPage* page = _page_table->at(page_index);
+      if (page != nullptr && !page->is_old()) {
+        page = nullptr;
+      }
+
+      if (page == nullptr && forwarding == nullptr) {
+        // Nothing to scan
+        continue;
+      }
+
+      // Found old page or old forwarding
+      entry_addr->_forwarding = forwarding;
+      entry_addr->_page = page;
+
+      return true;
+    }
   }
 };
 
-class ZRememberedScanPageTask : public ZRestartableTask {
+// This task scans the remembered set and follows pointers when possible.
+// Interleaving remembered set scanning with marking makes the marking times
+// lower and more predictable.
+class ZRememberedScanMarkFollowTask : public ZRestartableTask {
 private:
-  const ZRemembered&        _remembered;
-  ZOldPagesParallelIterator _old_pages_parallel_iterator;
+  ZRemembered* const   _remembered;
+  ZMark* const         _mark;
+  ZRemsetTableIterator _remset_table_iterator;
 
 public:
-  ZRememberedScanPageTask(const ZRemembered& remembered) :
-      ZRestartableTask("ZRememberedScanPageTask"),
+  ZRememberedScanMarkFollowTask(ZRemembered* remembered, ZMark* mark) :
+      ZRestartableTask("ZRememberedScanMarkFollowTask"),
       _remembered(remembered),
-      _old_pages_parallel_iterator(remembered._page_table) {
-    _remembered._page_allocator->enable_safe_destroy();
-    _remembered._page_allocator->enable_safe_recycle();
+      _mark(mark),
+      _remset_table_iterator(remembered)  {
+    _mark->prepare_work();
+    _remembered->_page_allocator->enable_safe_destroy();
+    _remembered->_page_allocator->enable_safe_recycle();
   }
 
-  ~ZRememberedScanPageTask() {
-    _remembered._page_allocator->disable_safe_recycle();
-    _remembered._page_allocator->disable_safe_destroy();
+  ~ZRememberedScanMarkFollowTask() {
+    _remembered->_page_allocator->disable_safe_recycle();
+    _remembered->_page_allocator->disable_safe_destroy();
+    _mark->finish_work();
     // We are done scanning the set of old pages.
     // Clear the set for the next young collection.
-    _remembered._page_table->clear_found_old_previous_set();
+    _remembered->clear_found_old_previous_set();
   }
 
-  virtual void work() {
-    for (ZPage* page; _old_pages_parallel_iterator.next(&page);) {
-      if (_remembered.should_scan_page(page)) {
-        // Visit all entries pointing into young gen
-        _remembered.scan_page(page);
-        // ... and as a side-effect clear the previous entries
-        page->clear_remset_previous();
+  virtual void work_inner() {
+    ZRememberedScanForwardingContext context;
+
+    // Follow initial roots
+    if (!_mark->follow_work_partial()) {
+      // Bail
+      return;
+    }
+
+    for (ZRemsetTableEntry entry; _remset_table_iterator.next(&entry);) {
+      bool left_marking = false;
+      ZForwarding* forwarding = entry._forwarding;
+      ZPage* page = entry._page;
+
+      // Scan forwarding
+      if (forwarding != nullptr) {
+        bool found_roots = _remembered->scan_forwarding(forwarding, &context);
+        ZVerify::after_scan(forwarding);
+        if (found_roots) {
+          // Follow remembered set when possible
+          left_marking = !_mark->follow_work_partial();
+        }
       }
 
-      // The remset scanning maintains the "maybe old" pages optimization.
-      //
-      // We maintain two sets of old pages: The first is the currently active
-      // set, where old pages are registered into. The second is the old
-      // read-only copy. The two sets flip during young mark start. This
-      // analogous to how we set and clean remembered set bits.
-      //
-      // The iterator reads from the read-only copy, and then here, we install
-      // entries in the current active set.
-      _remembered._page_table->register_found_old(page);
+      // Scan page
+      if (page != nullptr) {
+        if (_remembered->should_scan_page(page)) {
+          // Visit all entries pointing into young gen
+          bool found_roots = _remembered->scan_page(page);
 
-      if (ZGeneration::young()->should_worker_resize()) {
-        break;
+          // ... and as a side-effect clear the previous entries
+          if (ZVerifyRemembered) {
+            // Make sure self healing of pointers is ordered before clearing of
+            // the previous bits so that ZVerify::after_scan can detect missing
+            // remset entries accurately.
+            OrderAccess::storestore();
+          }
+          page->clear_remset_previous();
+
+          if (found_roots && !left_marking) {
+            // Follow remembered set when possible
+            left_marking = !_mark->follow_work_partial();
+          }
+        }
+
+        // The remset scanning maintains the "maybe old" pages optimization.
+        //
+        // We maintain two sets of old pages: The first is the currently active
+        // set, where old pages are registered into. The second is the old
+        // read-only copy. The two sets flip during young mark start. This
+        // analogous to how we set and clean remembered set bits.
+        //
+        // The iterator reads from the read-only copy, and then here, we install
+        // entries in the current active set.
+        _remembered->register_found_old(page);
+      }
+
+      SuspendibleThreadSet::yield();
+      if (left_marking) {
+        // Bail
+        return;
       }
     }
 
+    _mark->follow_work_complete();
+  }
+
+  virtual void work() {
+    SuspendibleThreadSetJoiner sts_joiner;
+    work_inner();
+    // We might have found pointers into the other generation, and then we want to
+    // publish such marking stacks to prevent that generation from getting a mark continue.
+    // We also flush in case of a resize where a new worker thread continues the marking
+    // work, causing a mark continue for the collected generation.
     ZHeap::heap()->mark_flush_and_free(Thread::current());
+  }
+
+  virtual void resize_workers(uint nworkers) {
+    _mark->resize_workers(nworkers);
   }
 };
 
-void ZRemembered::scan() const {
-  if (ZGeneration::old()->is_phase_relocate()) {
-    ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootRemsetForwardingYoung);
-    ZRememberedScanForwardingTask task(*this);
+void ZRemembered::scan_and_follow(ZMark* mark) {
+  {
+    // Follow the object graph and lazily scan the remembered set
+    ZRememberedScanMarkFollowTask task(this, mark);
     ZGeneration::young()->workers()->run(&task);
+
+    // Try to terminate after following the graph
+    if (ZAbort::should_abort() || !mark->try_terminate_flush()) {
+      return;
+    }
   }
 
-  ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootRemsetPageYoung);
-  ZRememberedScanPageTask task(*this);
-  ZGeneration::young()->workers()->run(&task);
+  // If flushing failed, we have to restart marking again, but this time we don't need to
+  // scan the remembered set.
+  mark->mark_follow();
 }
 
-void ZRemembered::scan_field(volatile zpointer* p) const {
+bool ZRemembered::scan_field(volatile zpointer* p) const {
   assert(ZGeneration::young()->is_phase_mark(), "Wrong phase");
 
   const zaddress addr = ZBarrier::remset_barrier_on_oop_field(p);
 
   if (!is_null(addr) && ZHeap::heap()->is_young(addr)) {
     remember(p);
+    return true;
   }
+
+  return false;
 }
 
-void ZRemembered::flip() const {
+void ZRemembered::flip() {
   ZRememberedSet::flip();
-  _page_table->flip_found_old_sets();
+  flip_found_old_sets();
 }

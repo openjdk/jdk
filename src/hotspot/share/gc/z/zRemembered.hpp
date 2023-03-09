@@ -25,9 +25,12 @@
 #define SHARE_GC_Z_ZREMEMBERED_HPP
 
 #include "gc/z/zAddress.hpp"
+#include "utilities/bitMap.hpp"
 
 class OopClosure;
 class ZForwarding;
+class ZForwardingTable;
+class ZMark;
 class ZPage;
 class ZPageAllocator;
 class ZPageTable;
@@ -35,39 +38,67 @@ struct ZRememberedSetContaining;
 template <typename T> class GrowableArrayView;
 
 class ZRemembered {
-  friend class ZRememberedScanForwardingTask;
-  friend class ZRememberedScanPageTask;
+  friend class ZRememberedScanMarkFollowTask;
+  friend class ZRemsetTableIterator;
 
 private:
   ZPageTable* const _page_table;
+  const ZForwardingTable* const _old_forwarding_table;
   ZPageAllocator* const _page_allocator;
+
+  // Optimization aid for faster old pages iteration
+  struct FoundOld {
+    CHeapBitMap   _allocated_bitmap_0;
+    CHeapBitMap   _allocated_bitmap_1;
+    BitMap* const _bitmaps[2];
+    int           _current;
+
+    FoundOld();
+
+    void flip();
+    void clear_previous();
+
+    void register_page(ZPage* page);
+
+    BitMap* current_bitmap();
+    BitMap* previous_bitmap();
+  } _found_old;
+
+  // Old pages iteration optimization aid
+  void flip_found_old_sets();
+  void clear_found_old_previous_set();
 
   template <typename Function>
   void oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const;
 
   bool should_scan_page(ZPage* page) const;
 
-  void scan_page(ZPage* page) const;
-  void scan_forwarding(ZForwarding* forwarding, void* context) const;
+  bool scan_page(ZPage* page) const;
+  bool scan_forwarding(ZForwarding* forwarding, void* context) const;
 
 public:
-  ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZRemembered(ZPageTable* page_table,
+              const ZForwardingTable* old_forwarding_table,
+              ZPageAllocator* page_allocator);
 
   // Add to remembered set
   void remember(volatile zpointer* p) const;
 
-  // Scan all remembered sets
-  void scan() const;
+  // Scan all remembered sets and follow
+  void scan_and_follow(ZMark* mark);
 
   // Save the current remembered sets,
   // and switch over to empty remembered sets.
-  void flip() const;
+  void flip();
 
   // Scan a remembered set entry
-  void scan_field(volatile zpointer* p) const;
+  bool scan_field(volatile zpointer* p) const;
 
   // Verification
   bool is_remembered(volatile zpointer* p) const;
+
+  // Register pages with the remembered set
+  void register_found_old(ZPage* page);
 };
 
 #endif // SHARE_GC_Z_ZREMEMBERED_HPP

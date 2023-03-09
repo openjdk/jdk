@@ -97,7 +97,6 @@ static const ZStatPhaseConcurrent ZPhaseConcurrentRemapRootsOld("Concurrent Rema
 
 static const ZStatSubPhase ZSubPhaseConcurrentMarkRootsYoung("Concurrent Mark Roots", ZGenerationId::young);
 static const ZStatSubPhase ZSubPhaseConcurrentMarkFollowYoung("Concurrent Mark Follow", ZGenerationId::young);
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRememberedSetYoung("Concurrent Mark Remset", ZGenerationId::young);
 
 static const ZStatSubPhase ZSubPhaseConcurrentMarkRootsOld("Concurrent Mark Roots", ZGenerationId::old);
 static const ZStatSubPhase ZSubPhaseConcurrentMarkFollowOld("Concurrent Mark Follow", ZGenerationId::old);
@@ -474,11 +473,13 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
   ZGeneration::young()->_active_type = ZYoungType::none;
 }
 
-ZGenerationYoung::ZGenerationYoung(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZGenerationYoung::ZGenerationYoung(ZPageTable* page_table,
+                                   const ZForwardingTable* old_forwarding_table,
+                                   ZPageAllocator* page_allocator) :
     ZGeneration(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
     _tenuring_threshold(0),
-    _remembered(page_table, page_allocator) {
+    _remembered(page_table, old_forwarding_table, page_allocator) {
   ZGeneration::_young = this;
 }
 
@@ -839,12 +840,13 @@ void ZGenerationYoung::mark_start() {
 
 void ZGenerationYoung::mark_roots() {
   ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootsYoung);
-  _mark.mark_roots();
+  _mark.mark_young_roots();
 }
 
 void ZGenerationYoung::mark_follow() {
+  // Combine following with scanning the remembered set
   ZStatTimerYoung timer(ZSubPhaseConcurrentMarkFollowYoung);
-  _mark.mark_follow();
+  _remembered.scan_and_follow(&_mark);
 }
 
 bool ZGenerationYoung::mark_end() {
@@ -915,9 +917,8 @@ void ZGenerationYoung::register_in_place_relocate_promoted(ZPage* page) {
   _relocation_set.register_in_place_relocate_promoted(page);
 }
 
-void ZGenerationYoung::scan_remembered_sets() {
-  ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRememberedSetYoung);
-  _remembered.scan();
+void ZGenerationYoung::register_with_remset(ZPage* page) {
+  _remembered.register_found_old(page);
 }
 
 ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator) :
@@ -1182,7 +1183,7 @@ void ZGenerationOld::mark_start() {
 
 void ZGenerationOld::mark_roots() {
   ZStatTimerOld timer(ZSubPhaseConcurrentMarkRootsOld);
-  _mark.mark_roots();
+  _mark.mark_old_roots();
 }
 
 void ZGenerationOld::mark_follow() {

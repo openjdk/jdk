@@ -34,7 +34,7 @@ class ZGranuleMap {
   template <typename, bool> friend class ZGranuleMapIterator;
   friend class ZForwardingTable;
   friend class ZPageTable;
-  friend class ZOldGenerationPagesSafeIterator;
+  friend class ZRemsetTableIterator;
 
 private:
   const size_t _size;

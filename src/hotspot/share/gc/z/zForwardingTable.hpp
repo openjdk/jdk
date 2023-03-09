@@ -31,7 +31,7 @@ class ZForwarding;
 
 class ZForwardingTable {
   friend class VMStructs;
-  friend class ZOldGenerationPagesSafeIterator;
+  friend class ZRemsetTableIterator;
 
 private:
   ZGranuleMap<ZForwarding*> _map;

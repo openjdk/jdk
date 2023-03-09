@@ -52,8 +52,8 @@ private:
 
   ZServiceability         _serviceability;
 
-  ZGenerationYoung        _young;
   ZGenerationOld          _old;
+  ZGenerationYoung        _young;
 
   bool                    _initialized;
 

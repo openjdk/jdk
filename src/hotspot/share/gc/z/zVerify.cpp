@@ -584,6 +584,11 @@ public:
     volatile zpointer* const p = (volatile zpointer*)p_;
     const zpointer ptr = Atomic::load(p);
 
+    // Order this load w.r.t. the was_remembered load which can race when
+    // the remset scanning of the to-space object is concurrently forgetting
+    // an entry.
+    OrderAccess::loadload();
+
     if (ZPointer::is_remembered_exact(ptr)) {
       // When the remembered bits are 11, it means that it is intentionally
       // not part of the remembered set
@@ -614,10 +619,24 @@ public:
 
     ZPage* page = ZHeap::heap()->page(p);
 
-    if (!page->is_remembered(p) && !page->was_remembered(p)) {
-      guarantee(ZGeneration::young()->is_phase_mark(), "Should be in the mark phase " BAD_REMSET_ARG(p, ptr, _to_addr));
-      guarantee(_forwarding->relocated_remembered_fields_published_contains(p), BAD_REMSET_ARG(p, ptr, _to_addr));
+    if (page->is_remembered(p) || page->was_remembered(p)) {
+      // No missing remembered set entry
+      return;
     }
+
+    OrderAccess::loadload();
+    if (Atomic::load(p) != ptr) {
+      // Order the was_remembered bitmap load w.r.t. the reload of the zpointer.
+      // Sometimes the was_remembered() call above races with clearing of the
+      // previous bits, when the to-space object is concurrently forgetting
+      // remset entries because they were not so useful. When that happens,
+      // we have already self healed the pointers to have 11 in the remset
+      // bits.
+      return;
+    }
+
+    guarantee(ZGeneration::young()->is_phase_mark(), "Should be in the mark phase " BAD_REMSET_ARG(p, ptr, _to_addr));
+    guarantee(_forwarding->relocated_remembered_fields_published_contains(p), BAD_REMSET_ARG(p, ptr, _to_addr));
   }
 
   virtual void do_oop(narrowOop* p) {

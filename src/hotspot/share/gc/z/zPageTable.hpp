@@ -28,51 +28,19 @@
 #include "gc/z/zGranuleMap.hpp"
 #include "gc/z/zIndexDistributor.hpp"
 #include "memory/allocation.hpp"
-#include "utilities/bitMap.hpp"
 
-class ZForwarding;
 class ZPage;
 class ZPageAllocator;
 class ZPageTable;
 
-class ZOldPagesParallelIterator {
-private:
-  ZPageTable* const      _page_table;
-  volatile BitMap::idx_t _claimed;
-
-public:
-  ZOldPagesParallelIterator(ZPageTable* page_table);
-
-  bool next(ZPage** page_addr);
-};
-
 class ZPageTable {
   friend class VMStructs;
-  friend class ZOldGenerationPagesSafeIterator;
   friend class ZPageTableIterator;
   friend class ZPageTableParallelIterator;
-  friend class ZOldPagesParallelIterator;
+  friend class ZRemsetTableIterator;
 
 private:
   ZGranuleMap<ZPage*> _map;
-
-  // Optimization aid for faster old pages iteration
-  struct FoundOld {
-    CHeapBitMap   _allocated_bitmap_0;
-    CHeapBitMap   _allocated_bitmap_1;
-    BitMap* const _bitmaps[2];
-    int           _current;
-
-    FoundOld();
-
-    void flip();
-    void clear_previous();
-
-    void register_page(ZPage* page);
-
-    BitMap* current_bitmap();
-    BitMap* previous_bitmap();
-  } _found_old;
 
 public:
   ZPageTable();
@@ -85,12 +53,6 @@ public:
   void insert(ZPage* page);
   void remove(ZPage* page);
   void replace(ZPage* old_page, ZPage* new_page);
-
-  // Old pages iteration optimization aid
-  void flip_found_old_sets();
-  void clear_found_old_previous_set();
-  void register_found_old(ZPage* page);
-  ZOldPagesParallelIterator old_pages_parallel_iterator();
 };
 
 class ZPageTableIterator : public StackObj {

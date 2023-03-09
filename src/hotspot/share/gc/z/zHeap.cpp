@@ -60,8 +60,8 @@ ZHeap::ZHeap() :
     _allocator_eden(),
     _allocator_relocation(),
     _serviceability(initial_capacity(), min_capacity(), max_capacity()),
-    _young(&_page_table, &_page_allocator),
     _old(&_page_table, &_page_allocator),
+    _young(&_page_table, _old.forwarding_table(), &_page_allocator),
     _initialized(false) {
 
   // Install global heap instance

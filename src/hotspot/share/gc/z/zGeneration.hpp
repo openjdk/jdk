@@ -220,7 +220,9 @@ private:
   void concurrent_relocate();
 
 public:
-  ZGenerationYoung(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZGenerationYoung(ZPageTable* page_table,
+                   const ZForwardingTable* old_forwarding_table,
+                   ZPageAllocator* page_allocator);
 
   ZYoungType type() const;
 
@@ -247,8 +249,8 @@ public:
   // Scan a remembered set entry
   void scan_remembered_field(volatile zpointer* p);
 
-  // Scan all remembered sets
-  void scan_remembered_sets();
+  // Register old pages with remembered set
+  void register_with_remset(ZPage* page);
 
   // Verification
   bool is_remembered(volatile zpointer* p) const;
