@@ -981,8 +981,8 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   // this would be still be helpful.
   JavaThread* THREAD = current;
   Handle init_error = java_lang_Throwable::create_initialization_error(current, exception);
-
-  if ( init_error.is_null()) {
+  ResourceMark rm(THREAD);
+  if (init_error.is_null()) {
     log_trace(class, init)("Initialization error is null for class %s", external_name());
     return;
   }
@@ -992,7 +992,6 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   bool created;
   _initialization_error_table.put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
-  ResourceMark rm(THREAD);
   log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 

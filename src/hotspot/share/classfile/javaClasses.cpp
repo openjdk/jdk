@@ -2740,8 +2740,9 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   // failed due to the passed in 'throwable'. We cannot save 'throwable' directly due to issues with keeping alive
   // all objects referenced via its stacktrace. So instead we save a new EIIE instance, with the same message and
   // symbolic stacktrace of 'throwable'.
+  assert(throwable.not_null(), "shouldn't be");
 
-  // Now create the message with the original exception and thread name.
+  // Now create the message from the original exception and thread name.
   Symbol* message = java_lang_Throwable::detail_message(throwable());
   ResourceMark rm(current);
   stringStream st;
@@ -2756,7 +2757,7 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
   Handle h_eiie = Exceptions::new_exception(current, exception_name, st.as_string());
   // If new_exception returns a different exception while creating the exception,
-  // abandon the attempts to save the initialization error and return null.
+  // abandon the attempt to save the initialization error and return null.
   if (h_eiie->klass()->name() != exception_name) {
     log_info(class, init)("Exception thrown while saving initialization exception %s",
                         h_eiie->klass()->external_name());
@@ -2766,7 +2767,6 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   // Call to java to fill in the stack trace and clear declaringClassObject to
   // not keep classes alive in the stack trace.
   // call this:  public StackTraceElement[] getStackTrace()
-  assert(throwable.not_null(), "shouldn't be");
   JavaValue result(T_ARRAY);
   JavaCalls::call_virtual(&result, throwable,
                           vmClasses::Throwable_klass(),
