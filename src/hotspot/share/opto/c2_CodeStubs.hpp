@@ -95,12 +95,12 @@ public:
 };
 
 #ifdef _LP64
-class C2FixAnonOMOwnerStub : public C2CodeStub {
+class C2HandleAnonOMOwnerStub : public C2CodeStub {
 private:
   Register _monitor;
   Register _tmp;
 public:
-  C2FixAnonOMOwnerStub(Register monitor, Register tmp = noreg) : C2CodeStub(),
+  C2HandleAnonOMOwnerStub(Register monitor, Register tmp = noreg) : C2CodeStub(),
     _monitor(monitor), _tmp(tmp) {}
   Register monitor() { return _monitor; }
   Register tmp() { return _tmp; }

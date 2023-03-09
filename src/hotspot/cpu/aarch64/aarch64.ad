@@ -3934,12 +3934,13 @@ encode %{
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
 
     if (UseFastLocking) {
-      // If the owner is anonymous, we need to fix it -- in the slow-path.
-      __ ldr(disp_hdr, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+      // If the owner is anonymous, we need to fix it -- in an outline stub.
+      Register tmp2 = disp_hdr;
+      __ ldr(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
       // We cannot use tbnz here, the target might be too far away and cannot
       // be encoded.
-      __ tst(disp_hdr, (uint64_t)(intptr_t) ANONYMOUS_OWNER);
-      C2FixAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2FixAnonOMOwnerStub(tmp, disp_hdr);
+      __ tst(tmp2, (uint64_t)(intptr_t) ANONYMOUS_OWNER);
+      C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
       Compile::current()->output()->add_stub(stub);
       __ br(Assembler::NE, stub->entry());
       __ bind(stub->continuation());

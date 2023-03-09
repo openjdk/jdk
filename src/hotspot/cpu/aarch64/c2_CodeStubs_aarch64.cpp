@@ -75,14 +75,15 @@ void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
   __ b(continuation());
 }
 
-int C2FixAnonOMOwnerStub::max_size() const {
+int C2HandleAnonOMOwnerStub::max_size() const {
   return 20;
 }
 
-void C2FixAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
+void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
   Register mon = monitor();
   Register t = tmp();
+  assert(t != noreg, "need tmp register");
 
   // Fix owner to be the current thread.
   __ str(rthread, Address(mon, ObjectMonitor::owner_offset_in_bytes()));
