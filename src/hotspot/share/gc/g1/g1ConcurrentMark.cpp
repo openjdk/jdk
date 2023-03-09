@@ -1156,7 +1156,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
       // region. We need to distribute this value across the entire set of regions a
       // humongous object spans.
       if (hr->is_humongous()) {
-        assert(hr->is_starts_humongous() || !_cm->contains_live_object(region_idx),
+        assert(hr->is_starts_humongous() || marked_bytes == 0,
                "Should not have live bytes %zu in continues humongous region %u (%s)",
                marked_bytes, region_idx, hr->get_type_str());
         if (hr->is_starts_humongous()) {
