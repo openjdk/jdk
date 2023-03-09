@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -291,6 +291,30 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::aarch64::_crc_table[] =
     0xED78D502UL, 0x62EDAE7DUL,         // byte swap
     0x02D578EDUL, 0x7DAEED62UL,         // word swap
     0xD502ED78UL, 0xAE7D62EDUL,         // byte swap of word swap
+
+    // Constants for CRC-32 crypto pmull implementation
+    0xe88ef372UL, 0x00000001UL,
+    0x4a7fe880UL, 0x00000001UL,
+    0x54442bd4UL, 0x00000001UL,
+    0xc6e41596UL, 0x00000001UL,
+    0x3db1ecdcUL, 0x00000000UL,
+    0x74359406UL, 0x00000001UL,
+    0xf1da05aaUL, 0x00000000UL,
+    0x5a546366UL, 0x00000001UL,
+    0x751997d0UL, 0x00000001UL,
+    0xccaa009eUL, 0x00000000UL,
+
+    // Constants for CRC-32C crypto pmull implementation
+    0x6992cea2UL, 0x00000000UL,
+    0x0d3b6092UL, 0x00000000UL,
+    0x740eef02UL, 0x00000000UL,
+    0x9e4addf8UL, 0x00000000UL,
+    0x1c291d04UL, 0x00000000UL,
+    0xd82c63daUL, 0x00000001UL,
+    0x384aa63aUL, 0x00000001UL,
+    0xba4fc28eUL, 0x00000000UL,
+    0xf20c0dfeUL, 0x00000000UL,
+    0x4cd00bd6UL, 0x00000001UL,
 };
 
 // Accumulation coefficients for adler32 upper 16 bits

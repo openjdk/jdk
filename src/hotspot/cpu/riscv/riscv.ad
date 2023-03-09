@@ -1845,10 +1845,6 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
-
-    case Op_ConvF2HF:
-    case Op_ConvHF2F:
-      return UseZfhmin;
   }
 
   return true; // Per default match rules are supported.
@@ -1922,7 +1918,12 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
   if (UseRVV) {
     // The MaxVectorSize should have been set by detecting RVV max vector register size when check UseRVV.
     // MaxVectorSize == VM_Version::_initial_vector_length
-    return MaxVectorSize;
+    int size = MaxVectorSize;
+    // Minimum 2 values in vector
+    if (size < 2 * type2aelembytes(bt)) size = 0;
+    // But never < 4
+    if (size < 4) size = 0;
+    return size;
   }
   return 0;
 }
@@ -1931,8 +1932,17 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 const int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt) / type2aelembytes(bt);
 }
+
 const int Matcher::min_vector_size(const BasicType bt) {
-  return max_vector_size(bt);
+  int max_size = max_vector_size(bt);
+  // Limit the min vector size to 8 bytes.
+  int size = 8 / type2aelembytes(bt);
+  if (bt == T_BOOLEAN) {
+    // To support vector api load/store mask.
+    size = 2;
+  }
+  if (size < 2) size = 2;
+  return MIN2(size, max_size);
 }
 
 // Vector ideal reg.
@@ -8198,44 +8208,6 @@ instruct convL2F_reg_reg(fRegF dst, iRegL src) %{
   %}
 
   ins_pipe(fp_l2f);
-%}
-
-// float <-> half float
-
-instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, fRegF tmp) %{
-  predicate(UseZfhmin);
-  match(Set dst (ConvHF2F src));
-  effect(TEMP tmp);
-
-  ins_cost(XFER_COST);
-  format %{ "fmv.h.x $tmp, $src\t#@convHF2F_reg_reg\n\t"
-            "fcvt.s.h $dst, $tmp\t#@convHF2F_reg_reg"
-  %}
-
-  ins_encode %{
-    __ fmv_h_x($tmp$$FloatRegister, $src$$Register);
-    __ fcvt_s_h($dst$$FloatRegister, $tmp$$FloatRegister);
-  %}
-
-  ins_pipe(fp_i2f);
-%}
-
-instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF tmp) %{
-  predicate(UseZfhmin);
-  match(Set dst (ConvF2HF src));
-  effect(TEMP tmp);
-
-  ins_cost(XFER_COST);
-  format %{ "fcvt.h.s $tmp, $src\t#@convF2HF_reg_reg\n\t"
-            "fmv.x.h $dst, $tmp\t#@convF2HF_reg_reg"
-  %}
-
-  ins_encode %{
-    __ fcvt_h_s($tmp$$FloatRegister, $src$$FloatRegister);
-    __ fmv_x_h($dst$$Register, $tmp$$FloatRegister);
-  %}
-
-  ins_pipe(fp_f2i);
 %}
 
 // double <-> int

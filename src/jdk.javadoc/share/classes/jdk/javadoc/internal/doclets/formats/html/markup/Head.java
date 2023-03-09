@@ -94,7 +94,7 @@ public class Head extends Content {
     }
 
     /**
-     * Sets the charset to be declared in a META [@code Content-TYPE} element.
+     * Sets the charset to be declared in a META {@code Content-TYPE} element.
      *
      * @param charset the charset
      * @return this object
@@ -123,7 +123,7 @@ public class Head extends Content {
     }
 
     /**
-     * Adds a list of keywords to appear in META [@code keywords} elements.
+     * Adds a list of keywords to appear in META {@code keywords} elements.
      *
      * @param keywords the list of keywords, or null if none need to be added
      * @return this object

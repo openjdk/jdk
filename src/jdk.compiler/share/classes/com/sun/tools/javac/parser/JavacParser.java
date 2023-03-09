@@ -3723,6 +3723,11 @@ public class JavacParser implements Parser {
                 JCExpression pn = qualident(false);
                 if (pn.hasTag(Tag.IDENT) && ((JCIdent)pn).name != names._this) {
                     name = ((JCIdent)pn).name;
+                } else if (lambdaParameter && type == null) {
+                    // we have a lambda parameter that is not an identifier this is a syntax error
+                    type = pn;
+                    name = names.empty;
+                    reportSyntaxError(pos, Errors.Expected(IDENTIFIER));
                 } else {
                     if (allowThisIdent) {
                         if ((mods.flags & Flags.VARARGS) != 0) {
@@ -4015,7 +4020,7 @@ public class JavacParser implements Parser {
             }
         } while (token.kind == DOT);
         accept(SEMI);
-        return toP(F.at(pos).Import(pid, importStatic));
+        return toP(F.at(pos).Import((JCFieldAccess)pid, importStatic));
     }
 
     /** TypeDeclaration = ClassOrInterfaceOrEnumDeclaration

@@ -51,7 +51,6 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class GenerationSpec;
-class CompactibleSpace;
 class ContiguousSpace;
 class CompactPoint;
 class OopClosure;
@@ -86,10 +85,6 @@ class Generation: public CHeapObj<mtGC> {
   // Memory area reserved for generation
   VirtualSpace _virtual_space;
 
-  // ("Weak") Reference processing support
-  SpanSubjectToDiscoveryClosure _span_based_discoverer;
-  ReferenceProcessor* _ref_processor;
-
   // Performance Counters
   CollectorCounters* _gc_counters;
 
@@ -116,12 +111,6 @@ class Generation: public CHeapObj<mtGC> {
     GenGrain = 1 << LogOfGenGrain
   };
 
-  // allocate and initialize ("weak") refs processing support
-  void ref_processor_init();
-  void set_ref_processor(ReferenceProcessor* rp) {
-    assert(_ref_processor == nullptr, "clobbering existing _ref_processor");
-    _ref_processor = rp;
-  }
 
   virtual Generation::Name kind() { return Generation::Other; }
 
@@ -202,7 +191,7 @@ class Generation: public CHeapObj<mtGC> {
 
   // Returns the first space, if any, in the generation that can participate
   // in compaction, or else "null".
-  virtual CompactibleSpace* first_compaction_space() const = 0;
+  virtual ContiguousSpace* first_compaction_space() const = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
@@ -361,9 +350,6 @@ class Generation: public CHeapObj<mtGC> {
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Reference Processing accessor
-  ReferenceProcessor* const ref_processor() { return _ref_processor; }
 
   // Iteration.
 

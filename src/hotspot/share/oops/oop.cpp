@@ -53,6 +53,16 @@ void oopDesc::print_address_on(outputStream* st) const {
 
 }
 
+void oopDesc::print_name_on(outputStream* st) const {
+  if (*((juint*)this) == badHeapWordVal) {
+    st->print_cr("BAD WORD");
+  } else if (*((juint*)this) == badMetaWordVal) {
+    st->print_cr("BAD META WORD");
+  } else {
+    st->print_cr("%s", klass()->external_name());
+  }
+}
+
 void oopDesc::print()         { print_on(tty);         }
 
 void oopDesc::print_address() { print_address_on(tty); }

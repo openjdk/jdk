@@ -254,7 +254,7 @@ public:
 
   // Create a new Node with given input edges.
   // This version requires use of the "edge-count" new.
-  // E.g.  new (C,3) FooNode( C, NULL, left, right );
+  // E.g.  new (C,3) FooNode( C, nullptr, left, right );
   Node( Node *n0 );
   Node( Node *n0, Node *n1 );
   Node( Node *n0, Node *n1, Node *n2 );
@@ -270,10 +270,10 @@ public:
   // Clone a Node, immediately supplying one or two new edges.
   // The first and second arguments, if non-null, replace in(1) and in(2),
   // respectively.
-  Node* clone_with_data_edge(Node* in1, Node* in2 = NULL) const {
+  Node* clone_with_data_edge(Node* in1, Node* in2 = nullptr) const {
     Node* nn = clone();
-    if (in1 != NULL)  nn->set_req(1, in1);
-    if (in2 != NULL)  nn->set_req(2, in2);
+    if (in1 != nullptr)  nn->set_req(1, in1);
+    if (in2 != nullptr)  nn->set_req(2, in2);
     return nn;
   }
 
@@ -292,10 +292,10 @@ protected:
   Node **_out;                  // Array of def-use references to Nodes
 
   // Input edges are split into two categories.  Required edges are required
-  // for semantic correctness; order is important and NULLs are allowed.
+  // for semantic correctness; order is important and nulls are allowed.
   // Precedence edges are used to help determine execution order and are
   // added, e.g., for scheduling purposes.  They are unordered and not
-  // duplicated; they have no embedded NULLs.  Edges from 0 to _cnt-1
+  // duplicated; they have no embedded nulls.  Edges from 0 to _cnt-1
   // are required, from _cnt to _max-1 are precedence edges.
   node_idx_t _cnt;              // Total number of required Node inputs.
 
@@ -390,8 +390,8 @@ protected:
 
   // Reference to the i'th input Node.  Error if out of bounds.
   Node* in(uint i) const { assert(i < _max, "oob: i=%d, _max=%d", i, _max); return _in[i]; }
-  // Reference to the i'th input Node.  NULL if out of bounds.
-  Node* lookup(uint i) const { return ((i < _max) ? _in[i] : NULL); }
+  // Reference to the i'th input Node.  null if out of bounds.
+  Node* lookup(uint i) const { return ((i < _max) ? _in[i] : nullptr); }
   // Reference to the i'th output Node.  Error if out of bounds.
   // Use this accessor sparingly.  We are going trying to use iterators instead.
   Node* raw_out(uint i) const { assert(i < _outcnt,"oob"); return _out[i]; }
@@ -434,9 +434,9 @@ protected:
     assert( !VerifyHashTableKeys || _hash_lock == 0,
             "remove node from hash table before modifying it");
     Node** p = &_in[i];    // cache this._in, across the del_out call
-    if (*p != NULL)  (*p)->del_out((Node *)this);
+    if (*p != nullptr)  (*p)->del_out((Node *)this);
     (*p) = n;
-    if (n != NULL)      n->add_out((Node *)this);
+    if (n != nullptr)      n->add_out((Node *)this);
     Compile::current()->record_modified_node(this);
   }
   // Light version of set_req() to init inputs after node creation.
@@ -446,9 +446,9 @@ protected:
     assert( i < _cnt, "oob");
     assert( !VerifyHashTableKeys || _hash_lock == 0,
             "remove node from hash table before modifying it");
-    assert( _in[i] == NULL, "sanity");
+    assert( _in[i] == nullptr, "sanity");
     _in[i] = n;
-    if (n != NULL)      n->add_out((Node *)this);
+    if (n != nullptr)      n->add_out((Node *)this);
     Compile::current()->record_modified_node(this);
   }
   // Find first occurrence of n among my edges:
@@ -456,22 +456,22 @@ protected:
   int find_prec_edge(Node* n) {
     for (uint i = req(); i < len(); i++) {
       if (_in[i] == n) return i;
-      if (_in[i] == NULL) {
-        DEBUG_ONLY( while ((++i) < len()) assert(_in[i] == NULL, "Gap in prec edges!"); )
+      if (_in[i] == nullptr) {
+        DEBUG_ONLY( while ((++i) < len()) assert(_in[i] == nullptr, "Gap in prec edges!"); )
         break;
       }
     }
     return -1;
   }
-  int replace_edge(Node* old, Node* neww, PhaseGVN* gvn = NULL);
+  int replace_edge(Node* old, Node* neww, PhaseGVN* gvn = nullptr);
   int replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gvn);
-  // NULL out all inputs to eliminate incoming Def-Use edges.
+  // null out all inputs to eliminate incoming Def-Use edges.
   void disconnect_inputs(Compile* C);
 
   // Quickly, return true if and only if I am Compile::current()->top().
   bool is_top() const {
-    assert((this == (Node*) Compile::current()->top()) == (_out == NULL), "");
-    return (_out == NULL);
+    assert((this == (Node*) Compile::current()->top()) == (_out == nullptr), "");
+    return (_out == nullptr);
   }
   // Reaffirm invariants for is_top.  (Only from Compile::set_cached_top_node.)
   void setup_is_top();
@@ -519,14 +519,14 @@ private:
   void close_prec_gap_at(uint gap) {
     assert(_cnt <= gap && gap < _max, "no valid prec edge");
     uint i = gap;
-    Node *last = NULL;
+    Node *last = nullptr;
     for (; i < _max-1; ++i) {
       Node *next = _in[i+1];
-      if (next == NULL) break;
+      if (next == nullptr) break;
       last = next;
     }
-    _in[gap] = last; // Move last slot to empty one.
-    _in[i] = NULL;   // NULL out last slot.
+    _in[gap] = last;  // Move last slot to empty one.
+    _in[i] = nullptr; // null out last slot.
   }
 
 public:
@@ -553,11 +553,11 @@ public:
     assert(i >= _cnt, "not a precedence edge");
     // Avoid spec violation: duplicated prec edge.
     if (_in[i] == n) return;
-    if (n == NULL || find_prec_edge(n) != -1) {
+    if (n == nullptr || find_prec_edge(n) != -1) {
       rm_prec(i);
       return;
     }
-    if (_in[i] != NULL) _in[i]->del_out((Node *)this);
+    if (_in[i] != nullptr) _in[i]->del_out((Node *)this);
     _in[i] = n;
     n->add_out((Node *)this);
     Compile::current()->record_modified_node(this);
@@ -582,7 +582,7 @@ public:
 
   // Iterators over input Nodes for a Node X are written as:
   // for( i = 0; i < X.req(); i++ ) ... X[i] ...
-  // NOTE: Required edges can contain embedded NULL pointers.
+  // NOTE: Required edges can contain embedded null pointers.
 
 //----------------- Other Node Properties
 
@@ -837,11 +837,11 @@ public:
     return ((_class_id & ClassMask_##type) == Class_##type); \
   }                                                          \
   type##Node *as_##type() const {                            \
-    assert(is_##type(), "invalid node class: %s", Name()); \
+    assert(is_##type(), "invalid node class: %s", Name());   \
     return (type##Node*)this;                                \
   }                                                          \
   type##Node* isa_##type() const {                           \
-    return (is_##type()) ? as_##type() : NULL;               \
+    return (is_##type()) ? as_##type() : nullptr;            \
   }
 
   DEFINE_CLASS_QUERY(AbstractLock)
@@ -1000,7 +1000,7 @@ public:
   // The node is a "macro" node which needs to be expanded before matching
   bool is_macro() const { return (_flags & Flag_is_macro) != 0; }
   // The node is expensive: the best control is set during loop opts
-  bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != NULL; }
+  bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != nullptr; }
 
   // An arithmetic node which accumulates a data in a loop.
   // It must have the loop's phi as input and provide a def to the phi.
@@ -1026,10 +1026,10 @@ public:
   void raise_bottom_type(const Type* new_type);
 
   // Get the address type with which this node uses and/or defs memory,
-  // or NULL if none.  The address type is conservatively wide.
+  // or null if none.  The address type is conservatively wide.
   // Returns non-null for calls, membars, loads, stores, etc.
   // Returns TypePtr::BOTTOM if the node touches memory "broadly".
-  virtual const class TypePtr *adr_type() const { return NULL; }
+  virtual const class TypePtr *adr_type() const { return nullptr; }
 
   // Return an existing node which computes the same function as this node.
   // The optimistic combined algorithm requires this to return a Node which
@@ -1087,7 +1087,7 @@ public:
   bool is_cloop_ind_var() const;
 
   // Return a node with opcode "opc" and same inputs as "this" if one can
-  // be found; Otherwise return NULL;
+  // be found; Otherwise return null;
   Node* find_similar(int opc);
 
   // Return the unique control out if only one. Null if none or more than one.
@@ -1117,7 +1117,7 @@ public:
   // Should we clone rather than spill this instruction?
   bool rematerialize() const;
 
-  // Return JVM State Object if this Node carries debug info, or NULL otherwise
+  // Return JVM State Object if this Node carries debug info, or null otherwise
   virtual JVMState* jvms() const;
 
   // Print as assembly
@@ -1133,12 +1133,12 @@ public:
   // return value_if_unknown.
   jint find_int_con(jint value_if_unknown) const {
     const TypeInt* t = find_int_type();
-    return (t != NULL && t->is_con()) ? t->get_con() : value_if_unknown;
+    return (t != nullptr && t->is_con()) ? t->get_con() : value_if_unknown;
   }
   // Return the constant, knowing it is an integer constant already
   jint get_int() const {
     const TypeInt* t = find_int_type();
-    guarantee(t != NULL, "must be con");
+    guarantee(t != nullptr, "must be con");
     return t->get_con();
   }
   // Here's where the work is done.  Can produce non-constant int types too.
@@ -1148,23 +1148,23 @@ public:
   // Same thing for long (and intptr_t, via type.hpp):
   jlong get_long() const {
     const TypeLong* t = find_long_type();
-    guarantee(t != NULL, "must be con");
+    guarantee(t != nullptr, "must be con");
     return t->get_con();
   }
   jlong find_long_con(jint value_if_unknown) const {
     const TypeLong* t = find_long_type();
-    return (t != NULL && t->is_con()) ? t->get_con() : value_if_unknown;
+    return (t != nullptr && t->is_con()) ? t->get_con() : value_if_unknown;
   }
   const TypeLong* find_long_type() const;
 
   jlong get_integer_as_long(BasicType bt) const {
     const TypeInteger* t = find_integer_type(bt);
-    guarantee(t != NULL && t->is_con(), "must be con");
+    guarantee(t != nullptr && t->is_con(), "must be con");
     return t->get_con_as_long(bt);
   }
   jlong find_integer_as_long(BasicType bt, jlong value_if_unknown) const {
     const TypeInteger* t = find_integer_type(bt);
-    if (t == NULL || !t->is_con())  return value_if_unknown;
+    if (t == nullptr || !t->is_con())  return value_if_unknown;
     return t->get_con_as_long(bt);
   }
   const TypePtr* get_ptr_type() const;
@@ -1258,7 +1258,7 @@ public:
 };
 
 inline bool not_a_node(const Node* n) {
-  if (n == NULL)                   return true;
+  if (n == nullptr)                return true;
   if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
   if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
   return false;
@@ -1518,7 +1518,7 @@ class SimpleDUIterator : public StackObj {
 
 //-----------------------------------------------------------------------------
 // Map dense integer indices to Nodes.  Uses classic doubling-array trick.
-// Abstractly provides an infinite array of Node*'s, initialized to NULL.
+// Abstractly provides an infinite array of Node*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 class Node_Array : public AnyObj {
@@ -1535,15 +1535,15 @@ public:
   }
 
   Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
-  Node *operator[] ( uint i ) const // Lookup, or NULL for not mapped
-  { return (i<_max) ? _nodes[i] : (Node*)NULL; }
+  Node *operator[] ( uint i ) const // Lookup, or null for not mapped
+  { return (i<_max) ? _nodes[i] : (Node*)nullptr; }
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
   Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
   void map( uint i, Node *n ) { if( i>=_max ) grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
-  // Clear all entries in _nodes to NULL but keep storage
+  // Clear all entries in _nodes to null but keep storage
   void clear() {
     Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
   }
@@ -1646,7 +1646,7 @@ public:
 
   void add(Node* node) {
     if (not_a_node(node)) {
-      return; // Gracefully handle NULL, -1, 0xabababab, etc.
+      return; // Gracefully handle null, -1, 0xabababab, etc.
     }
     if (_visited_set[node] == nullptr) {
       _visited_set.Insert(node, node);
@@ -1670,6 +1670,11 @@ private:
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
   _for_igvn->push(n);
+}
+
+// Inline definition of Compile::remove_for_igvn must be deferred to this point.
+inline void Compile::remove_for_igvn(Node* n) {
+  _for_igvn->remove(n);
 }
 
 //------------------------------Node_Stack-------------------------------------
@@ -1751,7 +1756,7 @@ class Node_Notes {
   JVMState* _jvms;
 
 public:
-  Node_Notes(JVMState* jvms = NULL) {
+  Node_Notes(JVMState* jvms = nullptr) {
     _jvms = jvms;
   }
 
@@ -1760,12 +1765,12 @@ public:
 
   // True if there is nothing here.
   bool is_clear() {
-    return (_jvms == NULL);
+    return (_jvms == nullptr);
   }
 
   // Make there be nothing here.
   void clear() {
-    _jvms = NULL;
+    _jvms = nullptr;
   }
 
   // Make a new, clean node notes.
@@ -1784,8 +1789,8 @@ public:
   // Absorb any information from source.
   bool update_from(Node_Notes* source) {
     bool changed = false;
-    if (source != NULL) {
-      if (source->jvms() != NULL) {
+    if (source != nullptr) {
+      if (source->jvms() != nullptr) {
         set_jvms(source->jvms());
         changed = true;
       }
@@ -1800,22 +1805,22 @@ Compile::locate_node_notes(GrowableArray<Node_Notes*>* arr,
                            int idx, bool can_grow) {
   assert(idx >= 0, "oob");
   int block_idx = (idx >> _log2_node_notes_block_size);
-  int grow_by = (block_idx - (arr == NULL? 0: arr->length()));
+  int grow_by = (block_idx - (arr == nullptr? 0: arr->length()));
   if (grow_by >= 0) {
-    if (!can_grow) return NULL;
+    if (!can_grow) return nullptr;
     grow_node_notes(arr, grow_by + 1);
   }
-  if (arr == NULL) return NULL;
+  if (arr == nullptr) return nullptr;
   // (Every element of arr is a sub-array of length _node_notes_block_size.)
   return arr->at(block_idx) + (idx & (_node_notes_block_size-1));
 }
 
 inline bool
 Compile::set_node_notes_at(int idx, Node_Notes* value) {
-  if (value == NULL || value->is_clear())
+  if (value == nullptr || value->is_clear())
     return false;  // nothing to write => write nothing
   Node_Notes* loc = locate_node_notes(_node_note_array, idx, true);
-  assert(loc != NULL, "");
+  assert(loc != nullptr, "");
   return loc->update_from(value);
 }
 
@@ -1830,13 +1835,13 @@ protected:
   const Type* const _type;
 public:
   void set_type(const Type* t) {
-    assert(t != NULL, "sanity");
+    assert(t != nullptr, "sanity");
     debug_only(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
     *(const Type**)&_type = t;   // cast away const-ness
     // If this node is in the hash table, make sure it doesn't need a rehash.
     assert(check_hash == NO_HASH || check_hash == hash(), "type change must preserve hash code");
   }
-  const Type* type() const { assert(_type != NULL, "sanity"); return _type; };
+  const Type* type() const { assert(_type != nullptr, "sanity"); return _type; };
   TypeNode( const Type *t, uint required ) : Node(required), _type(t) {
     init_class_id(Class_Type);
   }

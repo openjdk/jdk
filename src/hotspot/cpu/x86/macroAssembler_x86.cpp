@@ -5132,6 +5132,11 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
 }
 
+void MacroAssembler::load_klass_check_null(Register dst, Register src, Register tmp) {
+  null_check(src, oopDesc::klass_offset_in_bytes());
+  load_klass(dst, src, tmp);
+}
+
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);

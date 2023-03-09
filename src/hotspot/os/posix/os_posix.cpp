@@ -824,10 +824,6 @@ int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 
-struct hostent* os::get_host_by_name(char* name) {
-  return ::gethostbyname(name);
-}
-
 void os::exit(int num) {
   ALLOW_C_FUNCTION(::exit, ::exit(num);)
 }
@@ -2023,9 +2019,10 @@ void os::die() {
     // For TimeoutInErrorHandlingTest.java, we just kill the VM
     // and don't take the time to generate a core file.
     ::raise(SIGKILL);
-  } else {
-    ::abort();
+    // ::raise is not noreturn, even though with SIGKILL it definitely won't
+    // return.  Hence "fall through" to ::abort, which is declared noreturn.
   }
+  ::abort();
 }
 
 const char* os::file_separator() { return "/"; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -833,6 +833,10 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     __ move(LIR_OprFact::doubleConst(-0.0), tmp);
   }
 #endif
+  if (x->id() == vmIntrinsics::_floatToFloat16) {
+    tmp = new_register(T_FLOAT);
+    __ move(LIR_OprFact::floatConst(-0.0), tmp);
+  }
 
   switch(x->id()) {
     case vmIntrinsics::_dabs:
@@ -841,6 +845,12 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dsqrt:
     case vmIntrinsics::_dsqrt_strict:
       __ sqrt(calc_input, calc_result, LIR_OprFact::illegalOpr);
+      break;
+    case vmIntrinsics::_floatToFloat16:
+      __ f2hf(calc_input, calc_result, tmp);
+      break;
+    case vmIntrinsics::_float16ToFloat:
+      __ hf2f(calc_input, calc_result, LIR_OprFact::illegalOpr);
       break;
     default:
       ShouldNotReachHere();

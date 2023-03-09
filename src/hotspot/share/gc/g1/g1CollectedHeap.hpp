@@ -67,7 +67,6 @@
 
 // Forward declarations
 class G1Allocator;
-class G1ArchiveAllocator;
 class G1BatchedTask;
 class G1CardTableEntryClosure;
 class G1ConcurrentMark;
@@ -244,9 +243,6 @@ public:
   size_t bytes_used_during_gc() const { return _bytes_used_during_gc; }
 
 private:
-  // Class that handles archive allocation ranges.
-  G1ArchiveAllocator* _archive_allocator;
-
   // GC allocation statistics policy for survivors.
   G1EvacStats _survivor_evac_stats;
 
@@ -699,26 +695,6 @@ public:
   // this for a particular region at once.
   void free_humongous_region(HeapRegion* hr,
                              FreeRegionList* free_list);
-
-  // Facility for allocating in 'archive' regions in high heap memory and
-  // recording the allocated ranges. These should all be called from the
-  // VM thread at safepoints, without the heap lock held. They can be used
-  // to create and archive a set of heap regions which can be mapped at the
-  // same fixed addresses in a subsequent JVM invocation.
-  void begin_archive_alloc_range(bool open = false);
-
-  // Check if the requested size would be too large for an archive allocation.
-  bool is_archive_alloc_too_large(size_t word_size);
-
-  // Allocate memory of the requested size from the archive region. This will
-  // return NULL if the size is too large or if no memory is available. It
-  // does not trigger a garbage collection.
-  HeapWord* archive_mem_allocate(size_t word_size);
-
-  // Optionally aligns the end address and returns the allocated ranges in
-  // an array of MemRegions in order of ascending addresses.
-  void end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
-                               size_t end_alignment_in_bytes = 0);
 
   // Facility for allocating a fixed range within the heap and marking
   // the containing regions as 'archive'. For use at JVM init time, when the

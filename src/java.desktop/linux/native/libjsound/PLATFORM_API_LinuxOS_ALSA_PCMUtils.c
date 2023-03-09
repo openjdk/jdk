@@ -75,7 +75,7 @@ int iteratePCMDevices(DeviceIteratorPtr iterator, void* userData) {
             // try to get card info
             card = snd_pcm_info_get_card(pcminfo);
             if (card >= 0) {
-                sprintf(devname, ALSA_HARDWARE_CARD, card);
+                snprintf(devname, sizeof(devname), ALSA_HARDWARE_CARD, card);
                 if (snd_ctl_open(&handle, devname, SND_CTL_NONBLOCK) >= 0) {
                     if (snd_ctl_card_info(handle, cardinfo) >= 0) {
                         defcardinfo = cardinfo;
@@ -101,7 +101,7 @@ int iteratePCMDevices(DeviceIteratorPtr iterator, void* userData) {
         if (card < 0) {
             break;
         }
-        sprintf(devname, ALSA_HARDWARE_CARD, card);
+        snprintf(devname, sizeof(devname), ALSA_HARDWARE_CARD, card);
         TRACE1("Opening alsa device \"%s\"...\n", devname);
         err = snd_ctl_open(&handle, devname, SND_CTL_NONBLOCK);
         if (err < 0) {
@@ -185,7 +185,7 @@ int deviceInfoIterator(UINT32 deviceID, snd_pcm_info_t* pcminfo,
         *desc->deviceID = deviceID;
         buffer[0]=' '; buffer[1]='[';
         // buffer[300] is enough to store the actual device string w/o overrun
-        getDeviceStringFromDeviceID(&buffer[2], deviceID, usePlugHw, ALSA_PCM);
+        getDeviceStringFromDeviceID(&buffer[2], sizeof(buffer) - 2, deviceID, usePlugHw, ALSA_PCM);
         strncat(buffer, "]", sizeof(buffer) - strlen(buffer) - 1);
         strncpy(desc->name,
                 (cardinfo != NULL)
@@ -217,7 +217,7 @@ int openPCMfromDeviceID(int deviceID, snd_pcm_t** handle, int isSource, int hard
     int ret;
 
     initAlsaSupport();
-    getDeviceStringFromDeviceID(buffer, deviceID, !hardware, ALSA_PCM);
+    getDeviceStringFromDeviceID(buffer, sizeof(buffer), deviceID, !hardware, ALSA_PCM);
 
     TRACE1("Opening ALSA device %s\n", buffer);
     ret = snd_pcm_open(handle, buffer,
