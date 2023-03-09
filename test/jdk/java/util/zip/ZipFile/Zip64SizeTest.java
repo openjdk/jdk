@@ -161,8 +161,8 @@ public class Zip64SizeTest {
     }
 
     /**
-     * An OutputStream which creates sparse holes contents from EMPTY_BYTES
-     * is written to it.
+     * An OutputStream which creates sparse holes when contents
+     * from EMPTY_BYTES is written to it.
      */
     private static class SparseOutputStream extends FilterOutputStream {
         private final FileChannel channel;
