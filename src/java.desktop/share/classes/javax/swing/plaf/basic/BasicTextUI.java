@@ -762,6 +762,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         if (dropCaret != null) {
             dropCaret.paint(g);
         }
+        Toolkit.getDefaultToolkit().sync();
     }
 
     // --- ComponentUI methods --------------------------------------------
