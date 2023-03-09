@@ -1388,6 +1388,10 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
 }
 
 instanceOop InstanceKlass::allocate_instance(InstanceKlass* ik, TRAPS) {
+  if (ik == nullptr) {
+    ResourceMark rm(THREAD);
+    THROW_(vmSymbols::java_lang_InstantiationException(), nullptr);
+  }
   ik->check_valid_for_instantiation(false, CHECK_NULL);
   ik->initialize(CHECK_NULL);
   return ik->allocate_instance(THREAD);
