@@ -3985,8 +3985,8 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
 
   // Fill in the bottom_type where requested
   if (inst->captures_bottom_type(_globalNames)) {
-    if (strncmp("MachCall", inst->mach_base_class(_globalNames), strlen("MachCall"))
-      && strncmp("MachIf", inst->mach_base_class(_globalNames), strlen("MachIf"))) {
+    if (strncmp("MachCall", inst->mach_base_class(_globalNames), strlen("MachCall")) != 0
+      && strncmp("MachIf", inst->mach_base_class(_globalNames), strlen("MachIf")) != 0) {
       fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
     }
   }
