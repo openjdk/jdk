@@ -59,10 +59,11 @@ public class Zip64SizeTest {
     /**
      * Validate that if the size of a ZIP entry exceeds 0xFFFFFFFF, that the
      * correct size is returned from the ZIP64 Extended information.
+     *
      * @throws IOException
      */
     @Test
-    private static void validateZipEntrySizes() throws IOException {
+    public static void validateZipEntrySizes() throws IOException {
         createZipFile();
         System.out.println("Validating Zip Entry Sizes");
         try (ZipFile zip = new ZipFile(ZIP_FILE_NAME)) {
