@@ -1147,12 +1147,11 @@ public final class ProcessBuilder
             if (logger.isLoggable(System.Logger.Level.DEBUG)) {
                 boolean detail = logger.isLoggable(System.Logger.Level.TRACE);
                 var level = (detail) ? System.Logger.Level.TRACE : System.Logger.Level.DEBUG;
-                var cmdargs = (detail) ? String.join(" ", cmdarray) : cmdarray[0];
+                var cmdargs = (detail) ? String.join("\" \"", cmdarray) : cmdarray[0];
                 RuntimeException stackTraceEx = new RuntimeException("ProcessBuilder.start() debug");
-                LOGGER.log(level, "ProcessBuilder.start(): " +
-                                "cmd: " + cmdargs +
-                                ", dir: " + dir +
-                                ", pid: " + process.pid(),
+                LOGGER.log(level, "ProcessBuilder.start(): pid: " + process.pid() +
+                        ", dir: " + dir +
+                        ", cmd: \"" + cmdargs + "\"",
                         stackTraceEx);
             }
             return process;

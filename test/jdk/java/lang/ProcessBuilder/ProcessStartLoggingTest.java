@@ -44,6 +44,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ProcessStartLoggingTest {
 
+    private final static int NORMAL_STATUS = 0;
+    private final static int ERROR_STATUS = 1;
+
     private static final String TEST_JDK = System.getProperty("test.jdk");
     private static final String TEST_SRC = System.getProperty("test.src");
 
@@ -76,55 +79,53 @@ public class ProcessStartLoggingTest {
      * @return a stream of arguments for parameterized test
      */
     private static Stream<Arguments> logParamProvider() {
-        File nullDirectory = null;
-        File thisDirectory = new File(".");
 
         return Stream.of(
                 // Logging enabled with level TRACE
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
-                                Path.of(TEST_SRC, "ProcessLogging-FINER.properties").toString(),
+                                        Path.of(TEST_SRC, "ProcessLogging-FINER.properties").toString(),
                                 "-Ddirectory=."),
                         List.of("echo", "echo0"),
-                        "ProcessBuilder.start(): cmd: echo echo0, dir: ., pid:",
-                        0),
+                        NORMAL_STATUS,
+                        "dir: ., cmd: \"echo\" \"echo0\""),
                 // Logging enabled with level DEBUG
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
-                                Path.of(TEST_SRC, "ProcessLogging-FINE.properties").toString(),
+                                        Path.of(TEST_SRC, "ProcessLogging-FINE.properties").toString(),
                                 "-Ddirectory=."),
                         List.of("echo", "echo1"),
-                        "ProcessBuilder.start(): cmd: echo, dir: ., pid:",
-                        0),
-                // Logging disabled due to level
+                        NORMAL_STATUS,
+                        "dir: ., cmd: \"echo\""),
+                // Logging disabled due to level INFO
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
                                 Path.of(TEST_SRC, "ProcessLogging-INFO.properties").toString()),
                         List.of("echo", "echo2"),
-                        "",
-                        0),
-                // Console logger
+                        NORMAL_STATUS,
+                        ""),
+                // Console logger DEBUG
                 Arguments.of(List.of("--limit-modules", "java.base",
                                 "-Djdk.system.logger.level=DEBUG"),
                         List.of("echo", "echo3"),
-                        "ProcessBuilder.start(): cmd: echo, dir: null, pid:",
-                        0),
-                // Console logger
+                        NORMAL_STATUS,
+                        "dir: null, cmd: \"echo\""),
+                // Console logger TRACE
                 Arguments.of(List.of("--limit-modules", "java.base",
                                 "-Djdk.system.logger.level=TRACE",
                                 "-Ddirectory=."),
                         List.of("echo", "echo4"),
-                        "ProcessBuilder.start(): cmd: echo echo4, dir: ., pid:",
-                        0),
-                // Console logger
+                        NORMAL_STATUS,
+                        "dir: ., cmd: \"echo\" \"echo4\""),
+                // No Logging configured
                 Arguments.of(List.of(),
                         List.of("echo", "echo5"),
-                        "",
-                        0),
+                        NORMAL_STATUS,
+                        ""),
                 // Throwing Handler
                 Arguments.of(List.of("-DThrowingHandler",
                                 "-Djava.util.logging.config.file=" +
                                         Path.of(TEST_SRC, "ProcessLogging-FINE.properties").toString()),
                         List.of("echo", "echo6"),
-                        "Exception in thread \"main\" java.lang.RuntimeException: Exception in publish",
-                        1)
+                        ERROR_STATUS,
+                        "Exception in thread \"main\" java.lang.RuntimeException: Exception in publish")
         );
     }
 
@@ -138,7 +139,7 @@ public class ProcessStartLoggingTest {
     @ParameterizedTest
     @MethodSource("logParamProvider")
     public void checkLogger(List<String> logArgs, List<String> childArgs,
-                            String expectMessage, int expectedStatus) {
+                            int expectedStatus, String expectMessage) {
         ProcessBuilder pb = new ProcessBuilder();
         pb.redirectErrorStream(true);
 
