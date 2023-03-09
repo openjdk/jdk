@@ -38,9 +38,10 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
+import static jdk.internal.classfile.Classfile.*;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
@@ -158,10 +159,9 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 if (resource != null &&
                     resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
                     byte[] bytes = resource.contentBytes();
-                    ClassReader cr = newClassReader(path, bytes);
-                    if (Arrays.stream(cr.getInterfaces())
-                        .anyMatch(i -> i.contains(METAINFONAME)) &&
-                        stripUnsupportedLocales(bytes, cr)) {
+                    if (newClassReader(path, bytes).interfaces().stream()
+                        .anyMatch(i -> i.asInternalName().contains(METAINFONAME)) &&
+                        stripUnsupportedLocales(bytes)) {
                         resource = resource.copyWithContent(bytes);
                     }
                 }
@@ -269,26 +269,46 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             .toList();
     }
 
-    private boolean stripUnsupportedLocales(byte[] bytes, ClassReader cr) {
-        boolean[] modified = new boolean[1];
-
-        IntStream.range(1, cr.getItemCount())
-            .map(item -> cr.getItem(item))
-            .forEach(itemIndex -> {
-                if (bytes[itemIndex - 1] == 1 &&         // UTF-8
-                    bytes[itemIndex + 2] == (byte)' ') { // fast check for leading space
-                    int length = cr.readUnsignedShort(itemIndex);
-                    byte[] b = new byte[length];
-                    System.arraycopy(bytes, itemIndex + 2, b, 0, length);
-                    if (filterOutUnsupportedTags(b)) {
-                        // copy back
-                        System.arraycopy(b, 0, bytes, itemIndex + 2, length);
-                        modified[0] = true;
+    private boolean stripUnsupportedLocales(byte[] bytes) {
+        boolean modified = false;
+        // I haven't found a way how to change content of existing CP entries or get entry offset to the byteocde array using Bytecode lib
+        // so scanning CP entries directly
+        final int cpLength = (bytes[8] << 8) + (int)bytes[9];
+        int offset = 10;
+        for (int cpSlot=1; cpSlot<cpLength; cpSlot++) {
+            switch (bytes[offset]) { //entry tag
+                case TAG_UTF8 -> {
+                    final int length = (bytes[offset+1] << 8) + (int)bytes[offset+2];
+                    if (bytes[offset + 3] == (byte)' ') { // fast check for leading space
+                        byte[] b = new byte[length];
+                        System.arraycopy(bytes, offset + 3, b, 0, length);
+                        if (filterOutUnsupportedTags(b)) {
+                            // copy back
+                            System.arraycopy(b, 0, bytes, offset + 3, length);
+                            modified = true;
+                        }
                     }
+                    offset += 3 + length;
                 }
-            });
-
-        return modified[0];
+                case TAG_CLASS,
+                        TAG_STRING,
+                        TAG_METHODTYPE,
+                        TAG_MODULE,
+                        TAG_PACKAGE -> offset += 3;
+                case TAG_METHODHANDLE -> offset += 4;
+                case TAG_INTEGER,
+                        TAG_FLOAT,
+                        TAG_FIELDREF,
+                        TAG_METHODREF,
+                        TAG_INTERFACEMETHODREF,
+                        TAG_NAMEANDTYPE,
+                        TAG_CONSTANTDYNAMIC,
+                        TAG_INVOKEDYNAMIC -> offset += 5;
+                case TAG_LONG,
+                        TAG_DOUBLE -> {offset += 9; cpSlot++;} //additional slot for double and long entries
+            }
+        }
+        return modified;
     }
 
     private boolean filterOutUnsupportedTags(byte[] b) {

@@ -25,9 +25,9 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.function.Predicate;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.Classfile;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -59,10 +59,7 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                     if (path.endsWith("module-info.class")) {
                         // XXX. Do we have debug info? Is Asm ready for module-info?
                     } else {
-                        ClassReader reader = newClassReader(path, resource);
-                        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-                        reader.accept(writer, ClassReader.SKIP_DEBUG);
-                        byte[] content = writer.toByteArray();
+                        byte[] content = newClassReader(path, resource, Classfile.Option.processDebug(false)).transform(ClassTransform.ACCEPT_ALL);
                         res = resource.copyWithContent(content);
                     }
                 }
