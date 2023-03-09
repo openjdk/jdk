@@ -970,8 +970,11 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   if (!VerifyBeforeGC) {
     return;
   }
+  if (!G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyFull)) {
+    return;
+  }
   _verifier->verify_region_sets_optional();
-  _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
+  _verifier->verify_before_gc();
   _verifier->verify_bitmap_clear(true /* above_tams_only */);
 }
 
@@ -1009,9 +1012,12 @@ void G1CollectedHeap::verify_after_full_collection() {
   if (!VerifyAfterGC) {
     return;
   }
+  if (!G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyFull)) {
+    return;
+  }
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
-  _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
+  _verifier->verify_after_gc();
   _verifier->verify_bitmap_clear(false /* above_tams_only */);
 
   // At this point there should be no regions in the
@@ -2573,11 +2579,14 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
   if (!VerifyBeforeGC) {
     return;
   }
+  if (!G1HeapVerifier::should_verify(type)) {
+    return;
+  }
   Ticks start = Ticks::now();
   _verifier->prepare_for_verify();
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
-  _verifier->verify_before_gc(type);
+  _verifier->verify_before_gc();
   verify_numa_regions("GC Start");
   phase_times()->record_verify_before_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
@@ -2586,8 +2595,11 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   if (!VerifyAfterGC) {
     return;
   }
+  if (!G1HeapVerifier::should_verify(type)) {
+    return;
+  }
   Ticks start = Ticks::now();
-  _verifier->verify_after_gc(type);
+  _verifier->verify_after_gc();
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
   phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);

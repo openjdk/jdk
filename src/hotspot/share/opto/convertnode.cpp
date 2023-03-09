@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "opto/matcher.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
-#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -165,15 +165,12 @@ const Type* ConvF2DNode::Value(PhaseGVN* phase) const {
 //------------------------------Value------------------------------------------
 const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
-  if( t == Type::TOP ) return Type::TOP;
-  if( t == Type::FLOAT ) return TypeInt::SHORT;
-  const TypeF *tf = t->is_float_constant();
-  return TypeInt::make( SharedRuntime::f2hf( tf->getf() ) );
-}
+  if (t == Type::TOP) return Type::TOP;
+  if (t == Type::FLOAT) return TypeInt::SHORT;
+  if (StubRoutines::f2hf_adr() == nullptr) return bottom_type();
 
-//------------------------------Identity---------------------------------------
-Node* ConvF2HFNode::Identity(PhaseGVN* phase) {
-  return (in(1)->Opcode() == Op_ConvHF2F) ? in(1)->in(1) : this;
+  const TypeF *tf = t->is_float_constant();
+  return TypeInt::make( StubRoutines::f2hf(tf->getf()) );
 }
 
 //=============================================================================
@@ -238,11 +235,14 @@ Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Value------------------------------------------
 const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
-  if( t == Type::TOP ) return Type::TOP;
-  if( t == TypeInt::SHORT ) return Type::FLOAT;
-  const TypeInt *ti = t->is_int();
-  if ( ti->is_con() ) return TypeF::make( SharedRuntime::hf2f( ti->get_con() ) );
+  if (t == Type::TOP) return Type::TOP;
+  if (t == TypeInt::SHORT) return Type::FLOAT;
+  if (StubRoutines::hf2f_adr() == nullptr) return bottom_type();
 
+  const TypeInt *ti = t->is_int();
+  if (ti->is_con()) {
+    return TypeF::make( StubRoutines::hf2f(ti->get_con()) );
+  }
   return bottom_type();
 }
 
