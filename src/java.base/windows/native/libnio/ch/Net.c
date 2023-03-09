@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_shouldSetBothIPv4AndIPv6Options0(JNIEnv* env, jclass cl)
 {
-    /* Set both IPv4 and IPv6 socket options when setting multicast options */
+    /* Set both IPv4 and IPv6 socket options when setting IPPROTO_IPV6 options */
     return JNI_TRUE;
 }
 

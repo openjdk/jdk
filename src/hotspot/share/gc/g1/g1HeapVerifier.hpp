@@ -66,9 +66,9 @@ public:
   void verify_region_sets_optional() { DEBUG_ONLY(verify_region_sets();) }
 
   void prepare_for_verify();
-  void verify(G1VerifyType type, VerifyOption vo, const char* msg);
-  void verify_before_gc(G1VerifyType type);
-  void verify_after_gc(G1VerifyType type);
+  void verify(VerifyOption vo, const char* msg);
+  void verify_before_gc();
+  void verify_after_gc();
 
   void verify_bitmap_clear(bool above_tams_only);
 

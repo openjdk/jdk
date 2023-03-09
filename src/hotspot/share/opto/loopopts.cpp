@@ -1347,8 +1347,8 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
         return; // Compare must be in same blk as if
       }
     } else if (iff->is_CMove()) { // Trying to split-up a CMOVE
-      // Can't split CMove with different control edge.
-      if (iff->in(0) != NULL && iff->in(0) != n_ctrl ) {
+      // Can't split CMove with different control.
+      if (get_ctrl(iff) != n_ctrl) {
         return;
       }
       if (get_ctrl(iff->in(2)) == n_ctrl ||
