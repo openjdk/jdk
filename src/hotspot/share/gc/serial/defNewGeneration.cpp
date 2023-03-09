@@ -284,15 +284,15 @@ class KeepAliveClosure: public OopClosure {
   template <class T>
   void do_oop_work(T* p) {
     oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
+    assert(is_in_young_gen(obj), "in young-gen");
+    assert(!_young_gen->to()->is_in_reserved(obj), "in eden/from");
 
-    if (is_in_young_gen(obj)) {
-      oop new_obj = obj->is_forwarded() ? obj->forwardee()
-                                        : _young_gen->copy_to_survivor_space(obj);
-      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
+    oop new_obj = obj->is_forwarded() ? obj->forwardee()
+                                      : _young_gen->copy_to_survivor_space(obj);
+    RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
-      if (is_in_young_gen(new_obj) && !is_in_young_gen(p)) {
-        _rs->inline_write_ref_field_gc(p);
-      }
+    if (is_in_young_gen(new_obj) && !is_in_young_gen(p)) {
+      _rs->inline_write_ref_field_gc(p);
     }
   }
 public:
@@ -621,7 +621,12 @@ void DefNewGeneration::ref_processor_init() {
   assert(_ref_processor == nullptr, "a reference processor already exists");
   assert(!_reserved.is_empty(), "empty generation?");
   _span_based_discoverer.set_span(_reserved);
-  _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
+  static IsAliveClosure is_alive_closure(this);
+  _ref_processor = new ReferenceProcessor(&_span_based_discoverer,
+                                          1,                        // mt processing degree
+                                          1,                        // mt discovery degree
+                                          false,                    // concurrent_discovery
+                                          &is_alive_closure);
 }
 
 size_t DefNewGeneration::capacity() const {
