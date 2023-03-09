@@ -191,7 +191,6 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
       header_size += base_archive_name_size;
       base_archive_name_offset = c_header_size;
     }
-    FREE_C_HEAP_ARRAY(const char, default_base_archive_name);
   }
   ResourceMark rm;
   GrowableArray<const char*>* app_cp_array = create_dumptime_app_classpath_array();
