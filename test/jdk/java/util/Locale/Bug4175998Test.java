@@ -27,7 +27,7 @@
  * @library /java/text/testlib
  * @compile -encoding ascii Bug4175998Test.java
  * @run main Bug4175998Test
- * @bug 4175998
+ * @bug 4175998 8303917
  */
 
 /*
@@ -54,25 +54,23 @@ import java.util.*;
  */
 public class Bug4175998Test extends IntlTest {
     public static void main(String[] args) throws Exception {
-//        generateTables();    //uncomment this to regenerate data tables
         new Bug4175998Test().run(args);
+//        generateTables();    //uncomment this to regenerate data tables
     }
 
     public void testIt() throws Exception {
         boolean bad = false;
-        String[] isoLanguageTable = Locale.getISOLanguages();
-        for (int i = 0; i < CODES.length; i++) {
-            final String[] localeCodes = CODES[i];
+
+        for (final String[] localeCodes : CODES) {
             final Locale l = Locale.of(localeCodes[0]);
             final String iso3 = l.getISO3Language();
-            if (!iso3.equals(localeCodes[1]) /*&& !iso3.equals(localeCodes[2])*/) {
-                logln("Locale("+l+") returned bad ISO3 language code."
-                        +"   Got '"+iso3+"' instead of '"+localeCodes[1]+"'"/*+" or '"+localeCodes[2]+"'"*/);
-                System.out.println("Locale("+l+") returned bad ISO3 language code."
-                        +"   Got '"+iso3+"' instead of '"+localeCodes[1]+"'");
+            if (!iso3.equals(localeCodes[1])) {
+                logln("Locale(" + l + ") returned bad ISO3 language code."
+                        + "   Got '" + iso3 + "' instead of '" + localeCodes[1] + "'");
                 bad = true;
             }
         }
+
         if (bad) {
             errln("Bad ISO3 language codes detected.");
         }
@@ -265,12 +263,8 @@ public class Bug4175998Test extends IntlTest {
          {"zu","zul","zul"},
     };
 
-
-//    The following code was used to generate the table above from the two ISO standards.
-//    It matches the language names (not the codes) from both standards to associate
-//    the two and three letter codes.
-
-    private static final String ISO639 = "/Users/jclu/Dev/ISO-639-2_utf-8.txt";
+    // The following code was used to generate the table above from the two ISO standards.
+    private static final String ISO639 = "ISO-639-2_utf-8.txt";
     private static void generateTables() {
         try {
             BufferedReader ISO639File = new BufferedReader(new FileReader(ISO639));
@@ -297,5 +291,5 @@ public class Bug4175998Test extends IntlTest {
     }
 }
 
-//        data from ftp://dkuug.dk on March 4, 1999
-//        -verified by http://www.triacom.com/archive/iso639-2.en.html
+// CODES generated from https://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt
+// on March 9th, 2023.

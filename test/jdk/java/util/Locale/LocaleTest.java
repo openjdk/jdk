@@ -463,7 +463,7 @@ public class LocaleTest extends IntlTest {
         String[] spotCheck1 = {"en", "es", "fr", "de", "it", "ja", "ko", "zh", "th",
             "he", "id", "iu", "ug", "yi", "za"};
 
-        if (test.length != 187) {
+        if (test.length != 188) {
             errln("Expected getISOLanguages() to return 188 languages; it returned " + test.length);
         } else {
             for (int i = 0; i < spotCheck1.length; i++) {
