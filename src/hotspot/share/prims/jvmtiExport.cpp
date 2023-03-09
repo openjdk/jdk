@@ -723,8 +723,8 @@ void JvmtiExport::post_vm_initialized() {
     }
   }
 
-  // OnLoad JVMTI agents are timestamped as part of posting the VMInit event above.
-  // For -Xrun agents and JVMTI agents with no VMInit callback, we ensure they are also timestamped.
+  // Agents are timestamped as part of posting the VMInit event above.
+  // For -Xrun agents and agents with no VMInit callback, we explicitly ensure they are also timestamped.
   // JVM_OnLoad and Agent_OnLoad callouts are performed too early for the proper timestamp logic.
   AgentList::timestamp();
 }

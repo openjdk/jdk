@@ -625,7 +625,12 @@ static bool match(JvmtiEnv* env, const Agent* agent, const void* os_module_addre
   if (agent->os_lib() != os_module_address) {
     return false;
   }
-  return agent->is_instrument_lib() ? is_env_jplis_agent(env, agent) : true;
+  if (agent->is_instrument_lib()) {
+    return is_env_jplis_agent(env, agent);
+  }
+  // The agent maps to the correct os library.
+  // But if this is another JvmtiEnv for the same agent, we can't time it twice.
+  return !agent->is_timestamped();
 }
 
 // The function pointer is a JVMTI callback function.
