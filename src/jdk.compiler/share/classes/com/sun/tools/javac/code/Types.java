@@ -2863,7 +2863,7 @@ public class Types {
     /**
      * Merge multiple abstract methods. The preferred method is a method that is a subsignature
      * of all the other signatures and whose return type is more specific {@link MostSpecificReturnCheck}.
-     * The resulting preferred method has a thrown clause that is the intersection of the merged
+     * The resulting preferred method has a throws clause that is the intersection of the merged
      * methods' clauses.
      */
     public Optional<Symbol> mergeAbstracts(List<Symbol> ambiguousInOrder, Type site, boolean sigCheck) {
@@ -3692,7 +3692,7 @@ public class Types {
      *
      * <p>A closure is a list of all the supertypes and interfaces of
      * a class or interface type, ordered by ClassSymbol.precedes
-     * (that is, subclasses come first, arbitrary but fixed
+     * (that is, subclasses come first, arbitrarily but fixed
      * otherwise).
      */
     private Map<Type,List<Type>> closureCache = new HashMap<>();
