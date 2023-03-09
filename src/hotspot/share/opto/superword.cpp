@@ -756,8 +756,8 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 
 // Check if we can create the pack pairs for mem_ref:
 // If required, enforce strict alignment requirements of hardware.
-// Else, check that we create no pair over the "alignment boundary" of
-// the memory slice, so that the indepencence of the pack is guaranteed.
+// Else, only enforce alignment within a memory slice, so that there cannot be any
+// memory-dependence between different vector "lanes".
 bool SuperWord::can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
                                  MemNode* best_align_to_mem_ref, int best_iv_adjustment,
                                  Node_List &align_to_refs) {
