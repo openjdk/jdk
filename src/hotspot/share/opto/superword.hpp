@@ -476,11 +476,13 @@ class SuperWord : public ResourceObj {
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
   void print_loop(bool whole);
   #endif
-  // Check if alignment of mem_ref permissible on hardware,
-  // and if it is consistent with the other packs of the .
-  bool is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
-                               MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                               Node_List &align_to_refs);
+  // Check if we can create the pack pairs for mem_ref:
+  // If required, enforce strict alignment requirements of hardware.
+  // Else, check that we create no pair over the "alignment boundary" of
+  // the memory slice, so that the indepencence of the pack is guaranteed.
+  bool can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                        MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                        Node_List &align_to_refs);
   // Check if alignment of mem_ref is consistent with the other packs of the same memory slice.
   bool is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.

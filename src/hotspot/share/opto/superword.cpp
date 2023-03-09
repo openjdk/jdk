@@ -642,12 +642,10 @@ void SuperWord::find_adjacent_refs() {
       }
     }
 
-    // Create initial pack pairs of memory operations for which
-    // alignment is set and vectors will be aligned.
-    bool create_pack = is_mem_ref_alignment_ok(mem_ref, iv_adjustment, align_to_ref_p,
-                                               best_align_to_mem_ref, best_iv_adjustment,
-                                               align_to_refs);
-    if (create_pack) {
+    if (can_create_pairs(mem_ref, iv_adjustment, align_to_ref_p,
+                         best_align_to_mem_ref, best_iv_adjustment,
+                         align_to_refs)) {
+      // Create initial pack pairs of memory operations for which alignment was set.
       for (uint i = 0; i < memops.size(); i++) {
         Node* s1 = memops.at(i);
         int align = alignment(s1);
@@ -667,7 +665,9 @@ void SuperWord::find_adjacent_refs() {
           }
         }
       }
-    } else { // Don't create unaligned pack
+    } else {
+      // Cannot create pairs for mem_ref. Reject all related memops forever.
+
       // First, remove remaining memory ops of the same memory slice from the list.
       for (int i = memops.size() - 1; i >= 0; i--) {
         MemNode* s = memops.at(i)->as_Mem();
@@ -754,18 +754,24 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 }
 #endif
 
-// Check if alignment of mem_ref permissible on hardware, and if it is consistent with
-// the other packs of the same memory slice.
-bool SuperWord::is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
-                                        MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                                        Node_List &align_to_refs) {
+// Check if we can create the pack pairs for mem_ref:
+// If required, enforce strict alignment requirements of hardware.
+// Else, check that we create no pair over the "alignment boundary" of
+// the memory slice, so that the indepencence of the pack is guaranteed.
+bool SuperWord::can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                                 MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                                 Node_List &align_to_refs) {
   bool is_aligned_with_best = memory_alignment(mem_ref, best_iv_adjustment) == 0;
 
   if (vectors_should_be_aligned()) {
-    // All vectors need to be vector length aligned. We use best_align_to_mem_ref to adjust
-    // the pre-loop limit such that all vector memory accesses are vector aligned. Hence, we
-    // must ensure that all mem_refs that we vectorize are aligned with best_align_to_mem_ref.
-    // These 3 conditions must be fulfilled:
+    // All vectors need to be memory aligned, modulo their vector_width. This is more strict
+    // than the hardware probably requires. Most hardware at most requires 4-byte alignment.
+    //
+    // In the pre-loop, we align best_align_to_mem_ref to its vector_length. To ensure that
+    // all mem_ref's are memory aligned modulo their vector_width, we only need to check that
+    // they are all aligned to best_align_to_mem_ref, modulo their vector_width. For that,
+    // we check the following 3 conditions.
+
     // (1) All packs are aligned with best_align_to_mem_ref.
     if (!is_aligned_with_best) {
       return false;
@@ -774,9 +780,8 @@ bool SuperWord::is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWP
     int vw = vector_width(mem_ref);
     int vw_best = vector_width(best_align_to_mem_ref);
     if (vw > vw_best) {
-      // Do not vectorize a memory access with more elements per vector
-      // if unaligned memory access is not allowed because number of
-      // iterations in pre-loop will be not enough to align it.
+      // We only align to vector_width of best_align_to_mem_ref during pre-loop.
+      // A mem_ref with a larger vector_width might thus not be vector_width aligned.
       return false;
     }
     // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
@@ -790,24 +795,31 @@ bool SuperWord::is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWP
     }
     return true;
   } else {
-    // Alignment is not required by the hardware. However, we still have to make sure that
-    // the memory accesses do not form a cyclic dependency.
+    // Alignment is not required by the hardware.
 
-    // We have a compiler hint, so do not check alignment with other packs. For now we trust
-    // the hint. We may create cyclic dependencies (packs that are not independent). Later
-    // we will filter out packs that are not internally independent.
-    // This allows us to vectorize cases like this (forward read):
-    // for (int i ...) { v[i] = v[i + 1] + 5; }
-    // And the filtering still removes non-vectorizable cases like this (forward write):
-    // for (int i ...) { v[i + 1] = v[i] + 5; }
+    // However, we need to ensure that the pack for mem_ref is independent, i.e. all members
+    // of the pack are mutually independent.
+
     if (_do_vector_loop) {
+      // Wait until combine_packs to check independence of packs. For now we just know that
+      // the adjacent pairs are independent. This allows us to vectorize when we do not have
+      // alignment modulo vector_width. For example (forward read):
+      // for (int i ...) { v[i] = v[i + 1] + 5; }
+      // The following will be filtered out in combine_packs (forward write):
+      // for (int i ...) { v[i + 1] = v[i] + 5; }
       return true;
     }
 
-    // An easy way to prevent cyclic dependencies is to require all mem_refs of the same slice
-    // to be exactly aligned. This allows us to vectorize these cases:
+    // If all mem_ref's are modulo vector_width aligned with all other mem_ref's of their
+    // memory slice, then the VectorLoad / VectorStore regions are either exactly overlapping
+    // or completely non-overlapping. This ensures that there cannot be memory-dependencies
+    // between different vector "lanes".
+    // During SuperWord::filter_packs -> SuperWord::profitable -> SuperWord::is_vector_use,
+    // we check that all inputs are vectors that match on every element (with some reasonable
+    // exceptions). This ensures that every "lane" is isomorpic and independent to all other
+    // "lanes". This allows us to vectorize these cases:
     // for (int i ...) { v[i] = v[i] + 5; }      // same alignment
-    // for (int i ...) { v[i] = v[i + 32] + 5; } // alignment modulo vector size
+    // for (int i ...) { v[i] = v[i + 32] + 5; } // alignment modulo vector_width
     if (same_memory_slice(mem_ref, best_align_to_mem_ref)) {
       return is_aligned_with_best;
     } else {
