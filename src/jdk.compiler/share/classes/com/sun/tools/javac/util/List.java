@@ -438,19 +438,10 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return (List<T>)list;
     }
 
-    // cache because java.util.Collections.emptyIterator() explicitly
-    // does not guarantee returning the same instance
-    private static final Iterator<?> EMPTYITERATOR = Collections.emptyIterator();
-
-    @SuppressWarnings("unchecked")
-    private static <A> Iterator<A> emptyIterator() {
-        return (Iterator<A>)EMPTYITERATOR;
-    }
-
     @Override
     public Iterator<A> iterator() {
         if (tail == null)
-            return emptyIterator();
+            return Iterators.emptyIterator();
         return new Iterator<A>() {
             List<A> elems = List.this;
             public boolean hasNext() {

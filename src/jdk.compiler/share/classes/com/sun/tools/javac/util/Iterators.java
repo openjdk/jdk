@@ -40,6 +40,15 @@ import java.util.function.Predicate;
  */
 public class Iterators {
 
+    // cache the result of java.util.Collections.emptyIterator(), which
+    // explicitly does not guarantee to return the same instance
+    private static final Iterator<?> EMPTY = Collections.emptyIterator();
+
+    @SuppressWarnings("unchecked")
+    public static <T> Iterator<T> emptyIterator() {
+        return (Iterator<T>) EMPTY;
+    }
+
     public static <I, O> Iterator<O> createCompoundIterator(Iterable<I> inputs, Function<I, Iterator<O>> converter) {
         return new CompoundIterator<>(inputs, converter);
     }
@@ -48,7 +57,7 @@ public class Iterators {
 
         private final Iterator<I> inputs;
         private final Function<I, Iterator<O>> converter;
-        private Iterator<O> currentIterator = Collections.emptyIterator();
+        private Iterator<O> currentIterator = emptyIterator();
 
         public CompoundIterator(Iterable<I> inputs, Function<I, Iterator<O>> converter) {
             this.inputs = inputs.iterator();
