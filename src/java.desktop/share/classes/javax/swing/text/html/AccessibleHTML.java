@@ -311,7 +311,7 @@ class AccessibleHTML implements Accessible {
             return this;
         }
 
-        public void setElementInfo(ElementInfo elementInfo) {
+        protected void setElementInfo(ElementInfo elementInfo) {
             this.elementInfo = elementInfo;
         }
 
