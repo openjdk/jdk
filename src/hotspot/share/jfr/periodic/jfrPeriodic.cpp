@@ -274,6 +274,7 @@ template <typename AgentEvent>
 static void send_agent_event(AgentEvent& event, const Agent* agent) {
   event.set_name(agent->name());
   event.set_options(agent->options());
+  event.set_dynamic(agent->is_dynamic());
   event.set_initialization(agent->initialization());
   event.set_initializationTime(agent->initialization_time());
   event.commit();
@@ -285,7 +286,6 @@ TRACE_REQUEST_FUNC(JavaAgent) {
     const Agent* agent = it.next();
     assert(agent->is_jplis(), "invariant");
     EventJavaAgent event;
-    event.set_initializationMethod(agent->is_dynamic() ? "agentmain" : "premain");
     send_agent_event(event, agent);
   }
 }
@@ -295,7 +295,6 @@ static void send_native_agent_events(const AgentList::Iterator& it) {
     const Agent* agent = it.next();
     assert(!agent->is_jplis(), "invariant");
     EventNativeAgent event;
-    event.set_dynamic(agent->is_dynamic());
     event.set_path(agent->os_lib_path());
     send_agent_event(event, agent);
   }

@@ -89,12 +89,12 @@ public final class TestAgentEvent {
             System.out.println(e);
             Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
             Events.assertField(e, "options").equal("foo=bar");
+            Events.assertField(e, "dynamic").equal(false);
             Instant initialization = e.getInstant("initialization");
             if (initialization.isAfter(r.getStartTime())) {
                 throw new Exception("Expected a static JavaAgent to be initialized before recording start");
             }
             Events.assertField(e, "initializationTime").atLeast(0L);
-            Events.assertField(e, "initializationMethod").equal("premain");
         }
     }
 
@@ -109,6 +109,11 @@ public final class TestAgentEvent {
             Events.assertField(e, "name").equal("jdwp");
             Events.assertField(e, "options").equal("transport=dt_socket,server=y,address=any,onjcmd=y");
             Events.assertField(e, "dynamic").equal(false);
+            Instant initialization = e.getInstant("initialization");
+            if (initialization.isAfter(r.getStartTime())) {
+                throw new Exception("Expected a static NativeAgent to be initialized before recording start");
+            }
+            Events.assertField(e, "initializationTime").atLeast(0L);
         }
     }
 
@@ -148,7 +153,6 @@ public final class TestAgentEvent {
                 Events.assertField(e, "initializationMethod").equal("agentmain");
                 Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
             }
-            // The periodic task writing events uses an iterator over agents in the order from newest to oldest.
             Events.assertField(events.get(0), "options").equal("bar=baz");
             Events.assertField(events.get(1), "options").equal(null);
             Events.assertField(events.get(2), "options").equal("");

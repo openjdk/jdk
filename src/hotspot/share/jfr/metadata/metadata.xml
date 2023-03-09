@@ -1176,19 +1176,19 @@
     thread="false" startTime="false" period="endChunk" stackTrace="false">
     <Field type="string" name="name" label="Name" />
     <Field type="string" name="options" label="Options" />
-    <Field type="Ticks" name="initialization" label="Initialization" description="The time the initialization method exported by the agent was invoked by the JVM" />
+    <Field type="boolean" name="dynamic" label="Dynamic" description="If the agent attached to the JVM dynamically during runtime, i.e. not at startup" />
+    <Field type="Ticks" name="initialization" label="Initialization" description="The time the JVM initialized the agent" />
     <Field type="Tickspan" name="initializationTime" label="Initialization Time" description="The duration of executing the initialization method exported by the agent" />
-    <Field type="string" name="initializationMethod" label="Initialization Method" description="The initialization method exported by the agent and invoked by the JVM" />
   </Event>
 
   <Event name="NativeAgent" category="Java Virtual Machine, Diagnostics" label="Native Agent" description="A native programming language agent making use of the JVMTI interface used by development, profiling and monitoring tools"
     thread="false" startTime="false" period="endChunk" stackTrace="false">
     <Field type="string" name="name" label="Name" />
     <Field type="string" name="options" label="Options" />
-    <Field type="string" name="path" label="Path" description="The path of the library" />
     <Field type="boolean" name="dynamic" label="Dynamic" description="If the library attached to the JVM dynamically during runtime, i.e. not at startup" />
     <Field type="Ticks" name="initialization" label="Initialization" description="The time the JVM initialized the agent" />
     <Field type="Tickspan" name="initializationTime" label="Initialization Time" description="The duration of executing the initialization function exported by the agent" />
+    <Field type="string" name="path" label="Path" description="The path of the library" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
