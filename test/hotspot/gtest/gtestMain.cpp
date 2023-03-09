@@ -92,6 +92,7 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
   JNIEnv* env;
 
   int ret = JNI_CreateJavaVM(jvm_ptr, (void**)&env, &args);
+  delete[] options;
   if (ret == JNI_OK) {
     // CreateJavaVM leaves WXExec context, while gtests
     // calls internal functions assuming running in WXWwrite.
