@@ -67,7 +67,7 @@ public interface MultiRunner extends Runnable {
         /**
          * Get execution controller for current thread.
          *
-         * @returns execution controller for current thread
+         * @return execution controller for current thread
          */
         public ExecutionController getExecutionController();
 }

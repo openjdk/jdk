@@ -449,6 +449,7 @@ class SuperWord : public ResourceObj {
   BasicType velt_basic_type(Node* n)         { return velt_type(n)->array_element_basic_type(); }
   void set_velt_type(Node* n, const Type* t) { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
   bool same_velt_type(Node* n1, Node* n2);
+  bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
   // my_pack
   Node_List* my_pack(Node* n)                 { return !in_bb(n) ? NULL : _node_info.adr_at(bb_idx(n))->_my_pack; }
@@ -475,12 +476,13 @@ class SuperWord : public ResourceObj {
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
   void print_loop(bool whole);
   #endif
-  // Check if alignment of mem_ref permissible on hardware, and if it is consistent with the other packs of same velt type.
+  // Check if alignment of mem_ref permissible on hardware,
+  // and if it is consistent with the other packs of the .
   bool is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
                                MemNode* best_align_to_mem_ref, int best_iv_adjustment,
                                Node_List &align_to_refs);
-  // Check if alignment of mem_ref is consistent with the other packs of same velt type.
-  bool is_mem_ref_aligned_with_same_velt_type(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
+  // Check if alignment of mem_ref is consistent with the other packs of the same memory slice.
+  bool is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.

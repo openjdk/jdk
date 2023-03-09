@@ -668,25 +668,25 @@ void SuperWord::find_adjacent_refs() {
         }
       }
     } else { // Don't create unaligned pack
-      // First, remove remaining memory ops of the same type from the list.
+      // First, remove remaining memory ops of the same memory slice from the list.
       for (int i = memops.size() - 1; i >= 0; i--) {
         MemNode* s = memops.at(i)->as_Mem();
-        if (same_velt_type(s, mem_ref)) {
+        if (same_memory_slice(s, mem_ref) || same_velt_type(s, mem_ref)) {
           memops.remove(i);
         }
       }
 
-      // Second, remove already constructed packs of the same type.
+      // Second, remove already constructed packs of the same memory slice.
       for (int i = _packset.length() - 1; i >= 0; i--) {
         Node_List* p = _packset.at(i);
         MemNode* s = p->at(0)->as_Mem();
-        if (same_velt_type(s, mem_ref)) {
+        if (same_memory_slice(s, mem_ref) || same_velt_type(s, mem_ref)) {
           remove_pack_at(i);
         }
       }
 
       // If needed find the best memory reference for loop alignment again.
-      if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
+      if (same_memory_slice(mem_ref, best_align_to_mem_ref) || same_velt_type(mem_ref, best_align_to_mem_ref)) {
         // Put memory ops from remaining packs back on memops list for
         // the best alignment search.
         uint orig_msize = memops.size();
@@ -755,7 +755,7 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 #endif
 
 // Check if alignment of mem_ref permissible on hardware, and if it is consistent with
-// the other packs of same velt type.
+// the other packs of the same memory slice.
 bool SuperWord::is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
                                         MemNode* best_align_to_mem_ref, int best_iv_adjustment,
                                         Node_List &align_to_refs) {
@@ -804,27 +804,27 @@ bool SuperWord::is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWP
       return true;
     }
 
-    // An easy way to prevent cyclic dependencies is to require all mem_refs of the same type
+    // An easy way to prevent cyclic dependencies is to require all mem_refs of the same slice
     // to be exactly aligned. This allows us to vectorize these cases:
     // for (int i ...) { v[i] = v[i] + 5; }      // same alignment
     // for (int i ...) { v[i] = v[i + 32] + 5; } // alignment modulo vector size
-    if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
+    if (same_memory_slice(mem_ref, best_align_to_mem_ref)) {
       return is_aligned_with_best;
     } else {
-      return is_mem_ref_aligned_with_same_velt_type(mem_ref, iv_adjustment, align_to_refs);
+      return is_mem_ref_aligned_with_same_memory_slice(mem_ref, iv_adjustment, align_to_refs);
     }
   }
 }
 
-// Check if alignment of mem_ref is consistent with the other packs of same velt type.
-bool SuperWord::is_mem_ref_aligned_with_same_velt_type(MemNode* mem_ref, int iv_adjustment,
-                                                       Node_List &align_to_refs) {
+// Check if alignment of mem_ref is consistent with the other packs of the same memory slice
+bool SuperWord::is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment,
+                                                          Node_List &align_to_refs) {
   for (uint i = 0; i < align_to_refs.size(); i++) {
     MemNode* mr = align_to_refs.at(i)->as_Mem();
     if (mr != mem_ref &&
-        same_velt_type(mr, mem_ref) &&
+        same_memory_slice(mr, mem_ref) &&
         memory_alignment(mr, iv_adjustment) != 0) {
-      // mem_ref is misaligned with mr, another ref of the same velt type.
+      // mem_ref is misaligned with mr, another ref of the same memory slice.
       return false;
     }
   }
@@ -1291,9 +1291,9 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
 
   // FIXME - co_locate_pack fails on Stores in different mem-slices, so
   // only pack memops that are in the same alias set until that's fixed.
-  if (_phase->C->get_alias_index(s1->as_Mem()->adr_type()) !=
-      _phase->C->get_alias_index(s2->as_Mem()->adr_type()))
+  if (!same_memory_slice(s1->as_Mem(), s2->as_Mem())) {
     return false;
+  }
   SWPointer p1(s1->as_Mem(), this, NULL, false);
   SWPointer p2(s2->as_Mem(), this, NULL, false);
   if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
@@ -3810,6 +3810,10 @@ bool SuperWord::same_velt_type(Node* n1, Node* n2) {
     return data_size(n1) == data_size(n2);
   }
   return vt1 == vt2;
+}
+
+bool SuperWord::same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const {
+  return _phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(best_align_to_mem_ref->adr_type());
 }
 
 //------------------------------in_packset---------------------------
