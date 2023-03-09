@@ -1583,19 +1583,22 @@ public:
   void poly1305_multiply_vec(const FloatRegister u[], const FloatRegister m[],
                              const FloatRegister r[], const FloatRegister rr[]);
 
-  void poly1305_multiply_foo(const FloatRegister u_v[],
-                              AbstractRegSet<FloatRegister> vregs,
-                              const RegPair u[], Register s[], Register r[]);
-
+  void poly1305_step_foo(const FloatRegister s[], const FloatRegister u[],
+                         const FloatRegister upper_bits, Register input_start);
+void poly1305_multiply_foo(const FloatRegister u_v[],
+                           AbstractRegSet<FloatRegister> remaining,
+                           const FloatRegister s_v[],
+                           const FloatRegister r_v[],
+                           const FloatRegister rr_v[]);
   void poly1305_reduce_foo(const FloatRegister u[], AbstractRegSet<FloatRegister> scratch);
 
   void mov26(FloatRegister d, Register s, int lsb);
   void expand26(Register d, Register r);
   void split26(const FloatRegister d[], Register s);
   void copy_3_to_5_regs(const FloatRegister d[],
-                                        Register s0, Register s1, Register s2);
+                        const Register s0, const Register s1, const Register s2);
   void copy_3_regs_to_5_elements(const FloatRegister d[],
-                                 Register s0, Register s1, Register s2);
+                                 const Register s0, const Register s1, const Register s2);
 
   void poly1305_reduce(const RegPair u[]);
   void poly1305_reduce_step(FloatRegister d, FloatRegister s, FloatRegister upper_bits, FloatRegister scratch);

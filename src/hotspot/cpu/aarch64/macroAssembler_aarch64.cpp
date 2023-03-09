@@ -6019,14 +6019,14 @@ void MacroAssembler::split26(const FloatRegister d[], Register s) {
 }
 
 void MacroAssembler::copy_3_to_5_regs(const FloatRegister d[],
-                                 Register s0, Register s1, Register s2) {
+                                 const Register s0, const Register s1, const Register s2) {
   split26(&d[0], s0);
   split26(&d[2], s1);
   mov(d[4], S, 0, s2);
 }
 
 void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
-                                 Register s0, Register s1, Register s2) {
+                                 const Register s0, const Register s1, const Register s2) {
   expand26(rscratch2, s0);
   mov(d[0], D, 0, rscratch2);
   expand26(rscratch2, s1);
@@ -6034,26 +6034,66 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
   mov(d[1], S, 0, s2);
 }
 
+void MacroAssembler::poly1305_step_foo(const FloatRegister s[], const FloatRegister u[],
+                                       const FloatRegister upper_bits, Register input_start) {
+  ld1(s[0], T1D, post(input_start, wordSize));
+  ld1(s[2], T1D, post(input_start, wordSize));
+
+  orr(s[3], T16B, s[2], s[2]); // copy s[2] -> s[3]
+
+  ushr(s[4], T2D, s[3], 64-26); // Top 26 bits into s[4]
+  ushr(s[3], T2D, s[3], 64-52); // Next 26 bits into s[3]
+  shl(s[2], T2D, s[2], 14);
+  ushr(s[1], T2D, s[1], 64-12); // s[1] is tmp
+  orr (s[2], T16B, s[2], s[1]); // Next 26 bits into s[2]
+  ushr(s[1], T2D, s[0], 26); // Next 26 bits into s[1]
+
+  for (int i = 0; i < 5; i++)
+    bic(s[i], T16B, s[i], upper_bits);
+  for (int i = 0; i < 5; i++)
+    addv(u[0], T2D, u[0], s[0]);
+}
+
+// void MacroAssembler::poly1305_multiply_foo(const FloatRegister u_v[],
+//                                            AbstractRegSet<FloatRegister> remaining,
+//                                            const RegPair u[], Register s[], Register r[]) {
+//   // auto vregs = remaining.begin();
+//   // FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++,
+//   //                         *vregs++, *vregs++};
+//   // FloatRegister r_v[] = {*vregs++, *vregs++};
+//   // FloatRegister rr_v[] = {*vregs++, *vregs++};
+
+//   // FloatRegister vtmp = *vregs++;
+
+//   // copy_3_to_5_regs(s_v, s[0], s[1], s[2]);
+//   // copy_3_regs_to_5_elements(r_v, r[0], r[1], r[2]);
+
+//   // 5·r -> rr
+//    shl(vtmp, T4S, r_v[0], 2);
+//   addv(rr_v[0], T4S, r_v[0], vtmp);
+//    shl(vtmp, T4S, r_v[1], 2);
+//   addv(rr_v[1], T4S, r_v[1], vtmp);
+
+//   poly1305_multiply_vec(u_v, s_v, r_v, rr_v);
+
+//   nop();
+// }
+
 void MacroAssembler::poly1305_multiply_foo(const FloatRegister u_v[],
                                            AbstractRegSet<FloatRegister> remaining,
-                                           const RegPair u[], Register s[], Register r[]) {
+                                           const FloatRegister s_v[],
+                                           const FloatRegister r_v[],
+                                           const FloatRegister rr_v[]) {
   auto vregs = remaining.begin();
-  FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++,
-                          *vregs++, *vregs++};
-  FloatRegister r_v[] = {*vregs++, *vregs++};
-  FloatRegister rr_v[] = {*vregs++, *vregs++};
+  // FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++,
+  //                         *vregs++, *vregs++};
+  // FloatRegister r_v[] = {*vregs++, *vregs++};
+  // FloatRegister rr_v[] = {*vregs++, *vregs++};
 
   FloatRegister vtmp = *vregs++;
 
-  copy_3_to_5_regs(s_v, s[0], s[1], s[2]);
-  copy_3_regs_to_5_elements(r_v, r[0], r[1], r[2]);
-
+  // copy_3_to_5_regs(s_v, s[0], s[1], s[2]);
   // 5·r -> rr
-   shl(vtmp, T4S, r_v[0], 2);
-  addv(rr_v[0], T4S, r_v[0], vtmp);
-   shl(vtmp, T4S, r_v[1], 2);
-  addv(rr_v[1], T4S, r_v[1], vtmp);
-
   poly1305_multiply_vec(u_v, s_v, r_v, rr_v);
 
   nop();
@@ -6071,8 +6111,6 @@ void MacroAssembler::poly1305_reduce_foo(const FloatRegister u[],
   auto r = scratch.begin();
   FloatRegister upper_bits = *r++, vtmp2 = *r++, vtmp3 = *r++;
   // Partial reduction mod 2**130 - 5
-  movi(upper_bits, T16B, 0xff);
-  shl(upper_bits, T2D, upper_bits, 26);  // upper_bits == 0xfffffffffc000000
 
   // Goll-Guerin reduction
   poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
