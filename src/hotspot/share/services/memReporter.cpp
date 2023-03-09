@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ int MemDetailReporter::report_malloc_sites() {
 
   const MallocSite* malloc_site;
   int num_omitted = 0;
-  while ((malloc_site = malloc_itr.next()) != NULL) {
+  while ((malloc_site = malloc_itr.next()) != nullptr) {
     // Don't report if site has never allocated less than one unit of whatever our scale is
     if (scale() > 1 && amount_in_current_scale(malloc_site->size()) == 0
                        DEBUG_ONLY(&& amount_in_current_scale(malloc_site->peak_size()) == 0)) {
@@ -345,7 +345,7 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
   outputStream* out = output();
   const VirtualMemoryAllocationSite*  virtual_memory_site;
   int num_omitted = 0;
-  while ((virtual_memory_site = virtual_memory_itr.next()) != NULL) {
+  while ((virtual_memory_site = virtual_memory_itr.next()) != nullptr) {
     // Don't report free sites; does not count toward omitted count.
     if (virtual_memory_site->reserved() == 0) {
       continue;
@@ -375,13 +375,13 @@ void MemDetailReporter::report_virtual_memory_map() {
   const ReservedMemoryRegion* rgn;
 
   output()->print_cr("Virtual memory map:");
-  while ((rgn = itr.next()) != NULL) {
+  while ((rgn = itr.next()) != nullptr) {
     report_virtual_memory_region(rgn);
   }
 }
 
 void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion* reserved_rgn) {
-  assert(reserved_rgn != NULL, "NULL pointer");
+  assert(reserved_rgn != nullptr, "null pointer");
 
   // Don't report if size is too small
   if (amount_in_current_scale(reserved_rgn->size()) == 0) return;
@@ -408,14 +408,14 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
       // One region spanning the entire reserved region, with the same stack trace.
       // Don't print this regions because the "reserved and committed" line above
       // already indicates that the region is committed.
-      assert(itr.next() == NULL, "Unexpectedly more than one regions");
+      assert(itr.next() == nullptr, "Unexpectedly more than one regions");
       return;
     }
   }
 
   CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
   const CommittedMemoryRegion* committed_rgn;
-  while ((committed_rgn = itr.next()) != NULL) {
+  while ((committed_rgn = itr.next()) != nullptr) {
     // Don't report if size is too small
     if (amount_in_current_scale(committed_rgn->size()) == 0) continue;
     stack = committed_rgn->call_stack();
@@ -734,11 +734,11 @@ void MemDetailDiffReporter::diff_malloc_sites() const {
   const MallocSite* early_site   = early_itr.next();
   const MallocSite* current_site = current_itr.next();
 
-  while (early_site != NULL || current_site != NULL) {
-    if (early_site == NULL) {
+  while (early_site != nullptr || current_site != nullptr) {
+    if (early_site == nullptr) {
       new_malloc_site(current_site);
       current_site = current_itr.next();
-    } else if (current_site == NULL) {
+    } else if (current_site == nullptr) {
       old_malloc_site(early_site);
       early_site = early_itr.next();
     } else {
@@ -765,11 +765,11 @@ void MemDetailDiffReporter::diff_virtual_memory_sites() const {
   const VirtualMemoryAllocationSite* early_site   = early_itr.next();
   const VirtualMemoryAllocationSite* current_site = current_itr.next();
 
-  while (early_site != NULL || current_site != NULL) {
-    if (early_site == NULL) {
+  while (early_site != nullptr || current_site != nullptr) {
+    if (early_site == nullptr) {
       new_virtual_memory_site(current_site);
       current_site = current_itr.next();
-    } else if (current_site == NULL) {
+    } else if (current_site == nullptr) {
       old_virtual_memory_site(early_site);
       early_site = early_itr.next();
     } else {
@@ -817,7 +817,7 @@ void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_
   size_t current_count, size_t early_size, size_t early_count, MEMFLAGS flags) const {
   outputStream* out = output();
 
-  assert(stack != NULL, "NULL stack");
+  assert(stack != nullptr, "null stack");
 
   if (diff_in_current_scale(current_size, early_size) == 0) {
       return;

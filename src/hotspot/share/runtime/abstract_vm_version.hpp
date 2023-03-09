@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 typedef enum {
   NoDetectedVirtualization,
   XenHVM,
+  XenPVHVM, // mix-mode on Linux aarch64
   KVM,
   VMWare,
   HyperV,
@@ -71,9 +72,10 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_build_number;
   static unsigned int _data_cache_line_flush_size;
 
+ public:
+
   static VirtualizationType _detected_virtualization;
 
- public:
   // Called as part of the runtime services initialization which is
   // called from the management module initialization (via init_globals())
   // after argument parsing and attaching of the main thread has

@@ -775,6 +775,15 @@ Stops the remote management agent.
 Impact: Low --- no impact
 .RE
 .TP
+\f[V]System.native_heap_info\f[R] (Linux only)
+Prints information about native heap usage through malloc_info(3).
+.RS
+.PP
+Impact: Low
+.PP
+Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
+.RE
+.TP
 \f[V]System.trim_native_heap\f[R] (Linux only)
 Attempts to free up memory by trimming the C-heap.
 .RS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ WeakProcessorTimes::WeakProcessorTimes(uint max_threads) :
   for (auto id : EnumRange<OopStorageSet::WeakId>()) {
     assert(size_t(wpt - _worker_data) < ARRAY_SIZE(_worker_data), "invariant");
     const char* description = OopStorageSet::storage(id)->name();
-    *wpt = new WorkerDataArray<double>(NULL, description, _max_threads);
+    *wpt = new WorkerDataArray<double>(nullptr, description, _max_threads);
     (*wpt)->create_thread_work_items("Dead", DeadItems);
     (*wpt)->create_thread_work_items("Total", TotalItems);
     wpt++;
@@ -137,7 +137,7 @@ WeakProcessorTimeTracker::WeakProcessorTimeTracker(WeakProcessorTimes* times) :
 {}
 
 WeakProcessorTimeTracker::~WeakProcessorTimeTracker() {
-  if (_times != NULL) {
+  if (_times != nullptr) {
     Ticks end_time = Ticks::now();
     _times->record_total_time_sec(elapsed_time_sec(_start_time, end_time));
   }
@@ -151,13 +151,13 @@ WeakProcessorParTimeTracker::WeakProcessorParTimeTracker(WeakProcessorTimes* tim
   _worker_id(worker_id),
   _start_time(Ticks::now())
 {
-  assert(_times == NULL || worker_id < _times->active_workers(),
+  assert(_times == nullptr || worker_id < _times->active_workers(),
          "Invalid worker_id %u", worker_id);
 }
 
 
 WeakProcessorParTimeTracker::~WeakProcessorParTimeTracker() {
-  if (_times != NULL) {
+  if (_times != nullptr) {
     double time_sec = elapsed_time_sec(_start_time, Ticks::now());
     _times->record_worker_time_sec(_worker_id, _storage_id, time_sec);
   }
@@ -184,7 +184,7 @@ void WeakProcessorTimes::log_summary(OopStorageSet::WeakId id, uint indent) cons
 
   for (uint i = 0; i < worker_data(id)->MaxThreadWorkItems; i++) {
     WorkerDataArray<size_t>* work_items = worker_data(id)->thread_work_items(i);
-    if (work_items != NULL) {
+    if (work_items != nullptr) {
       ls.print("%s", indents[indent + 1]);
       work_items->print_summary_on(&ls, true);
       log_details(work_items, indent + 1);

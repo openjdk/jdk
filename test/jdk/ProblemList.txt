@@ -126,7 +126,6 @@ java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-a
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
-javax/swing/dnd/7171812/bug7171812.java 8041447 macosx-all
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
 java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java 8198618 macosx-all
 java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java 6986252 macosx-all
@@ -523,8 +522,6 @@ javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-all
 
-javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
-
 javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
 
 ############################################################################
@@ -550,7 +547,7 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc6
 
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
 
-java/nio/channels/FileChannel/FileExtensionAndMap.java          8297292 generic-all
+jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
 ############################################################################
 
@@ -585,14 +582,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
-javax/net/ssl/SSLEngine/TestAllSuites.java                      8298874 generic-all
-javax/net/ssl/SSLEngine/IllegalRecordVersion.java               8298873 generic-all
-javax/net/ssl/SSLEngine/EngineCloseOnAlert.java                 8298868 generic-all
-javax/net/ssl/SSLEngine/ConnectionTest.java                     8298869 generic-all
-javax/net/ssl/SSLEngine/CheckStatus.java                        8298872 generic-all
-
-sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
@@ -619,7 +608,6 @@ sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
 
-java/security/Policy/Root/Root.java                             8299994 generic-all
 sun/security/provider/certpath/OCSP/OCSPNoContentLength.java    8300939 generic-all
 
 ############################################################################
@@ -746,12 +734,13 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 javax/script/Test7.java                                         8239361 generic-all
 
+jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
+
 ############################################################################
 
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
-jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all

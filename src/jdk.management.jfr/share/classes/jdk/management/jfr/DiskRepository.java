@@ -409,7 +409,9 @@ final class DiskRepository implements Closeable {
 
     public synchronized void setMaxAge(Duration maxAge) {
         this.maxAge = maxAge;
-        trimToAge(Instant.now().minus(maxAge));
+        if (maxAge != null) {
+            trimToAge(Instant.now().minus(maxAge));
+        }
     }
 
     public synchronized void setMaxSize(long maxSize) {

@@ -88,6 +88,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use Neon for CRC32 computation")                             \
   product(bool, UseCRC32, false,                                        \
           "Use CRC32 instructions for CRC32 computation")               \
+  product(bool, UseCryptoPmullForCRC32, false,                          \
+          "Use Crypto PMULL instructions for CRC32 computation")        \
   product(bool, UseSIMDForMemoryOps, false,                             \
           "Use SIMD instructions in generated memory move code")        \
   product(bool, UseSIMDForArrayEquals, true,                            \
