@@ -25,63 +25,50 @@
 
 package jdk.jfr.internal.instrument;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.util.function.Predicate;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.instruction.ReturnInstruction;
 
-final class ConstructorTracerWriter extends ClassVisitor {
+final class ConstructorTracerWriter {
 
-    private final ConstructorWriter useInputParameter;
-    private final ConstructorWriter noUseInputParameter;
-
-    static byte[] generateBytes(Class<?> clz, byte[] oldBytes) throws IOException {
-        InputStream in = new ByteArrayInputStream(oldBytes);
-        ClassReader cr = new ClassReader(in);
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        ConstructorTracerWriter ctw = new ConstructorTracerWriter(cw, clz);
-        cr.accept(ctw, 0);
-        return cw.toByteArray();
-    }
-
-    private ConstructorTracerWriter(ClassVisitor cv, Class<?> classToChange) {
-        super(Opcodes.ASM7, cv);
-        useInputParameter = new ConstructorWriter(classToChange, true);
-        noUseInputParameter = new ConstructorWriter(classToChange, false);
-    }
-
-    private boolean isConstructor(String name) {
-        return name.equals("<init>");
-    }
-
-    private boolean takesStringParameter(String desc) {
-        Type[] types = Type.getArgumentTypes(desc);
-        if (types.length > 0 && types[0].getClassName().equals(String.class.getName())) {
-            return true;
+    private static Predicate<MethodModel> adaptTest = new Predicate<MethodModel>() {
+        @Override
+        public boolean test(MethodModel methodModel) {
+            return methodModel.methodName().stringValue().equals("<init>");
         }
-        return false;
-    }
-
-    @Override
-    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-
-        MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-
-        // Get a hold of the constructors that takes a String as a parameter
-        if (isConstructor(name)) {
-            if (takesStringParameter(desc)) {
-                useInputParameter.setMethodVisitor(mv);
-                return useInputParameter;
-            }
-            noUseInputParameter.setMethodVisitor(mv);
-            return noUseInputParameter;
-        }
-        return mv;
+    };
+    static byte[] generateBytes(Class<?> clz, byte[] oldBytes) {
+        String shortClassName = clz.getSimpleName();
+        String fullClassName = clz.getName().replace('.', '/');
+        return Classfile.parse(oldBytes).transform(
+                ClassTransform.transformingMethods(adaptTest, (mb, me) -> {
+                    MethodModel mm = mb.original().orElseThrow();
+                    boolean useInputParameter = mm.methodType().stringValue().startsWith("(Ljava/lang/String;");
+                    if (me instanceof CodeModel cm) {
+                        mb.transformCode(cm, (cob, ins) -> {
+                            if (ins instanceof ReturnInstruction ret) {
+                                //Load 'this' from local variable 0
+                                cob.loadInstruction(TypeKind.ReferenceType, 0);
+                                if (useInputParameter) {
+                                    //Load first input parameter
+                                    cob.loadInstruction(TypeKind.ReferenceType, 1);
+                                } else {
+                                    //Load ""
+                                    cob.constantInstruction(Opcode.ACONST_NULL, null);
+                                }
+                                //Invoke ThrowableTracer.traceCLASS(this, parameter) for current class
+                                cob.invokeInstruction(Opcode.INVOKESTATIC, ClassDesc.ofInternalName("jdk/jfr/internal/instrument/ThrowableTracer"),
+                                        "trace" + shortClassName, MethodTypeDesc.of(ConstantDescs.CD_void, ClassDesc.ofInternalName(fullClassName), ConstantDescs.CD_String), false);
+                            }
+                            cob.accept(ins);
+                        });
+                    } else {
+                        mb.accept(me);
+                    }
+                }));
     }
 }

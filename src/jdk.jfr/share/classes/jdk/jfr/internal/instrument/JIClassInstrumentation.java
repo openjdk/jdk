@@ -28,14 +28,31 @@ package jdk.jfr.internal.instrument;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.AccessFlag;
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.tree.ClassNode;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.FieldModel;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.TypeKind;
+import jdk.internal.classfile.instruction.BranchInstruction;
+import jdk.internal.classfile.instruction.InvokeInstruction;
+import jdk.internal.classfile.instruction.LookupSwitchInstruction;
+import jdk.internal.classfile.instruction.StoreInstruction;
+import jdk.internal.classfile.instruction.TableSwitchInstruction;
+import jdk.internal.classfile.components.ClassRemapper;
+import jdk.internal.classfile.components.CodeLocalsShifter;
+import jdk.internal.classfile.components.CodeRelabeler;
+import jdk.internal.classfile.instruction.ReturnInstruction;
+
 import jdk.jfr.internal.SecuritySupport;
 
 /**
@@ -51,8 +68,8 @@ final class JIClassInstrumentation {
     private final String targetName;
     private final String instrumentorName;
     private final byte[] newBytes;
-    private final ClassReader targetClassReader;
-    private final ClassReader instrClassReader;
+    private final ClassModel targetClassModel;
+    private final ClassModel instrClassModel;
 
     /**
      * Creates an instance and performs the instrumentation.
@@ -68,8 +85,22 @@ final class JIClassInstrumentation {
         instrumentorName = instrumentor.getName();
         this.targetName = target.getName();
         this.instrumentor = instrumentor;
-        this.targetClassReader = new ClassReader(old_target_bytes);
-        this.instrClassReader = new ClassReader(getOriginalClassBytes(instrumentor));
+        this.targetClassModel = Classfile.parse(old_target_bytes);
+        this.instrClassModel = Classfile.parse(getOriginalClassBytes(instrumentor));
+        //target model have invalid stack maps, so it needs to be extra scanned to resolve all labels
+        for (var m : targetClassModel.methods()) {
+            m.code().ifPresent(c -> c.forEachElement(el -> {
+                if (el instanceof BranchInstruction br) {
+                    br.target();
+                } else if (el instanceof TableSwitchInstruction ts) {
+                    ts.defaultTarget();
+                    ts.cases();
+                } else if (el instanceof LookupSwitchInstruction ls) {
+                    ls.defaultTarget();
+                    ls.cases();
+                }
+            }));
+        }
         this.newBytes = makeBytecode();
     }
 
@@ -84,39 +115,21 @@ final class JIClassInstrumentation {
 
         // Find the methods to instrument and inline
 
-        final List<Method> instrumentationMethods = new ArrayList<>();
+        final Set<String> instrumentationMethods = new HashSet<>();
         for (final Method m : instrumentor.getDeclaredMethods()) {
             JIInstrumentationMethod im = m.getAnnotation(JIInstrumentationMethod.class);
             if (im != null) {
-                instrumentationMethods.add(m);
+                StringBuilder sb = new StringBuilder();
+                sb.append(m.getName()).append('(');
+                for (var parameter : m.getParameterTypes()) {
+                    sb.append(parameter.descriptorString());
+                }
+                sb.append(')').append(m.getReturnType().descriptorString());
+                instrumentationMethods.add(sb.toString());
             }
         }
 
-        // We begin by inlining the target's methods into the instrumentor
-
-        ClassNode temporary = new ClassNode();
-        ClassVisitor inliner = new JIInliner(
-                Opcodes.ASM7,
-                temporary,
-                targetName,
-                instrumentorName,
-                targetClassReader,
-                instrumentationMethods);
-        instrClassReader.accept(inliner, ClassReader.EXPAND_FRAMES);
-
-        // Now we have the target's methods inlined into the instrumentation code (in 'temporary').
-        // We now need to replace the target's method with the code in the
-        // instrumentation method.
-
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        JIMethodMergeAdapter ma = new JIMethodMergeAdapter(
-                cw,
-                temporary,
-                instrumentationMethods,
-                instrumentor.getAnnotationsByType(JITypeMapping.class));
-        targetClassReader.accept(ma, ClassReader.EXPAND_FRAMES);
-
-       return cw.toByteArray();
+        return instrument(targetClassModel, instrClassModel, mm -> instrumentationMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue()));
     }
 
     /**
@@ -126,5 +139,71 @@ final class JIClassInstrumentation {
      */
     public byte[] getNewBytes() {
         return newBytes.clone();
+    }
+
+    private static byte[] instrument(ClassModel target, ClassModel instrumentor, Predicate<MethodModel> instrumentedMethodsFilter) {
+        var instrumentorCodeMap = instrumentor.methods().stream()
+                                              .filter(instrumentedMethodsFilter)
+                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElseThrow()));
+        var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
+        var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
+        var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
+        return target.transform(
+                ClassTransform.transformingMethods(
+                        instrumentedMethodsFilter,
+                        (mb, me) -> {
+                            if (me instanceof CodeModel targetCodeModel) {
+                                var mm = targetCodeModel.parent().get();
+                                //instrumented methods code is taken from instrumentor
+                                mb.transformCode(instrumentorCodeMap.get(mm.methodName().stringValue() + mm.methodType().stringValue()),
+                                        //all references to the instrumentor class are remapped to target class
+                                        instrumentorClassRemapper.asCodeTransform()
+                                        .andThen((codeBuilder, instrumentorCodeElement) -> {
+                                            //all invocations of target methods from instrumentor are inlined
+                                            if (instrumentorCodeElement instanceof InvokeInstruction inv
+                                                && target.thisClass().asInternalName().equals(inv.owner().asInternalName())
+                                                && mm.methodName().stringValue().equals(inv.name().stringValue())
+                                                && mm.methodType().stringValue().equals(inv.type().stringValue())) {
+
+                                                //store stacked method parameters into locals
+                                                var storeStack = new ArrayDeque<StoreInstruction>();
+                                                int slot = 0;
+                                                if (!mm.flags().has(AccessFlag.STATIC))
+                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                for (var pt : mm.methodTypeSymbol().parameterList()) {
+                                                    var tk = TypeKind.fromDescriptor(pt.descriptorString());
+                                                    storeStack.push(StoreInstruction.of(tk, slot));
+                                                    slot += tk.slotSize();
+                                                }
+                                                storeStack.forEach(codeBuilder::with);
+
+                                                //inlined target locals must be shifted based on the actual instrumentor locals
+                                                codeBuilder.block(inlinedBlockBuilder -> inlinedBlockBuilder
+                                                        .transform(targetCodeModel, CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol())
+                                                        .andThen(CodeRelabeler.of())
+                                                        .andThen((innerBuilder, shiftedTargetCode) -> {
+                                                            //returns must be replaced with jump to the end of the inlined method
+                                                            if (shiftedTargetCode instanceof ReturnInstruction)
+                                                                innerBuilder.goto_(inlinedBlockBuilder.breakLabel());
+                                                            else
+                                                                innerBuilder.with(shiftedTargetCode);
+                                                        })));
+                                            } else
+                                                codeBuilder.with(instrumentorCodeElement);
+                                        }));
+                            } else
+                                mb.with(me);
+                        })
+                .andThen(ClassTransform.endHandler(clb ->
+                    //remaining instrumentor fields and methods are injected at the end
+                    clb.transform(instrumentor,
+                            ClassTransform.dropping(cle ->
+                                    !(cle instanceof FieldModel fm
+                                            && !targetFieldNames.contains(fm.fieldName().stringValue()))
+                                    && !(cle instanceof MethodModel mm
+                                            && !"<init>".equals(mm.methodName().stringValue())
+                                            && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
+                            //and instrumentor class references remapped to target class
+                            .andThen(instrumentorClassRemapper)))));
     }
 }

@@ -25,13 +25,14 @@
 
 package jdk.jfr.internal;
 
-import jdk.internal.org.objectweb.asm.commons.Method;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import jdk.jfr.internal.EventInstrumentation.FieldInfo;
 import jdk.jfr.internal.event.EventConfiguration;
 
 public enum EventWriterMethod {
 
-    BEGIN_EVENT("(" + jdk.internal.org.objectweb.asm.Type.getType(EventConfiguration.class).getDescriptor() + "J)Z", "???", "beginEvent"),
+    BEGIN_EVENT("(" + EventConfiguration.class.descriptorString() + "J)Z", "???", "beginEvent"),
     END_EVENT("()Z", "???", "endEvent"),
     PUT_BYTE("(B)V", "byte", "putByte"),
     PUT_SHORT("(S)V", "short", "putShort"),
@@ -47,16 +48,14 @@ public enum EventWriterMethod {
     PUT_EVENT_THREAD("()V", Type.THREAD.getName(), "putEventThread"),
     PUT_STACK_TRACE("()V", Type.TYPES_PREFIX + "StackTrace", "putStackTrace");
 
-    final Method asmMethod;
-    final String typeDescriptor;
+    final String methodName;
+    final MethodTypeDesc methodDesc;
+    final ClassDesc typeDescriptor;
 
     EventWriterMethod(String paramSignature, String typeName, String methodName) {
         this.typeDescriptor = ASMToolkit.getDescriptor(typeName);
-        this.asmMethod = new Method(methodName, paramSignature);
-    }
-
-    public Method asASM() {
-        return asmMethod;
+        this.methodName = methodName;
+        this.methodDesc = MethodTypeDesc.ofDescriptor(paramSignature);
     }
 
     /**
@@ -73,7 +72,7 @@ public enum EventWriterMethod {
             return EventWriterMethod.PUT_EVENT_THREAD;
         }
         for (EventWriterMethod m : EventWriterMethod.values()) {
-            if (field.descriptor().equals(m.typeDescriptor)) {
+            if (field.descriptor().equals(m.typeDescriptor.descriptorString())) {
                 return m;
             }
         }
