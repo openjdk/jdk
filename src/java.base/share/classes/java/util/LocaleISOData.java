@@ -45,7 +45,7 @@ class LocaleISOData {
         + "ba" + "bak"  // Bashkir
         + "be" + "bel"  // Belarusian
         + "bg" + "bul"  // Bulgarian
-        + "bh" + "bih"  // Bihari
+        + "bh" + "bih"  // Bihari languages
         + "bi" + "bis"  // Bislama
         + "bm" + "bam"  // Bambara
         + "bn" + "ben"  // Bengali
