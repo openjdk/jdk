@@ -35,7 +35,7 @@
 #ifndef PRODUCT
 #define EVAC_FAILURE_INJECTOR 1
 #else
-#define EVAC_FAILURE_INJECTOR 0
+#define EVAC_FAILURE_INJECTOR 1
 #endif
 
 #if EVAC_FAILURE_INJECTOR
@@ -47,7 +47,7 @@
                                        range,                               \
                                        constraint)                          \
                                                                             \
-  product(bool, G1EvacuationFailureALot, false,                             \
+  product(bool, G1EvacuationFailureALot, true,                             \
           "Force use of evacuation failure handling during certain "        \
           "evacuation pauses")                                              \
                                                                             \

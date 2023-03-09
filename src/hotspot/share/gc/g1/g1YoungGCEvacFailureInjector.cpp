@@ -41,7 +41,7 @@ public:
 
   bool do_heap_region(HeapRegion* r) override {
     assert(r->in_collection_set(), "must be");
-    if (_evac_failure_regions_num > 0) {
+    if (_evac_failure_regions_num > 0 && r->is_young()) {
       _evac_failure_regions.set_bit(r->hrm_index());
       --_evac_failure_regions_num;
       return false;

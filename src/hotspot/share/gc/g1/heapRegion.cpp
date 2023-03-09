@@ -586,9 +586,9 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     }
 
     bool failed() const {
-      if (this->_from != this->_to && !this->_from->is_young() && this->_to->rem_set()->is_complete()) {
+      if (_from != _to && !_from->is_young() && _to->rem_set()->is_complete()) {
         const CardValue dirty = G1CardTable::dirty_card_val();
-        return !(this->_to->rem_set()->contains_reference(this->_p) ||
+        return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?
                   _cv_field == dirty :
                   _cv_obj == dirty || _cv_field == dirty));
