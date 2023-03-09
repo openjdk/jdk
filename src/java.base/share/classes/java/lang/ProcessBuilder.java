@@ -190,8 +190,8 @@ import sun.security.action.GetPropertyAction;
 
 public final class ProcessBuilder
 {
-    // Initialize the java.lang.ProcessBuilder logger, non-null if configured for level DEBUG
-    private static final System.Logger LOGGER = initLogger();
+    // Lazily and racy initialize when needed, racy is ok, any logger is ok
+    private static System.Logger LOGGER ;
 
     private List<String> command;
     private File directory;
@@ -1076,9 +1076,16 @@ public final class ProcessBuilder
      * @throws IOException if an I/O error occurs
      *
      * @implNote
-     * If the {@linkplain System#getLogger(String) system logger} for {@code java.lang.ProcessBuilder}
-     * is enabled with logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
-     * of the call to {@code ProcessBuilder.start()} is logged.
+     * Logging of the command, arguments, directory, stack trace, and process id can be enabled.
+     * The logged information may contain sensitive security information and the potential exposure
+     * of the information should be carefully reviewed.
+     * Logging of the information is enabled when the logging level of the
+     * {@linkplain System#getLogger(String) system logger} named {@code java.lang.ProcessBuilder}
+     * is {@link System.Logger.Level#DEBUG Level.DEBUG} or {@link System.Logger.Level#TRACE Level.TRACE}.
+     * When enabled for {@code Level.DEBUG} only the command, directory, stack trace,
+     * and process id are logged.
+     * When enabled for {@code Level.TRACE} the arguments are included with the command,
+     * directory, stack trace, and process id.
      *
      * @see Runtime#exec(String[], String[], java.io.File)
      */
@@ -1132,19 +1139,21 @@ public final class ProcessBuilder
                 event.pid = process.pid();
                 event.commit();
             }
-            try {
-                if (LOGGER != null) {
-                    RuntimeException stackTraceEx = new RuntimeException("ProcessBuilder.start() debug");
-                    LOGGER.log(System.Logger.Level.DEBUG, "ProcessBuilder.start(): " +
-                                    Arrays.toString(cmdarray) + ", pid: " + process.pid(),
-                                    stackTraceEx);
-                }
-            } catch (Throwable logEx) {
-                try {
-                    System.err.println("Logging failed: " + logEx.getMessage() +
-                            ", ProcessBuilder.start(): " + Arrays.toString(cmdarray) +
-                            ", pid: " + process.pid());
-                } catch (Throwable thEx) {/* ignore */}
+            // Racy initialization for logging; errors in configuration may throw exceptions
+            System.Logger logger = LOGGER;
+            if (logger == null) {
+                LOGGER = logger = System.getLogger("java.lang.ProcessBuilder");
+            }
+            if (logger.isLoggable(System.Logger.Level.DEBUG)) {
+                boolean detail = logger.isLoggable(System.Logger.Level.TRACE);
+                var level = (detail) ? System.Logger.Level.TRACE : System.Logger.Level.DEBUG;
+                var cmdargs = (detail) ? String.join(" ", cmdarray) : cmdarray[0];
+                RuntimeException stackTraceEx = new RuntimeException("ProcessBuilder.start() debug");
+                LOGGER.log(level, "ProcessBuilder.start(): " +
+                                "cmd: " + cmdargs +
+                                ", dir: " + dir +
+                                ", pid: " + process.pid(),
+                        stackTraceEx);
             }
             return process;
         } catch (IOException | IllegalArgumentException e) {

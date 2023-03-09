@@ -22,6 +22,7 @@
  */
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -56,8 +57,10 @@ public class ProcessStartLoggingTest {
         if (System.getProperty("ThrowingHandler") != null) {
             HOLD_LOGGER = ProcessStartLoggingTest.ThrowingHandler.installHandler();
         }
+        String directory = System.getProperty("directory");
         try {
             ProcessBuilder pb = new ProcessBuilder(args);
+            pb.directory((directory == null) ? null : new File(directory));
             Process p = pb.start();
             int status = p.waitFor();
             if (status != 0) {
@@ -73,45 +76,69 @@ public class ProcessStartLoggingTest {
      * @return a stream of arguments for parameterized test
      */
     private static Stream<Arguments> logParamProvider() {
+        File nullDirectory = null;
+        File thisDirectory = new File(".");
+
         return Stream.of(
+                // Logging enabled with level TRACE
+                Arguments.of(List.of("-Djava.util.logging.config.file=" +
+                                Path.of(TEST_SRC, "ProcessLogging-FINER.properties").toString(),
+                                "-Ddirectory=."),
+                        List.of("echo", "echo0"),
+                        "ProcessBuilder.start(): cmd: echo echo0, dir: ., pid:",
+                        0),
                 // Logging enabled with level DEBUG
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
-                                Path.of(TEST_SRC, "ProcessLogging-FINE.properties").toString()),
+                                Path.of(TEST_SRC, "ProcessLogging-FINE.properties").toString(),
+                                "-Ddirectory=."),
                         List.of("echo", "echo1"),
-                        "ProcessBuilder.start(): [echo, echo1], pid:"),
+                        "ProcessBuilder.start(): cmd: echo, dir: ., pid:",
+                        0),
                 // Logging disabled due to level
                 Arguments.of(List.of("-Djava.util.logging.config.file=" +
                                 Path.of(TEST_SRC, "ProcessLogging-INFO.properties").toString()),
                         List.of("echo", "echo2"),
-                        ""),
+                        "",
+                        0),
                 // Console logger
                 Arguments.of(List.of("--limit-modules", "java.base",
                                 "-Djdk.system.logger.level=DEBUG"),
                         List.of("echo", "echo3"),
-                        "ProcessBuilder.start(): [echo, echo3], pid:"),
+                        "ProcessBuilder.start(): cmd: echo, dir: null, pid:",
+                        0),
+                // Console logger
+                Arguments.of(List.of("--limit-modules", "java.base",
+                                "-Djdk.system.logger.level=TRACE",
+                                "-Ddirectory=."),
+                        List.of("echo", "echo4"),
+                        "ProcessBuilder.start(): cmd: echo echo4, dir: ., pid:",
+                        0),
                 // Console logger
                 Arguments.of(List.of(),
-                        List.of("echo", "echo4"),
-                        ""),
+                        List.of("echo", "echo5"),
+                        "",
+                        0),
                 // Throwing Handler
                 Arguments.of(List.of("-DThrowingHandler",
                                 "-Djava.util.logging.config.file=" +
                                         Path.of(TEST_SRC, "ProcessLogging-FINE.properties").toString()),
-                        List.of("echo", "echo5"),
-                        "Logging failed: Exception in publish, ProcessBuilder.start():")
+                        List.of("echo", "echo6"),
+                        "Exception in thread \"main\" java.lang.RuntimeException: Exception in publish",
+                        1)
         );
     }
 
     /**
      * Check that the logger output of a launched process contains the expected message.
      *
-     * @param logArgs Arguments to configure logging in the java test process
-     * @param childArgs the args passed to the child to be invoked as a Process
+     * @param logArgs       Arguments to configure logging in the java test process
+     * @param childArgs     the args passed to the child to be invoked as a Process
      * @param expectMessage log should contain the message
      */
     @ParameterizedTest
     @MethodSource("logParamProvider")
-    public void checkLogger(List<String> logArgs, List<String> childArgs, String expectMessage) {
+    public void checkLogger(List<String> logArgs, List<String> childArgs,
+                            String expectMessage, int expectedStatus) {
         ProcessBuilder pb = new ProcessBuilder();
         pb.redirectErrorStream(true);
 
@@ -120,7 +147,6 @@ public class ProcessStartLoggingTest {
         cmd.addAll(logArgs);
         cmd.add(this.getClass().getName());
         cmd.addAll(childArgs);
-
         try {
             Process process = pb.start();
             try (BufferedReader reader = process.inputReader()) {
@@ -136,7 +162,7 @@ public class ProcessStartLoggingTest {
                 }
             }
             int result = process.waitFor();
-            assertEquals(0, result, "Exit status");
+            assertEquals(expectedStatus, result, "Exit status");
         } catch (IOException | InterruptedException ex) {
             fail(ex);
         }
