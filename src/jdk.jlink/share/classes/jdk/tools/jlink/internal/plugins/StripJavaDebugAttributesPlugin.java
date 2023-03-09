@@ -59,7 +59,8 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                     if (path.endsWith("module-info.class")) {
                         // XXX. Do we have debug info? Is Asm ready for module-info?
                     } else {
-                        byte[] content = newClassReader(path, resource, Classfile.Option.processDebug(false)).transform(ClassTransform.ACCEPT_ALL);
+                        byte[] content = newClassReader(path, resource, Classfile.Option.processDebug(false))
+                                                .transform(ClassTransform.ACCEPT_ALL);
                         res = resource.copyWithContent(content);
                     }
                 }

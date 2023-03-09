@@ -102,10 +102,10 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
     @SuppressWarnings("deprecation")
     private byte[] redefine(String path, byte[] classFile) {
         return newClassReader(path, classFile).transform((clb, cle) -> {
-                if (cle instanceof MethodModel mm && mm.methodName().stringValue().equals("<clinit>")) {
-                        clb.transformMethod((MethodModel) cle, (mb, me) -> {
-                            if (me instanceof CodeModel) {
-                                mb.transformCode((CodeModel)me, new CodeTransform() {
+                if (cle instanceof MethodModel mm && mm.methodName().equalsString("<clinit>")) {
+                        clb.transformMethod(mm, (mb, me) -> {
+                            if (me instanceof CodeModel cm) {
+                                mb.transformCode(cm, new CodeTransform() {
                                     private CodeElement pendingLDC = null;
 
                                     private void flushPendingLDC(CodeBuilder cob) {
@@ -126,9 +126,12 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
                                                 flushPendingLDC(cob);
                                                 cob.accept(coe);
                                             }
-                                            case GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD -> {
-                                                if (ins.opcode() == Opcode.PUTSTATIC
-                                                        && ((FieldInstruction)coe).name().stringValue().equals(field)) {
+                                            case GETSTATIC, GETFIELD, PUTFIELD -> {
+                                                flushPendingLDC(cob);
+                                                cob.accept(coe);
+                                            }
+                                            case PUTSTATIC -> {
+                                                if (((FieldInstruction)coe).name().equalsString(field)) {
                                                     // assert that there is a pending ldc
                                                     // for the old value
                                                     if (pendingLDC == null) {

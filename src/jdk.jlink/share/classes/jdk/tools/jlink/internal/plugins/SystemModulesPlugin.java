@@ -61,7 +61,6 @@ import java.util.TreeSet;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import jdk.internal.classfile.AccessFlags;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.DefaultRoots;
@@ -101,17 +100,19 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  */
 
 public final class SystemModulesPlugin extends AbstractPlugin {
-    private static final String SYSTEM_MODULES_MAP_CLASS =
+    private static final String SYSTEM_MODULES_MAP_CLASSNAME =
             "jdk/internal/module/SystemModulesMap";
     private static final String SYSTEM_MODULES_CLASS_PREFIX =
             "jdk/internal/module/SystemModules$";
-    private static final ClassDesc SYSTEM_MODULES_CLASS =
-            ClassDesc.ofInternalName("jdk/internal/module/SystemModules");
-    private static final String ALL_SYSTEM_MODULES_CLASS =
-            SYSTEM_MODULES_CLASS_PREFIX + "all";
-    private static final String DEFAULT_SYSTEM_MODULES_CLASS =
-            SYSTEM_MODULES_CLASS_PREFIX + "default";
 
+    private static final String ALL_SYSTEM_MODULES_CLASSNAME =
+            SYSTEM_MODULES_CLASS_PREFIX + "all";
+    private static final String DEFAULT_SYSTEM_MODULES_CLASSNAME =
+            SYSTEM_MODULES_CLASS_PREFIX + "default";
+    private static final ClassDesc CD_SYSTEM_MODULES =
+            ClassDesc.ofInternalName("jdk/internal/module/SystemModules");
+    private static final ClassDesc CD_SYSTEM_MODULES_MAP =
+            ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASSNAME);
     private boolean enabled;
 
     public SystemModulesPlugin() {
@@ -229,7 +230,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 .collect(Collectors.toSet());
         String rn = genSystemModulesClass(moduleInfos,
                                           resolve(finder, allModuleNames),
-                                          ALL_SYSTEM_MODULES_CLASS,
+                                          ALL_SYSTEM_MODULES_CLASSNAME,
                                           out);
         generated.add(rn);
 
@@ -239,9 +240,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         Configuration cf = resolve(finder, DefaultRoots.compute(finder));
         if (cf.modules().size() == moduleCount) {
             // all modules are resolved so no need to generate a class
-            defaultSystemModulesClassName = ALL_SYSTEM_MODULES_CLASS;
+            defaultSystemModulesClassName = ALL_SYSTEM_MODULES_CLASSNAME;
         } else {
-            defaultSystemModulesClassName = DEFAULT_SYSTEM_MODULES_CLASS;
+            defaultSystemModulesClassName = DEFAULT_SYSTEM_MODULES_CLASSNAME;
             rn = genSystemModulesClass(sublist(moduleInfos, cf),
                                        cf,
                                        defaultSystemModulesClassName,
@@ -257,7 +258,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 cf = resolve(finder, Set.of(moduleName));
                 if (cf.modules().size() == moduleCount) {
                     // resolves all modules so no need to generate a class
-                    map.put(moduleName, ALL_SYSTEM_MODULES_CLASS);
+                    map.put(moduleName, ALL_SYSTEM_MODULES_CLASSNAME);
                 } else {
                     String cn = SYSTEM_MODULES_CLASS_PREFIX + (suffix++);
                     rn = genSystemModulesClass(sublist(moduleInfos, cf), cf, cn, out);
@@ -268,7 +269,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         // generate SystemModulesMap
-        rn = genSystemModulesMapClass(ClassDesc.ofInternalName(ALL_SYSTEM_MODULES_CLASS),
+        rn = genSystemModulesMapClass(ClassDesc.ofInternalName(ALL_SYSTEM_MODULES_CLASSNAME),
                                       ClassDesc.ofInternalName(defaultSystemModulesClassName),
                                       map,
                                       out);
@@ -493,30 +494,22 @@ public final class SystemModulesPlugin extends AbstractPlugin {
      * and other attributes of system modules.
      */
     static class SystemModulesClassGenerator {
-        private static final ClassDesc MODULE_DESCRIPTOR =
+        private static final ClassDesc CD_MODULE_DESCRIPTOR =
             ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor");
-        private static final ClassDesc MODULE_DESCRIPTOR_BUILDER =
+        private static final ClassDesc CD_MODULE_BUILDER =
             ClassDesc.ofInternalName("jdk/internal/module/Builder");
-        private static final ClassDesc MODULE_DESCRIPTOR_ARRAY_SIGNATURE =
-            MODULE_DESCRIPTOR.arrayType();
-        private static final ClassDesc REQUIRES_MODIFIER_CLASSNAME =
+        private static final ClassDesc CD_REQUIRES_MODIFIER =
             ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Requires$Modifier");
-        private static final ClassDesc EXPORTS_MODIFIER_CLASSNAME =
+        private static final ClassDesc CD_EXPORTS_MODIFIER =
             ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports$Modifier");
-        private static final ClassDesc OPENS_MODIFIER_CLASSNAME =
+        private static final ClassDesc CD_OPENS_MODIFIER =
             ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Opens$Modifier");
-        private static final ClassDesc MODULE_TARGET_CLASSNAME  =
+        private static final ClassDesc CD_MODULE_TARGET =
             ClassDesc.ofInternalName("jdk/internal/module/ModuleTarget");
-        private static final ClassDesc MODULE_TARGET_ARRAY_SIGNATURE  =
-            MODULE_TARGET_CLASSNAME.arrayType();
-        private static final ClassDesc MODULE_HASHES_CLASSNAME  =
+        private static final ClassDesc CD_MODULE_HASHES =
             ClassDesc.ofInternalName("jdk/internal/module/ModuleHashes");
-        private static final ClassDesc MODULE_HASHES_ARRAY_SIGNATURE  =
-            MODULE_HASHES_CLASSNAME.arrayType();
-        private static final ClassDesc MODULE_RESOLUTION_CLASSNAME  =
+        private static final ClassDesc CD_MODULE_RESOLUTION =
             ClassDesc.ofInternalName("jdk/internal/module/ModuleResolution");
-        private static final ClassDesc MODULE_RESOLUTIONS_ARRAY_SIGNATURE  =
-            MODULE_RESOLUTION_CLASSNAME.arrayType();
 
         private static final int MAX_LOCAL_VARS = 256;
 
@@ -527,7 +520,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private int nextLocalVar         = 2;  // index to next local variable
 
         // name of class to generate
-        private final ClassDesc className;
+        private final ClassDesc classDesc;
 
         // list of all ModuleDescriptorBuilders, invoked in turn when building.
         private final List<ModuleInfo> moduleInfos;
@@ -540,7 +533,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         public SystemModulesClassGenerator(String className,
                                            List<ModuleInfo> moduleInfos) {
-            this.className = ClassDesc.ofInternalName(className);
+            this.classDesc = ClassDesc.ofInternalName(className);
             this.moduleInfos = moduleInfos;
             moduleInfos.forEach(mi -> dedups(mi.descriptor()));
         }
@@ -580,10 +573,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate SystemModules class
          */
         public byte[] getClassWriter(Configuration cf) {
-            return Classfile.build(className,
+            return Classfile.build(classDesc,
                     clb -> {
                         clb.withFlags(ACC_FINAL + ACC_SUPER);
-                        clb.withInterfaceSymbols(List.of(SYSTEM_MODULES_CLASS));
+                        clb.withInterfaceSymbols(List.of(CD_SYSTEM_MODULES));
                         clb.withVersion(52, 0);
 
                         // generate <init>
@@ -616,15 +609,16 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate bytecode for no-arg constructor
          */
         private void genConstructor(ClassBuilder clb) {
-            clb.withMethod("<init>", MethodTypeDesc.of(CD_void), ACC_PUBLIC, mb -> mb.withFlags(ACC_PUBLIC).withCode( cob -> {
-                cob.loadInstruction(TypeKind.ReferenceType, 0);
-                cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                   CD_Object,
-                                   "<init>",
-                                   MethodTypeDesc.of(CD_void),
-                                   false);
-                cob.returnInstruction(TypeKind.VoidType);
-            }));
+            clb.withMethod("<init>", MethodTypeDesc.of(CD_void),
+                    ACC_PUBLIC, mb -> mb.withFlags(ACC_PUBLIC).withCode( cob -> {
+                        cob.loadInstruction(TypeKind.ReferenceType, 0);
+                        cob.invokeInstruction(Opcode.INVOKESPECIAL,
+                                              CD_Object,
+                                              "<init>",
+                                               MethodTypeDesc.of(CD_void),
+                                               false);
+                        cob.returnInstruction(TypeKind.VoidType);
+                    }));
         }
 
         /**
@@ -670,19 +664,19 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          */
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
             clb.withMethod("moduleDescriptors",
-                    MethodTypeDesc.of(MODULE_DESCRIPTOR_ARRAY_SIGNATURE),
+                    MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
                     ACC_PUBLIC,
                     mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
                         cob.constantInstruction(moduleInfos.size());
-                        cob.anewarray(MODULE_DESCRIPTOR);
+                        cob.anewarray(CD_MODULE_DESCRIPTOR);
                         cob.storeInstruction(TypeKind.ReferenceType, MD_VAR);
 
                         for (int index = 0; index < moduleInfos.size(); index++) {
                             ModuleInfo minfo = moduleInfos.get(index);
                             new ModuleDescriptorBuilder(cob,
-                                    minfo.descriptor(),
-                                    minfo.packages(),
-                                    index).build();
+                                                        minfo.descriptor(),
+                                                        minfo.packages(),
+                                                        index).build();
                         }
                         cob.loadInstruction(TypeKind.ReferenceType, MD_VAR);
                         cob.returnInstruction(TypeKind.ReferenceType);
@@ -694,11 +688,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          */
         private void genModuleTargetsMethod(ClassBuilder clb) {
             clb.withMethod("moduleTargets",
-                    MethodTypeDesc.of(MODULE_TARGET_ARRAY_SIGNATURE),
+                    MethodTypeDesc.of(CD_MODULE_TARGET.arrayType()),
                     ACC_PUBLIC,
                     mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
                         cob.constantInstruction(moduleInfos.size());
-                        cob.anewarray(MODULE_TARGET_CLASSNAME);
+                        cob.anewarray(CD_MODULE_TARGET);
                         cob.storeInstruction(TypeKind.ReferenceType, MT_VAR);
 
                         // if java.base has a ModuleTarget attribute then generate the array
@@ -723,10 +717,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                 cob.constantInstruction(index);
 
                                 // new ModuleTarget(String)
-                                cob.newObjectInstruction(MODULE_TARGET_CLASSNAME);
+                                cob.newObjectInstruction(CD_MODULE_TARGET);
                                 cob.stackInstruction(Opcode.DUP);
                                 cob.constantInstruction(minfo.target().targetPlatform());
-                                cob.invokeInstruction(Opcode.INVOKESPECIAL, MODULE_TARGET_CLASSNAME,
+                                cob.invokeInstruction(Opcode.INVOKESPECIAL, CD_MODULE_TARGET,
                                                    "<init>", MethodTypeDesc.of(CD_void, CD_String), false);
 
                                 cob.arrayStoreInstruction(TypeKind.ReferenceType);
@@ -743,11 +737,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          */
         private void genModuleHashesMethod(ClassBuilder clb) {
             clb.withMethod("moduleHashes",
-                    MethodTypeDesc.of(MODULE_HASHES_ARRAY_SIGNATURE),
+                    MethodTypeDesc.of(CD_MODULE_HASHES.arrayType()),
                     ACC_PUBLIC,
                     mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
                         cob.constantInstruction(moduleInfos.size());
-                        cob.anewarray(MODULE_HASHES_CLASSNAME);
+                        cob.anewarray(CD_MODULE_HASHES);
                         cob.storeInstruction(TypeKind.ReferenceType, MH_VAR);
 
                         for (int index = 0; index < moduleInfos.size(); index++) {
@@ -769,11 +763,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          */
         private void genModuleResolutionsMethod(ClassBuilder clb) {
             clb.withMethod("moduleResolutions",
-                MethodTypeDesc.of(MODULE_RESOLUTIONS_ARRAY_SIGNATURE),
+                MethodTypeDesc.of(CD_MODULE_RESOLUTION.arrayType()),
                 ACC_PUBLIC,
                 mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
                     cob.constantInstruction(moduleInfos.size());
-                    cob.anewarray(MODULE_RESOLUTION_CLASSNAME);
+                    cob.anewarray(CD_MODULE_RESOLUTION);
                     cob.storeInstruction(TypeKind.ReferenceType, 0);
 
                     for (int index=0; index < moduleInfos.size(); index++) {
@@ -781,13 +775,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         if (minfo.moduleResolution() != null) {
                             cob.loadInstruction(TypeKind.ReferenceType, 0);
                             cob.constantInstruction(index);
-                            cob.newObjectInstruction(MODULE_RESOLUTION_CLASSNAME);
+                            cob.newObjectInstruction(CD_MODULE_RESOLUTION);
                             cob.stackInstruction(Opcode.DUP);
                             cob.constantInstruction(minfo.moduleResolution().value());
                             cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                                   MODULE_RESOLUTION_CLASSNAME,
-                                                   "<init>",
-                                                   MethodTypeDesc.of(CD_void, CD_int), false);
+                                                  CD_MODULE_RESOLUTION,
+                                                  "<init>",
+                                                  MethodTypeDesc.of(CD_void, CD_int), false);
                             cob.arrayStoreInstruction(TypeKind.ReferenceType);
                         }
                     }
@@ -926,47 +920,45 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         class ModuleDescriptorBuilder {
-            static final ClassDesc BUILDER_TYPE =
-                ClassDesc.ofDescriptor("Ljdk/internal/module/Builder;");
-            static final ClassDesc EXPORTS_TYPE =
-                ClassDesc.ofDescriptor("Ljava/lang/module/ModuleDescriptor$Exports;");
-            static final ClassDesc OPENS_TYPE =
-                ClassDesc.ofDescriptor("Ljava/lang/module/ModuleDescriptor$Opens;");
-            static final ClassDesc PROVIDES_TYPE =
-                ClassDesc.ofDescriptor("Ljava/lang/module/ModuleDescriptor$Provides;");
-            static final ClassDesc REQUIRES_TYPE =
-                ClassDesc.ofDescriptor("Ljava/lang/module/ModuleDescriptor$Requires;");
+            static final ClassDesc CD_EXPORTS =
+                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports");
+            static final ClassDesc CD_OPENS =
+                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Opens");
+            static final ClassDesc CD_PROVIDES =
+                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Provides");
+            static final ClassDesc CD_REQUIRES =
+                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Requires");
 
             // method signature for static Builder::newExports, newOpens,
             // newProvides, newRequires methods
-            static final MethodTypeDesc EXPORTS_MODIFIER_SET_STRING_SET_SIG =
-                MethodTypeDesc.of(EXPORTS_TYPE, CD_Set, CD_String, CD_Set);
-            static final MethodTypeDesc EXPORTS_MODIFIER_SET_STRING_SIG =
-                MethodTypeDesc.of(EXPORTS_TYPE, CD_Set, CD_String);
-            static final MethodTypeDesc OPENS_MODIFIER_SET_STRING_SET_SIG =
-                MethodTypeDesc.of(OPENS_TYPE, CD_Set, CD_String, CD_Set);
-            static final MethodTypeDesc OPENS_MODIFIER_SET_STRING_SIG =
-                MethodTypeDesc.of(OPENS_TYPE, CD_Set, CD_String);
-            static final MethodTypeDesc PROVIDES_STRING_LIST_SIG =
-                MethodTypeDesc.of(PROVIDES_TYPE, CD_String, CD_List);
-            static final MethodTypeDesc REQUIRES_SET_STRING_SIG =
-                MethodTypeDesc.of(REQUIRES_TYPE, CD_Set, CD_String);
-            static final MethodTypeDesc REQUIRES_SET_STRING_STRING_SIG =
-                MethodTypeDesc.of(REQUIRES_TYPE, CD_Set, CD_String, CD_String);
+            static final MethodTypeDesc MTD_EXPORTS_MODIFIER_SET_STRING_SET =
+                MethodTypeDesc.of(CD_EXPORTS, CD_Set, CD_String, CD_Set);
+            static final MethodTypeDesc MTD_EXPORTS_MODIFIER_SET_STRING =
+                MethodTypeDesc.of(CD_EXPORTS, CD_Set, CD_String);
+            static final MethodTypeDesc MTD_OPENS_MODIFIER_SET_STRING_SET =
+                MethodTypeDesc.of(CD_OPENS, CD_Set, CD_String, CD_Set);
+            static final MethodTypeDesc MTD_OPENS_MODIFIER_SET_STRING =
+                MethodTypeDesc.of(CD_OPENS, CD_Set, CD_String);
+            static final MethodTypeDesc MTD_PROVIDES_STRING_LIST =
+                MethodTypeDesc.of(CD_PROVIDES, CD_String, CD_List);
+            static final MethodTypeDesc MTD_REQUIRES_SET_STRING =
+                MethodTypeDesc.of(CD_REQUIRES, CD_Set, CD_String);
+            static final MethodTypeDesc MTD_REQUIRES_SET_STRING_STRING =
+                MethodTypeDesc.of(CD_REQUIRES, CD_Set, CD_String, CD_String);
 
             // method signature for Builder instance methods that
             // return this Builder instance
-            static final MethodTypeDesc EXPORTS_ARRAY_SIG =
-                MethodTypeDesc.of(BUILDER_TYPE, EXPORTS_TYPE.arrayType());
-            static final MethodTypeDesc OPENS_ARRAY_SIG =
-                MethodTypeDesc.of(BUILDER_TYPE, OPENS_TYPE.arrayType());
-            static final MethodTypeDesc PROVIDES_ARRAY_SIG =
-                MethodTypeDesc.of(BUILDER_TYPE, PROVIDES_TYPE.arrayType());
-            static final MethodTypeDesc REQUIRES_ARRAY_SIG =
-                MethodTypeDesc.of(BUILDER_TYPE, REQUIRES_TYPE.arrayType());
-            static final MethodTypeDesc SET_SIG = MethodTypeDesc.of(BUILDER_TYPE, CD_Set);
-            static final MethodTypeDesc STRING_SIG = MethodTypeDesc.of(BUILDER_TYPE, CD_String);
-            static final MethodTypeDesc BOOLEAN_SIG = MethodTypeDesc.of(BUILDER_TYPE, CD_boolean);
+            static final MethodTypeDesc MTD_EXPORTS_ARRAY =
+                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_EXPORTS.arrayType());
+            static final MethodTypeDesc MTD_OPENS_ARRAY =
+                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_OPENS.arrayType());
+            static final MethodTypeDesc MTD_PROVIDES_ARRAY =
+                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_PROVIDES.arrayType());
+            static final MethodTypeDesc MTD_REQUIRES_ARRAY =
+                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_REQUIRES.arrayType());
+            static final MethodTypeDesc MTD_SET = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_Set);
+            static final MethodTypeDesc MTD_STRING = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_String);
+            static final MethodTypeDesc MTD_BOOLEAN = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_boolean);
 
             final CodeBuilder cob;
             final ModuleDescriptor md;
@@ -1015,10 +1007,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             }
 
             void newBuilder() {
-                cob.newObjectInstruction(MODULE_DESCRIPTOR_BUILDER);
+                cob.newObjectInstruction(CD_MODULE_BUILDER);
                 cob.stackInstruction(Opcode.DUP);
                 cob.constantInstruction(md.name());
-                cob.invokeInstruction(Opcode.INVOKESPECIAL, MODULE_DESCRIPTOR_BUILDER,
+                cob.invokeInstruction(Opcode.INVOKESPECIAL, CD_MODULE_BUILDER,
                     "<init>", MethodTypeDesc.of(CD_void, CD_String), false);
                 cob.storeInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
@@ -1040,8 +1032,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void setModuleBit(String methodName, boolean value) {
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(value ? 1 : 0);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    methodName, BOOLEAN_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    methodName, MTD_BOOLEAN, false);
                 cob.stackInstruction(Opcode.POP);
             }
 
@@ -1053,8 +1045,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 cob.constantInstruction(index);
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(md.hashCode());
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "build", MethodTypeDesc.of(MODULE_DESCRIPTOR, CD_int),
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "build", MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int),
                     false);
                 cob.arrayStoreInstruction(TypeKind.ReferenceType);
             }
@@ -1068,7 +1060,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void requires(Set<Requires> requires) {
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(requires.size());
-                cob.anewarray(ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Requires"));
+                cob.anewarray(CD_REQUIRES);
                 int arrayIndex = 0;
                 for (Requires require : sorted(requires)) {
                     String compiledVersion = null;
@@ -1081,8 +1073,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     newRequires(require.modifiers(), require.name(), compiledVersion);
                     cob.arrayStoreInstruction(TypeKind.ReferenceType);
                 }
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "requires", REQUIRES_ARRAY_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "requires", MTD_REQUIRES_ARRAY, false);
             }
 
             /*
@@ -1097,11 +1089,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 cob.constantInstruction(name);
                 if (compiledVersion != null) {
                     cob.constantInstruction(compiledVersion);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newRequires", REQUIRES_SET_STRING_STRING_SIG, false);
+                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
+                        "newRequires", MTD_REQUIRES_SET_STRING_STRING, false);
                 } else {
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newRequires", REQUIRES_SET_STRING_SIG, false);
+                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
+                        "newRequires", MTD_REQUIRES_SET_STRING, false);
                 }
             }
 
@@ -1114,7 +1106,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void exports(Set<Exports> exports) {
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(exports.size());
-                cob.anewarray(ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports"));
+                cob.anewarray(CD_EXPORTS);
                 int arrayIndex = 0;
                 for (Exports export : sorted(exports)) {
                     cob.stackInstruction(Opcode.DUP);    // arrayref
@@ -1122,8 +1114,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     newExports(export.modifiers(), export.source(), export.targets());
                     cob.arrayStoreInstruction(TypeKind.ReferenceType);
                 }
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "exports", EXPORTS_ARRAY_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "exports", MTD_EXPORTS_ARRAY, false);
             }
 
             /*
@@ -1148,13 +1140,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     cob.loadInstruction(TypeKind.ReferenceType, modifiersSetIndex);
                     cob.constantInstruction(pn);
                     cob.loadInstruction(TypeKind.ReferenceType, stringSetIndex);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newExports", EXPORTS_MODIFIER_SET_STRING_SET_SIG, false);
+                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
+                        "newExports", MTD_EXPORTS_MODIFIER_SET_STRING_SET, false);
                 } else {
                     cob.loadInstruction(TypeKind.ReferenceType, modifiersSetIndex);
                     cob.constantInstruction(pn);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newExports", EXPORTS_MODIFIER_SET_STRING_SIG, false);
+                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
+                        "newExports", MTD_EXPORTS_MODIFIER_SET_STRING, false);
                 }
             }
 
@@ -1167,7 +1159,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void opens(Set<Opens> opens) {
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(opens.size());
-                cob.anewarray(ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Opens"));
+                cob.anewarray(CD_OPENS);
                 int arrayIndex = 0;
                 for (Opens open : sorted(opens)) {
                     cob.stackInstruction(Opcode.DUP);    // arrayref
@@ -1175,8 +1167,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     newOpens(open.modifiers(), open.source(), open.targets());
                     cob.arrayStoreInstruction(TypeKind.ReferenceType);
                 }
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "opens", OPENS_ARRAY_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "opens", MTD_OPENS_ARRAY, false);
             }
 
             /*
@@ -1201,13 +1193,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     cob.loadInstruction(TypeKind.ReferenceType, modifiersSetIndex);
                     cob.constantInstruction(pn);
                     cob.loadInstruction(TypeKind.ReferenceType, stringSetIndex);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newOpens", OPENS_MODIFIER_SET_STRING_SET_SIG, false);
+                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
+                        "newOpens", MTD_OPENS_MODIFIER_SET_STRING_SET, false);
                 } else {
                     cob.loadInstruction(TypeKind.ReferenceType, modifiersSetIndex);
                     cob.constantInstruction(pn);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newOpens", OPENS_MODIFIER_SET_STRING_SIG, false);
+                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
+                        "newOpens", MTD_OPENS_MODIFIER_SET_STRING, false);
                 }
             }
 
@@ -1218,8 +1210,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 int varIndex = dedupSetBuilder.indexOfStringSet(cob, uses);
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.loadInstruction(TypeKind.ReferenceType, varIndex);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "uses", SET_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "uses", MTD_SET, false);
                 cob.stackInstruction(Opcode.POP);
             }
 
@@ -1232,7 +1224,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void provides(Collection<Provides> provides) {
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(provides.size());
-                cob.anewarray(ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Provides"));
+                cob.anewarray(CD_PROVIDES);
                 int arrayIndex = 0;
                 for (Provides provide : sorted(provides)) {
                     cob.stackInstruction(Opcode.DUP);    // arrayref
@@ -1240,8 +1232,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     newProvides(provide.service(), provide.providers());
                     cob.arrayStoreInstruction(TypeKind.ReferenceType);
                 }
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "provides", PROVIDES_ARRAY_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "provides", MTD_PROVIDES_ARRAY, false);
             }
 
             /*
@@ -1266,8 +1258,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 cob.invokeInstruction(Opcode.INVOKESTATIC, CD_List,
                     "of", MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/util/List;"), true);
-                cob.invokeInstruction(Opcode.INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                    "newProvides", PROVIDES_STRING_LIST_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
+                    "newProvides", MTD_PROVIDES_STRING_LIST, false);
             }
 
             /*
@@ -1277,8 +1269,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 int varIndex = dedupSetBuilder.newStringSet(cob, packages);
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.loadInstruction(TypeKind.ReferenceType, varIndex);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "packages", SET_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "packages", MTD_SET, false);
                 cob.stackInstruction(Opcode.POP);
             }
 
@@ -1288,8 +1280,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void mainClass(String cn) {
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(cn);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "mainClass", STRING_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "mainClass", MTD_STRING, false);
                 cob.stackInstruction(Opcode.POP);
             }
 
@@ -1299,16 +1291,16 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             void version(Version v) {
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(v.toString());
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "version", STRING_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    "version", MTD_STRING, false);
                 cob.stackInstruction(Opcode.POP);
             }
 
             void invokeBuilderMethod(String methodName, String value) {
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.constantInstruction(value);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    methodName, STRING_SIG, false);
+                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
+                    methodName, MTD_STRING, false);
                 cob.stackInstruction(Opcode.POP);
             }
         }
@@ -1375,7 +1367,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 cob.constantInstruction(index);
                 cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
                 cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_HASHES_BUILDER,
-                    "build", MethodTypeDesc.of(MODULE_HASHES_CLASSNAME),
+                    "build", MethodTypeDesc.of(CD_MODULE_HASHES),
                     false);
                 cob.arrayStoreInstruction(TypeKind.ReferenceType);
             }
@@ -1449,7 +1441,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void exportsModifiers(Set<Exports.Modifier> mods) {
                 exportsModifiersSets.computeIfAbsent(mods, s ->
-                                new EnumSetBuilder<>(s, EXPORTS_MODIFIER_CLASSNAME,
+                                new EnumSetBuilder<>(s, CD_EXPORTS_MODIFIER,
                                         enumSetVar, localVarSupplier)
                 ).increment();
             }
@@ -1459,7 +1451,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void opensModifiers(Set<Opens.Modifier> mods) {
                 opensModifiersSets.computeIfAbsent(mods, s ->
-                                new EnumSetBuilder<>(s, OPENS_MODIFIER_CLASSNAME,
+                                new EnumSetBuilder<>(s, CD_OPENS_MODIFIER,
                                         enumSetVar, localVarSupplier)
                 ).increment();
             }
@@ -1469,7 +1461,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void requiresModifiers(Set<Requires.Modifier> mods) {
                 requiresModifiersSets.computeIfAbsent(mods, s ->
-                    new EnumSetBuilder<>(s, REQUIRES_MODIFIER_CLASSNAME,
+                    new EnumSetBuilder<>(s, CD_REQUIRES_MODIFIER,
                                          enumSetVar, localVarSupplier)
                 ).increment();
             }
@@ -1615,14 +1607,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * for a given set of modifiers and assign to a local variable slot.
          */
         static class EnumSetBuilder<T extends Comparable<T>> extends SetBuilder<T> {
+            private final ClassDesc classDesc;
 
-            private final ClassDesc className;
-
-            EnumSetBuilder(Set<T> modifiers, ClassDesc className,
+            EnumSetBuilder(Set<T> modifiers, ClassDesc classDesc,
                            int defaultVarIndex,
                            IntSupplier nextLocalVar) {
                 super(modifiers, defaultVarIndex, nextLocalVar);
-                this.className = className;
+                this.classDesc = classDesc;
             }
 
             /**
@@ -1630,7 +1621,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             @Override
             void visitElement(T t, CodeBuilder cob) {
-                cob.fieldInstruction(Opcode.GETSTATIC, className, t.toString(), className);
+                cob.fieldInstruction(Opcode.GETSTATIC, classDesc, t.toString(), classDesc);
             }
         }
     }
@@ -1640,57 +1631,60 @@ public final class SystemModulesPlugin extends AbstractPlugin {
      *
      * @return the name of the class resource added to the pool
      */
-    private String genSystemModulesMapClass(ClassDesc allSystemModulesClassName,
-                                            ClassDesc defaultSystemModulesClassName,
+    private String genSystemModulesMapClass(ClassDesc allSystemModules,
+                                            ClassDesc defaultSystemModules,
                                             Map<String, String> map,
                                             ResourcePoolBuilder out) {
 
         // write the class file to the pool as a resource
-        String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASS + ".class";
+        String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASSNAME + ".class";
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.build(
-                ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASS),
+                CD_SYSTEM_MODULES_MAP,
                 clb -> {
                     clb.withFlags(ACC_FINAL+ACC_SUPER);
                     clb.withVersion(52, 0);
 
                     // <init>
-                    clb.withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb.withCode(cob -> {
-                        cob.loadInstruction(TypeKind.ReferenceType, 0);
-                        cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                           CD_Object,
-                                           "<init>",
-                                           MethodTypeDesc.of(CD_void),
-                                           false);
-                        cob.returnInstruction(TypeKind.VoidType);
-                    }));
+                    clb.withMethod("<init>",
+                            MethodTypeDesc.of(CD_void),
+                            0,
+                            mb -> mb.withCode(cob -> {
+                                cob.loadInstruction(TypeKind.ReferenceType, 0);
+                                cob.invokeInstruction(Opcode.INVOKESPECIAL,
+                                                      CD_Object,
+                                                     "<init>",
+                                                      MethodTypeDesc.of(CD_void),
+                                                      false);
+                                cob.returnInstruction(TypeKind.VoidType);
+                            }));
 
                     // allSystemModules()
                     clb.withMethod("allSystemModules",
-                            MethodTypeDesc.of(SYSTEM_MODULES_CLASS),
+                            MethodTypeDesc.of(CD_SYSTEM_MODULES),
                             ACC_STATIC,
                             mb -> mb.withFlags(ACC_STATIC).withCode(cob -> {
-                                cob.newObjectInstruction(allSystemModulesClassName);
+                                cob.newObjectInstruction(allSystemModules);
                                 cob.stackInstruction(Opcode.DUP);
                                 cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                                   allSystemModulesClassName,
-                                                   "<init>",
-                                                    MethodTypeDesc.of(CD_void),
-                                                   false);
+                                                      allSystemModules,
+                                                      "<init>",
+                                                      MethodTypeDesc.of(CD_void),
+                                                      false);
                                 cob.returnInstruction(TypeKind.ReferenceType);
                             }));
 
                     // defaultSystemModules()
                     clb.withMethod("defaultSystemModules",
-                            MethodTypeDesc.of(SYSTEM_MODULES_CLASS),
+                            MethodTypeDesc.of(CD_SYSTEM_MODULES),
                             ACC_STATIC,
                             mb -> mb.withFlags(ACC_STATIC).withCode(cob -> {
-                                cob.newObjectInstruction(defaultSystemModulesClassName);
+                                cob.newObjectInstruction(defaultSystemModules);
                                 cob.stackInstruction(Opcode.DUP);
                                 cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                                   defaultSystemModulesClassName,
-                                                   "<init>",
-                                                    MethodTypeDesc.of(CD_void),
-                                                   false);
+                                                      defaultSystemModules,
+                                                      "<init>",
+                                                       MethodTypeDesc.of(CD_void),
+                                                      false);
                                 cob.returnInstruction(TypeKind.ReferenceType);
                             }));
 
