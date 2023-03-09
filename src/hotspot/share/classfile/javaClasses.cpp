@@ -1634,7 +1634,8 @@ void java_lang_Thread::set_name(oop java_thread, oop name) {
 
 // Convenience macros for setting and getting Thread fields that
 // are actually stored in the FieldHolder object of the thread.
-// The FieldHolder can be null whilst a thread is attaching via JNI.
+// The FieldHolder can be null whilst a thread is attaching via
+// JNI, and when the main thread is attaching.
 
 // The default value should be the default/zero initialized value
 // of the field as it would be in java.lang.Thread.FieldHolder.
