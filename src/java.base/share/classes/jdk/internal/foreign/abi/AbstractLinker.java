@@ -28,7 +28,7 @@ import jdk.internal.foreign.SystemLookup;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
-import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64Linker;
+import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
@@ -46,7 +46,7 @@ import java.lang.invoke.MethodType;
 import java.util.Objects;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
-                                                                      SysVx64Linker, WindowsAArch64Linker, Windowsx64Linker, LinuxPPC64Linker, LinuxRISCV64Linker {
+                                                                      SysVx64Linker, WindowsAArch64Linker, Windowsx64Linker, LinuxPPC64leLinker, LinuxRISCV64Linker {
 
     private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {}
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();

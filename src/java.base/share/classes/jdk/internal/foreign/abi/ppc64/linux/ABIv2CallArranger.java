@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,34 +25,16 @@
  */
 package jdk.internal.foreign.abi.ppc64.linux;
 
-import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.ppc64.CallArranger;
 
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import java.util.function.Consumer;
-
-public final class LinuxPPC64Linker extends AbstractLinker {
-    private static LinuxPPC64Linker instance;
-
-    public static LinuxPPC64Linker getInstance() {
-        if (instance == null) {
-            instance = new LinuxPPC64Linker();
-        }
-        return instance;
-    }
+/**
+ * PPC64 CallArranger specialized for Linux ABI v2.
+ */
+public class ABIv2CallArranger extends CallArranger {
 
     @Override
-    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
-        return CallArranger.INSTANCE.arrangeDowncall(inferredMethodType, function, options);
+    protected boolean useABIv2() {
+        return true; // Linux PPC64 Little Endian uses ABI v2.
     }
 
-    @Override
-    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, SegmentScope scope) {
-        return CallArranger.INSTANCE.arrangeUpcall(target, targetType, function, scope);
-    }
 }

@@ -39,6 +39,7 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
+import jdk.internal.foreign.abi.ppc64.linux.ABIv2CallArranger;
 import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.SegmentScope;
@@ -62,16 +63,16 @@ import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
  * which are handled in sub-classes. Clients should access these through the provided
  * public constants CallArranger.LINUX.
  */
-public class CallArranger {
-    // Linux PPC64 Little Endian uses ABI v2.
-    private static final boolean useABIv2 = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
+public abstract class CallArranger {
+    protected abstract boolean useABIv2();
+
     private static final int STACK_SLOT_SIZE = 8;
     public static final int MAX_REGISTER_ARGUMENTS = 8;
     public static final int MAX_FLOAT_REGISTER_ARGUMENTS = 13;
 
     // This is derived from the 64-Bit ELF V2 ABI spec, restricted to what's
     // possible when calling to/from C code.
-    private static final ABIDescriptor C = abiFor(
+    private final ABIDescriptor C = abiFor(
         new VMStorage[] { r3, r4, r5, r6, r7, r8, r9, r10 }, // GP input
         new VMStorage[] { f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13 }, // FP intput
         new VMStorage[] { r3, r4 }, // GP output
@@ -79,7 +80,7 @@ public class CallArranger {
         new VMStorage[] { r0, r2, r11, r12 }, // volatile GP (excluding argument registers)
         new VMStorage[] { f0 }, // volatile FP (excluding argument registers)
         16, // Stack is always 16 byte aligned on PPC64
-        useABIv2 ? 32 : 48, // ABI header (excluding argument register spill slots)
+        useABIv2() ? 32 : 48, // ABI header (excluding argument register spill slots)
         r11, // scratch reg
         r12  // target addr reg, otherwise used as scratch reg
     );
@@ -88,8 +89,8 @@ public class CallArranger {
 
     private record HfaRegs(VMStorage[] first, VMStorage[] second) {}
 
-    protected CallArranger() {} // Singleton
-    public static final CallArranger INSTANCE = new CallArranger();
+    protected CallArranger() {}
+    public static final CallArranger ABIv2 = new ABIv2CallArranger();
 
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
@@ -146,10 +147,10 @@ public class CallArranger {
         return UpcallLinker.make(C, target, bindings.callingSequence, session);
     }
 
-    private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
+    private boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
         return returnLayout
             .filter(GroupLayout.class::isInstance)
-            .filter(layout -> !TypeClass.isStructHFAorReturnRegisterAggregate(layout, useABIv2))
+            .filter(layout -> !TypeClass.isStructHFAorReturnRegisterAggregate(layout, useABIv2()))
             .isPresent();
     }
 
@@ -200,7 +201,7 @@ public class CallArranger {
         VMStorage nextStorage(int type, boolean is32Bit) {
             VMStorage reg = regAlloc(type);
             VMStorage stack;
-            if (!useABIv2 && is32Bit) {
+            if (!useABIv2() && is32Bit) {
                 stackAlloc(4, STACK_SLOT_SIZE); // Skip first half of stack slot.
                 stack = stackAlloc(4, 4);
             } else {
@@ -216,7 +217,7 @@ public class CallArranger {
         // Regular struct, no HFA.
         VMStorage[] structAlloc(MemoryLayout layout) {
             // TODO: Big Endian can't pass partially used slots correctly.
-            if (!useABIv2 && layout.byteSize() % 8 != 0) throw new UnsupportedOperationException(
+            if (!useABIv2() && layout.byteSize() % 8 != 0) throw new UnsupportedOperationException(
                 "Only MemoryLayouts with size multiple of 8 supported. This layout has size " +
                 layout.byteSize() + ".");
 
@@ -328,7 +329,7 @@ public class CallArranger {
 
         @Override
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
-            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2);
+            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2());
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
                 case STRUCT_REGISTER -> {
@@ -405,7 +406,7 @@ public class CallArranger {
 
         @Override
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
-            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2);
+            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2());
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
                 case STRUCT_REGISTER -> {
