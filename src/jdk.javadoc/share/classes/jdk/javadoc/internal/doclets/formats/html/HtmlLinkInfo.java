@@ -28,20 +28,21 @@ package jdk.javadoc.internal.doclets.formats.html;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 
 
 /**
  * HTML-specific information about a link.
  */
-public class HtmlLinkInfo extends LinkInfo {
+public class HtmlLinkInfo {
 
     public enum Kind {
         /**
@@ -95,6 +96,64 @@ public class HtmlLinkInfo extends LinkInfo {
     public final Utils utils;
 
     /**
+     * The class we want to link to.  Null if we are not linking
+     * to a class.
+     */
+    public TypeElement typeElement;
+
+    /**
+     * The executable element we want to link to.  Null if we are not linking
+     * to an executable element.
+     */
+    public ExecutableElement executableElement;
+
+    /**
+     * The Type we want to link to.  Null if we are not linking to a type.
+     */
+    public TypeMirror type;
+
+    /**
+     * True if this is a link to a VarArg.
+     */
+    public boolean isVarArg = false;
+
+    /**
+     * The label for the link.
+     */
+    public Content label;
+
+    /**
+     * True if we should print the type bounds for the type parameter.
+     */
+    public boolean showTypeBounds = true;
+
+    /**
+     * True if type parameters should be rendered as links.
+     */
+    public boolean linkTypeParameters = true;
+
+    /**
+     * By default, the link can be to the page it's already on.  However,
+     * there are cases where we don't want this (e.g. heading of class page).
+     */
+    public boolean linkToSelf = true;
+
+    /**
+     * True iff the preview flags should be skipped for this link.
+     */
+    public boolean skipPreview;
+
+    /**
+     * True if type parameters should be separated by line breaks.
+     */
+    public boolean addLineBreaksInTypeParameters = false;
+
+    /**
+     * True if annotations on type parameters should be shown.
+     */
+    public boolean showTypeParameterAnnotations = false;
+
+    /**
      * Construct a LinkInfo object.
      *
      * @param configuration the configuration data for the doclet
@@ -106,11 +165,6 @@ public class HtmlLinkInfo extends LinkInfo {
         this.utils = configuration.utils;
         this.executableElement = ee;
         setContext(context);
-    }
-
-    @Override
-    protected Content newContent() {
-        return new ContentBuilder();
     }
 
     /**
@@ -221,22 +275,65 @@ public class HtmlLinkInfo extends LinkInfo {
      * @return true if this link is linkable and false if we can't link to the
      * desired place.
      */
-    @Override
     public boolean isLinkable() {
         return configuration.utils.isLinkable(typeElement);
     }
 
-    @Override
+    /**
+     * Returns true if links to declared types should include type parameters.
+     *
+     * @return true if type parameter links should be included
+     */
     public boolean showTypeParameters() {
         return context != Kind.PLAIN && context != Kind.SHOW_PREVIEW;
+    }
+
+    /**
+     * Return the label for this class link.
+     *
+     * @param configuration the current configuration of the doclet.
+     * @return the label for this class link.
+     */
+    public Content getClassLinkLabel(BaseConfiguration configuration) {
+        if (label != null && !label.isEmpty()) {
+            return label;
+        } else if (isLinkable()) {
+            Content tlabel = newContent();
+            Utils utils = configuration.utils;
+            tlabel.add(type instanceof DeclaredType dt && utils.isGenericType(dt.getEnclosingType())
+                    // If enclosing type is rendered as separate links only use own class name
+                    ? typeElement.getSimpleName().toString()
+                    : configuration.utils.getSimpleName(typeElement));
+            return tlabel;
+        } else {
+            Content tlabel = newContent();
+            tlabel.add(configuration.getClassName(typeElement));
+            return tlabel;
+        }
+    }
+
+    /**
+     * {@return a new instance of a content object}
+     */
+    protected Content newContent() {
+        return new ContentBuilder();
     }
 
     @Override
     public String toString() {
         return "HtmlLinkInfo{" +
-                "context=" + context +
+                "typeElement=" + typeElement +
+                ", executableElement=" + executableElement +
+                ", type=" + type +
+                ", isVarArg=" + isVarArg +
+                ", label=" + label +
+                ", showTypeBounds=" + showTypeBounds +
+                ", linkTypeParameters=" + linkTypeParameters +
+                ", linkToSelf=" + linkToSelf +
+                ", addLineBreaksInTypeParameters=" + addLineBreaksInTypeParameters +
+                ", showTypeParameterAnnotations=" + showTypeParameterAnnotations +
+                ", context=" + context +
                 ", fragment=" + fragment +
-                ", style=" + style +
-                super.toString() + '}';
+                ", style=" + style + '}';
     }
 }
