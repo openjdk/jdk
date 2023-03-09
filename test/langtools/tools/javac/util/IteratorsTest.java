@@ -53,32 +53,32 @@ public class IteratorsTest {
         Iterator<String> compound = Iterators.createCompoundIterator(List.of(test1, test2), c);
 
         //nothing should be called before the hasNext or next is called:
-        assertMaxCalls(c, 0);
-        assertMaxCalls(test1, 0, 0);
-        assertMaxCalls(test2, 0, 0);
+        assertAndResetMaxCalls(c, 0);
+        assertAndResetMaxCalls(test1, 0, 0);
+        assertAndResetMaxCalls(test2, 0, 0);
 
         //when hasNext is called, should invoke the hasNext delegate once:
         Assertions.assertTrue(compound.hasNext());
 
-        assertMaxCalls(c, 1);
-        assertMaxCalls(test1, 1, 0);
-        assertMaxCalls(test2, 0, 0);
+        assertAndResetMaxCalls(c, 1);
+        assertAndResetMaxCalls(test1, 1, 0);
+        assertAndResetMaxCalls(test2, 0, 0);
 
         Assertions.assertTrue(compound.hasNext());
 
-        assertMaxCalls(c, 0);
-        assertMaxCalls(test1, 1, 0);
-        assertMaxCalls(test2, 0, 0);
+        assertAndResetMaxCalls(c, 0);
+        assertAndResetMaxCalls(test1, 1, 0);
+        assertAndResetMaxCalls(test2, 0, 0);
 
         //next may invoke hasNext once:
         Assertions.assertEquals("1", compound.next());
 
-        assertMaxCalls(c, 0);
-        assertMaxCalls(test1, 1, 1);
-        assertMaxCalls(test2, 0, 0);
+        assertAndResetMaxCalls(c, 0);
+        assertAndResetMaxCalls(test1, 1, 1);
+        assertAndResetMaxCalls(test2, 0, 0);
     }
 
-    private void assertMaxCalls(TestIterator<?> test, int maxExpectedHasNextCalls, int maxExpectedNextCalls) {
+    private void assertAndResetMaxCalls(TestIterator<?> test, int maxExpectedHasNextCalls, int maxExpectedNextCalls) {
         if (test.hasNextCalls > maxExpectedHasNextCalls) {
             Assertions.fail("too many hasNext invocations: " + test.hasNextCalls +
                             ", expected: " + maxExpectedHasNextCalls);
@@ -91,7 +91,7 @@ public class IteratorsTest {
         test.nextCalls = 0;
     }
 
-    private void assertMaxCalls(TestConverter<?, ?> test, int maxExpectedApplyCalls) {
+    private void assertAndResetMaxCalls(TestConverter<?, ?> test, int maxExpectedApplyCalls) {
         if (test.applyCalls > maxExpectedApplyCalls) {
             Assertions.fail("too many apply invocations: " + test.applyCalls +
                             ", expected: " + maxExpectedApplyCalls);
@@ -99,7 +99,7 @@ public class IteratorsTest {
         test.applyCalls = 0;
     }
 
-    class TestIterator<T> implements Iterator<T> {
+    static class TestIterator<T> implements Iterator<T> {
         int hasNextCalls;
         int nextCalls;
         final Iterator<T> delegate;
@@ -120,7 +120,8 @@ public class IteratorsTest {
             return delegate.next();
         }
     }
-    class TestConverter<I, O>  implements Function<I, Iterator<O>> {
+
+    static class TestConverter<I, O>  implements Function<I, Iterator<O>> {
         int applyCalls;
         final Function<I, Iterator<O>> delegate;
 
