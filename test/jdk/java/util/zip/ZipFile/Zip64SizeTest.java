@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -36,25 +38,23 @@ import static org.testng.Assert.assertTrue;
 
 /**
  * @test
- * @bug 8226530
- * @summary ZIP File System tests that leverage DirectoryStream
+ * @bug 8226530 8303891
+ * @summary Verify that ZipFile reads size fields using the Zip64 extra field for entries
+ * of size > 0xFFFFFFFF
  * @compile Zip64SizeTest.java
  * @run testng Zip64SizeTest
  */
 public class Zip64SizeTest {
-
-    private static final int BUFFER_SIZE = 2048;
+    // Buffer used when writing zero-filled entries
+    private static final byte[] EMPTY_BYTES = new byte[16384];
     // ZIP file to create
     private static final String ZIP_FILE_NAME = "Zip64SizeTest.zip";
     // File that will be created with a size greater than 0xFFFFFFFF
     private static final String LARGE_FILE_NAME = "LargeZipEntry.txt";
     // File that will be created with a size less than 0xFFFFFFFF
     private static final String SMALL_FILE_NAME = "SmallZipEntry.txt";
-    // List of files to be added to the ZIP file
-    private static final List<String> ZIP_ENTRIES = List.of(LARGE_FILE_NAME,
-            SMALL_FILE_NAME);
     private static final long LARGE_FILE_SIZE = 5L * 1024L * 1024L * 1024L; // 5GB
-    private static final long SMALL_FILE_SIZE = 0x100000L; // 1024L x 1024L;
+    private static final long SMALL_FILE_SIZE = 0x1024L * 1024L; // 1MB
 
     /**
      * Validate that if the size of a ZIP entry exceeds 0xFFFFFFFF, that the
@@ -63,7 +63,6 @@ public class Zip64SizeTest {
      */
     @Test
     private static void validateZipEntrySizes() throws IOException {
-        createFiles();
         createZipFile();
         System.out.println("Validating Zip Entry Sizes");
         try (ZipFile zip = new ZipFile(ZIP_FILE_NAME)) {
@@ -73,7 +72,6 @@ public class Zip64SizeTest {
             ze = zip.getEntry(SMALL_FILE_NAME);
             System.out.printf("Entry: %s, size= %s%n", ze.getName(), ze.getSize());
             assertTrue(ze.getSize() == SMALL_FILE_SIZE);
-
         }
     }
 
@@ -89,40 +87,40 @@ public class Zip64SizeTest {
 
     /**
      * Create the ZIP file adding an entry whose size exceeds 0xFFFFFFFF
+     *
      * @throws IOException if an error occurs creating the ZIP File
      */
     private static void createZipFile() throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(ZIP_FILE_NAME);
+        try (OutputStream fos = new SparseOutputStream(new FileOutputStream(ZIP_FILE_NAME));
              ZipOutputStream zos = new ZipOutputStream(fos)) {
+
             System.out.printf("Creating Zip file: %s%n", ZIP_FILE_NAME);
-            for (String srcFile : ZIP_ENTRIES) {
-                System.out.printf("...Adding Entry: %s%n", srcFile);
-                File fileToZip = new File(srcFile);
-                try (FileInputStream fis = new FileInputStream(fileToZip)) {
-                    ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
-                    zipEntry.setSize(fileToZip.length());
-                    zos.putNextEntry(zipEntry);
-                    byte[] bytes = new byte[BUFFER_SIZE];
-                    int length;
-                    while ((length = fis.read(bytes)) >= 0) {
-                        zos.write(bytes, 0, length);
-                    }
-                }
-            }
+
+            addEntry(LARGE_FILE_NAME, LARGE_FILE_SIZE, zos);
+            addEntry(SMALL_FILE_NAME, SMALL_FILE_SIZE, zos);
         }
     }
 
     /**
-     * Create the files that will be added to the ZIP file
-     * @throws IOException if there is a problem  creating the files
+     * Add a STORED entry with the given name and size. The file content is filled with zero-bytes.
      */
-    private static void createFiles() throws IOException {
-        try (RandomAccessFile largeFile = new RandomAccessFile(LARGE_FILE_NAME, "rw");
-             RandomAccessFile smallFile = new RandomAccessFile(SMALL_FILE_NAME, "rw")) {
-            System.out.printf("Creating %s%n", LARGE_FILE_NAME);
-            largeFile.setLength(LARGE_FILE_SIZE);
-            System.out.printf("Creating %s%n", SMALL_FILE_NAME);
-            smallFile.setLength(SMALL_FILE_SIZE);
+    private static void addEntry(String entryName, long size, ZipOutputStream zos) throws IOException {
+        ZipEntry e = new ZipEntry(entryName);
+        e.setMethod(ZipEntry.STORED);
+        e.setSize(size);
+        e.setCrc(crc(size));
+        zos.putNextEntry(e);
+
+        // Write size number of empty bytes
+        long rem = size;
+        while (rem > 0) {
+            int lim = EMPTY_BYTES.length;
+            if (rem < lim) {
+                lim = (int) rem;
+            }
+            // Allows SparseOutputStream to simply  advance position
+            zos.write(EMPTY_BYTES, 0, lim);
+            rem -= lim;
         }
     }
 
@@ -137,10 +135,52 @@ public class Zip64SizeTest {
 
     /**
      * Remove the files created for the test
+     *
      * @throws IOException
      */
     @AfterMethod
     public void tearDown() throws IOException {
         deleteFiles();
+    }
+
+    /**
+     * Compute the CRC for a file of the given size filled with zero-bytes
+     */
+    private static long crc(long size) {
+        CRC32 crc32 = new CRC32();
+        long rem = size;
+        while (rem > 0) {
+            int lim = EMPTY_BYTES.length;
+            if (rem < lim) {
+                lim = (int) rem;
+            }
+            crc32.update(EMPTY_BYTES, 0, lim);
+            rem -= lim;
+        }
+
+        return crc32.getValue();
+    }
+
+    /**
+     * An OutputStream which creates sparse holes contents from EMPTY_BYTES
+     * is written to it.
+     */
+    private static class SparseOutputStream extends FilterOutputStream {
+        private final FileChannel channel;
+
+        public SparseOutputStream(FileOutputStream fileOutputStream) {
+            super(fileOutputStream);
+            this.channel = fileOutputStream.getChannel();
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            if (b == EMPTY_BYTES) {
+                // Create a sparse 'hole' in the file instead of writing bytes
+                channel.position(channel.position() + len);
+            } else {
+                super.write(b, off, len);
+            }
+        }
     }
 }
