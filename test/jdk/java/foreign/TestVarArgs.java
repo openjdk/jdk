@@ -31,20 +31,22 @@
  */
 
 import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-
 
 import static java.lang.foreign.MemoryLayout.PathElement.*;
 

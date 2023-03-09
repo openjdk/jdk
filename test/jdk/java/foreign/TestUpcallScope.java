@@ -36,14 +36,14 @@
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
+
+import org.testng.annotations.Test;
+
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import org.testng.annotations.Test;
-
-
 
 public class TestUpcallScope extends TestUpcallBase {
 
