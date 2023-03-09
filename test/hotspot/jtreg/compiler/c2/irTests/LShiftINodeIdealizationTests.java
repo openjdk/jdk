@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8297384
+ * @bug 8297384 8303238
  * @summary Test that Ideal transformations of LShiftINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.LShiftINodeIdealizationTests
@@ -119,7 +119,7 @@ public class LShiftINodeIdealizationTests {
     @Test
     @IR(failOn = { IRNode.RSHIFT })
     @IR(counts = { IRNode.AND, "1", IRNode.LSHIFT, "1" })
-    // Checks (x >> 4) << 8 => (x << 4) & 0xFF00
+    // Checks ((x >> 4) & 0xFF) << 8 => (x << 4) & 0xFF00
     public int test7(int x) {
         return ((x >> 4) & 0xFF) << 8;
     }
@@ -127,7 +127,7 @@ public class LShiftINodeIdealizationTests {
     @Test
     @IR(failOn = { IRNode.URSHIFT })
     @IR(counts = { IRNode.AND, "1", IRNode.LSHIFT, "1" })
-    // Checks (x >> 4) << 8 => (x << 4) & 0xFF00
+    // Checks ((x >>> 4) & 0xFF) << 8 => (x << 4) & 0xFF00
     public int test8(int x) {
         return ((x >>> 4) & 0xFF) << 8;
     }
