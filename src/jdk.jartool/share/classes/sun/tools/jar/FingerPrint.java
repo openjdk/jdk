@@ -278,8 +278,8 @@ final class FingerPrint {
                 case FieldModel fm -> {
                     if (isPublic(fm.flags())) {
                         fields.add(new Field(fm.flags().flagsMask(),
-                                fm.fieldName().stringValue(),
-                                fm.fieldType().stringValue()));
+                                             fm.fieldName().stringValue(),
+                                             fm.fieldType().stringValue()));
                     }
                 }
                 case MethodModel mm -> {
