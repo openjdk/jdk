@@ -135,7 +135,6 @@ public class Zip64SizeTest {
 
     /**
      * Remove the files created for the test
-     *
      * @throws IOException
      */
     @AfterMethod
