@@ -355,12 +355,12 @@ define SetupEclipseWorkspaceBody
   endif
 
   $$(eval $$(call SetupTextFileProcessing, $1_CREATE_WORKSPACE_FILE, \
-    SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/workspace.template, \
-    OUTPUT_FILE := $$($1_WORKSPACE_FILE), \
-    REPLACEMENTS := \
-        @@BUILD_MANAGERS@@ => $$($1_BUILD_MANAGERS) ; \
-        @@NATURES@@ => $$($1_NATURES) ; \
-        @@LINKED_RESOURCES@@ => $$($1_LINKED_RESOURCES), \
+      SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/workspace.template, \
+      OUTPUT_FILE := $$($1_WORKSPACE_FILE), \
+      REPLACEMENTS := \
+          @@BUILD_MANAGERS@@ => $$($1_BUILD_MANAGERS) ; \
+          @@NATURES@@ => $$($1_NATURES) ; \
+          @@LINKED_RESOURCES@@ => $$($1_LINKED_RESOURCES), \
   ))
 
   TARGETS += $$($1_CREATE_WORKSPACE_FILE)
