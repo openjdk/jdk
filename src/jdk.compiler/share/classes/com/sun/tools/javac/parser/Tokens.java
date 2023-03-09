@@ -275,6 +275,7 @@ public class Tokens {
             LINE,
             BLOCK,
             JAVADOC,
+            MARKDOWN
         }
 
         String getText();
@@ -357,7 +358,7 @@ public class Tokens {
          * the last one is returned
          */
         public Comment comment(Comment.CommentStyle style) {
-            List<Comment> comments = getComments(Comment.CommentStyle.JAVADOC);
+            List<Comment> comments = getDocComments();
             return comments.isEmpty() ?
                     null :
                     comments.head;
@@ -368,7 +369,7 @@ public class Tokens {
          * javadoc comment attached to this token contains the '@deprecated' string
          */
         public boolean deprecatedFlag() {
-            for (Comment c : getComments(Comment.CommentStyle.JAVADOC)) {
+            for (Comment c : getDocComments()) {
                 if (c.isDeprecated()) {
                     return true;
                 }
@@ -376,13 +377,15 @@ public class Tokens {
             return false;
         }
 
-        private List<Comment> getComments(Comment.CommentStyle style) {
+        private List<Comment> getDocComments() {
             if (comments == null) {
                 return List.nil();
             } else {
                 ListBuffer<Comment> buf = new ListBuffer<>();
                 for (Comment c : comments) {
-                    if (c.getStyle() == style) {
+                    Comment.CommentStyle style = c.getStyle();
+                    if (style == Comment.CommentStyle.JAVADOC ||
+                        style == Comment.CommentStyle.MARKDOWN) {
                         buf.add(c);
                     }
                 }
