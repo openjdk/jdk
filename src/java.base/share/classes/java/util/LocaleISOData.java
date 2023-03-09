@@ -78,10 +78,10 @@ class LocaleISOData {
         + "fj" + "fij"  // Fijian
         + "fo" + "fao"  // Faroese
         + "fr" + "fra"  // French
-        + "fy" + "fry"  // Frisian
+        + "fy" + "fry"  // Western Frisian
         + "ga" + "gle"  // Irish
         + "gd" + "gla"  // Scottish Gaelic
-        + "gl" + "glg"  // Gallegan
+        + "gl" + "glg"  // Galician
         + "gn" + "grn"  // Guarani
         + "gu" + "guj"  // Gujarati
         + "gv" + "glv"  // Manx
@@ -115,7 +115,7 @@ class LocaleISOData {
         + "kj" + "kua"  // Kwanyama
         + "kk" + "kaz"  // Kazakh
         + "kl" + "kal"  // Greenlandic
-        + "km" + "khm"  // Khmer
+        + "km" + "khm"  // Central Khmer
         + "kn" + "kan"  // Kannada
         + "ko" + "kor"  // Korean
         + "kr" + "kau"  // Kanuri
@@ -139,7 +139,7 @@ class LocaleISOData {
         + "mk" + "mkd"  // Macedonian
         + "ml" + "mal"  // Malayalam
         + "mn" + "mon"  // Mongolian
-//        + "mo" + "mol"  // Moldavian
+        + "mo" + "mol"  // Moldavian
         + "mr" + "mar"  // Marathi
         + "ms" + "msa"  // Malay
         + "mt" + "mlt"  // Maltese
@@ -155,7 +155,7 @@ class LocaleISOData {
         + "nr" + "nbl"  // South Ndebele
         + "nv" + "nav"  // Navajo
         + "ny" + "nya"  // Nyanja
-        + "oc" + "oci"  // Occitan
+        + "oc" + "oci"  // Occitan (post 1500)
         + "oj" + "oji"  // Ojibwa
         + "om" + "orm"  // Oromo
         + "or" + "ori"  // Oriya
@@ -166,7 +166,7 @@ class LocaleISOData {
         + "ps" + "pus"  // Pushto
         + "pt" + "por"  // Portuguese
         + "qu" + "que"  // Quechua
-        + "rm" + "roh"  // Raeto-Romance
+        + "rm" + "roh"  // Romansh
         + "rn" + "run"  // Rundi
         + "ro" + "ron"  // Romanian
         + "ru" + "rus"  // Russian
@@ -176,7 +176,7 @@ class LocaleISOData {
         + "sd" + "snd"  // Sindhi
         + "se" + "sme"  // Northern Sami
         + "sg" + "sag"  // Sango
-        + "si" + "sin"  // Sinhalese
+        + "si" + "sin"  // Sinhala
         + "sk" + "slk"  // Slovak
         + "sl" + "slv"  // Slovenian
         + "sm" + "smo"  // Samoan
