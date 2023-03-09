@@ -193,7 +193,7 @@ class ConstantUtils {
         int index = start;
         while (index < end) {
             switch (descriptor.charAt(index)) {
-                case JVM_SIGNATURE_VOID: if (!voidOK) { return index; }
+                case JVM_SIGNATURE_VOID: if (!voidOK) { return 0; }
                 case JVM_SIGNATURE_BOOLEAN:
                 case JVM_SIGNATURE_BYTE:
                 case JVM_SIGNATURE_CHAR:
