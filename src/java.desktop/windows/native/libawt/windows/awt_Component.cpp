@@ -3627,7 +3627,7 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
     } else {
         UINT scancode = ::MapVirtualKey(wkey, 0);
         converted = ::ToUnicodeEx(wkey, scancode, keyboardState,
-                                              wChar, 2, 0, GetKeyboardLayout());
+                                              reinterpret_cast<LPWSTR>(wChar), 2, 0, GetKeyboardLayout());
     }
 
     UINT translation;
