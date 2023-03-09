@@ -40,7 +40,6 @@ import jdk.internal.classfile.constantpool.*;
 import jdk.internal.classfile.FieldModel;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.ExceptionsAttribute;
 import jdk.internal.classfile.attribute.InnerClassesAttribute;
 
 /**
@@ -98,7 +97,7 @@ final class FingerPrint {
     }
 
     public boolean isNestedClass() {
-        return attrs.nestedClass;
+        return attrs.maybeNestedClass && attrs.outerClassName != null;
     }
 
     public boolean isPublicClass() {
@@ -250,7 +249,7 @@ final class FingerPrint {
         private final int majorVersion;
         private final int access;
         private final boolean publicClass;
-        private boolean nestedClass;
+        private boolean maybeNestedClass;
         private final Set<Field> fields = new HashSet<>();
         private final Set<Method> methods = new HashSet<>();
 
@@ -258,7 +257,7 @@ final class FingerPrint {
             this.majorVersion = majorVersion; // JDK-8296329: extract major version only
             this.access = access.flagsMask();
             this.name = name;
-            this.nestedClass = name.contains("$");
+            this.maybeNestedClass = name.contains("$");
             this.superName = superName;
             this.publicClass = isPublic(access);
         }
@@ -268,7 +267,7 @@ final class FingerPrint {
             switch (cle) {
                 case InnerClassesAttribute ica -> {
                     for (var icm : ica.classes()) {
-                        if (this.nestedClass && icm.outerClass().isPresent()
+                        if (this.maybeNestedClass && icm.outerClass().isPresent()
                                 && this.name.equals(icm.innerClass().asInternalName())
                                 && this.outerClassName == null) {
                             this.outerClassName = icm.outerClass().get().asInternalName();
@@ -300,7 +299,7 @@ final class FingerPrint {
                     }
                 }
                 case EnclosingMethodAttribute ema -> {
-                    if (this.nestedClass) {
+                    if (this.maybeNestedClass) {
                         this.outerClassName = ema.enclosingClass().asInternalName();
                     }
                 }
