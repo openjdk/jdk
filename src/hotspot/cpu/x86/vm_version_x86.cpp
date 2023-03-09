@@ -3227,7 +3227,9 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   switch (id) {
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:
-    if (!supports_f16c() && !supports_avx512vl()) return false;
+    if (!supports_f16c() && !supports_avx512vl()) {
+      return false;
+    }
     break;
   default:
     break;
