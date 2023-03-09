@@ -28,9 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/ticks.hpp"
 
-// For use by -agentlib, -agentpath and -Xrun
-// The terminology classifies -agentlib and -agentpath as "JVMTI agents".
-// -Xrun are classified as "xrun agents" (JVMPI)
+// Representing an agent launched by -agentlib, -agentpath or -Xrun
 class Agent : public CHeapObj<mtServiceability> {
   friend class AgentList;
  private:

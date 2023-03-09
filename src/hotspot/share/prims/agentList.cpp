@@ -67,7 +67,7 @@ void AgentList::add_xrun(const char* name, char* options, bool absolute_path) {
 
 Agent* AgentList::Iterator::filter(Agent* agent) const {
   while (agent != nullptr) {
-    if (_type == JVMTI) {
+    if (_type == JAVA_OR_NATIVE) {
       if (!agent->_is_xrun) {
         return agent;
       }
@@ -125,7 +125,7 @@ Agent* AgentList::Iterator::next() {
 }
 
 AgentList::Iterator AgentList::agents() {
-  return Iterator(&_list, Iterator::JVMTI);
+  return Iterator(&_list, Iterator::JAVA_OR_NATIVE);
 }
 
 AgentList::Iterator AgentList::java_agents() {
@@ -149,10 +149,10 @@ static inline void timestamp_agents(AgentList::Iterator& it) {
   }
 }
 
+// In case an agent did not enable the VMInit callback, it gets a timestamp here.
 void AgentList::timestamp() {
   Iterator xrun_it = xrun_agents();
   timestamp_agents(xrun_it);
-  // In case a JVMTI agent did not enable the VMInit callback, it gets a timestamp here.
   Iterator agent_it = agents();
   timestamp_agents(agent_it);
 }
@@ -277,7 +277,7 @@ static JvmtiEnv* get_last_jplis_jvmtienv() {
 }
 
 // Link the last, or most recent jvmtiEnv. that is a JPLIS agent, with the current agent.
-void AgentList::link_jplis(Agent* agent) {
+void AgentList::convert_to_jplis(Agent* agent) {
   assert(agent != nullptr, "invariant");
   assert(agent->is_instrument_lib(), "invariant");
   JvmtiEnv* const env = get_last_jplis_jvmtienv();
@@ -386,9 +386,9 @@ void AgentList::load_agents() {
       vm_exit_during_initialization("agent library failed Agent_OnLoad", agent->name());
     }
 
-    // Resolve the instrument libs to the actual JPLIS / javaagent it represents.
+    // Convert the instrument lib to the actual JPLIS / javaagent it represents.
     if (agent->is_instrument_lib()) {
-      link_jplis(agent);
+      convert_to_jplis(agent);
     }
   }
 
@@ -573,8 +573,8 @@ jint AgentList::load_agent(const char* agent_name, const char* absParam,
 
   if (result == JNI_OK) {
     if (agent->is_instrument_lib()) {
-      // If this is a JPLIS agent, link it to its JVMTI env.
-      link_jplis(agent);
+      // Convert the instrument lib to the actual JPLIS / javaagent it represents.
+      convert_to_jplis(agent);
     }
     // If OnAttach returns JNI_OK then we add it to the list of
     // agents so that we can iterate over it and call Agent_OnUnload later.

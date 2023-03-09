@@ -33,7 +33,7 @@ class JvmtiEnv;
 template <typename, MEMFLAGS>
 class GrowableArrayCHeap;
 
-// Maintains a single cas-linked-list for -agentlib, -agentpath and -Xrun agents.
+// Maintains a single cas linked-list for -agentlib, -agentpath and -Xrun agents.
 class AgentList : AllStatic {
   friend class Iterator;
   friend class JvmtiExport;
@@ -44,7 +44,7 @@ class AgentList : AllStatic {
     enum Type {
       JAVA,
       NATIVE,
-      JVMTI, // union of JAVA and NATIVE
+      JAVA_OR_NATIVE, // union of JAVA and NATIVE
       XRUN
     };
     GrowableArrayCHeap<Agent*, mtServiceability>* _stack;
@@ -64,7 +64,7 @@ class AgentList : AllStatic {
   static void timestamp();
   static void invoke_JVM_OnLoad();
   static void convert_xrun_agents();
-  static void link_jplis(Agent* agent);
+  static void convert_to_jplis(Agent* agent);
 
  public:
   static void add(Agent* agent);
