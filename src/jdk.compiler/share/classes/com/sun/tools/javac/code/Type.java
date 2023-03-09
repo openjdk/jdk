@@ -323,7 +323,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      *  and with given constant value
      */
     public Type constType(Object constValue) {
-        return addMetadata(new ConstantValue(constValue));
+        throw new AssertionError();
     }
 
     /**
@@ -772,6 +772,14 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             return true;
         }
 
+        /** Define a constant type, of the same kind as this type
+         *  and with given constant value
+         */
+        @Override
+        public Type constType(Object constValue) {
+            return addMetadata(new ConstantValue(constValue));
+        }
+
         /**
          * The constant value of this type, converted to String
          */
@@ -1026,6 +1034,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         @Override
         public <R,S> R accept(Type.Visitor<R,S> v, S s) {
             return v.visitClassType(this, s);
+        }
+
+        public Type constType(Object constValue) {
+            return addMetadata(new ConstantValue(constValue));
         }
 
         /** The Java source which this type represents.
