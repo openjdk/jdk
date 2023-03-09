@@ -438,17 +438,9 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
         return (List<T>)list;
     }
 
-    private static final Iterator<?> EMPTYITERATOR = new Iterator<Object>() {
-            public boolean hasNext() {
-                return false;
-            }
-            public Object next() {
-                throw new java.util.NoSuchElementException();
-            }
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
+    // cache because java.util.Collections.emptyIterator() explicitly
+    // does not guarantee returning the same instance
+    private static final Iterator<?> EMPTYITERATOR = Collections.emptyIterator();
 
     @SuppressWarnings("unchecked")
     private static <A> Iterator<A> emptyIterator() {
