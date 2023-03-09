@@ -32,10 +32,18 @@
 import com.sun.tools.javac.util.Iterators;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 import org.junit.jupiter.api.*;
 
 public class IteratorsTest {
+
+    @Test
+    public void consistentNext() {
+        Iterator<?> emptyCompoundIterator = Iterators.createCompoundIterator(List.of(), Function.identity());
+        Assertions.assertThrows(NoSuchElementException.class, emptyCompoundIterator::next);
+        Assertions.assertThrows(NoSuchElementException.class, emptyCompoundIterator::next);
+    }
 
     @Test
     public void compoundIterator() {
