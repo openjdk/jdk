@@ -151,7 +151,6 @@ public class Bug4175998Test extends IntlTest {
         {"ha","hau","hau"},
         {"mr","mar","mar"},
         {"br","bre","bre"},
-        {"mo","mol","mol"},
         {"bo","bod","tib"},
         {"mn","mon","mon"},
         {"bn","ben","ben"},

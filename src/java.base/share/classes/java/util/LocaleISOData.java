@@ -139,7 +139,7 @@ class LocaleISOData {
         + "mk" + "mkd"  // Macedonian
         + "ml" + "mal"  // Malayalam
         + "mn" + "mon"  // Mongolian
-        + "mo" + "mol"  // Moldavian
+//        + "mo" + "mol"  // Moldavian
         + "mr" + "mar"  // Marathi
         + "ms" + "msa"  // Malay
         + "mt" + "mlt"  // Maltese
