@@ -220,16 +220,16 @@ define SetupEclipseWorkspaceBody
       </target>$$(NEWLINE))
 
     $$(eval $$(call SetupTextFileProcessing, $1_CREATE_NATIVE_FILE, \
-      SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/native.template, \
-      OUTPUT_FILE := $$($1_NATIVE_FILE), \
-      REPLACEMENTS := \
-          @@DIR@@ => $$(call FixPath, $(TOPDIR)) ; \
-          @@ENV@@ => $$($1_ENV) ; \
-          @@WORKSPACE@@ => $$($1_WORKSPACE_MAJOR) ; \
-          @@MINOR@@ =>  $$($1_WORKSPACE_MINOR) ; \
-          @@MAKE@@ => $$($1_MAKE) ; \
-          @@SRC@@ => $$($1_NATIVE_SRCS) ; \
-          @@MAKE_TARGETS@@ => $$($1_MATCHING_MAKE_TARGETS), \
+        SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/native.template, \
+        OUTPUT_FILE := $$($1_NATIVE_FILE), \
+        REPLACEMENTS := \
+            @@DIR@@ => $$(call FixPath, $(TOPDIR)) ; \
+            @@ENV@@ => $$($1_ENV) ; \
+            @@WORKSPACE@@ => $$($1_WORKSPACE_MAJOR) ; \
+            @@MINOR@@ =>  $$($1_WORKSPACE_MINOR) ; \
+            @@MAKE@@ => $$($1_MAKE) ; \
+            @@SRC@@ => $$($1_NATIVE_SRCS) ; \
+            @@MAKE_TARGETS@@ => $$($1_MATCHING_MAKE_TARGETS), \
     ))
 
     TARGETS += $$($1_CREATE_NATIVE_FILE)
