@@ -963,9 +963,7 @@ JNI_ENTRY(jobject, jni_AllocObject(JNIEnv *env, jclass clazz))
   jobject ret = nullptr;
   DT_RETURN_MARK(AllocObject, jobject, (const jobject&)ret);
 
-  instanceOop i = InstanceKlass::allocate_instance(
-                    InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz))),
-                    CHECK_NULL);
+  instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(clazz), CHECK_NULL);
   ret = JNIHandles::make_local(THREAD, i);
   return ret;
 JNI_END
@@ -979,9 +977,7 @@ JNI_ENTRY(jobject, jni_NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID,
   jobject obj = nullptr;
   DT_RETURN_MARK(NewObjectA, jobject, (const jobject&)obj);
 
-  instanceOop i = InstanceKlass::allocate_instance(
-                    InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz))),
-                    CHECK_NULL);
+  instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(clazz), CHECK_NULL);
   obj = JNIHandles::make_local(THREAD, i);
   JavaValue jvalue(T_VOID);
   JNI_ArgumentPusherArray ap(methodID, args);
@@ -999,9 +995,7 @@ JNI_ENTRY(jobject, jni_NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID,
   jobject obj = nullptr;
   DT_RETURN_MARK(NewObjectV, jobject, (const jobject&)obj);
 
-  instanceOop i = InstanceKlass::allocate_instance(
-                    InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz))),
-                    CHECK_NULL);
+  instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(clazz), CHECK_NULL);
   obj = JNIHandles::make_local(THREAD, i);
   JavaValue jvalue(T_VOID);
   JNI_ArgumentPusherVaArg ap(methodID, args);
@@ -1019,10 +1013,8 @@ JNI_ENTRY(jobject, jni_NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, 
   jobject obj = nullptr;
   DT_RETURN_MARK(NewObject, jobject, (const jobject&)obj);
 
-  instanceOop i = InstanceKlass::allocate_instance(
-                    InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz))),
-                    CHECK_NULL);
-  obj = JNIHandles::make_local(THREAD, i);
+  instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(clazz), CHECK_NULL);
+    obj = JNIHandles::make_local(THREAD, i);
   va_list args;
   va_start(args, methodID);
   JavaValue jvalue(T_VOID);
