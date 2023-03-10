@@ -66,7 +66,7 @@ public class VMSupport {
     }
 
     /**
-     * @returns a Properties object containing only the entries in {@code p}
+     * @return a Properties object containing only the entries in {@code p}
      *          whose key and value are both Strings
      */
     private static Properties onlyStrings(Properties p) {
