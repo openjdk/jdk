@@ -43,35 +43,38 @@ import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
  */
 public class HtmlLinkInfo extends LinkInfo {
 
+    /**
+     * Enumeration of different kinds of links.
+     */
     public enum Kind {
         /**
-         * Creates a link with just the element name as label.
+         * Link with just the element name as label.
          */
         PLAIN,
         /**
-         * Creates a link with additional preview flag if appropriate.
+         * Link with additional preview flag if appropriate.
          */
         SHOW_PREVIEW,
         /**
-         * Creates a link with optional type parameters appended as plain text.
+         * Link with optional type parameters appended as plain text.
          */
         SHOW_TYPE_PARAMS,
 
         /**
-         * Creates a link with optional type parameters included in the link label.
+         * Link with optional type parameters included in the link label.
          */
         SHOW_TYPE_PARAMS_IN_LABEL,
 
         /**
-         * Creates a link with optional type parameters and bounds appended as plain text.
+         * Link with optional type parameters and bounds appended as plain text.
          */
         SHOW_TYPE_PARAMS_AND_BOUNDS,
         /**
-         * Creates a link with optional type parameters but no bounds rendered as separate links.
+         * Link with optional type parameters but no bounds rendered as separate links.
          */
         LINK_TYPE_PARAMS,
         /**
-         * Creates a link with optional type parameters and bounds rendered as separate links.
+         * Link with optional type parameters and bounds rendered as separate links.
          */
         LINK_TYPE_PARAMS_AND_BOUNDS;
     }
@@ -234,7 +237,7 @@ public class HtmlLinkInfo extends LinkInfo {
 
     @Override
     public boolean showTypeParameters() {
-        // Type parameters parameters for these kinds of links are either not desired
+        // Type parameters for these kinds of links are either not desired
         // or already included in the link label.
         return context != Kind.PLAIN && context != Kind.SHOW_PREVIEW
                 && context != Kind.SHOW_TYPE_PARAMS_IN_LABEL;
