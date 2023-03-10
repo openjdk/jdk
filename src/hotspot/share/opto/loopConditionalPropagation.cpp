@@ -698,6 +698,23 @@ public:
     return false;
   }
 
+  bool is_safe_for_replacement(Node* node, Node* use, TreeNode* types) {
+    // if the exit test of a counted loop doesn't constant fold, preserve the shape of the exit test
+    Node* node_c = _phase->get_ctrl(node);
+    IdealLoopTree* loop = _phase->get_loop(node_c);
+    Node* head = loop->_head;
+    if (head->is_BaseCountedLoop()) {
+      BaseCountedLoopNode* cl = head->as_BaseCountedLoop();
+      Node* cmp = cl->loopexit()->cmp_node();
+      if ((node == cl->phi() && use == cl->incr()) ||
+          (node == cl->incr() && use == cmp) &&
+          !types->get_type(cmp)->singleton()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool transform_helper(Node* c) {
     bool progress = false;
     TreeNode* types = (TreeNode*) _types_at_ctrl[c];
@@ -782,7 +799,7 @@ public:
             Node* con = NULL;
             for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
               Node* use = node->fast_out(i);
-              if (_phase->is_dominator(c, _phase->ctrl_or_self(use))) {
+              if (_phase->is_dominator(c, _phase->ctrl_or_self(use)) && is_safe_for_replacement(node, use, types)) {
                 progress = true;
                 if (con == NULL) {
                   con = makecon(t);
