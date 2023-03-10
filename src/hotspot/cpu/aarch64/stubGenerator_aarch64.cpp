@@ -5487,7 +5487,6 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(c_rarg0, r9);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, LockStack::ensure_lock_stack_size), 1);
 
-
     __ pop_call_clobbered_registers();
     __ leave();
     __ reset_last_Java_frame(true);

@@ -3851,7 +3851,7 @@ encode %{
       if (UseFastLocking) {
         __ fast_lock(oop, disp_hdr, tmp, rscratch1, no_count, false);
 
-        // Indicate success at cont.
+        // Indicate success on completion.
         __ cmp(oop, oop);
         __ b(count);
       } else {
@@ -3957,7 +3957,7 @@ encode %{
       if (UseFastLocking) {
         __ fast_unlock(oop, tmp, box, disp_hdr, no_count);
 
-        // Indicate success at cont.
+        // Indicate success on completion.
         __ cmp(oop, oop);
         __ b(count);
       } else {
