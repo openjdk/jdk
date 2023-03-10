@@ -59,6 +59,8 @@ public class TestLocOffsetFromZip64EF {
             + Long.BYTES     // Compressed size
             + Long.BYTES     // Loc offset
             + Integer.BYTES; // Start disk
+    // The Zip64 Magic value for 32-bit fields
+    public static final int ZIP64_MAGIC_VALUE = 0XFFFFFFFF;
 
     /**
      * Create the files used by this test
@@ -197,13 +199,12 @@ public class TestLocOffsetFromZip64EF {
 
         // Read name, extra field and comment lengths
         short nlen = buffer.getShort(cenOff + ZipFile.CENNAM);
-        short clen = buffer.getShort(cenOff + ZipFile.CENCOM);
         short elen = buffer.getShort(cenOff + ZipFile.CENEXT);
 
-        // Update CEN sizes and loc offset to 0xFFFFFFFF
-        buffer.putInt(cenOff + ZipFile.CENLEN, 0XFFFFFFFF);
-        buffer.putInt(cenOff + ZipFile.CENSIZ, 0XFFFFFFFF);
-        buffer.putInt(cenOff + ZipFile.CENOFF, 0xFFFFFFFF);
+        // Update CEN sizes and loc offset to 0'xFFFFFFFF
+        buffer.putInt(cenOff + ZipFile.CENLEN, ZIP64_MAGIC_VALUE);
+        buffer.putInt(cenOff + ZipFile.CENSIZ, ZIP64_MAGIC_VALUE);
+        buffer.putInt(cenOff + ZipFile.CENOFF, ZIP64_MAGIC_VALUE);
 
         // Offset of the extra fields
         int extraOff = cenOff + ZipFile.CENHDR + nlen;
@@ -211,12 +212,7 @@ public class TestLocOffsetFromZip64EF {
         // Position at the start of the Zip64 extra field
         buffer.position(extraOff + elen - ZIP64_SIZE);
 
-        // Update the Zip64 field with real values
+        // Update the Zip64 field with the real tag
         buffer.putShort((short) 0x1); //  Tag for Zip64
-        buffer.getShort(); // Data size is good
-        buffer.putLong(0); // Uncompressed size
-        buffer.putLong(0); // Compressed size
-        buffer.putLong(0); // loc offset
-        buffer.putInt(0);  // Set disk start
     }
 }
