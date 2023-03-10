@@ -774,7 +774,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
              "displached header must be first word in BasicObjectLock");
 
       Label fail;
-      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/NULL);
+      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
 
       // Fast check for recursive lock.
       //
@@ -891,7 +891,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       cbz(header_reg, count);
 
       // Atomic swap back the old header
-      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, /*fallthrough*/NULL);
+      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
     }
     // Call the runtime routine for slow case.
     str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj

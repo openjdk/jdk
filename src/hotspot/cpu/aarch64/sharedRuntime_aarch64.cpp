@@ -1787,7 +1787,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
         __ str(swap_reg, Address(lock_reg, mark_word_offset));
 
         // src -> dest iff dest == r0 else r0 <- dest
-        __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/NULL);
+        __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
 
         // Hmm should this move to the slow path code area???
 

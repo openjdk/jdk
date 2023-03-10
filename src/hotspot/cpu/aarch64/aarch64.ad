@@ -1788,7 +1788,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
-  int max_monitors = C->method() != NULL ? C->max_monitors() : 0;
+  int max_monitors = C->method() != nullptr ? C->max_monitors() : 0;
   if (UseFastLocking && max_monitors > 0) {
     C2CheckLockStackStub* stub = new (C->comp_arena()) C2CheckLockStackStub();
     C->output()->add_stub(stub);

@@ -94,7 +94,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     // displaced header address in the object header - if it is not the same, get the
     // object header instead
     lea(rscratch2, Address(obj, hdr_offset));
-    cmpxchgptr(hdr, disp_hdr, rscratch2, rscratch1, done, /*fallthough*/NULL);
+    cmpxchgptr(hdr, disp_hdr, rscratch2, rscratch1, done, /*fallthough*/nullptr);
     // if the object header was the same, we're done
     // if the object header was not the same, it is now in the hdr register
     // => test if it is a stack pointer into the same stack (recursive locking), i.e.:
@@ -113,7 +113,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     sub(hdr, hdr, rscratch1);
     ands(hdr, hdr, aligned_mask - (int)os::vm_page_size());
     // for recursive locking, the result is zero => save it in the displaced header
-    // location (NULL in the displaced hdr location indicates recursive locking)
+    // location (null in the displaced hdr location indicates recursive locking)
     str(hdr, Address(disp_hdr, 0));
     // otherwise we don't care about the result and handle locking via runtime call
     cbnz(hdr, slow_case);
@@ -134,7 +134,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   if (!UseFastLocking) {
     // load displaced header
     ldr(hdr, Address(disp_hdr, 0));
-    // if the loaded hdr is NULL we had recursive locking
+    // if the loaded hdr is null we had recursive locking
     // if we had recursive locking, we are done
     cbz(hdr, done);
   }
@@ -329,7 +329,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes, int m
     add(r9, r9, max_monitors * oopSize);
     cmp(r9, r10);
     br(Assembler::LT, ok);
-    assert(StubRoutines::aarch64::check_lock_stack() != NULL, "need runtime call stub");
+    assert(StubRoutines::aarch64::check_lock_stack() != nullptr, "need runtime call stub");
     far_call(StubRoutines::aarch64::check_lock_stack());
     bind(ok);
   }
