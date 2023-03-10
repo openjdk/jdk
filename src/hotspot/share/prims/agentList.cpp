@@ -421,17 +421,9 @@ void AgentList::invoke_JVM_OnLoad() {
   }
 }
 
-// Launch -Xrun agents eagerly at startup.
-void AgentList::load_xrun_agents_at_startup() {
-  assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invalid init sequence");
-  assert(EagerXrunInit, "invariant");
-  invoke_JVM_OnLoad();
-}
-
 // Launch -Xrun agents
 void AgentList::load_xrun_agents() {
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invalid init sequence");
-  assert(!EagerXrunInit, "invariant");
   invoke_JVM_OnLoad();
 }
 

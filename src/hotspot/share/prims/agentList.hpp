@@ -71,11 +71,10 @@ class AgentList : AllStatic {
   static void add(const char* name, char* options, bool absolute_path);
   static void add_xrun(const char* name, char* options, bool absolute_path);
 
-  static void load_xrun_agents();
-  static void load_xrun_agents_at_startup();
   static void load_agents();
   static jint load_agent(const char* agent, const char* absParam,
                          const char* options, outputStream* st);
+  static void load_xrun_agents();
   static void unload_agents();
 
   static Agent* lookup(JvmtiEnv* env, void* f_ptr);

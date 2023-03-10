@@ -623,7 +623,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Launch -Xrun agents early if EagerXrunInit is set
   if (EagerXrunInit) {
-    AgentList::load_xrun_agents_at_startup();
+    AgentList::load_xrun_agents();
   }
 
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
