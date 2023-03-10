@@ -520,6 +520,11 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         s.defaultWriteObject ();
     }
 
+    /**
+     * Releases any system or cryptographic resources.
+     * It is up to implementors to override disposeContext()
+     * to take necessary action.
+     */
     public void disposeContext() {
         // do nothing
     }

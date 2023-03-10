@@ -179,7 +179,7 @@ public class NegotiatorImpl extends Negotiator {
             if (context != null) {
                 context.dispose();
             }
-        }catch (GSSException e) {
+        } catch (GSSException e) {
             if (DEBUG) {
                 System.out.println("Cannot release resources. Reason:");
                 e.printStackTrace();
