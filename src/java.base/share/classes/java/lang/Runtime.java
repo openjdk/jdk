@@ -401,7 +401,7 @@ public class Runtime {
      *          If {@code command} is empty
      *
      * @implNote
-     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     * The process created is logged, see {@link ProcessBuilder#start()} for details.
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
@@ -465,7 +465,7 @@ public class Runtime {
      *          If {@code command} is empty
      *
      * @implNote
-     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     * The process created is logged, see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      * @since 1.3
@@ -513,7 +513,7 @@ public class Runtime {
      *          (has length {@code 0})
      *
      * @implNote
-     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     * The process created is logged, see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      */
@@ -559,7 +559,7 @@ public class Runtime {
      *          (has length {@code 0})
      *
      * @implNote
-     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     * The process created is logged, see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      */
@@ -657,7 +657,7 @@ public class Runtime {
      *          (has length {@code 0})
      *
      * @implNote
-     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     * The process created is logged, see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      * @since 1.3

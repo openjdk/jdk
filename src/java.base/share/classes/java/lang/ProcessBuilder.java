@@ -1082,10 +1082,10 @@ public final class ProcessBuilder
      * Logging of the information is enabled when the logging level of the
      * {@linkplain System#getLogger(String) system logger} named {@code java.lang.ProcessBuilder}
      * is {@link System.Logger.Level#DEBUG Level.DEBUG} or {@link System.Logger.Level#TRACE Level.TRACE}.
-     * When enabled for {@code Level.DEBUG} only the command, directory, stack trace,
-     * and process id are logged.
-     * When enabled for {@code Level.TRACE} the arguments are included with the command,
-     * directory, stack trace, and process id.
+     * When enabled for {@code Level.DEBUG} only the process id, directory, command, and stack trace
+     * are logged.
+     * When enabled for {@code Level.TRACE} the arguments are included with the process id,
+     * directory, command, and stack trace.
      *
      * @see Runtime#exec(String[], String[], java.io.File)
      */
@@ -1299,7 +1299,7 @@ public final class ProcessBuilder
      *          If the operating system does not support the creation of processes
      *
      * @implNote
-     * The start of each process is logged by {@link ProcessBuilder#start()}.
+     * Each created process is logged, see {@link ProcessBuilder#start()} for details.
      *
      * @throws IOException if an I/O error occurs
      * @since 9
