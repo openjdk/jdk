@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 package nsk.share;
 
+import java.lang.ref.Cleaner;
 import java.util.*;
 import nsk.share.gc.gp.*;
 import nsk.share.test.ExecutionController;
@@ -92,6 +93,57 @@ public class ClassUnloader {
      */
     private CustomClassLoader customClassLoader = null;
 
+    /*
+     * This class is used as an alternative to deprecated finalize() method.
+     * It is used as a 'cleaner' whose run() method will be called when JVM
+     * makes an 'registered' object unreachable.
+     * Here it will be used for tracking the local instance of 'CustomClassLoader'.
+     */
+    private static class CustomClassLoaderCleaner implements Runnable{
+
+        private ClassUnloader class_unloader;
+
+        /**
+         * Keep which ClassUnloader has to be notified.
+         */
+        public CustomClassLoaderCleaner(ClassUnloader class_unloader){
+            this.class_unloader = class_unloader;
+        }
+        @Override
+        public void run(){
+            if(class_unloader != null){
+                class_unloader.finalized = true;
+            }
+        }
+    }
+
+    /**
+     * The cleaner instance whose run() will be called by JVM.
+     */
+    private CustomClassLoaderCleaner customCleaner;
+
+    /**
+     * The java.lanf.ref.Cleaner object for registering the cleaner and the object to be traced.
+     */
+    private Cleaner cleaner;
+
+    /**
+     * The cleanable.clean() can be explicitly called to make the object unreachable.
+     */
+    private static Cleaner.Cleanable cleanable;
+
+    private void registerCleaning(){
+
+        if (cleaner != null)
+            return;
+
+        cleaner = Cleaner.create();
+        customCleaner = new CustomClassLoaderCleaner(this);
+
+        // When customClassLoader becomes unreachable, the customCleaner.run() method is called by JVM/GC.
+        cleanable = cleaner.register(customClassLoader, customCleaner);
+    }
+
     /**
      * List of classes loaded with current class loader.
      */
@@ -134,6 +186,8 @@ public class ClassUnloader {
         customClassLoader = new CustomClassLoader(this);
         classObjects.removeAllElements();
 
+        registerCleaning();
+
         return customClassLoader;
     }
 
@@ -147,6 +201,7 @@ public class ClassUnloader {
         this.customClassLoader = customClassLoader;
         classObjects.removeAllElements();
         customClassLoader.setClassUnloader(this);
+        registerCleaning();
     }
 
     /**
@@ -259,6 +314,12 @@ public class ClassUnloader {
             }
         }
 
+        // Since customClassLoader object is set to null, we should also null the cleaning
+        // objbects to let them be created when new customClassLoader is created.
+        cleaner = null;
+        cleanable = null;
+        customCleaner = null;
+
         // force GC to unload marked class loader and its classes
         if (finalized) {
             Runtime.getRuntime().gc();
@@ -289,30 +350,15 @@ public class ClassUnloader {
      * exception we preallocate it before the lunch starts. It means
      * that exception stack trace does not correspond to the place
      * where exception is thrown, but points at start of the method.
-     *
-     * @throws  Failure if exception other than OutOfMemoryError
-     *           is thrown while eating memory
      */
     public static void eatMemory(ExecutionController stresser) {
         GarbageUtils.eatMemory(stresser, 50, 1024, 2);
-
-        /*
-         * System.runFinalization() may potentially fail with OOM. This is why
-         * System.runFinalization() is repeated several times.
-         */
-        for (int i = 0; i < 10; ++i) {
-            try {
-                if(!stresser.continueExecution()) {
-                    return;
-                }
-                System.runFinalization();
-                break;
-            } catch (OutOfMemoryError e) {
-            }
+        if (cleanable != null) {
+          cleanable.clean();
         }
     }
 
-        /**
+    /**
      * Stresses memory by allocating arrays of bytes.
      *
      * Note that this method can throw Failure if any exception
@@ -320,9 +366,6 @@ public class ClassUnloader {
      * exception we preallocate it before the lunch starts. It means
      * that exception stack trace does not correspond to the place
      * where exception is thrown, but points at start of the method.
-     *
-     * @throws  Failure if exception other than OutOfMemoryError
-     *           is thrown while eating memory
      */
     public static void eatMemory() {
         Stresser stresser = new Stresser() {
@@ -334,19 +377,8 @@ public class ClassUnloader {
 
         };
         GarbageUtils.eatMemory(stresser, 50, 1024, 2);
-        /*
-         * System.runFinalization() may potentially fail with OOM. This is why
-         * System.runFinalization() is repeated several times.
-         */
-        for (int i = 0; i < 10; ++i) {
-            try {
-                if(!stresser.continueExecution()) {
-                    return;
-                }
-                System.runFinalization();
-                break;
-            } catch (OutOfMemoryError e) {
-            }
+        if (cleanable != null) {
+          cleanable.clean();
         }
     }
 }

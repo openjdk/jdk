@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,16 +135,4 @@ public class CustomClassLoader extends ClassLoader {
         return defineClass(name, data, 0, data.length);
     }
 
-    /**
-     * Notifies <code>ClassUnloader</code> about finalization.
-     */
-    protected void finalize() throws Throwable {
-
-        // notify ClassUnloader about finalization
-        if (classUnloader != null) {
-            classUnloader.finalized = true;
-        }
-
-        super.finalize();
-    }
 }
