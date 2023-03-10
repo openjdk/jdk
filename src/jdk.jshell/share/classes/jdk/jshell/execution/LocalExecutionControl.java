@@ -122,28 +122,29 @@ public class LocalExecutionControl extends DirectExecutionControl {
         }
         allStop.set(null, false);
 
-        execThreadGroup = new ThreadGroup("JShell process local execution");
-
         AtomicReference<InvocationTargetException> iteEx = new AtomicReference<>();
         AtomicReference<IllegalAccessException> iaeEx = new AtomicReference<>();
         AtomicReference<NoSuchMethodException> nmeEx = new AtomicReference<>();
         AtomicReference<Boolean> stopped = new AtomicReference<>(false);
 
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            if (e instanceof InvocationTargetException) {
-                if (e.getCause() instanceof ThreadDeath) {
+        execThreadGroup = new ThreadGroup("JShell process local execution") {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                if (e instanceof InvocationTargetException) {
+                    if (e.getCause() instanceof ThreadDeath) {
+                        stopped.set(true);
+                    } else {
+                        iteEx.set((InvocationTargetException) e);
+                    }
+                } else if (e instanceof IllegalAccessException) {
+                    iaeEx.set((IllegalAccessException) e);
+                } else if (e instanceof NoSuchMethodException) {
+                    nmeEx.set((NoSuchMethodException) e);
+                } else if (e instanceof ThreadDeath) {
                     stopped.set(true);
-                } else {
-                    iteEx.set((InvocationTargetException) e);
                 }
-            } else if (e instanceof IllegalAccessException) {
-                iaeEx.set((IllegalAccessException) e);
-            } else if (e instanceof NoSuchMethodException) {
-                nmeEx.set((NoSuchMethodException) e);
-            } else if (e instanceof ThreadDeath) {
-                stopped.set(true);
             }
-        });
+        };
 
         final Object[] res = new Object[1];
         Thread snippetThread = new Thread(execThreadGroup, () -> {
