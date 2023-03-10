@@ -9730,7 +9730,7 @@ void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, 
   const Register thread = r15_thread;
 #else
   const Register thread = rax;
-  get_thread(rax);
+  get_thread(thread);
 #endif
   subptr(Address(thread, JavaThread::lock_stack_current_offset()), oopSize);
 }

@@ -621,7 +621,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
       fast_lock_impl(objReg, tmpReg, thread, scrReg, NO_COUNT, false);
       jmp(COUNT);
 #else
-      // We can not emit the lock-stack-check in verified_entry() because we don't have enough
+      // We cannot emit the lock-stack-check in verified_entry() because we don't have enough
       // registers (for thread ptr). Therefore we have to emit the lock-stack-check in
       // fast_lock_impl(). However, that check can take a slow-path with ZF=1, therefore
       // we need to handle it specially and force ZF=0 before taking the actual slow-path.
@@ -629,7 +629,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
       fast_lock_impl(objReg, tmpReg, thread, scrReg, slow);
       jmp(COUNT);
       bind(slow);
-      testptr(objReg, objReg); // ZF=0 to indicate failure
+      testptr(objReg, objReg); // force ZF=0 to indicate failure
       jmp(NO_COUNT);
 #endif
     } else {
@@ -679,16 +679,9 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   movptr(scrReg, boxReg);
   movptr(boxReg, tmpReg);                   // consider: LEA box, [tmp-2]
 
-  // Optimistic form: consider XORL tmpReg,tmpReg
-  movptr(tmpReg, NULL_WORD);
+  xorptr(tmpReg, tmpReg);
 
-  // Appears unlocked - try to swing _owner from null to non-null.
-  // Ideally, I'd manifest "Self" with get_thread and then attempt
-  // to CAS the register containing Self into m->Owner.
-  // But we don't have enough registers, so instead we can either try to CAS
-  // rsp or the address of the box (in scr) into &m->owner.  If the CAS succeeds
-  // we later store "Self" into m->Owner.  Transiently storing a stack address
-  // (rsp or the address of the box) into  m->owner is harmless.
+  // Appears unlocked - try to swing _owner from null to curren thread.
   // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
   lock();
   cmpxchgptr(thread, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
@@ -812,7 +805,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 #endif
     jccb(Assembler::zero, Stacked);
     if (UseFastLocking) {
-      // If the owner is ANONYMOUS, we need to fix it -  in an outline stube.
+      // If the owner is ANONYMOUS, we need to fix it -  in an outline stub.
       testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) (intptr_t) ANONYMOUS_OWNER);
 #ifdef _LP64
       C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmpReg);

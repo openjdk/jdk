@@ -74,6 +74,9 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
 }
 
 int C2CheckLockStackStub::max_size() const {
+  // Max size of stub has been determined by testing with 0, in which case
+  // C2CodeStubList::emit() will throw an assertion and report the actual size that
+  // is needed.
   return 10;
 }
 
@@ -86,6 +89,9 @@ void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
 
 #ifdef _LP64
 int C2HandleAnonOMOwnerStub::max_size() const {
+  // Max size of stub has been determined by testing with 0, in which case
+  // C2CodeStubList::emit() will throw an assertion and report the actual size that
+  // is needed.
   return 17;
 }
 

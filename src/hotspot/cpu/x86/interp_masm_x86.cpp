@@ -1354,7 +1354,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
       movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
       cmpptr(obj_reg, Address(tmp, -oopSize));
       jcc(Assembler::notEqual, slow_case);
-      // Try to swing header from locked to unlock.
+      // Try to swing header from locked to unlocked.
       movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
       fast_unlock_impl(obj_reg, swap_reg, header_reg, slow_case);
