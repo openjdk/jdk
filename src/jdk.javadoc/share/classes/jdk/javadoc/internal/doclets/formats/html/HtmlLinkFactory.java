@@ -105,13 +105,12 @@ public class HtmlLinkFactory {
                     // keep track of the dimension depth and replace the last dimension
                     // specifier with varargs, when the stack is fully unwound.
                     currentDepth++;
-                    linkInfo.type = type.getComponentType();
-                    visit(linkInfo.type, linkInfo);
+                    var componentType = type.getComponentType();
+                    visit(componentType, linkInfo.forType(componentType));
                     currentDepth--;
                     if (utils.isAnnotated(type)) {
-                        linkInfo.type = type;
                         link.add(" ");
-                        link.add(getTypeAnnotationLinks(linkInfo));
+                        link.add(getTypeAnnotationLinks(linkInfo.forType(type)));
                     }
                     // use vararg if required
                     if (linkInfo.isVarArg && currentDepth == 0) {
@@ -129,14 +128,12 @@ public class HtmlLinkFactory {
                     TypeMirror extendsBound = type.getExtendsBound();
                     if (extendsBound != null) {
                         link.add(" extends ");
-                        setBoundsLinkInfo(linkInfo, extendsBound);
-                        link.add(getLink(linkInfo));
+                        link.add(getLink(linkInfo.forType(extendsBound)));
                     }
                     TypeMirror superBound = type.getSuperBound();
                     if (superBound != null) {
                         link.add(" super ");
-                        setBoundsLinkInfo(linkInfo, superBound);
-                        link.add(getLink(linkInfo));
+                        link.add(getLink(linkInfo.forType(superBound)));
                     }
                     return link;
                 }
@@ -152,8 +149,7 @@ public class HtmlLinkFactory {
                         linkInfo.typeElement = (TypeElement) owner;
                         Content label = newContent();
                         label.add(utils.getTypeName(type, false));
-                        linkInfo.label = label;
-                        linkInfo.skipPreview = true;
+                        linkInfo.label(label).skipPreview(true);
                         link.add(getClassLink(linkInfo));
                     } else {
                         // No need to link method type parameters.
@@ -174,8 +170,7 @@ public class HtmlLinkFactory {
                                 continue;
                             }
                             link.add(more ? " & " : " extends ");
-                            setBoundsLinkInfo(linkInfo, bound);
-                            link.add(getLink(linkInfo));
+                            link.add(getLink(linkInfo.forType(bound)));
                             more = true;
                         }
                     }
@@ -189,10 +184,8 @@ public class HtmlLinkFactory {
                         // If an enclosing type has type parameters render them as separate links as
                         // otherwise this information is lost. On the other hand, plain enclosing types
                         // are not linked separately as they are easy to reach from the nested type.
-                        setEnclosingTypeLinkInfo(linkInfo, dt);
-                        visitDeclared(dt, linkInfo);
+                        visitDeclared(dt, linkInfo.forType(dt));
                         link.add(".");
-                        setEnclosingTypeLinkInfo(linkInfo, type);
                     }
                     link.add(getTypeAnnotationLinks(linkInfo));
                     linkInfo.typeElement = utils.asTypeElement(type);
@@ -338,30 +331,12 @@ public class HtmlLinkFactory {
                         links.add(Text.NL);
                     }
                 }
-                links.add(getTypeParameterLink(linkInfo, t));
+                links.add(getLink(linkInfo.forType(t)));
                 many = true;
             }
             links.add(">");
         }
         return links;
-    }
-
-    /**
-     * Returns a link to the given type parameter.
-     *
-     * @param linkInfo     the information about the link to construct
-     * @param typeParam the type parameter to link to
-     * @return the link
-     */
-    protected Content getTypeParameterLink(HtmlLinkInfo linkInfo, TypeMirror typeParam) {
-        HtmlLinkInfo typeLinkInfo = new HtmlLinkInfo(m_writer.configuration,
-                linkInfo.getContext(), typeParam);
-        typeLinkInfo.showTypeBounds = linkInfo.showTypeBounds;
-        typeLinkInfo.linkTypeParameters = linkInfo.linkTypeParameters;
-        typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
-        typeLinkInfo.addLineBreaksInTypeParameters = linkInfo.addLineBreaksInTypeParameters;
-        typeLinkInfo.showTypeParameterAnnotations = linkInfo.showTypeParameterAnnotations;
-        return getLink(typeLinkInfo);
     }
 
     /**
@@ -392,19 +367,6 @@ public class HtmlLinkFactory {
                 });
 
         return links;
-    }
-
-    private void setBoundsLinkInfo(HtmlLinkInfo linkInfo, TypeMirror bound) {
-        linkInfo.typeElement = null;
-        linkInfo.label = null;
-        linkInfo.type = bound;
-        linkInfo.skipPreview = false;
-    }
-
-    private void setEnclosingTypeLinkInfo(HtmlLinkInfo linkinfo, DeclaredType enclosing) {
-        linkinfo.typeElement = null;
-        linkinfo.label = null;
-        linkinfo.type = enclosing;
     }
 
     /**

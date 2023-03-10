@@ -93,8 +93,6 @@ public class HtmlLinkInfo {
      */
     public HtmlStyle style = null;
 
-    public final Utils utils;
-
     /**
      * The class we want to link to.  Null if we are not linking
      * to a class.
@@ -120,7 +118,7 @@ public class HtmlLinkInfo {
     /**
      * The label for the link.
      */
-    public Content label;
+    private Content label;
 
     /**
      * True if we should print the type bounds for the type parameter.
@@ -162,7 +160,6 @@ public class HtmlLinkInfo {
      */
     public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, ExecutableElement ee) {
         this.configuration = configuration;
-        this.utils = configuration.utils;
         this.executableElement = ee;
         setContext(context);
     }
@@ -176,7 +173,6 @@ public class HtmlLinkInfo {
      */
     public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, TypeElement typeElement) {
         this.configuration = configuration;
-        this.utils = configuration.utils;
         this.typeElement = typeElement;
         setContext(context);
     }
@@ -190,9 +186,25 @@ public class HtmlLinkInfo {
      */
     public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, TypeMirror type) {
         this.configuration = configuration;
-        this.utils = configuration.utils;
         this.type = type;
         setContext(context);
+    }
+
+    /**
+     * Creates a copy of this HtmlLinkInfo instance with a different TypeMirror.
+     *
+     * @param type the type mirror
+     * @return the new link info
+     */
+    public HtmlLinkInfo forType(TypeMirror type) {
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, context, type);
+        linkInfo.showTypeBounds = showTypeBounds;
+        linkInfo.linkTypeParameters = linkTypeParameters;
+        linkInfo.linkToSelf = linkToSelf;
+        linkInfo.addLineBreaksInTypeParameters = addLineBreaksInTypeParameters;
+        linkInfo.showTypeParameterAnnotations = showTypeParameterAnnotations;
+        linkInfo.skipPreview = skipPreview;
+        return linkInfo;
     }
 
     /**
