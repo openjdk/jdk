@@ -249,7 +249,7 @@ final class FingerPrint {
         private final int majorVersion;
         private final int access;
         private final boolean publicClass;
-        private boolean maybeNestedClass;
+        private final boolean maybeNestedClass;
         private final Set<Field> fields = new HashSet<>();
         private final Set<Method> methods = new HashSet<>();
 
