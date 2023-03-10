@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ elapsedTimer Phase::_t_stubCompilation;
 elapsedTimer Phase::timers[max_phase_timers];
 
 //------------------------------Phase------------------------------------------
-Phase::Phase( PhaseNumber pnum ) : _pnum(pnum), C( pnum == Compiler ? NULL : Compile::current()) {
+Phase::Phase( PhaseNumber pnum ) : _pnum(pnum), C( pnum == Compiler ? nullptr : Compile::current()) {
   // Poll for requests from shutdown mechanism to quiesce compiler (4448539, 4448544).
   // This is an effective place to poll, since the compiler is full of phases.
   // In particular, every inlining site uses a recursively created Parse phase.

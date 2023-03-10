@@ -1465,8 +1465,9 @@ bool java_lang_Thread_FieldHolder::is_daemon(oop holder) {
   return holder->bool_field(_daemon_offset) != 0;
 }
 
-void java_lang_Thread_FieldHolder::set_daemon(oop holder) {
-  holder->bool_field_put(_daemon_offset, true);
+void java_lang_Thread_FieldHolder::set_daemon(oop holder, bool val) {
+  assert(val, "daemon status is never turned off");
+  holder->bool_field_put(_daemon_offset, val);
 }
 
 void java_lang_Thread_FieldHolder::set_thread_status(oop holder, JavaThreadStatus status) {
@@ -1599,7 +1600,8 @@ void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
 }
 
 oop java_lang_Thread::holder(oop java_thread) {
-    return java_thread->obj_field(_holder_offset);
+  // Note: may return null if the thread is still attaching
+  return java_thread->obj_field(_holder_offset);
 }
 
 bool java_lang_Thread::interrupted(oop java_thread) {
@@ -1630,25 +1632,43 @@ void java_lang_Thread::set_name(oop java_thread, oop name) {
   java_thread->obj_field_put(_name_offset, name);
 }
 
+// Convenience macros for setting and getting Thread fields that
+// are actually stored in the FieldHolder object of the thread.
+// The FieldHolder can be null whilst a thread is attaching via
+// JNI, and when the main thread is attaching.
+
+// The default value should be the default/zero initialized value
+// of the field as it would be in java.lang.Thread.FieldHolder.
+#define GET_FIELDHOLDER_FIELD(java_thread, field, default_val)  \
+  {                                                             \
+    oop holder = java_lang_Thread::holder(java_thread);         \
+    if (holder != nullptr)                                      \
+      return java_lang_Thread_FieldHolder::field(holder);       \
+    else                                                        \
+      return default_val;                                       \
+  }
+
+// We should never be trying to set a field of an attaching thread.
+#define SET_FIELDHOLDER_FIELD(java_thread, field, value)        \
+  {                                                             \
+    oop holder = java_lang_Thread::holder(java_thread);         \
+    assert(holder != nullptr, "Thread not fully initialized");  \
+    java_lang_Thread_FieldHolder::set_##field(holder, value);   \
+  }
+
 
 ThreadPriority java_lang_Thread::priority(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::priority(holder);
+  GET_FIELDHOLDER_FIELD(java_thread, priority, (ThreadPriority)0);
 }
 
 
 void java_lang_Thread::set_priority(oop java_thread, ThreadPriority priority) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_priority(holder, priority);
+  SET_FIELDHOLDER_FIELD(java_thread, priority, priority)
 }
 
 
 oop java_lang_Thread::threadGroup(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::threadGroup(holder);
+  GET_FIELDHOLDER_FIELD(java_thread, threadGroup, nullptr);
 }
 
 
@@ -1659,16 +1679,12 @@ bool java_lang_Thread::is_alive(oop java_thread) {
 
 
 bool java_lang_Thread::is_daemon(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::is_daemon(holder);
+  GET_FIELDHOLDER_FIELD(java_thread, is_daemon, false);
 }
 
 
 void java_lang_Thread::set_daemon(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_daemon(holder);
+  SET_FIELDHOLDER_FIELD(java_thread, daemon, true);
 }
 
 oop java_lang_Thread::context_class_loader(oop java_thread) {
@@ -1681,16 +1697,12 @@ oop java_lang_Thread::inherited_access_control_context(oop java_thread) {
 
 
 jlong java_lang_Thread::stackSize(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::stackSize(holder);
+  GET_FIELDHOLDER_FIELD(java_thread, stackSize, 0);
 }
 
 // Write the thread status value to threadStatus field in java.lang.Thread java class.
 void java_lang_Thread::set_thread_status(oop java_thread, JavaThreadStatus status) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_thread_status(holder, status);
+  SET_FIELDHOLDER_FIELD(java_thread, thread_status, status);
 }
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
@@ -1700,12 +1712,7 @@ JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
-  oop holder = java_lang_Thread::holder(java_thread);
-  if (holder == nullptr) {
-    return JavaThreadStatus::NEW;  // Java Thread not initialized
-  } else {
-    return java_lang_Thread_FieldHolder::get_thread_status(holder);
-  }
+  GET_FIELDHOLDER_FIELD(java_thread, get_thread_status, JavaThreadStatus::NEW /* not initialized */);
 }
 
 ByteSize java_lang_Thread::thread_id_offset() {
@@ -1841,9 +1848,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 }
 
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  JavaThreadStatus status = java_lang_Thread_FieldHolder::get_thread_status(holder);
+  JavaThreadStatus status = get_thread_status(java_thread);
   switch (status) {
     case JavaThreadStatus::NEW                      : return "NEW";
     case JavaThreadStatus::RUNNABLE                 : return "RUNNABLE";
