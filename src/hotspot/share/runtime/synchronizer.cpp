@@ -1339,7 +1339,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       bool own = is_lock_owned(current, object);
       if (own) {
         // Owned by us.
-        monitor->set_owner_from(NULL, current);
+        monitor->set_owner_from(nullptr, current);
       } else {
         // Owned by somebody else.
         monitor->set_owner_anonymous();

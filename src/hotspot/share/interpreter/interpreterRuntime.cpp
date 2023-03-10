@@ -740,8 +740,8 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
     // send an oopDesc* instead of a BasicObjectLock*.
     Handle h_obj(current, oop((reinterpret_cast<oopDesc*>(elem))));
     assert(Universe::heap()->is_in_or_null(h_obj()),
-           "must be NULL or an object");
-    ObjectSynchronizer::enter(h_obj, NULL, current);
+           "must be null or an object");
+    ObjectSynchronizer::enter(h_obj, nullptr, current);
     return;
   }
 #ifdef ASSERT

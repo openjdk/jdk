@@ -272,7 +272,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void*     try_set_owner_from(void* old_value, void* new_value);
 
   void set_owner_anonymous() {
-    set_owner_from(NULL, ANONYMOUS_OWNER);
+    set_owner_from(nullptr, ANONYMOUS_OWNER);
   }
 
   bool is_owner_anonymous() const {

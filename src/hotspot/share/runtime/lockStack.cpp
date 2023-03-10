@@ -31,7 +31,7 @@
 #include "utilities/ostream.hpp"
 
 LockStack::LockStack() :
-  _base(UseFastLocking && !UseHeavyMonitors ? _initial : NULL),
+  _base(UseFastLocking && !UseHeavyMonitors ? _initial : nullptr),
   _limit(_base + INITIAL_CAPACITY),
   _current(_base) {
 }

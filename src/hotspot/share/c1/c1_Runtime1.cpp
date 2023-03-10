@@ -758,7 +758,7 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
     lock->set_obj(obj);
   }
   assert(UseFastLocking || obj == lock->obj(), "must match");
-  SharedRuntime::monitor_enter_helper(obj, UseFastLocking ? NULL : lock->lock(), current);
+  SharedRuntime::monitor_enter_helper(obj, UseFastLocking ? nullptr : lock->lock(), current);
 JRT_END
 
 
