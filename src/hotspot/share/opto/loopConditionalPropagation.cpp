@@ -40,7 +40,7 @@ private:
 
   public:
     TreeNode(Node* n, const Type* type)
-            : _node(n), _type(type), _left(NULL), _right(NULL), _rpo(0) {
+            : _node(n), _type(type), _left(nullptr), _right(nullptr), _rpo(0) {
     }
 
     TreeNode(Node* n, const Type* type, int rpo, TreeNode* left, TreeNode* right)
@@ -48,7 +48,7 @@ private:
     }
 
     TreeNode()
-            : _node(NULL), _type(NULL), _left(NULL), _right(NULL), _rpo(0) {
+            : _node(nullptr), _type(nullptr), _left(nullptr), _right(nullptr), _rpo(0) {
     }
 
     const Node* node() const { return _node; };
@@ -88,8 +88,8 @@ private:
             tn = tn->_right;
           }
         }
-      } while (tn != NULL);
-      return NULL;
+      } while (tn != nullptr);
+      return nullptr;
     }
 
     TreeNode* set_type(Node* n, const Type* t, int rpo) {
@@ -102,7 +102,7 @@ private:
           return this;
         }
       } else if (n->_idx < idx()) {
-        assert(_left != NULL, "");
+        assert(_left != nullptr, "");
         TreeNode* tn = _left->set_type(n, t, rpo);
         if (_rpo == rpo) {
           _left = tn;
@@ -112,7 +112,7 @@ private:
           return new TreeNode(_node, _type, rpo, tn, _right);
         }
       } else if (n->_idx > idx()) {
-        assert(_right != NULL, "");
+        assert(_right != nullptr, "");
         TreeNode* tn = _right->set_type(n, t, rpo);
         if (_rpo == rpo) {
           _right = tn;
@@ -123,7 +123,7 @@ private:
         }
       }
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
 
     class Iterator : public StackObj {
@@ -134,29 +134,29 @@ private:
       GrowableArray<TreeNode*> _stack2;
     public:
       Iterator(TreeNode* root1, TreeNode* root2) :
-              _current1(NULL), _current2(NULL) {
+              _current1(nullptr), _current2(nullptr) {
         _stack1.push(root1);
         _stack2.push(root2);
       }
 
       bool next() {
-        _current1 = _current2 = NULL;
+        _current1 = _current2 = nullptr;
         assert(_stack1.length() == _stack2.length(), "");
         while (_stack1.is_nonempty()) {
           TreeNode* tn1 = _stack1.pop();
           TreeNode* tn2 = _stack2.pop();
           assert(tn1->_node = tn2->_node, "");
-          assert((tn1->_left != NULL) == (tn2->_left != NULL), "");
-          assert((tn1->_right != NULL) == (tn2->_right != NULL), "");
+          assert((tn1->_left != nullptr) == (tn2->_left != nullptr), "");
+          assert((tn1->_right != nullptr) == (tn2->_right != nullptr), "");
           if (tn1 == tn2) {
             continue;
           }
 
-          if (tn1->_left != NULL) {
+          if (tn1->_left != nullptr) {
             _stack1.push(tn1->_left);
             _stack2.push(tn2->_left);
           }
-          if (tn1->_right != NULL) {
+          if (tn1->_right != nullptr) {
             _stack1.push(tn1->_right);
             _stack2.push(tn2->_right);
           }
@@ -185,7 +185,7 @@ private:
 
     const Type* get_type(const Node* n) {
       const TreeNode* tn = find(n);
-      assert(tn != NULL, "");
+      assert(tn != nullptr, "");
       return tn->_type;
     }
   };
@@ -204,7 +204,7 @@ private:
       TreeNode tn = nodes.at(i);
       for (uint j = 0; j < tn.node()->req(); j++) {
         Node* in = tn.node()->in(j);
-        if (in != NULL && !visited.test_set(in->_idx)) {
+        if (in != nullptr && !visited.test_set(in->_idx)) {
           nodes.push(TreeNode(in, PhaseTransform::type(in)));
         }
       }
@@ -250,7 +250,7 @@ private:
     if (!_phase->is_dominator(c, u_c) && (u->is_CFG() || !_phase->is_dominator(u_c, c))) {
       return false;
     }
-    if (!u->is_CFG() && u->in(0) != NULL && u->in(0)->is_CFG() && !_phase->is_dominator(u->in(0), c)) {
+    if (!u->is_CFG() && u->in(0) != nullptr && u->in(0)->is_CFG() && !_phase->is_dominator(u->in(0), c)) {
       return false;
     }
     return true;
@@ -275,7 +275,7 @@ private:
             Node* uu = u->fast_out(i2);
             if (uu->is_Proj() && uu->as_Proj()->_con == TypeFunc::Control) {
               Node* catch_node = uu->find_out_with(Op_Catch);
-              if (catch_node != NULL) {
+              if (catch_node != nullptr) {
                 _wq.push(catch_node);
               }
             }
@@ -296,7 +296,7 @@ private:
 
   void sync_from_tree(Node* c) {
     _current_types = (TreeNode*) _types_at_ctrl[c];
-    assert(_current_types != NULL, "");
+    assert(_current_types != nullptr, "");
     TreeNode::Iterator iter((TreeNode*)_types_at_ctrl[_current_ctrl], (TreeNode*) _current_types);
     while (iter.next()) {
       Node* node = iter.node();
@@ -325,7 +325,7 @@ public:
     _visited(visited),
     _types_at_ctrl(cmpkey, hashptr),
     _rpo_list(rpo_list),
-    _current_types(NULL),
+    _current_types(nullptr),
     _current_ctrl(phase->C->root()) {
     assert(nstack.is_empty(), "");
     assert(_rpo_list.size() == 0, "");
@@ -346,7 +346,7 @@ public:
     while (progress) {
       iterations++;
       assert(iterations - extra_rounds - extra_rounds2 >= 0, "");
-      assert(iterations - extra_rounds2 <= 2 || _phase->ltree_root()->_child != NULL || has_infinite_loop, "");
+      assert(iterations - extra_rounds2 <= 2 || _phase->ltree_root()->_child != nullptr || has_infinite_loop, "");
       assert(iterations - extra_rounds - extra_rounds2 <= 3 || _phase->_has_irreducible_loops, "");
       assert(iterations < 100, "");
 
@@ -367,7 +367,7 @@ public:
         if (c->is_Region()) {
           Node* in = c->in(1);
           TreeNode* types_at_in1 = (TreeNode*) (_types_at_ctrl[in]);
-          if (types_at_in1 != NULL) {
+          if (types_at_in1 != nullptr) {
             TreeNode::Iterator iter(types_at_dom, types_at_in1);
             while (iter.next()) {
               Node* node = iter.node();
@@ -377,7 +377,7 @@ public:
               for (; j < c->req(); j++) {
                 in = c->in(j);
                 TreeNode* types_at_in = (TreeNode*) (_types_at_ctrl[in]);
-                if (types_at_in == NULL) {
+                if (types_at_in == nullptr) {
                   assert(!c->is_Loop() && (_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in)), "");
                   break;
                 }
@@ -388,11 +388,11 @@ public:
                 t = t->meet_speculative(type_at_in);
               }
               if (j == c->req()) {
-                if (prev_types_at_c != NULL) {
+                if (prev_types_at_c != nullptr) {
                   const Type* prev_t = t;
                   t = t->filter(prev_types_at_c->get_type(node));
                   assert(t == prev_t, "");
-                  t = saturate(t, prev_types_at_c->get_type(node), NULL);
+                  t = saturate(t, prev_types_at_c->get_type(node), nullptr);
                   if (c->is_Loop() && t != prev_types_at_c->get_type(node)) {
                     extra = true;
                   }
@@ -417,7 +417,7 @@ public:
           Node* iff = c->in(0);
           assert(iff->is_If(), "");
           if (/*iff->as_If()->safe_for_optimizations() &&*/
-              !(iff->is_CountedLoopEnd() && iff->as_CountedLoopEnd()->loopnode() != NULL && iff->as_CountedLoopEnd()->loopnode()->is_strip_mined())) {
+              !(iff->is_CountedLoopEnd() && iff->as_CountedLoopEnd()->loopnode() != nullptr && iff->as_CountedLoopEnd()->loopnode()->is_strip_mined())) {
             Node* bol = iff->in(1);
             if (iff->is_OuterStripMinedLoopEnd()) {
               assert(iff->in(0)->in(0)->in(0)->is_CountedLoopEnd(), "");
@@ -446,7 +446,7 @@ public:
           if (klass_t != Type::TOP) {
             const TypeOopPtr* ary_type = types_at_c->get_type(klass)->is_klassptr()->as_instance_type();
             const TypeInt* length_type = types_at_c->get_type(length)->isa_int();
-            if (ary_type->isa_aryptr() && length_type != NULL) {
+            if (ary_type->isa_aryptr() && length_type != nullptr) {
               const Type* narrow_length_type = ary_type->is_aryptr()->narrow_size_type(length_type);
               narrow_length_type = narrow_length_type->filter(length_type);
               assert(narrows_type(length_type, narrow_length_type), "");
@@ -473,12 +473,12 @@ public:
         while (_wq.size() > 0) {
           Node* n = _wq.pop();
           const Type* t = n->Value(this);
-          if (n->is_Phi() && prev_types_at_c != NULL) {
+          if (n->is_Phi() && prev_types_at_c != nullptr) {
             const Type* prev_t = t;
             t = t->filter(prev_types_at_c->get_type(n));
             assert(t == prev_t, "");
             if (!(n->in(0)->is_CountedLoop() && n->in(0)->as_CountedLoop()->phi() == n && n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
-              t = saturate(t, prev_types_at_c->get_type(n), NULL);
+              t = saturate(t, prev_types_at_c->get_type(n), nullptr);
             }
             if (c->is_Loop() && t != prev_types_at_c->get_type(n)) {
               extra = true;
@@ -497,14 +497,14 @@ public:
           _types_at_ctrl.Insert(c, _current_types);
           types_at_c = _current_types;
         }
-        if (prev_types_at_c == NULL && types_at_c != types_at_dom) {
+        if (prev_types_at_c == nullptr && types_at_c != types_at_dom) {
           progress = true;
-        } else if (prev_types_at_c != NULL && TreeNode::Iterator(prev_types_at_c, types_at_c).next()) {
+        } else if (prev_types_at_c != nullptr && TreeNode::Iterator(prev_types_at_c, types_at_c).next()) {
           progress = true;
 #ifdef ASSERT
           sync_from_tree(C->root());
           TreeNode::Iterator iter(prev_types_at_c, types_at_c);
-          int last_expected = (_phase->ltree_root()->_child != NULL || has_infinite_loop) ? 3 : 2;
+          int last_expected = (_phase->ltree_root()->_child != nullptr || has_infinite_loop) ? 3 : 2;
           if (iterations == last_expected) {
             while (iter.next() && !extra) {
               if (iter.node()->bottom_type()->make_oopptr() &&
@@ -518,7 +518,7 @@ public:
 #endif
         }
 #ifdef ASSERT
-        if (prev_types_at_c != NULL || (types_at_c != types_at_dom)) {
+        if (prev_types_at_c != nullptr || (types_at_c != types_at_dom)) {
           if (PrintLoopConditionalPropagation) {
             TreeNode::Iterator iter(types_at_dom, types_at_c);
             bool failure = false;
@@ -534,7 +534,7 @@ public:
             }
           }
           {
-            TreeNode::Iterator iter(prev_types_at_c != NULL ? prev_types_at_c : types_at_dom, types_at_c);
+            TreeNode::Iterator iter(prev_types_at_c != nullptr ? prev_types_at_c : types_at_dom, types_at_c);
             bool failure = false;
             while (iter.next()) {
               const Type* t1 = iter.type1();
@@ -570,7 +570,7 @@ public:
 
   TreeNode* analyze_if(int rpo, Node* c, TreeNode* types_at_c, const Node* cmp, Node* n) {
     const Type* t = IfNode::filtered_int_type(this, n, c, (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU) ? T_INT : T_LONG);
-    if (t != NULL) {
+    if (t != nullptr) {
       const Type* n_t = types_at_c->get_type(n);
       const Type* new_n_t = n_t->filter(t);
       assert(narrows_type(n_t, new_n_t), "");
@@ -621,7 +621,7 @@ public:
     }
 
     assert(old_t->isa_int() || old_t->isa_long(), "");
-    assert((old_t->isa_int() != NULL) == (new_t->isa_int() != NULL), "");
+    assert((old_t->isa_int() != nullptr) == (new_t->isa_int() != nullptr), "");
 
     BasicType bt = new_t->isa_int() ? T_INT : T_LONG;
 
@@ -796,12 +796,12 @@ public:
             continue;
           }
           {
-            Node* con = NULL;
+            Node* con = nullptr;
             for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
               Node* use = node->fast_out(i);
               if (_phase->is_dominator(c, _phase->ctrl_or_self(use)) && is_safe_for_replacement(node, use, types)) {
                 progress = true;
-                if (con == NULL) {
+                if (con == nullptr) {
                   con = makecon(t);
                   _phase->set_ctrl(con, C->root());
                 }
@@ -868,7 +868,7 @@ public:
                 if (head->is_CountedLoop() && head->as_CountedLoop()->is_main_loop()) {
                   CountedLoopNode* cl = head->as_CountedLoop();
                   Node* opaq = cl->is_canonical_loop_entry();
-                  if (opaq != NULL) {
+                  if (opaq != nullptr) {
                     assert(opaq->in(1) == limit, "");
                     earliest = cl->skip_predicates()->in(0)->in(0);
                   }
@@ -879,7 +879,7 @@ public:
                   if (head->is_CountedLoop() && head->as_CountedLoop()->is_main_loop()) {
                     CountedLoopNode* cl = head->as_CountedLoop();
                     Node* opaq = cl->is_canonical_loop_entry();
-                    if (opaq != NULL) {
+                    if (opaq != nullptr) {
                       replace_input_of(opaq, 1, cast);
                     }
                   }
@@ -939,7 +939,7 @@ public:
         register_new_node_with_optimizer(cast);
         _phase->set_ctrl(cast, best);
         IdealLoopTree* loop = _phase->get_loop(best);
-        assert(!(loop->_child == NULL && loop != _phase->ltree_root()), "");
+        assert(!(loop->_child == nullptr && loop != _phase->ltree_root()), "");
         return cast;
       }
       earliest = next;
@@ -954,7 +954,7 @@ public:
   const Type* type(const Node* n, const Node* c) const {
     assert(c->is_CFG(), "");
     TreeNode* types = (TreeNode*) _types_at_ctrl[c];
-    if (types == NULL) {
+    if (types == nullptr) {
       return PhaseTransform::type(n);
     }
     return types->get_type(n);

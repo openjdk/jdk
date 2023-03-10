@@ -1271,7 +1271,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       // to run (that is as long as the type of the backedge's control
       // is top), we might end up with non monotonic types
       return phase->type(in(LoopNode::EntryControl))->filter_speculative(_type);
-    } else if (l->in(LoopNode::EntryControl) != NULL &&
+    } else if (l->in(LoopNode::EntryControl) != nullptr &&
                phase->type(l->in(LoopNode::EntryControl)) == Type::TOP) {
       return Type::TOP;
     }

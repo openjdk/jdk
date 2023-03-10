@@ -898,9 +898,9 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   }
 
   const Type* t = IfNode::filtered_int_type(igvn, n, otherproj, T_INT);
-  const TypeInt* lo_type = t != NULL && t->isa_int() ? t->is_int() : NULL;
+  const TypeInt* lo_type = t != nullptr && t->isa_int() ? t->is_int() : nullptr;
   t = IfNode::filtered_int_type(igvn, n, success, T_INT);
-  const TypeInt* hi_type = t != NULL && t->isa_int() ? t->is_int() : NULL;
+  const TypeInt* hi_type = t != nullptr && t->isa_int() ? t->is_int() : nullptr;
 
   BoolTest::mask lo_test = dom_bool->_test._test;
   BoolTest::mask hi_test = this_bool->_test._test;

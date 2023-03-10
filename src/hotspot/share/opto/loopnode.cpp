@@ -3991,7 +3991,7 @@ void IdealLoopTree::dump_head() {
       tty->print("%d),", cl->limit()->get_int());
     else
       tty->print("int),");
-    if (cl->stride() != NULL) {
+    if (cl->stride() != nullptr) {
       int stride_con  = cl->stride_con();
       if (stride_con > 0) tty->print("+");
       tty->print("%d", stride_con);

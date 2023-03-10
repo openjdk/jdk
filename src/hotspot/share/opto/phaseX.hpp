@@ -447,7 +447,7 @@ public:
   // Check for a simple dead loop when a data node references itself.
   void dead_loop_check(Node *n);
 #endif
-  virtual PhaseConditionalPropagation* is_ConditionalPropagation() { return NULL; }
+  virtual PhaseConditionalPropagation* is_ConditionalPropagation() { return nullptr; }
 };
 
 //------------------------------PhaseIterGVN-----------------------------------
