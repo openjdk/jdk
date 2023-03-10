@@ -3518,6 +3518,55 @@ void StubGenerator::generate_libm_stubs() {
   }
 }
 
+/**
+*  Arguments:
+*
+*  Input:
+*    c_rarg0   - float16  jshort
+*
+*  Output:
+*       xmm0   - float
+*/
+address StubGenerator::generate_float16ToFloat() {
+  StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+
+  address start = __ pc();
+
+  BLOCK_COMMENT("Entry:");
+  // No need for RuntimeStub frame since it is called only during JIT compilation
+
+  // Load value into xmm0 and convert
+  __ flt16_to_flt(xmm0, c_rarg0);
+
+  __ ret(0);
+
+  return start;
+}
+
+/**
+*  Arguments:
+*
+*  Input:
+*       xmm0   - float
+*
+*  Output:
+*        rax   - float16  jshort
+*/
+address StubGenerator::generate_floatToFloat16() {
+  StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+
+  address start = __ pc();
+
+  BLOCK_COMMENT("Entry:");
+  // No need for RuntimeStub frame since it is called only during JIT compilation
+
+  // Convert and put result into rax
+  __ flt_to_flt16(rax, xmm0, xmm1);
+
+  __ ret(0);
+
+  return start;
+}
 
 address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
   if (!Continuations::enabled()) return nullptr;
@@ -3881,6 +3930,16 @@ void StubGenerator::generate_initial() {
 
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+  }
+
+  if (VM_Version::supports_float16()) {
+    // For results consistency both intrinsics should be enabled.
+    // vmIntrinsics checks InlineIntrinsics flag, no need to check it here.
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
+    }
   }
 
   generate_libm_stubs();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,9 +102,9 @@
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \
-  nonstatic_field(CompactibleSpace,            _compaction_top,                               HeapWord*)                             \
-  nonstatic_field(CompactibleSpace,            _first_dead,                                   HeapWord*)                             \
-  nonstatic_field(CompactibleSpace,            _end_of_live,                                  HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,            _compaction_top,                               HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,            _first_dead,                                   HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,            _end_of_live,                                  HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
@@ -162,8 +162,7 @@
            declare_type(GenCollectedHeap,             CollectedHeap)      \
   declare_toplevel_type(Generation)                                       \
   declare_toplevel_type(Space)                                            \
-           declare_type(CompactibleSpace,             Space)              \
-           declare_type(ContiguousSpace,              CompactibleSpace)   \
+           declare_type(ContiguousSpace,             Space)               \
   declare_toplevel_type(BarrierSet)                                       \
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \

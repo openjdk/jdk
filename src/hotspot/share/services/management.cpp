@@ -61,7 +61,6 @@
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/gcNotifier.hpp"
-#include "services/nmtDCmd.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
@@ -145,11 +144,7 @@ void Management::init() {
   _optional_support.isRemoteDiagnosticCommandsSupported = 1;
 
   // Registration of the diagnostic commands
-  DCmdRegistrant::register_dcmds();
-  DCmdRegistrant::register_dcmds_ext();
-  uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI
-                         | DCmd_Source_MBean;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
+  DCmd::register_dcmds();
 }
 
 void Management::initialize(TRAPS) {

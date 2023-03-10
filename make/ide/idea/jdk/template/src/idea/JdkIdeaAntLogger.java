@@ -54,7 +54,7 @@ public final class JdkIdeaAntLogger extends DefaultLogger {
     /**
      * This is just a way to pass in customized binary string predicates;
      *
-     * TODO: replace with @code{BiPredicate<String, String>} and method reference when moving to 8
+     * TODO: replace with {@code BiPredicate<String, String>} and method reference when moving to 8
      */
     enum StringBinaryPredicate {
         CONTAINS() {
