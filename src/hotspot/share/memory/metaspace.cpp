@@ -589,6 +589,13 @@ bool Metaspace::class_space_is_initialized() {
 // On error, returns an unreserved space.
 ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size) {
 
+  // Note: code below is broken and needs rethinking since it confuses encoding base
+  // with compressed class space attach address; both don't have be the same.
+  // That is also the reason why we atm don't get zero-based encoding for aarch.
+  // Comment is also wrong, at least for 9-bit shift.
+
+  // Will be fixed. For now it works well enough.
+
 #if defined(AARCH64) || defined(PPC64)
   const size_t alignment = Metaspace::reserve_alignment();
 
@@ -618,15 +625,16 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
 
   for (int i = 0; search_ranges[i].from != nullptr; i ++) {
     address a = search_ranges[i].from;
-    assert(CompressedKlassPointers::is_valid_base(a), "Sanity");
-    while (a < search_ranges[i].to) {
-      ReservedSpace rs(size, Metaspace::reserve_alignment(),
-                       os::vm_page_size(), (char*)a);
-      if (rs.is_reserved()) {
-        assert(a == (address)rs.base(), "Sanity");
-        return rs;
+    if (CompressedKlassPointers::is_valid_base(a)) {
+      while (a < search_ranges[i].to) {
+        ReservedSpace rs(size, Metaspace::reserve_alignment(),
+                         os::vm_page_size(), (char*)a);
+        if (rs.is_reserved()) {
+          assert(a == (address)rs.base(), "Sanity");
+          return rs;
+        }
+        a +=  search_ranges[i].increment;
       }
-      a +=  search_ranges[i].increment;
     }
   }
 #endif // defined(AARCH64) || defined(PPC64)
@@ -871,6 +879,7 @@ size_t Metaspace::max_allocation_word_size() {
 #ifdef _LP64
 // The largest allowed size for class space
 size_t Metaspace::max_class_space_size() {
+  assert(KlassEncodingMetaspaceMax > 0, "too early.");
   // This is a bit fuzzy. Max value of class space size depends on narrow klass pointer
   // encoding range size and CDS, since class space shares encoding range with CDS. CDS
   // archives are usually pretty small though, so to keep matters simple, for now we

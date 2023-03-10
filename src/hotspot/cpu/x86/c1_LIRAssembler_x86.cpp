@@ -3066,7 +3066,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register length  = op->length()->as_register();
   Register tmp = op->tmp()->as_register();
   Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-  Register tmp2 = LP64_ONLY(rscratch2) NOT_LP64(noreg);
+  Register tmp2 = UseCompactObjectHeaders ? rscratch2 : noreg;
 
   CodeStub* stub = op->stub();
   int flags = op->flags();
@@ -3191,10 +3191,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
   Address dst_length_addr = Address(dst, arrayOopDesc::length_offset_in_bytes());
-#ifndef _LP64
   Address src_klass_addr = Address(src, oopDesc::klass_offset_in_bytes());
   Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
-#endif
+
   // length and pos's are all sign extended at this point on 64bit
 
   // test for NULL
@@ -3259,14 +3258,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-#ifdef _LP64
-      __ load_nklass(tmp, src);
-      __ load_nklass(tmp2, dst);
-      __ cmpl(tmp, tmp2);
-#else
-      __ movptr(tmp, src_klass_addr);
-      __ cmpptr(tmp, dst_klass_addr);
-#endif
+      __ cmp_klass(src, dst, tmp, tmp2);
       __ jcc(Assembler::notEqual, *stub->entry());
     } else {
       // For object arrays, if src is a sub class of dst then we can
@@ -3422,27 +3414,17 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     Label known_ok, halt;
     __ mov_metadata(tmp, default_type->constant_encoding());
 #ifdef _LP64
-    assert(UseCompressedClassPointers, "Lilliput");
-    __ encode_klass_not_null(tmp, rscratch1);
-    if (basic_type != T_OBJECT) {
-      __ load_nklass(tmp2, dst);
-      __ cmpl(tmp, tmp2);
-      __ jcc(Assembler::notEqual, halt);
-      __ load_nklass(tmp2, src);
-      __ cmpl(tmp, tmp2);
-      __ jcc(Assembler::equal, known_ok);
-    } else {
-      __ load_nklass(tmp2, dst);
-      __ cmpl(tmp, tmp2);
-#else
-    if (basic_type != T_OBJECT) {
-      __ cmpptr(tmp, dst_klass_addr);
-      __ jcc(Assembler::notEqual, halt);
-      __ cmpptr(tmp, src_klass_addr);
-      __ jcc(Assembler::equal, known_ok);
-    } else {
-      __ cmpptr(tmp, dst_klass_addr);
+    if (UseCompressedClassPointers) {
+      __ encode_klass_not_null(tmp, rscratch1);
+    }
 #endif
+    if (basic_type != T_OBJECT) {
+      __ cmp_klass(tmp, dst, tmp2);
+      __ jcc(Assembler::notEqual, halt);
+      __ cmp_klass(tmp, src, tmp2);
+      __ jcc(Assembler::equal, known_ok);
+    } else {
+      __ cmp_klass(tmp, dst, tmp2);
       __ jcc(Assembler::equal, known_ok);
       __ cmpptr(src, dst);
       __ jcc(Assembler::equal, known_ok);
@@ -3536,24 +3518,28 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   if (info != NULL) {
     add_debug_info_for_null_check_here(info);
   }
-#ifdef _LP64
-  Register tmp = rscratch1;
-  assert_different_registers(tmp, obj);
-  assert_different_registers(tmp, result);
 
-  // Check if we can take the (common) fast path, if obj is unlocked.
-  __ movq(result, Address(obj, oopDesc::mark_offset_in_bytes()));
-  __ testb(result, markWord::monitor_value);
-  __ jcc(Assembler::notZero, *op->stub()->entry());
-  __ bind(*op->stub()->continuation());
-  // Fast-path: shift and decode Klass*.
-  __ shrq(result, markWord::klass_shift);
-  __ decode_klass_not_null(result, tmp);
-#else
-  __ movptr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-  // Not really needed, but bind the label anyway to make compiler happy.
-  __ bind(*op->stub()->continuation());
+#ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    Register tmp = rscratch1;
+    assert_different_registers(tmp, obj);
+    assert_different_registers(tmp, result);
+
+    // Check if we can take the (common) fast path, if obj is unlocked.
+    __ movq(result, Address(obj, oopDesc::mark_offset_in_bytes()));
+    __ testb(result, markWord::monitor_value);
+    __ jcc(Assembler::notZero, *op->stub()->entry());
+    __ bind(*op->stub()->continuation());
+    // Fast-path: shift and decode Klass*.
+    __ shrq(result, markWord::klass_shift);
+    __ decode_klass_not_null(result, tmp);
+  } else
+  if (UseCompressedClassPointers) {
+    __ movl(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+    __ decode_klass_not_null(result, rscratch1);
+  } else
 #endif
+    __ movptr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

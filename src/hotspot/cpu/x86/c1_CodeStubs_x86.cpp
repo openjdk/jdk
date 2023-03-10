@@ -280,6 +280,7 @@ void MonitorExitStub::emit_code(LIR_Assembler* ce) {
 }
 
 void LoadKlassStub::emit_code(LIR_Assembler* ce) {
+  assert(UseCompactObjectHeaders, "only with compact headers");
   __ bind(_entry);
 #ifdef _LP64
   Register d = _result->as_register();

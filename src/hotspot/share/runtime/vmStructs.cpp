@@ -198,7 +198,8 @@
   /******************************************************************/                                                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
-  NOT_LP64(volatile_nonstatic_field(oopDesc,   _klass,                                        Klass*))                               \
+  volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
+  volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \

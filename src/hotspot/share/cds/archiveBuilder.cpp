@@ -757,13 +757,13 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* generated = "";
     Klass* k = klasses()->at(i);
     k->remove_java_mirror();
-    Klass* requested_k = to_requested(k);
 #ifdef _LP64
-    narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
-    k->set_prototype_header(markWord::prototype().set_narrow_klass(nk));
-#else
-    k->set_prototype_header(markWord::prototype());
-#endif
+    if (UseCompactObjectHeaders) {
+      Klass* requested_k = to_requested(k);
+      narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
+      k->set_prototype_header(markWord::prototype().set_narrow_klass(nk));
+    }
+#endif //_LP64
     if (k->is_objArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.

@@ -179,3 +179,4 @@ runtime/CompressedOops/CompressedClassPointerEncoding.java#aarch64-xor 8302094 w
 runtime/CompressedOops/CompressedClassPointerEncoding.java#aarch64-movk-1 8302094 windows-all,macosx-all
 runtime/CompressedOops/CompressedClassPointerEncoding.java#aarch64-movk-2 8302094 windows-all,macosx-all
 runtime/CompressedOops/CompressedClassPointerEncoding.java#aarch64-movk-3 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassSpaceSize.java 8302094 generic-all

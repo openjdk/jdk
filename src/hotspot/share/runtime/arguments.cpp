@@ -1504,30 +1504,69 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
+      if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
+        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
+      }
     }
   }
 #endif // _LP64
 }
 
+
 // NOTE: set_use_compressed_klass_ptrs() must be called after calling
 // set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifdef _LP64
-  if (!UseCompressedClassPointers) {
-    // Lilliput requires compressed class pointers. Default shall reflect that.
-    // If user specifies -UseCompressedClassPointers, it should be reverted with
-    // a warning.
-    assert(!FLAG_IS_DEFAULT(UseCompressedClassPointers), "Wrong default for UseCompressedClassPointers");
-    warning("Lilliput reqires compressed class pointers.");
-    FLAG_SET_ERGO(UseCompressedClassPointers, true);
+
+  if (UseCompactObjectHeaders) {
+    // 512 byte alignment, 22-bit values (Lilliput)
+    LogKlassAlignmentInBytes = 9;
+    MaxNarrowKlassPointerBits = 22;
+  } else {
+    // Traditional: 8 byte alignment, 32-bit values
+    LogKlassAlignmentInBytes = 3;
+    MaxNarrowKlassPointerBits = 32;
   }
+
+  KlassAlignmentInBytes = 1 << LogKlassAlignmentInBytes;
+  NarrowKlassPointerBitMask = ((((uint64_t)1) << MaxNarrowKlassPointerBits) - 1);
+  KlassEncodingMetaspaceMax = UCONST64(1) << (MaxNarrowKlassPointerBits + LogKlassAlignmentInBytes);
+
+  // On some architectures, the use of UseCompressedClassPointers implies the use of
+  // UseCompressedOops. The reason is that the rheap_base register of said platforms
+  // is reused to perform some optimized spilling, in order to use rheap_base as a
+  // temp register. But by treating it as any other temp register, spilling can typically
+  // be completely avoided instead. So it is better not to perform this trick. And by
+  // not having that reliance, large heaps, or heaps not supporting compressed oops,
+  // can still use compressed class pointers.
+  if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS && !UseCompressedOops) {
+    if (UseCompressedClassPointers) {
+      warning("UseCompressedClassPointers requires UseCompressedOops");
+    }
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
+  } else {
+    // Turn on UseCompressedClassPointers too
+    if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
+      FLAG_SET_ERGO(UseCompressedClassPointers, true);
+    }
+    // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
+    if (UseCompressedClassPointers) {
+      if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
+        warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
+        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
+      }
+    }
+  }
+
   // Assert validity of compressed class space size. User arg should have been checked at this point
   // (see CompressedClassSpaceSizeConstraintFunc()), so no need to be nice about it, this fires in
   // case the default is wrong.
-  assert(CompressedClassSpaceSize <= Metaspace::max_class_space_size(),
-         "CompressedClassSpaceSize " SIZE_FORMAT " too large (max: " SIZE_FORMAT ")",
-         CompressedClassSpaceSize, Metaspace::max_class_space_size());
-#endif // _LP64
+  // TODO: This is placed wrong. The CompressedClassSpaceSizeFunc is done after ergo, but this
+  // assert is during ergo.
+  // assert(CompressedClassSpaceSize <= Metaspace::max_class_space_size(),
+  //        "CompressedClassSpaceSize " SIZE_FORMAT " too large (max: " SIZE_FORMAT ")",
+  //        CompressedClassSpaceSize, Metaspace::max_class_space_size());
+#endif
 }
 
 void Arguments::set_conservative_max_heap_alignment() {
@@ -1689,6 +1728,9 @@ void Arguments::set_heap_size() {
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
+          if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
+            FLAG_SET_ERGO(UseCompressedClassPointers, false);
+          }
         } else {
           reasonable_max = MIN2(reasonable_max, max_coop_heap);
         }
@@ -3107,8 +3149,21 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION(ShowRegistersOnAssert);
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-  // Lilliput requires fast-locking.
-  FLAG_SET_DEFAULT(UseFastLocking, true);
+#ifdef _LP64
+  if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
+    // If user specifies -UseCompressedClassPointers, disable compact headers with a warning.
+    warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
+    FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+  }
+
+  if (UseCompactObjectHeaders && !UseFastLocking) {
+    FLAG_SET_DEFAULT(UseFastLocking, true);
+  }
+
+  if (!UseCompactObjectHeaders) {
+    FLAG_SET_DEFAULT(UseSharedSpaces, false);
+  }
+#endif
 
   return JNI_OK;
 }
@@ -4083,7 +4138,6 @@ jint Arguments::apply_ergo() {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(valuebasedclasses));
     }
   }
-
   return JNI_OK;
 }
 

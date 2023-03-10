@@ -3513,12 +3513,17 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ sub(r3, r3, sizeof(oopDesc));
+    __ sub(r3, r3, oopDesc::base_offset_in_bytes());
     __ cbz(r3, initialize_header);
 
     // Initialize object fields
     {
-      __ add(r2, r0, sizeof(oopDesc));
+      __ add(r2, r0, oopDesc::base_offset_in_bytes());
+      if (!is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong)) {
+        __ strw(zr, Address(__ post(r2, BytesPerInt)));
+        __ sub(r3, r3, BytesPerInt);
+        __ cbz(r3, initialize_header);
+      }
       Label loop;
       __ bind(loop);
       __ str(zr, Address(__ post(r2, BytesPerLong)));
@@ -3528,9 +3533,14 @@ void TemplateTable::_new() {
 
     // initialize object header only.
     __ bind(initialize_header);
-    __ ldr(rscratch1, Address(r4, Klass::prototype_header_offset()));
-    __ str(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
-
+    if (UseCompactObjectHeaders) {
+      __ ldr(rscratch1, Address(r4, Klass::prototype_header_offset()));
+      __ str(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+    } else {
+      __ mov(rscratch1, (intptr_t)markWord::prototype().value());
+      __ str(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+      __ store_klass(r0, r4);      // store klass last
+    }
     {
       SkipIfEqual skip(_masm, &DTraceAllocProbes, false);
       // Trigger dtrace event for fastpath

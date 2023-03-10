@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.debugger;
 
 import sun.jvm.hotspot.oops.Mark;
+import sun.jvm.hotspot.runtime.VM;
 
 /** <P> DebuggerBase is a recommended base class for debugger
     implementations. It can use a PageCache to cache data from the
@@ -396,11 +397,15 @@ public abstract class DebuggerBase implements Debugger {
 
   protected long readCompKlassAddressValue(long address)
     throws UnmappedAddressException, UnalignedAddressException {
-    // On 64 bit systems, the compressed Klass* is currently read from the mark
-    // word. We need to load the whole mark, and shift the upper parts.
-    long value = readCInteger(address, machDesc.getAddressSize(), true);
-    value = value >>> Mark.getKlassShift();
-
+    long value;
+    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+      // On 64 bit systems, the compressed Klass* is currently read from the mark
+      // word. We need to load the whole mark, and shift the upper parts.
+      value = readCInteger(address, machDesc.getAddressSize(), true);
+      value = value >>> Mark.getKlassShift();
+    } else {
+      value = readCInteger(address, getKlassPtrSize(), true);
+    }
     // Todo: Lilliput: this is a hack. The real problem is the assumption that size
     //  of a narrow Klass pointer can be expressed in number of bytes (getKlassPtrSize).
     //  That assumption is present in a number of files here. Better would be

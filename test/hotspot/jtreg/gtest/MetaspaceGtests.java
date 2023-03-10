@@ -90,3 +90,37 @@
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:MetaspaceReclaimPolicy=balanced -XX:-UseCompressedClassPointers
  */
+
+
+/* @test id=ccs-on-compact-headers-on
+ * @summary Run with +UseCCS and +UseCompactObjectHeaders
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @requires vm.bits == 64
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -Xlog:metaspace* -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders -XX:+UseCompressedClassPointers -XX:VerifyMetaspaceInterval=3
+ */
+
+/* @test id=ccs-on-compact-headers-off
+ * @summary Run with +UseCCS and -UseCompactObjectHeaders
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @requires vm.bits == 64
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -Xlog:metaspace* -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders -XX:+UseCompressedClassPointers -XX:VerifyMetaspaceInterval=3
+ */
+
+/* @test id=ccs-off
+ * @summary Run with -UseCCS
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @requires vm.bits == 64
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -Xlog:metaspace* -XX:-UseCompressedClassPointers -XX:VerifyMetaspaceInterval=3
+ */
+
+
+

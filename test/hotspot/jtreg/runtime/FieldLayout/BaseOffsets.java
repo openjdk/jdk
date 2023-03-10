@@ -23,18 +23,22 @@
 
 /*
  * @test id=default
- * @library /test/lib
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm BaseOffsets
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI BaseOffsets
  */
 /*
  * @test id=no-coops
- * @library /test/lib
+ * @library /test/lib /
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:-UseCompressedOops BaseOffsets
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops BaseOffsets
  */
 
 import java.lang.reflect.Field;
@@ -44,6 +48,7 @@ import jdk.internal.misc.Unsafe;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
+import jdk.test.whitebox.WhiteBox;
 
 public class BaseOffsets {
 
@@ -51,8 +56,27 @@ public class BaseOffsets {
         public int i;
     }
 
-    // @0:  8 byte header,  @8: int field
-    static final long INT_OFFSET  = 8L;
+    public static final WhiteBox WB = WhiteBox.getWhiteBox();
+
+  // @0:  8 byte header,  @8: int field
+    static final long INT_OFFSET;
+    static final int  INT_ARRAY_OFFSET;
+    static final int  LONG_ARRAY_OFFSET;
+    static {
+        if (!Platform.is64bit() || WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
+            INT_OFFSET = 8;
+            INT_ARRAY_OFFSET = 12;
+            LONG_ARRAY_OFFSET = 16;
+        } else if (WB.getBooleanVMFlag("UseCompressedClassPointers")) {
+            INT_OFFSET = 12;
+            INT_ARRAY_OFFSET = 16;
+            LONG_ARRAY_OFFSET = 16;
+        } else {
+            INT_OFFSET = 16;
+            INT_ARRAY_OFFSET = 20;
+            LONG_ARRAY_OFFSET = 24;
+        }
+    }
 
     static public void main(String[] args) {
         Unsafe unsafe = Unsafe.getUnsafe();
@@ -67,17 +91,17 @@ public class BaseOffsets {
             }
         }
 
-        Asserts.assertEquals(unsafe.arrayBaseOffset(boolean[].class), 12, "Misplaced boolean array base");
-        Asserts.assertEquals(unsafe.arrayBaseOffset(byte[].class),    12, "Misplaced byte    array base");
-        Asserts.assertEquals(unsafe.arrayBaseOffset(char[].class),    12, "Misplaced char    array base");
-        Asserts.assertEquals(unsafe.arrayBaseOffset(short[].class),   12, "Misplaced short   array base");
-        Asserts.assertEquals(unsafe.arrayBaseOffset(int[].class),     12, "Misplaced int     array base");
-        Asserts.assertEquals(unsafe.arrayBaseOffset(long[].class),    16, "Misplaced long    array base");
-        Asserts.assertEquals(unsafe.arrayBaseOffset(float[].class),   12, "Misplaced float   array base");
-        Asserts.assertEquals(unsafe.arrayBaseOffset(double[].class),  16, "Misplaced double  array base");
+        Asserts.assertEquals(unsafe.arrayBaseOffset(boolean[].class), INT_ARRAY_OFFSET,  "Misplaced boolean array base");
+        Asserts.assertEquals(unsafe.arrayBaseOffset(byte[].class),    INT_ARRAY_OFFSET,  "Misplaced byte    array base");
+        Asserts.assertEquals(unsafe.arrayBaseOffset(char[].class),    INT_ARRAY_OFFSET,  "Misplaced char    array base");
+        Asserts.assertEquals(unsafe.arrayBaseOffset(short[].class),   INT_ARRAY_OFFSET,  "Misplaced short   array base");
+        Asserts.assertEquals(unsafe.arrayBaseOffset(int[].class),     INT_ARRAY_OFFSET,  "Misplaced int     array base");
+        Asserts.assertEquals(unsafe.arrayBaseOffset(long[].class),    LONG_ARRAY_OFFSET, "Misplaced long    array base");
+        Asserts.assertEquals(unsafe.arrayBaseOffset(float[].class),   INT_ARRAY_OFFSET,  "Misplaced float   array base");
+        Asserts.assertEquals(unsafe.arrayBaseOffset(double[].class),  LONG_ARRAY_OFFSET, "Misplaced double  array base");
         boolean narrowOops = System.getProperty("java.vm.compressedOopsMode") != null ||
                              !Platform.is64bit();
-        int expected_objary_offset = narrowOops ? 12 : 16;
+        int expected_objary_offset = narrowOops ? INT_ARRAY_OFFSET : LONG_ARRAY_OFFSET;
         Asserts.assertEquals(unsafe.arrayBaseOffset(Object[].class),  expected_objary_offset, "Misplaced object  array base");
     }
 }

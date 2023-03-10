@@ -36,19 +36,23 @@ narrowKlass markWord::narrow_klass() const {
 }
 
 Klass* markWord::klass() const {
+  assert(UseCompactObjectHeaders, "only used with compact object headers");
   assert(!CompressedKlassPointers::is_null(narrow_klass()), "narrow klass must not be null: " INTPTR_FORMAT, value());
   return CompressedKlassPointers::decode_not_null(narrow_klass());
 }
 
 Klass* markWord::klass_or_null() const {
+  assert(UseCompactObjectHeaders, "only used with compact object headers");
   return CompressedKlassPointers::decode(narrow_klass());
 }
 
 markWord markWord::set_narrow_klass(const narrowKlass nklass) const {
+  assert(UseCompactObjectHeaders, "only used with compact object headers");
   return markWord((value() & ~klass_mask_in_place) | ((uintptr_t) nklass << klass_shift));
 }
 
 Klass* markWord::safe_klass() const {
+  assert(UseCompactObjectHeaders, "only used with compact object headers");
   assert(SafepointSynchronize::is_at_safepoint(), "only call at safepoint");
   markWord m = *this;
   if (m.has_displaced_mark_helper()) {
@@ -58,6 +62,7 @@ Klass* markWord::safe_klass() const {
 }
 
 markWord markWord::set_klass(const Klass* klass) const {
+  assert(UseCompactObjectHeaders, "only used with compact object headers");
   assert(UseCompressedClassPointers, "expect compressed klass pointers");
   // TODO: Don't cast to non-const, change CKP::encode() to accept const Klass* instead.
   narrowKlass nklass = CompressedKlassPointers::encode(const_cast<Klass*>(klass));

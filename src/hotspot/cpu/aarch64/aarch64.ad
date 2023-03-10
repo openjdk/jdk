@@ -7235,11 +7235,24 @@ instruct loadKlass(iRegPNoSp dst, memory8 mem)
 %}
 
 // Load Narrow Klass Pointer
-instruct loadNKlass(iRegNNoSp dst, memory4 mem, rFlagsReg cr)
+instruct loadNKlass(iRegNNoSp dst, memory4 mem)
+%{
+  match(Set dst (LoadNKlass mem));
+  predicate(!needs_acquiring_load(n) && !UseCompactObjectHeaders);
+
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}
+
+  ins_encode(aarch64_enc_ldrw(dst, mem));
+
+  ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassLilliput(iRegNNoSp dst, memory4 mem, rFlagsReg cr)
 %{
   match(Set dst (LoadNKlass mem));
   effect(TEMP_DEF dst, KILL cr);
-  predicate(!needs_acquiring_load(n));
+  predicate(!needs_acquiring_load(n) && UseCompactObjectHeaders);
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}

@@ -38,6 +38,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "nativeInst_aarch64.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -2287,6 +2288,8 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
   Address dst_length_addr = Address(dst, arrayOopDesc::length_offset_in_bytes());
+  Address src_klass_addr = Address(src, oopDesc::klass_offset_in_bytes());
+  Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
 
   // test for NULL
   if (flags & LIR_OpArrayCopy::src_null_check) {
@@ -2347,10 +2350,15 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      assert(UseCompressedClassPointers, "Lilliput");
-      __ load_nklass(tmp, src);
-      __ load_nklass(rscratch1, dst);
-      __ cmpw(tmp, rscratch1);
+      if (UseCompressedClassPointers) {
+        __ load_nklass(tmp, src);
+        __ load_nklass(rscratch1, dst);
+        __ cmpw(tmp, rscratch1);
+      } else {
+        __ ldr(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
+        __ ldr(rscratch1, Address(dst, oopDesc::klass_offset_in_bytes()));
+        __ cmp(tmp, rscratch1);
+      }
       __ br(Assembler::NE, *stub->entry());
     } else {
       // For object arrays, if src is a sub class of dst then we can
@@ -2472,21 +2480,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
     __ mov_metadata(tmp, default_type->constant_encoding());
-    if (UseCompressedClassPointers) {
-      __ encode_klass_not_null(tmp);
-    }
 
-    assert(UseCompressedClassPointers, "Lilliput");
     if (basic_type != T_OBJECT) {
-      __ load_nklass(rscratch1, dst);
-      __ cmpw(tmp, rscratch1);
+      __ cmp_klass(dst, tmp, rscratch1);
       __ br(Assembler::NE, halt);
-      __ load_nklass(rscratch1, src);
-      __ cmpw(tmp, rscratch1);
+      __ cmp_klass(src, tmp, rscratch1);
       __ br(Assembler::EQ, known_ok);
     } else {
-      __ load_nklass(rscratch1, dst);
-      __ cmpw(tmp, rscratch1);
+      __ cmp_klass(dst, tmp, rscratch1);
       __ br(Assembler::EQ, known_ok);
       __ cmp(src, dst);
       __ br(Assembler::EQ, known_ok);
@@ -2566,17 +2567,23 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-  assert(UseCompressedClassPointers, "expects UseCompressedClassPointers");
+  if (UseCompressedClassPointers) {
+    if (UseCompactObjectHeaders) {
+      // Check if we can take the (common) fast path, if obj is unlocked.
+      __ ldr(result, Address(obj, oopDesc::mark_offset_in_bytes()));
+      __ tst(result, markWord::monitor_value);
+      __ br(Assembler::NE, *op->stub()->entry());
+      __ bind(*op->stub()->continuation());
 
-  // Check if we can take the (common) fast path, if obj is unlocked.
-  __ ldr(result, Address(obj, oopDesc::mark_offset_in_bytes()));
-  __ tst(result, markWord::monitor_value);
-  __ br(Assembler::NE, *op->stub()->entry());
-  __ bind(*op->stub()->continuation());
-
-  // Shift and decode Klass*.
-  __ lsr(result, result, markWord::klass_shift);
-  __ decode_klass_not_null(result);
+      // Shift to get proper narrow Klass*.
+      __ lsr(result, result, markWord::klass_shift);
+    } else {
+      __ ldrw(result, Address (obj, oopDesc::klass_offset_in_bytes()));
+    }
+    __ decode_klass_not_null(result);
+  } else {
+    __ ldr(result, Address (obj, oopDesc::klass_offset_in_bytes()));
+  }
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

@@ -35,21 +35,27 @@ class Klass;
 
 // Narrow Klass pointer constants;
 #ifdef _LP64
-const int LogKlassAlignmentInBytes = 9; // 512 byte alignment (Lilliput)
-#else
-const int LogKlassAlignmentInBytes = 3; // traditional 64-bit alignment
-#endif
-
-const int KlassAlignmentInBytes    = 1 << LogKlassAlignmentInBytes;
+// All these depend on UseCompactObjectHeaders
+extern int LogKlassAlignmentInBytes;
+extern int KlassAlignmentInBytes;
 
 // Max. allowed size of compressed class pointer, in bits
-const  int      MaxNarrowKlassPointerBits = 22;
+extern int MaxNarrowKlassPointerBits;
 
 // Mask to mask in the bits which are valid to be set in a narrow Klass pointer
-const uint64_t  NarrowKlassPointerBitMask = ((((uint64_t)1) << MaxNarrowKlassPointerBits) - 1);
+extern uint64_t NarrowKlassPointerBitMask;
 
-// Maximal size of compressed class pointer encoding range (2G with 22bit class ptr and 9 bit alignment).
-const  uint64_t KlassEncodingMetaspaceMax = UCONST64(1) << (MaxNarrowKlassPointerBits + LogKlassAlignmentInBytes);
+// Maximal size of compressed class pointer encoding range
+extern uint64_t KlassEncodingMetaspaceMax;
+
+#else
+// Why is this even needed in 32-bit? Todo: fix.
+const int LogKlassAlignmentInBytes = 3; // traditional 64-bit alignment
+const int KlassAlignmentInBytes    = 1 << LogKlassAlignmentInBytes;
+const int MaxNarrowKlassPointerBits = 22; // should never be used.
+const uint64_t  NarrowKlassPointerBitMask = ((((uint64_t)1) << MaxNarrowKlassPointerBits) - 1);
+const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlassAlignmentInBytes;
+#endif
 
 // If compressed klass pointers then use narrowKlass.
 typedef uint32_t narrowKlass;
@@ -58,6 +64,7 @@ class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
   friend class ArchiveBuilder;
 
+  // Encoding base
   static address _base;
 
   // Shift is actually a constant; we keep this just for the SA (see vmStructs.cpp and
@@ -70,6 +77,8 @@ class CompressedKlassPointers : public AllStatic {
   static inline Klass* decode_not_null(narrowKlass v, address base);
   static inline narrowKlass encode_not_null(Klass* v, address base);
   DEBUG_ONLY(static inline void verify_klass_pointer(const Klass* v, address base));
+
+  static void print_mode_pd(outputStream* st);
 
 public:
 

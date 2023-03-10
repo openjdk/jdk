@@ -109,8 +109,11 @@ static void print_settings(outputStream* out, size_t scale) {
     out->cr();
     out->print_cr("KlassAlignmentInBytes: %d", KlassAlignmentInBytes);
     out->print("KlassEncodingMetaspaceMax: ");
+#ifdef _LP64
+    // TODO: This currently doesn't compile on 32bit because of size_t overflow.
     print_human_readable_size(out, KlassEncodingMetaspaceMax, scale);
     out->cr();
+#endif
     CompressedKlassPointers::print_mode(out);
   } else {
     out->print_cr("No class space");

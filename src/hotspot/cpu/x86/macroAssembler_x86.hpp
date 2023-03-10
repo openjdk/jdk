@@ -372,11 +372,18 @@ class MacroAssembler: public Assembler {
   // oop manipulations
 #ifdef _LP64
   void load_nklass(Register dst, Register src);
-#else
-  void store_klass(Register dst, Register src);
 #endif
   void load_klass(Register dst, Register src, Register tmp);
   void load_klass_check_null(Register dst, Register src, Register tmp);
+  void store_klass(Register dst, Register src, Register tmp);
+
+  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
+  // depending on UseCompressedClassPointers).
+  void cmp_klass(Register klass, Register dst, Register tmp);
+
+  // Compares the Klass pointer of two objects o1 and o2. Result is in the condition flags.
+  // Uses t1 and t2 as temporary registers.
+  void cmp_klass(Register src, Register dst, Register tmp1, Register tmp2);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register thread_tmp);
@@ -395,6 +402,8 @@ class MacroAssembler: public Assembler {
   void store_heap_oop_null(Address dst);
 
 #ifdef _LP64
+  void store_klass_gap(Register dst, Register src);
+
   // This dummy is to prevent a call to store_heap_oop from
   // converting a zero (like NULL) into a Register by giving
   // the compiler two choices it can't resolve

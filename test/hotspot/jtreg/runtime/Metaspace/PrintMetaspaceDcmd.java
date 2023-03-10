@@ -58,6 +58,17 @@ import jdk.test.lib.JDKToolFinder;
  */
 
 /*
+ * @test id=test-64bit-compact-headers
+ * @summary Test the VM.metaspace command
+ * @requires vm.bits == "64"
+ * @requires vm.debug == true
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run main/othervm -Dwith-compressed-class-space -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UnlockDiagnosticVMOptions -XX:+MetaspaceGuardAllocations PrintMetaspaceDcmd
+ */
+
+/*
  * @test test-32bit
  * @summary Test the VM.metaspace command
  * @requires vm.bits == "32"

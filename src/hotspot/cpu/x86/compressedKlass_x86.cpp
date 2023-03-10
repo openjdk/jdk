@@ -41,7 +41,7 @@ bool CompressedKlassPointers::is_valid_base(address p) {
   return MacroAssembler::klass_decode_mode_for_base(p) != MacroAssembler::KlassDecodeNone;
 }
 
-void CompressedKlassPointers::print_mode(outputStream* st) {
+void CompressedKlassPointers::print_mode_pd(outputStream* st) {
   st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "
                "Narrow klass range: " UINT64_FORMAT_X
                ", Encoding mode %s",
