@@ -1299,7 +1299,7 @@ public final class ProcessBuilder
      *          If the operating system does not support the creation of processes
      *
      * @implNote
-     * Each created process is logged, see {@link ProcessBuilder#start()} for details.
+     * Logging of each process created can be enabled, see {@link ProcessBuilder#start()} for details.
      *
      * @throws IOException if an I/O error occurs
      * @since 9
