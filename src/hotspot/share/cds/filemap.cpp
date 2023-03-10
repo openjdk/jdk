@@ -1043,13 +1043,13 @@ bool FileMapInfo::validate_shared_path_table() {
     assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
     if (header()->app_class_paths_start_index() > 1) {
       DynamicDumpSharedSpaces = false;
-      warning(
+      log_warning(cds)(
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
     if (header()->num_module_paths() > 0) {
       if (!check_module_paths()) {
         DynamicDumpSharedSpaces = false;
-        warning(
+        log_warning(cds)(
           "Dynamic archiving is disabled because base layer archive has a different module path");
       }
     }
@@ -1134,7 +1134,7 @@ void FileMapInfo::validate_non_existent_class_paths() {
        i++) {
     SharedClassPathEntry* ent = shared_path(i);
     if (!ent->check_non_existent()) {
-      warning("Archived non-system classes are disabled because the "
+      log_warning(cds)("Archived non-system classes are disabled because the "
               "file %s exists", ent->name());
       header()->set_has_platform_or_app_classes(false);
     }
@@ -2385,14 +2385,14 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
 
   // Check that regions are within the java heap
   if (!G1CollectedHeap::heap()->check_archive_addresses(regions, num_regions)) {
-    log_info(cds)("UseSharedSpaces: Unable to allocate region, range is not within java heap.");
+    log_info(cds)("Unable to allocate region, range is not within java heap.");
     return false;
   }
 
   // allocate from java heap
   if (!G1CollectedHeap::heap()->alloc_archive_regions(
              regions, num_regions, is_open_archive)) {
-    log_info(cds)("UseSharedSpaces: Unable to allocate region, java heap range is already in use.");
+    log_info(cds)("Unable to allocate region, java heap range is already in use.");
     return false;
   }
 
@@ -2408,7 +2408,7 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
     if (base == nullptr || base != addr) {
       // dealloc the regions from java heap
       dealloc_heap_regions(regions, num_regions);
-      log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
+      log_info(cds)("Unable to map at required address in java heap. "
                     INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
                     p2i(addr), regions[i].byte_size());
       return false;
@@ -2418,7 +2418,7 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
     if (VerifySharedSpaces && !r->check_region_crc()) {
       // dealloc the regions from java heap
       dealloc_heap_regions(regions, num_regions);
-      log_info(cds)("UseSharedSpaces: mapped heap regions are corrupt");
+      log_info(cds)("mapped heap regions are corrupt");
       return false;
     }
   }
@@ -2644,7 +2644,7 @@ bool FileMapHeader::validate() {
   // header data
   const char* prop = Arguments::get_property("java.system.class.loader");
   if (prop != nullptr) {
-    warning("Archived non-system classes are disabled because the "
+    log_warning(cds)("Archived non-system classes are disabled because the "
             "java.system.class.loader property is specified (value = \"%s\"). "
             "To use archived non-system classes, this property must not be set", prop);
     _has_platform_or_app_classes = false;
@@ -2683,7 +2683,7 @@ bool FileMapHeader::validate() {
   }
 
   if (_allow_archiving_with_java_agent) {
-    warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
 
