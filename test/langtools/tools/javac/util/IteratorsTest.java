@@ -40,6 +40,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class IteratorsTest {
 
@@ -69,6 +70,13 @@ public class IteratorsTest {
         var actual = new ArrayList<String>();
         emptyCompoundIterator.forEachRemaining(actual::add);
         assertEquals(List.of("1", "2", "3", "4", "5"), actual);
+    }
+
+    @Test
+    public void recursiveEmpty() {
+        Iterable<Iterator<Object>> inner = () -> Iterators.createCompoundIterator(List.of(), i -> Collections.emptyIterator());
+        Iterator<Object> outer = Iterators.createCompoundIterator(inner, Function.identity());
+        assertFalse(outer.hasNext());
     }
 
     @Test
