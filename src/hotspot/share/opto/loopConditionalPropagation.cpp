@@ -801,6 +801,16 @@ public:
               Node* use = node->fast_out(i);
               if (use->is_Phi()) {
                 Node* r = use->in(0);
+                if (r->Opcode() == Op_Region && r->req() == 3 &&
+                    ((r->in(1)->is_IfProj() && r->in(1)->in(0)->is_CountedLoopEnd() &&
+                      r->in(1)->in(0)->as_CountedLoopEnd()->loopnode() != nullptr &&
+                      r->in(1)->in(0)->as_CountedLoopEnd()->loopnode()->is_main_loop()) ||
+                     (r->in(2)->is_IfProj() && r->in(2)->in(0)->is_CountedLoopEnd() &&
+                      r->in(2)->in(0)->as_CountedLoopEnd()->loopnode() != nullptr &&
+                      r->in(2)->in(0)->as_CountedLoopEnd()->loopnode()->is_main_loop()))) {
+                  // Bounds of main loop may be adjusted. Can't constant fold.
+                  continue;
+                }
                 int nb_deleted = 0;
                 for (uint j = 1; j < use->req(); ++j) {
                   if (use->in(j) == node && _phase->is_dominator(c, r->in(j)) &&
@@ -808,7 +818,7 @@ public:
                         j == LoopNode::LoopBackControl &&
                         use == r->as_BaseCountedLoop()->phi() &&
                         node == r->as_BaseCountedLoop()->incr() &&
-                        !types->get_type(r->as_BaseCountedLoop()->loopexit()->cmp_node())->singleton())) {
+                        !((TreeNode*) _types_at_ctrl[r->as_BaseCountedLoop()->loopexit()])->get_type(r->as_BaseCountedLoop()->loopexit()->cmp_node())->singleton())) {
                     progress = true;
                     if (con == NULL) {
                       con = makecon(t);
@@ -830,6 +840,11 @@ public:
                   }
                 }
                 if (nb_deleted > 0) {
+//                  stringStream ss;
+//                  C->method()->print_short_name(&ss);
+//                  tty->print("XXX %d %s", C->compile_id(), ss.as_string());
+//                  use->dump();
+//                  con->dump();
                   --i;
                   imax -= nb_deleted;
                 }
