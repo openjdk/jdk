@@ -2607,11 +2607,6 @@ public final class String
      * }</pre>
      * If no such value of {@code k} exists, then {@code -1} is returned.
      *
-     * @param   str         the substring to search for.
-     * @param   fromIndex   the index from which to start the search.
-     * @return  the index of the first occurrence of the specified substring,
-     *          starting at the specified index,
-     *          or {@code -1} if there is no such occurrence.
      * @apiNote
      * Unlike {@link #substring(int)}, for example, this method does not throw
      * an exception when {@code fromIndex} is outside the valid range.
@@ -2624,13 +2619,19 @@ public final class String
      * On {@link String}s {@code s} and a non-empty {@code str}, for example,
      * {@code s.indexOf(str, fromIndex, s.length())} would throw if
      * {@code fromIndex} were larger than the string length, or were negative.
+     *
+     * @param   str         the substring to search for.
+     * @param   fromIndex   the index from which to start the search.
+     * @return  the index of the first occurrence of the specified substring,
+     *          starting at the specified index,
+     *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str, int fromIndex) {
         return indexOf(value, coder(), length(), str, fromIndex);
     }
 
     /**
-     * Returns the smallest index of an occurrence of the specified substring
+     * Returns the index of the first occurrence of the specified substring
      * within the specified index range of {@code this} string.
      *
      * <p>This method returns the same result as the one of the invocation
