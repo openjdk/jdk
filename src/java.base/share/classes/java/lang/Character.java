@@ -10782,6 +10782,60 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
     }
 
     /**
+     * isEmoji?
+     * @param codePoint code point
+     * @return is Emoji?
+     */
+    public static boolean isEmoji(int codePoint) {
+        return CharacterData.of(codePoint).isEmoji(codePoint);
+    }
+
+    /**
+     * presentation?
+     * @param codePoint code point
+     * @return is presentation?
+     */
+    public static boolean isEmojiPresentation(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiPresentation(codePoint);
+    }
+
+    /**
+     * modifier?
+     * @param codePoint code point
+     * @return is modifier?
+     */
+    public static boolean isEmojiModifier(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiModifier(codePoint);
+    }
+
+    /**
+     * modifier base?
+     * @param codePoint code point
+     * @return is modifier base?
+     */
+    public static boolean isEmojiModifierBase(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiModifierBase(codePoint);
+    }
+
+    /**
+     * component?
+     * @param codePoint code point
+     * @return is component?
+     */
+    public static boolean isEmojiComponent(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiComponent(codePoint);
+    }
+
+    /**
+     * isextpict?
+     * @param codePoint code point
+     * @return is extpict?
+     */
+    public static boolean isExtendedPictographic(int codePoint) {
+        return CharacterData.of(codePoint).isExtendedPictographic(codePoint);
+    }
+
+    /**
      * Converts the character argument to lowercase using case
      * mapping information from the UnicodeData file.
      * <p>
