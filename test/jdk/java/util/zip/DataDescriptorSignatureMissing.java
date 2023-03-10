@@ -40,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.*;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 public class DataDescriptorSignatureMissing {
 
@@ -56,10 +57,12 @@ public class DataDescriptorSignatureMissing {
         try (ZipInputStream in = new ZipInputStream(
                 new ByteArrayInputStream(zip))) {
             ZipEntry first = in.getNextEntry();
+            assertNotNull(first, "Zip file is unexpectedly missing first entry");
             assertEquals(first.getName(), "first");
             assertEquals(in.readAllBytes(), "first".getBytes(StandardCharsets.UTF_8));
 
             ZipEntry second = in.getNextEntry();
+            assertNotNull(second, "Zip file is unexpectedly missing second entry");
             assertEquals(second.getName(), "second");
             assertEquals(in.readAllBytes(), "second".getBytes(StandardCharsets.UTF_8));
         }
