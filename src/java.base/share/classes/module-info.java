@@ -191,6 +191,17 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
+    exports jdk.internal.classfile to
+        jdk.jdeps,
+        jdk.jlink;
+    exports jdk.internal.classfile.attribute to
+        jdk.jdeps;
+    exports jdk.internal.classfile.instruction to
+        jdk.jdeps;
+    exports jdk.internal.classfile.constantpool to
+        jdk.jdeps;
+    exports jdk.internal.classfile.java.lang.constant to
+        jdk.jdeps;
     exports jdk.internal.org.objectweb.asm to
         jdk.jartool,
         jdk.jfr,
@@ -380,16 +391,6 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
-    exports jdk.internal.classfile to
-        jdk.jdeps;
-    exports jdk.internal.classfile.attribute to
-        jdk.jdeps;
-    exports jdk.internal.classfile.instruction to
-        jdk.jdeps;
-    exports jdk.internal.classfile.constantpool to
-        jdk.jdeps;
-    exports jdk.internal.classfile.java.lang.constant to
-        jdk.jdeps;
 
     // the service types defined by the APIs in this module
 
