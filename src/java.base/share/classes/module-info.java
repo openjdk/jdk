@@ -383,6 +383,7 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
+
     // the service types defined by the APIs in this module
 
     uses java.lang.System.LoggerFinder;
