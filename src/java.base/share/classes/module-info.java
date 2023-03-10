@@ -191,7 +191,8 @@ module java.base {
     exports jdk.internal.logger to
         java.logging;
     exports jdk.internal.classfile to
-        jdk.jfr;
+        jdk.jfr,
+        jdk.jlink;
     exports jdk.internal.classfile.attribute to
         jdk.jfr;
     exports jdk.internal.classfile.instruction to
