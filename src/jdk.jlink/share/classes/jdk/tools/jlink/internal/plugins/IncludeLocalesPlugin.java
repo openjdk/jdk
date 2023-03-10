@@ -269,8 +269,8 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
 
     private boolean stripUnsupportedLocales(byte[] bytes) {
         boolean modified = false;
-        // I haven't found a way how to change content of existing CP entries or get entry offset to the byteocde array using Bytecode lib
-        // so scanning CP entries directly
+        // scan CP entries directly to read the bytes of UTF8 entries and
+        // patch in place with unsupported locale tags stripped
         final int cpLength = (bytes[8] << 8) + (int)bytes[9];
         int offset = 10;
         for (int cpSlot=1; cpSlot<cpLength; cpSlot++) {
