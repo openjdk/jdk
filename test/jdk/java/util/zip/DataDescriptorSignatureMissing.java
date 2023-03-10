@@ -24,9 +24,8 @@
 /**
  * @test
  * @bug 8056934
- * @summary Check ability to read zip files created by python zipfile
- * implementation, which fails to write optional (but recommended) data
- * descriptor signatures.
+ * @summary Verify the ability to read zip files whose local header
+ * data descriptor is missing the optional signature
  * <p>
  * No way to adapt the technique in this test to get a ZIP64 zip file
  * without data descriptors was found.
