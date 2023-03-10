@@ -85,7 +85,7 @@ public final class ModuleInfoWriter {
             return Classfile.buildModule(
                 ModuleAttribute.of(ModuleDesc.of(md.name()), mb -> {
                     mb.moduleFlags(md.modifiers().stream()
-                            .map(mm -> MODULE_MODS_TO_FLAGS.getOrDefault(mm, 0))
+                            .mapToInt(mm -> MODULE_MODS_TO_FLAGS.getOrDefault(mm, 0))
                             .reduce(0, (x, y) -> (x | y)));
 
                     String vs = md.rawVersion().orElse(null);
@@ -94,7 +94,7 @@ public final class ModuleInfoWriter {
                     // requires
                     for (ModuleDescriptor.Requires r : md.requires()) {
                         int flags = r.modifiers().stream()
-                                .map(REQUIRES_MODS_TO_FLAGS::get)
+                                .mapToInt(REQUIRES_MODS_TO_FLAGS::get)
                                 .reduce(0, (x, y) -> (x | y));
                         vs = r.rawCompiledVersion().orElse(null);
                         mb.requires(ModuleDesc.of(r.name()), flags, vs);
@@ -103,7 +103,7 @@ public final class ModuleInfoWriter {
                     // exports
                     for (ModuleDescriptor.Exports e : md.exports()) {
                         int flags = e.modifiers().stream()
-                                .map(EXPORTS_MODS_TO_FLAGS::get)
+                                .mapToInt(EXPORTS_MODS_TO_FLAGS::get)
                                 .reduce(0, (x, y) -> (x | y));
                         var targets = e.targets().stream().map(ModuleDesc::of)
                                 .toArray(ModuleDesc[]::new);
@@ -113,7 +113,7 @@ public final class ModuleInfoWriter {
                     // opens
                     for (ModuleDescriptor.Opens opens : md.opens()) {
                         int flags = opens.modifiers().stream()
-                                .map(OPENS_MODS_TO_FLAGS::get)
+                                .mapToInt(OPENS_MODS_TO_FLAGS::get)
                                 .reduce(0, (x, y) -> (x | y));
                         var targets = opens.targets().stream().map(ModuleDesc::of)
                                 .toArray(ModuleDesc[]::new);
@@ -121,7 +121,7 @@ public final class ModuleInfoWriter {
                     }
 
                     // uses
-                    md.uses().stream().map(sn -> ClassDesc.of(sn)).forEach(mb::uses);
+                    md.uses().stream().map(ClassDesc::of).forEach(mb::uses);
 
                     // provides
                     for (ModuleDescriptor.Provides p : md.provides()) {
@@ -147,7 +147,7 @@ public final class ModuleInfoWriter {
                     }
 
                     // write ModuleTarget attribute if there is a target platform
-                    if (target != null && target.targetPlatform().length() > 0) {
+                    if (target != null && !target.targetPlatform().isEmpty()) {
                         clb.with(ModuleTargetAttribute.of(target.targetPlatform()));
                     }
                 });
