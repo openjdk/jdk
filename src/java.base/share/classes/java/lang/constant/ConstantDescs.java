@@ -262,6 +262,22 @@ public final class ConstantDescs {
     /** {@link ClassDesc} representing the primitive type {@code void} */
     public static final ClassDesc CD_void = ClassDesc.ofDescriptor("V");
 
+    /**
+     * {@link MethodHandleDesc} representing {@link MethodHandles#classData(Lookup, String, Class)} MethodHandles.classData}
+     * @since 21
+     */
+    public static final DirectMethodHandleDesc BSM_CLASS_DATA
+            = ofConstantBootstrap(CD_MethodHandles, "classData",
+            CD_Object);
+
+    /**
+     * {@link MethodHandleDesc} representing {@link MethodHandles#classDataAt(Lookup, String, Class, int)} MethodHandles.classDataAt}
+     * @since 21
+     */
+    public static final DirectMethodHandleDesc BSM_CLASS_DATA_AT
+            = ofConstantBootstrap(CD_MethodHandles, "classDataAt",
+            CD_Object, CD_int);
+
     /** Nominal descriptor representing the constant {@code null} */
     public static final ConstantDesc NULL
             = DynamicConstantDesc.ofNamed(ConstantDescs.BSM_NULL_CONSTANT,
