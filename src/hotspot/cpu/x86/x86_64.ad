@@ -922,8 +922,8 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ bind(L_skip_barrier);
   }
 
-  int max_monitors = C->method() != NULL ? C->max_monitors() : 0;
-  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != NULL, max_monitors);
+  int max_monitors = C->method() != nullptr ? C->max_monitors() : 0;
+  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != nullptr, max_monitors);
 
   C->output()->set_frame_complete(cbuf.insts_size());
 
@@ -13378,7 +13378,7 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, r15_thread, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, r15_thread, nullptr, nullptr, nullptr, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

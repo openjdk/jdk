@@ -99,7 +99,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     subptr(hdr, rsp);
     andptr(hdr, aligned_mask - (int)os::vm_page_size());
     // for recursive locking, the result is zero => save it in the displaced header
-    // location (NULL in the displaced hdr location indicates recursive locking)
+    // location (null in the displaced hdr location indicates recursive locking)
     movptr(Address(disp_hdr, 0), hdr);
     // otherwise we don't care about the result and handle locking via runtime call
     jcc(Assembler::notZero, slow_case);
@@ -122,7 +122,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   if (!UseFastLocking) {
     // load displaced header
     movptr(hdr, Address(disp_hdr, 0));
-    // if the loaded hdr is NULL we had recursive locking
+    // if the loaded hdr is null we had recursive locking
     testptr(hdr, hdr);
     // if we had recursive locking, we are done
     jcc(Assembler::zero, done);
@@ -346,7 +346,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
     addptr(rax, max_monitors * wordSize);
     cmpptr(rax, Address(r15_thread, JavaThread::lock_stack_limit_offset()));
     jcc(Assembler::less, ok);
-    assert(StubRoutines::x86::check_lock_stack() != NULL, "need runtime call stub");
+    assert(StubRoutines::x86::check_lock_stack() != nullptr, "need runtime call stub");
     call(RuntimeAddress(StubRoutines::x86::check_lock_stack()));
     bind(ok);
   }
