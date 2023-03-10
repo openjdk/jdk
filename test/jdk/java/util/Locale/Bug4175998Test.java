@@ -55,12 +55,11 @@ import java.util.*;
 public class Bug4175998Test extends IntlTest {
     public static void main(String[] args) throws Exception {
         new Bug4175998Test().run(args);
-//        generateTables();    //uncomment this to regenerate data tables
+        //generateTables();    //uncomment this to regenerate data tables
     }
 
     public void testIt() throws Exception {
         boolean bad = false;
-
         for (final String[] localeCodes : CODES) {
             final Locale l = Locale.of(localeCodes[0]);
             final String iso3 = l.getISO3Language();
@@ -70,7 +69,6 @@ public class Bug4175998Test extends IntlTest {
                 bad = true;
             }
         }
-
         if (bad) {
             errln("Bad ISO3 language codes detected.");
         }
@@ -270,19 +268,19 @@ public class Bug4175998Test extends IntlTest {
             BufferedReader ISO639File = new BufferedReader(new FileReader(ISO639));
             for (String line = ISO639File.readLine(); line != null; line = ISO639File.readLine()) {
                 String[] tokens= line.split("\\|");
-
-                if (tokens[2].isEmpty()){
-                    continue; // Only concerned if both a 639-1 and 639-2 code
+                String iso639_1 = tokens[2];
+                String iso639_2B = tokens[1];
+                String iso639_2T = tokens[0];
+                if (iso639_1.isEmpty()){
+                    continue; // Skip if not both a 639-1 and 639-2 code
                 }
-
-                if (tokens[1].isEmpty()){
-                    tokens[1] = tokens[0]; // Default 639/B to 639/T if empty
+                if (iso639_2B.isEmpty()){
+                    iso639_2B = iso639_2T; // Default 639/B to 639/T if empty
                 }
-
                 System.out.print("{");
-                System.out.print("\""+tokens[2]+"\",");
-                System.out.print("\""+tokens[1]+"\",");
-                System.out.print("\""+tokens[0]+"\"");
+                System.out.print("\""+iso639_1+"\",");
+                System.out.print("\""+iso639_2B+"\",");
+                System.out.print("\""+iso639_2T+"\"");
                 System.out.println("},");
             }
         } catch (Exception e) {
