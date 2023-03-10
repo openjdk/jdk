@@ -60,7 +60,6 @@ public class TestLocOffsetFromZip64EF {
 
     /**
      * Create the files used by this test
-     *
      * @throws IOException if an error occurs
      */
     @BeforeClass
