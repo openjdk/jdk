@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,24 @@
  * questions.
  */
 
-import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.List;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.util.Map;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import static java.lang.String.format;
 
@@ -43,28 +47,25 @@ import static java.lang.String.format;
  * @bug 8255380 8257445
  * @summary Test that Zip FS can access the LOC offset from the Zip64 extra field
  * @modules jdk.zipfs
- * @requires (os.family == "linux") | (os.family == "mac")
- * @run testng/manual TestLocOffsetFromZip64EF
+ * @run testng TestLocOffsetFromZip64EF
  */
 public class TestLocOffsetFromZip64EF {
 
+    // Buffer used when writing zero-filled entries in the sparse file
+    private final static byte[] EMPTY_BYTES = new byte[16384];
+
     private static final String ZIP_FILE_NAME = "LargeZipTest.zip";
-    // File that will be created with a size greater than 0xFFFFFFFF
-    private static final String LARGE_FILE_NAME = "LargeZipEntry.txt";
-    // File that will be created with a size less than 0xFFFFFFFF
-    private static final String SMALL_FILE_NAME = "SmallZipEntry.txt";
-    // The size (4GB) of the large file to be created
+
     private static final long LARGE_FILE_SIZE = 4L * 1024L * 1024L * 1024L;
 
     /**
      * Create the files used by this test
+     *
      * @throws IOException if an error occurs
      */
     @BeforeClass
     public void setUp() throws IOException {
-        System.out.println("In setup");
         cleanup();
-        createFiles();
         createZipWithZip64Ext();
     }
 
@@ -74,23 +75,7 @@ public class TestLocOffsetFromZip64EF {
      */
     @AfterClass
     public void cleanup() throws IOException {
-        System.out.println("In cleanup");
         Files.deleteIfExists(Path.of(ZIP_FILE_NAME));
-        Files.deleteIfExists(Path.of(LARGE_FILE_NAME));
-        Files.deleteIfExists(Path.of(SMALL_FILE_NAME));
-    }
-
-    /**
-     * Create a Zip file that will result in a Zip64 Extra (EXT) header
-     * being added to the CEN entry in order to find the LOC offset for
-     * SMALL_FILE_NAME.
-     */
-    public static void createZipWithZip64Ext() {
-        System.out.println("Executing zip...");
-        List<String> commands = List.of("zip", "-0", ZIP_FILE_NAME,
-                LARGE_FILE_NAME, SMALL_FILE_NAME);
-        Result rc = run(new ProcessBuilder(commands));
-        rc.assertSuccess();
     }
 
     /*
@@ -143,88 +128,70 @@ public class TestLocOffsetFromZip64EF {
     }
 
     /**
-     * Create the files that will be added to the ZIP file
-     * @throws IOException if there is a problem  creating the files
+     * Create a ZIP file where the second entry is large enough to output a
+     * Zip64 CEN entry where the LOC offset is found inside a Zip64 Extra field.
      */
-    private static void createFiles() throws IOException {
-        try (RandomAccessFile file = new RandomAccessFile(LARGE_FILE_NAME, "rw")
-        ) {
-            System.out.printf("Creating %s%n", LARGE_FILE_NAME);
-            file.setLength(LARGE_FILE_SIZE);
-            System.out.printf("Creating %s%n", SMALL_FILE_NAME);
-            Files.writeString(Path.of(SMALL_FILE_NAME), "Hello");
+    public void createZipWithZip64Ext() throws IOException {
+        // Make a ZIP with two entries
+        try (FileOutputStream fileOutputStream = new FileOutputStream(new File(ZIP_FILE_NAME));
+             ZipOutputStream zo = new ZipOutputStream(new SparseOutputStream(fileOutputStream))) {
+
+            // First entry is a small DEFLATED entry
+            zo.putNextEntry(new ZipEntry("first"));
+
+            // Second entry is STORED to enable sparse writing
+            ZipEntry e = new ZipEntry("second");
+            e.setMethod(ZipEntry.STORED);
+            e.setSize(LARGE_FILE_SIZE);
+            e.setCrc(crc(LARGE_FILE_SIZE));
+
+            // This forces an Info-ZIP Extended Timestamp extra field to be produced
+            e.setLastModifiedTime(FileTime.from(Instant.now()));
+            zo.putNextEntry(e);
+
+            // Write LARGE_FILE_SIZE empty bytes
+            for (int i = 0; i < LARGE_FILE_SIZE / EMPTY_BYTES.length; i++) {
+                zo.write(EMPTY_BYTES, 0, EMPTY_BYTES.length);
+            }
         }
     }
 
     /**
-     * Utility method to execute a ProcessBuilder command
-     * @param pb ProcessBuilder to execute
-     * @return The Result(s) from the ProcessBuilder execution
+     * Compute the CRC for a file of the given size filled with zero-bytes
      */
-    private static Result run(ProcessBuilder pb) {
-        Process p;
-        System.out.printf("Running: %s%n", pb.command());
-        try {
-            p = pb.start();
-        } catch (IOException e) {
-            throw new RuntimeException(
-                    format("Couldn't start process '%s'", pb.command()), e);
+    private static long crc(long size) {
+        CRC32 crc32 = new CRC32();
+        long rem = size;
+        while (rem > 0) {
+            int lim = EMPTY_BYTES.length;
+            if (rem < lim) {
+                lim = (int) rem;
+            }
+            crc32.update(EMPTY_BYTES, 0, lim);
+            rem -= lim;
         }
-
-        String output;
-        try {
-            output = toString(p.getInputStream(), p.getErrorStream());
-        } catch (IOException e) {
-            throw new RuntimeException(
-                    format("Couldn't read process output '%s'", pb.command()), e);
-        }
-
-        try {
-            p.waitFor();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(
-                    format("Process hasn't finished '%s'", pb.command()), e);
-        }
-        return new Result(p.exitValue(), output);
+        return crc32.getValue();
     }
 
     /**
-     * Utility Method for combining the output from a ProcessBuilder invocation
-     * @param in1 ProccessBuilder.getInputStream
-     * @param in2 ProcessBuilder.getErrorStream
-     * @return The ProcessBuilder output
-     * @throws IOException if an error occurs
+     * An OutputStream which creates sparse holes when contents
+     * from EMPTY_BYTES is written to it.
      */
-    static String toString(InputStream in1, InputStream in2) throws IOException {
-        try (ByteArrayOutputStream dst = new ByteArrayOutputStream();
-             InputStream concatenated = new SequenceInputStream(in1, in2)) {
-            concatenated.transferTo(dst);
-            return new String(dst.toByteArray(), StandardCharsets.UTF_8);
-        }
-    }
+    private class SparseOutputStream extends FilterOutputStream {
+        private final FileChannel channel;
 
-    /**
-     * Utility class used to hold the results from  a ProcessBuilder execution
-     */
-    static class Result {
-        final int ec;
-        final String output;
+        public SparseOutputStream(FileOutputStream fileOutputStream) {
+            super(fileOutputStream);
+            this.channel = fileOutputStream.getChannel();
+        }
 
-        private Result(int ec, String output) {
-            this.ec = ec;
-            this.output = output;
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            if (b == EMPTY_BYTES) {
+                channel.position(channel.position() + len);
+            } else {
+                super.write(b, off, len);
+            }
         }
-        Result assertSuccess() {
-            assertTrue(ec == 0, "Expected ec 0, got: ", ec, " , output [", output, "]");
-            return this;
-        }
-    }
-    static void assertTrue(boolean cond, Object ... failedArgs) {
-        if (cond)
-            return;
-        StringBuilder sb = new StringBuilder();
-        for (Object o : failedArgs)
-            sb.append(o);
-        Assert.fail(sb.toString());
     }
 }
