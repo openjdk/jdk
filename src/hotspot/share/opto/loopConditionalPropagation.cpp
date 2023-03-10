@@ -799,7 +799,41 @@ public:
             Node* con = nullptr;
             for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
               Node* use = node->fast_out(i);
-              if (_phase->is_dominator(c, _phase->ctrl_or_self(use)) && is_safe_for_replacement(node, use, types)) {
+              if (use->is_Phi()) {
+                Node* r = use->in(0);
+                int nb_deleted = 0;
+                for (uint j = 1; j < use->req(); ++j) {
+                  if (use->in(j) == node && _phase->is_dominator(c, r->in(j)) &&
+                      !(r->is_BaseCountedLoop() &&
+                        j == LoopNode::LoopBackControl &&
+                        use == r->as_BaseCountedLoop()->phi() &&
+                        node == r->as_BaseCountedLoop()->incr() &&
+                        !types->get_type(r->as_BaseCountedLoop()->loopexit()->cmp_node())->singleton())) {
+                    progress = true;
+                    if (con == NULL) {
+                      con = makecon(t);
+                      _phase->set_ctrl(con, C->root());
+                    }
+                    replace_input_of(use, j, con);
+                    nb_deleted++;
+#ifdef ASSERT
+                    if (PrintLoopConditionalPropagation) {
+                      tty->print_cr("constant folding");
+                      iter.node()->dump();
+                      tty->print("input %d of ", j); use->dump();
+                      iter.type1()->dump();
+                      tty->cr();
+                      iter.type2()->dump();
+                      tty->cr();
+                    }
+#endif
+                  }
+                }
+                if (nb_deleted > 0) {
+                  --i;
+                  imax -= nb_deleted;
+                }
+              } else if (_phase->is_dominator(c, _phase->ctrl_or_self(use)) && is_safe_for_replacement(node, use, types)) {
                 progress = true;
                 if (con == nullptr) {
                   con = makecon(t);
