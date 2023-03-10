@@ -24,6 +24,7 @@
  */
 package java.lang.constant;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.TypeDescriptor;
 import java.util.List;
@@ -187,6 +188,9 @@ public sealed interface MethodTypeDesc
                                    .collect(Collectors.joining(",")),
                              returnType().displayName());
     }
+
+    @Override
+    MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
     /**
      * Compares the specified object with this descriptor for equality.  Returns

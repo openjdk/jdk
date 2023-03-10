@@ -24,6 +24,7 @@
  */
 package java.lang.constant;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.TypeDescriptor;
 import java.util.stream.Stream;
 
@@ -361,6 +362,9 @@ public sealed interface ClassDesc
      * @jvms 4.3.2 Field Descriptors
      */
     String descriptorString();
+
+    @Override
+    Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
     /**
      * Compare the specified object with this descriptor for equality.  Returns

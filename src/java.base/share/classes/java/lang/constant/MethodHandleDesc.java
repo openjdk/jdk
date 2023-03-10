@@ -204,6 +204,9 @@ public sealed interface MethodHandleDesc
      */
     MethodTypeDesc invocationType();
 
+    @Override
+    MethodHandle resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
+
     /**
      * Compares the specified object with this descriptor for equality.  Returns
      * {@code true} if and only if the specified object is also a
