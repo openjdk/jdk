@@ -58,8 +58,8 @@ final class AsTypeMethodHandleDesc extends DynamicConstantDesc<MethodHandle>
     @Override
     public MethodHandle resolveConstantDesc(MethodHandles.Lookup lookup)
             throws ReflectiveOperationException {
-        MethodHandle handle = (MethodHandle) underlying.resolveConstantDesc(lookup);
-        MethodType methodType = (MethodType) type.resolveConstantDesc(lookup);
+        MethodHandle handle = underlying.resolveConstantDesc(lookup);
+        MethodType methodType = type.resolveConstantDesc(lookup);
         return handle.asType(methodType);
     }
 

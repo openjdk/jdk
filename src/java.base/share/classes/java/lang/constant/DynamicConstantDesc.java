@@ -252,7 +252,7 @@ public abstract non-sealed class DynamicConstantDesc<T>
     @SuppressWarnings("unchecked")
     public T resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
         try {
-            MethodHandle bsm = (MethodHandle) bootstrapMethod.resolveConstantDesc(lookup);
+            MethodHandle bsm = bootstrapMethod.resolveConstantDesc(lookup);
             if (bsm.type().parameterCount() < 2 ||
                 !MethodHandles.Lookup.class.isAssignableFrom(bsm.type().parameterType(0))) {
                 throw new BootstrapMethodError(
