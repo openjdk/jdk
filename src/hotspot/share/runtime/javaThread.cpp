@@ -235,7 +235,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_string_void_signature(),
                             thread_group,
                             name,
-                            THREAD);
+                            CHECK);
   } else {
     // Thread gets assigned name "Thread-nnn" and null target
     // (java.lang.Thread doesn't have a constructor taking only a ThreadGroup argument)
@@ -246,7 +246,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_runnable_void_signature(),
                             thread_group,
                             Handle(),
-                            THREAD);
+                            CHECK);
   }
   os::set_priority(this, NormPriority);
 
