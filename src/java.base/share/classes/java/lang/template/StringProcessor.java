@@ -45,8 +45,8 @@ import jdk.internal.javac.PreviewFeature;
  * @since 21
  *
  * @implNote Implementations using {@link StringProcessor} are equivalent to implementations using
- * {@code TemplateProcessor<String>} or {@code ValidatingProcessor<String, RuntimeException>},
- * however, StringProcessor is cleaner and easier to understand.
+ * {@code TemplateProcessor<String>} or {@code ValidatingProcessor<String, RuntimeException>}.
+ * However, StringProcessor is cleaner and easier to understand.
  *
  * @jls 15.8.6 Process Template Expressions
  */
