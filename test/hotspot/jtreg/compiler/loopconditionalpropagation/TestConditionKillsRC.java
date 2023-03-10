@@ -25,11 +25,13 @@
  * @test
  * @bug 8275202	
  * @summary C2: optimize out more redundant conditions
- * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileOnly=TestConditionKillsRC::test -XX:CompileCommand=quiet TestLSMDeadInLoopPredication
+ * @run main/othervm -XX:-BackgroundCompilation -XX:CompileOnly=TestConditionKillsRC::test -XX:LoopUnrollLimit=1000 TestConditionKillsRC
  */
 
-// java -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:+PrintCompilation -XX:CompileOnly=TestConditionKillsRC::test -XX:CompileCommand=quiet TestConditionKillsRC
 public class TestConditionKillsRC {
+
+    static volatile int barrier;
+    
     public static void main(String[] args) {
         byte[] array = new byte[1000];
         for (int i = 0; i < 20_000; i++) {
@@ -46,7 +48,11 @@ public class TestConditionKillsRC {
     private static void testHelper(int stop, byte[] array) {
         for (int i = 0; i < stop; i++) {
             if (i < array.length) {
-                array[i] = 42;
+                if (i % 2 == 0) {
+                    array[0] = 42;
+                } else {
+                    array[i] = 42;
+                }
             }
         }
     }

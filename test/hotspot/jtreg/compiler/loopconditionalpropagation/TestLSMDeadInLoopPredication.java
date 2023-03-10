@@ -25,12 +25,9 @@
  * @test
  * @bug 8275202	
  * @summary C2: optimize out more redundant conditions
- * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileOnly=TestLSMDeadInLoopPredication::test -XX:CompileCommand=quiet TestLSMDeadInLoopPredication
+ * @run main/othervm -XX:-BackgroundCompilation TestLSMDeadInLoopPredication
  */
 
-
-
-// java -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:+PrintCompilation -XX:CompileOnly=TestLSMDeadInLoopPredication::test -XX:CompileCommand=quiet -XX:PrintIdealGraphFile=graph.xml -XX:PrintIdealGraphLevel=2 TestLSMDeadInLoopPredication
 
 public class TestLSMDeadInLoopPredication {
     private static volatile int barrier;
