@@ -162,7 +162,7 @@ public final class ModuleInfoExtender {
             if (packages != null) {
                 List<PackageDesc> packageNames = packages.stream()
                         .sorted()
-                        .map(s -> PackageDesc.of(s))
+                        .map(PackageDesc::of)
                         .toList();
                 clb.with(ModulePackagesAttribute.ofNames(packageNames));
             }
