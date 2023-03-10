@@ -172,11 +172,11 @@ define SetupEclipseWorkspaceBody
 
     # This is always emitted, no matter which of the 3 natures were selected
     $1_NATIVE_SRCS += \
-      <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src/hotspot"/>$$(NEWLINE)
+        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src/hotspot"/>$$(NEWLINE)
 
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
       $1_NATIVE_SRCS += $$(foreach src,$(NATIVE_DIRS), \
-        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$$(strip $$(src))"/>$$(NEWLINE))
+          <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$$(strip $$(src))"/>$$(NEWLINE))
     endif
 
     $1_WORKSPACE_MAJOR := $$(call RandomDigits, 10)
@@ -202,7 +202,7 @@ define SetupEclipseWorkspaceBody
 
     $1_MATCHING_MAKE_TARGETS :=
     $1_PLAIN_MAKE_TARGETS := update-build-docs docs gensrc gendata \
-      copy java launchers libs hotspot jdk product-images all-images test-image clean
+        copy java launchers libs hotspot jdk product-images all-images test-image clean
 
     # make reconfigure omitted since it is sensitive to which make was used
     ifeq ($$($1_SHARED), true)
@@ -279,30 +279,30 @@ define SetupEclipseWorkspaceBody
     $1_CXXSETTINGS += </resource>$$(NEWLINE)
 
     $1_CXXSETTINGS += \
-      <resource project-relative-path="src/hotspot/share/runtime/abstract_vm_version.cpp"> \
-          <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
-          <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
-          <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
-          <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
-          <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
-          <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
-      </resource> \
-      <resource project-relative-path="src/hotspot/share/runtime/arguments.cpp"> \
-          <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
-          <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
-          <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
-          <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
-          <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
-          <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
-      </resource>$$(NEWLINE)
+        <resource project-relative-path="src/hotspot/share/runtime/abstract_vm_version.cpp"> \
+            <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
+            <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
+            <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
+        </resource> \
+        <resource project-relative-path="src/hotspot/share/runtime/arguments.cpp"> \
+            <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
+            <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
+            <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
+        </resource>$$(NEWLINE)
 
     # Now the rest of the C++ sources in the codebase
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
       $1_CXXSETTINGS += $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
-        $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
-          <resource project-relative-path="$$(dirs)"> \
-              <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
-          </resource>$$(NEWLINE))))
+          $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+              <resource project-relative-path="$$(dirs)"> \
+                  <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
+              </resource>$$(NEWLINE))))
     endif
 
     $$(eval $$(call SetupTextFileProcessing, $1_CREATE_SETTINGS_FILE, \
@@ -321,36 +321,36 @@ define SetupEclipseWorkspaceBody
   ifeq ($$($1_SHARED), false)
     ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
       $1_LINKED_RESOURCES += $$(foreach src,$(JAVA_DIRS), \
-        <link> \
-            <name>$$(strip $$(src))</name> \
-            <type>2</type> \
-            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
-        </link>$$(NEWLINE))
+          <link> \
+              <name>$$(strip $$(src))</name> \
+              <type>2</type> \
+              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
+          </link>$$(NEWLINE))
     endif
 
     ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
       # CDT includes a Makefile editor, so if CDT support was indicated there's no harm in
       # including the make sources as well, since the cost of indexing them is miniscule
       $1_LINKED_RESOURCES += \
-        <link> \
-            <name>make</name> \
-            <type>2</type> \
-            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/make))</location> \
-        </link> \
-        <link> \
-            <name>src/hotspot</name> \
-            <type>2</type> \
-            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/src/hotspot))</location> \
-        </link>$$(NEWLINE)
+          <link> \
+              <name>make</name> \
+              <type>2</type> \
+              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/make))</location> \
+          </link> \
+          <link> \
+              <name>src/hotspot</name> \
+              <type>2</type> \
+              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/src/hotspot))</location> \
+          </link>$$(NEWLINE)
     endif
 
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
       $1_LINKED_RESOURCES += $$(foreach src,$(NATIVE_DIRS), \
-        <link> \
-            <name>$$(strip $$(src))</name> \
-            <type>2</type> \
-            <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
-        </link>$$(NEWLINE))
+          <link> \
+              <name>$$(strip $$(src))</name> \
+              <type>2</type> \
+              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
+          </link>$$(NEWLINE))
     endif
   endif
 
