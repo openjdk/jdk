@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,22 +391,37 @@ public final class Utils {
         return new URLPermission(urlString, actionStringBuilder.toString());
     }
 
+    private static final boolean[] LOWER_CASE_CHARS = new boolean[128];
+
     // ABNF primitives defined in RFC 7230
     private static final boolean[] tchar      = new boolean[256];
     private static final boolean[] fieldvchar = new boolean[256];
 
     static {
-        char[] allowedTokenChars =
-                ("!#$%&'*+-.^_`|~0123456789" +
-                 "abcdefghijklmnopqrstuvwxyz" +
-                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ").toCharArray();
-        for (char c : allowedTokenChars) {
+        char[] lcase = ("!#$%&'*+-.^_`|~0123456789" +
+                "abcdefghijklmnopqrstuvwxyz").toCharArray();
+        for (char c : lcase) {
+            tchar[c] = true;
+            LOWER_CASE_CHARS[c] = true;
+        }
+        char[] ucase = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ").toCharArray();
+        for (char c : ucase) {
             tchar[c] = true;
         }
         for (char c = 0x21; c <= 0xFF; c++) {
             fieldvchar[c] = true;
         }
         fieldvchar[0x7F] = false; // a little hole (DEL) in the range
+    }
+
+    public static boolean isValidLowerCaseName(String token) {
+        for (int i = 0; i < token.length(); i++) {
+            char c = token.charAt(i);
+            if (c > 255 || !LOWER_CASE_CHARS[c]) {
+                return false;
+            }
+        }
+        return !token.isEmpty();
     }
 
     /*
