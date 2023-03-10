@@ -167,7 +167,7 @@ public final class ModuleInfoExtender {
                 clb.with(ModulePackagesAttribute.ofNames(packageNames));
             }
 
-            // add ModuleTarget, ModuleResolution and ModuleHashes attributes
+            // ModuleTarget, ModuleResolution and ModuleHashes attributes
             if (targetPlatform != null) {
                 clb.with(ModuleTargetAttribute.of(targetPlatform));
             }
