@@ -25,9 +25,12 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.*;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -92,7 +95,14 @@ public class Zip64SizeTest {
      * @throws IOException if an error occurs creating the ZIP File
      */
     private static void createZipFile() throws IOException {
-        try (OutputStream fos = new SparseOutputStream(new FileOutputStream(ZIP_FILE_NAME));
+        // NTFS requires sparse files to be created explicitly
+        EnumSet<StandardOpenOption> options = EnumSet.of(StandardOpenOption.CREATE_NEW,
+                StandardOpenOption.WRITE,
+                StandardOpenOption.SPARSE);
+
+        try (FileChannel channel = FileChannel.open(Path.of(ZIP_FILE_NAME), options);
+             OutputStream outputStream = Channels.newOutputStream(channel);
+             OutputStream fos = new SparseOutputStream(outputStream, channel);
              ZipOutputStream zos = new ZipOutputStream(fos)) {
 
             System.out.printf("Creating Zip file: %s%n", ZIP_FILE_NAME);
@@ -168,9 +178,9 @@ public class Zip64SizeTest {
     private static class SparseOutputStream extends FilterOutputStream {
         private final FileChannel channel;
 
-        public SparseOutputStream(FileOutputStream fileOutputStream) {
-            super(fileOutputStream);
-            this.channel = fileOutputStream.getChannel();
+        public SparseOutputStream(OutputStream out, FileChannel channel) {
+            super(out);
+            this.channel = channel;
         }
 
         @Override
