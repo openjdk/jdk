@@ -615,8 +615,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         cob.invokeInstruction(Opcode.INVOKESPECIAL,
                                               CD_Object,
                                               "<init>",
-                                               MethodTypeDesc.of(CD_void),
-                                               false);
+                                              MethodTypeDesc.of(CD_void),
+                                              false);
                         cob.returnInstruction(TypeKind.VoidType);
                     }));
         }
@@ -1641,7 +1641,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.build(
                 CD_SYSTEM_MODULES_MAP,
                 clb -> {
-                    clb.withFlags(ACC_FINAL+ACC_SUPER);
+                    clb.withFlags(ACC_FINAL + ACC_SUPER);
                     clb.withVersion(52, 0);
 
                     // <init>
