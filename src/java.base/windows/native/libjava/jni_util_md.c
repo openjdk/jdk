@@ -66,8 +66,9 @@ void buildJniFunctionName(const char *sym, const char *cname,
 jstring
 getLastErrorString(JNIEnv *env) {
 
+#define BUFSIZE 256
     DWORD errval;
-    WCHAR buf[256];
+    WCHAR buf[BUFSIZE];
 
     if ((errval = GetLastError()) != 0) {
         // DOS error
@@ -77,7 +78,7 @@ getLastErrorString(JNIEnv *env) {
                 errval,
                 0,
                 buf,
-                sizeof(buf) / sizeof(WCHAR),
+                BUFSIZE,
                 NULL);
         if (n > 3) {
             // Drop final '.', CR, LF
