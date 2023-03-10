@@ -350,7 +350,7 @@ public class Runtime {
      *          If {@code command} is empty
      *
      * @implNote
-     * The new process creation is logged by {@link ProcessBuilder#start()}.
+     * The process created is logged, see {@link ProcessBuilder#start()} for details.
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
