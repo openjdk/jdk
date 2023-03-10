@@ -28,19 +28,18 @@ import org.testng.annotations.Test;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.ByteOrder;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Map;
-import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static java.lang.String.format;
+import static org.testng.Assert.assertEquals;
 
 /**
  * @test
@@ -51,15 +50,19 @@ import static java.lang.String.format;
  */
 public class TestLocOffsetFromZip64EF {
 
-    // Buffer used when writing zero-filled entries in the sparse file
-    private final static byte[] EMPTY_BYTES = new byte[16384];
+    private static final String ZIP_FILE_NAME = "LocOffsetFromZip64.zip";
 
-    private static final String ZIP_FILE_NAME = "LargeZipTest.zip";
-
-    private static final long LARGE_FILE_SIZE = 4L * 1024L * 1024L * 1024L;
+    // Size of a Zip64 extended information field
+    public static final int ZIP64_SIZE = Short.BYTES // Tag
+            + Short.BYTES    // Data size
+            + Long.BYTES     // Uncompressed size
+            + Long.BYTES     // Compressed size
+            + Long.BYTES     // Loc offset
+            + Integer.BYTES; // Start disk
 
     /**
      * Create the files used by this test
+     *
      * @throws IOException if an error occurs
      */
     @BeforeClass
@@ -127,70 +130,93 @@ public class TestLocOffsetFromZip64EF {
     }
 
     /**
-     * Create a ZIP file where the second entry is large enough to output a
-     * Zip64 CEN entry where the LOC offset is found inside a Zip64 Extra field.
+     * This produces a ZIP with similar features as the one created by 'Info-ZIP' which
+     * caused 'Extended timestamp' parsing to fail before JDK-8255380.
+     *
+     * The issue was sensitive to the ordering of 'Info-ZIP extended timestamp' fields and
+     * 'Zip64 extended information' fields. ZipOutputStream and 'Info-ZIP' order these differently.
+     *
+     * ZipFileSystem tried to read the Local file header while parsing the extended timestamp,
+     * but if the Zip64 extra field was not read yet, ZipFileSystem would incorrecly try to read
+     * the Local File header from offset 0xFFFFFFFF.
+     *
+     * This method creates a ZIP file which includes a CEN with the following features:
+     *
+     * - Its extra field has a 'Info-ZIP extended timestamp' field followed by a
+     *   'Zip64 extended information' field.
+     * - The sizes and offset fields values of the CEN are set to 0xFFFFFFFF (Zip64 magic values)
+     *
      */
     public void createZipWithZip64Ext() throws IOException {
-        // Make a ZIP with two entries
-        try (FileOutputStream fileOutputStream = new FileOutputStream(new File(ZIP_FILE_NAME));
-             ZipOutputStream zo = new ZipOutputStream(new SparseOutputStream(fileOutputStream))) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ZipOutputStream zo = new ZipOutputStream(out)) {
 
-            // First entry is a small DEFLATED entry
-            zo.putNextEntry(new ZipEntry("first"));
-
-            // Second entry is STORED to enable sparse writing
-            ZipEntry e = new ZipEntry("second");
+            ZipEntry e = new ZipEntry("entry");
+            // Make it STORED and empty to simplify parsing
             e.setMethod(ZipEntry.STORED);
-            e.setSize(LARGE_FILE_SIZE);
-            e.setCrc(crc(LARGE_FILE_SIZE));
+            e.setSize(0);
+            e.setCrc(0);
 
-            // This forces an Info-ZIP Extended Timestamp extra field to be produced
+            // Make ZipOutputStream output an 'Info-Zip extended timestamp' extra field
             e.setLastModifiedTime(FileTime.from(Instant.now()));
+            e.setLastAccessTime(FileTime.from(Instant.now()));
+
+            // Add an opaque extra field, right-sized for a Zip64 extended field
+            // We'll update this below
+            byte[] zip64 = new byte[ZIP64_SIZE];
+            ByteBuffer buffer = ByteBuffer.wrap(zip64).order(ByteOrder.LITTLE_ENDIAN);
+            buffer.putShort((short) 0x42); // Opaque tag makes ZipEntry.setExtra ignore it
+            buffer.putShort((short) (zip64.length - 2 * Short.BYTES)); // Data size
+            e.setExtra(zip64);
+
             zo.putNextEntry(e);
-
-            // Write LARGE_FILE_SIZE empty bytes
-            for (int i = 0; i < LARGE_FILE_SIZE / EMPTY_BYTES.length; i++) {
-                zo.write(EMPTY_BYTES, 0, EMPTY_BYTES.length);
-            }
         }
+
+        byte[] zip = out.toByteArray();
+
+        // ZIP now has the right structure, but we need to update the CEN to Zip64 format
+        updateToZip64(zip);
+        // Write the ZIP to disk
+        Files.write(Path.of(ZIP_FILE_NAME), zip);
     }
 
     /**
-     * Compute the CRC for a file of the given size filled with zero-bytes
+     * Update the CEN record to Zip64 format
      */
-    private static long crc(long size) {
-        CRC32 crc32 = new CRC32();
-        long rem = size;
-        while (rem > 0) {
-            int lim = EMPTY_BYTES.length;
-            if (rem < lim) {
-                lim = (int) rem;
-            }
-            crc32.update(EMPTY_BYTES, 0, lim);
-            rem -= lim;
-        }
-        return crc32.getValue();
-    }
+    private static void updateToZip64(byte[] bytes) throws IOException {
 
-    /**
-     * An OutputStream which creates sparse holes when contents
-     * from EMPTY_BYTES is written to it.
-     */
-    private class SparseOutputStream extends FilterOutputStream {
-        private final FileChannel channel;
+        ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
 
-        public SparseOutputStream(FileOutputStream fileOutputStream) {
-            super(fileOutputStream);
-            this.channel = fileOutputStream.getChannel();
-        }
+        // Local header name length
+        short nlenLoc = buffer.getShort(ZipFile.LOCNAM);
+        // Local header extra field length
+        short elenLoc = buffer.getShort(ZipFile.LOCEXT);
 
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            if (b == EMPTY_BYTES) {
-                channel.position(channel.position() + len);
-            } else {
-                super.write(b, off, len);
-            }
-        }
+        // Offset of the CEN header
+        int cenOff = ZipFile.LOCHDR + nlenLoc + elenLoc;
+
+        // Read name, extra field and comment lengths
+        short nlen = buffer.getShort(cenOff + ZipFile.CENNAM);
+        short clen = buffer.getShort(cenOff + ZipFile.CENCOM);
+        short elen = buffer.getShort(cenOff + ZipFile.CENEXT);
+
+        // Update CEN sizes and loc offset to 0xFFFFFFFF
+        buffer.putInt(cenOff + ZipFile.CENLEN, 0XFFFFFFFF);
+        buffer.putInt(cenOff + ZipFile.CENSIZ, 0XFFFFFFFF);
+        buffer.putInt(cenOff + ZipFile.CENOFF, 0xFFFFFFFF);
+
+        // Offset of the extra fields
+        int extraOff = cenOff + ZipFile.CENHDR + nlen;
+
+        // Position at the start of the Zip64 extra field
+        buffer.position(extraOff + elen - ZIP64_SIZE);
+
+        // Update the Zip64 field with real values
+        buffer.putShort((short) 0x1); //  Tag for Zip64
+        buffer.getShort(); // Data size is good
+        buffer.putLong(0); // Uncompressed size
+        buffer.putLong(0); // Compressed size
+        buffer.putLong(0); // loc offset
+        buffer.putInt(0);  // Set disk start
     }
 }
