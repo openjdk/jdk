@@ -131,10 +131,14 @@ serviceability/jvmti/vthread/VThreadNotifyFramePopTest/VThreadNotifyFramePopTest
 serviceability/jvmti/vthread/VThreadTest/VThreadTest.java 0000000 generic-all
 serviceability/jvmti/vthread/VThreadUnsupportedTest/VThreadUnsupportedTest.java 0000000 generic-all
 serviceability/jvmti/vthread/premain/AgentWithVThreadTest.java 0000000 generic-all
-serviceability/jvmti/vthread/SelfSuspendDisablerTest/SelfSuspendDisablerTest.java 0000000 generic-all
-serviceability/jvmti/vthread/SuspendResume1/SuspendResume1.java 0000000 generic-all
-serviceability/jvmti/vthread/SuspendResume2/SuspendResume2.java 0000000 generic-all
-serviceability/jvmti/vthread/SuspendResumeAll/SuspendResumeAll.java 0000000 generic-all
+serviceability/jvmti/vthread/SelfSuspendDisablerTest/SelfSuspendDisablerTest.java#default 0000000 generic-all
+serviceability/jvmti/vthread/SelfSuspendDisablerTest/SelfSuspendDisablerTest.java#no-vmcontinuations 0000000 generic-all
+serviceability/jvmti/vthread/SuspendResume1/SuspendResume1.java#default 0000000 generic-all
+serviceability/jvmti/vthread/SuspendResume1/SuspendResume1.java#no-vmcontinuations 0000000 generic-all
+serviceability/jvmti/vthread/SuspendResume2/SuspendResume2.java#default 0000000 generic-all
+serviceability/jvmti/vthread/SuspendResume2/SuspendResume2.java#no-vmcontinuations 0000000 generic-all
+serviceability/jvmti/vthread/SuspendResumeAll/SuspendResumeAll.java#default 0000000 generic-all
+serviceability/jvmti/vthread/SuspendResumeAll/SuspendResumeAll.java#no-vmcontinuations 0000000 generic-all
 
 ####
 # JVMTI tests failing to find thread
@@ -527,3 +531,7 @@ vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDe
 vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java 8285420 generic-all
 vmTestbase/nsk/monitoring/ThreadInfo/from_c/from_c001/TestDescription.java 8285420 generic-all
 vmTestbase/nsk/monitoring/MemoryUsage/from/from001/TestDescription.java 8285420 generic-all
+
+####
+## different number of frames
+serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 0000000 generic-all
