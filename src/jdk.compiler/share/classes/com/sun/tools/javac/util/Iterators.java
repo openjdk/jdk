@@ -66,26 +66,24 @@ public class Iterators {
 
         @Override
         public boolean hasNext() {
-            if (currentIterator != null && !currentIterator.hasNext()) {
-                update();
-            }
-            return currentIterator != null;
+            return advanceIfNeeded();
         }
 
         @Override
-        public O next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
+        public O next() { // next cannot assume hasNext was called immediately before
+            advanceIfNeeded();
             return currentIterator.next();
         }
 
-        private void update() {
-            while (inputs.hasNext()) {
+        // if there's no element currently available, advances until there is
+        // or the input is exhausted
+        private boolean advanceIfNeeded() {
+            boolean elementAvailable;
+            while (!(elementAvailable = currentIterator.hasNext())
+                    && inputs.hasNext()) {
                 currentIterator = converter.apply(inputs.next());
-                if (currentIterator.hasNext()) return; // implicit null check
             }
-            currentIterator = null;
+            return elementAvailable; // cached currentIterator.hasNext()
         }
     }
 
