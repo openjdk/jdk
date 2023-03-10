@@ -66,24 +66,27 @@ public class Iterators {
 
         @Override
         public boolean hasNext() {
-            return advanceIfNeeded();
+            // if there's no element currently available, advance until there
+            // is one or the input is exhausted
+            for (;;) {
+                if (currentIterator.hasNext())
+                    return true;
+                else if (inputs.hasNext())
+                    currentIterator = converter.apply(inputs.next());
+                else
+                    return false;
+            }
         }
 
         @Override
-        public O next() { // next cannot assume hasNext was called immediately before
-            advanceIfNeeded();
-            return currentIterator.next();
-        }
-
-        // if there's no element currently available, advances until there is
-        // or the input is exhausted
-        private boolean advanceIfNeeded() {
-            boolean elementAvailable;
-            while (!(elementAvailable = currentIterator.hasNext())
-                    && inputs.hasNext()) {
+        public O next() {
+            // next() cannot assume hasNext() was called immediately before:
+            // next() must itself be able to find the next available element
+            // if there is one
+            while (!currentIterator.hasNext() && inputs.hasNext()) {
                 currentIterator = converter.apply(inputs.next());
             }
-            return elementAvailable; // cached currentIterator.hasNext()
+            return currentIterator.next();
         }
     }
 
