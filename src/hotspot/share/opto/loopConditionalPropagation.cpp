@@ -706,8 +706,8 @@ public:
     if (head->is_BaseCountedLoop()) {
       BaseCountedLoopNode* cl = head->as_BaseCountedLoop();
       Node* cmp = cl->loopexit()->cmp_node();
-      if ((node == cl->phi() && use == cl->incr()) ||
-          (node == cl->incr() && use == cmp) &&
+      if (((node == cl->phi() && use == cl->incr()) ||
+           (node == cl->incr() && use == cmp)) &&
           !types->get_type(cmp)->singleton()) {
         return false;
       }
