@@ -172,6 +172,16 @@ void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0) {
   printf("\n");
 }
 
+void print_foo(u64 x0, u64 x1) {
+  u128 sum = ((u128)x1 << 64) + x0;
+
+  setbuf(stdout, NULL);
+  for (int i = 26 * 4; i >= 0; i -= 26) {
+    printf("0x%05x ", (unsigned int)(sum >> i) & ~(-1u<<26));
+  }
+  printf("\n");
+}
+
 #define is_token_break(ch) (isspace(ch) || (ch) == ',')
 
 static const char* last_file_name = NULL;

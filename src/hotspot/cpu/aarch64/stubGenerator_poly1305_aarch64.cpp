@@ -109,6 +109,8 @@ address generate_poly1305_processBlocks2() {
     __ shl(vtmp, __ T4S, r_v[1], 2);
     __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
   }
+
+  __ copy_3_to_5_regs(v_u1, u1[0]._lo, u1[1]._lo, u1[2]._lo);
   {
     Label DONE, LOOP;
 

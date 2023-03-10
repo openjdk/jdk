@@ -6013,16 +6013,16 @@ void MacroAssembler::expand26(Register d, Register r) {
 
 void MacroAssembler::split26(const FloatRegister d[], Register s) {
   ubfx(rscratch1, s, 0, 26);
-  mov(d[0], S, 0, rscratch1);
+  mov(d[0], D, 0, rscratch1);
   lsr(rscratch1, s, 26);
-  mov(d[1], S, 0, rscratch1);
+  mov(d[1], D, 0, rscratch1);
 }
 
 void MacroAssembler::copy_3_to_5_regs(const FloatRegister d[],
                                  const Register s0, const Register s1, const Register s2) {
   split26(&d[0], s0);
   split26(&d[2], s1);
-  mov(d[4], S, 0, s2);
+  mov(d[4], D, 0, s2);
 }
 
 void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
@@ -6031,27 +6031,37 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
   mov(d[0], D, 0, rscratch2);
   expand26(rscratch2, s1);
   mov(d[0], D, 1, rscratch2);
-  mov(d[1], S, 0, s2);
+  mov(d[1], D, 0, s2);
 }
 
 void MacroAssembler::poly1305_step_foo(const FloatRegister s[], const FloatRegister u[],
                                        const FloatRegister upper_bits, Register input_start) {
-  ld1(s[0], T1D, post(input_start, wordSize));
-  ld1(s[2], T1D, post(input_start, wordSize));
+  FloatRegister tmp = s[4];
+  ld1(tmp, T1D, post(input_start, wordSize)); // 26 bits
+  bic(s[0], T16B, tmp, upper_bits);
+  addv(u[0], T2D, u[0], s[0]);
 
-  orr(s[3], T16B, s[2], s[2]); // copy s[2] -> s[3]
+  ushr(s[0], T2D, tmp, 26);
+  bic(s[0], T16B, s[0], upper_bits);
+  addv(u[1], T2D, u[1], s[0]);
 
-  ushr(s[4], T2D, s[3], 64-26); // Top 26 bits into s[4]
-  ushr(s[3], T2D, s[3], 64-52); // Next 26 bits into s[3]
-  shl(s[2], T2D, s[2], 14);
-  ushr(s[1], T2D, s[1], 64-12); // s[1] is tmp
-  orr (s[2], T16B, s[2], s[1]); // Next 26 bits into s[2]
-  ushr(s[1], T2D, s[0], 26); // Next 26 bits into s[1]
+  ushr(s[0], T2D, tmp, 52);
+  addv(u[2], T2D, u[2], s[0]);
 
-  for (int i = 0; i < 5; i++)
-    bic(s[i], T16B, s[i], upper_bits);
-  for (int i = 0; i < 5; i++)
-    addv(u[0], T2D, u[0], s[0]);
+  ld1(tmp, T1D, post(input_start, wordSize));
+  shl(s[0], T2D, tmp, 64-14);
+  ushr(s[0], T2D, s[0], 64-26);
+  addv(u[2], T2D, u[2], s[0]);
+
+  ushr(s[0], T2D, tmp, 14);
+  bic(s[0], T16B, s[0], upper_bits);
+  addv(u[3], T2D, u[3], s[0]);
+
+  ushr(s[0], T2D, tmp, 14+26);
+  addv(u[4], T2D, u[4], s[0]);
+
+  mov(s[0], T2D, 1 << 24);
+  addv(u[4], T2D, u[4], s[0]);
 }
 
 // void MacroAssembler::poly1305_multiply_foo(const FloatRegister u_v[],
