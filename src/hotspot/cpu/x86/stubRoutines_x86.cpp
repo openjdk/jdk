@@ -84,7 +84,7 @@ address StubRoutines::x86::_join_2_3_base64 = NULL;
 address StubRoutines::x86::_decoding_table_base64 = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
-address StubRoutines::x86::_check_lock_stack = NULL;
+address StubRoutines::x86::_check_lock_stack = nullptr;
 
 uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {

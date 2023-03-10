@@ -82,7 +82,7 @@ int C2CheckLockStackStub::max_size() const {
 
 void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
-  assert(StubRoutines::x86::check_lock_stack() != NULL, "need runtime call stub");
+  assert(StubRoutines::x86::check_lock_stack() != nullptr, "need runtime call stub");
   __ call(RuntimeAddress(StubRoutines::x86::check_lock_stack()));
   __ jmp(continuation(), false /* maybe_short */);
 }
