@@ -47,9 +47,9 @@ public class DataDescriptorSignatureMissing {
      * the recommended but optional signature.
      */
     @Test
-    public void shouldParseSignaturlessDescriptor() throws IOException {
+    public void shouldParseSignaturelessDescriptor() throws IOException {
         // The ZIP with a signature-less descriptor
-        byte[] zip = makeZipWithSiglessDescriptor();
+        byte[] zip = makeZipWithSignaturelessDescriptor();
 
         // ZipInputStream should read the signature-less data descriptor
         try (ZipInputStream in = new ZipInputStream(
@@ -68,7 +68,7 @@ public class DataDescriptorSignatureMissing {
     /**
      * Produce a ZIP file where the first entry has a signature-less data descriptor
      */
-    private static byte[] makeZipWithSiglessDescriptor() throws IOException {
+    private static byte[] makeZipWithSignaturelessDescriptor() throws IOException {
         // Offset of the signed data descriptor
         int sigOffset;
 
