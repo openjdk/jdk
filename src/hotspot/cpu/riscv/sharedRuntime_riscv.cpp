@@ -1684,7 +1684,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
         __ sd(swap_reg, Address(lock_reg, mark_word_offset));
 
         // src -> dest if dest == x10 else x10 <- dest
-        __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
+        __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
 
         // Test if the oopMark is an obvious stack pointer, i.e.,
         //  1) (mark & 3) == 0, and
