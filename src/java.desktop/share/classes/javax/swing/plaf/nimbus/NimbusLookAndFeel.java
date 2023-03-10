@@ -49,11 +49,14 @@ import javax.swing.JToolBar;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.ColorUIResource;
+
 import sun.swing.ImageIconUIResource;
 import javax.swing.plaf.synth.SynthIcon;
 import sun.swing.plaf.GTKKeybindings;
 import sun.swing.plaf.WindowsKeybindings;
 import sun.security.action.GetPropertyAction;
+
+import jdk.internal.util.OperatingSystem;
 
 /**
  * <p>The NimbusLookAndFeel class.</p>
@@ -130,8 +133,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     @Override public UIDefaults getDefaults() {
         if (uiDefaults == null){
             // Detect platform
-            String osName = getSystemProperty("os.name");
-            boolean isWindows = osName != null && osName.contains("Windows");
+            boolean isWindows = OperatingSystem.isWindows();
 
             // We need to call super for basic's properties file.
             uiDefaults = super.getDefaults();

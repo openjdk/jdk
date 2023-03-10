@@ -31,7 +31,7 @@
 
 package sun.security.krb5;
 
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.OperatingSystem;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
 import sun.security.krb5.internal.crypto.EType;
@@ -39,7 +39,6 @@ import sun.security.util.SecurityProperties;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.Locale;
 import java.net.InetAddress;
 
 /**
@@ -327,9 +326,8 @@ public class Credentials {
 
         if (ticketCache == null) {
             // The default ticket cache on Windows and Mac is not a file.
-            String os = GetPropertyAction.privilegedGetProperty("os.name");
-            if (os.toUpperCase(Locale.ENGLISH).startsWith("WINDOWS") ||
-                    os.toUpperCase(Locale.ENGLISH).contains("OS X")) {
+            if (OperatingSystem.isWindows() ||
+                    OperatingSystem.isMacOS()) {
                 Credentials creds = acquireDefaultCreds();
                 if (creds == null) {
                     if (DEBUG) {
@@ -530,7 +528,7 @@ public class Credentials {
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Void> () {
                         public Void run() {
-                                if (System.getProperty("os.name").contains("OS X")) {
+                                if (OperatingSystem.isMacOS()) {
                                     System.loadLibrary("osxkrb5");
                                 } else {
                                     System.loadLibrary("w2k_lsa_auth");

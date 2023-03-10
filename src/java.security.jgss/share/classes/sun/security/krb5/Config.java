@@ -44,6 +44,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.util.OperatingSystem;
 import sun.net.dns.ResolverConfiguration;
 import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.crypto.EType;
@@ -159,8 +160,7 @@ public class Config {
 
     private static boolean isMacosLionOrBetter() {
         // split the "10.x.y" version number
-        String osname = GetPropertyAction.privilegedGetProperty("os.name");
-        if (!osname.contains("OS X")) {
+        if (!OperatingSystem.isMacOS()) {
             return false;
         }
 
@@ -892,8 +892,7 @@ public class Config {
      */
     private String getNativeFileName() {
         String name = null;
-        String osname = GetPropertyAction.privilegedGetProperty("os.name");
-        if (osname.startsWith("Windows")) {
+        if (OperatingSystem.isWindows()) {
             try {
                 Credentials.ensureLoaded();
             } catch (Exception e) {
@@ -926,7 +925,7 @@ public class Config {
             if (name == null) {
                 name = "c:\\winnt\\krb5.ini";
             }
-        } else if (osname.contains("OS X")) {
+        } else if (OperatingSystem.isMacOS()) {
             name = findMacosConfigFile();
         } else {
             name =  "/etc/krb5.conf";
@@ -1193,8 +1192,7 @@ public class Config {
                     new java.security.PrivilegedAction<String>() {
                 @Override
                 public String run() {
-                    String osname = System.getProperty("os.name");
-                    if (osname.startsWith("Windows")) {
+                    if (OperatingSystem.isWindows()) {
                         return System.getenv("USERDNSDOMAIN");
                     }
                     return null;
@@ -1241,8 +1239,7 @@ public class Config {
                     new java.security.PrivilegedAction<String>() {
                 @Override
                 public String run() {
-                    String osname = System.getProperty("os.name");
-                    if (osname.startsWith("Windows")) {
+                    if (OperatingSystem.isWindows()) {
                         String logonServer = System.getenv("LOGONSERVER");
                         if (logonServer != null
                                 && logonServer.startsWith("\\\\")) {

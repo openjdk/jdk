@@ -99,6 +99,8 @@ import sun.swing.SwingUtilities2;
 import sun.swing.icon.SortArrowIcon;
 import sun.swing.plaf.windows.ClassicSortArrowIcon;
 
+import jdk.internal.util.OperatingSystem;
+
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
 import static com.sun.java.swing.plaf.windows.TMSchema.State;
@@ -159,7 +161,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     }
 
     public boolean isNativeLookAndFeel() {
-        return OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
+        return OperatingSystem.isWindows();
     }
 
     public boolean isSupportedLookAndFeel() {
@@ -592,7 +594,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
 
         if (!(this instanceof WindowsClassicLookAndFeel) &&
-                (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
+                (OperatingSystem.isWindows() &&
                 OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0)) {
             @SuppressWarnings("removal")
             String prop = AccessController.doPrivileged(new GetPropertyAction("swing.noxp"));
@@ -1589,12 +1591,12 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     }
 
     static boolean isOnVista() {
-        return OSInfo.getOSType() == OSInfo.OSType.WINDOWS
+        return OperatingSystem.isWindows()
                 && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_VISTA) >= 0;
     }
 
     static boolean isOnWindows7() {
-        return OSInfo.getOSType() == OSInfo.OSType.WINDOWS
+        return OperatingSystem.isWindows()
                 && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_7) >= 0;
     }
 
@@ -2124,7 +2126,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.nativeImageName = nativeImageName;
             this.fallbackName = fallbackName;
 
-            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
+            if (OperatingSystem.isWindows() &&
                     OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) < 0) {
                 // This desktop property is needed to trigger reloading the icon.
                 // It is kept in member variable to avoid GC.

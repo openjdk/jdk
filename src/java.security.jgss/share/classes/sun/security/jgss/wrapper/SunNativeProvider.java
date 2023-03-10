@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.security.Provider;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import jdk.internal.util.OperatingSystem;
 import org.ietf.jgss.Oid;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.PutAllAction;
@@ -86,25 +88,21 @@ public final class SunNativeProvider extends Provider {
                         String defaultLib
                                 = System.getProperty("sun.security.jgss.lib");
                         if (defaultLib == null || defaultLib.trim().equals("")) {
-                            String osname = System.getProperty("os.name");
-                            if (osname.startsWith("Linux")) {
-                                gssLibs = new String[]{
-                                    "libgssapi.so",
-                                    "libgssapi_krb5.so",
-                                    "libgssapi_krb5.so.2",
+                            gssLibs = switch (OperatingSystem.current()) {
+                                case Linux -> new String[]{
+                                        "libgssapi.so",
+                                        "libgssapi_krb5.so",
+                                        "libgssapi_krb5.so.2",
                                 };
-                            } else if (osname.contains("OS X")) {
-                                gssLibs = new String[]{
-                                    "libgssapi_krb5.dylib",
-                                    "/usr/lib/sasl2/libgssapiv2.2.so",
-                               };
-                            } else if (osname.contains("Windows")) {
-                                // Full path needed, DLL is in jre/bin
-                                gssLibs = new String[]{ System.getProperty("java.home")
-                                        + "\\bin\\sspi_bridge.dll" };
-                            } else {
-                                gssLibs = new String[0];
-                            }
+                                case MacOS -> new String[]{
+                                        "libgssapi_krb5.dylib",
+                                        "/usr/lib/sasl2/libgssapiv2.2.so",
+                                };
+                                case Windows -> // Full path needed, DLL is in jre/bin
+                                        new String[]{System.getProperty("java.home")
+                                                + "\\bin\\sspi_bridge.dll"};
+                                default -> new String[0];
+                            };
                         } else {
                             gssLibs = new String[]{ defaultLib };
                         }

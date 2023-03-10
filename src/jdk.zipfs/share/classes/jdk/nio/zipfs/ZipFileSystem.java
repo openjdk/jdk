@@ -25,6 +25,8 @@
 
 package jdk.nio.zipfs;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -83,9 +85,7 @@ import static jdk.nio.zipfs.ZipUtils.*;
 class ZipFileSystem extends FileSystem {
     // statics
     @SuppressWarnings("removal")
-    private static final boolean isWindows = AccessController.doPrivileged(
-        (PrivilegedAction<Boolean>)()->System.getProperty("os.name")
-                                             .startsWith("Windows"));
+    private static final boolean isWindows = OperatingSystem.isWindows();
     private static final byte[] ROOTPATH = new byte[] { '/' };
     private static final String PROPERTY_POSIX = "enablePosixFileAttributes";
     private static final String PROPERTY_DEFAULT_OWNER = "defaultOwner";

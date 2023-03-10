@@ -22,7 +22,6 @@
  */
 package jdk.internal.util;
 
-import jdk.internal.util.OperatingSystemProps;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**

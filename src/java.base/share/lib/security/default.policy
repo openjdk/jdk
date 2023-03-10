@@ -50,6 +50,8 @@ grant codeBase "jrt:/java.smartcardio" {
                    "accessClassInPackage.sun.security.jca";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.util";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.util";
     permission java.util.PropertyPermission
                    "javax.smartcardio.TerminalFactory.DefaultType", "read";
     permission java.util.PropertyPermission "os.name", "read";
@@ -118,6 +120,8 @@ grant codeBase "jrt:/jdk.charsets" {
                    "accessClassInPackage.jdk.internal.access";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.util";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";
 };
 
@@ -215,6 +219,7 @@ grant codeBase "jrt:/jdk.zipfs" {
     permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
     permission java.lang.RuntimePermission "fileSystemProvider";
     permission java.lang.RuntimePermission "accessUserInformation";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.util";
     permission java.util.PropertyPermission "os.name", "read";
     permission java.util.PropertyPermission "user.dir", "read";
     permission java.util.PropertyPermission "user.name", "read";

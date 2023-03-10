@@ -29,13 +29,12 @@ import java.io.FileDescriptor;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Defines extended socket options, beyond those defined in
@@ -400,22 +399,12 @@ public final class ExtendedSocketOptions {
         }
 
         private static PlatformSocketOptions create() {
-            @SuppressWarnings("removal")
-            String osname = AccessController.doPrivileged(
-                    new PrivilegedAction<String>() {
-                        public String run() {
-                            return System.getProperty("os.name");
-                        }
-                    });
-            if ("Linux".equals(osname)) {
-                return newInstance("jdk.net.LinuxSocketOptions");
-            } else if (osname.startsWith("Mac")) {
-                return newInstance("jdk.net.MacOSXSocketOptions");
-            } else if (osname.startsWith("Windows")) {
-                return newInstance("jdk.net.WindowsSocketOptions");
-            } else {
-                return new PlatformSocketOptions();
-            }
+            return switch (OperatingSystem.current()) {
+                case Linux -> newInstance("jdk.net.LinuxSocketOptions");
+                case MacOS -> newInstance("jdk.net.MacOSXSocketOptions");
+                case Windows -> newInstance("jdk.net.WindowsSocketOptions");
+                default -> new PlatformSocketOptions();
+            };
         }
 
         private static final PlatformSocketOptions instance = create();

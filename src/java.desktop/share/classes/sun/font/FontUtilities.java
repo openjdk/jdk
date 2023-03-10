@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import javax.swing.plaf.FontUIResource;
 
+import jdk.internal.util.OperatingSystem;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -64,11 +65,10 @@ public final class FontUtilities {
             @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
             @Override
             public Object run() {
-                String osName = System.getProperty("os.name", "unknownOS");
 
-                isLinux = osName.startsWith("Linux");
+                isLinux = OperatingSystem.isLinux();
 
-                isMacOSX = osName.contains("OS X"); // TODO: MacOSX
+                isMacOSX = OperatingSystem.isMacOS(); // TODO: MacOSX
                 if (isMacOSX) {
                     // os.version has values like 10.13.6, 10.14.6
                     // If it is not positively recognised as 10.13 or less,
@@ -100,7 +100,7 @@ public final class FontUtilities {
                 } else {
                     useJDKScaler = false;
                 }
-                isWindows = osName.startsWith("Windows");
+                isWindows = OperatingSystem.isWindows();
                 String debugLevel =
                     System.getProperty("sun.java2d.debugfonts");
 

@@ -53,6 +53,7 @@ import java.io.FileReader;
 import java.net.URL;
 import java.nio.file.Files;
 
+import jdk.internal.util.OperatingSystem;
 import sun.awt.util.ThreadGroupUtils;
 
 /*
@@ -75,10 +76,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     private static boolean pollServices = true;
     private static final int DEFAULT_MINREFRESH = 120;  // 2 minutes
     private static int minRefreshTime = DEFAULT_MINREFRESH;
-
-    @SuppressWarnings("removal")
-    static String osname = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("os.name"));
 
     // List of commands used to deal with the printer queues on AIX
     String[] lpNameComAix = {
@@ -150,20 +147,16 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     }
 
     static boolean isMac() {
-        return osname.startsWith("Mac");
-    }
-
-    static boolean isLinux() {
-        return (osname.equals("Linux"));
+        return OperatingSystem.isMacOS();
     }
 
     static boolean isBSD() {
-        return (osname.equals("Linux") ||
-                osname.contains("OS X"));
+        return (OperatingSystem.isLinux() ||
+                OperatingSystem.isMacOS());
     }
 
     static boolean isAIX() {
-        return osname.equals("AIX");
+        return OperatingSystem.isAix();
     }
 
     static final int UNINITIALIZED = -1;

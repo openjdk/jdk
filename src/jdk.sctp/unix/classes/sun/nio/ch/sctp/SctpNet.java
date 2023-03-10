@@ -41,10 +41,6 @@ import com.sun.nio.sctp.SctpSocketOption;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
 public class SctpNet {
-    @SuppressWarnings("removal")
-    private static final String osName = AccessController.doPrivileged(
-        (PrivilegedAction<String>) () -> System.getProperty("os.name"));
-
     /* -- Miscellaneous SCTP utilities -- */
 
     private static boolean IPv4MappedAddresses() {
@@ -350,4 +346,3 @@ public class SctpNet {
         init();
     }
 }
-

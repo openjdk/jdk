@@ -26,6 +26,7 @@
 package jdk.jpackage.internal;
 
 import java.util.regex.Pattern;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Platform
@@ -55,20 +56,12 @@ enum Platform {UNKNOWN, WINDOWS, LINUX, MAC;
     private static final int minorVersion;
 
     static {
-        String os = System.getProperty("os.name").toLowerCase();
-
-        if (os.indexOf("win") >= 0) {
-            platform = Platform.WINDOWS;
-        }
-        else if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0) {
-            platform = Platform.LINUX;
-        }
-        else if (os.indexOf("mac") >= 0) {
-            platform = Platform.MAC;
-        }
-        else {
-            platform = Platform.UNKNOWN;
-        }
+        platform = switch (OperatingSystem.current()) {
+            case Windows -> Platform.WINDOWS;
+            case Linux, AIX -> Platform.LINUX;
+            case MacOS -> Platform.MAC;
+            default -> Platform.UNKNOWN;
+        };
 
         String version = System.getProperty("os.version");
         String[] parts = version.split(Pattern.quote("."));

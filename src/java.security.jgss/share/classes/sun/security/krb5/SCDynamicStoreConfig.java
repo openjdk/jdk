@@ -25,6 +25,8 @@
 
 package sun.security.krb5;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -47,8 +49,7 @@ public class SCDynamicStoreConfig {
         boolean isMac = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
                 public Boolean run() {
-                    String osname = System.getProperty("os.name");
-                    if (osname.contains("OS X")) {
+                    if (OperatingSystem.isMacOS()) {
                         System.loadLibrary("osxkrb5");
                         return true;
                     }
