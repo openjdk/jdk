@@ -619,6 +619,10 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     assert(_containing_obj != nullptr, "must be");
     assert(!G1CollectedHeap::heap()->is_obj_dead_cond(_containing_obj, _vo), "Precondition");
 
+    if (num_failures() >= G1MaxVerifyFailures) {
+      return;
+    }
+
     T heap_oop = RawAccess<>::oop_load(p);
     if (CompressedOops::is_null(heap_oop)) {
       return;
