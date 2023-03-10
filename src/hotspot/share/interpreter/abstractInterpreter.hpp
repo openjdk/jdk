@@ -88,6 +88,8 @@ class AbstractInterpreter: AllStatic {
     java_util_zip_CRC32C_updateDirectByteBuffer,                // implementation of java.util.zip.CRC32C.updateDirectByteBuffer(crc, address, off, end)
     java_lang_Float_intBitsToFloat,                             // implementation of java.lang.Float.intBitsToFloat()
     java_lang_Float_floatToRawIntBits,                          // implementation of java.lang.Float.floatToRawIntBits()
+    java_lang_Float_float16ToFloat,                             // implementation of java.lang.Float.float16ToFloat()
+    java_lang_Float_floatToFloat16,                             // implementation of java.lang.Float.floatToFloat16()
     java_lang_Double_longBitsToDouble,                          // implementation of java.lang.Double.longBitsToDouble()
     java_lang_Double_doubleToRawLongBits,                       // implementation of java.lang.Double.doubleToRawLongBits()
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
@@ -157,6 +159,8 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dexp  : // fall thru
       case vmIntrinsics::_fmaD  : // fall thru
       case vmIntrinsics::_fmaF  : // fall thru
+      case vmIntrinsics::_floatToFloat16       : // fall thru
+      case vmIntrinsics::_float16ToFloat       : // fall thru
       case vmIntrinsics::_Continuation_doYield : // fall thru
         return false;
 
