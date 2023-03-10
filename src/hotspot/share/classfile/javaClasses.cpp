@@ -1600,7 +1600,7 @@ void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
 }
 
 oop java_lang_Thread::holder(oop java_thread) {
-  // Note: may be null if the thread is still attaching
+  // Note: may return null if the thread is still attaching
   return java_thread->obj_field(_holder_offset);
 }
 
@@ -1712,7 +1712,7 @@ JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
-  GET_FIELDHOLDER_FIELD(java_thread, get_thread_status, JavaThreadStatus::NEW;  /* not initialized */);
+  GET_FIELDHOLDER_FIELD(java_thread, get_thread_status, JavaThreadStatus::NEW /* not initialized */);
 }
 
 ByteSize java_lang_Thread::thread_id_offset() {
