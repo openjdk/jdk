@@ -43,33 +43,33 @@ include hotspot/lib/JvmFlags.gmk
 # No need to check if the parameter passed is a valid number, the shell will
 # be more than happy to complain if it isn't ;)
 RandomDigits = \
-  $(shell od -An -N8 -d /dev/urandom | sed -e 's| ||g' -e 's|\(.\{$(strip $1)\}\).*|\1|')
+    $(shell od -An -N8 -d /dev/urandom | sed -e 's| ||g' -e 's|\(.\{$(strip $1)\}\).*|\1|')
 
 # Modified version of utility from JdkNativeCompilation.gmk
 # The full path could be omitted, but it was chosen not to so wildcard
 # can work properly for existing directories. The pathsubst below that
 # this necessitates is a relatively small price to pay.
 FindModuleNativeDirs = \
-  $(call uniq, $(wildcard \
-      $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native \
-      $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native \
-      $(TOPDIR)/src/$(strip $1)/share/native))
+    $(call uniq, $(wildcard \
+        $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native \
+        $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native \
+        $(TOPDIR)/src/$(strip $1)/share/native))
 
 # Taken from JdkNativeCompilation.gmk
 FindJavaHeaderDir = \
-  $(if $(strip $1),$(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)))
+    $(if $(strip $1),$(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)))
 
 JAVA_DIRS := $(strip $(foreach module, $(call FindAllModules), \
-  $(patsubst $(TOPDIR)/%,%,$(filter-out $(OUTPUTDIR)%, \
-  $(call FindModuleSrcDirs, $(module))))))
+    $(patsubst $(TOPDIR)/%,%,$(filter-out $(OUTPUTDIR)%, \
+    $(call FindModuleSrcDirs, $(module))))))
 
 NATIVE_DIRS := $(strip $(foreach module, $(call FindAllModules), \
-  $(patsubst $(TOPDIR)/%,%,$(call FindModuleNativeDirs, $(module)))))
+    $(patsubst $(TOPDIR)/%,%,$(call FindModuleNativeDirs, $(module)))))
 
 # Emit the defines extracted from the list of options specified in the first parameter into
 # the language settings file, in Eclipse format.
 EmitExtractedDefines = \
-  $(shell echo $(1) | grep -o "\-D\s\?")
+    $(shell echo $(1) | grep -o "\-D\s\?")
 
 ################################################################################
 # Create an Eclipse Workspace with the specified nature
@@ -131,13 +131,13 @@ define SetupEclipseWorkspaceBody
     # Eclipse crashes when processing multiple module-info.java files
     # This is an annoying bug that has not been fixed for some time now
     $1_CLASSPATH += $$(foreach src,$(JAVA_DIRS), \
-      <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>$$(NEWLINE))
+        <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>$$(NEWLINE))
 
     $$(eval $$(call SetupTextFileProcessing, $1_CREATE_CLASSPATH_FILE, \
-      SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/classpath.template, \
-      OUTPUT_FILE := $$($1_CLASSPATH_FILE), \
-      REPLACEMENTS := \
-          @@CLASSPATH@@ => $$($1_CLASSPATH), \
+        SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/classpath.template, \
+        OUTPUT_FILE := $$($1_CLASSPATH_FILE), \
+        REPLACEMENTS := \
+            @@CLASSPATH@@ => $$($1_CLASSPATH), \
     ))
 
     TARGETS += $$($1_CREATE_CLASSPATH_FILE)
@@ -151,24 +151,24 @@ define SetupEclipseWorkspaceBody
     $1_NATIVE_SRCS :=
 
     $1_BUILD_MANAGERS += \
-      <buildCommand> \
-          <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name> \
-          <triggers>clean$$(COMMA)full$$(COMMA)incremental$$(COMMA)</triggers> \
-          <arguments> \
-          </arguments> \
-      </buildCommand> \
-      <buildCommand> \
-          <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name> \
-          <triggers>full$$(COMMA)incremental$$(COMMA)</triggers> \
-          <arguments> \
-          </arguments> \
-      </buildCommand>$$(NEWLINE)
+        <buildCommand> \
+            <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name> \
+            <triggers>clean$$(COMMA)full$$(COMMA)incremental$$(COMMA)</triggers> \
+            <arguments> \
+            </arguments> \
+        </buildCommand> \
+        <buildCommand> \
+            <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name> \
+            <triggers>full$$(COMMA)incremental$$(COMMA)</triggers> \
+            <arguments> \
+            </arguments> \
+        </buildCommand>$$(NEWLINE)
 
     $1_NATURES += \
-      <nature>org.eclipse.cdt.core.cnature</nature> \
-      <nature>org.eclipse.cdt.core.ccnature</nature> \
-      <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature> \
-      <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>$$(NEWLINE)
+        <nature>org.eclipse.cdt.core.cnature</nature> \
+        <nature>org.eclipse.cdt.core.ccnature</nature> \
+        <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature> \
+        <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>$$(NEWLINE)
 
     # This is always emitted, no matter which of the 3 natures were selected
     $1_NATIVE_SRCS += \
@@ -245,17 +245,17 @@ define SetupEclipseWorkspaceBody
 
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
       $1_CSETTINGS += $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
-        $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
-          <resource project-relative-path="$$(dirs)"> \
-              <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
-              $$(if $$(findstring jdk.sctp,$$(module)),    <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, java.base))"/>) \
-          </resource>$$(NEWLINE))))
+          $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+              <resource project-relative-path="$$(dirs)"> \
+                  <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
+                  $$(if $$(findstring jdk.sctp,$$(module)),    <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, java.base))"/>) \
+              </resource>$$(NEWLINE))))
 
       # main.c source file used for generic launchers
       $1_CSETTINGS += \
-        <resource project-relative-path="src/java.base/share/native/launcher/main.c"> \
-            <entry kind="macro" name="LAUNCHER_NAME" value="&quot;$(LAUNCHER_NAME)&quot;"/> \
-        </resource>$$(NEWLINE)
+          <resource project-relative-path="src/java.base/share/native/launcher/main.c"> \
+              <entry kind="macro" name="LAUNCHER_NAME" value="&quot;$(LAUNCHER_NAME)&quot;"/> \
+          </resource>$$(NEWLINE)
     endif
 
     # HotSpot first
@@ -368,25 +368,25 @@ define SetupEclipseWorkspaceBody
 endef
 
 ifeq ($(WORKSPACE), java)
-$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
-  NATURE := JAVA, \
-  SHARED := $(SHARED), \
-))
+  $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+      NATURE := JAVA, \
+      SHARED := $(SHARED), \
+  ))
 else ifeq ($(WORKSPACE), hotspot)
-$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
-  NATURE := HOTSPOT, \
-  SHARED := $(SHARED), \
-))
+  $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+      NATURE := HOTSPOT, \
+      SHARED := $(SHARED), \
+  ))
 else ifeq ($(WORKSPACE), native)
-$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
-  NATURE := NATIVE, \
-  SHARED := $(SHARED), \
-))
+  $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+      NATURE := NATIVE, \
+      SHARED := $(SHARED), \
+  ))
 else
-$(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
-  NATURE := MIXED, \
-  SHARED := $(SHARED), \
-))
+  $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+      NATURE := MIXED, \
+      SHARED := $(SHARED), \
+  ))
 endif
 
 all: $(TARGETS)
