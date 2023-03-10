@@ -31,7 +31,6 @@ import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.Set;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.java.lang.constant.PackageDesc;
@@ -73,17 +72,7 @@ public final class ModuleInfoWriter {
             ModuleDescriptor.Opens.Modifier.MANDATED, Classfile.ACC_MANDATED
         );
 
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
-
     private ModuleInfoWriter() { }
-
-    private static int modifiersToFlags(Set<ModuleDescriptor.Modifier> mods) {
-        int flags = 0;
-        if (mods.contains(ModuleDescriptor.Modifier.OPEN)) flags |= Classfile.ACC_OPEN;
-        if (mods.contains(ModuleDescriptor.Modifier.SYNTHETIC)) flags |= Classfile.ACC_SYNTHETIC;
-        if (mods.contains(ModuleDescriptor.Modifier.MANDATED)) flags |= Classfile.ACC_MANDATED;
-        return flags;
-    }
 
     /**
      * Writes the given module descriptor to a module-info.class file,
@@ -95,7 +84,9 @@ public final class ModuleInfoWriter {
         try {
             return Classfile.buildModule(
                 ModuleAttribute.of(ModuleDesc.of(md.name()), mb -> {
-                    mb.moduleFlags(modifiersToFlags(md.modifiers()));
+                    mb.moduleFlags(md.modifiers().stream()
+                            .map(mm -> MODULE_MODS_TO_FLAGS.getOrDefault(mm, 0))
+                            .reduce(0, (x, y) -> (x | y)));
 
                     String vs = md.rawVersion().orElse(null);
                     if (vs != null) mb.moduleVersion(vs);
@@ -135,10 +126,9 @@ public final class ModuleInfoWriter {
                     // provides
                     for (ModuleDescriptor.Provides p : md.provides()) {
                         mb.provides(ClassDesc.of(p.service()),
-                                        p.providers()
-                                            .stream()
-                                            .map(pn -> ClassDesc.of(pn))
-                                            .toArray(ClassDesc[]::new));
+                                                 p.providers().stream()
+                                                         .map(ClassDesc::of)
+                                                         .toArray(ClassDesc[]::new));
                     }
                 }),
 
