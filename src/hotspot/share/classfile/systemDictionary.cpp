@@ -1615,7 +1615,7 @@ void SystemDictionary::add_to_hierarchy(JavaThread* current, InstanceKlass* k) {
   assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
 
   // In case we are not using CHA based vtables we need to make sure the loaded
-  // deopt is completed before anyone link this class.
+  // deopt is completed before anyone links this class.
   // Linking is done with _init_monitor held, by loading and deopting with it
   // held we make sure the deopt is completed before linking.
   if (!UseVtableBasedCHA) {
