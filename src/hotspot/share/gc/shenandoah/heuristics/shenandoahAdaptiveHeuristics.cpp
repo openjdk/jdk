@@ -28,7 +28,6 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -340,28 +339,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     available = usable;
   }
 
-  // Allocation spikes are a characteristic of both the application ahd the JVM configuration.  On the JVM command line,
-  // the application developer may want to supply a hint of the nature of spikes that are inherent in the application
-  // workload, and this information would normally be independent of heap size (not a percentage thereof).  On the
-  // other hand, some allocation spikes are correlated with JVM configuration.  For example, there are allocation
-  // spikes at the starts of concurrent marking and evacuation to refresh all local allocation buffers.  The nature
-  // of these spikes is determined by LAB min and max sizes and numbers of threads, but also on frequency of GC passes,
-  // and on "periodic" behavior of these threads  If GC frequency is much higher than the periodic trigger for mutator
-  // threads, then many of the mutator threads may be able to "sit out" of most GC passes.  Though the thread's stack
-  // must be scanned, the thread does not need to refresh its LABs if it sits idle throughout the duration of the GC
-  // pass.  The best prediction for this aspect of spikes in allocation patterns is probably recent past history.
-  // TODO: and dive deeper into _gc_time_penalties as this may also need to be corrected
-
-  // Check if allocation headroom is still okay. This also factors in:
-  //   1. Some space to absorb allocation spikes (ShenandoahAllocSpikeFactor)
-  //   2. Accumulated penalties from Degenerated and Full GC
-  size_t allocation_headroom = available;
-  size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
-  size_t penalties      = capacity / 100 * _gc_time_penalties;
-
-  allocation_headroom -= MIN2(allocation_headroom, penalties);
-  allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
-
   // Track allocation rate even if we decide to start a cycle for other reasons.
   double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
@@ -371,7 +348,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (available < min_threshold) {
     log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                  _generation->name(),
-                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                 byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold),       proper_unit_for_byte_size(min_threshold));
     return resize_and_evaluate();
   }
@@ -383,7 +360,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     if (available < init_threshold) {
       log_info(gc)("Trigger (%s): Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
                    _generation->name(), _gc_times_learned + 1, max_learn,
-                   byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                   byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                    byte_size_in_proper_unit(init_threshold),      proper_unit_for_byte_size(init_threshold));
       return true;
     }
@@ -427,6 +404,16 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   //  2. The frequency of inquiries to should_start_gc() is adaptive, ranging between ShenandoahControlIntervalMin and
   //     ShenandoahControlIntervalMax.  The current control interval (or the max control interval) should also be added into
   //     the calculation of avg_cycle_time below.
+
+  // Check if allocation headroom is still okay. This also factors in:
+  //   1. Some space to absorb allocation spikes (ShenandoahAllocSpikeFactor)
+  //   2. Accumulated penalties from Degenerated and Full GC
+  size_t allocation_headroom = available;
+  size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
+  size_t penalties      = capacity / 100 * _gc_time_penalties;
+
+  allocation_headroom -= MIN2(allocation_headroom, penalties);
+  allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
 
   double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
 
