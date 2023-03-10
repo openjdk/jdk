@@ -101,7 +101,12 @@ public class EditableComboBoxPopupPos {
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
+        });
 
+        robot.delay(1000);
+        robot.waitForIdle();
+
+        SwingUtilities.invokeAndWait(() -> {
             cb1Point = cb1.getLocationOnScreen();
             cb1Width = cb1.getWidth();
             cb1Height = cb1.getHeight();
