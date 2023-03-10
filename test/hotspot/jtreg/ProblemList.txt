@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
 compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64,generic-i586
@@ -84,7 +85,7 @@ gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 # :hotspot_runtime
 
-runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
+
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
@@ -96,7 +97,6 @@ runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/vthread/RedefineClass.java 8297286 generic-all
 runtime/vthread/TestObjectAllocationSampleEvent.java 8297286 generic-all
-runtime/StackGuardPages/TestStackGuardPages.java 8293452 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -120,6 +120,7 @@ serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
+serviceability/sa/UniqueVtableTest.java 8303921 linux-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
@@ -143,11 +144,11 @@ vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
+vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8277573 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
-vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8277812 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-x64
 
@@ -165,7 +166,4 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
 vmTestbase/nsk/stress/except/except012.java 8297977 generic-all
-vmTestbase/nsk/stress/strace/strace002.java 8288912 macosx-x64,windows-x64
-vmTestbase/nsk/stress/strace/strace003.java 8297824 macosx-x64,windows-x64
-vmTestbase/nsk/stress/strace/strace004.java 8297824 macosx-x64,windows-x64
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64

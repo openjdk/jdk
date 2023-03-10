@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class LambdaStackTrace {
         } catch (Exception ex) {
             // Before 8025636 the stacktrace would look like:
             //  at LambdaStackTrace.lambda$main$0(LambdaStackTrace.java:37)
-            //  at LambdaStackTrace$$Lambda$1/1937396743.run(<Unknown>:1000000)
+            //  at LambdaStackTrace$$Lambda/1937396743.run(<Unknown>:1000000)
             //  at LambdaStackTrace.testBasic(LambdaStackTrace.java:40)
             //  at ...
             //

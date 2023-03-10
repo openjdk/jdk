@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
@@ -238,13 +239,13 @@ public class ClassReader {
 
     /**
      * The prototype @Target Attribute.Compound if this class is an annotation annotated with
-     * @Target
+     * {@code @Target}
      */
     CompoundAnnotationProxy target;
 
     /**
      * The prototype @Repeatable Attribute.Compound if this class is an annotation annotated with
-     * @Repeatable
+     * {@code @Repeatable}
      */
     CompoundAnnotationProxy repeatable;
 
@@ -329,7 +330,12 @@ public class ClassReader {
     /** Read a character.
      */
     char nextChar() {
-        char res = buf.getChar(bp);
+        char res;
+        try {
+            res = buf.getChar(bp);
+        } catch (UnderflowException e) {
+            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+        }
         bp += 2;
         return res;
     }
@@ -337,13 +343,22 @@ public class ClassReader {
     /** Read a byte.
      */
     int nextByte() {
-        return buf.getByte(bp++) & 0xFF;
+        try {
+            return buf.getByte(bp++) & 0xFF;
+        } catch (UnderflowException e) {
+            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+        }
     }
 
     /** Read an integer.
      */
     int nextInt() {
-        int res = buf.getInt(bp);
+        int res;
+        try {
+            res = buf.getInt(bp);
+        } catch (UnderflowException e) {
+            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+        }
         bp += 4;
         return res;
     }
@@ -1482,7 +1497,12 @@ public class ClassReader {
     /** Read parameter annotations.
      */
     void readParameterAnnotations(Symbol meth) {
-        int numParameters = buf.getByte(bp++) & 0xFF;
+        int numParameters;
+        try {
+            numParameters = buf.getByte(bp++) & 0xFF;
+        } catch (UnderflowException e) {
+            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+        }
         if (parameterAnnotations == null) {
             parameterAnnotations = new ParameterAnnotations[numParameters];
         } else if (parameterAnnotations.length != numParameters) {
@@ -1771,7 +1791,12 @@ public class ClassReader {
     }
 
     Attribute readAttributeValue() {
-        char c = (char) buf.getByte(bp++);
+        char c;
+        try {
+            c = (char)buf.getByte(bp++);
+        } catch (UnderflowException e) {
+            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+        }
         switch (c) {
         case 'B':
             return new Attribute.Constant(syms.byteType, poolReader.getConstant(nextChar()));

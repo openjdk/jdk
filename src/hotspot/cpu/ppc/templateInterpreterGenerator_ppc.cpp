@@ -1703,8 +1703,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 #endif // ASSERT
 
-  __ verify_thread();
-
   // --------------------------------------------------------------------------
   // JVMTI support
   __ notify_method_entry();
@@ -1935,6 +1933,10 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return NULL;
 }
 
+// Not supported
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
+
 // =============================================================================
 // Exceptions
 
@@ -1957,7 +1959,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   {
     __ mr(Rexception, R3_RET);
 
-    __ verify_thread();
     __ verify_oop(Rexception);
 
     // Expression stack must be empty before entering the VM in case of an exception.
@@ -2086,7 +2087,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   Interpreter::_remove_activation_entry = __ pc();
   {
     __ pop_ptr(Rexception);
-    __ verify_thread();
     __ verify_oop(Rexception);
     __ std(Rexception, in_bytes(JavaThread::vm_result_offset()), R16_thread);
 

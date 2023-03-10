@@ -614,7 +614,11 @@ public class BufferedInputStream extends FilterInputStream {
                 out.write(buffer);
                 pos = count;
             }
-            return avail + getInIfOpen().transferTo(out);
+            try {
+                return Math.addExact(avail, getInIfOpen().transferTo(out));
+            } catch (ArithmeticException ignore) {
+                return Long.MAX_VALUE;
+            }
         } else {
             return super.transferTo(out);
         }

@@ -67,6 +67,7 @@
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
   template(java_lang_BaseVirtualThread,               "java/lang/BaseVirtualThread")              \
   template(java_lang_VirtualThread,                   "java/lang/VirtualThread")                  \
+  template(java_lang_BoundVirtualThread,              "java/lang/ThreadBuilders$BoundVirtualThread") \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
   template(java_lang_Throwable,                       "java/lang/Throwable")                      \
   template(java_lang_ClassLoader,                     "java/lang/ClassLoader")                    \
@@ -520,6 +521,8 @@
   template(java_lang_Boolean_signature,               "Ljava/lang/Boolean;")                      \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(jvmti_thread_state_name,                   "jvmti_thread_state")                       \
+  template(jvmti_VTMS_transition_disable_count_name,  "jvmti_VTMS_transition_disable_count")      \
+  template(jvmti_is_in_VTMS_transition_name,          "jvmti_is_in_VTMS_transition")              \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \
@@ -749,6 +752,7 @@
   template(encodeThrowable_name,                       "encodeThrowable")                                         \
   template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
+  template(decodeAndThrowThrowable_signature,          "(JZ)V")                                                   \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \

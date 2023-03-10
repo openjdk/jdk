@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 //
 
 define_pd_global(bool,  ImplicitNullChecks,       true);  // Generate code for implicit null checks
-define_pd_global(bool,  UncommonNullCast,         true);  // Uncommon-trap NULLs past to check cast
+define_pd_global(bool,  UncommonNullCast,         true);  // Uncommon-trap nulls past to check cast
 define_pd_global(bool,  TrapBasedNullChecks,      false); // Not needed
 
 define_pd_global(uintx, CodeCacheSegmentSize, 64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
