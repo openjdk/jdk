@@ -55,6 +55,7 @@ import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import java.lang.reflect.Method;
+import jtreg.SkippedException;
 
 public class TestTypeProfiling {
 
@@ -98,7 +99,7 @@ public class TestTypeProfiling {
         }
         // Only execute if C2 is available
         if (TIERED_STOP_AT_LEVEL != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("please enable C2");
+            throw new SkippedException("The test can't be run w/ TieredStopAtLevel < 4");
         }
 
         Method method;
