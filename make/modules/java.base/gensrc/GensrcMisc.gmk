@@ -51,8 +51,8 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
 ))
 
 $(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
-    SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/OperatingSystemProps.java.template, \
-    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc/OperatingSystemProps.java, \
+    SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/util/OperatingSystemProps.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/OperatingSystemProps.java, \
     REPLACEMENTS := \
         @@OPENJDK_TARGET_OS@@ => $(OPENJDK_TARGET_OS), \
 ))

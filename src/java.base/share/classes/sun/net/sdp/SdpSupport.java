@@ -30,7 +30,7 @@ import java.io.FileDescriptor;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
-import jdk.internal.misc.OperatingSystem;
+import jdk.internal.util.OperatingSystem;
 
 
 /**

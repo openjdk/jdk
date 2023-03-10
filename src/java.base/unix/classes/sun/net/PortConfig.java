@@ -25,7 +25,7 @@
 
 package sun.net;
 
-import jdk.internal.misc.OperatingSystem;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Determines the ephemeral port range in use on this system.
@@ -47,7 +47,7 @@ public final class PortConfig {
                 defaultLower = 32768;
                 defaultUpper = 61000;
                 break;
-            case Mac:
+            case MacOS:
                 defaultLower = 49152;
                 defaultUpper = 65535;
                 break;

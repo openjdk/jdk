@@ -25,12 +25,12 @@
 import java.util.Locale;
 import java.util.stream.Stream;
 
-import jdk.internal.misc.OperatingSystem;
+import jdk.internal.util.OperatingSystem;
 
-import static jdk.internal.misc.OperatingSystem.AIX;
-import static jdk.internal.misc.OperatingSystem.Linux;
-import static jdk.internal.misc.OperatingSystem.Mac;
-import static jdk.internal.misc.OperatingSystem.Windows;
+import static jdk.internal.util.OperatingSystem.AIX;
+import static jdk.internal.util.OperatingSystem.Linux;
+import static jdk.internal.util.OperatingSystem.MacOS;
+import static jdk.internal.util.OperatingSystem.Windows;
 
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @test
  * @summary test OperatingSystem enum
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.util
  * @run junit OSTest
  */
 
@@ -56,7 +56,7 @@ public class OSTest {
         OperatingSystem os = switch (osName) {
             case "win" -> Windows;
             case "lin" -> Linux;
-            case "mac" -> Mac;
+            case "mac" -> MacOS;
             case "aix" -> AIX;
             default    -> fail("Unknown os.name: " + osName);
         };
@@ -71,7 +71,7 @@ public class OSTest {
         return Stream.of(
                 Arguments.of(Linux, OperatingSystem.isLinux()),
                 Arguments.of(Windows, OperatingSystem.isWindows()),
-                Arguments.of(Mac, OperatingSystem.isMac()),
+                Arguments.of(MacOS, OperatingSystem.isMacOS()),
                 Arguments.of(AIX, OperatingSystem.isAix())
         );
     }

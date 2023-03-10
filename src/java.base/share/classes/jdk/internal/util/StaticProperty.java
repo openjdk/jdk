@@ -258,7 +258,7 @@ public final class StaticProperty {
      }
 
      /**
-      * {@eturn the {@code os.arch} system property}
+      * {@return the {@code os.arch} system property}
       * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
       * in this method. This property is not considered security sensitive.</strong>
       */

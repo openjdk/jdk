@@ -25,7 +25,7 @@
  */
 package jdk.internal.foreign;
 
-import jdk.internal.misc.OperatingSystem;
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
@@ -54,7 +54,7 @@ public enum CABI {
                 ABI = SYS_V;
             }
         } else if (ARCH.equals("aarch64")) {
-            if (OperatingSystem.isMac()) {
+            if (OperatingSystem.isMacOS()) {
                 ABI = MAC_OS_AARCH_64;
             } else if (OperatingSystem.isWindows()) {
                 ABI = WIN_AARCH_64;

@@ -20,12 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.misc;
+package jdk.internal.util;
 
-import jdk.internal.util.StaticProperty;
+import jdk.internal.util.OperatingSystemProps;
 import jdk.internal.vm.annotation.ForceInline;
-
-import java.util.Objects;
 
 /**
  * Enumeration of operating system types and testing for the current OS.
@@ -45,7 +43,7 @@ import java.util.Objects;
  * Alternatively, compare with the {@linkplain #current() current} operating system.
  * For example,
  * {@snippet lang = "java":
- * if (OperatingSystem.current() == Windows) {
+ * if (OperatingSystem.current() == OperatingSystem.Windows) {
  *     // Windows only code.
  * }
  *}
@@ -56,39 +54,34 @@ import java.util.Objects;
  *      return switch(OperatingSystem.current()) {
  *          case Linux->32768;
  *          case AIX->32768;
- *          case Mac->49152;
+ *          case MacOS->49152;
  *          case Windows->49152;
  *      };
  * }
- * }
+ *}
  */
 public enum OperatingSystem {
 
     /**
      * The Linux Operating system.
      */
-    Linux("Linux"),
+    Linux,
     /**
      * The Mac OS X Operating system.
      */
-    Mac("Mac OS X"),
+    MacOS,
     /**
      * The Windows Operating system.
      */
-    Windows("Windows"),
+    Windows,
     /**
      * The AIX Operating system.
      */
-    AIX("AIX"),
+    AIX,
     ;
 
     // Cache a copy of the array for lightweight indexing
     private static final OperatingSystem[] osValues = OperatingSystem.values();
-
-    /**
-     * The operating system name.
-     */
-    private final String name;
 
     /**
      * {@return {@code true} if built for the Linux operating system}
@@ -102,7 +95,7 @@ public enum OperatingSystem {
      * {@return {@code true} if built for the Mac OS X operating system}
      */
     @ForceInline
-    public static boolean isMac() {
+    public static boolean isMacOS() {
         return OperatingSystemProps.TARGET_OS_IS_MACOSX;
     }
 
@@ -123,26 +116,9 @@ public enum OperatingSystem {
     }
 
     /**
-     * Construct an operating system enum with the given name.
-     *
-     * @param name       the name of the operating system
-     */
-    OperatingSystem(String name) {
-        this.name = name;
-    }
-
-    /**
      * {@return the current operating system}
      */
     public static OperatingSystem current() {
-        return osValues[OperatingSystemProps.TARGET_OS_ORDINAL];
+        return osValues[OperatingSystemProps.CURRENT_OS_ORDINAL];
     }
-
-    /**
-     * {@return the name of the operating system}
-     */
-    public String getName() {
-        return name;
-    }
-
 }

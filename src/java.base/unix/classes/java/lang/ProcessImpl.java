@@ -26,7 +26,7 @@
 package java.lang;
 
 import java.lang.ProcessBuilder.Redirect;
-import jdk.internal.misc.OperatingSystem;
+import jdk.internal.util.OperatingSystem;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -103,12 +103,12 @@ final class ProcessImpl extends Process {
 
         try {
             // Should be value of a LaunchMechanism enum
-            LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ENGLISH));
+            LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
             switch (OperatingSystem.current()) {
                 case Linux:
                     return lm;      // All options are valid for Linux
                 case AIX:
-                case Mac:
+                case MacOS:
                     if (lm != LaunchMechanism.VFORK) {
                         return lm; // All but VFORK are valid
                     }
@@ -329,7 +329,7 @@ final class ProcessImpl extends Process {
     void initStreams(int[] fds, boolean forceNullOutputStream) throws IOException {
         switch (OperatingSystem.current()) {
             case Linux:
-            case Mac:
+            case MacOS:
                 stdin = (fds[0] == -1) ?
                         ProcessBuilder.NullOutputStream.INSTANCE :
                         new ProcessPipeOutputStream(fds[0]);
@@ -460,7 +460,7 @@ final class ProcessImpl extends Process {
     private void destroy(boolean force) {
         switch (OperatingSystem.current()) {
             case Linux:
-            case Mac:
+            case MacOS:
             case AIX:
                 // There is a risk that pid will be recycled, causing us to
                 // kill the wrong process!  So we only terminate processes

@@ -25,7 +25,6 @@
 
 package java.util.zip;
 
-import jdk.internal.misc.OperatingSystem;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.io.IOException;
@@ -64,7 +63,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.JavaUtilJarAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.VM;
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
