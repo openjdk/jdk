@@ -221,23 +221,11 @@ public abstract class XMLInputFactory {
    * </li>
    * <li>
    *   <p>
-   *   Use the configuration file "stax.properties". The file is in standard
-   *   {@link java.util.Properties} format and typically located in the
-   *   {@code conf} directory of the Java installation. It contains the fully qualified
-   *   name of the implementation class with the key being the system property
-   *   defined above.
-   *
-   *   <p>
-   *   The stax.properties file is read only once by the implementation
-   *   and its values are then cached for future use.  If the file does not exist
-   *   when the first attempt is made to read from it, no further attempts are
-   *   made to check for its existence.  It is not possible to change the value
-   *   of any property in stax.properties after it has been read for the first time.
-   *
-   *   <p>
-   *   Use the jaxp configuration file "jaxp.properties". The file is in the same
-   *   format as stax.properties and will only be read if stax.properties does
-   *   not exist.
+   *   Use the value of the property {@code factoryId} set in the
+   * <a href="../../../module-summary.html#ConfigurationFile">configuration file</a>,
+   * stax.properties or jaxp.properties by default. If the file exists and
+   * the property {@code factoryId} is specified in the file, its value will be
+   * used as the implementation class.
    * </li>
    * <li>
    *   <p>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,92 @@
  * Defines the Java API for XML Processing (JAXP), the Streaming API for XML (StAX),
  * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
  *
+ * <h2 id="ConfigurationFile">Configuration File</h2>
+ * The java.xml (JAXP) Configuration File is used for configuring factories in the
+ * <a href="#LookupMechanism">Factory Lookup Mechanism</a>, secure processing,
+ * and Catalog API.
+ *
+ * <h3>Format</h3>
+ * The configuration file is in standard {@link java.util.Properties} format.
+ * <p>
+ * The keys are:
+ * <ul>
+ * <li>
+ * For the <a href="#LookupMechanism">Factory Lookup Mechanism</a>, System properties
+ * as listed in column System Property of the table <a href="#Factories">JAXP Factories</a>.
+ * </li>
+ * <li>
+ * <p>
+ * For secure processing, {@code Full Name} in
+ * table <a href="#Properties">Implementation Specific Properties</a> and
+ * <a href="#Features">Features</a>
+ * </li>
+ * <li>
+ * <p>
+ * For the Catalog API, {@code System Property} in table {@code Catalog Features}
+ * of class {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}
+ * </li>
+ * </ul>
+ * <p>
+ * The values are:
+ * <ul>
+ * <li>
+ * For the <a href="#LookupMechanism">Factory Lookup Mechanism</a>, the fully
+ * qualified name of the implementation class.
+ * </li>
+ * <li>
+ * <p>
+ * For secure processing, {@code Value} in
+ * table <a href="#Properties">Implementation Specific Properties</a> and
+ * <a href="#Features">Features</a>
+ * </li>
+ * <li>
+ * <p>
+ * For the Catalog API, {@code value} in table {@code Catalog Features}
+ * of class {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}
+ * </li>
+ * </ul>
+ * <p>
+ * Below are examples on what can be placed in the configuration file:
+ * <pre>
+ *     {@code javax.xml.parsers.DocumentBuilderFactory=packagename.DocumentBuilderFactoryImpl}
+ *     {@code jdk.xml.entityExpansionLimit=2000}
+ * </pre>
+ *
+ *
+ * <h3 id="CF_Default">Default</h3>
+ * The JDK may be distributed with a configuration file called {@code jaxp.properties}
+ * that is used by all factories listed in <a href="#Factories">the Factories table</a> below.
+ * It may also include one called {@code stax.properties} that will be used by
+ * the StAX factories for the <a href="#LookupMechanism">Factory Lookup Mechanism</a>
+ * only. The files, if exist, are typically located in the {@code conf}
+ * directory of the Java installation.
+ * <p>
+ * The default files will be read only once during a factory initialization and
+ * the values are used while the factory is alive.  If the file does not exist when
+ * the first attempt is made to read from it, no further attempts are made to check
+ * for its existence. It is not possible to change the value of any property after
+ * it has been read for the first time.
+ *
+ *
+ * <h3>System Property</h3>
+ * The system property {@code jdk.xml.config.file} can be used to set up a
+ * configuration file outside of the JDK to override the default configuration
+ * file (jaxp.properties).
+ * <p>
+ * When the system property is specified, the configuration file it points to
+ * will override the default file in its entirety, that means no setting in the
+ * latter will be used by the factories. If the system property does not exist
+ * when a factory is instantiated, no further attempt will be made to locate it
+ * while the factory is alive.
+ * <p>
+ * The value of the property shall be a valid file path to a configuration file.
+ * If the file path is not absolute, it will be considered relative to the working
+ * directory.
+ * <p>
+ * Unlike other system properties, this property can not be placed in a configuration
+ * file.
+ *
  * <h2 id="LookupMechanism">JAXP Lookup Mechanism</h2>
  * JAXP defines an ordered lookup procedure to determine the implementation class
  * to load for the JAXP factories. Factories that support the mechanism are listed
@@ -52,7 +138,7 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.datatype.DatatypeFactory#newInstance() newInstance()}</td>
  * <td style="text-align:center">{@code javax.xml.datatype.DatatypeFactory}</td>
- * <td style="text-align:center"><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.datatype.DatatypeFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -61,7 +147,7 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.parsers.DocumentBuilderFactory#newInstance() newInstance()}</td>
  * <td style="text-align:center">{@code javax.xml.parsers.DocumentBuilderFactory}</td>
- * <td style="text-align:center"><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.parsers.DocumentBuilderFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -70,7 +156,7 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.parsers.SAXParserFactory#newInstance() newInstance()}</td>
  * <td style="text-align:center">{@code javax.xml.parsers.SAXParserFactory}</td>
- * <td style="text-align:center"><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.parsers.SAXParserFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -80,8 +166,8 @@
  * <td style="text-align:center">{@link javax.xml.stream.XMLEventFactory#newFactory() newFactory()}</td>
  * <td style="text-align:center">{@code javax.xml.stream.XMLEventFactory}</td>
  * <td style="text-align:center">
- *     <a href="#StAXProperties">stax.properties</a> and then
- *     <a href="#JaxpProperties">jaxp.properties</a>
+ *     <a href="#ConfigurationFile">Configuration File</a>,
+ *     <a href="#CF_Default">stax.properties</a> and/or <a href="#CF_Default">jaxp.properties</a> by default
  * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLEventFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
@@ -92,8 +178,8 @@
  * <td style="text-align:center">{@link javax.xml.stream.XMLInputFactory#newFactory() newFactory()}</td>
  * <td style="text-align:center">{@code javax.xml.stream.XMLInputFactory}</td>
  * <td style="text-align:center">
- *     <a href="#StAXProperties">stax.properties</a> and then
- *     <a href="#JaxpProperties">jaxp.properties</a>
+ *     <a href="#ConfigurationFile">Configuration File</a>,
+ *     <a href="#CF_Default">stax.properties</a> and/or <a href="#CF_Default">jaxp.properties</a> by default
  * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLInputFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
@@ -104,8 +190,8 @@
  * <td style="text-align:center">{@link javax.xml.stream.XMLOutputFactory#newFactory() newFactory()}</td>
  * <td style="text-align:center">{@code javax.xml.stream.XMLOutputFactory}</td>
  * <td style="text-align:center">
- *     <a href="#StAXProperties">stax.properties</a> and then
- *     <a href="#JaxpProperties">jaxp.properties</a>
+ *     <a href="#ConfigurationFile">Configuration File</a>,
+ *     <a href="#CF_Default">stax.properties</a> and/or <a href="#CF_Default">jaxp.properties</a> by default
  * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLOutputFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
@@ -115,7 +201,7 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.transform.TransformerFactory#newInstance() newInstance()}</td>
  * <td style="text-align:center">{@code javax.xml.transform.TransformerFactory}</td>
- * <td style="text-align:center"><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.transform.TransformerFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -124,7 +210,7 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.validation.SchemaFactory#newInstance(java.lang.String) newInstance(schemaLanguage)}</td>
  * <td style="text-align:center">{@code javax.xml.validation.SchemaFactory:}<i>schemaLanguage</i>[1]</td>
- * <td style="text-align:center"><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.validation.SchemaFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -133,7 +219,7 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.xpath.XPathFactory#newInstance(java.lang.String) newInstance(uri)}</td>
  * <td style="text-align:center">{@link javax.xml.xpath.XPathFactory#DEFAULT_PROPERTY_NAME DEFAULT_PROPERTY_NAME} + ":uri"[2]</td>
- * <td style="text-align:center"><a href="#JaxpProperties">jaxp.properties</a></td>
+ * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.xpath.XPathFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * </tbody>
@@ -147,23 +233,6 @@
  * {@link javax.xml.xpath.XPathFactory#newInstance(java.lang.String) newInstance(uri)}
  * method.
  *
- * <h3 id="JaxpProperties">jaxp.properties</h3>
- * {@code jaxp.properties} is a configuration file in standard
- * {@link java.util.Properties} format and typically located in the {@code conf}
- * directory of the Java installation. It contains the fully qualified
- * name of the implementation class with the key being the system property name
- * defined in <a href="#Factories">the table</a> above.
- * <p>
- * The {@code jaxp.properties} file is read only once by the implementation and
- * the values are then cached for future use.  If the file does not exist when
- * the first attempt is made to read from it, no further attempts
- * are made to check for its existence. It is not possible to change the value
- * of any property after it has been read for the first time.
- *
- * <h3 id="StAXProperties">stax.properties</h3>
- * {@code stax.properties} is a configuration file that functions the same as
- * {@code jaxp.properties} except that it is only used by StAX factory lookup.
- *
  * <h3 id="LookupProcedure">Lookup Procedure</h3>
  * The <a href="#Factories">JAXP Factories</a> follow the procedure described
  * below in order to locate and load the implementation class:
@@ -175,10 +244,7 @@
  * </li>
  * <li>
  * <p>
- * Use the configuration file <a href="#JaxpProperties">jaxp.properties</a> as
- * indicated in the table <a href="#Factories">JAXP Factories</a>. For StAX,
- * if <a href="#StAXProperties">stax.properties</a> exists, the factories will
- * first attempt to read from it instead of <a href="#JaxpProperties">jaxp.properties</a>.
+ * Use the <a href="#ConfigurationFile">Configuration File</a>.
  * </li>
  * <li>
  * <p>
@@ -235,10 +301,10 @@
  * In addition to the standard features and properties described within the public
  * APIs of this module, the JDK implementation supports a further number of
  * implementation specific features and properties. This section describes the
- * naming convention, System Properties, jaxp.properties, scope and order,
- * and processors to which a property applies. A table listing the implementation
- * specific features and properties which the implementation currently supports
- * can be found at the end of this note.
+ * naming convention, System Properties, scope and order, and processors to which
+ * a property applies. A table listing the implementation specific features and
+ * properties that the implementation currently supports can be found at the end
+ * of this note.
  *
  * <h3 id="NamingConvention">Naming Convention</h3>
  * The names of the features and properties are fully qualified, composed of a
@@ -271,9 +337,9 @@
  * A System Property should be set prior to the creation of a processor and
  * may be cleared afterwards.
  *
- * <h3>jaxp.properties</h3>
- * A system property can be specified in the <a href="#JaxpProperties">jaxp.properties</a>
- * file to set the behavior for all invocations of the JDK. The format is
+ * <h3>Configuration File</h3>
+ * A system property can be specified in the <a href="#ConfigurationFile">Configuration File</a>
+ * to set the behavior for all invocations of the JDK. The format is
  * {@code system-property-name=value}. For example:
  * <pre>
  *     {@code jdk.xml.isStandalone=true}
@@ -295,16 +361,16 @@
  * When the Java Security Manager is present, secure processing is set to true
  * and can not be turned off. The security properties are therefore enforced.
  * <p>
- * Properties specified in the jaxp.properties file affect all invocations of
+ * Properties specified in the configuration file affect all invocations of
  * the JDK, and will override their default values, or those that may have been
  * set by secure processing.
  * <p>
  * System properties, when set, affect the invocation of the JDK and override
- * the default settings or those that may have been set in jaxp.properties or
- * by secure processing.
+ * the default settings or those that may have been set in the configuration file
+ * or by secure processing.
  * <p>
  * JAXP properties specified through JAXP factories or processors (e.g. SAXParser)
- * take preference over system properties, the jaxp.properties file, as well as
+ * take preference over system properties, the configuration file, as well as
  * secure processing.
  *
  * <h3 id="Processor">Processor Support</h3>
@@ -436,7 +502,7 @@
  * <th scope="col" rowspan="2">Description</th>
  * <th scope="col" rowspan="2">API Property <a href="#Note2">[2]</a></th>
  * <th scope="col" rowspan="2">System Property <a href="#Note3">[3]</a></th>
- * <th scope="col" rowspan="2">jaxp.properties <a href="#Note3">[3]</a></th>
+ * <th scope="col" rowspan="2">Configuration File <a href="#Note3">[3]</a></th>
  * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note4">[4]</a></th>
  * <th scope="col" rowspan="2">Security <a href="#Note5">[5]</a></th>
  * <th scope="col" rowspan="2">Supported Processor <a href="#Note6">[6]</a></th>
@@ -672,7 +738,7 @@
  * <th scope="col" rowspan="2">Description</th>
  * <th scope="col" rowspan="2">API Property <a href="#Note2">[2]</a></th>
  * <th scope="col" rowspan="2">System Property <a href="#Note3">[3]</a></th>
- * <th scope="col" rowspan="2">jaxp.properties <a href="#Note3">[3]</a></th>
+ * <th scope="col" rowspan="2">Configuration File <a href="#Note3">[3]</a></th>
  * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note4">[4]</a></th>
  * <th scope="col" rowspan="2">Security <a href="#Note5">[5]</a></th>
  * <th scope="col" rowspan="2">Supported Processor <a href="#Note6">[6]</a></th>
@@ -787,7 +853,7 @@
  * <ul>
  * <li>The default value;</li>
  * <li>Value set by FEATURE_SECURE_PROCESSING;</li>
- * <li>Value set in jaxp.properties;</li>
+ * <li>Value set in the configuration file;</li>
  * <li>Value set as System Property;</li>
  * <li>Value set on factories or processors using <b>legacy property names</b>;</li>
  * <li>Value set on factories or processors using new property names.</li>

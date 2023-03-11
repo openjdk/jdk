@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,9 @@
 
 package javax.xml.transform;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
@@ -52,17 +48,6 @@ class FactoryFinder {
      * Internal debug flag.
      */
     private static boolean debug = false;
-
-    /**
-     * Cache for properties in java.home/conf/jaxp.properties
-     */
-    private final static Properties cacheProps = new Properties();
-
-    /**
-     * Flag indicating if properties from java.home/conf/jaxp.properties
-     * have been cached.
-     */
-    static volatile boolean firstTime = true;
 
     // Define system property "jaxp.debug" to get output
     static {
@@ -217,31 +202,10 @@ class FactoryFinder {
             if (debug) se.printStackTrace();
         }
 
-        // try to read from $java.home/conf/jaxp.properties
-        try {
-            if (firstTime) {
-                synchronized (cacheProps) {
-                    if (firstTime) {
-                        String configFile = SecuritySupport.getSystemProperty("java.home") + File.separator +
-                            "conf" + File.separator + "jaxp.properties";
-                        File f = new File(configFile);
-                        firstTime = false;
-                        if (SecuritySupport.doesFileExist(f)) {
-                            dPrint(()->"Read properties file "+f);
-                            cacheProps.load(SecuritySupport.getFileInputStream(f));
-                        }
-                    }
-                }
-            }
-            final String factoryClassName = cacheProps.getProperty(factoryId);
-
-            if (factoryClassName != null) {
-                dPrint(()->"found in ${java.home}/conf/jaxp.properties, value=" + factoryClassName);
-                return newInstance(type, factoryClassName, null, true);
-            }
-        }
-        catch (Exception ex) {
-            if (debug) ex.printStackTrace();
+        // try to read from the configuration file
+        String factoryClassName = SecuritySupport.readConfig(factoryId);
+        if (factoryClassName != null) {
+            return newInstance(type, factoryClassName, null, true);
         }
 
         // Try Jar Service Provider Mechanism

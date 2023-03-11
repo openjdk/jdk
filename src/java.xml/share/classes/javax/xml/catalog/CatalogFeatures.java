@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import jdk.xml.internal.SecuritySupport;
  * <th scope="col" rowspan="2">Description</th>
  * <th scope="col" rowspan="2">Property Name</th>
  * <th scope="col" rowspan="2">System Property [1]</th>
- * <th scope="col" rowspan="2">jaxp.properties [1]</th>
+ * <th scope="col" rowspan="2"><a href="../../../module-summary.html#ConfigurationFile">configuration file</a> [1]</th>
  * <th scope="col" colspan="2" style="text-align:center">Value [2]</th>
  * <th scope="col" rowspan="2">Action</th>
  * </tr>
@@ -166,7 +166,9 @@ import jdk.xml.internal.SecuritySupport;
  *
  * <h2>Scope and Order</h2>
  * Features and properties can be set through the catalog file, the Catalog API,
- * system properties, and {@code jaxp.properties}, with a preference in the same order.
+ * system properties, and
+ * <a href="../../../module-summary.html#ConfigurationFile">configuration file</a>,
+ * with a preference in the same order.
  * <p>
  * Properties that are specified as attributes in the catalog file for the
  * catalog and group entries shall take preference over any of the other settings.
@@ -175,21 +177,17 @@ import jdk.xml.internal.SecuritySupport;
  * is not necessary or will be ignored.
  * <p>
  * Properties set through the Catalog API override those that may have been set
- * by system properties and/or in {@code jaxp.properties}. In case of multiple
- * interfaces, the latest in a procedure shall take preference. For
- * {@link Feature#FILES}, this means that the URI(s) specified through the methods
+ * by system properties and/or in the
+ * <a href="../../../module-summary.html#ConfigurationFile">configuration file</a>.
+ * In case of multiple interfaces, the latest in a procedure shall take preference.
+ * For {@link Feature#FILES}, this means that the URI(s) specified through the methods
  * of the {@link CatalogManager} will override any that may have been entered
  * through the {@link Builder}.
  *
  * <p>
- * System properties when set shall override those in {@code jaxp.properties}.
- * <p>
- * The {@code jaxp.properties} file is typically in the conf directory of the Java
- * installation. The file is read only once by the JAXP implementation and
- * its values are then cached for future use. If the file does not exist
- * when the first attempt is made to read from it, no further attempts are
- * made to check for its existence. It is not possible to change the value
- * of any properties in {@code jaxp.properties} after it has been read.
+ * System properties when set shall override those in the
+ * <a href="../../../module-summary.html#ConfigurationFile">configuration file</a>.
+ *
  * <p>
  * A CatalogFeatures instance can be created through its builder as illustrated
  * in the following sample code:
@@ -489,7 +487,7 @@ public class CatalogFeatures {
 
     /**
      * States of the settings of a property, in the order: default value,
-     * jaxp.properties file, jaxp system properties, and jaxp api properties
+     * configuration file, jaxp system properties, and jaxp api properties
      */
     static enum State {
         /** represents the default state of a feature. */
@@ -622,7 +620,7 @@ public class CatalogFeatures {
                 return true;
             }
 
-            value = SecuritySupport.readJAXPProperty(sysPropertyName);
+            value = SecuritySupport.readConfig(sysPropertyName);
             if (value != null && !value.isEmpty()) {
                 setProperty(cf, State.JAXPDOTPROPERTIES, value);
                 return true;

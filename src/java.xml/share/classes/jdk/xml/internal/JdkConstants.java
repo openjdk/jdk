@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,12 @@ public final class JdkConstants {
 
     public static final String XML_SECURITY_PROPERTY_MANAGER =
             "jdk.xml.xmlSecurityPropertyManager";
+
+    /**
+     * System Property for the Configuration File
+     * @since 21
+     */
+    public static final String CONFIG_FILE = "jdk.xml.config.file";
 
     /**
      * Values for a feature

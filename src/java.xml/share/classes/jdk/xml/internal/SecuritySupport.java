@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
@@ -159,47 +160,86 @@ public class SecuritySupport {
     public static String getJAXPSystemProperty(String propName) {
         String value = getSystemProperty(propName);
         if (value == null) {
-            value = readJAXPProperty(propName);
+            value = readConfig(propName);
         }
         return value;
     }
 
     /**
-     * Reads the specified property from $java.home/conf/jaxp.properties
+     * Returns the value of the specified property from the Configuration file.
+     * The method reads the System Property "java.xml.config.file" for a custom
+     * configuration file, if doesn't exist, falls back to the JDK default that
+     * is typically located at $java.home/conf/jaxp.properties.
      *
-     * @param propName the name of the property
-     * @return the value of the property
+     * @param propName the specified property
+     * @return the value of the specified property, null if the property is not
+     * found
      */
-    public static String readJAXPProperty(String propName) {
-        String value = null;
-        InputStream is = null;
-        try {
-            if (firstTime) {
-                synchronized (cacheProps) {
-                    if (firstTime) {
-                        String configFile = getSystemProperty("java.home") + File.separator
-                                + "conf" + File.separator + "jaxp.properties";
-                        File f = new File(configFile);
-                        if (isFileExists(f)) {
-                            is = getFileInputStream(f);
-                            cacheProps.load(is);
-                        }
-                        firstTime = false;
-                    }
-                }
-            }
-            value = cacheProps.getProperty(propName);
+    public static String readConfig(String propName) {
+        return readConfig(propName, false);
+    }
 
-        } catch (IOException ex) {
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ex) {}
+    /**
+     * Returns the value of the specified property from the Configuration file.
+     * The method reads the System Property "java.xml.config.file" for a custom
+     * configuration file, if doesn't exist, falls back to the JDK default that
+     * is typically located at $java.home/conf/jaxp.properties.
+     *
+     * @param propName the specified property
+     * @param stax a flag indicating whether to read stax.properties
+     * @return the value of the specified property, null if the property is not
+     * found
+     */
+    public static String readConfig(String propName, boolean stax) {
+        // use the System Property if specified
+        String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE);
+        if (configFile != null && loadProperties(configFile)) {
+            return cacheProps.getProperty(propName);
+        }
+
+        // fall back to the default configuration file
+        if (firstTime) {
+            synchronized (cacheProps) {
+                if (firstTime) {
+                    boolean found = false;
+                    if (stax) {
+                        found = loadProperties(
+                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                                    "conf", "stax.properties")
+                                    .toAbsolutePath().normalize().toString()
+                        );
+                    }
+
+                    if (!found) {
+                        loadProperties(
+                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                                "conf", "jaxp.properties")
+                                .toAbsolutePath().normalize().toString());
+                    }
+                    firstTime = false;
+                }
             }
         }
 
-        return value;
+        return cacheProps.getProperty(propName);
+    }
+
+    /**
+     * Loads the properties from the specified file into the cache.
+     * @param file the specified file
+     * @return true if success, false otherwise
+     */
+    private static boolean loadProperties(String file) {
+        File f = new File(file);
+        if (SecuritySupport.doesFileExist(f)) {
+            try (final InputStream in = SecuritySupport.getFileInputStream(f)) {
+                cacheProps.load(in);
+                return true;
+            } catch (IOException e) {
+                // ignore file not found error
+            }
+        }
+        return false;
     }
 
     /**

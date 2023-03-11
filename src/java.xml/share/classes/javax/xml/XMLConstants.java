@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,11 +240,11 @@ public final class XMLConstants {
          *
          *
          * <p>
-         * <b>jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format and typically located in the {@code conf}
-         * directory of the Java installation. If the file exists and the system
-         * property is specified, its value will be used to override the default
-         * of the property.
+         * <b>Configuration File:</b>
+         * The property can be set set in the
+         * <a href="../../module-summary.html#ConfigurationFile">configuration file</a>.
+         * If the file exists and the system property is specified, its value will
+         * be used to override the default of the property.
          *
          *
          * @since 1.7
@@ -303,11 +303,11 @@ public final class XMLConstants {
          * system property {@code javax.xml.accessExternalSchema}
          *
          * <p>
-         * <b>jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format and typically located in the {@code conf}
-         * directory of the Java installation. If the file exists and the system
-         * property is specified, its value will be used to override the default
-         * of the property.
+         * <b>Configuration File:</b>
+         * The property can be set in the
+         * <a href="../../module-summary.html#ConfigurationFile">configuration file</a>.
+         * If the file exists and the system property is specified, its value will
+         * be used to override the default of the property.
          *
          * @since 1.7
          */
@@ -367,11 +367,11 @@ public final class XMLConstants {
          * system property {@code javax.xml.accessExternalStylesheet}
          *
          * <p>
-         * <b>jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format and typically located in the {@code conf}
-         * directory of the Java installation. If the file exists and the system
-         * property is specified, its value will be used to override the default
-         * of the property.
+         * <b>Configuration File:</b>
+         * The property can be set in the
+         * <a href="../../module-summary.html#ConfigurationFile">configuration file</a>.
+         * If the file exists and the system property is specified, its value will
+         * be used to override the default of the property.
          *
          * @since 1.7
          */
@@ -384,7 +384,7 @@ public final class XMLConstants {
          * <p>
          * Instructs XML processors to use XML Catalogs to resolve entity references.
          * Catalogs may be set through JAXP factories, system properties, or
-         * jaxp.properties by using the {@code javax.xml.catalog.files} property
+         * configuration file by using the {@code javax.xml.catalog.files} property
          * defined in {@link javax.xml.catalog.CatalogFeatures}.
          * The following code enables Catalog on SAX parser:
          * <pre>{@code
@@ -405,11 +405,11 @@ public final class XMLConstants {
          * system property {@code javax.xml.useCatalog}
          *
          * <p>
-         * <b>jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format and typically located in the {@code conf}
-         * directory of the Java installation. If the file exists and the system
-         * property is specified, its value will be used to override the default
-         * value of the property.
+         * <b>Configuration File:</b>
+         * The property can be set in the
+         * <a href="../../module-summary.html#ConfigurationFile">configuration file</a>.
+         * If the file exists and the system property is specified, its value will
+         * be used to override the default of the property.
          *
          * @since 9
          */
