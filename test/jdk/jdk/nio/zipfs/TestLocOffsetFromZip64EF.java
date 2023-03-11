@@ -61,6 +61,8 @@ public class TestLocOffsetFromZip64EF {
             + Integer.BYTES; // Start disk
     // The Zip64 Magic value for 32-bit fields
     public static final int ZIP64_MAGIC_VALUE = 0XFFFFFFFF;
+    // The 'unknown' tag, see APPNOTE.txt
+    private static final short UNKNOWN_TAG = (short) 0x9902;
 
     /**
      * Create the files used by this test
@@ -167,7 +169,7 @@ public class TestLocOffsetFromZip64EF {
             // We'll update this below
             byte[] zip64 = new byte[ZIP64_SIZE];
             ByteBuffer buffer = ByteBuffer.wrap(zip64).order(ByteOrder.LITTLE_ENDIAN);
-            buffer.putShort((short) 0x42); // Opaque tag makes ZipEntry.setExtra ignore it
+            buffer.putShort(UNKNOWN_TAG); // Opaque tag makes ZipEntry.setExtra ignore it
             buffer.putShort((short) (zip64.length - 2 * Short.BYTES)); // Data size
             e.setExtra(zip64);
 
