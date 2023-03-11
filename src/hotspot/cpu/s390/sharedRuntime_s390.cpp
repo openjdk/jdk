@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -1541,9 +1542,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                           // Just resize the existing one.
 #endif
 
-  wrapper_FrameDone = __ offset();
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(masm);
 
-  __ verify_thread();
+  wrapper_FrameDone = __ offset();
 
   // Native nmethod wrappers never take possession of the oop arguments.
   // So the caller will gc the arguments.
@@ -1967,7 +1969,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //--------------------------------------------------------------------
   // Clear "last Java frame" SP and PC.
   //--------------------------------------------------------------------
-  __ verify_thread(); // Z_thread must be correct.
 
   __ reset_last_Java_frame();
 
@@ -2617,7 +2618,6 @@ void SharedRuntime::generate_deopt_blob() {
 
   // stack: ("unpack" frame, deoptee, caller_of_deoptee, ...).
 
-  {
   const Register unroll_block_reg  = Z_tmp_2;
 
   // we need to set `last_Java_frame' because `fetch_unroll_info' will
@@ -2632,8 +2632,8 @@ void SharedRuntime::generate_deopt_blob() {
   // despite it's marked as "leaf call"!
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), Z_thread, exec_mode_reg);
   // Set an oopmap for the call site this describes all our saved volatile registers
-  int offs = __ offset();
-  oop_maps->add_gc_map(offs, map);
+  int oop_map_offs = __ offset();
+  oop_maps->add_gc_map(oop_map_offs, map);
 
   __ reset_last_Java_frame();
   // save the return value.
@@ -2675,7 +2675,6 @@ void SharedRuntime::generate_deopt_blob() {
 
   // stack: (skeletal interpreter frame, ..., optional skeletal
   // interpreter frame, caller of deoptee, ...).
-  }
 
   // push an "unpack" frame taking care of float / int return values.
   __ push_frame(RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers));
@@ -2688,7 +2687,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ z_std(Z_FRET, offset_of(frame::z_abi_160_spill, spill[1]), Z_SP);
 
   // let the unpacker layout information in the skeletal frames just allocated.
-  __ get_PC(Z_RET);
+  __ get_PC(Z_RET, oop_map_offs - __ offset());
   __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_RET);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames),
                   Z_thread/*thread*/, exec_mode_reg/*exec_mode*/);

@@ -24,19 +24,20 @@
 /**
  * @test
  * @summary Stress test asynchronous Thread.getStackTrace
- * @requires vm.debug != true
+ * @requires vm.debug != true & vm.continuations
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} GetStackTraceALot.java ../ThreadBuilders.java
- * @run main/othervm --enable-preview GetStackTraceALot
- *
+ * @enablePreview
+ * @compile GetStackTraceALot.java ../ThreadBuilders.java
+ * @run main GetStackTraceALot
  */
 
 /**
  * @test
- * @requires vm.debug == true
+ * @requires vm.debug == true & vm.continuations
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} GetStackTraceALot.java ../ThreadBuilders.java
- * @run main/othervm/timeout=300 --enable-preview GetStackTraceALot 1000
+ * @enablePreview
+ * @compile GetStackTraceALot.java ../ThreadBuilders.java
+ * @run main/timeout=300 GetStackTraceALot 1000
  */
 
 import java.time.Duration;

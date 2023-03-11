@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <math.h>
+#include <strsafe.h>
 #include <windows.h>
 #include <winuser.h>
 
@@ -125,7 +126,7 @@ static unsigned char* getIGTable(int gamma) {
 JNIEXPORT jboolean JNICALL
     Java_sun_font_FileFontStrike_initNative(JNIEnv *env, jclass unused) {
 
-    memset(igLUTable, 0,  LCDLUTCOUNT);
+    memset(igLUTable, 0, sizeof igLUTable);
 
     return JNI_TRUE;
 }
@@ -236,7 +237,7 @@ Java_sun_font_FileFontStrike__1getGlyphImageFromWindows
     name[nameLen] = '\0';
 
     if (nameLen < (sizeof(lf.lfFaceName) / sizeof(lf.lfFaceName[0]))) {
-        wcscpy(lf.lfFaceName, name);
+        StringCchCopyW(lf.lfFaceName, LF_FACESIZE, name);
     } else {
         FREE_AND_RETURN;
     }

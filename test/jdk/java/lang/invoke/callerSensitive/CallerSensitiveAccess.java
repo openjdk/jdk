@@ -62,9 +62,10 @@ public class CallerSensitiveAccess {
      */
     @DataProvider(name = "callerSensitiveMethods")
     static Object[][] callerSensitiveMethods() {
-        return callerSensitiveMethods(Object.class.getModule())
-                .map(m -> new Object[] { m, shortDescription(m) })
-                .toArray(Object[][]::new);
+        try (Stream<Method> stream = callerSensitiveMethods(Object.class.getModule())) {
+            return stream.map(m -> new Object[]{m, shortDescription(m)})
+                    .toArray(Object[][]::new);
+        }
     }
 
     /**
@@ -100,11 +101,13 @@ public class CallerSensitiveAccess {
      */
     @DataProvider(name = "accessibleCallerSensitiveMethods")
     static Object[][] accessibleCallerSensitiveMethods() {
-        return callerSensitiveMethods(Object.class.getModule())
+        try (Stream<Method> stream = callerSensitiveMethods(Object.class.getModule())) {
+            return stream
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .map(m -> { m.setAccessible(true); return m; })
                 .map(m -> new Object[] { m, shortDescription(m) })
                 .toArray(Object[][]::new);
+        }
     }
 
     /**

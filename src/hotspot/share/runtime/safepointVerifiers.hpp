@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_SAFEPOINTVERIFIERS_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // A NoSafepointVerifier object will throw an assertion failure if
 // the current thread passes a possible safepoint while this object is

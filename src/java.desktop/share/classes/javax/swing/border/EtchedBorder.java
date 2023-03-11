@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,15 @@
  */
 package javax.swing.border;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Component;
 import java.beans.ConstructorProperties;
+
+import com.sun.java.swing.SwingUtilities3;
 
 /**
  * A class which implements a simple etched border which can
@@ -119,6 +122,22 @@ public class EtchedBorder extends AbstractBorder
         this.shadow = shadow;
     }
 
+    private void paintBorderHighlight(Graphics g, Color c, int w, int h, int stkWidth) {
+        g.setColor(c);
+        g.drawRect(stkWidth/2, stkWidth/2, w-(2*stkWidth), h-(2*stkWidth));
+    }
+
+    private void paintBorderShadow(Graphics g, Color c, int w, int h, int stkWidth) {
+        g.setColor(c);
+        g.drawLine(((3*stkWidth)/2), h-((3*stkWidth)/2), ((3*stkWidth)/2), ((3*stkWidth)/2)); // left line
+        g.drawLine(((3*stkWidth)/2), ((3*stkWidth)/2), w-((3*stkWidth)/2), ((3*stkWidth)/2)); // top line
+
+        g.drawLine((stkWidth/2), h-(stkWidth-stkWidth/2),
+                w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2)); // bottom line
+        g.drawLine(w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2),
+                w-(stkWidth-stkWidth/2), stkWidth/2); // right line
+    }
+
     /**
      * Paints the border for the specified component with the
      * specified position and size.
@@ -131,22 +150,26 @@ public class EtchedBorder extends AbstractBorder
      * @param height the height of the painted border
      */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        int w = width;
-        int h = height;
+        SwingUtilities3.paintBorder(c, g,
+                                    x, y,
+                                    width, height,
+                                    this::paintUnscaledBorder);
+    }
 
-        g.translate(x, y);
+    private void paintUnscaledBorder(Component c, Graphics g,
+                                     int w, int h,
+                                     double scaleFactor) {
+        int stkWidth = (int) Math.floor(scaleFactor);
+        if (g instanceof Graphics2D) {
+            ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
+        }
 
-        g.setColor(etchType == LOWERED? getShadowColor(c) : getHighlightColor(c));
-        g.drawRect(0, 0, w-2, h-2);
-
-        g.setColor(etchType == LOWERED? getHighlightColor(c) : getShadowColor(c));
-        g.drawLine(1, h-3, 1, 1);
-        g.drawLine(1, 1, w-3, 1);
-
-        g.drawLine(0, h-1, w-1, h-1);
-        g.drawLine(w-1, h-1, w-1, 0);
-
-        g.translate(-x, -y);
+        paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
+                                                   : getShadowColor(c),
+                          w, h, stkWidth);
+        paintBorderHighlight(g, (etchType == LOWERED) ? getShadowColor(c)
+                                                      : getHighlightColor(c),
+                             w, h, stkWidth);
     }
 
     /**
@@ -154,6 +177,8 @@ public class EtchedBorder extends AbstractBorder
      *
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
+     * @throws NullPointerException if the specified {@code insets}
+     *         is {@code null}
      */
     public Insets getBorderInsets(Component c, Insets insets) {
         insets.set(2, 2, 2, 2);

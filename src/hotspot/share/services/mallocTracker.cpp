@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,68 +22,42 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
+#include "precompiled.hpp"
+#include "jvm_io.h"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
+#include "services/mallocHeader.inline.hpp"
+#include "services/mallocLimit.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-
-#include "jvm_io.h"
+#include "utilities/vmError.hpp"
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
 #ifdef ASSERT
-void MemoryCounter::update_peak_count(size_t count) {
-  size_t peak_cnt = peak_count();
-  while (peak_cnt < count) {
-    size_t old_cnt = Atomic::cmpxchg(&_peak_count, peak_cnt, count, memory_order_relaxed);
-    if (old_cnt != peak_cnt) {
-      peak_cnt = old_cnt;
-    }
-  }
-}
-
-void MemoryCounter::update_peak_size(size_t sz) {
+void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
-  while (peak_sz < sz) {
-    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, sz, memory_order_relaxed);
-    if (old_sz != peak_sz) {
+  while (peak_sz < size) {
+    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
+    if (old_sz == peak_sz) {
+      // I won
+      _peak_count = cnt;
+      break;
+    } else {
       peak_sz = old_sz;
     }
   }
 }
-
-size_t MemoryCounter::peak_count() const {
-  return Atomic::load(&_peak_count);
-}
-
-size_t MemoryCounter::peak_size() const {
-  return Atomic::load(&_peak_size);
-}
-#endif
-
-// Total malloc invocation count
-size_t MallocMemorySnapshot::total_count() const {
-  size_t amount = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
-    amount += _malloc[index].malloc_count();
-  }
-  return amount;
-}
-
-// Total malloc'd memory amount
-size_t MallocMemorySnapshot::total() const {
-  size_t amount = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
-    amount += _malloc[index].malloc_size();
-  }
-  amount += _tracking_header.size() + total_arena();
-  return amount;
-}
+#endif // ASSERT
 
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
@@ -99,127 +74,56 @@ void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
   int chunk_idx = NMTUtil::flag_to_index(mtChunk);
   _malloc[chunk_idx].record_free(arena_size);
+  _all_mallocs.deallocate(arena_size);
 }
-
 
 void MallocMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
   ::new ((void*)_snapshot)MallocMemorySnapshot();
+  MallocLimitHandler::initialize(MallocLimit);
 }
 
-void MallocHeader::mark_block_as_dead() {
-  _canary = _header_canary_dead_mark;
-  NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
-  set_footer(_footer_canary_dead_mark);
-}
+bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
 
-void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
-  assert(bad_address >= (address)this, "sanity");
+  // Ignore the limit break during error reporting to prevent secondary errors.
+  if (VMError::is_error_reported()) {
+    return false;
+  }
 
-  // This function prints block information, including hex dump, in case of a detected
-  // corruption. The hex dump should show both block header and corruption site
-  // (which may or may not be close together or identical). Plus some surrounding area.
-  //
-  // Note that we use os::print_hex_dump(), which is able to cope with unmapped
-  // memory (it uses SafeFetch).
+#define FORMATTED \
+  "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
+  PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
-  st->print_cr("NMT Block at " PTR_FORMAT ", corruption at: " PTR_FORMAT ": ",
-               p2i(this), p2i(bad_address));
-  static const size_t min_dump_length = 256;
-  address from1 = align_down((address)this, sizeof(void*)) - (min_dump_length / 2);
-  address to1 = from1 + min_dump_length;
-  address from2 = align_down(bad_address, sizeof(void*)) - (min_dump_length / 2);
-  address to2 = from2 + min_dump_length;
-  if (from2 > to1) {
-    // Dump gets too large, split up in two sections.
-    os::print_hex_dump(st, from1, to1, 1);
-    st->print_cr("...");
-    os::print_hex_dump(st, from2, to2, 1);
+  if (limit->mode == MallocLimitMode::trigger_fatal) {
+    fatal(FORMATTED);
   } else {
-    // print one hex dump
-    os::print_hex_dump(st, from1, to2, 1);
+    log_warning(nmt)(FORMATTED);
   }
-}
-void MallocHeader::assert_block_integrity() const {
-  char msg[256];
-  address corruption = NULL;
-  if (!check_block_integrity(msg, sizeof(msg), &corruption)) {
-    if (corruption != NULL) {
-      print_block_on_error(tty, (address)this);
-    }
-    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(this), msg);
-  }
-}
+#undef FORMATTED
 
-bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_corruption) const {
-  // Note: if you modify the error messages here, make sure you
-  // adapt the associated gtests too.
-
-  // Weed out obviously wrong block addresses of NULL or very low
-  // values. Note that we should not call this for ::free(NULL),
-  // which should be handled by os::free() above us.
-  if (((size_t)p2i(this)) < K) {
-    jio_snprintf(msg, msglen, "invalid block address");
-    return false;
-  }
-
-  // From here on we assume the block pointer to be valid. We could
-  // use SafeFetch but since this is a hot path we don't. If we are
-  // wrong, we will crash when accessing the canary, which hopefully
-  // generates distinct crash report.
-
-  // Weed out obviously unaligned addresses. NMT blocks, being the result of
-  // malloc calls, should adhere to malloc() alignment. Malloc alignment is
-  // specified by the standard by this requirement:
-  // "malloc returns a pointer which is suitably aligned for any built-in type"
-  // For us it means that it is *at least* 64-bit on all of our 32-bit and
-  // 64-bit platforms since we have native 64-bit types. It very probably is
-  // larger than that, since there exist scalar types larger than 64bit. Here,
-  // we test the smallest alignment we know.
-  // Should we ever start using std::max_align_t, this would be one place to
-  // fix up.
-  if (!is_aligned(this, sizeof(uint64_t))) {
-    *p_corruption = (address)this;
-    jio_snprintf(msg, msglen, "block address is unaligned");
-    return false;
-  }
-
-  // Check header canary
-  if (_canary != _header_canary_life_mark) {
-    *p_corruption = (address)this;
-    jio_snprintf(msg, msglen, "header canary broken");
-    return false;
-  }
-
-#ifndef _LP64
-  // On 32-bit we have a second canary, check that one too.
-  if (_alt_canary != _header_alt_canary_life_mark) {
-    *p_corruption = (address)this;
-    jio_snprintf(msg, msglen, "header canary broken");
-    return false;
-  }
-#endif
-
-  // Does block size seems reasonable?
-  if (_size >= max_reasonable_malloc_size) {
-    *p_corruption = (address)this;
-    jio_snprintf(msg, msglen, "header looks invalid (weirdly large block size)");
-    return false;
-  }
-
-  // Check footer canary
-  if (get_footer() != _footer_canary_life_mark) {
-    *p_corruption = footer_address();
-    jio_snprintf(msg, msglen, "footer canary broken at " PTR_FORMAT " (buffer overflow?)",
-                p2i(footer_address()));
-    return false;
-  }
   return true;
 }
 
-bool MallocHeader::get_stack(NativeCallStack& stack) const {
-  return MallocSiteTable::access_stack(stack, _mst_marker);
+bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
+
+  // Ignore the limit break during error reporting to prevent secondary errors.
+  if (VMError::is_error_reported()) {
+    return false;
+  }
+
+#define FORMATTED \
+  "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
+  NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  if (limit->mode == MallocLimitMode::trigger_fatal) {
+    fatal(FORMATTED);
+  } else {
+    log_warning(nmt)(FORMATTED);
+  }
+#undef FORMATTED
+
+  return true;
 }
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {
@@ -238,17 +142,16 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   const NativeCallStack& stack)
 {
   assert(MemTracker::enabled(), "precondition");
-  assert(malloc_base != NULL, "precondition");
+  assert(malloc_base != nullptr, "precondition");
 
   MallocMemorySummary::record_malloc(size, flags);
-  MallocMemorySummary::record_new_malloc_header(sizeof(MallocHeader));
   uint32_t mst_marker = 0;
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::allocation_at(stack, size, &mst_marker, flags);
   }
 
   // Uses placement global new operator to initialize malloc header
-  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, stack, mst_marker);
+  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, mst_marker);
   void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.
@@ -258,32 +161,33 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 #ifdef ASSERT
   // Read back
   {
-    MallocHeader* const header2 = malloc_header(memblock);
+    const MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
     assert(header2->size() == size, "Wrong size");
     assert(header2->flags() == flags, "Wrong flags");
-    header2->assert_block_integrity();
   }
 #endif
 
   return memblock;
 }
 
-void* MallocTracker::record_free(void* memblock) {
+void* MallocTracker::record_free_block(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
-  assert(memblock != NULL, "precondition");
+  assert(memblock != nullptr, "precondition");
 
-  MallocHeader* const header = malloc_header(memblock);
-  header->assert_block_integrity();
+  MallocHeader* header = MallocHeader::resolve_checked(memblock);
 
-  MallocMemorySummary::record_free(header->size(), header->flags());
-  MallocMemorySummary::record_free_malloc_header(sizeof(MallocHeader));
-  if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
-  }
+  deaccount(header->free_info());
 
   header->mark_block_as_dead();
 
   return (void*)header;
+}
+
+void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
+  MallocMemorySummary::record_free(free_info.size, free_info.flags);
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::deallocation_at(free_info.size, free_info.mst_marker);
+  }
 }
 
 // Given a pointer, if it seems to point to the start of a valid malloced block,

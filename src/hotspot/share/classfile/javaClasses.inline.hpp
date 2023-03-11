@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,12 @@
 
 #include "classfile/javaClasses.hpp"
 
+#include "memory/referenceType.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
-#include "logging/log.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "oops/stackChunkOop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 
 void java_lang_String::set_coder(oop string, jbyte coder) {
@@ -109,7 +108,7 @@ int java_lang_String::length(oop java_string, typeArrayOop value) {
   assert(is_instance(java_string), "must be java_string");
   assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be equal to java_lang_String::value(java_string)");
-  if (value == NULL) {
+  if (value == nullptr) {
     return 0;
   }
   int arr_length = value->length();
@@ -128,20 +127,23 @@ int java_lang_String::length(oop java_string) {
 }
 
 bool java_lang_String::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::String_klass();
+  return obj != nullptr && obj->klass() == vmClasses::String_klass();
 }
 
 // Accessors
 
 oop java_lang_ref_Reference::weak_referent_no_keepalive(oop ref) {
+  assert(java_lang_ref_Reference::is_weak(ref) || java_lang_ref_Reference::is_soft(ref), "must be Weak or Soft Reference");
   return ref->obj_field_access<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::weak_referent(oop ref) {
+  assert(java_lang_ref_Reference::is_weak(ref) || java_lang_ref_Reference::is_soft(ref), "must be Weak or Soft Reference");
   return ref->obj_field_access<ON_WEAK_OOP_REF>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::phantom_referent_no_keepalive(oop ref) {
+  assert(java_lang_ref_Reference::is_phantom(ref), "must be Phantom Reference");
   return ref->obj_field_access<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
@@ -150,6 +152,10 @@ oop java_lang_ref_Reference::unknown_referent_no_keepalive(oop ref) {
 }
 
 void java_lang_ref_Reference::clear_referent(oop ref) {
+  HeapAccess<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>::oop_store_at(ref, _referent_offset, nullptr);
+}
+
+void java_lang_ref_Reference::clear_referent_raw(oop ref) {
   ref->obj_field_put_raw(_referent_offset, nullptr);
 }
 
@@ -197,6 +203,14 @@ bool java_lang_ref_Reference::is_phantom(oop ref) {
   return InstanceKlass::cast(ref->klass())->reference_type() == REF_PHANTOM;
 }
 
+bool java_lang_ref_Reference::is_weak(oop ref) {
+  return InstanceKlass::cast(ref->klass())->reference_type() == REF_WEAK;
+}
+
+bool java_lang_ref_Reference::is_soft(oop ref) {
+  return InstanceKlass::cast(ref->klass())->reference_type() == REF_SOFT;
+}
+
 inline oop java_lang_Thread::continuation(oop java_thread) {
   return java_thread->obj_field(_continuation_offset);
 }
@@ -220,159 +234,6 @@ inline void java_lang_Thread::set_jfr_epoch(oop ref, u2 epoch) {
 }
 #endif // INCLUDE_JFR
 
-inline oop jdk_internal_vm_ContinuationScope::name(oop ref) {
-  return ref->obj_field(_name_offset);
-}
-
-inline oop jdk_internal_vm_Continuation::scope(oop continuation) {
-  return continuation->obj_field(_scope_offset);
-}
-
-inline oop jdk_internal_vm_Continuation::target(oop continuation) {
-  return continuation->obj_field(_target_offset);
-}
-
-inline oop jdk_internal_vm_Continuation::parent(oop continuation) {
-  return continuation->obj_field(_parent_offset);
-}
-
-inline oop jdk_internal_vm_Continuation::yieldInfo(oop continuation) {
-  return continuation->obj_field(_yieldInfo_offset);
-}
-
-inline void jdk_internal_vm_Continuation::set_yieldInfo(oop continuation, oop value) {
-  continuation->obj_field_put(_yieldInfo_offset, value);
-}
-
-inline stackChunkOop jdk_internal_vm_Continuation::tail(oop continuation) {
-  return stackChunkOopDesc::cast(continuation->obj_field(_tail_offset));
-}
-
-inline void jdk_internal_vm_Continuation::set_tail(oop continuation, stackChunkOop value) {
-  continuation->obj_field_put(_tail_offset, value);
-}
-
-inline bool jdk_internal_vm_Continuation::done(oop continuation) {
-  return continuation->bool_field(_done_offset);
-}
-
-inline bool jdk_internal_vm_Continuation::is_preempted(oop continuation) {
-  return continuation->bool_field(_preempted_offset);
-}
-
-inline void jdk_internal_vm_Continuation::set_preempted(oop continuation, bool value) {
-  continuation->bool_field_put(_preempted_offset, (jboolean)value);
-}
-
-inline oop jdk_internal_vm_StackChunk::parent(oop chunk) {
-  return chunk->obj_field(_parent_offset);
-}
-
-inline void jdk_internal_vm_StackChunk::set_parent(oop chunk, oop value) {
-  chunk->obj_field_put(_parent_offset, value);
-}
-
-template<typename P>
-inline bool jdk_internal_vm_StackChunk::is_parent_null(oop chunk) {
-  return (oop)RawAccess<>::oop_load(chunk->field_addr<P>(_parent_offset)) == NULL;
-}
-
-template<typename P>
-inline void jdk_internal_vm_StackChunk::set_parent_raw(oop chunk, oop value) {
-  RawAccess<>::oop_store(chunk->field_addr<P>(_parent_offset), value);
-}
-
-inline oop jdk_internal_vm_StackChunk::cont(oop chunk) {
-  return chunk->obj_field(_cont_offset);
-}
-
-inline void jdk_internal_vm_StackChunk::set_cont(oop chunk, oop value) {
-  chunk->obj_field_put(_cont_offset, value);
-}
-
-template<typename P>
-inline oop jdk_internal_vm_StackChunk::cont_raw(oop chunk) {
-  return (oop)RawAccess<>::oop_load(chunk->field_addr<P>(_cont_offset));
-}
-
-template<typename P>
-inline void jdk_internal_vm_StackChunk::set_cont_raw(oop chunk, oop value) {
-  RawAccess<>::oop_store(chunk->field_addr<P>(_cont_offset), value);
-}
-
-inline int jdk_internal_vm_StackChunk::size(oop chunk) {
-  return chunk->int_field(_size_offset);
-}
-
-inline void jdk_internal_vm_StackChunk::set_size(HeapWord* chunk, int value) {
-  // Used by StackChunkAllocator before the Object has been finished,
-  // so don't cast too oop and use int_field_put in this function.
-  assert(_size_offset != 0, "must be set");
-  *(int*)(((char*)chunk) + _size_offset) = (int)value;
-}
-
-inline int jdk_internal_vm_StackChunk::sp(oop chunk) {
-  return chunk->int_field(_sp_offset);
-}
-
-inline void jdk_internal_vm_StackChunk::set_sp(oop chunk, int value) {
-  chunk->int_field_put(_sp_offset, value);
-}
-
-inline void jdk_internal_vm_StackChunk::set_sp(HeapWord* chunk, int value) {
-  // Used by StackChunkAllocator before the Object has been finished,
-  // so don't cast too oop and use int_field_put in this function.
-  assert(_sp_offset != 0, "must be set");
-  *(int*)(((char*)chunk) + _sp_offset) = (int)value;
-}
-
-inline address jdk_internal_vm_StackChunk::pc(oop chunk) {
-  return chunk->address_field(_pc_offset);
-}
-
-inline void jdk_internal_vm_StackChunk::set_pc(oop chunk, address value) {
-  chunk->address_field_put(_pc_offset, value);
-}
-
-inline int jdk_internal_vm_StackChunk::argsize(oop chunk) {
-  return chunk->int_field(_argsize_offset);
-}
-
-inline void jdk_internal_vm_StackChunk::set_argsize(oop chunk, int value) {
-  chunk->int_field_put(_argsize_offset, value);
-}
-
-inline uint8_t jdk_internal_vm_StackChunk::flags(oop chunk) {
-  return Atomic::load(chunk->field_addr<uint8_t>(_flags_offset));
-}
-
-inline void jdk_internal_vm_StackChunk::set_flags(oop chunk, uint8_t value) {
-  Atomic::store(chunk->field_addr<uint8_t>(_flags_offset), value);
-}
-
-inline uint8_t jdk_internal_vm_StackChunk::flags_acquire(oop chunk) {
-  return Atomic::load_acquire(chunk->field_addr<uint8_t>(_flags_offset));
-}
-
-inline void jdk_internal_vm_StackChunk::release_set_flags(oop chunk, uint8_t value) {
-  Atomic::release_store(chunk->field_addr<uint8_t>(_flags_offset), value);
-}
-
-inline bool jdk_internal_vm_StackChunk::try_set_flags(oop chunk, uint8_t expected_value, uint8_t new_value) {
-  return Atomic::cmpxchg(chunk->field_addr<uint8_t>(_flags_offset), expected_value, new_value) == expected_value;
-}
-
-inline int jdk_internal_vm_StackChunk::maxThawingSize(oop chunk) {
-  return chunk->int_field(_maxThawingSize_offset);
-}
-
-inline void jdk_internal_vm_StackChunk::set_maxThawingSize(oop chunk, int value) {
-#ifdef ASSERT
-  jint old = maxThawingSize(chunk);
-  log_develop_trace(continuations)("%s max_size: %d -> %d", value >= old ? "add" : "sub", old, value);
-#endif
-  chunk->int_field_put(_maxThawingSize_offset, value);
-}
 
 inline void java_lang_invoke_CallSite::set_target_volatile(oop site, oop target) {
   site->obj_field_put_volatile(_target_offset, target);
@@ -387,7 +248,7 @@ inline void java_lang_invoke_CallSite::set_target(oop site, oop target) {
 }
 
 inline bool java_lang_invoke_CallSite::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline jboolean java_lang_invoke_ConstantCallSite::is_frozen(oop site) {
@@ -395,50 +256,50 @@ inline jboolean java_lang_invoke_ConstantCallSite::is_frozen(oop site) {
 }
 
 inline bool java_lang_invoke_ConstantCallSite::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline bool java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline bool java_lang_invoke_MemberName::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::MemberName_klass();
+  return obj != nullptr && obj->klass() == vmClasses::MemberName_klass();
 }
 
 inline bool java_lang_invoke_ResolvedMethodName::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::ResolvedMethodName_klass();
+  return obj != nullptr && obj->klass() == vmClasses::ResolvedMethodName_klass();
 }
 
 inline bool java_lang_invoke_MethodType::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::MethodType_klass();
+  return obj != nullptr && obj->klass() == vmClasses::MethodType_klass();
 }
 
 inline bool java_lang_invoke_MethodHandle::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline bool java_lang_Class::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::Class_klass();
+  return obj != nullptr && obj->klass() == vmClasses::Class_klass();
 }
 
 inline Klass* java_lang_Class::as_Klass(oop java_class) {
   //%note memory_2
   assert(java_lang_Class::is_instance(java_class), "must be a Class object");
   Klass* k = ((Klass*)java_class->metadata_field(_klass_offset));
-  assert(k == NULL || k->is_klass(), "type check");
+  assert(k == nullptr || k->is_klass(), "type check");
   return k;
 }
 
 inline bool java_lang_Class::is_primitive(oop java_class) {
   // should assert:
   //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
-  bool is_primitive = (java_class->metadata_field(_klass_offset) == NULL);
+  bool is_primitive = (java_class->metadata_field(_klass_offset) == nullptr);
 
 #ifdef ASSERT
   if (is_primitive) {
     Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
-    assert(k == NULL || is_java_primitive(ArrayKlass::cast(k)->element_type()),
+    assert(k == nullptr || is_java_primitive(ArrayKlass::cast(k)->element_type()),
         "Should be either the T_VOID primitive or a java primitive");
   }
 #endif
@@ -454,11 +315,11 @@ inline size_t java_lang_Class::oop_size(oop java_class) {
 }
 
 inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
-  return obj != NULL && is_subclass(obj->klass());
+  return obj != nullptr && is_subclass(obj->klass());
 }
 
 inline bool java_lang_Module::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == vmClasses::Module_klass();
+  return obj != nullptr && obj->klass() == vmClasses::Module_klass();
 }
 
 inline int Backtrace::merge_bci_and_version(int bci, int version) {
@@ -512,7 +373,7 @@ inline Symbol* Backtrace::get_source_file_name(InstanceKlass* holder, int versio
   // the source_file_name_index for any older constant pool version
   // to be unstable so we shouldn't try to use it.
   if (holder->constants()->version() != version) {
-    return NULL;
+    return nullptr;
   } else {
     return holder->source_file_name();
   }

@@ -115,7 +115,7 @@ public abstract class AbstractProcessor implements Processor {
                         initialized &&
                         processingEnv.getSourceVersion().compareTo(SourceVersion.RELEASE_8) <= 0;
                 return arrayToSet(sat.value(), stripModulePrefixes,
-                                  "annotation type", "@SupportedAnnotationTypes");
+                                  "annotation interface", "@SupportedAnnotationTypes");
             }
         }
 

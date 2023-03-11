@@ -216,12 +216,9 @@ class NegotiateAuthentication extends AuthenticationInfo {
      */
     private byte[] firstToken() throws IOException {
         negotiator = null;
-        HashMap <String, Negotiator> cachedMap = getCache();
+        HashMap<String, Negotiator> cachedMap = getCache();
         if (cachedMap != null) {
-            negotiator = cachedMap.get(getHost());
-            if (negotiator != null) {
-                cachedMap.remove(getHost()); // so that it is only used once
-            }
+            negotiator = cachedMap.remove(getHost()); // so that it is only used once
         }
         if (negotiator == null) {
             negotiator = Negotiator.getNegotiator(hci);

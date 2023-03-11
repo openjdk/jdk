@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
  */
 
 package jdk.internal.net.http.common;
-
-import sun.net.NetProperties;
-import sun.net.util.IPAddressUtil;
-import sun.net.www.HeaderParser;
 
 import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLException;
@@ -73,10 +69,16 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.net.http.common.DebugLogger.LoggerConfig;
+import jdk.internal.net.http.HttpRequestImpl;
+
+import sun.net.NetProperties;
+import sun.net.util.IPAddressUtil;
+import sun.net.www.HeaderParser;
+
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.joining;
-import jdk.internal.net.http.HttpRequestImpl;
 
 /**
  * Miscellaneous utilities
@@ -98,16 +100,54 @@ public final class Utils {
 //            TESTING = AccessController.doPrivileged(action) != null;
 //        } else TESTING = false;
 //    }
-    public static final boolean DEBUG = // Revisit: temporary dev flag.
-            getBooleanProperty(DebugLogger.HTTP_NAME, false);
-    public static final boolean DEBUG_WS = // Revisit: temporary dev flag.
-            getBooleanProperty(DebugLogger.WS_NAME, false);
-    public static final boolean DEBUG_HPACK = // Revisit: temporary dev flag.
-            getBooleanProperty(DebugLogger.HPACK_NAME, false);
+    public static final LoggerConfig DEBUG_CONFIG =
+            getLoggerConfig(DebugLogger.HTTP_NAME, LoggerConfig.OFF);
+    public static final LoggerConfig DEBUG_WS_CONFIG =
+            getLoggerConfig(DebugLogger.WS_NAME, LoggerConfig.OFF);
+    public static final LoggerConfig DEBUG_HPACK_CONFIG =
+            getLoggerConfig(DebugLogger.HPACK_NAME, LoggerConfig.OFF);
+
+    public static final boolean DEBUG = DEBUG_CONFIG.on(); // Revisit: temporary dev flag.
+    public static final boolean DEBUG_WS = DEBUG_WS_CONFIG.on(); // Revisit: temporary dev flag.
     public static final boolean TESTING = DEBUG;
 
     public static final boolean isHostnameVerificationDisabled = // enabled by default
             hostnameVerificationDisabledValue();
+
+    private static LoggerConfig getLoggerConfig(String loggerName, LoggerConfig def) {
+        PrivilegedAction<String> action = () -> System.getProperty(loggerName);
+        @SuppressWarnings("removal")
+        var prop = AccessController.doPrivileged(action);
+        if (prop == null) return def;
+        var config = LoggerConfig.OFF;
+        for (var s : prop.split(",")) {
+            s = s.trim();
+            if (s.isEmpty()) continue;
+            int len = s.length();
+            switch (len) {
+                case 3 -> {
+                    if (s.regionMatches(true, 0, "err", 0, 3)) {
+                        config = config.withErrLevel(Level.ALL);
+                        continue;
+                    }
+                    if (s.regionMatches(true, 0, "out", 0, 3)) {
+                        config = config.withOutLevel(Level.ALL);
+                        continue;
+                    }
+                    if (s.regionMatches(true, 0, "log", 0, 3)) {
+                        config = config.withLogLevel(Level.ALL);
+                    }
+                }
+                case 4 -> {
+                    if (s.regionMatches(true, 0, "true", 0, 4)) {
+                        config = config.withErrLevel(Level.ALL).withLogLevel(Level.ALL);
+                    }
+                }
+                default -> { continue; }
+            }
+        }
+        return config;
+    }
 
     private static boolean hostnameVerificationDisabledValue() {
         String prop = getProperty("jdk.internal.httpclient.disableHostnameVerification");
@@ -665,6 +705,14 @@ public final class Utils {
         return false;
     }
 
+    public static boolean hasRemaining(ByteBuffer[] bufs) {
+        for (ByteBuffer buf : bufs) {
+            if (buf.hasRemaining())
+                return true;
+        }
+        return false;
+    }
+
     public static long remaining(List<ByteBuffer> bufs) {
         long remain = 0;
         for (ByteBuffer buf : bufs) {
@@ -765,13 +813,24 @@ public final class Utils {
 
     /**
      * Get a logger for debug HTTP traces.
-     *
+     * <p>
      * The logger should only be used with levels whose severity is
-     * {@code <= DEBUG}. By default, this logger will forward all messages
-     * logged to an internal logger named "jdk.internal.httpclient.debug".
-     * In addition, if the property -Djdk.internal.httpclient.debug=true is set,
-     * it will print the messages on stderr.
-     * The logger will add some decoration to the printed message, in the form of
+     * {@code <= DEBUG}.
+     * <p>
+     * The output of this logger is controlled by the system property
+     * -Djdk.internal.httpclient.debug. The value of the property is
+     * a comma separated list of tokens. The following tokens are
+     * recognized:
+     * <ul>
+     *   <li> err: the messages will be logged on System.err</li>
+     *   <li> out: the messages will be logged on System.out</li>
+     *   <li> log: the messages will be forwarded to an internal
+     *        System.Logger named "jdk.internal.httpclient.debug"</li>
+     *   <li> true: this is equivalent to "err,log":  the messages will be logged
+     *        both on System.err, and forwarded to the internal logger.</li>
+     * </ul>
+     *
+     * This logger will add some decoration to the printed message, in the form of
      * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
      *
      * @param dbgTag A lambda that returns a string that identifies the caller
@@ -780,72 +839,26 @@ public final class Utils {
      * @return A logger for HTTP internal debug traces
      */
     public static Logger getDebugLogger(Supplier<String> dbgTag) {
-        return getDebugLogger(dbgTag, DEBUG);
+        return DebugLogger.createHttpLogger(dbgTag, DEBUG_CONFIG);
     }
+
 
     /**
      * Get a logger for debug HTTP traces.The logger should only be used
      * with levels whose severity is {@code <= DEBUG}.
      *
-     * By default, this logger will forward all messages logged to an internal
-     * logger named "jdk.internal.httpclient.debug".
-     * In addition, if the message severity level is >= to
-     * the provided {@code errLevel} it will print the messages on stderr.
-     * The logger will add some decoration to the printed message, in the form of
-     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
-     *
-     * @apiNote To obtain a logger that will always print things on stderr in
-     *          addition to forwarding to the internal logger, use
-     *          {@code getDebugLogger(this::dbgTag, Level.ALL);}.
-     *          This is also equivalent to calling
-     *          {@code getDebugLogger(this::dbgTag, true);}.
-     *          To obtain a logger that will only forward to the internal logger,
-     *          use {@code getDebugLogger(this::dbgTag, Level.OFF);}.
-     *          This is also equivalent to calling
-     *          {@code getDebugLogger(this::dbgTag, false);}.
+     * If {@code on} is false, returns a logger that doesn't log anything.
+     * Otherwise, returns a logger equivalent to {@link #getDebugLogger(Supplier)}.
      *
      * @param dbgTag A lambda that returns a string that identifies the caller
      *               (e.g: "SocketTube(3)", or "Http2Connection(SocketTube(3))")
-     * @param errLevel The level above which messages will be also printed on
-     *               stderr (in addition to be forwarded to the internal logger).
-     *
-     * @return A logger for HTTP internal debug traces
-     */
-    static Logger getDebugLogger(Supplier<String> dbgTag, Level errLevel) {
-        return DebugLogger.createHttpLogger(dbgTag, Level.OFF, errLevel);
-    }
-
-    /**
-     * Get a logger for debug HTTP traces.The logger should only be used
-     * with levels whose severity is {@code <= DEBUG}.
-     *
-     * By default, this logger will forward all messages logged to an internal
-     * logger named "jdk.internal.httpclient.debug".
-     * In addition, the provided boolean {@code on==true}, it will print the
-     * messages on stderr.
-     * The logger will add some decoration to the printed message, in the form of
-     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
-     *
-     * @apiNote To obtain a logger that will always print things on stderr in
-     *          addition to forwarding to the internal logger, use
-     *          {@code getDebugLogger(this::dbgTag, true);}.
-     *          This is also equivalent to calling
-     *          {@code getDebugLogger(this::dbgTag, Level.ALL);}.
-     *          To obtain a logger that will only forward to the internal logger,
-     *          use {@code getDebugLogger(this::dbgTag, false);}.
-     *          This is also equivalent to calling
-     *          {@code getDebugLogger(this::dbgTag, Level.OFF);}.
-     *
-     * @param dbgTag A lambda that returns a string that identifies the caller
-     *               (e.g: "SocketTube(3)", or "Http2Connection(SocketTube(3))")
-     * @param on  Whether messages should also be printed on
-     *               stderr (in addition to be forwarded to the internal logger).
+     * @param on  Whether the logger is enabled.
      *
      * @return A logger for HTTP internal debug traces
      */
     public static Logger getDebugLogger(Supplier<String> dbgTag, boolean on) {
-        Level errLevel = on ? Level.ALL : Level.OFF;
-        return getDebugLogger(dbgTag, errLevel);
+        LoggerConfig config = on ? DEBUG_CONFIG : LoggerConfig.OFF;
+        return DebugLogger.createHttpLogger(dbgTag, config);
     }
 
     /**
@@ -879,22 +892,12 @@ public final class Utils {
      * Get a logger for debug HPACK traces.The logger should only be used
      * with levels whose severity is {@code <= DEBUG}.
      *
-     * By default, this logger will forward all messages logged to an internal
-     * logger named "jdk.internal.httpclient.hpack.debug".
-     * In addition, if the message severity level is >= to
-     * the provided {@code errLevel} it will print the messages on stderr.
-     * The logger will add some decoration to the printed message, in the form of
-     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
-     *
-     * @apiNote To obtain a logger that will always print things on stderr in
-     *          addition to forwarding to the internal logger, use
-     *          {@code getHpackLogger(this::dbgTag, Level.ALL);}.
-     *          This is also equivalent to calling
-     *          {@code getHpackLogger(this::dbgTag, true);}.
-     *          To obtain a logger that will only forward to the internal logger,
-     *          use {@code getHpackLogger(this::dbgTag, Level.OFF);}.
-     *          This is also equivalent to calling
-     *          {@code getHpackLogger(this::dbgTag, false);}.
+     * By default, this logger has a configuration equivalent to that
+     * returned by {@link #getHpackLogger(Supplier)}. This original
+     * configuration is amended by the provided {@code errLevel} in
+     * the following way: if the message severity level is >= to
+     * the provided {@code errLevel} the message will additionally
+     * be printed on stderr.
      *
      * @param dbgTag A lambda that returns a string that identifies the caller
      *               (e.g: "Http2Connection(SocketTube(3))/hpack.Decoder(3)")
@@ -904,107 +907,72 @@ public final class Utils {
      * @return A logger for HPACK internal debug traces
      */
     public static Logger getHpackLogger(Supplier<String> dbgTag, Level errLevel) {
-        Level outLevel = Level.OFF;
-        return DebugLogger.createHpackLogger(dbgTag, outLevel, errLevel);
+        return DebugLogger.createHpackLogger(dbgTag, DEBUG_HPACK_CONFIG.withErrLevel(errLevel));
     }
 
     /**
      * Get a logger for debug HPACK traces.The logger should only be used
      * with levels whose severity is {@code <= DEBUG}.
      *
-     * By default, this logger will forward all messages logged to an internal
-     * logger named "jdk.internal.httpclient.hpack.debug".
-     * In addition, the provided boolean {@code on==true}, it will print the
-     * messages on stderr.
-     * The logger will add some decoration to the printed message, in the form of
-     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
+     * The logger should only be used with levels whose severity is
+     * {@code <= DEBUG}.
+     * <p>
+     * The output of this logger is controlled by the system property
+     * -Djdk.internal.httpclient.hpack.debug. The value of the property is
+     * a comma separated list of tokens. The following tokens are
+     * recognized:
+     * <ul>
+     *   <li> err: the messages will be logged on System.err</li>
+     *   <li> out: the messages will be logged on System.out</li>
+     *   <li> log: the messages will be forwarded to an internal
+     *        System.Logger named "jdk.internal.httpclient.hpack.debug"</li>
+     *   <li> true: this is equivalent to "err,log":  the messages will be logged
+     *        both on System.err, and forwarded to the internal logger.</li>
+     * </ul>
      *
-     * @apiNote To obtain a logger that will always print things on stderr in
-     *          addition to forwarding to the internal logger, use
-     *          {@code getHpackLogger(this::dbgTag, true);}.
-     *          This is also equivalent to calling
-     *          {@code getHpackLogger(this::dbgTag, Level.ALL);}.
-     *          To obtain a logger that will only forward to the internal logger,
-     *          use {@code getHpackLogger(this::dbgTag, false);}.
-     *          This is also equivalent to calling
-     *          {@code getHpackLogger(this::dbgTag, Level.OFF);}.
+     * This logger will add some decoration to the printed message, in the form of
+     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
      *
      * @param dbgTag A lambda that returns a string that identifies the caller
      *               (e.g: "Http2Connection(SocketTube(3))/hpack.Decoder(3)")
-     * @param on  Whether messages should also be printed on
-     *            stderr (in addition to be forwarded to the internal logger).
      *
      * @return A logger for HPACK internal debug traces
      */
-    public static Logger getHpackLogger(Supplier<String> dbgTag, boolean on) {
-        Level errLevel = on ? Level.ALL : Level.OFF;
-        return getHpackLogger(dbgTag, errLevel);
+    public static Logger getHpackLogger(Supplier<String> dbgTag) {
+        return DebugLogger.createHpackLogger(dbgTag, DEBUG_HPACK_CONFIG);
     }
 
     /**
      * Get a logger for debug WebSocket traces.The logger should only be used
      * with levels whose severity is {@code <= DEBUG}.
+     * <p>
+     * The logger should only be used with levels whose severity is
+     * {@code <= DEBUG}.
+     * <p>
+     * The output of this logger is controlled by the system property
+     * -Djdk.internal.httpclient.websocket.debug. The value of the property is
+     * a comma separated list of tokens. The following tokens are
+     * recognized:
+     * <ul>
+     *   <li> err: the messages will be logged on System.err</li>
+     *   <li> out: the messages will be logged on System.out</li>
+     *   <li> log: the messages will be forwarded to an internal
+     *        System.Logger named "jdk.internal.httpclient.websocket.debug"</li>
+     *   <li> true: this is equivalent to "err,log":  the messages will be logged
+     *        both on System.err, and forwarded to the internal logger.</li>
+     * </ul>
      *
-     * By default, this logger will forward all messages logged to an internal
-     * logger named "jdk.internal.httpclient.websocket.debug".
-     * In addition, if the message severity level is >= to
-     * the provided {@code errLevel} it will print the messages on stderr.
-     * The logger will add some decoration to the printed message, in the form of
+     * This logger will add some decoration to the printed message, in the form of
      * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
      *
-     * @apiNote To obtain a logger that will always print things on stderr in
-     *          addition to forwarding to the internal logger, use
-     *          {@code getWebSocketLogger(this::dbgTag, Level.ALL);}.
-     *          This is also equivalent to calling
-     *          {@code getWSLogger(this::dbgTag, true);}.
-     *          To obtain a logger that will only forward to the internal logger,
-     *          use {@code getWebSocketLogger(this::dbgTag, Level.OFF);}.
-     *          This is also equivalent to calling
-     *          {@code getWSLogger(this::dbgTag, false);}.
      *
      * @param dbgTag A lambda that returns a string that identifies the caller
      *               (e.g: "WebSocket(3)")
-     * @param errLevel The level above which messages will be also printed on
-     *               stderr (in addition to be forwarded to the internal logger).
-     *
-     * @return A logger for HPACK internal debug traces
-     */
-    public static Logger getWebSocketLogger(Supplier<String> dbgTag, Level errLevel) {
-        Level outLevel = Level.OFF;
-        return DebugLogger.createWebSocketLogger(dbgTag, outLevel, errLevel);
-    }
-
-    /**
-     * Get a logger for debug WebSocket traces.The logger should only be used
-     * with levels whose severity is {@code <= DEBUG}.
-     *
-     * By default, this logger will forward all messages logged to an internal
-     * logger named "jdk.internal.httpclient.websocket.debug".
-     * In addition, the provided boolean {@code on==true}, it will print the
-     * messages on stderr.
-     * The logger will add some decoration to the printed message, in the form of
-     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
-     *
-     * @apiNote To obtain a logger that will always print things on stderr in
-     *          addition to forwarding to the internal logger, use
-     *          {@code getWebSocketLogger(this::dbgTag, true);}.
-     *          This is also equivalent to calling
-     *          {@code getWebSocketLogger(this::dbgTag, Level.ALL);}.
-     *          To obtain a logger that will only forward to the internal logger,
-     *          use {@code getWebSocketLogger(this::dbgTag, false);}.
-     *          This is also equivalent to calling
-     *          {@code getHpackLogger(this::dbgTag, Level.OFF);}.
-     *
-     * @param dbgTag A lambda that returns a string that identifies the caller
-     *               (e.g: "WebSocket(3)")
-     * @param on  Whether messages should also be printed on
-     *            stderr (in addition to be forwarded to the internal logger).
      *
      * @return A logger for WebSocket internal debug traces
      */
-    public static Logger getWebSocketLogger(Supplier<String> dbgTag, boolean on) {
-        Level errLevel = on ? Level.ALL : Level.OFF;
-        return getWebSocketLogger(dbgTag, errLevel);
+    public static Logger getWebSocketLogger(Supplier<String> dbgTag) {
+        return DebugLogger.createWebSocketLogger(dbgTag, DEBUG_WS_CONFIG);
     }
 
     /**

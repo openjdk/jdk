@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,7 +406,6 @@ static int getWinTimeZone(char *winZoneName)
 static char *matchJavaTZ(const char *java_home_dir, char *tzName)
 {
     int line;
-    int IDmatched = 0;
     FILE *fp;
     char *javaTZName = NULL;
     char *items[TZ_NITEMS];

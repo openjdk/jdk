@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,10 @@
 #include "runtime/task.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
-                        "ObjectAlignmentInBytes (" INTX_FORMAT ") must be "
+                        "ObjectAlignmentInBytes (%d) must be "
                         "power of 2\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -43,8 +43,8 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
   // In case page size is very small.
   if (value >= (intx)os::vm_page_size()) {
     JVMFlag::printError(verbose,
-                        "ObjectAlignmentInBytes (" INTX_FORMAT ") must be "
-                        "less than page size (%d)\n",
+                        "ObjectAlignmentInBytes (%d) must be "
+                        "less than page size (" SIZE_FORMAT ")\n",
                         value, os::vm_page_size());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -86,18 +86,6 @@ JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
                         JVMFlagLimit::last_checked_flag()->type_string(),
                         JVMFlagLimit::last_checked_flag()->name(),
                         value, min, max_uintx);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-
-  return JVMFlag::SUCCESS;
-}
-
-JVMFlag::Error ExtentLocalCacheSizeConstraintFunc(intx value, bool verbose) {
-  if (!is_power_of_2(value)) {
-    JVMFlag::printError(verbose,
-                        "ExtentLocalCacheSize (" INTX_FORMAT ") must be "
-                        "power of 2\n",
-                        value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 

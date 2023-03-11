@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
 #include "asm/macroAssembler.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/icache.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "register_arm.hpp"
 
 // -------------------------------------------------------------------
@@ -63,7 +63,7 @@ class RawNativeInstruction {
 
   // illegal instruction used by NativeJump::patch_verified_entry
   // permanently undefined (UDF): 0xe << 28 | 0b1111111 << 20 | 0b1111 << 4
-  static const int zombie_illegal_instruction = 0xe7f000f0;
+  static const int not_entrant_illegal_instruction = 0xe7f000f0;
 
   static int decode_rotated_imm12(int encoding) {
     int base = encoding & 0xff;
@@ -77,9 +77,12 @@ class RawNativeInstruction {
   address instruction_address()      const { return addr_at(0); }
   address next_raw_instruction_address() const { return addr_at(instruction_size); }
 
+  static int size() { return instruction_size; }
+
   static RawNativeInstruction* at(address address) {
     return (RawNativeInstruction*)address;
   }
+
   RawNativeInstruction* next_raw() const {
     return at(next_raw_instruction_address());
   }
@@ -434,33 +437,40 @@ inline NativeCall* nativeCall_before(address return_address) {
 
 class NativePostCallNop: public NativeInstruction {
 public:
-  bool check() const { Unimplemented(); return false; }
-  int displacement() const { Unimplemented(); return 0; }
-  void patch(jint diff) { Unimplemented(); }
-  void make_deopt() { Unimplemented(); }
+  bool check() const { return is_nop(); }
+  int displacement() const { return 0; }
+  void patch(jint diff);
+  void make_deopt();
 };
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {
-  Unimplemented();
-  return NULL;
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  if (nop->check()) {
+    return nop;
+  }
+  return nullptr;
 }
 
 class NativeDeoptInstruction: public NativeInstruction {
 public:
-  address instruction_address() const       { Unimplemented(); return NULL; }
-  address next_instruction_address() const  { Unimplemented(); return NULL; }
+  enum {
+    instruction_size            =    4,
+    instruction_offset          =    0,
+  };
 
-  void  verify() { Unimplemented(); }
+  address instruction_address() const       { return addr_at(instruction_offset); }
+  address next_instruction_address() const  { return addr_at(instruction_size); }
+
+  void  verify();
 
   static bool is_deopt_at(address instr) {
-    Unimplemented();
-    return false;
+    assert(instr != nullptr, "");
+    uint32_t value = *(uint32_t *) instr;
+    return value == 0xe7fdecfa;
   }
 
   // MT-safe patching
-  static void insert(address code_pos) {
-    Unimplemented();
-  }
+  static void insert(address code_pos);
 };
 
 #endif // CPU_ARM_NATIVEINST_ARM_32_HPP

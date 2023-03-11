@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@ package pkg2;
 import pkg.C;
 
 /**
- * {@inheritDoc}
- *
- * A class that extends pkg.C from onother package and inherits some of its comments.
+ * A class that extends pkg.C from another package and inherits some of its comments.
  */
 public class E extends C {
 

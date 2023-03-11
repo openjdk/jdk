@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ class ClassLoaderHelper {
         try {
             major = Integer.parseInt(i < 0 ? osVersion : osVersion.substring(0, i));
         } catch (NumberFormatException e) {}
-        hasDynamicLoaderCache = major >= 11;
+        // SDK 10.15 and earlier always reports 10.16 instead of 11.x.x
+        hasDynamicLoaderCache = major >= 11 || osVersion.equals("10.16");
     }
 
     private ClassLoaderHelper() {}

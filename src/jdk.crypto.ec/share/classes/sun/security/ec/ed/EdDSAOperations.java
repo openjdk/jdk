@@ -116,8 +116,6 @@ public class EdDSAOperations {
         IntegerModuloP rElem = subField.getElement(r);
         MutableIntegerModuloP S = kElem.mutable().setProduct(sElem);
         S.setSum(rElem);
-        // need to be reduced before output conversion
-        S.setReduced();
         byte[] sArr = S.asByteArray(byteLength);
         byte[] rArr = encode(byteLength, R);
 
@@ -256,7 +254,7 @@ public class EdDSAOperations {
 
         // set the highest bit
         if (highBits == 0) {
-            k[lastByteIndex - 1] |= 0x80;
+            k[lastByteIndex - 1] |= (byte) 0x80;
         } else {
             byte msbMaskOn = (byte) (1 << (highBits - 1));
             k[lastByteIndex] |= msbMaskOn;
@@ -278,7 +276,7 @@ public class EdDSAOperations {
     private static byte[] encode(int length, AffinePoint p) {
         byte[] result = p.getY().asByteArray(length);
         int xLSB = p.getX().asByteArray(1)[0] & 0x01;
-        result[result.length - 1] |= (xLSB << 7);
+        result[result.length - 1] |= (byte) (xLSB << 7);
         return result;
     }
 }

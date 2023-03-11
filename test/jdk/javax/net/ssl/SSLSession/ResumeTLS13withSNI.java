@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 8211806 8277881
+ * @bug 8211806 8277881 8277307
  * @summary TLS 1.3 handshake server name indication is missing on a session resume
  * @run main/othervm ResumeTLS13withSNI
  */
@@ -102,7 +102,7 @@ public class ResumeTLS13withSNI {
         SSLParameters cliSSLParams = clientEngine.getSSLParameters();
         cliSSLParams.setServerNames(List.of(SNI_NAME));
         clientEngine.setSSLParameters(cliSSLParams);
-        clientEngine.setEnabledProtocols(new String[] { "TLSv1.3" });
+        clientEngine.setEnabledProtocols(new String[] { "TLSv1.2", "TLSv1.3" });
 
         SSLEngine serverEngine = makeEngine(sslCtx, kmf, tmf, false);
         SSLParameters servSSLParams = serverEngine.getSSLParameters();
@@ -114,7 +114,7 @@ public class ResumeTLS13withSNI {
         // Create a new client-side engine which can initiate TLS session
         // resumption
         SSLEngine newCliEngine = makeEngine(sslCtx, kmf, tmf, true);
-        newCliEngine.setEnabledProtocols(new String[] { "TLSv1.3" });
+        newCliEngine.setEnabledProtocols(new String[] { "TLSv1.2", "TLSv1.3" });
         ByteBuffer resCliHello = getResumptionClientHello(newCliEngine);
 
         dumpBuffer("Resumed ClientHello Data", resCliHello);
@@ -392,6 +392,16 @@ public class ResumeTLS13withSNI {
                     // is good enough to tell us this is a resumed ClientHello.
                     foundPSK = true;
                     System.err.println("* Found pre_shared_key Extension");
+                    resCliHello.position(resCliHello.position() + extLen);
+                    break;
+                case 35:                // session_ticket
+                    // This is a TLS1.2 extension; should be empty since we're
+                    // negotiating TLS1.3. See JDK-8277307
+                    System.err.format("* Found session_ticket extension " +
+                                    "(%d bytes)\n", extLen);
+                    if (extLen != 0) {
+                        throw new Exception("Unexpected session_ticket content");
+                    }
                     resCliHello.position(resCliHello.position() + extLen);
                     break;
                 default:

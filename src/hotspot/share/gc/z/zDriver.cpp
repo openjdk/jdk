@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "gc/z/zVerify.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 
@@ -221,7 +222,6 @@ bool ZDriver::is_busy() const {
 void ZDriver::collect(const ZDriverRequest& request) {
   switch (request.cause()) {
   case GCCause::_wb_young_gc:
-  case GCCause::_wb_conc_mark:
   case GCCause::_wb_full_gc:
   case GCCause::_dcmd_gc_run:
   case GCCause::_java_lang_system_gc:
@@ -229,7 +229,7 @@ void ZDriver::collect(const ZDriverRequest& request) {
   case GCCause::_scavenge_alot:
   case GCCause::_jvmti_force_gc:
   case GCCause::_metadata_GC_clear_soft_refs:
-  case GCCause::_codecache_GC_threshold:
+  case GCCause::_codecache_GC_aggressive:
     // Start synchronous GC
     _gc_cycle_port.send_sync(request);
     break;
@@ -240,6 +240,7 @@ void ZDriver::collect(const ZDriverRequest& request) {
   case GCCause::_z_allocation_stall:
   case GCCause::_z_proactive:
   case GCCause::_z_high_usage:
+  case GCCause::_codecache_GC_threshold:
   case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
     _gc_cycle_port.send_async(request);
@@ -318,12 +319,7 @@ void ZDriver::concurrent_reset_relocation_set() {
 }
 
 void ZDriver::pause_verify() {
-  if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
-    // Full verification
-    VM_Verify op;
-    VMThread::execute(&op);
-  } else if (ZVerifyRoots || ZVerifyObjects) {
-    // Limited verification
+  if (ZVerifyRoots || ZVerifyObjects) {
     VM_ZVerify op;
     VMThread::execute(&op);
   }

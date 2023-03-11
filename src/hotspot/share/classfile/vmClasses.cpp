@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/archiveHeapLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/dictionary.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -40,8 +41,8 @@
 #include "runtime/globals.hpp"
 
 InstanceKlass* vmClasses::_klasses[static_cast<int>(vmClassID::LIMIT)]
-                                                 =  { NULL /*, NULL...*/ };
-InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { NULL /*, NULL...*/ };
+                                                 =  { nullptr /*, nullptr...*/ };
+InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { nullptr /*, nullptr...*/ };
 
 
 // CDS: scan and relocate all classes referenced by _klasses[].
@@ -52,7 +53,7 @@ void vmClasses::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 bool vmClasses::is_loaded(InstanceKlass* klass) {
-  return klass != NULL && klass->is_loaded();
+  return klass != nullptr && klass->is_loaded();
 }
 
 // Compact table of the vmSymbolIDs of all the VM classes (stored as short to save space)
@@ -101,7 +102,7 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
     Klass* k = SystemDictionary::resolve_or_fail(symbol, true, CHECK_false);
     (*klassp) = InstanceKlass::cast(k);
   }
-  return ((*klassp) != NULL);
+  return ((*klassp) != nullptr);
 }
 
 void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
@@ -135,13 +136,13 @@ void vmClasses::resolve_all(TRAPS) {
     // ConstantPool::restore_unshareable_info (restores the archived
     // resolved_references array object).
     //
-    // HeapShared::fixup_regions() fills the empty
+    // ArchiveHeapLoader::fixup_regions fills the empty
     // spaces in the archived heap regions and may use
     // vmClasses::Object_klass(), so we can do this only after
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
-    HeapShared::fixup_regions();
+    ArchiveHeapLoader::fixup_regions();
 
     // Initialize the constant pool for the Object_class
     assert(Object_klass()->is_shared(), "must be");
@@ -153,12 +154,12 @@ void vmClasses::resolve_all(TRAPS) {
     resolve_through(VM_CLASS_ID(Class_klass), scan, CHECK);
   }
 
-  assert(vmClasses::Object_klass() != NULL, "well-known classes should now be initialized");
+  assert(vmClasses::Object_klass() != nullptr, "well-known classes should now be initialized");
 
   java_lang_Object::register_natives(CHECK);
 
   // Calculate offsets for String and Class classes since they are loaded and
-  // can be used after this point.
+  // can be used after this point. These are no-op when CDS is enabled.
   java_lang_String::compute_offsets();
   java_lang_Class::compute_offsets();
 
@@ -166,31 +167,31 @@ void vmClasses::resolve_all(TRAPS) {
   Universe::initialize_basic_type_mirrors(CHECK);
   Universe::fixup_mirrors(CHECK);
 
-  // do a bunch more:
-  resolve_through(VM_CLASS_ID(Reference_klass), scan, CHECK);
+  if (UseSharedSpaces) {
+    // These should already have been initialized during CDS dump.
+    assert(vmClasses::Reference_klass()->reference_type() == REF_NONE, "sanity");
+    assert(vmClasses::SoftReference_klass()->reference_type() == REF_SOFT, "sanity");
+    assert(vmClasses::WeakReference_klass()->reference_type() == REF_WEAK, "sanity");
+    assert(vmClasses::FinalReference_klass()->reference_type() == REF_FINAL, "sanity");
+    assert(vmClasses::PhantomReference_klass()->reference_type() == REF_PHANTOM, "sanity");
+  } else {
+    // If CDS is not enabled, the references classes must be initialized in
+    // this order before the rest of the vmClasses can be resolved.
+    resolve_through(VM_CLASS_ID(Reference_klass), scan, CHECK);
 
-  // The offsets for jlr.Reference must be computed before
-  // InstanceRefKlass::update_nonstatic_oop_maps is called. That function uses
-  // the offsets to remove the referent and discovered fields from the oop maps,
-  // as they are treated in a special way by the GC. Removing these oops from the
-  // oop maps must be done before the usual subclasses of jlr.Reference are loaded.
-  java_lang_ref_Reference::compute_offsets();
+    // The offsets for jlr.Reference must be computed before
+    // InstanceRefKlass::update_nonstatic_oop_maps is called. That function uses
+    // the offsets to remove the referent and discovered fields from the oop maps,
+    // as they are treated in a special way by the GC. Removing these oops from the
+    // oop maps must be done before the usual subclasses of jlr.Reference are loaded.
+    java_lang_ref_Reference::compute_offsets();
 
-  // Preload ref klasses and set reference types
-  vmClasses::Reference_klass()->set_reference_type(REF_OTHER);
-  InstanceRefKlass::update_nonstatic_oop_maps(vmClasses::Reference_klass());
+    // Preload ref klasses and set reference types
+    InstanceRefKlass::update_nonstatic_oop_maps(vmClasses::Reference_klass());
 
-  resolve_through(VM_CLASS_ID(PhantomReference_klass), scan, CHECK);
-  vmClasses::SoftReference_klass()->set_reference_type(REF_SOFT);
-  vmClasses::WeakReference_klass()->set_reference_type(REF_WEAK);
-  vmClasses::FinalReference_klass()->set_reference_type(REF_FINAL);
-  vmClasses::PhantomReference_klass()->set_reference_type(REF_PHANTOM);
+    resolve_through(VM_CLASS_ID(PhantomReference_klass), scan, CHECK);
+  }
 
-  // JSR 292 classes
-  vmClassID jsr292_group_start = VM_CLASS_ID(MethodHandle_klass);
-  vmClassID jsr292_group_end   = VM_CLASS_ID(VolatileCallSite_klass);
-  resolve_until(jsr292_group_start, scan, CHECK);
-  resolve_through(jsr292_group_end, scan, CHECK);
   resolve_until(vmClassID::LIMIT, scan, CHECK);
 
   CollectedHeap::set_filler_object_klass(vmClasses::FillerObject_klass());
@@ -225,13 +226,13 @@ void vmClasses::resolve_all(TRAPS) {
 void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
   assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
   assert(klass->is_shared(), "Must be shared class");
-  if (klass->class_loader_data() != NULL) {
+  if (klass->class_loader_data() != nullptr) {
     return;
   }
 
   // add super and interfaces first
   Klass* super = klass->super();
-  if (super != NULL && super->class_loader_data() == NULL) {
+  if (super != nullptr && super->class_loader_data() == nullptr) {
     assert(super->is_instance_klass(), "Super should be instance klass");
     resolve_shared_class(InstanceKlass::cast(super), loader_data, domain, CHECK);
   }
@@ -239,16 +240,15 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   Array<InstanceKlass*>* ifs = klass->local_interfaces();
   for (int i = 0; i < ifs->length(); i++) {
     InstanceKlass* ik = ifs->at(i);
-    if (ik->class_loader_data()  == NULL) {
+    if (ik->class_loader_data()  == nullptr) {
       resolve_shared_class(ik, loader_data, domain, CHECK);
     }
   }
 
-  klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
+  klass->restore_unshareable_info(loader_data, domain, nullptr, THREAD);
   SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
-  unsigned int hash = dictionary->compute_hash(klass->name());
-  dictionary->add_klass(hash, klass->name(), klass);
+  dictionary->add_klass(THREAD, klass->name(), klass);
   SystemDictionary::add_to_hierarchy(klass);
   assert(klass->is_loaded(), "Must be in at least loaded state");
 }
@@ -258,7 +258,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
 // Tells if a given klass is a box (wrapper class, such as java.lang.Integer).
 // If so, returns the basic type it holds.  If not, returns T_OBJECT.
 BasicType vmClasses::box_klass_type(Klass* k) {
-  assert(k != NULL, "");
+  assert(k != nullptr, "");
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     if (_box_klasses[i] == k)
       return (BasicType)i;

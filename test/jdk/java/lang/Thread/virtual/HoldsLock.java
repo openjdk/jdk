@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,19 @@
 /**
  * @test
  * @summary Test Thread.holdsLock when lock held by carrier thread
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} HoldsLock.java
- * @run testng/othervm --enable-preview HoldsLock
- * @run testng/othervm --enable-preview -XX:+UseHeavyMonitors HoldsLock
+ * @enablePreview
+ * @run junit HoldsLock
+ */
+
+/**
+ * @test
+ * @summary Test Thread.holdsLock when lock held by carrier thread
+ * @requires vm.continuations & vm.debug
+ * @modules java.base/java.lang:+open
+ * @enablePreview
+ * @run junit/othervm -XX:+UseHeavyMonitors HoldsLock
  */
 
 import java.lang.management.LockInfo;
@@ -43,15 +52,17 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class HoldsLock {
+class HoldsLock {
     static final Object LOCK1 = new Object();
     static final Object LOCK2 = new Object();
 
-    @Test(enabled=false) // JDK-8281642
-    public void testHoldsLock() throws Exception {
+    @Disabled("JDK-8281642")
+    @Test
+    void testHoldsLock() throws Exception {
         var q = new ArrayBlockingQueue<Runnable>(5);
 
         Thread carrier = Thread.ofPlatform().start(() -> {
@@ -76,7 +87,7 @@ public class HoldsLock {
     }
 
     @Test
-    public void testThreadInfo() throws Exception {
+    void testThreadInfo() throws Exception {
         var q = new ArrayBlockingQueue<Runnable>(5);
 
         Thread carrier = spawnCarrier(q);
@@ -114,10 +125,10 @@ public class HoldsLock {
 
             if (tid == carrierId) {
                 // Carrier is WAITING on vthread
-                assertEquals(info.getThreadState(), Thread.State.WAITING);
-                assertEquals(info.getLockInfo().getClassName(), vthread.getClass().getName());
-                assertEquals(info.getLockInfo().getIdentityHashCode(), System.identityHashCode(vthread));
-                assertEquals(info.getLockOwnerId(), vthreadId);
+                assertTrue(info.getThreadState() == Thread.State.WAITING);
+                assertEquals(vthread.getClass().getName(), info.getLockInfo().getClassName());
+                assertTrue(info.getLockInfo().getIdentityHashCode() == System.identityHashCode(vthread));
+                assertTrue(info.getLockOwnerId() == vthreadId);
                 foundCarrier = true;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,23 @@
   flags(BEFORE_REMOVEUSELESS,         "Before RemoveUseless") \
   flags(AFTER_PARSING,                "After Parsing") \
   flags(ITER_GVN1,                    "Iter GVN 1") \
+  flags(INCREMENTAL_INLINE_STEP,      "Incremental Inline Step") \
+  flags(INCREMENTAL_INLINE_CLEANUP,   "Incremental Inline Cleanup") \
+  flags(INCREMENTAL_INLINE,           "Incremental Inline") \
+  flags(INCREMENTAL_BOXING_INLINE,    "Incremental Boxing Inline") \
   flags(EXPAND_VUNBOX,                "Expand VectorUnbox") \
   flags(SCALARIZE_VBOX,               "Scalarize VectorBox") \
   flags(INLINE_VECTOR_REBOX,          "Inline Vector Rebox Calls") \
   flags(EXPAND_VBOX,                  "Expand VectorBox") \
   flags(ELIMINATE_VBOX_ALLOC,         "Eliminate VectorBoxAllocate") \
-  flags(PHASEIDEAL_BEFORE_EA,         "PhaseIdealLoop before EA") \
-  flags(ITER_GVN_AFTER_VECTOR,        "Iter GVN after vector box elimination") \
   flags(ITER_GVN_BEFORE_EA,           "Iter GVN before EA") \
+  flags(ITER_GVN_AFTER_VECTOR,        "Iter GVN after vector box elimination") \
+  flags(BEFORE_BEAUTIFY_LOOPS,        "Before beautify loops") \
+  flags(AFTER_BEAUTIFY_LOOPS,         "After beautify loops") \
+  flags(BEFORE_CLOOPS,                "Before CountedLoop") \
+  flags(AFTER_CLOOPS,                 "After CountedLoop") \
+  flags(PHASEIDEAL_BEFORE_EA,         "PhaseIdealLoop before EA") \
+  flags(AFTER_EA,                     "After Escape Analysis") \
   flags(ITER_GVN_AFTER_EA,            "Iter GVN after EA") \
   flags(ITER_GVN_AFTER_ELIMINATION,   "Iter GVN after eliminating allocations and locks") \
   flags(PHASEIDEALLOOP1,              "PhaseIdealLoop 1") \
@@ -47,26 +56,17 @@
   flags(CCP1,                         "PhaseCCP 1") \
   flags(ITER_GVN2,                    "Iter GVN 2") \
   flags(PHASEIDEALLOOP_ITERATIONS,    "PhaseIdealLoop iterations") \
-  flags(OPTIMIZE_FINISHED,            "Optimize finished") \
-  flags(GLOBAL_CODE_MOTION,           "Global code motion") \
-  flags(FINAL_CODE,                   "Final Code") \
-  flags(AFTER_EA,                     "After Escape Analysis") \
-  flags(BEFORE_CLOOPS,                "Before CountedLoop") \
-  flags(AFTER_CLOOPS,                 "After CountedLoop") \
-  flags(BEFORE_BEAUTIFY_LOOPS,        "Before beautify loops") \
-  flags(AFTER_BEAUTIFY_LOOPS,         "After beautify loops") \
-  flags(BEFORE_MATCHING,              "Before matching") \
-  flags(MATCHING,                     "After matching") \
-  flags(MACHANALYSIS,                 "After mach analysis") \
-  flags(INCREMENTAL_INLINE,           "Incremental Inline") \
-  flags(INCREMENTAL_INLINE_STEP,      "Incremental Inline Step") \
-  flags(INCREMENTAL_INLINE_CLEANUP,   "Incremental Inline Cleanup") \
-  flags(INCREMENTAL_BOXING_INLINE,    "Incremental Boxing Inline") \
-  flags(CALL_CATCH_CLEANUP,           "Call catch cleanup") \
   flags(MACRO_EXPANSION,              "Macro expand") \
   flags(BARRIER_EXPANSION,            "Barrier expand") \
+  flags(OPTIMIZE_FINISHED,            "Optimize finished") \
+  flags(BEFORE_MATCHING,              "Before matching") \
+  flags(MATCHING,                     "After matching") \
+  flags(GLOBAL_CODE_MOTION,           "Global code motion") \
+  flags(MACH_ANALYSIS,                "After mach analysis") \
+  flags(FINAL_CODE,                   "Final Code") \
   flags(END,                          "End") \
   flags(FAILURE,                      "Failure") \
+  flags(ALL,                          "All") \
   flags(DEBUG,                        "Debug")
 
 #define table_entry(name, description) PHASE_##name,
@@ -131,7 +131,7 @@ class PhaseNameIter {
   const char* operator*() const { return _token; }
 
   PhaseNameIter& operator++() {
-    _token = strtok_r(NULL, ",", &_saved_ptr);
+    _token = strtok_r(nullptr, ",", &_saved_ptr);
     return *this;
   }
 
@@ -159,15 +159,17 @@ class PhaseNameValidator {
 
  public:
   PhaseNameValidator(ccstrlist option, uint64_t& mask) : _valid(true), _bad(nullptr) {
-    for (PhaseNameIter iter(option); *iter != NULL && _valid; ++iter) {
+    for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
       if (PHASE_NONE == cpt) {
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all phase descriptions
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
-        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with NULLs.
+        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with nulls.
         strncpy(_bad, *iter, len);
         _valid = false;
+      } else if (PHASE_ALL == cpt) {
+        mask = ~(UINT64_C(0));
       } else {
         assert(cpt < 64, "out of bounds");
         mask |= CompilerPhaseTypeHelper::to_bitmask(cpt);
@@ -176,7 +178,7 @@ class PhaseNameValidator {
   }
 
   ~PhaseNameValidator() {
-    if (_bad != NULL) {
+    if (_bad != nullptr) {
       FREE_C_HEAP_ARRAY(char, _bad);
     }
   }

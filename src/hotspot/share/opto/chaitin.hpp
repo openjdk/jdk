@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public:
 
 
   // Alive if non-zero, dead if zero
-  bool alive() const { return _def != NULL; }
+  bool alive() const { return _def != nullptr; }
   bool is_multidef() const { return _def == NodeSentinel; }
   bool is_singledef() const { return _def != NodeSentinel; }
 
@@ -478,7 +478,7 @@ class PhaseChaitin : public PhaseRegAlloc {
 
   Block **_blks;                // Array of blocks sorted by frequency for coalescing
 
-  float _high_frequency_lrg;    // Frequency at which LRG will be spilled for debug info
+  double _high_frequency_lrg;   // Frequency at which LRG will be spilled for debug info
 
 #ifndef PRODUCT
   bool _trace_spilling;
@@ -495,7 +495,7 @@ public:
   // Do all the real work of allocate
   void Register_Allocate();
 
-  float high_frequency_lrg() const { return _high_frequency_lrg; }
+  double high_frequency_lrg() const { return _high_frequency_lrg; }
 
   // Used when scheduling info generated, not in general register allocation
   bool _scheduling_info_generated;
@@ -731,8 +731,8 @@ private:
   int yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
       Node_List *value, Node_List *regnd);
   int yank( Node *old, Block *current_block, Node_List *value, Node_List *regnd );
-  int elide_copy( Node *n, int k, Block *current_block, Node_List &value, Node_List &regnd, bool can_change_regs );
-  int use_prior_register( Node *copy, uint idx, Node *def, Block *current_block, Node_List &value, Node_List &regnd );
+  int elide_copy( Node *n, int k, Block *current_block, Node_List *value, Node_List *regnd, bool can_change_regs );
+  int use_prior_register( Node *copy, uint idx, Node *def, Block *current_block, Node_List *value, Node_List *regnd );
   bool may_be_copy_of_callee( Node *def ) const;
 
   // If nreg already contains the same constant as val then eliminate it
@@ -747,7 +747,7 @@ private:
     Node* _def;
     Node* _first_use;
   public:
-    RegDefUse() : _def(NULL), _first_use(NULL) { }
+    RegDefUse() : _def(nullptr), _first_use(nullptr) { }
     Node* def() const       { return _def;       }
     Node* first_use() const { return _first_use; }
 
@@ -758,8 +758,8 @@ private:
       }
     }
     void clear() {
-      _def = NULL;
-      _first_use = NULL;
+      _def = nullptr;
+      _first_use = nullptr;
     }
   };
   typedef GrowableArray<RegDefUse> RegToDefUseMap;
@@ -803,7 +803,7 @@ private:
 
 public:
   void dump_frame() const;
-  char *dump_register(const Node* n, char* buf) const;
+  char *dump_register(const Node* n, char* buf, size_t buf_size) const;
 private:
   static void print_chaitin_statistics();
 #endif // not PRODUCT

@@ -71,7 +71,7 @@ public class ExemptionMechanism {
     private Key keyStored = null;
 
     /**
-     * Creates a ExemptionMechanism object.
+     * Creates an {@code ExemptionMechanism} object.
      *
      * @param exmechSpi the delegate
      * @param provider the provider
@@ -87,28 +87,28 @@ public class ExemptionMechanism {
 
     /**
      * Returns the exemption mechanism name of this
-     * <code>ExemptionMechanism</code> object.
+     * {@code ExemptionMechanism} object.
      *
      * <p>This is the same name that was specified in one of the
-     * <code>getInstance</code> calls that created this
-     * <code>ExemptionMechanism</code> object.
+     * {@code getInstance} calls that created this
+     * {@code ExemptionMechanism} object.
      *
      * @return the exemption mechanism name of this
-     * <code>ExemptionMechanism</code> object.
+     * {@code ExemptionMechanism} object.
      */
     public final String getName() {
         return this.mechanism;
     }
 
     /**
-     * Returns an <code>ExemptionMechanism</code> object that implements the
+     * Returns an {@code ExemptionMechanism} object that implements the
      * specified exemption mechanism algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
-     * A new ExemptionMechanism object encapsulating the
-     * ExemptionMechanismSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
+     * A new {@code ExemptionMechanism} object encapsulating the
+     * {@code ExemptionMechanismSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -150,12 +150,12 @@ public class ExemptionMechanism {
 
 
     /**
-     * Returns an <code>ExemptionMechanism</code> object that implements the
+     * Returns an {@code ExemptionMechanism} object that implements the
      * specified exemption mechanism algorithm.
      *
-     * <p> A new ExemptionMechanism object encapsulating the
-     * ExemptionMechanismSpi implementation from the specified provider
-     * is returned.  The specified provider must be registered
+     * <p> A new {@code ExemptionMechanism} object encapsulating the
+     * {@code ExemptionMechanismSpi} implementation from the specified
+     * provider is returned. The specified provider must be registered
      * in the security provider list.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -197,12 +197,12 @@ public class ExemptionMechanism {
     }
 
     /**
-     * Returns an <code>ExemptionMechanism</code> object that implements the
+     * Returns an {@code ExemptionMechanism} object that implements the
      * specified exemption mechanism algorithm.
      *
-     * <p> A new ExemptionMechanism object encapsulating the
-     * ExemptionMechanismSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * <p> A new {@code ExemptionMechanism} object encapsulating the
+     * {@code ExemptionMechanismSpi} implementation from the specified
+     * provider object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested exemption mechanism.
@@ -217,11 +217,11 @@ public class ExemptionMechanism {
      * @return the new {@code ExemptionMechanism} object
      *
      * @throws IllegalArgumentException if the {@code provider}
-     *         is null
+     *         is {@code null}
      *
      * @throws NoSuchAlgorithmException if an {@code ExemptionMechanismSpi}
      *         implementation for the specified algorithm is not available
-     *         from the specified {@code Provider object}
+     *         from the specified {@code Provider} object
      *
      * @exception NullPointerException if {@code algorithm} is {@code null}
      *
@@ -237,9 +237,9 @@ public class ExemptionMechanism {
     }
 
     /**
-     * Returns the provider of this <code>ExemptionMechanism</code> object.
+     * Returns the provider of this {@code ExemptionMechanism} object.
      *
-     * @return the provider of this <code>ExemptionMechanism</code> object.
+     * @return the provider of this {@code ExemptionMechanism} object.
      */
     public final Provider getProvider() {
         return this.provider;
@@ -256,8 +256,8 @@ public class ExemptionMechanism {
      * @param key the key the crypto is going to use.
      *
      * @return whether the result blob of the same key has been generated
-     * successfully by this exemption mechanism; false if <code>key</code>
-     * is null.
+     * successfully by this exemption mechanism; {@code false} if {@code key}
+     * is {@code null}.
      *
      * @exception ExemptionMechanismException if problem(s) encountered
      * while determining whether the result blob has been generated successfully
@@ -278,7 +278,7 @@ public class ExemptionMechanism {
      * Returns the length in bytes that an output buffer would need to be in
      * order to hold the result of the next
      * {@link #genExemptionBlob(byte[]) genExemptionBlob}
-     * operation, given the input length <code>inputLen</code> (in bytes).
+     * operation, given the input length {@code inputLen} (in bytes).
      *
      * <p>The actual output length of the next
      * {@link #genExemptionBlob(byte[]) genExemptionBlob}
@@ -307,11 +307,11 @@ public class ExemptionMechanism {
      * Initializes this exemption mechanism with a key.
      *
      * <p>If this exemption mechanism requires any algorithm parameters
-     * that cannot be derived from the given <code>key</code>, the
+     * that cannot be derived from the given {@code key}, the
      * underlying exemption mechanism implementation is supposed to
      * generate the required parameters itself (using provider-specific
      * default values); in the case that algorithm parameters must be
-     * specified by the caller, an <code>InvalidKeyException</code> is raised.
+     * specified by the caller, an {@code InvalidKeyException} is raised.
      *
      * @param key the key for this exemption mechanism
      *
@@ -335,11 +335,11 @@ public class ExemptionMechanism {
      * parameters.
      *
      * <p>If this exemption mechanism requires any algorithm parameters
-     * and <code>params</code> is null, the underlying exemption
+     * and {@code params} is {@code null}, the underlying exemption
      * mechanism implementation is supposed to generate the required
      * parameters itself (using provider-specific default values); in the case
      * that algorithm parameters must be specified by the caller, an
-     * <code>InvalidAlgorithmParameterException</code> is raised.
+     * {@code InvalidAlgorithmParameterException} is raised.
      *
      * @param key the key for this exemption mechanism
      * @param params the algorithm parameters
@@ -367,11 +367,11 @@ public class ExemptionMechanism {
      * parameters.
      *
      * <p>If this exemption mechanism requires any algorithm parameters
-     * and <code>params</code> is null, the underlying exemption mechanism
+     * and {@code params} is {@code null}, the underlying exemption mechanism
      * implementation is supposed to generate the required parameters itself
      * (using provider-specific default values); in the case that algorithm
      * parameters must be specified by the caller, an
-     * <code>InvalidAlgorithmParameterException</code> is raised.
+     * {@code InvalidAlgorithmParameterException} is raised.
      *
      * @param key the key for this exemption mechanism
      * @param params the algorithm parameters
@@ -417,17 +417,17 @@ public class ExemptionMechanism {
 
     /**
      * Generates the exemption mechanism key blob, and stores the result in
-     * the <code>output</code> buffer.
+     * the {@code output} buffer.
      *
-     * <p>If the <code>output</code> buffer is too small to hold the result,
-     * a <code>ShortBufferException</code> is thrown. In this case, repeat this
+     * <p>If the {@code output} buffer is too small to hold the result,
+     * a {@code ShortBufferException} is thrown. In this case, repeat this
      * call with a larger output buffer. Use
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
      * @param output the buffer for the result
      *
-     * @return the number of bytes stored in <code>output</code>
+     * @return the number of bytes stored in {@code output}
      *
      * @exception IllegalStateException if this exemption mechanism is in
      * a wrong state (e.g., has not been initialized).
@@ -450,20 +450,20 @@ public class ExemptionMechanism {
 
     /**
      * Generates the exemption mechanism key blob, and stores the result in
-     * the <code>output</code> buffer, starting at <code>outputOffset</code>
+     * the {@code output} buffer, starting at {@code outputOffset}
      * inclusive.
      *
-     * <p>If the <code>output</code> buffer is too small to hold the result,
-     * a <code>ShortBufferException</code> is thrown. In this case, repeat this
+     * <p>If the {@code output} buffer is too small to hold the result,
+     * a {@code ShortBufferException} is thrown. In this case, repeat this
      * call with a larger output buffer. Use
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
      * @param output the buffer for the result
-     * @param outputOffset the offset in <code>output</code> where the result
+     * @param outputOffset the offset in {@code output} where the result
      * is stored
      *
-     * @return the number of bytes stored in <code>output</code>
+     * @return the number of bytes stored in {@code output}
      *
      * @exception IllegalStateException if this exemption mechanism is in
      * a wrong state (e.g., has not been initialized).

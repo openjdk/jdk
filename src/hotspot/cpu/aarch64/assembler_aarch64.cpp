@@ -31,7 +31,7 @@
 #include "memory/resourceArea.hpp"
 
 #ifndef PRODUCT
-const uintptr_t Assembler::asm_bp = 0x00007fffee09ac88;
+const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
 #endif
 
 static float unpack(unsigned value);
@@ -126,25 +126,23 @@ extern "C" {
 #define __ as->
 
 void Address::lea(MacroAssembler *as, Register r) const {
-  Relocation* reloc = _rspec.reloc();
-  relocInfo::relocType rtype = (relocInfo::relocType) reloc->type();
-
   switch(_mode) {
   case base_plus_offset: {
-    if (_offset == 0 && _base == r) // it's a nop
+    if (offset() == 0 && base() == r) // it's a nop
       break;
-    if (_offset > 0)
-      __ add(r, _base, _offset);
+    if (offset() > 0)
+      __ add(r, base(), offset());
     else
-      __ sub(r, _base, -_offset);
-      break;
+      __ sub(r, base(), -offset());
+    break;
   }
   case base_plus_offset_reg: {
-    __ add(r, _base, _index, _ext.op(), MAX2(_ext.shift(), 0));
+    __ add(r, base(), index(), ext().op(), MAX2(ext().shift(), 0));
     break;
   }
   case literal: {
-    if (rtype == relocInfo::none)
+    as->code_section()->relocate(as->inst_mark(), rspec());
+    if (rspec().type() == relocInfo::none)
       __ mov(r, target());
     else
       __ movptr(r, (uint64_t)target());
@@ -153,10 +151,6 @@ void Address::lea(MacroAssembler *as, Register r) const {
   default:
     ShouldNotReachHere();
   }
-}
-
-void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
-  ShouldNotReachHere();
 }
 
 #undef __
@@ -189,7 +183,7 @@ void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) 
     offset >>= 2;
     starti;
     f(1, 31), f(offset_lo, 30, 29), f(0b10000, 28, 24), sf(offset, 23, 5);
-    rf(Rd, 0);
+    zrf(Rd, 0);
   }
 
 // An "all-purpose" add/subtract immediate, per ARM documentation:
@@ -241,9 +235,20 @@ void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
 
 #undef starti
 
-Address::Address(address target, relocInfo::relocType rtype) : _mode(literal){
-  _is_lval = false;
-  _target = target;
+#ifdef ASSERT
+
+void Address::assert_is_literal() const {
+  assert(_mode == literal, "addressing mode is non-literal: %d", _mode);
+}
+
+void Address::assert_is_nonliteral() const {
+  assert(_mode != literal, "unexpected literal addressing mode");
+  assert(_mode != no_mode, "unexpected no_mode addressing mode");
+}
+
+#endif // ASSERT
+
+static RelocationHolder address_relocation(address target, relocInfo::relocType rtype) {
   switch (rtype) {
   case relocInfo::oop_type:
   case relocInfo::metadata_type:
@@ -251,34 +256,32 @@ Address::Address(address target, relocInfo::relocType rtype) : _mode(literal){
     // but in cases like icBuffer they are literals in the code stream that
     // we don't have a section for. We use none so that we get a literal address
     // which is always patchable.
-    break;
+    return RelocationHolder::none;
   case relocInfo::external_word_type:
-    _rspec = external_word_Relocation::spec(target);
-    break;
+    return external_word_Relocation::spec(target);
   case relocInfo::internal_word_type:
-    _rspec = internal_word_Relocation::spec(target);
-    break;
+    return internal_word_Relocation::spec(target);
   case relocInfo::opt_virtual_call_type:
-    _rspec = opt_virtual_call_Relocation::spec();
-    break;
+    return opt_virtual_call_Relocation::spec();
   case relocInfo::static_call_type:
-    _rspec = static_call_Relocation::spec();
-    break;
+    return static_call_Relocation::spec();
   case relocInfo::runtime_call_type:
-    _rspec = runtime_call_Relocation::spec();
-    break;
+    return runtime_call_Relocation::spec();
   case relocInfo::poll_type:
   case relocInfo::poll_return_type:
-    _rspec = Relocation::spec_simple(rtype);
-    break;
+    return Relocation::spec_simple(rtype);
   case relocInfo::none:
-    _rspec = RelocationHolder::none;
-    break;
+    return RelocationHolder::none;
   default:
     ShouldNotReachHere();
-    break;
+    return RelocationHolder::none;
   }
 }
+
+Address::Address(address target, relocInfo::relocType rtype) :
+  _mode(literal),
+  _literal(target, address_relocation(target, rtype))
+{}
 
 void Assembler::b(const Address &dest) {
   code_section()->relocate(pc(), dest.rspec());

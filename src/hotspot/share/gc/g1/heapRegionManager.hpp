@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,6 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   G1RegionToSpaceMapper* _bot_mapper;
   G1RegionToSpaceMapper* _cardtable_mapper;
-  G1RegionToSpaceMapper* _card_counts_mapper;
 
   // Keeps track of the currently committed regions in the heap. The committed regions
   // can either be active (ready for use) or inactive (ready for uncommit).
@@ -123,8 +122,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   G1HeapRegionTable _regions;
   G1RegionToSpaceMapper* _heap_mapper;
-  G1RegionToSpaceMapper* _prev_bitmap_mapper;
-  G1RegionToSpaceMapper* _next_bitmap_mapper;
+  G1RegionToSpaceMapper* _bitmap_mapper;
   FreeRegionList _free_list;
 
   void expand(uint index, uint num_regions, WorkerThreads* pretouch_workers = NULL);
@@ -162,11 +160,9 @@ public:
   HeapRegionManager();
 
   void initialize(G1RegionToSpaceMapper* heap_storage,
-                  G1RegionToSpaceMapper* prev_bitmap,
-                  G1RegionToSpaceMapper* next_bitmap,
+                  G1RegionToSpaceMapper* bitmap,
                   G1RegionToSpaceMapper* bot,
-                  G1RegionToSpaceMapper* cardtable,
-                  G1RegionToSpaceMapper* card_counts);
+                  G1RegionToSpaceMapper* cardtable);
 
   // Return the "dummy" region used for G1AllocRegion. This is currently a hardwired
   // new HeapRegion that owns HeapRegion at index 0. Since at the moment we commit
@@ -273,6 +269,7 @@ public:
   // Apply blk->do_heap_region() on all committed regions in address order,
   // terminating the iteration early if do_heap_region() returns true.
   void iterate(HeapRegionClosure* blk) const;
+  void iterate(HeapRegionIndexClosure* blk) const;
 
   void par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* hrclaimer, const uint start_index) const;
 

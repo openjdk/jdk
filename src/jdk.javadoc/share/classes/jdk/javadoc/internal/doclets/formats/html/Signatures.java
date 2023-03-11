@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import javax.lang.model.element.Element;
@@ -136,7 +135,8 @@ public class Signatures {
                 nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
             }
             HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.CLASS_SIGNATURE, typeElement);
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement);
+            linkInfo.showTypeParameterAnnotations = true;
             //Let's not link to ourselves in the signature.
             linkInfo.linkToSelf = false;
             nameSpan.add(writer.getTypeParameterLinks(linkInfo));
@@ -150,10 +150,10 @@ public class Signatures {
                 if (!utils.isPlainInterface(typeElement)) {
                     TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
                     if (superclass != null) {
-                        content.add(DocletConstants.NL);
+                        content.add(Text.NL);
                         extendsImplements.add("extends ");
                         Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                                 superclass));
                         extendsImplements.add(link);
                     }
@@ -167,14 +167,14 @@ public class Signatures {
                             continue;
                         }
                         if (isFirst) {
-                            extendsImplements.add(DocletConstants.NL);
+                            extendsImplements.add(Text.NL);
                             extendsImplements.add(utils.isPlainInterface(typeElement) ? "extends " : "implements ");
                             isFirst = false;
                         } else {
                             extendsImplements.add(", ");
                         }
                         Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                                 type));
                         extendsImplements.add(link);
                     }
@@ -192,7 +192,7 @@ public class Signatures {
                 boolean isFirst = true;
                 for (TypeMirror type : linkablePermits) {
                     if (isFirst) {
-                        content.add(DocletConstants.NL);
+                        content.add(Text.NL);
                         permitsSpan.add("permits");
                         permitsSpan.add(" ");
                         isFirst = false;
@@ -200,7 +200,7 @@ public class Signatures {
                         permitsSpan.add(", ");
                     }
                     Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                            HtmlLinkInfo.Kind.PERMITTED_SUBCLASSES,
+                            HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                             type));
                     permitsSpan.add(link);
                 }
@@ -221,8 +221,8 @@ public class Signatures {
             for (RecordComponentElement e : typeElement.getRecordComponents()) {
                 content.add(sep);
                 writer.getAnnotations(e.getAnnotationMirrors(), false)
-                        .forEach(a -> { content.add(a).add(" "); });
-                Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
+                        .forEach(a -> content.add(a).add(" "));
+                Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
                         e.asType()));
                 content.add(link);
                 content.add(Entity.NO_BREAK_SPACE);
@@ -403,7 +403,7 @@ public class Signatures {
          * @return this instance
          */
         MemberSignature setType(TypeMirror type) {
-            this.returnType = memberWriter.writer.getLink(new HtmlLinkInfo(memberWriter.configuration, HtmlLinkInfo.Kind.MEMBER, type));
+            this.returnType = memberWriter.writer.getLink(new HtmlLinkInfo(memberWriter.configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, type));
             return this;
         }
 
@@ -530,7 +530,7 @@ public class Signatures {
          */
         private int appendTypeParameters(Content target, int lastLineSeparator) {
             // Apply different wrapping strategies for type parameters
-            // depending of combined length of type parameters and return type.
+            // depending on the combined length of type parameters and return type.
             int typeParamLength = typeParameters.charCount();
 
             if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
@@ -544,7 +544,7 @@ public class Signatures {
 
             // sum below includes length of modifiers plus type params added above
             if (lineLength + returnType.charCount() > RETURN_TYPE_MAX_LINE_LENGTH) {
-                target.add(DocletConstants.NL);
+                target.add(Text.NL);
                 newLastLineSeparator = target.charCount();
             } else {
                 target.add(Entity.NO_BREAK_SPACE);
@@ -574,7 +574,7 @@ public class Signatures {
             // Exceptions
             if (exceptions != null && !exceptions.isEmpty()) {
                 CharSequence indent = " ".repeat(Math.max(0, indentSize + 1 - 7));
-                target.add(DocletConstants.NL)
+                target.add(Text.NL)
                         .add(indent)
                         .add("throws ")
                         .add(HtmlTree.SPAN(HtmlStyle.exceptions, exceptions));

@@ -55,10 +55,8 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
      *
      * @param configuration the configuration for this doclet
      */
-    public NewAPIListWriter(NewAPIBuilder builder, HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, PageMode.NEW, "new elements",
-                Text.of(getHeading(configuration)),
-                "doclet.Window_New_List");
+    public NewAPIListWriter(HtmlConfiguration configuration, DocPath filename) {
+        super(configuration, filename, configuration.newAPIPageBuilder);
     }
 
     /**
@@ -70,40 +68,41 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
-            NewAPIBuilder builder = configuration.newAPIPageBuilder;
-            NewAPIListWriter writer = new NewAPIListWriter(builder, configuration, DocPaths.NEW_LIST);
-            writer.generateSummaryListFile(builder);
+            NewAPIListWriter writer = new NewAPIListWriter(configuration, DocPaths.NEW_LIST);
+            writer.generateSummaryListFile(PageMode.NEW, "new elements",
+                    Text.of(getHeading(configuration)), "doclet.Window_New_List");
         }
     }
 
     @Override
-    protected void addExtraSection(NewAPIBuilder list, Content content) {
+    protected void addContentSelectors(Content content) {
         List<String> releases = configuration.newAPIPageBuilder.releases;
-        if (!releases.isEmpty()) {
+        if (releases.size() > 1) {
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes,
                     contents.getContent("doclet.New_API_Checkbox_Label"));
             for (int i = 0; i < releases.size(); i++) {
                 int releaseIndex = i + 1;
                 String release = releases.get(i);
                 HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
-                tabs.add(HtmlTree.LABEL(htmlId.name(),
+                tabs.add(Text.of(" ")).add(HtmlTree.LABEL(htmlId.name(),
                                 HtmlTree.INPUT("checkbox", htmlId)
                                         .put(HtmlAttr.CHECKED, "")
                                         .put(HtmlAttr.ONCLICK,
                                                 "toggleGlobal(this, '" + releaseIndex + "', 3)"))
                         .add(HtmlTree.SPAN(Text.of(release))));
             }
-            content.add(tabs);        }
+            content.add(tabs);
+        }
     }
 
     @Override
-    protected void addTableTabs(Table table, String headingKey) {
-        List<String> releases = configuration.newAPIPageBuilder.releases;
-        if (!releases.isEmpty()) {
+    protected void addTableTabs(Table<Element> table, String headingKey) {
+        table.setGridStyle(HtmlStyle.threeColumnReleaseSummary);
+        List<String> releases = builder.releases;
+        if (releases.size() > 1) {
             table.setDefaultTab(getTableCaption(headingKey))
                     .setAlwaysShowDefaultTab(true)
-                    .setRenderTabs(false)
-                    .setGridStyle(HtmlStyle.threeColumnReleaseSummary);
+                    .setRenderTabs(false);
             for (String release : releases) {
                 table.addTab(
                         releases.size() == 1

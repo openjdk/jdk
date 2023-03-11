@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,22 +34,33 @@
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
 void oopDesc::print_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
-    st->print("BAD WORD");
+    st->print_cr("BAD WORD");
   } else if (*((juint*)this) == badMetaWordVal) {
-    st->print("BAD META WORD");
+    st->print_cr("BAD META WORD");
   } else {
     klass()->oop_print_on(cast_to_oop(this), st);
   }
 }
 
 void oopDesc::print_address_on(outputStream* st) const {
-  st->print("{" INTPTR_FORMAT "}", p2i(this));
+  st->print("{" PTR_FORMAT "}", p2i(this));
 
+}
+
+void oopDesc::print_name_on(outputStream* st) const {
+  if (*((juint*)this) == badHeapWordVal) {
+    st->print_cr("BAD WORD");
+  } else if (*((juint*)this) == badMetaWordVal) {
+    st->print_cr("BAD META WORD");
+  } else {
+    st->print_cr("%s", klass()->external_name());
+  }
 }
 
 void oopDesc::print()         { print_on(tty);         }
@@ -85,7 +96,7 @@ void oopDesc::print_value_on(outputStream* st) const {
 
 
 void oopDesc::verify_on(outputStream* st, oopDesc* oop_desc) {
-  if (oop_desc != NULL) {
+  if (oop_desc != nullptr) {
     oop_desc->klass()->oop_verify_on(oop_desc, st);
   }
 }
@@ -98,10 +109,7 @@ void oopDesc::verify(oopDesc* oop_desc) {
 intptr_t oopDesc::slow_identity_hash() {
   // slow case; we have to acquire the micro lock in order to locate the header
   Thread* current = Thread::current();
-  ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
-  HandleMark hm(current);
-  Handle object(current, this);
-  return ObjectSynchronizer::identity_hash_value_for(object);
+  return ObjectSynchronizer::FastHashCode(current, this);
 }
 
 // used only for asserts and guarantees
@@ -125,14 +133,14 @@ bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
 
 // used only for asserts and guarantees
 bool oopDesc::is_oop_or_null(oop obj, bool ignore_mark_word) {
-  return obj == NULL ? true : is_oop(obj, ignore_mark_word);
+  return obj == nullptr ? true : is_oop(obj, ignore_mark_word);
 }
 
 VerifyOopClosure VerifyOopClosure::verify_oop;
 
 template <class T> void VerifyOopClosure::do_oop_work(T* p) {
   oop obj = RawAccess<>::oop_load(p);
-  guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
+  guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " PTR_FORMAT, p2i(obj));
 }
 
 void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); }
@@ -162,7 +170,7 @@ void oopDesc::set_narrow_klass(narrowKlass nk) {
 void* oopDesc::load_klass_raw(oop obj) {
   if (UseCompressedClassPointers) {
     narrowKlass narrow_klass = obj->_metadata._compressed_klass;
-    if (narrow_klass == 0) return NULL;
+    if (narrow_klass == 0) return nullptr;
     return (void*)CompressedKlassPointers::decode_raw(narrow_klass);
   } else {
     return obj->_metadata._klass;
@@ -173,7 +181,7 @@ void* oopDesc::load_oop_raw(oop obj, int offset) {
   uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
   if (UseCompressedOops) {
     narrowOop narrow_oop = *(narrowOop*)addr;
-    if (CompressedOops::is_null(narrow_oop)) return NULL;
+    if (CompressedOops::is_null(narrow_oop)) return nullptr;
     return (void*)CompressedOops::decode_raw(narrow_oop);
   } else {
     return *(void**)addr;

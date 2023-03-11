@@ -29,9 +29,9 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar TestAutoCreateSharedArchive verifySharedSpacesOff
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar TestAutoCreateSharedArchive verifySharedSpacesOn
  */
@@ -149,6 +149,10 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
 
     public static void print(String message) {
         System.out.println(message);
+    }
+
+    private static String hex(int version) {
+        return String.format("0x%x", version);
     }
 
     private static void testAutoCreateSharedArchive() throws Exception {
@@ -303,7 +307,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_WORLD)
-                      .shouldContain("Cannot handle shared archive file version " + version1 + ". Must be at least " + genericHeaderMinVersion)
+                      .shouldContain("Cannot handle shared archive file version " + hex(version1) + ". Must be at least " + hex(genericHeaderMinVersion))
                       .shouldContain("Unable to use shared archive: invalid archive")
                       .shouldNotContain("Dumping shared data to file");
             });
@@ -331,9 +335,9 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_WORLD)
-                      .shouldContain("The shared archive file version " + version2 + " does not match the required version " + currentCDSVersion)
-                      .shouldContain("UseSharedSpaces: The shared archive file has the wrong version")
-                      .shouldContain("UseSharedSpaces: Initialize dynamic archive failed")
+                      .shouldContain("The shared archive file version " + hex(version2) + " does not match the required version " + hex(currentCDSVersion))
+                      .shouldContain("The shared archive file has the wrong version")
+                      .shouldContain("Initialize dynamic archive failed")
                       .shouldContain("Dumping shared data to file");
             });
         ft2 = Files.getLastModifiedTime(Paths.get(modVersion));
@@ -396,7 +400,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed")
+                    output.shouldContain("Header checksum verification failed")
                           .shouldContain("Unable to use shared archive: invalid archive")
                           .shouldNotContain("Dumping shared data to file");
                 } else {
@@ -523,7 +527,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              .assertNormalExit(output -> {
                  output.shouldHaveExitValue(0)
                        .shouldContain(HELLO_WORLD)
-                       .shouldContain("Cannot handle shared archive file version " + version1)
+                       .shouldContain("Cannot handle shared archive file version " + hex(version1))
                        .shouldContain(versionB)
                        .shouldContain("Dumping shared data to file:");
              });
@@ -548,7 +552,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
-                 output.shouldContain("The shared archive file version " + version2 + " does not match the required version " + currentCDSVersion)
+                 output.shouldContain("The shared archive file version " + hex(version2) + " does not match the required version " + hex(currentCDSVersion))
                        .shouldContain(HELLO_WORLD)
                        .shouldContain("Dumping shared data to file:");
              });
@@ -601,7 +605,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed");
+                    output.shouldContain("Header checksum verification failed");
                 }
                 output.shouldContain(HELLO_WORLD)
                       .shouldContain("Dumping shared data to file");
@@ -630,7 +634,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_WORLD);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed");
+                    output.shouldContain("Header checksum verification failed");
                 }
                 output.shouldContain("Unable to map shared spaces")
                       .shouldNotContain("Dumping shared data to file");

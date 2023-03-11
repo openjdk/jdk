@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,9 @@ public:
   inline stackChunkOop parent() const;
   inline void set_parent(stackChunkOop value);
   template<typename P>
-  inline bool is_parent_null() const;
-  template<typename P>
   inline void set_parent_raw(oop value);
+  template<DecoratorSet decorators>
+  inline void set_parent_access(oop value);
 
   inline int stack_size() const;
 
@@ -92,10 +92,13 @@ public:
   inline void set_max_thawing_size(int value);
 
   inline oop cont() const;
-  template<typename P> inline oop cont() const;
+  template<typename P>
+  inline oop cont() const;
   inline void set_cont(oop value);
   template<typename P>
   inline void set_cont_raw(oop value);
+  template<DecoratorSet decorators>
+  inline void set_cont_access(oop value);
 
   inline int bottom() const;
 
@@ -150,6 +153,7 @@ public:
   void relativize_derived_pointers_concurrently();
   void transform();
 
+  inline void* gc_data() const;
   inline BitMapView bitmap() const;
   inline BitMap::idx_t bit_index_for(intptr_t* p) const;
   inline intptr_t* address_for_bit(BitMap::idx_t index) const;
@@ -182,12 +186,15 @@ public:
   inline void copy_from_stack_to_chunk(intptr_t* from, intptr_t* to, int size);
   inline void copy_from_chunk_to_stack(intptr_t* from, intptr_t* to, int size);
 
+  template <typename OopT>
+  inline oop load_oop(OopT* addr);
+
   using oopDesc::print_on;
   void print_on(bool verbose, outputStream* st) const;
 
   // Verifies the consistency of the chunk's data
-  bool verify(size_t* out_size = NULL, int* out_oops = NULL,
-              int* out_frames = NULL, int* out_interpreted_frames = NULL) NOT_DEBUG({ return true; });
+  bool verify(size_t* out_size = nullptr, int* out_oops = nullptr,
+              int* out_frames = nullptr, int* out_interpreted_frames = nullptr) NOT_DEBUG({ return true; });
 
 private:
   template <BarrierType barrier, ChunkFrames frames = ChunkFrames::Mixed, typename RegisterMapT>

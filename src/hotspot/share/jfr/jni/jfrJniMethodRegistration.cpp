@@ -27,7 +27,7 @@
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "utilities/exceptions.hpp"
 
 JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
@@ -57,7 +57,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"setFileNotification", (char*)"(J)V", (void*)jfr_set_file_notification,
       (char*)"setGlobalBufferCount", (char*)"(J)V", (void*)jfr_set_global_buffer_count,
       (char*)"setGlobalBufferSize", (char*)"(J)V", (void*)jfr_set_global_buffer_size,
-      (char*)"setMethodSamplingInterval", (char*)"(JJ)V", (void*)jfr_set_method_sampling_interval,
+      (char*)"setMethodSamplingPeriod", (char*)"(JJ)V", (void*)jfr_set_method_sampling_period,
       (char*)"setOutput", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_output,
       (char*)"setStackDepth", (char*)"(I)V", (void*)jfr_set_stack_depth,
       (char*)"setStackTraceEnabled", (char*)"(JZ)V", (void*)jfr_set_stacktrace_enabled,
@@ -93,7 +93,9 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"setConfiguration", (char*)"(Ljava/lang/Class;Ljdk/jfr/internal/event/EventConfiguration;)Z", (void*)jfr_set_configuration,
       (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string,
       (char*)"isExcluded", (char*)"(Ljava/lang/Class;)Z", (void*)jfr_is_class_excluded,
-      (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented
+      (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented,
+      (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
+      (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
@@ -39,7 +39,7 @@
 #include "runtime/java.hpp"
 
 static size_t calculate_heap_alignment(size_t space_alignment) {
-  size_t card_table_alignment = CardTableRS::ct_max_alignment_constraint();
+  size_t card_table_alignment = CardTable::ct_max_alignment_constraint();
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   return MAX3(card_table_alignment, space_alignment, page_size);
 }
@@ -177,7 +177,13 @@ void G1Arguments::initialize() {
     FLAG_SET_ERGO(ParallelGCThreads, 1);
   }
 
-  if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+  if (!G1UseConcRefinement) {
+    if (!FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+      log_warning(gc, ergo)("Ignoring -XX:G1ConcRefinementThreads "
+                            "because of -XX:-G1UseConcRefinement");
+    }
+    FLAG_SET_DEFAULT(G1ConcRefinementThreads, 0);
+  } else if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
     FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
   }
 

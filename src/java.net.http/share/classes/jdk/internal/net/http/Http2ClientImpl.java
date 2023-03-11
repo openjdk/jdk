@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -57,7 +56,9 @@ class Http2ClientImpl {
             Utils.getDebugLogger("Http2ClientImpl"::toString, Utils.DEBUG);
 
     private final HttpClientImpl client;
-    private volatile boolean stopping;
+
+    // only accessed from within synchronized blocks
+    private boolean stopping;
 
     Http2ClientImpl(HttpClientImpl client) {
         this.client = client;
@@ -66,7 +67,8 @@ class Http2ClientImpl {
     /* Map key is "scheme:host:port" */
     private final Map<String,Http2Connection> connections = new ConcurrentHashMap<>();
 
-    private final Set<String> failures = Collections.synchronizedSet(new HashSet<>());
+    // only accessed from within synchronized blocks
+    private final Set<String> failures = new HashSet<>();
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
@@ -188,9 +190,7 @@ class Http2ClientImpl {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
         synchronized (this) {
-            Http2Connection c1 = connections.get(c.key());
-            if (c1 != null && c1.equals(c)) {
-                connections.remove(c.key());
+            if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
@@ -199,10 +199,10 @@ class Http2ClientImpl {
 
     private EOFException STOPPED;
     void stop() {
-        synchronized (this) {stopping = true;}
         if (debug.on()) debug.log("stopping");
         STOPPED = new EOFException("HTTP/2 client stopped");
         STOPPED.setStackTrace(new StackTraceElement[0]);
+        synchronized (this) {stopping = true;}
         do {
             connections.values().forEach(this::close);
         } while (!connections.isEmpty());

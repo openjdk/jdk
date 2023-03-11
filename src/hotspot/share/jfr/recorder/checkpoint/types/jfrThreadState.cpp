@@ -28,8 +28,8 @@
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jvmtifiles/jvmti.h"
+#include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/thread.hpp"
 
 struct jvmti_thread_state {
   u8 id;

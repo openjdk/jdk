@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    Register dst,
                                    Address src,
                                    Register tmp1,
-                                   Register tmp_thread) {
+                                   Register tmp2) {
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
     return;
   }
 
@@ -108,7 +108,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                         Address dst,
                                         Register val,
                                         Register tmp1,
-                                        Register tmp2) {
+                                        Register tmp2,
+                                        Register tmp3) {
   // Verify value
   if (is_reference_type(type)) {
     // Note that src could be noreg, which means we
@@ -116,7 +117,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
     if (val != noreg) {
       Label done;
 
-      // tmp1 and tmp2 are often set to noreg.
+      // tmp1, tmp2 and tmp3 are often set to noreg.
       RegSet savedRegs = RegSet::of(rscratch1);
       __ push(savedRegs, sp);
 
@@ -131,7 +132,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   }
 
   // Store value
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, noreg);
 }
 
 #endif // ASSERT
@@ -443,6 +444,19 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   __ b(*stub->continuation());
 }
 
-#undef __
-
 #endif // COMPILER2
+
+#undef __
+#define __ masm->
+
+void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if mask is good.
+  // verifies that ZAddressBadMask & r0 == 0
+  __ ldr(tmp2, Address(rthread, ZThreadLocalData::address_bad_mask_offset()));
+  __ andr(tmp1, obj, tmp2);
+  __ cbnz(tmp1, error);
+
+  BarrierSetAssembler::check_oop(masm, obj, tmp1, tmp2, error);
+}
+
+#undef __

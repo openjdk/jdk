@@ -81,6 +81,7 @@ JVM_GetClassDeclaredConstructors
 JVM_GetClassDeclaredFields
 JVM_GetClassDeclaredMethods
 JVM_GetClassFieldsCount
+JVM_GetClassFileVersion
 JVM_GetClassInterfaces
 JVM_GetClassMethodsCount
 JVM_GetClassModifiers
@@ -155,6 +156,7 @@ JVM_IsFinalizationEnabled
 JVM_IsHiddenClass
 JVM_IsInterface
 JVM_IsPreviewEnabled
+JVM_IsContinuationsSupported
 JVM_IsPrimitiveClass
 JVM_IsRecord
 JVM_IsSameClassPackage
@@ -192,9 +194,6 @@ JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
 JVM_ReportFinalizationComplete
-JVM_ResumeThread
-JVM_ExtentLocalCache
-JVM_SetExtentLocalCache
 JVM_SetArrayElement
 JVM_SetClassSigners
 JVM_SetNativeThreadName
@@ -203,9 +202,7 @@ JVM_SetStackWalkContinuation
 JVM_SetThreadPriority
 JVM_Sleep
 JVM_StartThread
-JVM_StopThread
 JVM_SupportsCX8
-JVM_SuspendThread
 JVM_TotalMemory
 JVM_UnloadLibrary
 JVM_WaitForReferencePendingList
@@ -225,4 +222,11 @@ JVM_VirtualThreadMountBegin
 JVM_VirtualThreadMountEnd
 JVM_VirtualThreadUnmountBegin
 JVM_VirtualThreadUnmountEnd
+JVM_VirtualThreadHideFrames
+
+# Scoped values
+JVM_EnsureMaterializedForStackWalk_func
+JVM_FindScopedValueBindings
+JVM_ScopedValueCache
+JVM_SetScopedValueCache
 #

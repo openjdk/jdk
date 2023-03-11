@@ -727,9 +727,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 }
 
                 dispatchEvent(ev);
-            } catch (ThreadDeath td) {
-                XBaseWindow.ungrabInput();
-                return;
             } catch (Throwable thr) {
                 XBaseWindow.ungrabInput();
                 processException(thr);
@@ -1376,9 +1373,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                         awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
                     }
                 }
-            } catch (NumberFormatException nf) {
-                awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
-            } catch (NullPointerException npe) {
+            } catch (NumberFormatException | NullPointerException e) {
                 awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
             }
         } finally {
@@ -1493,7 +1488,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             } catch (InterruptedException ie) {
             // Note: the returned timeStamp can be incorrect in this case.
                 if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                    log.fine("Catched exception, timeStamp may not be correct (ie = " + ie + ")");
+                    log.fine("Caught exception, timeStamp may not be correct (ie = " + ie + ")");
                 }
             }
         } finally {
@@ -1911,7 +1906,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * @param task a Runnable which {@code run} method will be called
      *        on the toolkit thread when {@code interval} milliseconds
      *        elapse
-     * @param interval an interal in milliseconds
+     * @param interval an interval in milliseconds
      *
      * @throws NullPointerException if {@code task} is {@code null}
      * @throws IllegalArgumentException if {@code interval} is not positive
@@ -1996,8 +1991,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
                 try {
                     task.run();
-                } catch (ThreadDeath td) {
-                    throw td;
                 } catch (Throwable thr) {
                     processException(thr);
                 }
@@ -2392,7 +2385,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static int oops_position = 0;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected boolean syncNativeQueue(long timeout) {
@@ -2406,7 +2399,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     @Override
                     public void dispatchEvent(XEvent e) {
                         if (e.get_type() == XConstants.ConfigureNotify) {
-                            // OOPS ConfigureNotify event catched
+                            // OOPS ConfigureNotify event caught
                             oops_updated = true;
                             awtLockNotifyAll();
                         }

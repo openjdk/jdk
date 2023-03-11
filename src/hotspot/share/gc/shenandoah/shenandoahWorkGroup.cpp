@@ -30,10 +30,11 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 #include "logging/log.hpp"
+#include "runtime/threads.hpp"
 
 ShenandoahWorkerScope::ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool check) :
   _workers(workers) {
-  assert(msg != NULL, "Missing message");
+  assert(msg != nullptr, "Missing message");
 
   _n_workers = _workers->set_active_workers(nworkers);
   assert(_n_workers <= nworkers, "Must be");

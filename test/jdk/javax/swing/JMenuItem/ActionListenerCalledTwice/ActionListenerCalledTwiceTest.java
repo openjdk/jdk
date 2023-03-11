@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,37 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @key headful
  * @bug 7160951 8152492 8178448
  * @summary [macosx] ActionListener called twice for JMenuItem using ScreenMenuBar
- * @author vera.akulova@oracle.com
- * @modules java.desktop/java.awt:open
- * @library /test/lib
- * @build jdk.test.lib.Platform
+ * @requires (os.family == "mac")
  * @run main ActionListenerCalledTwiceTest
  */
 
-import jdk.test.lib.Platform;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Desktop;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 
 public class ActionListenerCalledTwiceTest {
 
-    static String menuItems[] = {"Item1", "Item2", "Item3",
-                                    "Item4", "Item5", "Item6"};
-    static KeyStroke keyStrokes[] = {
-        KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.META_MASK),
+    static final String[] menuItems = { "Item1", "Item2", "Item3",
+                                        "Item4", "Item5", "Item6" };
+    static final KeyStroke[] keyStrokes = {
+        KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.META_DOWN_MASK),
         KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
-        KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.SHIFT_MASK),
-        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_MASK),
-        KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK),
-        KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.META_MASK)
+        KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.SHIFT_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.META_DOWN_MASK)
     };
 
     static JMenuBar bar;
@@ -56,7 +59,7 @@ public class ActionListenerCalledTwiceTest {
     static volatile int listenerCallCounter = 0;
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.isOSX()) {
+        if (!System.getProperty("os.name").toLowerCase().startsWith("mac")) {
             System.out.println("This test is for MacOS only." +
                     " Automatically passed on other platforms.");
             return;
@@ -81,7 +84,10 @@ public class ActionListenerCalledTwiceTest {
 
             testForTwice(robot, "DefaultMenuBar");
         } finally {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            SwingUtilities.invokeAndWait(() -> {
+                frame.dispose();
+                Desktop.getDesktop().setDefaultMenuBar(null);
+            });
         }
     }
 

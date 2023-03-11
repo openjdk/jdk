@@ -378,7 +378,6 @@ public class StreamDecoder extends Reader {
                     eof = true;
                     if ((cb.position() == 0) && (!bb.hasRemaining()))
                         break;
-                    decoder.reset();
                 }
                 continue;
             }

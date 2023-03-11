@@ -321,24 +321,20 @@ public class SQLOutputImpl implements SQLOutput {
      *        use by a <code>SQLData</code> object attempting to write the attribute
      *        values of a UDT to the database.
      */
-    @SuppressWarnings("unchecked")
     public void writeCharacterStream(java.io.Reader x) throws SQLException {
-         BufferedReader bufReader = new BufferedReader(x);
-         try {
-             int i;
-             while( (i = bufReader.read()) != -1 ) {
+        BufferedReader bufReader = new BufferedReader(x);
+        try {
+            int i;
+            while ((i = bufReader.read()) != -1) {
                 char ch = (char)i;
-                StringBuffer strBuf = new StringBuffer();
-                strBuf.append(ch);
 
-                String str = new String(strBuf);
                 String strLine = bufReader.readLine();
 
-                writeString(str.concat(strLine));
-             }
-         } catch(IOException ioe) {
+                writeString(ch + strLine);
+            }
+        } catch (IOException ioe) {
 
-         }
+        }
     }
 
     /**
@@ -351,23 +347,17 @@ public class SQLOutputImpl implements SQLOutput {
      *        use by a <code>SQLData</code> object attempting to write the attribute
      *        values of a UDT to the database.
      */
-    @SuppressWarnings("unchecked")
     public void writeAsciiStream(java.io.InputStream x) throws SQLException {
-         BufferedReader bufReader = new BufferedReader(new InputStreamReader(x));
-         try {
-               int i;
-               while( (i=bufReader.read()) != -1 ) {
+        BufferedReader bufReader = new BufferedReader(new InputStreamReader(x));
+        try {
+            int i;
+            while ((i = bufReader.read()) != -1) {
                 char ch = (char)i;
 
-                StringBuffer strBuf = new StringBuffer();
-                strBuf.append(ch);
-
-                String str = new String(strBuf);
                 String strLine = bufReader.readLine();
-
-                writeString(str.concat(strLine));
+                writeString(ch + strLine);
             }
-          }catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new SQLException(ioe.getMessage());
         }
     }
@@ -381,23 +371,18 @@ public class SQLOutputImpl implements SQLOutput {
      *        use by a <code>SQLData</code> object attempting to write the attribute
      *        values of a UDT to the database.
      */
-    @SuppressWarnings("unchecked")
     public void writeBinaryStream(java.io.InputStream x) throws SQLException {
-         BufferedReader bufReader = new BufferedReader(new InputStreamReader(x));
-         try {
-               int i;
-             while( (i=bufReader.read()) != -1 ) {
+        BufferedReader bufReader = new BufferedReader(new InputStreamReader(x));
+        try {
+            int i;
+            while ((i = bufReader.read()) != -1) {
                 char ch = (char)i;
 
-                StringBuffer strBuf = new StringBuffer();
-                strBuf.append(ch);
-
-                String str = new String(strBuf);
                 String strLine = bufReader.readLine();
 
-                writeString(str.concat(strLine));
-             }
-        } catch(IOException ioe) {
+                writeString(ch + strLine);
+            }
+        } catch (IOException ioe) {
             throw new SQLException(ioe.getMessage());
         }
     }

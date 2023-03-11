@@ -25,12 +25,14 @@ package org.openjdk.bench.java.security;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import sun.security.util.DisabledAlgorithmConstraints;
 
 import java.security.AlgorithmConstraints;
@@ -43,8 +45,10 @@ import static sun.security.util.DisabledAlgorithmConstraints.PROPERTY_TLS_DISABL
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
 @State(Scope.Thread)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 public class AlgorithmConstraintsPermits {
 
     AlgorithmConstraints tlsDisabledAlgConstraints;

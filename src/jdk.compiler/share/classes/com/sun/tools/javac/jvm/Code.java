@@ -621,7 +621,7 @@ public class Code {
             markDead();
             break;
         case athrow:
-            state.pop(1);
+            state.pop(state.stacksize);
             markDead();
             break;
         case lstore_0:

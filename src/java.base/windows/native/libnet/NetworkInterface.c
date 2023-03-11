@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -834,7 +834,6 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0
     (JNIEnv *env, jclass cls, jobject iaObj)
 {
-    jobject netifObj = NULL;
     DWORD i;
 
     int family = getInetAddress_family(env, iaObj);

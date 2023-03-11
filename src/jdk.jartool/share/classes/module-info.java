@@ -48,6 +48,8 @@
  * @since 9
  */
 module jdk.jartool {
+    requires jdk.internal.opt;
+
     exports com.sun.jarsigner;
     exports jdk.security.jarsigner;
 

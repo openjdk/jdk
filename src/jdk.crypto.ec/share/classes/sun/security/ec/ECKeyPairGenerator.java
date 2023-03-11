@@ -25,8 +25,6 @@
 
 package sun.security.ec;
 
-import java.io.IOException;
-import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
@@ -193,11 +191,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         int seedSize = (seedBits + 7) / 8;
         byte[] privArr = generatePrivateScalar(random, ops, seedSize);
 
-        ECPoint genPoint = ecParams.getGenerator();
-        ImmutableIntegerModuloP x = field.getElement(genPoint.getAffineX());
-        ImmutableIntegerModuloP y = field.getElement(genPoint.getAffineY());
-        AffinePoint affGen = new AffinePoint(x, y);
-        Point pub = ops.multiply(affGen, privArr);
+        Point pub = ops.multiply(ecParams.getGenerator(), privArr);
         AffinePoint affPub = pub.asAffine();
 
         PrivateKey privateKey = new ECPrivateKeyImpl(privArr, ecParams);

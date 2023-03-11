@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -484,7 +485,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, lookupCharset(charsetName));
+        this(lookupCharset(charsetName), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
     }
 
     /**
@@ -517,10 +518,18 @@ public final class String
      *
      * @since  1.6
      */
-    @SuppressWarnings("removal")
     public String(byte[] bytes, int offset, int length, Charset charset) {
-        Objects.requireNonNull(charset);
-        checkBoundsOffCount(offset, length, bytes.length);
+        this(Objects.requireNonNull(charset), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
+    }
+
+    /**
+     * This method does not do any precondition checks on its arguments.
+     * <p>
+     * Important: parameter order of this method is deliberately changed in order to
+     * disambiguate it against other similar methods of this class.
+     */
+    @SuppressWarnings("removal")
+    private String(Charset charset, byte[] bytes, int offset, int length) {
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
@@ -658,6 +667,8 @@ public final class String
 
             // decode using CharsetDecoder
             int en = scale(length, cd.maxCharsPerByte());
+            cd.onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
             char[] ca = new char[en];
             if (charset.getClass().getClassLoader0() != null &&
                     System.getSecurityManager() != null) {
@@ -665,7 +676,13 @@ public final class String
                 offset = 0;
             }
 
-            int caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            int caLen;
+            try {
+                caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            } catch (CharacterCodingException x) {
+                // Substitution is enabled, so this shouldn't happen
+                throw new Error(x);
+            }
             if (COMPACT_STRINGS) {
                 byte[] bs = StringUTF16.compress(ca, 0, caLen);
                 if (bs != null) {
@@ -681,8 +698,13 @@ public final class String
 
     /*
      * Throws iae, instead of replacing, if malformed or unmappable.
+     *
+     * @param  noShare
+     *         {@code true} if the resulting string MUST NOT share the byte array,
+     *         {@code false} if the byte array can be exclusively used to construct
+     *         the string and is not modified or used for any other purpose.
      */
-    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
+    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length, boolean noShare) {
         checkBoundsOffCount(offset, length, bytes.length);
         if (length == 0) {
             return "";
@@ -693,7 +715,11 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
-                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+                if (noShare || length != bytes.length) {
+                    return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+                } else {
+                    return new String(bytes, LATIN1);
+                }
             }
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
@@ -761,7 +787,7 @@ public final class String
             return "";
         }
         if (cs == UTF_8.INSTANCE) {
-            return newStringUTF8NoRepl(src, 0, src.length);
+            return newStringUTF8NoRepl(src, 0, src.length, false);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
@@ -783,6 +809,8 @@ public final class String
         if (cd instanceof ArrayDecoder ad &&
                 ad.isASCIICompatible() &&
                 !StringCoding.hasNegatives(src, 0, src.length)) {
+            if (COMPACT_STRINGS)
+                return new String(src, LATIN1);
             return new String(src, 0, src.length, ISO_8859_1.INSTANCE);
         }
         int en = scale(len, cd.maxCharsPerByte());
@@ -791,7 +819,13 @@ public final class String
                 System.getSecurityManager() != null) {
             src = Arrays.copyOf(src, len);
         }
-        int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        int caLen;
+        try {
+            caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        } catch (CharacterCodingException x) {
+            // throw via IAE
+            throw new IllegalArgumentException(x);
+        }
         if (COMPACT_STRINGS) {
             byte[] bs = StringUTF16.compress(ca, 0, caLen);
             if (bs != null) {
@@ -845,20 +879,17 @@ public final class String
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
-        if (ce instanceof ArrayEncoder ae) {
+        // fastpath with ArrayEncoder implies `doReplace`.
+        if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
             if (coder == LATIN1 &&
                     ae.isASCIICompatible() &&
                     !StringCoding.hasNegatives(val, 0, val.length)) {
-                return Arrays.copyOf(val, val.length);
+                return val.clone();
             }
             byte[] ba = new byte[en];
             if (len == 0) {
                 return ba;
-            }
-            if (doReplace) {
-                ce.onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
             }
 
             int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
@@ -953,11 +984,10 @@ public final class String
 
     private static byte[] encodeASCII(byte coder, byte[] val) {
         if (coder == LATIN1) {
-            byte[] dst = Arrays.copyOf(val, val.length);
-            for (int i = 0; i < dst.length; i++) {
-                if (dst[i] < 0) {
-                    dst[i] = '?';
-                }
+            int positives = StringCoding.countPositives(val, 0, val.length);
+            byte[] dst = val.clone();
+            if (positives < dst.length) {
+                replaceNegatives(dst, positives);
             }
             return dst;
         }
@@ -982,13 +1012,21 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
+    private static void replaceNegatives(byte[] val, int fromIndex) {
+        for (int i = fromIndex; i < val.length; i++) {
+            if (val[i] < 0) {
+                val[i] = '?';
+            }
+        }
+    }
+
     private static byte[] encode8859_1(byte coder, byte[] val) {
         return encode8859_1(coder, val, true);
     }
 
     private static byte[] encode8859_1(byte coder, byte[] val, boolean doReplace) {
         if (coder == LATIN1) {
-            return Arrays.copyOf(val, val.length);
+            return val.clone();
         }
         int len = val.length >> 1;
         byte[] dst = new byte[len];
@@ -1202,23 +1240,16 @@ public final class String
         return dp;
     }
 
-    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
+    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length)
+                                            throws CharacterCodingException {
         ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
         CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
-        cd.onMalformedInput(CodingErrorAction.REPLACE)
-            .onUnmappableCharacter(CodingErrorAction.REPLACE);
-        try {
-            CoderResult cr = cd.decode(bb, cb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = cd.flush(cb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        } catch (CharacterCodingException x) {
-            // Substitution is always enabled,
-            // so this shouldn't happen
-            throw new Error(x);
-        }
+        CoderResult cr = cd.decode(bb, cb, true);
+        if (!cr.isUnderflow())
+            cr.throwException();
+        cr = cd.flush(cb);
+        if (!cr.isUnderflow())
+            cr.throwException();
         return cb.position();
     }
 
@@ -1249,8 +1280,7 @@ public final class String
     }
 
     private static void throwMalformed(byte[] val) {
-        int dp = 0;
-        while (dp < val.length && val[dp] >=0) { dp++; }
+        int dp = StringCoding.countPositives(val, 0, val.length);
         throwMalformed(dp, 1);
     }
 
@@ -1260,17 +1290,18 @@ public final class String
     }
 
     private static void throwUnmappable(byte[] val) {
-        int dp = 0;
-        while (dp < val.length && val[dp] >=0) { dp++; }
+        int dp = StringCoding.countPositives(val, 0, val.length);
         throwUnmappable(dp);
     }
 
     private static byte[] encodeUTF8(byte coder, byte[] val, boolean doReplace) {
-        if (coder == UTF16)
+        if (coder == UTF16) {
             return encodeUTF8_UTF16(val, doReplace);
+        }
 
-        if (!StringCoding.hasNegatives(val, 0, val.length))
-            return Arrays.copyOf(val, val.length);
+        if (!StringCoding.hasNegatives(val, 0, val.length)) {
+            return val.clone();
+        }
 
         int dp = 0;
         byte[] dst = new byte[val.length << 1];
@@ -1282,8 +1313,9 @@ public final class String
                 dst[dp++] = c;
             }
         }
-        if (dp == dst.length)
+        if (dp == dst.length) {
             return dst;
+        }
         return Arrays.copyOf(dst, dp);
     }
 
@@ -1366,7 +1398,7 @@ public final class String
      */
     public String(byte[] bytes, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, 0, bytes.length, charsetName);
+        this(lookupCharset(charsetName), bytes, 0, bytes.length);
     }
 
     /**
@@ -1390,7 +1422,7 @@ public final class String
      * @since  1.6
      */
     public String(byte[] bytes, Charset charset) {
-        this(bytes, 0, bytes.length, charset);
+        this(Objects.requireNonNull(charset), bytes, 0, bytes.length);
     }
 
     /**
@@ -1420,7 +1452,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes, int offset, int length) {
-        this(bytes, offset, length, Charset.defaultCharset());
+        this(Charset.defaultCharset(), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
     }
 
     /**
@@ -1440,7 +1472,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        this(Charset.defaultCharset(), bytes, 0, bytes.length);
     }
 
     /**
@@ -1629,7 +1661,7 @@ public final class String
      * @param codePointOffset the offset in code points
      * @return the index within this {@code String}
      * @throws    IndexOutOfBoundsException if {@code index}
-     *   is negative or larger then the length of this
+     *   is negative or larger than the length of this
      *   {@code String}, or if {@code codePointOffset} is positive
      *   and the substring starting with {@code index} has fewer
      *   than {@code codePointOffset} code points,
@@ -1639,9 +1671,6 @@ public final class String
      * @since 1.5
      */
     public int offsetByCodePoints(int index, int codePointOffset) {
-        if (index < 0 || index > length()) {
-            throw new IndexOutOfBoundsException();
-        }
         return Character.offsetByCodePoints(this, index, codePointOffset);
     }
 
@@ -1861,23 +1890,17 @@ public final class String
         if (len != sb.length()) {
             return false;
         }
-        byte v1[] = value;
-        byte v2[] = sb.getValue();
+        byte[] v1 = value;
+        byte[] v2 = sb.getValue();
         byte coder = coder();
         if (coder == sb.getCoder()) {
-            int n = v1.length;
-            for (int i = 0; i < n; i++) {
-                if (v1[i] != v2[i]) {
-                    return false;
-                }
-            }
+            return v1.length <= v2.length && ArraysSupport.mismatch(v1, v2, v1.length) < 0;
         } else {
             if (coder != LATIN1) {  // utf16 str and latin1 abs can never be "equal"
                 return false;
             }
             return StringUTF16.contentEquals(v1, v2, len);
         }
-        return true;
     }
 
     /**
@@ -2015,8 +2038,8 @@ public final class String
      *          lexicographically greater than the string argument.
      */
     public int compareTo(String anotherString) {
-        byte v1[] = value;
-        byte v2[] = anotherString.value;
+        byte[] v1 = value;
+        byte[] v2 = anotherString.value;
         byte coder = coder();
         if (coder == anotherString.coder()) {
             return coder == LATIN1 ? StringLatin1.compareTo(v1, v2)
@@ -2051,8 +2074,8 @@ public final class String
         private static final long serialVersionUID = 8575799808933029326L;
 
         public int compare(String s1, String s2) {
-            byte v1[] = s1.value;
-            byte v2[] = s2.value;
+            byte[] v1 = s1.value;
+            byte[] v2 = s2.value;
             byte coder = s1.coder();
             if (coder == s2.coder()) {
                 return coder == LATIN1 ? StringLatin1.compareToCI(v1, v2)
@@ -2127,26 +2150,23 @@ public final class String
      *          {@code false} otherwise.
      */
     public boolean regionMatches(int toffset, String other, int ooffset, int len) {
-        byte tv[] = value;
-        byte ov[] = other.value;
         // Note: toffset, ooffset, or len might be near -1>>>1.
         if ((ooffset < 0) || (toffset < 0) ||
              (toffset > (long)length() - len) ||
              (ooffset > (long)other.length() - len)) {
             return false;
         }
+        byte[] tv = value;
+        byte[] ov = other.value;
         byte coder = coder();
         if (coder == other.coder()) {
-            if (!isLatin1() && (len > 0)) {
-                toffset = toffset << 1;
-                ooffset = ooffset << 1;
-                len = len << 1;
+            if (coder == UTF16) {
+                toffset <<= UTF16;
+                ooffset <<= UTF16;
+                len <<= UTF16;
             }
-            while (len-- > 0) {
-                if (tv[toffset++] != ov[ooffset++]) {
-                    return false;
-                }
-            }
+            return ArraysSupport.mismatch(tv, toffset,
+                    ov, ooffset, len) < 0;
         } else {
             if (coder == LATIN1) {
                 while (len-- > 0) {
@@ -2226,8 +2246,8 @@ public final class String
                 || (ooffset > (long)other.length() - len)) {
             return false;
         }
-        byte tv[] = value;
-        byte ov[] = other.value;
+        byte[] tv = value;
+        byte[] ov = other.value;
         byte coder = coder();
         if (coder == other.coder()) {
             return coder == LATIN1
@@ -2261,18 +2281,17 @@ public final class String
         if (toffset < 0 || toffset > length() - prefix.length()) {
             return false;
         }
-        byte ta[] = value;
-        byte pa[] = prefix.value;
+        byte[] ta = value;
+        byte[] pa = prefix.value;
         int po = 0;
         int pc = pa.length;
         byte coder = coder();
         if (coder == prefix.coder()) {
-            int to = (coder == LATIN1) ? toffset : toffset << 1;
-            while (po < pc) {
-                if (ta[to++] != pa[po++]) {
-                    return false;
-                }
+            if (coder == UTF16) {
+                toffset <<= UTF16;
             }
+            return ArraysSupport.mismatch(ta, toffset,
+                    pa, 0, pc) < 0;
         } else {
             if (coder == LATIN1) {  // && pcoder == UTF16
                 return false;
@@ -2420,10 +2439,69 @@ public final class String
      *          character sequence represented by this object that is greater
      *          than or equal to {@code fromIndex}, or {@code -1}
      *          if the character does not occur.
+     *
+     * @apiNote
+     * Unlike {@link #substring(int)}, for example, this method does not throw
+     * an exception when {@code fromIndex} is outside the valid range.
+     * Rather, it returns -1 when {@code fromIndex} is larger than the length of
+     * the string.
+     * This result is, by itself, indistinguishable from a genuine absence of
+     * {@code ch} in the string.
+     * If stricter behavior is needed, {@link #indexOf(int, int, int)}
+     * should be considered instead.
+     * On a {@link String} {@code s}, for example,
+     * {@code s.indexOf(ch, fromIndex, s.length())} would throw if
+     * {@code fromIndex} were larger than the string length, or were negative.
      */
     public int indexOf(int ch, int fromIndex) {
-        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex)
-                          : StringUTF16.indexOf(value, ch, fromIndex);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, length())
+                : StringUTF16.indexOf(value, ch, fromIndex, length());
+    }
+
+    /**
+     * Returns the index within this string of the first occurrence of the
+     * specified character, starting the search at {@code beginIndex} and
+     * stopping before {@code endIndex}.
+     *
+     * <p>If a character with value {@code ch} occurs in the
+     * character sequence represented by this {@code String}
+     * object at an index no smaller than {@code beginIndex} but smaller than
+     * {@code endIndex}, then
+     * the index of the first such occurrence is returned. For values
+     * of {@code ch} in the range from 0 to 0xFFFF (inclusive),
+     * this is the smallest value <i>k</i> such that:
+     * <blockquote><pre>
+     * (this.charAt(<i>k</i>) == ch) &amp;&amp; (beginIndex &lt;= <i>k</i> &lt; endIndex)
+     * </pre></blockquote>
+     * is true. For other values of {@code ch}, it is the
+     * smallest value <i>k</i> such that:
+     * <blockquote><pre>
+     * (this.codePointAt(<i>k</i>) == ch) &amp;&amp; (beginIndex &lt;= <i>k</i> &lt; endIndex)
+     * </pre></blockquote>
+     * is true. In either case, if no such character occurs in this
+     * string at or after position {@code beginIndex} and before position
+     * {@code endIndex}, then {@code -1} is returned.
+     *
+     * <p>All indices are specified in {@code char} values
+     * (Unicode code units).
+     *
+     * @param   ch          a character (Unicode code point).
+     * @param   beginIndex  the index to start the search from (included).
+     * @param   endIndex    the index to stop the search at (excluded).
+     * @return  the index of the first occurrence of the character in the
+     *          character sequence represented by this object that is greater
+     *          than or equal to {@code beginIndex} and less than {@code endIndex},
+     *          or {@code -1} if the character does not occur.
+     * @throws  StringIndexOutOfBoundsException if {@code beginIndex}
+     *          is negative, or {@code endIndex} is larger than the length of
+     *          this {@code String} object, or {@code beginIndex} is larger than
+     *          {@code endIndex}.
+     * @since   21
+     */
+    public int indexOf(int ch, int beginIndex, int endIndex) {
+        checkBoundsBeginEnd(beginIndex, endIndex, length());
+        return isLatin1() ? StringLatin1.indexOf(value, ch, beginIndex, endIndex)
+                : StringUTF16.indexOf(value, ch, beginIndex, endIndex);
     }
 
     /**
@@ -3120,41 +3198,50 @@ public final class String
             (ch < Character.MIN_HIGH_SURROGATE ||
              ch > Character.MAX_LOW_SURROGATE))
         {
-            int off = 0;
-            int next = 0;
-            boolean limited = limit > 0;
-            ArrayList<String> list = new ArrayList<>();
-            while ((next = indexOf(ch, off)) != -1) {
-                if (!limited || list.size() < limit - 1) {
-                    list.add(substring(off, next));
-                    off = next + 1;
-                } else {    // last one
-                    //assert (list.size() == limit - 1);
-                    int last = length();
-                    list.add(substring(off, last));
-                    off = last;
-                    break;
-                }
-            }
-            // If no match was found, return this
-            if (off == 0)
-                return new String[]{this};
-
-            // Add remaining segment
-            if (!limited || list.size() < limit)
-                list.add(substring(off, length()));
-
-            // Construct result
-            int resultSize = list.size();
-            if (limit == 0) {
-                while (resultSize > 0 && list.get(resultSize - 1).isEmpty()) {
-                    resultSize--;
-                }
-            }
-            String[] result = new String[resultSize];
-            return list.subList(0, resultSize).toArray(result);
+            // All the checks above can potentially be constant folded by
+            // a JIT/AOT compiler when the regex is a constant string.
+            // That requires method inlining of the checks, which is only
+            // possible when the actual split logic is in a separate method
+            // because the large split loop can usually not be inlined.
+            return split(ch, limit);
         }
         return Pattern.compile(regex).split(this, limit);
+    }
+
+    private String[] split(char ch, int limit) {
+        int off = 0;
+        int next = 0;
+        boolean limited = limit > 0;
+        ArrayList<String> list = new ArrayList<>();
+        while ((next = indexOf(ch, off)) != -1) {
+            if (!limited || list.size() < limit - 1) {
+                list.add(substring(off, next));
+                off = next + 1;
+            } else {    // last one
+                //assert (list.size() == limit - 1);
+                int last = length();
+                list.add(substring(off, last));
+                off = last;
+                break;
+            }
+        }
+        // If no match was found, return this
+        if (off == 0)
+            return new String[]{this};
+
+        // Add remaining segment
+        if (!limited || list.size() < limit)
+            list.add(substring(off, length()));
+
+        // Construct result
+        int resultSize = list.size();
+        if (limit == 0) {
+            while (resultSize > 0 && list.get(resultSize - 1).isEmpty()) {
+                resultSize--;
+            }
+        }
+        String[] result = new String[resultSize];
+        return list.subList(0, resultSize).toArray(result);
     }
 
     /**
@@ -4058,9 +4145,9 @@ public final class String
 
     /**
      * Returns a stream of {@code int} zero-extending the {@code char} values
-     * from this sequence.  Any char which maps to a <a
-     * href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate code
-     * point</a> is passed through uninterpreted.
+     * from this sequence.  Any char which maps to a {@linkplain
+     * Character##unicode surrogate code point} is passed through
+     * uninterpreted.
      *
      * @return an IntStream of char values from this sequence
      * @since 9
@@ -4578,12 +4665,13 @@ public final class String
      * Check {@code offset}, {@code count} against {@code 0} and {@code length}
      * bounds.
      *
+     * @return  {@code offset} if the sub-range within bounds of the range
      * @throws  StringIndexOutOfBoundsException
      *          If {@code offset} is negative, {@code count} is negative,
      *          or {@code offset} is greater than {@code length - count}
      */
-    static void checkBoundsOffCount(int offset, int count, int length) {
-        Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
+    static int checkBoundsOffCount(int offset, int count, int length) {
+        return Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*

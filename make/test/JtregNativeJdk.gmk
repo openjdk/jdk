@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,39 +53,54 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
 
+TEST_LIB_NATIVE_SRC := $(TOPDIR)/test/lib/native
+
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
-  BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c exelauncher.c
+  BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
+      libExplicitAttach.c libImplicitAttach.c \
+      exelauncher.c
 
   WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
   WIN_LIB_JLI := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := $(WIN_LIB_JLI)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := jvm.lib
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerClassLoaderTest := jvm.lib
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerLookupTest := jvm.lib
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerResourceBundle := jvm.lib
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerGetResource := jvm.lib
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX) jvm.lib
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncStackWalk := /EHsc
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := /EHsc
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := /EHsc
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := /EHsc
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := /EHsc
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncStackWalk := $(LIBCXX)
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncInvokers := $(LIBCXX)
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := $(LIBCXX)
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := $(LIBCXX)
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := $(LIBCXX)
+  BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeNullCallerTest := /EHsc
+
+  # java.lang.foreign tests
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncStackWalk := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerUnnamed := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerModule := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLoaderLookupInvoker := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := -I$(TEST_LIB_NATIVE_SRC)
+
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libTracePinnedThreads := jvm.lib
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := $(WIN_LIB_JAVA)
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeThread := -pthread
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncStackWalk := $(LIBCXX) -pthread
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncInvokers := $(LIBCXX) -pthread
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := $(LIBCXX) -pthread
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := $(LIBCXX) -pthread
-  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := $(LIBCXX) -pthread
+
+  # java.lang.foreign tests
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncStackWalk := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncStackWalk := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncInvokers := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerUnnamed := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerModule := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLoaderLookupInvoker := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := -pthread
+
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libExplicitAttach := -ljvm
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libExplicitAttach := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libImplicitAttach := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libTracePinnedThreads := -ljvm
   BUILD_JDK_JTREG_EXCLUDE += exerevokeall.c
   ifeq ($(call isTargetOs, linux), true)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava
@@ -93,10 +108,7 @@ else
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := -ljli
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := -ljvm
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerClassLoaderTest := -ljvm
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerLookupTest := -ljvm
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerResourceBundle := -ljvm
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerGetResource := -ljvm
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX) -ljvm
 endif
 
 ifeq ($(call isTargetOs, macosx), true)
@@ -120,6 +132,18 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_JDK_JTREG_LIBRARIES_STRIP_SYMBOLS_libFib := false
 endif
 
+ifeq ($(ASAN_ENABLED), true)
+  # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
+  # default ASan options.
+  BUILD_JDK_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/asan/asan_default_options.c
+endif
+
+ifeq ($(LSAN_ENABLED), true)
+  # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
+  # default LSan options.
+  BUILD_JDK_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
+endif
+
 # This evaluation is expensive and should only be done if this target was
 # explicitly called.
 ifneq ($(filter build-test-jdk-jtreg-native, $(MAKECMDGOALS)), )
@@ -135,6 +159,7 @@ ifneq ($(filter build-test-jdk-jtreg-native, $(MAKECMDGOALS)), )
       SOURCE_DIRS := $(BUILD_JDK_JTREG_NATIVE_SRC), \
       OUTPUT_DIR := $(BUILD_JDK_JTREG_OUTPUT_DIR), \
       EXCLUDE := $(BUILD_JDK_JTREG_EXCLUDE), \
+      EXTRA_FILES := $(BUILD_JDK_JTREG_EXTRA_FILES), \
   ))
 endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import com.sun.tools.javac.tree.DCTree.DCDocType;
 import com.sun.tools.javac.tree.DCTree.DCEndElement;
 import com.sun.tools.javac.tree.DCTree.DCEntity;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
+import com.sun.tools.javac.tree.DCTree.DCEscape;
 import com.sun.tools.javac.tree.DCTree.DCHidden;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCIndex;
@@ -76,6 +77,7 @@ import com.sun.tools.javac.tree.DCTree.DCSerialData;
 import com.sun.tools.javac.tree.DCTree.DCSerialField;
 import com.sun.tools.javac.tree.DCTree.DCSince;
 import com.sun.tools.javac.tree.DCTree.DCSnippet;
+import com.sun.tools.javac.tree.DCTree.DCSpec;
 import com.sun.tools.javac.tree.DCTree.DCStartElement;
 import com.sun.tools.javac.tree.DCTree.DCSummary;
 import com.sun.tools.javac.tree.DCTree.DCSystemProperty;
@@ -89,9 +91,7 @@ import com.sun.tools.javac.tree.DCTree.DCVersion;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
@@ -124,7 +124,7 @@ public class DocTreeMaker implements DocTreeFactory {
 
     /** The position at which subsequent trees will be created.
      */
-    public int pos = Position.NOPOS;
+    public int pos;
 
     private final JavacTrees trees;
 
@@ -238,9 +238,8 @@ public class DocTreeMaker implements DocTreeFactory {
             }
         };
         Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
-        DCDocComment tree = new DCDocComment(c, fBody, pair.fst, pair.snd, cast(tags),
+        return new DCDocComment(c, fBody, pair.fst, pair.snd, cast(tags),
                                              cast(preamble), cast(postamble));
-        return tree;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -274,6 +273,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCErroneous newErroneousTree(String text, Diagnostic<JavaFileObject> diag) {
         DCErroneous tree = new DCErroneous(text, (JCDiagnostic) diag);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCEscape newEscapeTree(char ch) {
+        DCEscape tree = new DCEscape(ch);
         tree.pos = pos;
         return tree;
     }
@@ -352,8 +358,8 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCReference newReferenceTree(String signature) {
         try {
-            ReferenceParser.Reference ref = referenceParser.parse(signature);
-            DCReference tree = new DCReference(signature, ref.moduleName, ref.qualExpr, ref.member, ref.paramTypes);
+            ReferenceParser.Reference ref = referenceParser.parse(signature, ReferenceParser.Mode.MEMBER_OPTIONAL);
+            DCReference tree = newReferenceTree(signature, ref);
             tree.pos = pos;
             return tree;
         } catch (ReferenceParser.ParseException e) {
@@ -361,8 +367,8 @@ public class DocTreeMaker implements DocTreeFactory {
         }
     }
 
-    public DCReference newReferenceTree(String signature, JCTree.JCExpression moduleName, JCTree qualExpr, Name member, List<JCTree> paramTypes) {
-        DCReference tree = new DCReference(signature, moduleName, qualExpr, member, paramTypes);
+    public DCReference newReferenceTree(String signature, ReferenceParser.Reference ref) {
+        DCReference tree = new DCReference(signature, ref.moduleName, ref.qualExpr, ref.member, ref.paramTypes);
         tree.pos = pos;
         return tree;
     }
@@ -417,6 +423,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCSnippet newSnippetTree(List<? extends DocTree> attributes, TextTree text) {
         DCSnippet tree = new DCSnippet(cast(attributes), (DCText) text);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSpec newSpecTree(TextTree url, List<? extends DocTree> title) {
+        DCSpec tree = new DCSpec((DCText) url, cast(title));
         tree.pos = pos;
         return tree;
     }
@@ -480,8 +493,13 @@ public class DocTreeMaker implements DocTreeFactory {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCValue newValueTree(ReferenceTree ref) {
+        return newValueTree(null, ref);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCValue newValueTree(TextTree format, ReferenceTree ref) {
         // TODO: verify the reference is to a constant value
-        DCValue tree = new DCValue((DCReference) ref);
+        DCValue tree = new DCValue((DCText) format, (DCReference) ref);
         tree.pos = pos;
         return tree;
     }

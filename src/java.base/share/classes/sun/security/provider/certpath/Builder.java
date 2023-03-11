@@ -157,7 +157,6 @@ abstract class Builder {
         case GeneralNameInterface.NAME_MATCH:
             return 0;
         case GeneralNameInterface.NAME_WIDENS:
-            break;
         case GeneralNameInterface.NAME_NARROWS:
             break;
         default: // should never occur
@@ -203,10 +202,9 @@ abstract class Builder {
             return 0;
         case GeneralNameInterface.NAME_WIDENS:
             /* base is ancestor of test */
-            return (test.subtreeDepth()-base.subtreeDepth());
         case GeneralNameInterface.NAME_NARROWS:
             /* base is descendant of test */
-            return (test.subtreeDepth()-base.subtreeDepth());
+            return test.subtreeDepth() - base.subtreeDepth();
         default: // should never occur
             return incomparable;
         }
@@ -232,7 +230,7 @@ abstract class Builder {
             int commonDistance = commonName.subtreeDepth();
             int baseDistance = baseName.subtreeDepth();
             int testDistance = testName.subtreeDepth();
-            return (baseDistance + testDistance - (2 * commonDistance));
+            return baseDistance + testDistance - (2 * commonDistance);
         }
     }
 
@@ -302,8 +300,7 @@ abstract class Builder {
         SubjectAlternativeNameExtension altNameExt =
             certImpl.getSubjectAlternativeNameExtension();
         if (altNameExt != null) {
-            GeneralNames altNames = altNameExt.get(
-                    SubjectAlternativeNameExtension.SUBJECT_NAME);
+            GeneralNames altNames = altNameExt.getNames();
             /* see if any alternative name matches target */
             if (altNames != null) {
                 for (int j = 0, n = altNames.size(); j < n; j++) {
@@ -329,7 +326,7 @@ abstract class Builder {
             constraints.merge(ncExt);
         } else {
             // Make sure we do a clone here, because we're probably
-            // going to modify this object later and we don't want to
+            // going to modify this object later, and we don't want to
             // be sharing it with a Certificate object!
             constraints = (NameConstraintsExtension) ncExt.clone();
         }
@@ -339,10 +336,8 @@ abstract class Builder {
                 + constraints);
         }
         /* reduce permitted by excluded */
-        GeneralSubtrees permitted =
-                constraints.get(NameConstraintsExtension.PERMITTED_SUBTREES);
-        GeneralSubtrees excluded =
-                constraints.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
+        GeneralSubtrees permitted = constraints.getPermittedSubtrees();
+        GeneralSubtrees excluded = constraints.getExcludedSubtrees();
         if (permitted != null) {
             permitted.reduce(excluded);
         }
@@ -364,7 +359,7 @@ abstract class Builder {
             GeneralNameInterface perName = permitted.get(i).getName().getName();
             int distance = distance(perName, target, -1);
             if (distance >= 0) {
-                return (distance + 1);
+                return distance + 1;
             }
         }
         /* no matching type in permitted; cert holder could certify target */
@@ -403,7 +398,7 @@ abstract class Builder {
             } else {
                 // we just return an empty set to make sure that there is
                 // at least a certificate policies extension in the cert
-                matchingPolicies = Collections.<String>emptySet();
+                matchingPolicies = Collections.emptySet();
             }
         }
         return matchingPolicies;

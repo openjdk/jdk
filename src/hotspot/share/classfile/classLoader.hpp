@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ public:
   // Is this entry created from the "Class-path" attribute from a JAR Manifest?
   virtual bool from_class_path_attr() const { return false; }
   virtual const char* name() const = 0;
-  virtual JImageFile* jimage() const { return NULL; }
+  virtual JImageFile* jimage() const { return nullptr; }
   virtual void close_jimage() {}
   // Constructor
-  ClassPathEntry() : _next(NULL) {}
+  ClassPathEntry() : _next(nullptr) {}
   // Attempt to locate file_name through this class path entry.
   // Returns a class file parsing stream if successful.
   virtual ClassFileStream* open_stream(JavaThread* current, const char* name) = 0;
@@ -80,7 +80,7 @@ class ClassPathDirEntry: public ClassPathEntry {
   ClassPathDirEntry(const char* dir) {
     _dir = copy_path(dir);
   }
-  virtual ~ClassPathDirEntry() {}
+  virtual ~ClassPathDirEntry();
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
 
@@ -110,7 +110,6 @@ class ClassPathZipEntry: public ClassPathEntry {
   virtual ~ClassPathZipEntry();
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
-  void contents_do(void f(const char* name, void* context), void* context);
 };
 
 
@@ -121,7 +120,7 @@ private:
   DEBUG_ONLY(static ClassPathImageEntry* _singleton;)
 public:
   bool is_modules_image() const;
-  const char* name() const { return _name == NULL ? "" : _name; }
+  const char* name() const { return _name == nullptr ? "" : _name; }
   JImageFile* jimage() const;
   JImageFile* jimage_non_null() const;
   void close_jimage();
@@ -224,7 +223,6 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static void setup_app_search_path(JavaThread* current, const char* class_path);)
   CDS_ONLY(static void setup_module_search_path(JavaThread* current, const char* path);)
   static void add_to_app_classpath_entries(JavaThread* current,
-                                           const char* path,
                                            ClassPathEntry* entry,
                                            bool check_for_duplicates);
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
@@ -236,7 +234,7 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
   CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
 
-  static bool has_bootclasspath_append() { return first_append_entry() != NULL; }
+  static bool has_bootclasspath_append() { return first_append_entry() != nullptr; }
 
  protected:
   // Initialization:
@@ -309,7 +307,7 @@ class ClassLoader: AllStatic {
   }
 
   // Modular java runtime image is present vs. a build with exploded modules
-  static bool has_jrt_entry() { return (_jrt_entry != NULL); }
+  static bool has_jrt_entry() { return (_jrt_entry != nullptr); }
   static ClassPathEntry* get_jrt_entry() { return _jrt_entry; }
   static void close_jrt_image();
 
@@ -375,10 +373,14 @@ class ClassLoader: AllStatic {
 
   static char* lookup_vm_options();
 
+  // Determines if the named module is present in the
+  // modules jimage file or in the exploded modules directory.
+  static bool is_module_observable(const char* module_name);
+
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
                                                 const char* file_name, jlong &size);
 
-  static void  trace_class_path(const char* msg, const char* name = NULL);
+  static void  trace_class_path(const char* msg, const char* name = nullptr);
 
   // VM monitoring and management support
   static jlong classloader_time_ms();
@@ -392,15 +394,15 @@ class ClassLoader: AllStatic {
   // adds a class path to the boot append entries
   static void add_to_boot_append_entries(ClassPathEntry* new_entry);
 
-  // creates a class path zip entry (returns NULL if JAR file cannot be opened)
+  // creates a class path zip entry (returns null if JAR file cannot be opened)
   static ClassPathZipEntry* create_class_path_zip_entry(const char *apath, bool is_boot_append);
 
   static bool string_ends_with(const char* str, const char* str_to_find);
 
   // Extract package name from a fully qualified class name
   // *bad_class_name is set to true if there's a problem with parsing class_name, to
-  // distinguish from a class_name with no package name, as both cases have a NULL return value
-  static Symbol* package_from_class_name(const Symbol* class_name, bool* bad_class_name = NULL);
+  // distinguish from a class_name with no package name, as both cases have a null return value
+  static Symbol* package_from_class_name(const Symbol* class_name, bool* bad_class_name = nullptr);
 
   // Debugging
   static void verify()              PRODUCT_RETURN;
@@ -455,7 +457,7 @@ class PerfClassTraceTime {
   inline PerfClassTraceTime(PerfLongCounter* timep,     /* counter incremented with inclusive time */
                             elapsedTimer* timers,       /* thread-local timer array */
                             int type                    /* event type */ ) :
-      _timep(timep), _selftimep(NULL), _eventp(NULL), _recursion_counters(NULL), _timers(timers), _event_type(type) {
+      _timep(timep), _selftimep(nullptr), _eventp(nullptr), _recursion_counters(nullptr), _timers(timers), _event_type(type) {
     initialize();
   }
 

@@ -34,8 +34,8 @@
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
-#include "runtime/thread.inline.hpp"
 
 ContinuationWrapper::ContinuationWrapper(const RegisterMap* map)
   : _thread(map->thread()),
@@ -43,9 +43,9 @@ ContinuationWrapper::ContinuationWrapper(const RegisterMap* map)
     _continuation(map->stack_chunk()->cont())
   {
   assert(oopDesc::is_oop(_continuation),"Invalid cont: " INTPTR_FORMAT, p2i((void*)_continuation));
-  assert(_entry == nullptr || _continuation == _entry->cont_oop(),
+  assert(_entry == nullptr || _continuation == _entry->cont_oop(map->thread()),
     "cont: " INTPTR_FORMAT " entry: " INTPTR_FORMAT " entry_sp: " INTPTR_FORMAT,
-    p2i( (oopDesc*)_continuation), p2i((oopDesc*)_entry->cont_oop()), p2i(entrySP()));
+    p2i( (oopDesc*)_continuation), p2i((oopDesc*)_entry->cont_oop(map->thread())), p2i(entrySP()));
   disallow_safepoint();
   read();
 }

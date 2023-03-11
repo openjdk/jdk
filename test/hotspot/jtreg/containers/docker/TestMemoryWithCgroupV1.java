@@ -34,8 +34,8 @@ import jdk.internal.platform.Metrics;
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
- * @build sun.hotspot.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main TestMemoryWithCgroupV1
  */
 public class TestMemoryWithCgroupV1 {
@@ -81,10 +81,23 @@ public class TestMemoryWithCgroupV1 {
         Common.addWhiteBoxOpts(opts);
 
         OutputAnalyzer out = Common.run(opts);
-        out.shouldContain("Memory and Swap Limit is: " + expectedReadLimit)
-                .shouldContain(
+        // in case of warnings like : "Your kernel does not support swap limit
+        // capabilities or the cgroup is not mounted. Memory limited without swap."
+        // we only have 'Memory and Swap Limit is: -2' in the output
+        try {
+            if (out.getOutput().contains("Memory and Swap Limit is: -2")) {
+                System.out.println("System doesn't seem to allow swap, avoiding Memory and Swap Limit check");
+            } else {
+                out.shouldContain("Memory and Swap Limit is: " + expectedReadLimit)
+                    .shouldContain(
                         "Memory and Swap Limit has been reset to " + expectedResetLimit + " because swappiness is 0")
-                .shouldContain("Memory & Swap Limit: " + expectedLimit);
+                    .shouldContain("Memory & Swap Limit: " + expectedLimit);
+            }
+        } catch (RuntimeException ex) {
+            System.out.println("Expected Memory and Swap Limit output missing.");
+            System.out.println("You may need to add 'cgroup_enable=memory swapaccount=1' to the Linux kernel boot parameters.");
+            throw ex;
+        }
     }
 
     private static void testOSBeanSwappinessMemory(String memoryAllocation, String swapAllocation,

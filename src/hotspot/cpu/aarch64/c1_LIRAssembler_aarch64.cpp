@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -282,10 +282,9 @@ void LIR_Assembler::osr_entry() {
         __ bind(L);
       }
 #endif
-      __ ldr(r19, Address(OSR_buf, slot_offset + 0));
+      __ ldp(r19, r20, Address(OSR_buf, slot_offset));
       __ str(r19, frame_map()->address_for_monitor_lock(i));
-      __ ldr(r19, Address(OSR_buf, slot_offset + 1*BytesPerWord));
-      __ str(r19, frame_map()->address_for_monitor_object(i));
+      __ str(r20, frame_map()->address_for_monitor_object(i));
     }
   }
 }
@@ -332,7 +331,7 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {
     __ mov(reg, zr);
   } else {
-    __ movoop(reg, o, /*immediate*/true);
+    __ movoop(reg, o);
   }
 }
 
@@ -438,7 +437,6 @@ int LIR_Assembler::emit_unwind_handler() {
       __ unlock_object(r5, r4, r0, *stub->entry());
     }
     __ bind(*stub->continuation());
-    __ dec_held_monitor_count(rthread);
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
@@ -965,7 +963,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       if (UseCompressedOops && !wide) {
         __ ldrw(dest->as_register(), as_Address(from_addr));
       } else {
-         __ ldr(dest->as_register(), as_Address(from_addr));
+        __ ldr(dest->as_register(), as_Address(from_addr));
       }
       break;
     case T_METADATA:
@@ -1816,10 +1814,12 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
 void LIR_Assembler::arith_fpu_implementation(LIR_Code code, int left_index, int right_index, int dest_index, bool pop_fpu_stack) { Unimplemented(); }
 
 
-void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, LIR_Opr dest, LIR_Op* op) {
+void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_Opr dest, LIR_Op* op) {
   switch(code) {
   case lir_abs : __ fabsd(dest->as_double_reg(), value->as_double_reg()); break;
   case lir_sqrt: __ fsqrtd(dest->as_double_reg(), value->as_double_reg()); break;
+  case lir_f2hf: __ flt_to_flt16(dest->as_register(), value->as_float_reg(), tmp->as_float_reg()); break;
+  case lir_hf2f: __ flt16_to_flt(dest->as_float_reg(), value->as_register(), tmp->as_float_reg()); break;
   default      : ShouldNotReachHere();
   }
 }
@@ -2559,6 +2559,10 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
   if (UseHeavyMonitors) {
+    if (op->info() != NULL) {
+      add_debug_info_for_null_check_here(op->info());
+      __ null_check(obj, -1);
+    }
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
@@ -2574,18 +2578,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   } else {
     Unimplemented();
   }
-  if (op->code() == lir_lock) {
-    // If deoptimization happens in Runtime1::monitorenter, inc_held_monitor_count after backing from slowpath
-    // will be skipped. Solution is:
-    // 1. Increase only in fastpath
-    // 2. Runtime1::monitorenter increase count after locking
-    __ inc_held_monitor_count(rthread);
-  }
   __ bind(*op->stub()->continuation());
-  if (op->code() == lir_unlock) {
-    // unlock in slowpath is JRT_Leaf stub, no deoptimization can happen
-    __ dec_held_monitor_count(rthread);
-  }
 }
 
 void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
@@ -2699,7 +2692,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   assert_different_registers(val, crc, res);
   uint64_t offset;
   __ adrp(res, ExternalAddress(StubRoutines::crc_table_addr()), offset);
-  if (offset) __ add(res, res, offset);
+  __ add(res, res, offset);
 
   __ mvnw(crc, crc); // ~crc
   __ update_byte_crc32(crc, val, res);
@@ -3194,7 +3187,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
         __ encode_heap_oop(rscratch2, obj);
         obj = rscratch2;
       }
-      assert_different_registers(obj, addr.base(), tmp, rscratch1, dst);
+      assert_different_registers(obj, addr.base(), tmp, rscratch1);
+      assert_different_registers(dst, addr.base(), tmp, rscratch1);
       __ lea(tmp, addr);
       (_masm->*xchg)(dst, obj, tmp);
       if (is_oop && UseCompressedOops) {

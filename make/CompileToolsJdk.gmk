@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,13 @@ $(eval $(call SetupCopyFiles,COPY_NIMBUS_TEMPLATES, \
 
 TARGETS += $(COPY_NIMBUS_TEMPLATES)
 
+$(eval $(call SetupCopyFiles,COPY_CLDRCONVERTER_PROPERTIES, \
+    SRC := $(TOPDIR)/make/jdk/src/classes/build/tools/cldrconverter, \
+    DEST := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/cldrconverter, \
+    FILES := $(wildcard $(TOPDIR)/make/jdk/src/classes/build/tools/cldrconverter/*.properties)))
+
+TARGETS += $(COPY_CLDRCONVERTER_PROPERTIES)
+
 ################################################################################
 
 $(eval $(call SetupJavaCompilation, COMPILE_DEPEND, \
@@ -77,6 +84,13 @@ $(eval $(call SetupJavaCompilation, COMPILE_DEPEND, \
     INCLUDES := build/tools/depend, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/depend, \
     DISABLED_WARNINGS := options, \
+    JAVAC_FLAGS := \
+        --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+        --add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
+        --add-exports jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED \
+        --add-exports jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED \
+        --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+        --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED, \
 ))
 
 DEPEND_SERVICE_PROVIDER := $(BUILDTOOLS_OUTPUTDIR)/depend/META-INF/services/com.sun.source.util.Plugin

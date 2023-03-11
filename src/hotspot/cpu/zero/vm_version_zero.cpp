@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,9 +45,10 @@ void VM_Version::initialize() {
   }
   FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
 
-  // If lock diagnostics is needed, always call to runtime
+  // Disable lock diagnostics for Zero
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    FLAG_SET_DEFAULT(UseHeavyMonitors, true);
+    warning("Lock diagnostics is not available for a Zero VM");
+    FLAG_SET_DEFAULT(DiagnoseSyncOnValueBasedClasses, 0);
   }
 
   if (UseAESIntrinsics) {
@@ -114,6 +115,17 @@ void VM_Version::initialize() {
     warning("vectorizedMismatch intrinsic is not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
+
+  // Enable error context decoding on known platforms
+#if defined(IA32) || defined(AMD64) || defined(ARM) || \
+    defined(AARCH64) || defined(PPC) || defined(RISCV) || \
+    defined(S390)
+  if (FLAG_IS_DEFAULT(DecodeErrorContext)) {
+    FLAG_SET_DEFAULT(DecodeErrorContext, true);
+  }
+#else
+  UNSUPPORTED_OPTION(DecodeErrorContext);
+#endif
 
   // Not implemented
   UNSUPPORTED_OPTION(UseCompiler);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Subscription;
 
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.HttpBodySubscriberWrapper;
@@ -208,12 +209,13 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        protected void complete(Throwable t) {
-            try {
-                exchange.responseSubscriberCompleted(this);
-            } finally {
-                super.complete(t);
-            }
+        protected void register() {
+            exchange.registerResponseSubscriber(this);
+        }
+
+        @Override
+        protected void unregister() {
+            exchange.unregisterResponseSubscriber(this);
         }
     }
 
@@ -264,7 +266,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     // The Http1ResponseBodySubscriber is registered with the HttpClient
     // to ensure that it gets completed if the SelectorManager aborts due
     // to unexpected exceptions.
-    void registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+    private boolean registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
         Throwable failed = null;
         synchronized (lock) {
             failed = this.failed;
@@ -274,13 +276,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
         if (failed != null) {
             subscriber.onError(failed);
+            return false;
         } else {
-            client.registerSubscriber(subscriber);
+            return client.registerSubscriber(subscriber);
         }
     }
 
-    void responseSubscriberCompleted(HttpBodySubscriberWrapper<T> subscriber) {
-        client.subscriberCompleted(subscriber);
+    private boolean unregisterResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+        return client.unregisterSubscriber(subscriber);
     }
 
     @Override
@@ -450,7 +453,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         BodySubscriber<T> subscriber = handler.apply(response);
         Http1ResponseBodySubscriber<T> bs =
                 new Http1ResponseBodySubscriber<T>(subscriber, this);
-        registerResponseSubscriber(bs);
         return bs;
     }
 
@@ -499,6 +501,15 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
      */
     @Override
     void cancel(IOException cause) {
+        cancelImpl(cause);
+    }
+
+    @Override
+    void onProtocolError(final IOException cause) {
+        if (debug.on()) {
+            debug.log("cancelling exchange due to protocol error: %s", cause.getMessage());
+        }
+        Log.logError("cancelling exchange due to protocol error: {0}\n", cause);
         cancelImpl(cause);
     }
 
@@ -851,5 +862,15 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     String dbgString() {
         return "Http1Exchange";
+    }
+
+    @Override
+    void expectContinueFailed(int rcode) {
+        var response = this.response;
+        if (response != null) {
+            // Sets a flag which closes the connection locally when
+            // onFinished() is called
+            response.closeWhenFinished();
+        }
     }
 }

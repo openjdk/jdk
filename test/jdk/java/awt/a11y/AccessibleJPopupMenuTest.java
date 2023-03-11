@@ -93,7 +93,7 @@ public class AccessibleJPopupMenuTest extends AccessibleComponentTest {
     public static void main(String[] args) throws Exception {
         AccessibleJPopupMenuTest a11yTest = new AccessibleJPopupMenuTest();
 
-        CountDownLatch countDownLatch = a11yTest.createCountDownLatch();
+        countDownLatch = a11yTest.createCountDownLatch();
         SwingUtilities.invokeLater(a11yTest::createTest);
         countDownLatch.await();
 

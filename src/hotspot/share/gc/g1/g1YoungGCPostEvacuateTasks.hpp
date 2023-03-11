@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,13 @@ class G1ParScanThreadStateSet;
 // - Merge PSS (s)
 // - Recalculate Used (s)
 // - Sample Collection Set Candidates (s)
-// - Remove Self Forwards (on evacuation failure)
 // - Clear Card Table
+// - Restore retained regions (on evacuation failure)
 class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
   class MergePssTask;
   class RecalculateUsedTask;
   class SampleCollectionSetCandidatesTask;
-  class RemoveSelfForwardPtrsTask;
+  class RestoreRetainedRegionsTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
@@ -54,22 +54,22 @@ public:
 
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
-// - Purge Code Roots (s)
-// - Reset Hot Card Cache (s)
 // - Update Derived Pointers (s)
+// - Clear Retained Region Bitmaps (on evacuation failure)
 // - Redirty Logged Cards
 // - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
+// - Resize TLABs
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
-  class PurgeCodeRootsTask;
-  class ResetHotCardCacheTask;
 #if COMPILER2_OR_JVMCI
   class UpdateDerivedPointersTask;
 #endif
 
+  class ClearRetainedRegionBitmaps;
   class RedirtyLoggedCardsTask;
   class RestorePreservedMarksTask;
+  class ResizeTLABsTask;
   class FreeCollectionSetTask;
 
 public:
@@ -79,4 +79,3 @@ public:
 };
 
 #endif // SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
-

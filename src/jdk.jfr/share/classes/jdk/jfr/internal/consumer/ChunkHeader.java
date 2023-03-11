@@ -57,7 +57,6 @@ public final class ChunkHeader {
     private long metadataPosition = 0;
     private long durationNanos;
     private long absoluteChunkEnd;
-    private boolean isFinished;
     private boolean finished;
     private boolean finalChunk;
 
@@ -89,21 +88,25 @@ public final class ChunkHeader {
         if (major != 1 && major != 2) {
             throw new IOException("File version " + major + "." + minor + ". Only Flight Recorder files of version 1.x and 2.x can be read by this JDK.");
         }
-        long c = input.readRawLong(); // chunk size
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: chunkSize=" + c);
-        long cp = input.readRawLong(); // constant pool position
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: constantPoolPosition=" + cp);
-        long mp = input.readRawLong(); // metadata position
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: metadataPosition=" + mp);
-        chunkStartNanos = input.readRawLong(); // nanos since epoch
+        // Chunk size, constant pool position and metadata position are
+        // updated by JVM and not reliable to read
+        input.skipBytes(3 * Long.BYTES);
+
+        chunkStartNanos = input.readRawLong();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: startNanos=" + chunkStartNanos);
-        durationNanos = input.readRawLong(); // duration nanos, not used
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: durationNanos=" + durationNanos);
+
+        // Duration nanos, updated by JVM and not reliable to read
+        input.skipBytes(Long.BYTES);
+
         chunkStartTicks = input.readRawLong();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: startTicks=" + chunkStartTicks);
+
         ticksPerSecond = input.readRawLong();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: ticksPerSecond=" + ticksPerSecond);
-        input.readRawInt(); // ignore file state and flag bits
+
+        // File state and flag bit, updated by JVM and not reliable to read
+        input.skipBytes(Integer.BYTES);
+
         refresh();
         input.position(absoluteEventStart);
     }
@@ -154,14 +157,25 @@ public final class ChunkHeader {
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: metadataPosition=" + metadataPosition);
                     this.durationNanos = durationNanos;
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: durationNanos =" + durationNanos);
-                    isFinished = fileState2 == 0;
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: generation=" + fileState2);
-                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finished=" + isFinished);
+                    Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finished=" + finished);
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: fileSize=" + input.size());
                     this.finalChunk = (flagByte & MASK_FINAL_CHUNK) != 0;
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finalChunk=" + finalChunk);
                     absoluteChunkEnd = absoluteChunkStart + chunkSize;
                     return;
+                } else {
+                    if (finished) {
+                        throw new IOException("No metadata event found in finished chunk.");
+                    }
+                    if (chunkSize == HEADER_SIZE) {
+                        // This ensures that a non-streaming parser is able
+                        // to break out of the loop in case the file is
+                        // ended before the first metadata event has
+                        // been written. This can happen during a failed crash
+                        // dump.
+                        input.pollWait();
+                    }
                 }
             }
         }
@@ -197,7 +211,7 @@ public final class ChunkHeader {
     }
 
     public boolean isFinished() throws IOException {
-        return isFinished;
+        return finished;
     }
 
     public ChunkHeader nextHeader() throws IOException {

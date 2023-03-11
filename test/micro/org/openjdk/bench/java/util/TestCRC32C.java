@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,16 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 2)
-
+@Warmup(iterations = 4, time = 2)
+@Measurement(iterations = 4, time = 2)
+@Fork(value = 3)
 public class TestCRC32C {
 
     private CRC32C crc32c;
     private Random random;
     private byte[] bytes;
 
-    @Param({"64", "128", "256", "512", "1024", "2048", "4096", "8192", "16384", "32768", "65536"})
+    @Param({"64", "128", "256", "512", /* "1024", */ "2048", /* "4096", "8192", */ "16384", /* "32768", */ "65536"})
     private int count;
 
     public TestCRC32C() {

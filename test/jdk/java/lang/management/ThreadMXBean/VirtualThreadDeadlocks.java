@@ -22,14 +22,27 @@
  */
 
 /**
- * @test
+ * @test id=default
  * @bug 8284161 8287103
  * @summary Test ThredMXBean.findMonitorDeadlockedThreads with cycles of
  *   platform and virtual threads in deadlock
- * @compile --enable-preview -source ${jdk.version} VirtualThreadDeadlocks.java
- * @run main/othervm --enable-preview VirtualThreadDeadlocks PP
- * @run main/othervm --enable-preview VirtualThreadDeadlocks PV
- * @run main/othervm --enable-preview VirtualThreadDeadlocks VV
+ * @enablePreview
+ * @modules java.base/java.lang:+open java.management
+ * @library /test/lib
+ * @run main/othervm VirtualThreadDeadlocks PP
+ * @run main/othervm VirtualThreadDeadlocks PV
+ * @run main/othervm VirtualThreadDeadlocks VV
+ */
+
+/**
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @enablePreview
+ * @modules java.base/java.lang:+open java.management
+ * @library /test/lib
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks PP
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks PV
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks VV
  */
 
 import java.lang.management.ManagementFactory;
@@ -37,6 +50,7 @@ import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
 import java.util.concurrent.CyclicBarrier;
 import java.util.stream.Stream;
+import jdk.test.lib.thread.VThreadRunner;
 
 public class VirtualThreadDeadlocks {
     private static final Object LOCK1 = new Object();
@@ -50,6 +64,8 @@ public class VirtualThreadDeadlocks {
      * VV = test deadlock with two virtual threads
      */
     public static void main(String[] args) throws Exception {
+        // need at least two carrier threads due to pinning
+        VThreadRunner.ensureParallelism(2);
 
         // start thread1
         Thread.Builder builder1 = (args[0].charAt(0) == 'P')

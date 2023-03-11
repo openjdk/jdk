@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -463,6 +463,22 @@ final class Double64Vector extends DoubleVector {
 
     @Override
     @ForceInline
+    public Double64Vector compress(VectorMask<Double> m) {
+        return (Double64Vector)
+            super.compressTemplate(Double64Mask.class,
+                                   (Double64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double64Vector expand(VectorMask<Double> m) {
+        return (Double64Vector)
+            super.expandTemplate(Double64Mask.class,
+                                   (Double64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Double64Vector selectFrom(Vector<Double> v) {
         return (Double64Vector)
             super.selectFromTemplate((Double64Vector) v);  // specialize
@@ -628,6 +644,15 @@ final class Double64Vector extends DoubleVector {
             return xor(m.not());
         }
 
+        @Override
+        @ForceInline
+        /*package-private*/
+        Double64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Double64Mask) VectorSupport.indexPartiallyInUpperRange(
+                Double64Mask.class, double.class, VLENGTH, offset, limit,
+                (o, l) -> (Double64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
+        }
+
         // Unary operations
 
         @Override
@@ -635,6 +660,15 @@ final class Double64Vector extends DoubleVector {
         public Double64Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Double64Mask compress() {
+            return (Double64Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Double64Vector.class, Double64Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -812,8 +846,8 @@ final class Double64Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m) {
-        return super.fromArray0Template(Double64Mask.class, a, offset, (Double64Mask) m);  // specialize
+    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m, int offsetInRange) {
+        return super.fromArray0Template(Double64Mask.class, a, offset, (Double64Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -828,29 +862,15 @@ final class Double64Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    DoubleVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m) {
-        return super.fromByteArray0Template(Double64Mask.class, a, offset, (Double64Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
-        return super.fromByteBuffer0Template(Double64Mask.class, bb, offset, (Double64Mask) m);  // specialize
+    DoubleVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Double> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(Double64Mask.class, ms, offset, (Double64Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -878,22 +898,8 @@ final class Double64Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Double> m) {
-        super.intoByteArray0Template(Double64Mask.class, a, offset, (Double64Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
-        super.intoByteBuffer0Template(Double64Mask.class, bb, offset, (Double64Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Double> m) {
+        super.intoMemorySegment0Template(Double64Mask.class, ms, offset, (Double64Mask) m);
     }
 
 
@@ -902,3 +908,4 @@ final class Double64Vector extends DoubleVector {
     // ================================================
 
 }
+

@@ -30,10 +30,6 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 
-inline size_t ParallelScavengeHeap::total_invocations() {
-  return PSParallelCompact::total_invocations();
-}
-
 inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const {
   const size_t eden_size = young_gen()->eden_space()->capacity_in_words();
   return size < eden_size / 2;
@@ -43,11 +39,11 @@ inline void ParallelScavengeHeap::invoke_scavenge() {
   PSScavenge::invoke();
 }
 
-inline bool ParallelScavengeHeap::is_in_young(const oop p) const {
+inline bool ParallelScavengeHeap::is_in_young(const void* p) const {
   // Assumes the old gen address range is lower than that of the young gen.
-  bool result = cast_from_oop<HeapWord*>(p) >= young_gen()->reserved().start();
+  bool result = p >= young_gen()->reserved().start();
   assert(result == young_gen()->is_in_reserved(p),
-         "incorrect test - result=%d, p=" PTR_FORMAT, result, p2i((void*)p));
+         "incorrect test - result=%d, p=" PTR_FORMAT, result, p2i(p));
   return result;
 }
 #endif // SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP

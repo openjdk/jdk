@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,14 @@ class CgroupV2Controller: public CgroupController {
 class CgroupV2Subsystem: public CgroupSubsystem {
   private:
     /* One unified controller */
-    CgroupController* _unified = NULL;
+    CgroupController* _unified = nullptr;
     /* Caching wrappers for cpu/memory metrics */
-    CachingCgroupController* _memory = NULL;
-    CachingCgroupController* _cpu = NULL;
+    CachingCgroupController* _memory = nullptr;
+    CachingCgroupController* _cpu = nullptr;
 
     char *mem_limit_val();
     char *mem_swp_limit_val();
+    char *mem_swp_current_val();
     char *mem_soft_limit_val();
     char *cpu_quota_val();
     char *pids_max_val();
@@ -77,10 +78,13 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     jlong memory_soft_limit_in_bytes();
     jlong memory_usage_in_bytes();
     jlong memory_max_usage_in_bytes();
+
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
     jlong pids_max();
     jlong pids_current();
+
+    void print_version_specific_info(outputStream* st);
 
     const char * container_type() {
       return "cgroupv2";

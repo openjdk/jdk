@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "os_windows.hpp"
 #include "runtime/os.hpp"
 
 void MacroAssembler::int3() {
@@ -52,7 +53,7 @@ void MacroAssembler::int3() {
 //
 void MacroAssembler::get_thread(Register thread) {
   prefix(FS_segment);
-  movptr(thread, ExternalAddress(NULL));
+  movptr(thread, ExternalAddress(nullptr));
   assert(os::win32::get_thread_ptr_offset() != 0,
          "Thread Pointer Offset has not been initialized");
   movl(thread, Address(thread, os::win32::get_thread_ptr_offset()));

@@ -37,8 +37,6 @@ import jdk.jfr.internal.Type;
 @StackTrace(false)
 public final class ActiveSettingEvent extends AbstractJDKEvent {
 
-    public static final ActiveSettingEvent EVENT = new ActiveSettingEvent();
-
     // The order of these fields must be the same as the parameters in
     // commit(... , long, String, String)
 
@@ -53,5 +51,9 @@ public final class ActiveSettingEvent extends AbstractJDKEvent {
 
     public static void commit(long startTime, long duration, long id, String name, String value) {
         // Generated
+    }
+
+    public static boolean enabled() {
+        return false; // Generated
     }
 }

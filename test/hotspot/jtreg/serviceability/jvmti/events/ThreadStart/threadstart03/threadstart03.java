@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -46,30 +44,19 @@ import java.io.PrintStream;
 
 public class threadstart03 {
 
-    final static int JCK_STATUS_BASE = 95;
     final static String ThreadName = "testedThread";
 
     static {
-        try {
-            System.loadLibrary("threadstart03");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load threadstart03 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("threadstart03");
     }
 
     native static int check(Thread thr, String name);
 
     public static void main(String args[]) {
-        int result = run(args, System.out);
+        int result = check(new Thread(ThreadName), ThreadName);
         if (result != 0) {
             throw new RuntimeException("Unexpected status: " + result);
         }
     }
 
-    public static int run(String args[], PrintStream out) {
-        return check(new Thread(ThreadName), ThreadName);
-    }
 }

@@ -543,7 +543,7 @@ abstract class OutputRecord
     }
 
     static ByteBuffer encodeV2ClientHello(
-            byte[] fragment, int offset, int length) throws IOException {
+            byte[] fragment, int offset, int length) {
         int v3SessIdLenOffset = offset + 34;      //  2: client_version
                                                   // 32: random
 

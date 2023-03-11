@@ -21,10 +21,12 @@
  * questions.
  */
 
+// Disabled by default
+// @test
 /*
- * @test
  * @summary Test compress expand as if the test methods are the implementation methods
  * @key randomness
+ * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_expand_i,_expand_l,_compress_i,_compress_l CompressExpandSanityTest
  * @run testng CompressExpandSanityTest
  */
 

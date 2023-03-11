@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,18 +334,6 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   LIR_Opr obj_temp = new_register(T_INT);
   set_no_result(x);
   monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
-}
-
-void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
-  BasicTypeList signature(0);
-  CallingConvention* cc = frame_map()->java_calling_convention(&signature, true);
-
-  const LIR_Opr result_reg = result_register_for(x->type());
-  address entry = StubRoutines::cont_doYield();
-  LIR_Opr result = rlock_result(x);
-  CodeEmitInfo* info = state_for(x, x->state());
-  __ call_runtime(entry, LIR_OprFact::illegalOpr, result_reg, cc->args(), info);
-  __ move(result_reg, result);
 }
 
 // _ineg, _lneg, _fneg, _dneg
@@ -844,6 +832,10 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     __ move(LIR_OprFact::doubleConst(-0.0), tmp);
   }
 #endif
+  if (x->id() == vmIntrinsics::_floatToFloat16) {
+    tmp = new_register(T_FLOAT);
+    __ move(LIR_OprFact::floatConst(-0.0), tmp);
+  }
 
   switch(x->id()) {
     case vmIntrinsics::_dabs:
@@ -852,6 +844,12 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dsqrt:
     case vmIntrinsics::_dsqrt_strict:
       __ sqrt(calc_input, calc_result, LIR_OprFact::illegalOpr);
+      break;
+    case vmIntrinsics::_floatToFloat16:
+      __ f2hf(calc_input, calc_result, tmp);
+      break;
+    case vmIntrinsics::_float16ToFloat:
+      __ hf2f(calc_input, calc_result, LIR_OprFact::illegalOpr);
       break;
     default:
       ShouldNotReachHere();

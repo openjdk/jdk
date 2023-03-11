@@ -35,7 +35,7 @@ import java.util.List;
  * @author Sergey Malenkov
  * @modules java.desktop/com.sun.beans.finder
  * @compile -XDignore.symbol.file TestConstructorFinder.java
- * @run main/othervm --enable-preview TestConstructorFinder
+ * @run main TestConstructorFinder
  */
 
 public class TestConstructorFinder {

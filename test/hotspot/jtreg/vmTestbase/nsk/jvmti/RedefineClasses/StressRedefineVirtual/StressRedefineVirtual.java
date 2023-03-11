@@ -27,6 +27,7 @@
  *
  * @key randomness
  *
+ * @requires vm.jvmti & vm.continuations
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jvmti.RedefineClasses.StressRedefine

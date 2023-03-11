@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +27,10 @@
  * @summary Vectorization test on basic int operations
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -40,9 +41,11 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicIntOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] a;
     private int[] b;
@@ -61,6 +64,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public int[] vectorNeg() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -70,6 +75,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
+        counts = {IRNode.ABS_V, ">0"})
     public int[] vectorAbs() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -79,6 +86,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.ADD_V, ">0"})
     public int[] vectorAdd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +97,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public int[] vectorSub() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -97,6 +108,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public int[] vectorMul() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -106,6 +119,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
     public int[] vectorMulAdd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -115,6 +130,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
     public int[] vectorMulSub() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -124,6 +141,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.POPCOUNT_VI, ">0"})
     public int[] vectorPopCount() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,6 +153,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_V, ">0"})
     public int[] vectorNot() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -143,6 +164,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.AND_V, ">0"})
     public int[] vectorAnd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -152,6 +175,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.OR_V, ">0"})
     public int[] vectorOr() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -161,6 +186,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_V, ">0"})
     public int[] vectorXor() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -171,6 +198,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.LSHIFT_V, ">0"})
     public int[] vectorShiftLeft() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -180,6 +209,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
     public int[] vectorSignedShiftRight() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -189,6 +220,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.URSHIFT_V, ">0"})
     public int[] vectorUnsignedShiftRight() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -235,6 +268,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that integer max produces non-vectorizable CMoveI node.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int reductionMax() {
         int res = Integer.MIN_VALUE;
         for (int i = 0; i < SIZE; i++) {
@@ -244,6 +279,8 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that integer min produces non-vectorizable CMoveI node.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int reductionMin() {
         int res = Integer.MAX_VALUE;
         for (int i = 0; i < SIZE; i++) {
@@ -252,4 +289,3 @@ public class BasicIntOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

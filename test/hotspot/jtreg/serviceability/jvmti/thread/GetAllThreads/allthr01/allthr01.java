@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,10 @@
  *     Fixed according to the 4480280 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} allthr01.java
- * @run main/othervm/native --enable-preview -agentlib:allthr01 allthr01
+ * @run main/othervm/native --enable-preview -Djava.util.concurrent.ForkJoinPool.common.parallelism=1 -agentlib:allthr01 allthr01
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,20 +47,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class allthr01 {
 
     static {
-        try {
-            System.loadLibrary("allthr01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load allthr001 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("allthr01");
     }
 
     // Sync with native code
     final static String THREAD_NAME = "thread1";
 
-    native static void setSysCnt();
     native static void startAgentThread();
     native static void stopAgentThread();
     native static boolean checkInfo0(int expectedInfoIdx);
@@ -70,7 +63,6 @@ public class allthr01 {
     }
 
     public static void main(String[] args) {
-        setSysCnt();
         checkInfo(0);
 
         MyThread platformThread = new MyThread(THREAD_NAME, false);

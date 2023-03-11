@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,11 @@ public class ParallelScavengeHeap extends CollectedHeap {
 
    // Accessors
    public PSYoungGen youngGen() {
-      return (PSYoungGen) VMObjectFactory.newObject(PSYoungGen.class, youngGenField.getValue());
+      return VMObjectFactory.newObject(PSYoungGen.class, youngGenField.getValue());
    }
 
    public PSOldGen oldGen() {
-      return (PSOldGen) VMObjectFactory.newObject(PSOldGen.class, oldGenField.getValue());
+      return VMObjectFactory.newObject(PSOldGen.class, oldGenField.getValue());
    }
 
    public long capacity() {

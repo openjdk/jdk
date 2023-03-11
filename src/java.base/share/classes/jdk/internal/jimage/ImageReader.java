@@ -458,7 +458,11 @@ public final class ImageReader implements AutoCloseable {
                     makeDirectories(path);
                 } else { // a resource
                     makeDirectories(childloc.buildName(true, true, false));
-                    newResource(dir, childloc);
+                    // if we have already created a resource for this name previously, then don't
+                    // recreate it
+                    if (!nodes.containsKey(childloc.getFullName(true))) {
+                        newResource(dir, childloc);
+                    }
                 }
             });
             dir.setCompleted(true);
@@ -753,6 +757,7 @@ public final class ImageReader implements AutoCloseable {
         }
 
         void addChild(Node node) {
+            assert !children.contains(node) : "Child " + node + " already added";
             children.add(node);
         }
 

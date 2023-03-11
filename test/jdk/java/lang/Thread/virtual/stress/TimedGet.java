@@ -21,12 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary Stress parking with CompletableFuture timed get
- * @requires vm.debug != true
- * @compile --enable-preview -source ${jdk.version} TimedGet.java
- * @run main/othervm -Xmx1g --enable-preview TimedGet
+ * @requires vm.debug != true & vm.continuations
+ * @enablePreview
+ * @run main/othervm -Xmx1g TimedGet 100000
  */
 
 import java.time.Duration;

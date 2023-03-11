@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private List<PackageElement> findRelatedPackages() {
         String pkgName = packageElement.getQualifiedName().toString();
 
-        // always add super package
+        // always add superpackage
         int lastdot = pkgName.lastIndexOf('.');
         String pkgPrefix = lastdot > 0 ? pkgName.substring(0, lastdot) : null;
         List<PackageElement> packages = new ArrayList<>(
@@ -168,7 +168,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             packages.addAll(subpackages);
         }
 
-        // only add sibling packages if there is a non-empty super package, we are beneath threshold,
+        // only add sibling packages if there is a non-empty superpackage, we are beneath threshold,
         // and number of siblings is beneath threshold as well
         if (hasSuperPackage && pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
             Pattern siblingPattern = Pattern.compile(pkgPrefix.replace(".", "\\.") + "\\.\\w+");
@@ -241,21 +241,21 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @param target the content to which the links will be added
      */
     public void addAllClassesAndInterfacesSummary(Content target) {
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<TypeElement>(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.CLASS_SUMMARY)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
+                .addTab(contents.classes, e -> utils.isNonThrowableClass(e))
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
+                .addTab(contents.records, e -> utils.isRecord(e))
+                .addTab(contents.exceptionClasses, e -> utils.isThrowable(e))
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (TypeElement typeElement : allClasses) {
             if (typeElement != null && utils.isCoreClass(typeElement)) {
                 Content classLink = getLink(new HtmlLinkInfo(
-                        configuration, HtmlLinkInfo.Kind.PACKAGE, typeElement));
+                        configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement));
                 ContentBuilder description = new ContentBuilder();
                 addPreviewSummary(typeElement, description);
                 if (utils.isDeprecated(typeElement)) {
@@ -279,7 +279,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                                   TableHeader tableHeader, Content summaryContent,
                                   boolean showModules) {
         if (!packages.isEmpty()) {
-            Table table = new Table(HtmlStyle.summaryTable)
+            var table = new Table<Void>(HtmlStyle.summaryTable)
                     .setId(HtmlIds.RELATED_PACKAGE_SUMMARY)
                     .setCaption(label)
                     .setHeader(tableHeader);

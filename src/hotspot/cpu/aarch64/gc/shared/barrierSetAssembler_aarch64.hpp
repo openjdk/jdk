@@ -31,6 +31,12 @@
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
 
+enum class NMethodPatchingType {
+  stw_instruction_and_data_patch,
+  conc_instruction_and_data_patch,
+  conc_data_patch
+};
+
 class BarrierSetAssembler: public CHeapObj<mtGC> {
 private:
   void incr_allocated_bytes(MacroAssembler* masm,
@@ -41,11 +47,57 @@ public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register start, Register end, Register tmp, RegSet saved_regs) {}
+                                  Register start, Register count, Register tmp, RegSet saved_regs) {}
+
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            Register dst1,
+                            Register dst2,
+                            Address src,
+                            Register tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             Register src1,
+                             Register src2,
+                             Register tmp1,
+                             Register tmp2,
+                             Register tmp3);
+
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            FloatRegister dst1,
+                            FloatRegister dst2,
+                            Address src,
+                            Register tmp1,
+                            Register tmp2,
+                            FloatRegister vec_tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             FloatRegister src1,
+                             FloatRegister src2,
+                             Register tmp1,
+                             Register tmp2,
+                             Register tmp3,
+                             FloatRegister vec_tmp1,
+                             FloatRegister vec_tmp2,
+                             FloatRegister vec_tmp3);
+
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                       Register dst, Address src, Register tmp1, Register tmp_thread);
+                       Register dst, Address src, Register tmp1, Register tmp2);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                        Address dst, Register val, Register tmp1, Register tmp2);
+                        Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
@@ -59,19 +111,20 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
 
-  void eden_allocate(MacroAssembler* masm,
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   virtual void barrier_stubs_init() {}
 
-  virtual bool nmethod_code_patching() { return true; }
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
 
-  virtual void nmethod_entry_barrier(MacroAssembler* masm);
+  virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
+
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
+
+  virtual bool supports_instruction_patching() {
+    NMethodPatchingType patching_type = nmethod_patching_type();
+    return patching_type == NMethodPatchingType::conc_instruction_and_data_patch ||
+            patching_type == NMethodPatchingType::stw_instruction_and_data_patch;
+  }
 
   static address patching_epoch_addr();
   static void clear_patching_epoch();

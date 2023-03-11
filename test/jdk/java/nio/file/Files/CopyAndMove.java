@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6917021 7006126 6950237 8006645 8201407 8267820
+ * @bug 4313887 6838333 6917021 7006126 6950237 8006645 8201407 8264744 8267820
  * @summary Unit test for java.nio.file.Files copy and move methods (use -Dseed=X to set PRNG seed)
  * @library .. /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.RandomFactory
@@ -59,15 +59,33 @@ public class CopyAndMove {
             testCopyFileToFile(dir1, dir1, TestUtil.supportsLinks(dir1));
             testMove(dir1, dir1, TestUtil.supportsLinks(dir1));
 
-            // Different directories. Use test.dir if possible as it might be
-            // a different volume/file system and so improve test coverage.
+            // Use test.dir to define second directory if possible as it might
+            // be a different volume/file system and so improve test coverage.
             String testDir = System.getProperty("test.dir", ".");
             Path dir2 = TestUtil.createTemporaryDirectory(testDir);
+            FileStore fileStore2 = getFileStore(dir2);
+            printDirInfo("dir2", dir2, fileStore2);
+
+            // If different type (format) from dir1, re-do same directory tests
+            if (!fileStore1.type().equals(fileStore2.type())) {
+                try {
+                    testPosixAttributes =
+                        fileStore2.supportsFileAttributeView("posix");
+                    testCopyFileToFile(dir2, dir2, TestUtil.supportsLinks(dir2));
+                    testMove(dir2, dir2, TestUtil.supportsLinks(dir2));
+                } finally {
+                    TestUtil.removeAll(dir2);
+                }
+            }
+
+            // Different directories.
             try {
+                // Recreate dir2 if it was removed above
+                if (notExists(dir2)) {
+                    dir2 = TestUtil.createTemporaryDirectory(testDir);
+                }
                 boolean testSymbolicLinks =
                     TestUtil.supportsLinks(dir1) && TestUtil.supportsLinks(dir2);
-                FileStore fileStore2 = getFileStore(dir2);
-                printDirInfo("dir2", dir2, fileStore2);
                 testPosixAttributes = fileStore1.supportsFileAttributeView("posix") &&
                                       fileStore2.supportsFileAttributeView("posix");
                 testCopyFileToFile(dir1, dir2, testSymbolicLinks);

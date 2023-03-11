@@ -121,7 +121,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Path bgFile = Path.of(rootPath.toString(), APP_NAME.fetchFrom(params),
                               BACKGROUND_IMAGE_FOLDER, BACKGROUND_IMAGE);
 
-        //prepare config for exe
+        // Prepare DMG setup script
         Map<String, String> data = new HashMap<>();
         data.put("DEPLOY_VOLUME_URL", volumeUrl);
         data.put("DEPLOY_BG_FILE", bgFile.toString());
@@ -131,6 +131,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
               APP_NAME.fetchFrom(params) : appLocation.getFileName().toString();
         data.put("DEPLOY_TARGET", targetItem);
         data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params, true));
+        data.put("DEPLOY_INSTALL_LOCATION_DISPLAY_NAME",
+                getInstallDirDisplayName(params));
 
         createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
                 .setCategory(I18N.getString("resource.dmg-setup-script"))
@@ -277,11 +279,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
                 + INSTALLER_SUFFIX.fetchFrom(params) + ".dmg");
 
-        Path srcFolder = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
-        Path predefinedImage = StandardBundlerParam.getPredefinedAppImage(params);
-        if (predefinedImage != null) {
-            srcFolder = predefinedImage;
-        } else if (StandardBundlerParam.isRuntimeInstaller(params)) {
+        Path srcFolder = appLocation.getParent();
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
             Path newRoot = Files.createTempDirectory(TEMP_ROOT.fetchFrom(params),
                     "root-");
 

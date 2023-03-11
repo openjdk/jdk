@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,26 @@
  * @summary Vectorization test on array index fill
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.ArrayIndexFillTest
  *
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class ArrayIndexFillTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] a;
 
@@ -54,6 +57,8 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public byte[] fillByteArray() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -63,6 +68,8 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public short[] fillShortArray() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -72,6 +79,8 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public char[] fillCharArray() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -81,6 +90,8 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public int[] fillIntArray() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -99,6 +110,8 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public short[] fillShortArrayWithShortIndex() {
         short[] res = new short[SIZE];
         for (short i = 0; i < SIZE; i++) {
@@ -108,6 +121,8 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public int[] fillMultipleArraysDifferentTypes1() {
         int[] res1 = new int[SIZE];
         short[] res2 = new short[SIZE];
@@ -119,6 +134,8 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.POPULATE_INDEX, ">0"})
     public char[] fillMultipleArraysDifferentTypes2() {
         int[] res1 = new int[SIZE];
         char[] res2 = new char[SIZE];
@@ -139,4 +156,3 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
         return res;
     }
 }
-

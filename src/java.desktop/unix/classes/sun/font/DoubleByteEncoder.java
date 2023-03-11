@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
  * questions.
  */
 
-/*
- */
-
 package sun.font;
 
 import java.nio.ByteBuffer;
@@ -39,8 +36,8 @@ public abstract class DoubleByteEncoder
     extends CharsetEncoder
 {
 
-    private short[] index1;
-    private String[] index2;
+    private final short[] index1;
+    private final String[] index2;
 
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
@@ -102,8 +99,7 @@ public abstract class DoubleByteEncoder
                         return CoderResult.UNDERFLOW;
                     char c2 = sa[sp + 1];
 
-                    byte[] outputBytes = new byte[2];
-                    outputBytes = encodeSurrogate(c, c2);
+                    byte[] outputBytes = encodeSurrogate(c, c2);
 
                     if (outputBytes == null) {
                         return sgp.unmappableResult();
@@ -158,8 +154,7 @@ public abstract class DoubleByteEncoder
                     if ((surr = sgp.parse(c, src)) < 0)
                         return sgp.error();
                     char c2 = Surrogate.low(surr);
-                    byte[] outputBytes = new byte[2];
-                    outputBytes = encodeSurrogate(c, c2);
+                    byte[] outputBytes = encodeSurrogate(c, c2);
 
                     if (outputBytes == null) {
                         return sgp.unmappableResult();
@@ -204,7 +199,7 @@ public abstract class DoubleByteEncoder
     }
 
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
-        if (true && src.hasArray() && dst.hasArray())
+        if (src.hasArray() && dst.hasArray())
             return encodeArrayLoop(src, dst);
         else
             return encodeBufferLoop(src, dst);

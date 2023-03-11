@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 void G1RemSetSummary::update() {
   class CollectData : public ThreadClosure {
@@ -52,9 +52,6 @@ void G1RemSetSummary::update() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   g1h->concurrent_refine()->threads_do(&collector);
-  _coarsenings = HeapRegionRemSet::coarsen_stats();
-
-  set_sampling_task_vtime(g1h->rem_set()->sampling_task_vtime());
 }
 
 void G1RemSetSummary::set_rs_thread_vtime(uint thread, double value) {
@@ -70,10 +67,8 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
 }
 
 G1RemSetSummary::G1RemSetSummary(bool should_update) :
-  _coarsenings(),
   _num_vtimes(G1ConcurrentRefine::max_num_threads()),
-  _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
-  _sampling_task_vtime(0.0f) {
+  _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)) {
 
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
 
@@ -90,24 +85,16 @@ void G1RemSetSummary::set(G1RemSetSummary* other) {
   assert(other != NULL, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
-  _coarsenings = other->_coarsenings;
-
   memcpy(_rs_threads_vtimes, other->_rs_threads_vtimes, sizeof(double) * _num_vtimes);
-
-  set_sampling_task_vtime(other->sampling_task_vtime());
 }
 
 void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   assert(other != NULL, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
-  _coarsenings.subtract_from(other->_coarsenings);
-
   for (uint i = 0; i < _num_vtimes; i++) {
     set_rs_thread_vtime(i, other->rs_thread_vtime(i) - rs_thread_vtime(i));
   }
-
-  _sampling_task_vtime = other->sampling_task_vtime() - _sampling_task_vtime;
 }
 
 class RegionTypeCounter {
@@ -298,7 +285,8 @@ public:
                   rem_set->occupied());
 
     HeapRegionRemSet::print_static_mem_size(out);
-    G1CardSetFreePool::free_list_pool()->print_on(out);
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    g1h->card_set_freelist_pool()->print_on(out);
 
     // Code root statistics
     HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
@@ -327,17 +315,15 @@ public:
   }
 };
 
-void G1RemSetSummary::print_on(outputStream* out) {
-  out->print("Coarsening: ");
-  _coarsenings.print_on(out);
-  out->print_cr("  Concurrent refinement threads times (s)");
-  out->print("     ");
-  for (uint i = 0; i < _num_vtimes; i++) {
-    out->print("    %5.2f", rs_thread_vtime(i));
+void G1RemSetSummary::print_on(outputStream* out, bool show_thread_times) {
+  if (show_thread_times) {
+    out->print_cr(" Concurrent refinement threads times (s)");
+    out->print("     ");
+    for (uint i = 0; i < _num_vtimes; i++) {
+      out->print("    %5.2f", rs_thread_vtime(i));
+    }
+    out->cr();
   }
-  out->cr();
-  out->print_cr("  Sampling task time (ms)");
-  out->print_cr("         %5.3f", sampling_task_vtime() * MILLIUNITS);
 
   HRRSStatsIter blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);

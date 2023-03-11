@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -37,6 +36,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
@@ -52,10 +52,10 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "runtime/thread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
@@ -71,31 +71,31 @@ extern "C" {
   typedef jboolean (*verify_byte_codes_fn_t)(JNIEnv *, jclass, char *, jint, jint);
 }
 
-static verify_byte_codes_fn_t volatile _verify_byte_codes_fn = NULL;
+static verify_byte_codes_fn_t volatile _verify_byte_codes_fn = nullptr;
 
 static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
-  if (_verify_byte_codes_fn != NULL)
+  if (_verify_byte_codes_fn != nullptr)
     return _verify_byte_codes_fn;
 
   MutexLocker locker(Verify_lock);
 
-  if (_verify_byte_codes_fn != NULL)
+  if (_verify_byte_codes_fn != nullptr)
     return _verify_byte_codes_fn;
 
   // Load verify dll
   char buffer[JVM_MAXPATHLEN];
   char ebuf[1024];
   if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
-    return NULL; // Caller will throw VerifyError
+    return nullptr; // Caller will throw VerifyError
 
   void *lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
-  if (lib_handle == NULL)
-    return NULL; // Caller will throw VerifyError
+  if (lib_handle == nullptr)
+    return nullptr; // Caller will throw VerifyError
 
   void *fn = os::dll_lookup(lib_handle, "VerifyClassForMajorVersion");
-  if (fn == NULL)
-    return NULL; // Caller will throw VerifyError
+  if (fn == nullptr)
+    return nullptr; // Caller will throw VerifyError
 
   return _verify_byte_codes_fn = CAST_TO_FN_PTR(verify_byte_codes_fn_t, fn);
 }
@@ -104,7 +104,7 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
 // Methods in Verifier
 
 bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
-  return (class_loader == NULL || !should_verify_class) ?
+  return (class_loader == nullptr || !should_verify_class) ?
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
@@ -119,14 +119,14 @@ bool Verifier::relax_access_for(oop loader) {
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
-  assert(verify_class != NULL, "Unexpected null verify_class");
+  assert(verify_class != nullptr, "Unexpected null verify_class");
   ResourceMark rm;
   Symbol* s = verify_class->source_file_name();
-  const char* source_file = (s != NULL ? s->as_C_string() : NULL);
+  const char* source_file = (s != nullptr ? s->as_C_string() : nullptr);
   const char* verify = verify_class->external_name();
   const char* resolve = resolve_class->external_name();
   // print in a single call to reduce interleaving between threads
-  if (source_file != NULL) {
+  if (source_file != nullptr) {
     log_debug(class, resolve)("%s %s %s (verification)", verify, resolve, source_file);
   } else {
     log_debug(class, resolve)("%s %s (verification)", verify, resolve);
@@ -135,10 +135,10 @@ void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verif
 
 // Prints the end-verification message to the appropriate output.
 void Verifier::log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, oop pending_exception) {
-  if (pending_exception != NULL) {
+  if (pending_exception != nullptr) {
     st->print("Verification for %s has", klassName);
     oop message = java_lang_Throwable::message(pending_exception);
-    if (message != NULL) {
+    if (message != nullptr) {
       char* ex_msg = java_lang_String::as_utf8_string(message);
       st->print_cr(" exception pending '%s %s'",
                    pending_exception->klass()->external_name(), ex_msg);
@@ -146,7 +146,7 @@ void Verifier::log_end_verification(outputStream* st, const char* klassName, Sym
       st->print_cr(" exception pending %s ",
                    pending_exception->klass()->external_name());
     }
-  } else if (exception_name != NULL) {
+  } else if (exception_name != nullptr) {
     st->print_cr("Verification for %s failed", klassName);
   }
   st->print_cr("End class verification for: %s", klassName);
@@ -165,7 +165,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   // effect (sic!) for external_name(), but instead of doing that, we opt to
   // explicitly push the hashcode in here. This is signify the following block
   // is IMPORTANT:
-  if (klass->java_mirror() != NULL) {
+  if (klass->java_mirror() != nullptr) {
     klass->java_mirror()->identity_hash();
   }
 
@@ -186,10 +186,10 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   // If the class should be verified, first see if we can use the split
   // verifier.  If not, or if verification fails and can failover, then
   // call the inference verifier.
-  Symbol* exception_name = NULL;
+  Symbol* exception_name = nullptr;
   const size_t message_buffer_len = klass->name()->utf8_length() + 1024;
-  char* message_buffer = NULL;
-  char* exception_message = NULL;
+  char* message_buffer = nullptr;
+  char* exception_message = nullptr;
 
   log_info(class, init)("Start class verification for: %s", klass->external_name());
   if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
@@ -216,7 +216,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       exception_name = inference_verify(
         klass, message_buffer, message_buffer_len, THREAD);
     }
-    if (exception_name != NULL) {
+    if (exception_name != nullptr) {
       exception_message = split_verifier.exception_message();
     }
   } else {
@@ -239,7 +239,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     return false; // use the existing exception
-  } else if (exception_name == NULL) {
+  } else if (exception_name == nullptr) {
     return true; // verification succeeded
   } else { // VerifyError or ClassFormatError to be created and thrown
     Klass* kls =
@@ -248,7 +248,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       Verifier::trace_class_resolution(kls, klass);
     }
 
-    while (kls != NULL) {
+    while (kls != nullptr) {
       if (kls == klass) {
         // If the class being verified is the exception we're creating
         // or one of it's superclasses, we're in trouble and are going
@@ -258,10 +258,10 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       }
       kls = kls->super();
     }
-    if (message_buffer != NULL) {
+    if (message_buffer != nullptr) {
       message_buffer[message_buffer_len - 1] = '\0'; // just to be sure
     }
-    assert(exception_message != NULL, "");
+    assert(exception_message != nullptr, "");
     THROW_MSG_(exception_name, exception_message, false);
   }
 }
@@ -270,7 +270,7 @@ bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_ve
   Symbol* name = klass->name();
   Klass* refl_magic_klass = vmClasses::reflect_MagicAccessorImpl_klass();
 
-  bool is_reflect = refl_magic_klass != NULL && klass->is_subtype_of(refl_magic_klass);
+  bool is_reflect = refl_magic_klass != nullptr && klass->is_subtype_of(refl_magic_klass);
 
   return (should_verify_for(klass->class_loader(), should_verify_class) &&
     // return if the class is a bootstrapping class
@@ -305,7 +305,7 @@ Symbol* Verifier::inference_verify(
 
   verify_byte_codes_fn_t verify_func = verify_byte_codes_fn();
 
-  if (verify_func == NULL) {
+  if (verify_func == nullptr) {
     jio_snprintf(message, message_len, "Could not link verifier");
     return vmSymbols::java_lang_VerifyError();
   }
@@ -333,14 +333,14 @@ Symbol* Verifier::inference_verify(
   if (result == 0) {
     return vmSymbols::java_lang_VerifyError();
   } else if (result == 1) {
-    return NULL; // verified.
+    return nullptr; // verified.
   } else if (result == 2) {
-    THROW_MSG_(vmSymbols::java_lang_OutOfMemoryError(), message, NULL);
+    THROW_MSG_(vmSymbols::java_lang_OutOfMemoryError(), message, nullptr);
   } else if (result == 3) {
     return vmSymbols::java_lang_ClassFormatError();
   } else {
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -348,36 +348,36 @@ TypeOrigin TypeOrigin::null() {
   return TypeOrigin();
 }
 TypeOrigin TypeOrigin::local(u2 index, StackMapFrame* frame) {
-  assert(frame != NULL, "Must have a frame");
+  assert(frame != nullptr, "Must have a frame");
   return TypeOrigin(CF_LOCALS, index, StackMapFrame::copy(frame),
      frame->local_at(index));
 }
 TypeOrigin TypeOrigin::stack(u2 index, StackMapFrame* frame) {
-  assert(frame != NULL, "Must have a frame");
+  assert(frame != nullptr, "Must have a frame");
   return TypeOrigin(CF_STACK, index, StackMapFrame::copy(frame),
       frame->stack_at(index));
 }
 TypeOrigin TypeOrigin::sm_local(u2 index, StackMapFrame* frame) {
-  assert(frame != NULL, "Must have a frame");
+  assert(frame != nullptr, "Must have a frame");
   return TypeOrigin(SM_LOCALS, index, StackMapFrame::copy(frame),
       frame->local_at(index));
 }
 TypeOrigin TypeOrigin::sm_stack(u2 index, StackMapFrame* frame) {
-  assert(frame != NULL, "Must have a frame");
+  assert(frame != nullptr, "Must have a frame");
   return TypeOrigin(SM_STACK, index, StackMapFrame::copy(frame),
       frame->stack_at(index));
 }
 TypeOrigin TypeOrigin::bad_index(u2 index) {
-  return TypeOrigin(BAD_INDEX, index, NULL, VerificationType::bogus_type());
+  return TypeOrigin(BAD_INDEX, index, nullptr, VerificationType::bogus_type());
 }
 TypeOrigin TypeOrigin::cp(u2 index, VerificationType vt) {
-  return TypeOrigin(CONST_POOL, index, NULL, vt);
+  return TypeOrigin(CONST_POOL, index, nullptr, vt);
 }
 TypeOrigin TypeOrigin::signature(VerificationType vt) {
-  return TypeOrigin(SIG, 0, NULL, vt);
+  return TypeOrigin(SIG, 0, nullptr, vt);
 }
 TypeOrigin TypeOrigin::implicit(VerificationType t) {
-  return TypeOrigin(IMPLICIT, 0, NULL, t);
+  return TypeOrigin(IMPLICIT, 0, nullptr, t);
 }
 TypeOrigin TypeOrigin::frame(StackMapFrame* frame) {
   return TypeOrigin(FRAME_ONLY, 0, StackMapFrame::copy(frame),
@@ -385,7 +385,7 @@ TypeOrigin TypeOrigin::frame(StackMapFrame* frame) {
 }
 
 void TypeOrigin::reset_frame() {
-  if (_frame != NULL) {
+  if (_frame != nullptr) {
     _frame->restore();
   }
 }
@@ -422,7 +422,7 @@ void TypeOrigin::details(outputStream* ss) const {
 #ifdef ASSERT
 void TypeOrigin::print_on(outputStream* str) const {
   str->print("{%d,%d,%p:", _origin, _index, _frame);
-  if (_frame != NULL) {
+  if (_frame != nullptr) {
     _frame->print_on(str);
   } else {
     str->print("null");
@@ -507,7 +507,7 @@ void ErrorContext::reason_details(outputStream* ss) const {
 }
 
 void ErrorContext::location_details(outputStream* ss, const Method* method) const {
-  if (_bci != -1 && method != NULL) {
+  if (_bci != -1 && method != nullptr) {
     streamIndentor si(ss);
     const char* bytecode_name = "<invalid>";
     if (method->validate_bci(_bci) != -1) {
@@ -529,12 +529,12 @@ void ErrorContext::location_details(outputStream* ss, const Method* method) cons
 
 void ErrorContext::frame_details(outputStream* ss) const {
   streamIndentor si(ss);
-  if (_type.is_valid() && _type.frame() != NULL) {
+  if (_type.is_valid() && _type.frame() != nullptr) {
     ss->indent().print_cr("Current Frame:");
     streamIndentor si2(ss);
     _type.frame()->print_on(ss);
   }
-  if (_expected.is_valid() && _expected.frame() != NULL) {
+  if (_expected.is_valid() && _expected.frame() != nullptr) {
     ss->indent().print_cr("Stackmap Frame:");
     streamIndentor si2(ss);
     _expected.frame()->print_on(ss);
@@ -542,7 +542,7 @@ void ErrorContext::frame_details(outputStream* ss) const {
 }
 
 void ErrorContext::bytecode_details(outputStream* ss, const Method* method) const {
-  if (method != NULL) {
+  if (method != nullptr) {
     streamIndentor si(ss);
     ss->indent().print_cr("Bytecode:");
     streamIndentor si2(ss);
@@ -551,7 +551,7 @@ void ErrorContext::bytecode_details(outputStream* ss, const Method* method) cons
 }
 
 void ErrorContext::handler_details(outputStream* ss, const Method* method) const {
-  if (method != NULL) {
+  if (method != nullptr) {
     streamIndentor si(ss);
     ExceptionTable table(method);
     if (table.length() > 0) {
@@ -566,7 +566,7 @@ void ErrorContext::handler_details(outputStream* ss, const Method* method) const
 }
 
 void ErrorContext::stackmap_details(outputStream* ss, const Method* method) const {
-  if (method != NULL && method->has_stackmap_table()) {
+  if (method != nullptr && method->has_stackmap_table()) {
     streamIndentor si(ss);
     ss->indent().print_cr("Stackmap Table:");
     Array<u1>* data = method->stackmap_data();
@@ -593,14 +593,14 @@ void ErrorContext::stackmap_details(outputStream* ss, const Method* method) cons
 // Methods in ClassVerifier
 
 ClassVerifier::ClassVerifier(JavaThread* current, InstanceKlass* klass)
-    : _thread(current), _previous_symbol(NULL), _symbols(NULL), _exception_type(NULL),
-      _message(NULL), _method_signatures_table(NULL), _klass(klass) {
+    : _thread(current), _previous_symbol(nullptr), _symbols(nullptr), _exception_type(nullptr),
+      _message(nullptr), _klass(klass) {
   _this_type = VerificationType::reference_type(klass->name());
 }
 
 ClassVerifier::~ClassVerifier() {
   // Decrement the reference count for any symbols created.
-  if (_symbols != NULL) {
+  if (_symbols != nullptr) {
     for (int i = 0; i < _symbols->length(); i++) {
       Symbol* s = _symbols->at(i);
       s->decrement_refcount();
@@ -625,16 +625,12 @@ void ClassVerifier::verify_class(TRAPS) {
   // Either verifying both local and remote classes or just remote classes.
   assert(BytecodeVerificationRemote, "Should not be here");
 
-  // Create hash table containing method signatures.
-  method_signatures_table_type method_signatures_table;
-  set_method_signatures_table(&method_signatures_table);
-
   Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();
 
   for (int index = 0; index < num_methods; index++) {
     // Check for recursive re-verification before each method.
-    if (was_recursively_verified())  return;
+    if (was_recursively_verified()) return;
 
     Method* m = methods->at(index);
     if (m->is_native() || m->is_abstract() || m->is_overpass()) {
@@ -1851,7 +1847,7 @@ char* ClassVerifier::generate_code_data(const methodHandle& m, u4 code_length, T
       }
     } else {
       verify_error(ErrorContext::bad_code(bcs.bci()), "Bad instruction");
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -2033,7 +2029,7 @@ void ClassVerifier::verify_cp_type(
   // In this case, a constant pool cache exists and some indices refer to that
   // instead.  Be sure we don't pick up such indices by accident.
   // We must check was_recursively_verified() before we get here.
-  guarantee(cp->cache() == NULL, "not rewritten yet");
+  guarantee(cp->cache() == nullptr, "not rewritten yet");
 
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
@@ -2071,7 +2067,7 @@ void ClassVerifier::verify_error(ErrorContext ctx, const char* msg, ...) {
 #ifdef ASSERT
   ResourceMark rm;
   const char* exception_name = _exception_type->as_C_string();
-  Exceptions::debug_check_abort(exception_name, NULL);
+  Exceptions::debug_check_abort(exception_name, nullptr);
 #endif // ndef ASSERT
 }
 
@@ -2102,7 +2098,7 @@ Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
     name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
     true, THREAD);
 
-  if (kls != NULL) {
+  if (kls != nullptr) {
     if (log_is_enabled(Debug, class, resolve)) {
       Verifier::trace_class_resolution(kls, current_class());
     }
@@ -2126,14 +2122,14 @@ bool ClassVerifier::is_protected_access(InstanceKlass* this_class,
   fieldDescriptor fd;
   if (is_method) {
     Method* m = target_instance->uncached_lookup_method(field_name, field_sig, Klass::OverpassLookupMode::find);
-    if (m != NULL && m->is_protected()) {
+    if (m != nullptr && m->is_protected()) {
       if (!this_class->is_same_class_package(m->method_holder())) {
         return true;
       }
     }
   } else {
     Klass* member_klass = target_instance->find_field(field_name, field_sig, &fd);
-    if (member_klass != NULL && fd.is_protected()) {
+    if (member_klass != nullptr && fd.is_protected()) {
       if (!this_class->is_same_class_package(member_klass)) {
         return true;
       }
@@ -2289,13 +2285,13 @@ void ClassVerifier::verify_switch(
     stackmap_table->check_jump_target(
       current_frame, target, CHECK_VERIFY(this));
   }
-  NOT_PRODUCT(aligned_bcp = NULL);  // no longer valid at this point
+  NOT_PRODUCT(aligned_bcp = nullptr);  // no longer valid at this point
 }
 
 bool ClassVerifier::name_in_supers(
     Symbol* ref_name, InstanceKlass* current) {
   Klass* super = current->super();
-  while (super != NULL) {
+  while (super != nullptr) {
     if (super->name() == ref_name) {
       return true;
     }
@@ -2732,7 +2728,7 @@ void ClassVerifier::verify_invoke_init(
         cp->signature_ref_at(bcs->get_index_u2()),
         Klass::OverpassLookupMode::find);
       // Do nothing if method is not found.  Let resolution detect the error.
-      if (m != NULL) {
+      if (m != nullptr) {
         InstanceKlass* mh = m->method_holder();
         if (m->is_protected() && !mh->is_same_class_package(_klass)) {
           bool assignable = current_type().is_assignable_from(
@@ -2769,10 +2765,10 @@ bool ClassVerifier::is_same_or_direct_interface(
     VerificationType ref_class_type) {
   if (ref_class_type.equals(klass_type)) return true;
   Array<InstanceKlass*>* local_interfaces = klass->local_interfaces();
-  if (local_interfaces != NULL) {
+  if (local_interfaces != nullptr) {
     for (int x = 0; x < local_interfaces->length(); x++) {
       InstanceKlass* k = local_interfaces->at(x);
-      assert (k != NULL && k->is_interface(), "invalid interface");
+      assert (k != nullptr && k->is_interface(), "invalid interface");
       if (ref_class_type.equals(VerificationType::reference_type(k->name()))) {
         return true;
       }
@@ -2837,10 +2833,10 @@ void ClassVerifier::verify_invoke_instructions(
   // Get the signature's verification types.
   sig_as_verification_types* mth_sig_verif_types;
   sig_as_verification_types** mth_sig_verif_types_ptr = method_signatures_table()->get(sig_index);
-  if (mth_sig_verif_types_ptr != NULL) {
+  if (mth_sig_verif_types_ptr != nullptr) {
     // Found the entry for the signature's verification types in the hash table.
     mth_sig_verif_types = *mth_sig_verif_types_ptr;
-    assert(mth_sig_verif_types != NULL, "Unexpected NULL sig_as_verification_types value");
+    assert(mth_sig_verif_types != nullptr, "Unexpected null sig_as_verification_types value");
   } else {
     // Not found, add the entry to the table.
     GrowableArray<VerificationType>* verif_types = new GrowableArray<VerificationType>(10);
@@ -2912,7 +2908,7 @@ void ClassVerifier::verify_invoke_instructions(
 
   // Get the verification types for the method's arguments.
   GrowableArray<VerificationType>* sig_verif_types = mth_sig_verif_types->sig_verif_types();
-  assert(sig_verif_types != NULL, "Missing signature's array of verification types");
+  assert(sig_verif_types != nullptr, "Missing signature's array of verification types");
   // Match method descriptor with operand stack
   // The arguments are on the stack in descending order.
   for (int i = nargs - 1; i >= 0; i--) { // Run backwards
@@ -2936,7 +2932,7 @@ void ClassVerifier::verify_invoke_instructions(
           current_frame->pop_stack(ref_class_type, CHECK_VERIFY(this));
         if (current_type() != stack_object_type) {
           if (was_recursively_verified()) return;
-          assert(cp->cache() == NULL, "not rewritten yet");
+          assert(cp->cache() == nullptr, "not rewritten yet");
           Symbol* ref_class_name =
             cp->klass_name_at(cp->klass_ref_index_at(index));
           // See the comments in verify_field_instructions() for
@@ -2997,7 +2993,7 @@ void ClassVerifier::verify_invoke_instructions(
 VerificationType ClassVerifier::get_newarray_type(
     u2 index, u2 bci, TRAPS) {
   const char* from_bt[] = {
-    NULL, NULL, NULL, NULL, "[Z", "[C", "[F", "[D", "[B", "[S", "[I", "[J",
+    nullptr, nullptr, nullptr, nullptr, "[Z", "[C", "[F", "[D", "[B", "[S", "[I", "[J",
   };
   if (index < T_BOOLEAN || index > T_LONG) {
     verify_error(ErrorContext::bad_code(bci), "Illegal newarray instruction");
@@ -3154,13 +3150,13 @@ void ClassVerifier::verify_return_value(
 // they can be reference counted.
 Symbol* ClassVerifier::create_temporary_symbol(const char *name, int length) {
   // Quick deduplication check
-  if (_previous_symbol != NULL && _previous_symbol->equals(name, length)) {
+  if (_previous_symbol != nullptr && _previous_symbol->equals(name, length)) {
     return _previous_symbol;
   }
   Symbol* sym = SymbolTable::new_symbol(name, length);
   if (!sym->is_permanent()) {
-    if (_symbols == NULL) {
-      _symbols = new GrowableArray<Symbol*>(50, 0, NULL);
+    if (_symbols == nullptr) {
+      _symbols = new GrowableArray<Symbol*>(50, 0, nullptr);
     }
     _symbols->push(sym);
   }

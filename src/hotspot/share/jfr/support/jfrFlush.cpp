@@ -28,7 +28,7 @@
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrFlush.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 
 JfrFlush::JfrFlush(JfrStorage::BufferPtr old, size_t used, size_t requested, Thread* thread) :

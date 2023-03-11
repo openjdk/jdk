@@ -25,23 +25,11 @@
 
 package com.sun.source.tree;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A tree node used as the base class for the different kinds of
  * patterns.
  *
  * @since 16
  */
-public interface PatternTree extends Tree, CaseLabelTree {
-
-    /**
-     * The guard for the case.
-     *
-     * @return the guard
-     * @since 19
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    ExpressionTree getGuard();
-
+public interface PatternTree extends Tree {
 }

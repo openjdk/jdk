@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -60,44 +58,20 @@ import java.io.PrintStream;
  *     Fixed according to 6221885 test bug.
  *
  * @library /test/lib
- * @run main/othervm/native -agentlib:threadstart02 threadstart02 5
+ * @run main/othervm/native -agentlib:threadstart02 threadstart02
  */
 
 public class threadstart02 {
 
     static {
-        try {
-            System.loadLibrary("threadstart02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load threadstart02 library");
-            System.err.println("java.library.path:"
-                    + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("threadstart02");
     }
 
     native static int check();
 
-    public static int waitTime = 2;
+    public static int waitTime = 5;
 
     public static void main(String args[]) {
-        int result = run(args, System.out);
-        if (result != 0) {
-            throw new RuntimeException("Unexpected status: " + result);
-        }
-    }
-
-    public static int run(String args[], PrintStream out) {
-        if (args.length > 0) {
-            try {
-                int i  = Integer.parseInt(args[0]);
-                waitTime = i;
-            } catch (NumberFormatException ex) {
-                out.println("# Wrong argument \"" + args[0] + "\", the default value is used");
-            }
-        }
-        out.println("# Waiting time = " + waitTime + " mins");
-
         TestThread t = new TestThread("TestThread_1");
         t.start();
 
@@ -107,7 +81,10 @@ public class threadstart02 {
             throw new Error("Unexpected: " + e);
         }
 
-        return check();
+        int result = check();
+        if (result != 0) {
+            throw new RuntimeException("Unexpected status: " + result);
+        }
     }
 
     static class TestThread extends Thread {

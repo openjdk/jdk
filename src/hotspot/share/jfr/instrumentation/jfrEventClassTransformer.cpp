@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -34,6 +33,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/verificationType.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "jvm.h"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
@@ -54,9 +54,9 @@
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -431,9 +431,13 @@ static bool java_base_can_read_jdk_jfr() {
     return false;
   }
   assert(java_base_module != NULL, "invariant");
-  ModuleEntry* const jdk_jfr_module = table->lookup_only(jdk_jfr_module_symbol);
-  if (jdk_jfr_module == NULL) {
-    return false;
+  ModuleEntry* jdk_jfr_module;
+  {
+    MutexLocker ml(Module_lock);
+    jdk_jfr_module = table->lookup_only(jdk_jfr_module_symbol);
+    if (jdk_jfr_module == NULL) {
+      return false;
+    }
   }
   assert(jdk_jfr_module != NULL, "invariant");
   if (java_base_module->can_read(jdk_jfr_module)) {
@@ -1520,22 +1524,19 @@ static ClassFileStream* retransform_bytes(const Klass* existing_klass, const Cla
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   jint size_of_new_bytes = 0;
   unsigned char* new_bytes = NULL;
-  {
-    ResourceMark rm(THREAD);
-    const ClassFileStream* const stream = parser.clone_stream();
-    assert(stream != NULL, "invariant");
-    const jclass clazz = static_cast<jclass>(JfrJavaSupport::local_jni_handle(existing_klass->java_mirror(), THREAD));
-    JfrUpcalls::on_retransform(JfrTraceId::load_raw(existing_klass),
-                               clazz,
-                               stream->length(),
-                               stream->buffer(),
-                               &size_of_new_bytes,
-                               &new_bytes,
-                               THREAD);
-    JfrJavaSupport::destroy_local_jni_handle(clazz);
-    if (has_pending_exception(THREAD)) {
-      return NULL;
-    }
+  const ClassFileStream* const stream = parser.clone_stream();
+  assert(stream != NULL, "invariant");
+  const jclass clazz = static_cast<jclass>(JfrJavaSupport::local_jni_handle(existing_klass->java_mirror(), THREAD));
+  JfrUpcalls::on_retransform(JfrTraceId::load_raw(existing_klass),
+                              clazz,
+                              stream->length(),
+                              stream->buffer(),
+                              &size_of_new_bytes,
+                              &new_bytes,
+                              THREAD);
+  JfrJavaSupport::destroy_local_jni_handle(clazz);
+  if (has_pending_exception(THREAD)) {
+    return NULL;
   }
   assert(new_bytes != NULL, "invariant");
   assert(size_of_new_bytes > 0, "invariant");

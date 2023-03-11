@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 
 int PeriodicTask::_num_tasks = 0;
@@ -85,7 +86,7 @@ void PeriodicTask::enroll() {
   // not already own the PeriodicTask_lock. Otherwise, we don't try to
   // enter it again because VM internal Mutexes do not support recursion.
   //
-  MutexLocker ml(PeriodicTask_lock->owned_by_self() ? NULL : PeriodicTask_lock);
+  MutexLocker ml(PeriodicTask_lock->owned_by_self() ? nullptr : PeriodicTask_lock);
 
   if (_num_tasks == PeriodicTask::max_tasks) {
     fatal("Overflow in PeriodicTask table");
@@ -94,7 +95,7 @@ void PeriodicTask::enroll() {
   }
 
   WatcherThread* thread = WatcherThread::watcher_thread();
-  if (thread != NULL) {
+  if (thread != nullptr) {
     thread->unpark();
   } else {
     WatcherThread::start();
@@ -107,7 +108,7 @@ void PeriodicTask::disenroll() {
   // not already own the PeriodicTask_lock. Otherwise, we don't try to
   // enter it again because VM internal Mutexes do not support recursion.
   //
-  MutexLocker ml(PeriodicTask_lock->owned_by_self() ? NULL : PeriodicTask_lock);
+  MutexLocker ml(PeriodicTask_lock->owned_by_self() ? nullptr : PeriodicTask_lock);
 
   int index;
   for(index = 0; index < _num_tasks && _tasks[index] != this; index++)

@@ -32,7 +32,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Function;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.ArenaAllocator;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 
@@ -45,17 +46,17 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * This interface also defines factories for commonly used allocators:
  * <ul>
- *     <li>{@link #newNativeArena(MemorySession)} creates a more efficient arena-style allocator, where off-heap memory
- *     is allocated in bigger blocks, which are then sliced accordingly to fit allocation requests;</li>
- *     <li>{@link #implicitAllocator()} obtains an allocator which allocates native memory segment in independent,
- *     {@linkplain MemorySession#openImplicit() implicit memory sessions}; and</li>
+ *     <li>{@link #nativeAllocator(SegmentScope)} obtains a simple allocator which can
+ *     be used to allocate native segments;</li>
+ *     <li>{@link #slicingAllocator(MemorySegment)} obtains an efficient slicing allocator, where memory
+ *     is allocated by repeatedly slicing the provided memory segment;</li>
  *     <li>{@link #prefixAllocator(MemorySegment)} obtains an allocator which wraps a segment (either on-heap or off-heap)
  *     and recycles its content upon each new allocation request.</li>
  * </ul>
  * <p>
  * Passing a segment allocator to an API can be especially useful in circumstances where a client wants to communicate <em>where</em>
  * the results of a certain operation (performed by the API) should be stored, as a memory segment. For instance,
- * {@linkplain Linker#downcallHandle(FunctionDescriptor) downcall method handles} can accept an additional
+ * {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handles} can accept an additional
  * {@link SegmentAllocator} parameter if the underlying foreign function is known to return a struct by-value. Effectively,
  * the allocator parameter tells the linker runtime where to store the return value of the foreign function.
  */
@@ -71,11 +72,16 @@ public interface SegmentAllocator {
      * sequences with this charset's default replacement byte array.  The
      * {@link java.nio.charset.CharsetEncoder} class should be used when more
      * control over the encoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
+     * will appear truncated when read again.
      *
      * @implSpec the default implementation for this method copies the contents of the provided Java string
      * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
      * @param str the Java string to be converted into a C string.
-     * @return a new native memory segment containing the converted C string.
+     * @return a new native segment containing the converted C string.
      */
     default MemorySegment allocateUtf8String(String str) {
         Objects.requireNonNull(str);
@@ -195,11 +201,11 @@ public interface SegmentAllocator {
      * @param value the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
      */
-    default MemorySegment allocate(ValueLayout.OfAddress layout, Addressable value) {
+    default MemorySegment allocate(ValueLayout.OfAddress layout, MemorySegment value) {
         Objects.requireNonNull(value);
         Objects.requireNonNull(layout);
         MemorySegment segment = allocate(layout);
-        layout.varHandle().set(segment, value.address());
+        layout.varHandle().set(segment, value);
         return segment;
     }
 
@@ -282,12 +288,12 @@ public interface SegmentAllocator {
 
     private <Z> MemorySegment copyArrayWithSwapIfNeeded(Z array, ValueLayout elementLayout,
                                                         Function<Z, MemorySegment> heapSegmentFactory) {
-        Objects.requireNonNull(array);
-        Objects.requireNonNull(elementLayout);
-        int size = Array.getLength(array);
-        MemorySegment addr = allocate(MemoryLayout.sequenceLayout(size, elementLayout));
-        MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
-                addr, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+        int size = Array.getLength(Objects.requireNonNull(array));
+        MemorySegment addr = allocateArray(Objects.requireNonNull(elementLayout), size);
+        if (size > 0) {
+            MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
+                    addr, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+        }
         return addr;
     }
 
@@ -312,110 +318,47 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
         Objects.requireNonNull(elementLayout);
+        if (count < 0) {
+            throw new IllegalArgumentException("Negative array size");
+        }
         return allocate(MemoryLayout.sequenceLayout(count, elementLayout));
     }
 
     /**
      * Allocates a memory segment with the given size.
-     * @implSpec the default implementation for this method calls {@code this.allocate(bytesSize, 1)}.
-     * @param bytesSize the size (in bytes) of the block of memory to be allocated.
+     * @implSpec the default implementation for this method calls {@code this.allocate(byteSize, 1)}.
+     * @param byteSize the size (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}
+     * @throws IllegalArgumentException if {@code byteSize < 0}
      */
-    default MemorySegment allocate(long bytesSize) {
-        return allocate(bytesSize, 1);
+    default MemorySegment allocate(long byteSize) {
+        return allocate(byteSize, 1);
     }
 
     /**
-     * Allocates a memory segment with the given size and alignment constraints.
-     * @param bytesSize the size (in bytes) of the block of memory to be allocated.
-     * @param bytesAlignment the alignment (in bytes) of the block of memory to be allocated.
+     * Allocates a memory segment with the given size and alignment constraint.
+     * @param byteSize the size (in bytes) of the block of memory to be allocated.
+     * @param byteAlignment the alignment (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code alignmentBytes <= 0},
+     * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0},
      * or if {@code alignmentBytes} is not a power of 2.
      */
-    MemorySegment allocate(long bytesSize, long bytesAlignment);
+    MemorySegment allocate(long byteSize, long byteAlignment);
 
     /**
-     * Creates an unbounded arena-based allocator used to allocate native memory segments.
-     * The returned allocator features a predefined block size and maximum arena size, and the segments it allocates
-     * are associated with the provided memory session. Equivalent to the following code:
-     * {@snippet lang=java :
-     * SegmentAllocator.newNativeArena(Long.MAX_VALUE, predefinedBlockSize, session);
-     * }
-     *
-     * @param session the memory session associated with the segments allocated by the arena-based allocator.
-     * @return a new unbounded arena-based allocator
-     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#ownerThread() owning} {@code session}.
-     */
-    static SegmentAllocator newNativeArena(MemorySession session) {
-        return newNativeArena(Long.MAX_VALUE, ArenaAllocator.DEFAULT_BLOCK_SIZE, session);
-    }
-
-    /**
-     * Creates an arena-based allocator used to allocate native memory segments.
-     * The returned allocator features a block size set to the specified arena size, and the native segments
-     * it allocates are associated with the provided memory session. Equivalent to the following code:
-     * {@snippet lang=java :
-     * SegmentAllocator.newNativeArena(arenaSize, arenaSize, session);
-     * }
-     *
-     * @param arenaSize the size (in bytes) of the allocation arena.
-     * @param session the memory session associated with the segments allocated by the arena-based allocator.
-     * @return a new unbounded arena-based allocator
-     * @throws IllegalArgumentException if {@code arenaSize <= 0}.
-     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#ownerThread() owning} {@code session}.
-     */
-    static SegmentAllocator newNativeArena(long arenaSize, MemorySession session) {
-        return newNativeArena(arenaSize, arenaSize, session);
-    }
-
-    /**
-     * Creates an arena-based allocator used to allocate native memory segments. The returned allocator features
-     * the given block size {@code B} and the given arena size {@code A}, and the native segments
-     * it allocates are associated with the provided memory session.
+     * Returns a segment allocator which responds to allocation requests by returning consecutive slices
+     * obtained from the provided segment. Each new allocation request will return a new slice starting at the
+     * current offset (modulo additional padding to satisfy alignment constraint), with given size.
      * <p>
-     * The allocator arena is first initialized by {@linkplain MemorySegment#allocateNative(long, MemorySession) allocating} a
-     * native memory segment {@code S} of size {@code B}. The allocator then responds to allocation requests in one of the following ways:
-     * <ul>
-     *     <li>if the size of the allocation requests is smaller than the size of {@code S}, and {@code S} has a <em>free</em>
-     *     slice {@code S'} which fits that allocation request, return that {@code S'}.
-     *     <li>if the size of the allocation requests is smaller than the size of {@code S}, and {@code S} has no <em>free</em>
-     *     slices which fits that allocation request, allocate a new segment {@code S'}, with size {@code B},
-     *     and set {@code S = S'}; the allocator then tries to respond to the same allocation request again.
-     *     <li>if the size of the allocation requests is bigger than the size of {@code S}, allocate a new segment {@code S'},
-     *     which has a sufficient size to satisfy the allocation request, and return {@code S'}.
-     * </ul>
-     * <p>
-     * This segment allocator can be useful when clients want to perform multiple allocation requests while avoiding the
-     * cost associated with allocating a new off-heap memory region upon each allocation request.
-     * <p>
-     * The returned allocator might throw an {@link OutOfMemoryError} if the total memory allocated with this allocator
-     * exceeds the arena size {@code A}, or the system capacity. Furthermore, the returned allocator is not thread safe.
-     * Concurrent allocation needs to be guarded with synchronization primitives.
+     * When the returned allocator cannot satisfy an allocation request, e.g. because a slice of the provided
+     * segment with the requested size cannot be found, an {@link IndexOutOfBoundsException} is thrown.
      *
-     * @param arenaSize the size (in bytes) of the allocation arena.
-     * @param blockSize the block size associated with the arena-based allocator.
-     * @param session the memory session associated with the segments returned by the arena-based allocator.
-     * @return a new unbounded arena-based allocator
-     * @throws IllegalArgumentException if {@code blockSize <= 0}, if {@code arenaSize <= 0} or if {@code arenaSize < blockSize}.
-     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
-     * @throws WrongThreadException if this method is called from a thread other than the thread
-     * {@linkplain MemorySession#ownerThread() owning} {@code session}.
+     * @param segment the segment which the returned allocator should slice from.
+     * @return a new slicing allocator
      */
-    static SegmentAllocator newNativeArena(long arenaSize, long blockSize, MemorySession session) {
-        Objects.requireNonNull(session);
-        if (blockSize <= 0) {
-            throw new IllegalArgumentException("Invalid block size: " + blockSize);
-        }
-        if (arenaSize <= 0 || arenaSize < blockSize) {
-            throw new IllegalArgumentException("Invalid arena size: " + arenaSize);
-        }
-        return new ArenaAllocator(blockSize, arenaSize, session);
+    static SegmentAllocator slicingAllocator(MemorySegment segment) {
+        Objects.requireNonNull(segment);
+        return new SlicingAllocator(segment);
     }
 
     /**
@@ -439,24 +382,33 @@ public interface SegmentAllocator {
      * @return an allocator which recycles an existing segment upon each new allocation request.
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        Objects.requireNonNull(segment);
-        return (AbstractMemorySegmentImpl)segment;
+        return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
     }
 
     /**
-     * Returns an allocator which allocates native segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
-     * Equivalent to (but likely more efficient than) the following code:
-     * {@snippet lang=java :
-     * SegmentAllocator implicitAllocator = (size, align) -> MemorySegment.allocateNative(size, align, MemorySession.openImplicit());
+     * Simple allocator used to allocate native segments. The returned allocator responds to an allocation request by
+     * returning a native segment backed by a fresh off-heap region of memory, with given byte size and alignment constraint.
+     * <p>
+     * Each native segment obtained by the returned allocator is associated with the provided scope. As such,
+     * the off-heap region which backs the returned segment is freed when the scope becomes not
+     * {@linkplain SegmentScope#isAlive() alive}.
+     * <p>
+     * The {@link MemorySegment#address()} of the native segments obtained by the returned allocator is the starting address of
+     * the newly allocated off-heap memory region backing the segment. Moreover, the {@linkplain MemorySegment#address() address}
+     * of the native segment will be aligned according the provided alignment constraint.
+     * <p>
+     * The off-heap region of memory backing a native segment obtained by the returned allocator is initialized to zero.
+     * <p>
+     * This is equivalent to the following code:
+     * {@snippet lang = java:
+     * SegmentAllocator nativeAllocator = (byteSize, byteAlignment) ->
+     *     MemorySegment.allocateNative(byteSize, byteAlignment, scope);
      * }
-     *
-     * @return an allocator which allocates native segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
+     * @param scope the scope associated with the segments returned by the native allocator.
+     * @return a simple allocator used to allocate native segments.
      */
-    static SegmentAllocator implicitAllocator() {
-        class Holder {
-            static final SegmentAllocator IMPLICIT_ALLOCATOR = (size, align) ->
-                    MemorySegment.allocateNative(size, align, MemorySession.openImplicit());
-        }
-        return Holder.IMPLICIT_ALLOCATOR;
+    static SegmentAllocator nativeAllocator(SegmentScope scope) {
+        Objects.requireNonNull(scope);
+        return (MemorySessionImpl)scope;
     }
 }

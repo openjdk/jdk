@@ -30,13 +30,14 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 /*
  * @test
  * @bug 8259610
+ * @enablePreview
  * @key randomness
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector cast intrinsics work as intended on avx2.
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
- * @run driver compiler.vectorapi.reshape.TestVectorCastAVX2
+ * @run main compiler.vectorapi.reshape.TestVectorCastAVX2
  */
 public class TestVectorCastAVX2 {
     public static void main(String[] args) {

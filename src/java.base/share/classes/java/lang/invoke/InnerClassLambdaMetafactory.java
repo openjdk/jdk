@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-    // Used to ensure that each spun class name is unique
+    // Used to ensure that dumped class files for failed definitions have a unique class name
     private static final AtomicInteger counter = new AtomicInteger();
 
     // For dumping generated classes to disk, for debugging purposes
@@ -119,7 +119,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private final ClassWriter cw;                    // ASM class writer
     private final String[] argNames;                 // Generated names for the constructor arguments
     private final String[] argDescs;                 // Type descriptors for the constructor arguments
-    private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda$1"
+    private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda"
     private final boolean useImplMethodHandle;       // use MethodHandle invocation instead of symbolic bytecode invocation
 
     /**
@@ -209,7 +209,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             // use the original class name
             name = name.replace('/', '_');
         }
-        return name.replace('.', '/') + "$$Lambda$" + counter.incrementAndGet();
+        return name.replace('.', '/') + "$$Lambda";
     }
 
     /**
@@ -260,8 +260,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * registers the lambda proxy class for including into the CDS archive.
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
-        // CDS does not handle disableEagerInitialization.
-        if (!disableEagerInitialization) {
+        // CDS does not handle disableEagerInitialization or useImplMethodHandle
+        if (!disableEagerInitialization && !useImplMethodHandle) {
             // include lambda proxy class in CDS archive at dump time
             if (CDS.isDumpingArchive()) {
                 Class<?> innerClass = generateInnerClass();
@@ -301,7 +301,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * @throws LambdaConversionException If properly formed functional interface
      * is not found
      */
-    @SuppressWarnings("removal")
     private Class<?> generateInnerClass() throws LambdaConversionException {
         String[] interfaceNames;
         String interfaceName = interfaceClass.getName().replace('.', '/');
@@ -310,7 +309,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             interfaceNames = new String[]{interfaceName};
         } else {
             // Assure no duplicate interfaces (ClassFormatError)
-            Set<String> itfs = new LinkedHashSet<>(altInterfaces.length + 1);
+            Set<String> itfs = LinkedHashSet.newLinkedHashSet(altInterfaces.length + 1);
             itfs.add(interfaceName);
             for (Class<?> i : altInterfaces) {
                 itfs.add(i.getName().replace('.', '/'));
@@ -362,34 +361,51 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         // Define the generated class in this VM.
 
         final byte[] classBytes = cw.toByteArray();
-        // If requested, dump out to a file for debugging purposes
-        if (dumper != null) {
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override
-                public Void run() {
-                    dumper.dumpClass(lambdaClassName, classBytes);
-                    return null;
-                }
-            }, null,
-            new FilePermission("<<ALL FILES>>", "read, write"),
-            // createDirectories may need it
-            new PropertyPermission("user.dir", "read"));
-        }
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
-            Lookup lookup;
-            if (useImplMethodHandle) {
-                lookup = caller.defineHiddenClassWithClassData(classBytes, implementation, !disableEagerInitialization,
-                                                               NESTMATE, STRONG);
-            } else {
-                lookup = caller.defineHiddenClass(classBytes, !disableEagerInitialization, NESTMATE, STRONG);
+            Lookup lookup = null;
+            try {
+                if (useImplMethodHandle) {
+                    lookup = caller.defineHiddenClassWithClassData(classBytes, implementation, !disableEagerInitialization,
+                                                                   NESTMATE, STRONG);
+                } else {
+                    lookup = caller.defineHiddenClass(classBytes, !disableEagerInitialization, NESTMATE, STRONG);
+                }
+                return lookup.lookupClass();
+            } finally {
+                // If requested, dump out to a file for debugging purposes
+                if (dumper != null) {
+                    String name;
+                    if (lookup != null) {
+                        String definedName = lookup.lookupClass().getName();
+                        int suffixIdx = definedName.lastIndexOf('/');
+                        assert suffixIdx != -1;
+                        name = lambdaClassName + '.' + definedName.substring(suffixIdx + 1);
+                    } else {
+                        name = lambdaClassName + ".failed-" + counter.incrementAndGet();
+                    }
+                    doDump(name, classBytes);
+                }
             }
-            return lookup.lookupClass();
         } catch (IllegalAccessException e) {
             throw new LambdaConversionException("Exception defining lambda proxy class", e);
         } catch (Throwable t) {
             throw new InternalError(t);
         }
+    }
+
+    @SuppressWarnings("removal")
+    private void doDump(final String className, final byte[] classBytes) {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public Void run() {
+                dumper.dumpClass(className, classBytes);
+                return null;
+            }
+        }, null,
+        new FilePermission("<<ALL FILES>>", "read, write"),
+        // createDirectories may need it
+        new PropertyPermission("user.dir", "read"));
     }
 
     /**

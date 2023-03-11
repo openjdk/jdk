@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ResolvedModule;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.AnnotatedElement;
 import java.net.URI;
 import java.net.URL;
@@ -51,21 +52,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.internal.classfile.AccessFlags;
+import jdk.internal.classfile.Attribute;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.attribute.ModuleAttribute;
+import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.ModuleVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.Stable;
@@ -111,6 +115,8 @@ public final class Module implements AnnotatedElement {
     private final ModuleDescriptor descriptor;
 
     // true, if this module allows restricted native access
+    // Accessing this variable is made through Unsafe in order to use the
+    // memory semantics that preserves ordering and visibility across threads.
     @Stable
     private boolean enableNativeAccess;
 
@@ -257,24 +263,79 @@ public final class Module implements AnnotatedElement {
      * Update this module to allow access to restricted methods.
      */
     Module implAddEnableNativeAccess() {
-        enableNativeAccess = true;
+        EnableNativeAccess.trySetEnableNativeAccess(this);
         return this;
+    }
+
+    /**
+     * Returns {@code true} if this module can access
+     * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
+     *
+     * @return {@code true} if this module can access <em>restricted</em> methods.
+     * @since 20
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
+    public boolean isNativeAccessEnabled() {
+        Module target = moduleForNativeAccess();
+        return EnableNativeAccess.isNativeAccessEnabled(target);
+    }
+
+    /**
+     * This class is used to be able to bootstrap without using Unsafe
+     * in the outer Module class as that would create a circular initializer dependency.
+     */
+    private static final class EnableNativeAccess {
+
+        private EnableNativeAccess() {}
+
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        private static final long FIELD_OFFSET = UNSAFE.objectFieldOffset(Module.class, "enableNativeAccess");
+
+        private static boolean isNativeAccessEnabled(Module target) {
+            return UNSAFE.getBooleanVolatile(target, FIELD_OFFSET);
+        }
+
+        // Atomically sets enableNativeAccess if not already set
+        // returning if the value was updated
+        private static boolean trySetEnableNativeAccess(Module target) {
+            return UNSAFE.compareAndSetBoolean(target, FIELD_OFFSET, false, true);
+        }
+    }
+
+    // Returns the Module object that holds the enableNativeAccess
+    // flag for this module.
+    private Module moduleForNativeAccess() {
+        return isNamed() ? this : ALL_UNNAMED_MODULE;
+    }
+
+    // This is invoked from Reflection.ensureNativeAccess
+    void ensureNativeAccess(Class<?> owner, String methodName) {
+        // The target module whose enableNativeAccess flag is ensured
+        Module target = moduleForNativeAccess();
+        if (!EnableNativeAccess.isNativeAccessEnabled(target)) {
+            if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
+                throw new IllegalCallerException("Illegal native access from: " + this);
+            }
+            if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
+                // warn and set flag, so that only one warning is reported per module
+                String cls = owner.getName();
+                String mtd = cls + "::" + methodName;
+                String mod = isNamed() ? "module " + getName() : "the unnamed module";
+                String modflag = isNamed() ? getName() : "ALL-UNNAMED";
+                System.err.printf("""
+                        WARNING: A restricted method in %s has been called
+                        WARNING: %s has been called by %s
+                        WARNING: Use --enable-native-access=%s to avoid a warning for this module
+                        %n""", cls, mtd, mod, modflag);
+            }
+        }
     }
 
     /**
      * Update all unnamed modules to allow access to restricted methods.
      */
-    static void implAddEnableNativeAccessAllUnnamed() {
-        ALL_UNNAMED_MODULE.enableNativeAccess = true;
-    }
-
-    /**
-     * Returns true if module m can access restricted methods.
-     */
-    boolean implIsEnableNativeAccess() {
-        return isNamed() ?
-                enableNativeAccess :
-                ALL_UNNAMED_MODULE.enableNativeAccess;
+    static void implAddEnableNativeAccessToAllUnnamed() {
+        EnableNativeAccess.trySetEnableNativeAccess(ALL_UNNAMED_MODULE);
     }
 
     // --
@@ -543,6 +604,14 @@ public final class Module implements AnnotatedElement {
      *
      * <p> This method does not check if the given module reads this module. </p>
      *
+     * @apiNote A package {@code p} opened to module {@code M} allows code in
+     * {@code M} do {@linkplain java.lang.reflect.AccessibleObject#setAccessible(boolean)
+     * deep reflection} on all types in the package.
+     * Further, if {@code M} reads this module, it can obtain a
+     * {@link java.lang.invoke.MethodHandles.Lookup Lookup} object that is allowed to
+     * {@link java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+     * in package {@code p}.
+     *
      * @param  pn
      *         The package name
      * @param  other
@@ -596,6 +665,14 @@ public final class Module implements AnnotatedElement {
      *
      * <p> This method does not check if the given module reads this module. </p>
      *
+     * @apiNote A package {@code p} opened to module {@code M} allows code in
+     * {@code M} do {@linkplain java.lang.reflect.AccessibleObject#setAccessible(boolean)
+     * deep reflection} on all types in the package.
+     * Further, if {@code M} reads this module, it can obtain a
+     * {@link java.lang.invoke.MethodHandles.Lookup Lookup} object that is allowed to
+     * {@link java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+     * in package {@code p}.
+     *
      * @param  pn
      *         The package name
      *
@@ -603,6 +680,8 @@ public final class Module implements AnnotatedElement {
      *         unconditionally
      *
      * @see ModuleDescriptor#opens()
+     * @see java.lang.reflect.AccessibleObject#setAccessible(boolean)
+     * @see java.lang.invoke.MethodHandles#privateLookupIn
      */
     public boolean isOpen(String pn) {
         Objects.requireNonNull(pn);
@@ -1511,47 +1590,17 @@ public final class Module implements AnnotatedElement {
      */
     private Class<?> loadModuleInfoClass(InputStream in) throws IOException {
         final String MODULE_INFO = "module-info";
-
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                         + ClassWriter.COMPUTE_FRAMES);
-
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM7, cw) {
-            @Override
-            public void visit(int version,
-                              int access,
-                              String name,
-                              String signature,
-                              String superName,
-                              String[] interfaces) {
-                cw.visit(version,
-                        Opcodes.ACC_INTERFACE
-                            + Opcodes.ACC_ABSTRACT
-                            + Opcodes.ACC_SYNTHETIC,
-                        MODULE_INFO,
-                        null,
-                        "java/lang/Object",
-                        null);
-            }
-            @Override
-            public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        byte[] bytes = Classfile.parse(in.readAllBytes(),
+                Classfile.Option.constantPoolSharing(false)).transform((clb, cle) -> {
+            switch (cle) {
+                case AccessFlags af -> clb.withFlags(AccessFlag.INTERFACE,
+                        AccessFlag.ABSTRACT, AccessFlag.SYNTHETIC);
                 // keep annotations
-                return super.visitAnnotation(desc, visible);
-            }
-            @Override
-            public void visitAttribute(Attribute attr) {
+                case RuntimeVisibleAnnotationsAttribute a -> clb.with(a);
                 // drop non-annotation attributes
-            }
-            @Override
-            public ModuleVisitor visitModule(String name, int flags, String version) {
-                // drop Module attribute
-                return null;
-            }
-        };
-
-        ClassReader cr = new ClassReader(in);
-        cr.accept(cv, 0);
-        byte[] bytes = cw.toByteArray();
-
+                case Attribute<?> a -> {}
+                default -> clb.with(cle);
+            }});
         ClassLoader cl = new ClassLoader(loader) {
             @Override
             protected Class<?> findClass(String cn)throws ClassNotFoundException {

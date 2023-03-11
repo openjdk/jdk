@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,18 +90,6 @@ private:
     bool do_heap_region(HeapRegion* hr);
   };
 
-  class G1ResetMetadataClosure : public HeapRegionClosure {
-    G1CollectedHeap* _g1h;
-    G1FullCollector* _collector;
-
-    void reset_region_metadata(HeapRegion* hr);
-
-  public:
-    G1ResetMetadataClosure(G1FullCollector* collector);
-
-    bool do_heap_region(HeapRegion* hr);
-  };
-
   class G1PrepareCompactLiveClosure : public StackObj {
     G1FullGCCompactionPoint* _cp;
 
@@ -115,12 +103,12 @@ private:
 // serial compaction.
 class G1SerialRePrepareClosure : public StackObj {
   G1FullGCCompactionPoint* _cp;
-  HeapRegion* _current;
+  HeapWord* _dense_prefix_top;
 
 public:
-  G1SerialRePrepareClosure(G1FullGCCompactionPoint* hrcp, HeapRegion* hr) :
+  G1SerialRePrepareClosure(G1FullGCCompactionPoint* hrcp, HeapWord* dense_prefix_top) :
     _cp(hrcp),
-    _current(hr) { }
+    _dense_prefix_top(dense_prefix_top) { }
 
   inline size_t apply(oop obj);
 };

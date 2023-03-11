@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -188,13 +188,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_pc == NULL ||  sender_blob == NULL) {
-      return false;
-    }
-
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
       return false;
     }
 
@@ -319,7 +314,16 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
   return &unextended_sp()[index];
 }
 
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  ptr_at_put(interpreter_frame_locals_offset, (intptr_t) (locs - fp()));
+}
+
 // sender_sp
+
 intptr_t* frame::interpreter_frame_sender_sp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   return (intptr_t*) at(interpreter_frame_sender_sp_offset);
@@ -352,6 +356,11 @@ void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
 // Used by template based interpreter deoptimization
 void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
     *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
+}
+
+// Used by template based interpreter deoptimization
+void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
+  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
 }
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
@@ -526,7 +535,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
 
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals =  (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
@@ -599,6 +608,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
     DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
@@ -606,13 +616,21 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
   }
 
-  intptr_t* ret_pc_loc = sp() - return_addr_offset;
-  address ret_pc = *(address*)ret_pc_loc;
-  if (Continuation::is_return_barrier_entry(ret_pc))
-    values.describe(frame_no, ret_pc_loc, "return address (return barrier)");
-  else
-    values.describe(frame_no, ret_pc_loc, err_msg("return address for #%d", frame_no));
-  values.describe(frame_no, sp() - sender_sp_offset, err_msg("saved fp for #%d", frame_no), 0);
+  if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
+    intptr_t* ret_pc_loc;
+    intptr_t* fp_loc;
+    if (is_interpreted_frame()) {
+      ret_pc_loc = fp() + return_addr_offset;
+      fp_loc = fp();
+    } else {
+      ret_pc_loc = real_fp() - return_addr_offset;
+      fp_loc = real_fp() - sender_sp_offset;
+    }
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
+      Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
+    values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
+  }
 }
 #endif
 
@@ -662,6 +680,8 @@ void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
   DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
   DESCRIBE_FP_OFFSET(interpreter_frame_method);
   DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
   DESCRIBE_FP_OFFSET(interpreter_frame_cache);
   DESCRIBE_FP_OFFSET(interpreter_frame_locals);
   DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
@@ -723,9 +743,15 @@ extern "C" void pf(uintptr_t sp, uintptr_t fp, uintptr_t pc,
                    uintptr_t bcx, uintptr_t thread) {
   if (!reg_map) {
     reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtInternal);
-    ::new (reg_map) RegisterMap((JavaThread*)thread, false);
+    ::new (reg_map) RegisterMap(reinterpret_cast<JavaThread*>(thread),
+                                RegisterMap::UpdateMap::skip,
+                                RegisterMap::ProcessFrames::include,
+                                RegisterMap::WalkContinuation::skip);
   } else {
-    *reg_map = RegisterMap((JavaThread*)thread, false);
+    *reg_map = RegisterMap(reinterpret_cast<JavaThread*>(thread),
+                           RegisterMap::UpdateMap::skip,
+                           RegisterMap::ProcessFrames::include,
+                           RegisterMap::WalkContinuation::skip);
   }
 
   {
@@ -764,4 +790,3 @@ void JavaFrameAnchor::make_walkable() {
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }
-

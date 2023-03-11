@@ -71,6 +71,18 @@ void launchApp() {
                     << _T("lib/runtime"));
     } else {
         ownerPackage.initAppLauncher(appLauncher);
+
+        tstring homeDir;
+        JP_TRY;
+        homeDir = SysInfo::getEnvVariable("HOME");
+        JP_CATCH_ALL;
+
+        if (!homeDir.empty()) {
+            appLauncher.addCfgFileLookupDir(FileUtils::mkpath()
+                    << homeDir << ".local" << ownerPackage.name());
+            appLauncher.addCfgFileLookupDir(FileUtils::mkpath()
+                    << homeDir << "." + ownerPackage.name());
+        }
     }
 
     const std::string _JPACKAGE_LAUNCHER = "_JPACKAGE_LAUNCHER";

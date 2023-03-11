@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "registerSaver_s390.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -38,10 +39,10 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -59,35 +60,40 @@
 #define BLOCK_COMMENT(str) if (PrintAssembly || PrintStubCode) __ block_comment(str)
 #define BIND(label)        bind(label); BLOCK_COMMENT(#label ":")
 
-// These static, partially const, variables are for the AES intrinsics.
-// They are declared/initialized here to make them available across function bodies.
 
-#if defined(JIT_TIMER)
-    static const int JIT_TIMER_space      = 8;                   // extra space for JIT_TIMER data
-#else
-    static const int JIT_TIMER_space      = 0;
-#endif
-    static const int AES_parmBlk_align    = 32;                  // octoword alignment.
+  // These static, partially const, variables are for the AES intrinsics.
+  // They are declared/initialized here to make them available across function bodies.
 
-    static int AES_ctrVal_len  = 0;                              // ctr init value len (in bytes), expected: length of dataBlk (16)
-    static int AES_ctrVec_len  = 0;                              // # of ctr vector elements. That many block can be ciphered with one instruction execution
-    static int AES_ctrArea_len = 0;                              // reserved stack space (in bytes) for ctr (= ctrVal_len * ctrVec_len)
+      static const int AES_parmBlk_align    = 32;                  // octoword alignment.
+      static const int AES_stackSpace_incr  = AES_parmBlk_align;   // add'l stack space is allocated in such increments.
+                                                                   // Must be multiple of AES_parmBlk_align.
 
-    static int AES_parmBlk_addspace = 0;  // Must be multiple of AES_parmblk_align.
-                                          // Will be set by stub generator to stub specific value.
-    static int AES_dataBlk_space    = 0;  // Must be multiple of AES_parmblk_align.
-                                          // Will be set by stub generator to stub specific value.
+      static int AES_ctrVal_len  = 0;                              // ctr init value len (in bytes), expected: length of dataBlk (16)
+      static int AES_ctrVec_len  = 0;                              // # of ctr vector elements. That many block can be ciphered with one instruction execution
+      static int AES_ctrArea_len = 0;                              // reserved stack space (in bytes) for ctr (= ctrVal_len * ctrVec_len)
 
-    static const int keylen_offset     =  -1;
-    static const int fCode_offset      =  -2;
-    static const int ctrVal_len_offset =  -4;
-    static const int msglen_offset     =  -8;
-    static const int unextSP_offset    = -16;
-    static const int remmsg_len_offset = -20;
-    static const int argsave_offset    = -2*AES_parmBlk_align;
-    static const int localSpill_offset = argsave_offset + 24;  // arg2..arg4 are saved
+      static int AES_parmBlk_addspace = 0;  // Must be multiple of AES_parmblk_align.
+                                            // Will be set by stub generator to stub specific value.
+      static int AES_dataBlk_space    = 0;  // Must be multiple of AES_parmblk_align.
+                                            // Will be set by stub generator to stub specific value.
+      static int AES_dataBlk_offset   = 0;  // offset of the local src and dst dataBlk buffers
+                                            // Will be set by stub generator to stub specific value.
 
-// -----------------------------------------------------------------------
+      // These offsets are relative to the parameter block address (Register parmBlk = Z_R1)
+      static const int keylen_offset     =  -1;
+      static const int fCode_offset      =  -2;
+      static const int ctrVal_len_offset =  -4;
+      static const int msglen_offset     =  -8;
+      static const int unextSP_offset    = -16;
+      static const int rem_msgblk_offset = -20;
+      static const int argsave_offset    = -2*AES_parmBlk_align;
+      static const int regsave_offset    = -4*AES_parmBlk_align; // save space for work regs (Z_R10..13)
+      static const int msglen_red_offset = regsave_offset + AES_parmBlk_align; // reduced len after preLoop;
+      static const int counter_offset    = msglen_red_offset+8;  // current counter vector position.
+      static const int localSpill_offset = argsave_offset + 24;  // arg2..arg4 are saved
+
+
+      // -----------------------------------------------------------------------
 // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
@@ -1858,7 +1864,8 @@ class StubGenerator: public StubCodeGenerator {
     return __ addr_at(start_off);
   }
 
-// *****************************************************************************
+
+  // *****************************************************************************
 
   // AES CounterMode
   // Push a parameter block for the cipher/decipher instruction on the stack.
@@ -1866,8 +1873,6 @@ class StubGenerator: public StubCodeGenerator {
   //
   //   |        |
   //   +--------+ <-- SP before expansion
-  //   |        | JIT_TIMER timestamp buffer, only if JIT_TIMER is defined.
-  //   +--------+
   //   |        |
   //   :        :  alignment loss (part 2), 0..(AES_parmBlk_align-1) bytes.
   //   |        |
@@ -1876,7 +1881,8 @@ class StubGenerator: public StubCodeGenerator {
   //   :        :  byte[] ctr - kmctr expects a counter vector the size of the input vector.
   //   :        :         The interface only provides byte[16] iv, the init vector.
   //   :        :         The size of this area is a tradeoff between stack space, init effort, and speed.
-  //   |        |         Each counter is a 128bit int. Vector element i is formed by incrementing element (i-1).
+  //   |        |         Each counter is a 128bit int. Vector element [0] is a copy of iv.
+  //   |        |         Vector element [i] is formed by incrementing element [i-1].
   //   +--------+ <-- ctr = parmBlk + parmBlk_len
   //   |        |
   //   :        :  space for parameter block, size VM_Version::Cipher::_AES*_parmBlk_G
@@ -1919,7 +1925,17 @@ class StubGenerator: public StubCodeGenerator {
   //    parmBlk-40 free spill slot, used for local spills.
   //    parmBlk-64 ARG2(dst) ptr spill slot
   //    parmBlk-56 ARG3(crypto key) ptr spill slot
-  //    parmBlk-48 ARG4(counter value) ptr spill slot
+  //    parmBlk-48 ARG4(icv value) ptr spill slot
+  //
+  //    parmBlk-72
+  //    parmBlk-80
+  //    parmBlk-88 counter vector current position
+  //    parmBlk-96 reduced msg len (after preLoop processing)
+  //
+  //    parmBlk-104 Z_R13 spill slot (preLoop only)
+  //    parmBlk-112 Z_R12 spill slot (preLoop only)
+  //    parmBlk-120 Z_R11 spill slot (preLoop only)
+  //    parmBlk-128 Z_R10 spill slot (preLoop only)
   //
   //
   // Layout of the parameter block (instruction KMCTR, function KMCTR-AES*
@@ -1990,10 +2006,24 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("increment ctrVector counterMode_AESCrypt {");
 
     __ add2reg(counter, AES_parmBlk_align, parmBlk);       // ptr to counter array needs to be restored
-    for (int j = 0; j < AES_ctrVec_len; j++) {
-      int offset = j * AES_ctrVal_len;
+
+    if (v0_only) {
+      int offset = 0;
       generate_increment128(counter, offset, AES_ctrVec_len, scratch); // increment iv by # vector elements
-      if (v0_only) break;
+    } else {
+      int j = 0;
+      if (VM_Version::has_VectorFacility()) {
+        bool first_call = true;
+        for (; j < (AES_ctrVec_len - 3); j+=4) {                       // increment blocks of 4 iv elements
+          int offset = j * AES_ctrVal_len;
+          generate_increment128x4(counter, offset, AES_ctrVec_len, first_call);
+          first_call = false;
+        }
+      }
+      for (; j < AES_ctrVec_len; j++) {
+        int offset = j * AES_ctrVal_len;
+        generate_increment128(counter, offset, AES_ctrVec_len, scratch); // increment iv by # vector elements
+      }
     }
 
     BLOCK_COMMENT("} increment ctrVector counterMode_AESCrypt");
@@ -2013,29 +2043,62 @@ class StubGenerator: public StubCodeGenerator {
     __ z_stg(scratch, Address(counter, offset));           // store back
   }
 
-  void generate_counterMode_push_Block(int dataBlk_len, int parmBlk_len, int crypto_fCode,
+  void generate_increment128(Register counter, int offset, Register increment, Register scratch) {
+    __ clear_reg(scratch);                                 // prepare to add carry to high-order DW
+    __ z_alg(increment, Address(counter, offset + 8));     // increment low order DW
+    __ z_stg(increment, Address(counter, offset + 8));     // store back
+    __ z_alcg(scratch, Address(counter, offset));          // add carry to high-order DW
+    __ z_stg(scratch, Address(counter, offset));           // store back
+  }
+
+  // This is the vector variant of increment128, incrementing 4 ctr vector elements per call.
+  void generate_increment128x4(Register counter, int offset, int increment, bool init) {
+    VectorRegister Vincr      = Z_V16;
+    VectorRegister Vctr0      = Z_V20;
+    VectorRegister Vctr1      = Z_V21;
+    VectorRegister Vctr2      = Z_V22;
+    VectorRegister Vctr3      = Z_V23;
+
+    // Initialize the increment value only once for a series of increments.
+    // It must be assured that the non-initializing generator calls are
+    // immediately subsequent. Otherwise, there is no guarantee for Vincr to be unchanged.
+    if (init) {
+      __ z_vzero(Vincr);                                   // preset VReg with constant increment
+      __ z_vleih(Vincr, increment, 7);                     // rightmost HW has ix = 7
+    }
+
+    __ z_vlm(Vctr0, Vctr3, offset, counter);               // get the counter values
+    __ z_vaq(Vctr0, Vctr0, Vincr);                         // increment them
+    __ z_vaq(Vctr1, Vctr1, Vincr);
+    __ z_vaq(Vctr2, Vctr2, Vincr);
+    __ z_vaq(Vctr3, Vctr3, Vincr);
+    __ z_vstm(Vctr0, Vctr3, offset, counter);              // store the counter values
+  }
+
+  unsigned int generate_counterMode_push_Block(int dataBlk_len, int parmBlk_len, int crypto_fCode,
                            Register parmBlk, Register msglen, Register fCode, Register key) {
 
     // space for data blocks (src and dst, one each) for partial block processing)
-    AES_dataBlk_space    = roundup(2*dataBlk_len, AES_parmBlk_align);
-    AES_parmBlk_addspace = AES_parmBlk_align    // spill space (temp data)
-                         + AES_parmBlk_align    // for argument save/restore
+    AES_parmBlk_addspace = AES_stackSpace_incr             // spill space (temp data)
+                         + AES_stackSpace_incr             // for argument save/restore
+                         + AES_stackSpace_incr*2           // for work reg save/restore
                          ;
-    const int key_len    = parmBlk_len;         // The length of the unextended key (16, 24, 32)
+    AES_dataBlk_space    = roundup(2*dataBlk_len, AES_parmBlk_align);
+    AES_dataBlk_offset   = -(AES_parmBlk_addspace+AES_dataBlk_space);
+    const int key_len    = parmBlk_len;                    // The length of the unextended key (16, 24, 32)
 
     assert((AES_ctrVal_len == 0) || (AES_ctrVal_len == dataBlk_len), "varying dataBlk_len is not supported.");
-    AES_ctrVal_len  = dataBlk_len;               // ctr init value len (in bytes)
-    AES_ctrArea_len = AES_ctrVec_len * AES_ctrVal_len; // space required on stack for ctr vector
+    AES_ctrVal_len  = dataBlk_len;                         // ctr init value len (in bytes)
+    AES_ctrArea_len = AES_ctrVec_len * AES_ctrVal_len;     // space required on stack for ctr vector
 
     // This len must be known at JIT compile time. Only then are we able to recalc the SP before resize.
     // We buy this knowledge by wasting some (up to AES_parmBlk_align) bytes of stack space.
-    const int resize_len = JIT_TIMER_space       // timestamp storage for JIT_TIMER
-                         + AES_parmBlk_align     // room for alignment of parmBlk
-                         + AES_parmBlk_align     // extra room for alignment
-                         + AES_dataBlk_space     // one src and one dst data blk
-                         + AES_parmBlk_addspace  // spill space for local data
+    const int resize_len = AES_parmBlk_align               // room for alignment of parmBlk
+                         + AES_parmBlk_align               // extra room for alignment
+                         + AES_dataBlk_space               // one src and one dst data blk
+                         + AES_parmBlk_addspace            // spill space for local data
                          + roundup(parmBlk_len, AES_parmBlk_align)  // aligned length of parmBlk
-                         + AES_ctrArea_len       // stack space for ctr vector
+                         + AES_ctrArea_len                 // stack space for ctr vector
                          ;
     Register scratch     = fCode;  // We can use fCode as a scratch register. It's contents on entry
                                    // is irrelevant and it is set at the very end of this code block.
@@ -2049,47 +2112,94 @@ class StubGenerator: public StubCodeGenerator {
     // alignment waste in addspace and/or in the gap area.
     // After resize_frame, scratch contains the frame pointer.
     __ resize_frame(-resize_len, scratch, true);
+#ifdef ASSERT
+    __ clear_mem(Address(Z_SP, (intptr_t)8), resize_len - 8);
+#endif
 
     // calculate aligned parmBlk address from updated (resized) SP.
-    __ add2reg(parmBlk, AES_parmBlk_addspace + (AES_parmBlk_align-1), Z_SP);
+    __ add2reg(parmBlk, AES_parmBlk_addspace + AES_dataBlk_space + (2*AES_parmBlk_align-1), Z_SP);
     __ z_nill(parmBlk, (~(AES_parmBlk_align-1)) & 0xffff); // Align parameter block.
 
     // There is room to spill stuff in the range [parmBlk-AES_parmBlk_addspace+8, parmBlk).
     __ z_mviy(keylen_offset, parmBlk, key_len - 1);        // Spill crypto key length for later use. Decrement by one for direct use with xc template.
     __ z_mviy(fCode_offset,  parmBlk, crypto_fCode);       // Crypto function code, will be loaded into Z_R0 later.
     __ z_sty(msglen, msglen_offset, parmBlk);              // full plaintext/ciphertext len.
+    __ z_sty(msglen, msglen_red_offset, parmBlk);          // save for main loop, may get updated in preLoop.
     __ z_sra(msglen, exact_log2(dataBlk_len));             // # full cipher blocks that can be formed from input text.
-    __ z_sty(msglen, remmsg_len_offset, parmBlk);
+    __ z_sty(msglen, rem_msgblk_offset, parmBlk);
 
     __ add2reg(scratch, resize_len, Z_SP);                 // calculate (SP before resize) from resized SP.
     __ z_stg(scratch, unextSP_offset, parmBlk);            // Spill unextended SP for easy revert.
+    __ z_stmg(Z_R10, Z_R13, regsave_offset, parmBlk);      // make some regs available as work registers
 
     // Fill parmBlk with all required data
     __ z_mvc(0, key_len-1, parmBlk, 0, key);               // Copy key. Need to do it here - key_len is only known here.
     BLOCK_COMMENT(err_msg("} push_Block (%d bytes) counterMode_AESCrypt%d", resize_len, parmBlk_len*8));
+    return resize_len;
   }
 
 
   void generate_counterMode_pop_Block(Register parmBlk, Register msglen, Label& eraser) {
     // For added safety, clear the stack area where the crypto key was stored.
     Register scratch = msglen;
-    assert_different_registers(scratch, Z_R0);            // can't use Z_R0 for exrl.
+    assert_different_registers(scratch, Z_R0);             // can't use Z_R0 for exrl.
 
     // wipe out key on stack
-    __ z_llgc(scratch, keylen_offset, parmBlk);           // get saved (key_len-1) value (we saved just one byte!)
-    __ z_exrl(scratch, eraser);                           // template relies on parmBlk still pointing to key on stack
+    __ z_llgc(scratch, keylen_offset, parmBlk);            // get saved (key_len-1) value (we saved just one byte!)
+    __ z_exrl(scratch, eraser);                            // template relies on parmBlk still pointing to key on stack
 
     // restore argument registers.
     //   ARG1(from) is Z_RET as well. Not restored - will hold return value anyway.
     //   ARG5(msglen) is restored further down.
     __ z_lmg(Z_ARG2, Z_ARG4, argsave_offset,    parmBlk);
 
-    __ z_lgf(msglen, msglen_offset,  parmBlk);            // Restore msglen, only low order FW is valid
-    __ z_lg(Z_SP,    unextSP_offset, parmBlk);            // trim stack back to unextended size
+    // restore work registers
+    __ z_lmg(Z_R10, Z_R13, regsave_offset, parmBlk);       // make some regs available as work registers
+
+    __ z_lgf(msglen, msglen_offset,  parmBlk);             // Restore msglen, only low order FW is valid
+#ifdef ASSERT
+    {
+      Label skip2last, skip2done;
+      // Z_RET (aka Z_R2) can be used as scratch as well. It will be set from msglen before return.
+      __ z_lgr(Z_RET, Z_SP);                                 // save extended SP
+      __ z_lg(Z_SP,    unextSP_offset, parmBlk);             // trim stack back to unextended size
+      __ z_sgrk(Z_R1, Z_SP, Z_RET);
+
+      __ z_cghi(Z_R1, 256);
+      __ z_brl(skip2last);
+      __ z_xc(0, 255, Z_RET, 0, Z_RET);
+      __ z_aghi(Z_RET, 256);
+      __ z_aghi(Z_R1, -256);
+
+      __ z_cghi(Z_R1, 256);
+      __ z_brl(skip2last);
+      __ z_xc(0, 255, Z_RET, 0, Z_RET);
+      __ z_aghi(Z_RET, 256);
+      __ z_aghi(Z_R1, -256);
+
+      __ z_cghi(Z_R1, 256);
+      __ z_brl(skip2last);
+      __ z_xc(0, 255, Z_RET, 0, Z_RET);
+      __ z_aghi(Z_RET, 256);
+      __ z_aghi(Z_R1, -256);
+
+      __ bind(skip2last);
+      __ z_lgr(Z_R0, Z_RET);
+      __ z_aghik(Z_RET, Z_R1, -1);  // decrement for exrl
+      __ z_brl(skip2done);
+      __ z_lgr(parmBlk, Z_R0);      // parmBlk == Z_R1, used in eraser template
+      __ z_exrl(Z_RET, eraser);
+
+      __ bind(skip2done);
+    }
+#else
+    __ z_lg(Z_SP,    unextSP_offset, parmBlk);             // trim stack back to unextended size
+#endif
   }
 
 
-  void generate_counterMode_push_parmBlk(Register parmBlk, Register msglen, Register fCode, Register key, bool is_decipher) {
+  int generate_counterMode_push_parmBlk(Register parmBlk, Register msglen, Register fCode, Register key, bool is_decipher) {
+    int       resize_len = 0;
     int       mode = is_decipher ? VM_Version::CipherMode::decipher : VM_Version::CipherMode::cipher;
     Label     parmBlk_128, parmBlk_192, parmBlk_256, parmBlk_set;
     Register  keylen = fCode;      // Expanded key length, as read from key array, Temp only.
@@ -2107,7 +2217,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (VM_Version::has_Crypto_AES_CTR128()) {
       __ bind(parmBlk_128);
-      generate_counterMode_push_Block(VM_Version::Cipher::_AES128_dataBlk,
+      resize_len = generate_counterMode_push_Block(VM_Version::Cipher::_AES128_dataBlk,
                           VM_Version::Cipher::_AES128_parmBlk_G,
                           VM_Version::Cipher::_AES128 + mode,
                           parmBlk, msglen, fCode, key);
@@ -2118,7 +2228,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (VM_Version::has_Crypto_AES_CTR192()) {
       __ bind(parmBlk_192);
-      generate_counterMode_push_Block(VM_Version::Cipher::_AES192_dataBlk,
+      resize_len = generate_counterMode_push_Block(VM_Version::Cipher::_AES192_dataBlk,
                           VM_Version::Cipher::_AES192_parmBlk_G,
                           VM_Version::Cipher::_AES192 + mode,
                           parmBlk, msglen, fCode, key);
@@ -2129,7 +2239,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (VM_Version::has_Crypto_AES_CTR256()) {
       __ bind(parmBlk_256);
-      generate_counterMode_push_Block(VM_Version::Cipher::_AES256_dataBlk,
+      resize_len = generate_counterMode_push_Block(VM_Version::Cipher::_AES256_dataBlk,
                           VM_Version::Cipher::_AES256_parmBlk_G,
                           VM_Version::Cipher::_AES256 + mode,
                           parmBlk, msglen, fCode, key);
@@ -2137,6 +2247,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ bind(parmBlk_set);
+    return resize_len;
   }
 
 
@@ -2149,38 +2260,26 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("} pop parmBlk counterMode_AESCrypt");
   }
 
-  // Resize current stack frame to make room for some register data which needs
-  // to be spilled temporarily. All registers in the range [from..to] are spilled
-  // automatically. The actual length of the allocated aux block is returned.
-  // The extra spill space (if requested) is located at
-  //   [Z_SP+stackSpace-spillSpace, Z_SP+stackSpace)
-  // Kills Z__R0 (contains fp afterwards) and Z_R1 (contains old SP afterwards).
-  // All space in the range [SP..SP+regSpace) is reserved.
-  // As always (here): 0(SP) - stack linkage, 8(SP) - SP before resize for easy pop.
-  int generate_push_aux_block(Register from, Register to, unsigned int spillSpace) {
-    int n_regs     = to->encoding() - from->encoding() + 1;
-    int linkSpace  = 2*wordSize;
-    int regSpace   = n_regs*wordSize;
-    int stackSpace = roundup(linkSpace + regSpace + spillSpace, AES_parmBlk_align);
-    BLOCK_COMMENT(err_msg("push aux_block (%d bytes) counterMode_AESCrypt {", stackSpace));
-    __ z_lgr(Z_R1, Z_SP);
-    __ resize_frame(-stackSpace, Z_R0, true);
-    __ z_stg(Z_R1, 8, Z_SP);
-    __ z_stmg(from, to, linkSpace, Z_SP);
-    BLOCK_COMMENT(err_msg("} push aux_block (%d bytes) counterMode_AESCrypt", stackSpace));
-    return stackSpace;
-  }
-  // Reverts everything done by generate_push_aux_block().
-  void generate_pop_aux_block(Register from, Register to) {
-    BLOCK_COMMENT("pop aux_block counterMode_AESCrypt {");
-    __ z_lmg(from, to, 16, Z_SP);
-    __ z_lg(Z_SP, 8, Z_SP);
-    BLOCK_COMMENT("} pop aux_block counterMode_AESCrypt");
-  }
-
   // Implementation of counter-mode AES encrypt/decrypt function.
   //
   void generate_counterMode_AES_impl(bool is_decipher) {
+
+    // On entry:
+    // if there was a previous call to update(), and this previous call did not fully use
+    // the current encrypted counter, that counter is available at arg6_Offset(Z_SP).
+    // The index of the first unused bayte in the encrypted counter is available at arg7_Offset(Z_SP).
+    // The index is in the range [1..AES_ctrVal_len] ([1..16]), where index == 16 indicates a fully
+    // used previous encrypted counter.
+    // The unencrypted counter has already been incremented and is ready to be used for the next
+    // data block, after the unused bytes from the previous call have been consumed.
+    // The unencrypted counter follows the "increment-after use" principle.
+
+    // On exit:
+    // The index of the first unused byte of the encrypted counter is written back to arg7_Offset(Z_SP).
+    // A value of AES_ctrVal_len (16) indicates there is no leftover byte.
+    // If there is at least one leftover byte (1 <= index < AES_ctrVal_len), the encrypted counter value
+    // is written back to arg6_Offset(Z_SP). If there is no leftover, nothing is written back.
+    // The unencrypted counter value is written back after having been incremented.
 
     Register       from    = Z_ARG1; // byte[], source byte array (clear text)
     Register       to      = Z_ARG2; // byte[], destination byte array (ciphered)
@@ -2190,78 +2289,101 @@ class StubGenerator: public StubCodeGenerator {
                                      // returned in Z_RET upon completion of this stub.
                                      // This is a jint. Negative values are illegal, but technically possible.
                                      // Do not rely on high word. Contents is undefined.
+               // encCtr   = Z_ARG6  - encrypted counter (byte array),
+               //                      address passed on stack at _z_abi(remaining_cargs) + 0 * WordSize
+               // cvIndex  = Z_ARG7  - # used (consumed) bytes of encrypted counter,
+               //                      passed on stack at _z_abi(remaining_cargs) + 1 * WordSize
+               //                      Caution:4-byte value, right-justified in 8-byte stack word
 
     const Register fCode   = Z_R0;   // crypto function code
     const Register parmBlk = Z_R1;   // parameter block address (points to crypto key)
-    const Register src     = Z_ARG1; // is Z_R2
+    const Register src     = Z_ARG1; // is Z_R2, forms even/odd pair with srclen
     const Register srclen  = Z_ARG2; // Overwrites destination address.
     const Register dst     = Z_ARG3; // Overwrites key address.
     const Register counter = Z_ARG5; // Overwrites msglen. Must have counter array in an even register.
 
     Label srcMover, dstMover, fromMover, ctrXOR, dataEraser;  // EXRL (execution) templates.
-    Label CryptoLoop, CryptoLoop_doit, CryptoLoop_end, CryptoLoop_setupAndDoLast, CryptoLoop_ctrVal_inc, allDone, Exit;
+    Label CryptoLoop, CryptoLoop_doit, CryptoLoop_end, CryptoLoop_setupAndDoLast, CryptoLoop_ctrVal_inc;
+    Label allDone, allDone_noInc, popAndExit, Exit;
+
+    int    arg6_Offset = _z_abi(remaining_cargs) + 0 * HeapWordSize;
+    int    arg7_Offset = _z_abi(remaining_cargs) + 1 * HeapWordSize; // stack slot holds ptr to int value
+    int   oldSP_Offset = 0;
+
+    // Is there anything to do at all? Protect against negative len as well.
+    __ z_ltr(msglen, msglen);
+    __ z_brnh(Exit);
+
+    // Expand stack, load parm block address into parmBlk (== Z_R1), copy crypto key to parm block.
+    oldSP_Offset = generate_counterMode_push_parmBlk(parmBlk, msglen, fCode, key, is_decipher);
+    arg6_Offset += oldSP_Offset;
+    arg7_Offset += oldSP_Offset;
 
     // Check if there is a leftover, partially used encrypted counter from last invocation.
     // If so, use those leftover counter bytes first before starting the "normal" encryption.
+
+    // We do not have access to the encrypted counter value. It is generated and used only
+    // internally within the previous kmctr instruction. But, at the end of call to this stub,
+    // the last encrypted couner is extracted by ciphering a 0x00 byte stream. The result is
+    // stored at the arg6 location for use with the subsequent call.
+    //
+    // The #used bytes of the encrypted counter (from a previous call) is provided via arg7.
+    // It is used as index into the encrypted counter to access the first byte availabla for ciphering.
+    // To cipher the input text, we move the number of remaining bytes in the encrypted counter from
+    // input to output. Then we simply XOR the output bytes with the associated encrypted counter bytes.
+
+    Register cvIxAddr  = Z_R10;                  // Address of index into encCtr. Preserved for use @CryptoLoop_end.
+    __ z_lg(cvIxAddr, arg7_Offset, Z_SP);        // arg7: addr of field encCTR_index.
+
     {
-      Register cvIndex   = Z_R10;  // # unused bytes of last encrypted counter value
-      Register cvUnused  = Z_R11;  // # unused bytes of last encrypted counter value
-      Register encCtr    = Z_R12;  // encrypted counter value, points to first ununsed byte.
-      Label no_preLoop, preLoop_end;
+      Register cvUnused  = Z_R11;                // # unused bytes of encrypted counter value (= 16 - cvIndex)
+      Register encCtr    = Z_R12;                // encrypted counter value, points to first ununsed byte.
+      Register cvIndex   = Z_R13;                // # index of first unused byte of encrypted counter value
+      Label    preLoop_end;
 
-      // Before pushing an aux block, check if it's necessary at all (saves some cycles).
-      __ z_lt(Z_R0, _z_abi(remaining_cargs) + 8 + 4, Z_R0, Z_SP); // arg7: # unused bytes in encCTR.
-      __ z_brnp(no_preLoop);                                      // no unused bytes, nothing special to do.
+      // preLoop is necessary only if there is a partially used encrypted counter (encCtr).
+      // Partially used means cvIndex is in [1, dataBlk_len-1].
+      // cvIndex == 0:           encCtr is set up but not used at all. Should not occur.
+      // cvIndex == dataBlk_len: encCtr is exhausted, all bytes used.
+      // Using unsigned compare protects against cases where (cvIndex < 0).
+      __ z_clfhsi(0, cvIxAddr, AES_ctrVal_len);  // check #used bytes in encCtr against ctr len.
+      __ z_brnl(preLoop_end);                    // if encCtr is fully used, skip to normal processing.
+      __ z_ltgf(cvIndex, 0, Z_R0, cvIxAddr);     // # used bytes in encCTR.
+      __ z_brz(preLoop_end);                     // if encCtr has no used bytes, skip to normal processing.
 
-      int   oldSP_Offset  = generate_push_aux_block(Z_R10, Z_R12, 16);
-      int   arg6_Offset   = oldSP_Offset + _z_abi(remaining_cargs);
-      int   arg7_Offset   = oldSP_Offset + _z_abi(remaining_cargs) + 8;
+      __ z_lg(encCtr, arg6_Offset, Z_SP);        // encrypted counter from last call to update()
+      __ z_agr(encCtr, cvIndex);                 // now points to first unused byte
 
-      __ z_ltgf(cvUnused, arg7_Offset+4, Z_R0, Z_SP); // arg7: # unused bytes in encCTR. (16-arg7) is index of first unused byte.
-      __ z_brnp(preLoop_end);                  // "not positive" means no unused bytes left
-      __ z_aghik(cvIndex, cvUnused, -16);      // calculate index of first unused byte. AES_ctrVal_len undefined at this point.
-      __ z_brnl(preLoop_end);                  // NotLow(=NotNegative): unused bytes >= 16? How that?
-      __ z_lcgr(cvIndex, cvIndex);
+      __ add2reg(cvUnused, -AES_ctrVal_len, cvIndex); // calculate #unused bytes in encCtr.
+      __ z_lcgr(cvUnused, cvUnused);             // previous checks ensure cvUnused in range [1, dataBlk_len-1]
 
-      __ z_lg(encCtr, arg6_Offset, Z_SP);      // arg6: encrypted counter byte array.
-      __ z_agr(encCtr, cvIndex);               // first unused byte of encrypted ctr. Used in ctrXOR.
-
-      __ z_cr(cvUnused, msglen);               // check if msg is long enough
+      __ z_lgf(msglen, msglen_offset, parmBlk);  // Restore msglen (jint value)
+      __ z_cr(cvUnused, msglen);                 // check if msg can consume all unused encCtr bytes
       __ z_locr(cvUnused, msglen, Assembler::bcondHigh); // take the shorter length
-
-      __ z_aghi(cvUnused, -1);                 // decrement # unused bytes by 1 for exrl instruction
-      __ z_brl(preLoop_end);                   // negative result means nothing to do (msglen is zero)
-
+      __ z_aghi(cvUnused, -1);                   // decrement # unused bytes by 1 for exrl instruction
+                                                 // preceding checks ensure cvUnused in range [1, dataBlk_len-1]
       __ z_exrl(cvUnused, fromMover);
       __ z_exrl(cvUnused, ctrXOR);
 
-      __ add2reg(cvUnused, 1, cvUnused);
+      __ z_aghi(cvUnused, 1);                    // revert decrement from above
+      __ z_agr(cvIndex, cvUnused);               // update index into encCtr (first unused byte)
+      __ z_st(cvIndex, 0, cvIxAddr);             // write back arg7, cvIxAddr is still valid
+
+      // update pointers and counters to prepare for main loop
       __ z_agr(from, cvUnused);
       __ z_agr(to, cvUnused);
-      __ z_sr(msglen, cvUnused);
-      __ z_brnz(preLoop_end);                  // there is still work to do
+      __ z_sr(msglen, cvUnused);                 // #bytes not yet processed
+      __ z_sty(msglen, msglen_red_offset, parmBlk); // save for calculations in main loop
+      __ z_srak(Z_R0, msglen, exact_log2(AES_ctrVal_len));// # full cipher blocks that can be formed from input text.
+      __ z_sty(Z_R0, rem_msgblk_offset, parmBlk);
 
-      // Remaining msglen is zero, i.e. all msg bytes were processed in preLoop.
-      // Take an early exit.
-      generate_pop_aux_block(Z_R10, Z_R12);
-      __ z_bru(Exit);
-
-      //-------------------------------------------
-      //---<  execution templates for preLoop  >---
-      //-------------------------------------------
-      __ bind(fromMover);
-      __ z_mvc(0, 0, to, 0, from);         // Template instruction to move input data to dst.
-      __ bind(ctrXOR);
-      __ z_xc(0,  0, to, 0, encCtr);       // Template instruction to XOR input data (now in to) with encrypted counter.
+      // check remaining msglen. If zero, all msg bytes were processed in preLoop.
+      __ z_ltr(msglen, msglen);
+      __ z_brnh(popAndExit);
 
       __ bind(preLoop_end);
-      generate_pop_aux_block(Z_R10, Z_R12);
-
-      __ bind(no_preLoop);
     }
 
-    // Expand stack, load parm block address into parmBlk (== Z_R1), copy crypto key to parm block.
-    generate_counterMode_push_parmBlk(parmBlk, msglen, fCode, key, is_decipher);
     // Create count vector on stack to accommodate up to AES_ctrVec_len blocks.
     generate_counterMode_prepare_Stack(parmBlk, ctr, counter, fCode);
 
@@ -2272,16 +2394,17 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(CryptoLoop);
       __ z_lghi(srclen, AES_ctrArea_len);                     // preset len (#bytes) for next iteration: max possible.
-      __ z_asi(remmsg_len_offset, parmBlk, -AES_ctrVec_len);  // decrement #remaining blocks (16 bytes each). Range: [+127..-128]
-      __ z_brl(CryptoLoop_setupAndDoLast);                    // Handling the last iteration out-of-line
+      __ z_asi(rem_msgblk_offset, parmBlk, -AES_ctrVec_len);  // decrement #remaining blocks (16 bytes each). Range: [+127..-128]
+      __ z_brl(CryptoLoop_setupAndDoLast);                    // Handling the last iteration (using less than max #blocks) out-of-line
 
       __ bind(CryptoLoop_doit);
       __ kmctr(dst, counter, src);   // Cipher the message.
 
-      __ z_lt(srclen, remmsg_len_offset, Z_R0, parmBlk);      // check if this was the last iteration
+      __ z_lt(srclen, rem_msgblk_offset, Z_R0, parmBlk);      // check if this was the last iteration
       __ z_brz(CryptoLoop_ctrVal_inc);                        // == 0: ctrVector fully used. Need to increment the first
                                                               //       vector element to encrypt remaining unprocessed bytes.
 //    __ z_brl(CryptoLoop_end);                               //  < 0: this was detected before and handled at CryptoLoop_setupAndDoLast
+                                                              //  > 0: this is the fallthru case, need another iteration
 
       generate_counterMode_increment_ctrVector(parmBlk, counter, srclen, false); // srclen unused here (serves as scratch)
       __ z_bru(CryptoLoop);
@@ -2289,50 +2412,75 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(CryptoLoop_end);
 
     // OK, when we arrive here, we have encrypted all of the "from" byte stream
-    // except for the last few [0..dataBlk_len) bytes. To encrypt these few bytes
-    // we need to form an extra src and dst data block of dataBlk_len each. This
-    // is because we can only process full blocks but we must not read or write
-    // beyond the boundaries of the argument arrays. Here is what we do:
-    //  - The src data block is filled with the remaining "from" bytes, padded with 0x00's.
+    // except for the last few [0..dataBlk_len) bytes. In addition, we know that
+    // there are no more unused bytes in the previously generated encrypted counter.
+    // The (unencrypted) counter, however, is ready to use (it was incremented before).
+
+    // To encrypt the few remaining bytes, we need to form an extra src and dst
+    // data block of dataBlk_len each. This is because we can only process full
+    // blocks but we must not read or write beyond the boundaries of the argument
+    // arrays. Here is what we do:
+    //  - The ctrVector has at least one unused element. This is ensured by CryptoLoop code.
+    //  - The (first) unused element is pointed at by the counter register.
+    //  - The src data block is filled with the remaining "from" bytes, remainder of block undefined.
     //  - The single src data block is encrypted into the dst data block.
     //  - The dst data block is copied into the "to" array, but only the leftmost few bytes
     //    (as many as were left in the source byte stream).
-    //  - The counter value to be used is is pointed at by the counter register.
-    //  - Fortunately, the crypto instruction (kmctr) updates all related addresses such that we
-    //    know where to continue with "from" and "to" and which counter value to use next.
+    //  - The counter value to be used is pointed at by the counter register.
+    //  - Fortunately, the crypto instruction (kmctr) has updated all related addresses such that
+    //    we know where to continue with "from" and "to" and which counter value to use next.
 
-    // Use speaking alias for temp register
-    Register dataBlk = counter;
-    __ z_stg(counter, -24, parmBlk);                      // spill address of counter array
-    __ add2reg(dataBlk, -(AES_parmBlk_addspace + AES_dataBlk_space), parmBlk);
+    Register encCtr    = Z_R12;  // encrypted counter value, points to stub argument.
+    Register tmpDst    = Z_R12;  // addr of temp destination (for last partial block encryption)
 
-    __ z_lgf(srclen, msglen_offset, parmBlk);             // full plaintext/ciphertext len.
-    __ z_nilf(srclen, AES_ctrVal_len - 1);                // those rightmost bits indicate the unprocessed #bytes
-    __ z_braz(allDone);                                   // no unprocessed bytes? Then we are done.
+    __ z_lgf(srclen, msglen_red_offset, parmBlk);          // plaintext/ciphertext len after potential preLoop processing.
+    __ z_nilf(srclen, AES_ctrVal_len - 1);                 // those rightmost bits indicate the unprocessed #bytes
+    __ z_stg(srclen, localSpill_offset, parmBlk);          // save for later reuse
+    __ z_mvhi(0, cvIxAddr, 16);                            // write back arg7 (default 16 in case of allDone).
+    __ z_braz(allDone_noInc);                              // no unprocessed bytes? Then we are done.
+                                                           // This also means the last block of data processed was
+                                                           // a full-sized block (AES_ctrVal_len bytes) which results
+                                                           // in no leftover encrypted counter bytes.
+    __ z_st(srclen, 0, cvIxAddr);                          // This will be the index of the first unused byte in the encrypted counter.
+    __ z_stg(counter, counter_offset, parmBlk);            // save counter location for easy later restore
 
-    __ add2reg(srclen, -1);                               // decrement for exrl
-    __ z_stg(srclen, localSpill_offset, parmBlk);         // save for later reuse
-    __ z_xc(0, AES_ctrVal_len - 1, dataBlk, 0, dataBlk);  // clear src block (zero padding)
-    __ z_exrl(srclen, srcMover);                          // copy src byte stream (remaining bytes)
-    __ load_const_optimized(srclen, AES_ctrVal_len);      // kmctr processes only complete blocks
+    // calculate address (on stack) for final dst and src blocks.
+    __ add2reg(tmpDst, AES_dataBlk_offset, parmBlk);       // tmp dst (on stack) is right before tmp src
 
-    __ z_lgr(src, dataBlk);                               // tmp src address for kmctr
-    __ z_lg(counter, -24, parmBlk);                       // restore counter
-    __ z_stg(dst, -24, parmBlk);                          // save current dst
-    __ add2reg(dst, AES_ctrVal_len, src);                 // tmp dst is right after tmp src
+    // We have a residue of [1..15] unprocessed bytes, srclen holds the exact number.
+    // Residue == 0 was checked just above, residue == AES_ctrVal_len would be another
+    // full-sized block and would have been handled by CryptoLoop.
 
-    __ kmctr(dst, counter, src);   // Cipher the remaining bytes.
+    __ add2reg(srclen, -1);                                // decrement for exrl
+    __ z_exrl(srclen, srcMover);                           // copy remaining bytes of src byte stream
+    __ load_const_optimized(srclen, AES_ctrVal_len);       // kmctr processes only complete blocks
+    __ add2reg(src, AES_ctrVal_len, tmpDst);               // tmp dst is right before tmp src
 
-    __ add2reg(dataBlk, -AES_ctrVal_len, dst);            // tmp dst address
-    __ z_lg(dst, -24, parmBlk);                           // real dst address
-    __ z_lg(srclen, localSpill_offset, parmBlk);          // reuse calc from above
+    __ kmctr(tmpDst, counter, src);                        // Cipher the remaining bytes.
+
+    __ add2reg(tmpDst, -AES_ctrVal_len, tmpDst);           // restore tmp dst address
+    __ z_lg(srclen, localSpill_offset, parmBlk);           // residual len, saved above
+    __ add2reg(srclen, -1);                                // decrement for exrl
     __ z_exrl(srclen, dstMover);
 
+    // Write back new encrypted counter
+    __ add2reg(src, AES_dataBlk_offset, parmBlk);
+    __ clear_mem(Address(src, RegisterOrConstant((intptr_t)0)), AES_ctrVal_len);
+    __ load_const_optimized(srclen, AES_ctrVal_len);       // kmctr processes only complete blocks
+    __ z_lg(encCtr, arg6_Offset, Z_SP);                    // write encrypted counter to arg6
+    __ z_lg(counter, counter_offset, parmBlk);             // restore counter
+    __ kmctr(encCtr, counter, src);
+
+    // The last used element of the counter vector contains the latest counter value that was used.
+    // As described above, the counter value on exit must be the one to be used next.
     __ bind(allDone);
-    __ z_llgf(srclen, msglen_offset, parmBlk);            // increment unencrypted ctr by #blocks processed.
-    __ z_srag(srclen, srclen, exact_log2(AES_ctrVal_len));
-    __ z_ag(srclen, 8, Z_R0, ctr);
-    __ z_stg(srclen, 8, Z_R0, ctr);
+    __ z_lg(counter, counter_offset, parmBlk);             // restore counter
+    generate_increment128(counter, 0, 1, Z_R0);
+
+    __ bind(allDone_noInc);
+    __ z_mvc(0, AES_ctrVal_len, ctr, 0, counter);
+
+    __ bind(popAndExit);
     generate_counterMode_pop_parmBlk(parmBlk, msglen, dataEraser);
 
     __ bind(Exit);
@@ -2344,15 +2492,24 @@ class StubGenerator: public StubCodeGenerator {
     //---<  out-of-line code  >---
     //----------------------------
     __ bind(CryptoLoop_setupAndDoLast);
-      __ z_lgf(srclen, remmsg_len_offset, parmBlk);           // remaining #blocks in memory is < 0
+      __ z_lgf(srclen, rem_msgblk_offset, parmBlk);           // remaining #blocks in memory is < 0
       __ z_aghi(srclen, AES_ctrVec_len);                      // recalculate the actually remaining #blocks
       __ z_sllg(srclen, srclen, exact_log2(AES_ctrVal_len));  // convert to #bytes. Counter value is same length as data block
       __ kmctr(dst, counter, src);                            // Cipher the last integral blocks of the message.
-      __ z_bru(CryptoLoop_end);
+      __ z_bru(CryptoLoop_end);                               // There is at least one unused counter vector element.
+                                                              // no need to increment.
 
     __ bind(CryptoLoop_ctrVal_inc);
       generate_counterMode_increment_ctrVector(parmBlk, counter, srclen, true); // srclen unused here (serves as scratch)
       __ z_bru(CryptoLoop_end);
+
+    //-------------------------------------------
+    //---<  execution templates for preLoop  >---
+    //-------------------------------------------
+    __ bind(fromMover);
+    __ z_mvc(0, 0, to, 0, from);               // Template instruction to move input data to dst.
+    __ bind(ctrXOR);
+    __ z_xc(0,  0, to, 0, encCtr);             // Template instruction to XOR input data (now in to) with encrypted counter.
 
     //-------------------------------
     //---<  execution templates  >---
@@ -2360,14 +2517,13 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(dataEraser);
     __ z_xc(0, 0, parmBlk, 0, parmBlk);  // Template instruction to erase crypto key on stack.
     __ bind(dstMover);
-    __ z_mvc(0, 0, dst, 0, dataBlk);     // Template instruction to move encrypted reminder from stack to dst.
+    __ z_mvc(0, 0, dst, 0, tmpDst);      // Template instruction to move encrypted reminder from stack to dst.
     __ bind(srcMover);
-    __ z_mvc(0, 0, dataBlk, 0, src);     // Template instruction to move reminder of source byte stream to stack.
+    __ z_mvc(AES_ctrVal_len, 0, tmpDst, 0, src); // Template instruction to move reminder of source byte stream to stack.
   }
 
 
   // Create two intrinsic variants, optimized for short and long plaintexts.
-  //
   void generate_counterMode_AES(bool is_decipher) {
 
     const Register msglen  = Z_ARG5;    // int, Total length of the msg to be encrypted. Value must be
@@ -2381,9 +2537,10 @@ class StubGenerator: public StubCodeGenerator {
     __ z_chi(msglen, threshold);
     __ z_brh(AESCTR_long);
 
+    __ bind(AESCTR_short);
+
     BLOCK_COMMENT(err_msg("counterMode_AESCrypt (text len <= %d, block size = %d) {", threshold, vec_short*16));
 
-    __ bind(AESCTR_short);
     AES_ctrVec_len = vec_short;
     generate_counterMode_AES_impl(false);   // control of generated code will not return
 
@@ -2857,6 +3014,79 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_nmethod_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    address start = __ pc();
+
+    int nbytes_volatile = (8 + 5) * BytesPerWord;
+
+    // VM-Call Prologue
+    __ save_return_pc();
+    __ push_frame_abi160(nbytes_volatile);
+    __ save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
+
+    // Prep arg for VM call
+    // Create ptr to stored return_pc in caller frame.
+    __ z_la(Z_ARG1, _z_abi(return_pc) + frame::z_abi_160_size + nbytes_volatile, Z_R0, Z_SP);
+
+    // VM-Call: BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
+    __ z_ltr(Z_R0_scratch, Z_RET);
+
+    // VM-Call Epilogue
+    __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
+    __ pop_frame();
+    __ restore_return_pc();
+
+    // Check return val of VM-Call
+    __ z_bcr(Assembler::bcondZero, Z_R14);
+
+    // Pop frame built in prologue.
+    // Required so wrong_method_stub can deduce caller.
+    __ pop_frame();
+    __ restore_return_pc();
+
+    // VM-Call indicates deoptimization required
+    __ load_const_optimized(Z_R1_scratch, SharedRuntime::get_handle_wrong_method_stub());
+    __ z_br(Z_R1_scratch);
+
+    return start;
+  }
+
+  address generate_cont_thaw(bool return_barrier, bool exception) {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_thaw() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_returnBarrier() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  #if INCLUDE_JFR
+  RuntimeStub* generate_jfr_write_checkpoint() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+  #endif // INCLUD_JFR
+
   void generate_initial() {
     // Generates all stubs and initializes the entry points.
 
@@ -2895,6 +3125,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::zarch::_trot_table_addr = (address)StubRoutines::zarch::_trot_table;
   }
 
+  void generate_phase1() {
+    if (!Continuations::enabled()) return;
+
+    // Continuation stubs:
+    StubRoutines::_cont_thaw          = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
+    StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+  }
 
   void generate_all() {
     // Generates all stubs and initializes the entry points.
@@ -2955,6 +3196,12 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(true,  "SHA512_multiBlock");
     }
 
+    // nmethod entry barriers for concurrent class unloading
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::zarch::_nmethod_entry_barrier = generate_nmethod_entry_barrier();
+    }
+
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
@@ -2971,12 +3218,14 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    _stub_count = !all ? 0x100 : 0x200;
-    if (all) {
-      generate_all();
-    } else {
+  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
+    _stub_count = (phase == 0) ? 0x100 : 0x200;
+    if (phase == 0) {
       generate_initial();
+    } else if (phase == 1) {
+      generate_phase1(); // stubs that must be available for the interpreter
+    } else {
+      generate_all();
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.StringTokenizer;
 
+import sun.awt.AWTAccessor;
 import sun.java2d.cmm.CMSManager;
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.Profile;
@@ -132,6 +133,10 @@ public sealed class ICC_Profile implements Serializable
 
         ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
                "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
+    }
+
+    static {
+        AWTAccessor.setICC_ProfileAccessor(ICC_Profile::cmmProfile);
     }
 
     /**
@@ -1073,8 +1078,8 @@ public sealed class ICC_Profile implements Serializable
      * Returns a particular tagged data element from the profile as a byte
      * array. Elements are identified by signatures as defined in the ICC
      * specification. The signature icSigHead can be used to get the header.
-     * This method is useful for advanced applets or applications which need to
-     * access profile data directly.
+     * This method is useful for advanced applications which need to access
+     * profile data directly.
      *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to get
@@ -1099,8 +1104,8 @@ public sealed class ICC_Profile implements Serializable
      * Sets a particular tagged data element in the profile from a byte array.
      * The array should contain data in a format, corresponded to the
      * {@code tagSignature} as defined in the ICC specification, section 10.
-     * This method is useful for advanced applets or applications which need to
-     * access profile data directly.
+     * This method is useful for advanced applications which need to access
+     * profile data directly.
      *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to set

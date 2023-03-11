@@ -22,7 +22,7 @@
  */
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -36,18 +36,27 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
             ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN);
 
     static final List<IntFunction<ByteBuffer>> BYTE_BUFFER_GENERATORS = List.of(
-            withToString("HB:RW:NE", (int s) -> {
-                return ByteBuffer.allocate(s)
-                        .order(ByteOrder.nativeOrder());
-            }),
-            withToString("DB:RW:NE", (int s) -> {
-                return ByteBuffer.allocateDirect(s)
-                        .order(ByteOrder.nativeOrder());
-            }),
-            withToString("MS:RW:NE", (int s) -> {
-                return MemorySegment.allocateNative(s, MemorySession.openImplicit())
+            withToString("HB:RW:NE", (int s) ->
+                    ByteBuffer.allocate(s)
+                        .order(ByteOrder.nativeOrder())),
+            withToString("DB:RW:NE", (int s) ->
+                    ByteBuffer.allocateDirect(s)
+                        .order(ByteOrder.nativeOrder())),
+            withToString("MS:RW:NE", (int s) ->
+                    MemorySegment.allocateNative(s, SegmentScope.auto())
                         .asByteBuffer()
-                        .order(ByteOrder.nativeOrder());
+                        .order(ByteOrder.nativeOrder())
+            )
+    );
+
+    static final List<IntFunction<MemorySegment>> MEMORY_SEGMENT_GENERATORS = List.of(
+            withToString("HMS", (int s) ->
+                    MemorySegment.allocateNative(s, SegmentScope.auto())
+            ),
+            withToString("DMS", (int s) -> {
+                byte[] b = new byte[s];
+                return MemorySegment.ofArray(b);
             })
     );
+
 }

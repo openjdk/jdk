@@ -83,7 +83,7 @@ void JNICALL jfr_set_global_buffer_count(JNIEnv* env, jobject jvm, jlong count);
 
 void JNICALL jfr_set_global_buffer_size(JNIEnv* env, jobject jvm, jlong size);
 
-void JNICALL jfr_set_method_sampling_interval(JNIEnv* env, jobject jvm, jlong type, jlong intervalMillis);
+void JNICALL jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, jlong type, jlong periodMillis);
 
 void JNICALL jfr_set_output(JNIEnv* env, jobject jvm, jstring path);
 
@@ -158,9 +158,12 @@ jboolean JNICALL jfr_is_class_excluded(JNIEnv* env, jobject jvm, jclass clazz);
 
 jboolean JNICALL jfr_is_class_instrumented(JNIEnv* env, jobject jvm, jclass clazz);
 
+jboolean JNICALL jfr_is_containerized(JNIEnv* env, jobject jvm);
+
+jlong JNICALL jfr_host_total_memory(JNIEnv* env, jobject jvm);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif // SHARE_JFR_JNI_JFRJNIMETHOD_HPP
-

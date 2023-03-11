@@ -25,7 +25,7 @@
  * SealedCompilationTests
  *
  * @test
- * @bug 8246353 8273257
+ * @bug 8246353 8273257 8294550
  * @summary Negative compilation tests, and positive compilation (smoke) tests for sealed classes
  * @library /lib/combo /tools/lib
  * @modules
@@ -1146,6 +1146,19 @@ public class SealedCompilationTests extends CompilationTestCase {
                         C c = (C) i;
                     }
                 }
+                """,
+                //JDK-8294550:
+                """
+                interface I {}
+                sealed class C permits D {}
+                final class D extends C {}
+
+                class Test {
+                    void test () {
+                        C[] c = null;
+                        I[] i = (I[]) c;
+                    }
+                }
                 """
         )) {
             assertFail("compiler.err.prob.found.req", s);
@@ -1232,6 +1245,17 @@ public class SealedCompilationTests extends CompilationTestCase {
                 class Test {
                     void f(A.B a, A<Object> b) {
                         a = (A.B)b;
+                    }
+                }
+                """,
+                """
+                sealed class C permits D {}
+                final class D extends C {}
+
+                class Test {
+                    void test () {
+                        C[] c = null;
+                        D[] d = (D[]) c;
                     }
                 }
                 """

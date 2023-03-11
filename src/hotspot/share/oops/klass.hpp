@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,9 +145,9 @@ class Klass : public Metadata {
   OopHandle   _java_mirror;
   // Superclass
   Klass*      _super;
-  // First subclass (NULL if none); _subklass->next_sibling() is next one
+  // First subclass (null if none); _subklass->next_sibling() is next one
   Klass* volatile _subklass;
-  // Sibling link (or NULL); links all subklasses of a klass
+  // Sibling link (or null); links all subklasses of a klass
   Klass* volatile _next_sibling;
 
   // All klasses loaded by a class loader are chained through these links
@@ -173,14 +173,16 @@ private:
   jshort _shared_class_path_index;
 
 #if INCLUDE_CDS
-  // Flags of the current shared class.
+  // Various attributes for shared classes. Should be zero for a non-shared class.
   u2     _shared_class_flags;
-  enum {
+  enum CDSSharedClassFlags {
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
     _has_archived_enum_objs                = 1 << 4,
-    _regenerated                           = 1 << 5
+    // This class was not loaded from a classfile in the module image
+    // or classpath.
+    _is_generated_shared_class             = 1 << 5
   };
 #endif
 
@@ -218,7 +220,7 @@ protected:
                                                           Array<InstanceKlass*>* transitive_interfaces);
 
   // java_super is the Java-level super type as specified by Class.getSuperClass.
-  virtual InstanceKlass* java_super() const  { return NULL; }
+  virtual InstanceKlass* java_super() const  { return nullptr; }
 
   juint    super_check_offset() const  { return _super_check_offset; }
   void set_super_check_offset(juint o) { _super_check_offset = o; }
@@ -230,11 +232,11 @@ protected:
   void set_secondary_supers(Array<Klass*>* k) { _secondary_supers = k; }
 
   // Return the element of the _super chain of the given depth.
-  // If there is no such element, return either NULL or this.
+  // If there is no such element, return either null or this.
   Klass* primary_super_of_depth(juint i) const {
     assert(i < primary_super_limit(), "oob");
     Klass* super = _primary_supers[i];
-    assert(super == NULL || super->super_depth() == i, "correct display");
+    assert(super == nullptr || super->super_depth() == i, "correct display");
     return super;
   }
 
@@ -263,13 +265,14 @@ protected:
   oop java_mirror_no_keepalive() const;
   void set_java_mirror(Handle m);
 
-  oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  void set_archived_java_mirror(oop m) NOT_CDS_JAVA_HEAP_RETURN;
+  oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  void set_archived_java_mirror(int mirror_index) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
-  void replace_java_mirror(oop mirror);
+  OopHandle java_mirror_handle() const { return _java_mirror; }
+  void swap_java_mirror_handle(OopHandle& mirror) { _java_mirror.swap(mirror); }
 
-  // Set java mirror OopHandle to NULL for CDS
+  // Set java mirror OopHandle to null for CDS
   // This leaves the OopHandle in the CLD, but that's ok, you can't release them.
   void clear_java_mirror_handle() { _java_mirror = OopHandle(); }
 
@@ -352,11 +355,11 @@ protected:
     NOT_CDS(return false;)
   }
 
-  void set_regenerated() {
-    CDS_ONLY(_shared_class_flags |= _regenerated;)
+  void set_is_generated_shared_class() {
+    CDS_ONLY(_shared_class_flags |= _is_generated_shared_class;)
   }
-  bool is_regenerated() const {
-    CDS_ONLY(return (_shared_class_flags & _regenerated) != 0;)
+  bool is_generated_shared_class() const {
+    CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
     NOT_CDS(return false;)
   }
 
@@ -525,7 +528,7 @@ protected:
   // array class with this klass as element type
   virtual Klass* array_klass(TRAPS) = 0;
 
-  // These will return NULL instead of allocating on the heap:
+  // These will return null instead of allocating on the heap:
   virtual Klass* array_klass_or_null(int rank) = 0;
   virtual Klass* array_klass_or_null() = 0;
 
@@ -543,7 +546,9 @@ protected:
   void set_vtable_length(int len) { _vtable_len= len; }
 
   vtableEntry* start_of_vtable() const;
+#if INCLUDE_CDS
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+#endif
  public:
   Method* method_at_vtable(int index);
 
@@ -552,6 +557,7 @@ protected:
     return byte_offset_of(Klass, _vtable_len);
   }
 
+#if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
@@ -561,12 +567,13 @@ protected:
     if (has_archived_mirror_index()) {
       // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
       return false;
-    } else if (_java_mirror.ptr_raw() == NULL) {
+    } else if (_java_mirror.ptr_raw() == nullptr) {
       return false;
     } else {
       return true;
     }
   }
+#endif // INCLUDE_CDS
 
  public:
   // ALL FUNCTIONS BELOW THIS POINT ARE DISPATCHED FROM AN OOP

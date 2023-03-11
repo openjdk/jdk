@@ -31,12 +31,11 @@ enum class VerifyOption : uint {
   Default = 0,
 
   // G1
-
-  // Use "prev" mark bitmap information using pTAMS.
-  G1UsePrevMarking = Default,
-  // Use "next" mark bitmap information from full gc marking. This does not
+  // Use mark bitmap information (from concurrent marking) using TAMS.
+  G1UseConcMarking = Default,
+  // Use mark bitmap information from full gc marking. This does not
   // use (or need) TAMS.
-  G1UseFullMarking = G1UsePrevMarking + 1
+  G1UseFullMarking = G1UseConcMarking + 1,
 };
 
 #endif // SHARE_GC_SHARED_VERIFYOPTION_HPP

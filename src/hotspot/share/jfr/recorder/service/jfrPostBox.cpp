@@ -28,7 +28,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 #define MSG_IS_SYNCHRONOUS ( (MSGBIT(MSG_ROTATE)) |          \
                              (MSGBIT(MSG_STOP))   |          \

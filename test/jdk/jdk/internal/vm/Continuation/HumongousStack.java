@@ -24,12 +24,14 @@
 /**
 * @test
 * @summary Tests humongous stack-chunk handling
+* @requires vm.continuations
 * @modules java.base/jdk.internal.vm
 *
 * @requires vm.gc.G1
-* @run main/othervm --enable-preview -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyContinuations -Xms2g -Xmx2g -XX:+UseG1GC -XX:G1HeapRegionSize=1m -Xss10m -Xint HumongousStack 5000
-* @run main/othervm --enable-preview -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyContinuations -Xms2g -Xmx2g -XX:+UseG1GC -XX:G1HeapRegionSize=1m -Xss10m -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk/internal/vm/Continuation,HumongousStack HumongousStack 10000
-* @run main/othervm --enable-preview -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyContinuations -Xms2g -Xmx2g -XX:+UseG1GC -XX:G1HeapRegionSize=1m -Xss10m -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,HumongousStack HumongousStack 10000
+* @enablePreview
+* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyContinuations -Xms2g -Xmx2g -XX:+UseG1GC -XX:G1HeapRegionSize=1m -Xss10m -Xint HumongousStack 5000
+* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyContinuations -Xms2g -Xmx2g -XX:+UseG1GC -XX:G1HeapRegionSize=1m -Xss10m -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk/internal/vm/Continuation,HumongousStack HumongousStack 10000
+* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyContinuations -Xms2g -Xmx2g -XX:+UseG1GC -XX:G1HeapRegionSize=1m -Xss10m -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,HumongousStack HumongousStack 10000
 */
 
 import jdk.internal.vm.Continuation;

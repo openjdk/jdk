@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ static int compute_num_stack_arg_slots(Symbol* signature, int sizeargs, bool is_
 
 void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   // See if we fingerprinted this method already
-  if (_method != NULL) {
+  if (_method != nullptr) {
     assert(!static_flag, "must not be passed by caller");
     static_flag = _method->is_static();
     _fingerprint = _method->constMethod()->fingerprint();
@@ -189,7 +189,7 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
 #endif
 
   // Detect overflow.  (We counted _param_size correctly.)
-  if (_method == NULL && _param_size > fp_max_size_of_parameters) {
+  if (_method == nullptr && _param_size > fp_max_size_of_parameters) {
     // We did a one-pass computation of argument size, return type,
     // and fingerprint.
     _fingerprint = overflow_fingerprint();
@@ -206,7 +206,7 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   _fingerprint = _accumulator;
 
   // Cache the result on the method itself:
-  if (_method != NULL) {
+  if (_method != nullptr) {
     _method->constMethod()->set_fingerprint(_fingerprint);
   }
 }
@@ -235,14 +235,14 @@ void Fingerprinter::do_type_calling_convention(BasicType type) {
   case T_BYTE:
   case T_SHORT:
   case T_INT:
-#if defined(PPC64)
+#if defined(PPC64) || defined(S390)
     if (_int_args < Argument::n_int_register_parameters_j) {
       _int_args++;
     } else {
       _stack_arg_slots += 1;
     }
     break;
-#endif // defined(PPC64)
+#endif // defined(PPC64) || defined(S390)
   case T_LONG:
   case T_OBJECT:
   case T_ARRAY:
@@ -251,23 +251,25 @@ void Fingerprinter::do_type_calling_convention(BasicType type) {
       _int_args++;
     } else {
       PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
       _stack_arg_slots += 2;
     }
     break;
   case T_FLOAT:
-#if defined(PPC64)
+#if defined(PPC64) || defined(S390)
     if (_fp_args < Argument::n_float_register_parameters_j) {
       _fp_args++;
     } else {
       _stack_arg_slots += 1;
     }
     break;
-#endif // defined(PPC64)
+#endif // defined(PPC64) || defined(S390)
   case T_DOUBLE:
     if (_fp_args < Argument::n_float_register_parameters_j) {
       _fp_args++;
     } else {
       PPC64_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
+      S390_ONLY(_stack_arg_slots = align_up(_stack_arg_slots, 2));
       _stack_arg_slots += 2;
     }
     break;
@@ -302,22 +304,22 @@ SignatureStream::SignatureStream(const Symbol* signature,
   _array_prefix = 0;  // just for definiteness
 
   // assigning java/lang/Object to _previous_name means we can
-  // avoid a number of NULL checks in the parser
+  // avoid a number of null checks in the parser
   _previous_name = vmSymbols::java_lang_Object();
-  _names = NULL;
+  _names = nullptr;
   next();
 }
 
 SignatureStream::~SignatureStream() {
   if (_previous_name == vmSymbols::java_lang_Object()) {
     // no names were created
-    assert(_names == NULL, "_names unexpectedly created");
+    assert(_names == nullptr, "_names unexpectedly created");
     return;
   }
 
   // decrement refcount for names created during signature parsing
   _previous_name->decrement_refcount();
-  if (_names != NULL) {
+  if (_names != nullptr) {
     for (int i = 0; i < _names->length(); i++) {
       _names->at(i)->decrement_refcount();
     }
@@ -332,14 +334,19 @@ inline int SignatureStream::scan_type(BasicType type) {
   switch (type) {
   case T_OBJECT:
     tem = (const u1*) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
-    return (tem == NULL ? limit : tem + 1 - base);
+    return (tem == nullptr ? limit : tem + 1 - base);
 
   case T_ARRAY:
     while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
+    // If we discovered only the string of '[', this means something is wrong.
+    if (end >= limit) {
+      assert(false, "Invalid type detected");
+      return limit;
+    }
     _array_prefix = end - _end;  // number of '[' chars just skipped
     if (Signature::has_envelope(base[end])) {
       tem = (const u1 *) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
-      return (tem == NULL ? limit : tem + 1 - base);
+      return (tem == nullptr ? limit : tem + 1 - base);
     }
     // Skipping over a single character for a primitive type.
     assert(is_java_primitive(decode_signature_char(base[end])), "only primitives expected");
@@ -482,7 +489,7 @@ Symbol* SignatureStream::find_symbol() {
   // Only allocate the GrowableArray for the _names buffer if more than
   // one name is being processed in the signature.
   if (!_previous_name->is_permanent()) {
-    if (_names == NULL) {
+    if (_names == nullptr) {
       _names = new GrowableArray<Symbol*>(10);
     }
     _names->push(_previous_name);
@@ -494,18 +501,18 @@ Symbol* SignatureStream::find_symbol() {
 Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
                                  FailureMode failure_mode, TRAPS) {
   if (!is_reference()) {
-    return NULL;
+    return nullptr;
   }
   Symbol* name = as_symbol();
-  Klass* k = NULL;
+  Klass* k = nullptr;
   if (failure_mode == ReturnNull) {
-    // Note:  SD::resolve_or_null returns NULL for most failure modes,
+    // Note:  SD::resolve_or_null returns null for most failure modes,
     // but not all.  Circularity errors, invalid PDs, etc., throw.
     k = SystemDictionary::resolve_or_null(name, class_loader, protection_domain, CHECK_NULL);
   } else if (failure_mode == CachedOrNull) {
     NoSafepointVerifier nsv;  // no loading, now, we mean it!
     assert(!HAS_PENDING_EXCEPTION, "");
-    k = SystemDictionary::find_instance_klass(name, class_loader, protection_domain);
+    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader, protection_domain);
     // SD::find does not trigger loading, so there should be no throws
     // Still, bad things can happen, so we CHECK_NULL and ask callers
     // to do likewise.
@@ -527,8 +534,8 @@ oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domai
     return Universe::java_mirror(type());
   }
   Klass* klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
-  if (klass == NULL) {
-    return NULL;
+  if (klass == nullptr) {
+    return nullptr;
   }
   return klass->java_mirror();
 }
@@ -546,13 +553,13 @@ ResolvingSignatureStream::ResolvingSignatureStream(Symbol* signature,
   : SignatureStream(signature, is_method),
     _class_loader(class_loader), _protection_domain(protection_domain)
 {
-  initialize_load_origin(NULL);
+  initialize_load_origin(nullptr);
 }
 
 ResolvingSignatureStream::ResolvingSignatureStream(Symbol* signature, Klass* load_origin, bool is_method)
   : SignatureStream(signature, is_method)
 {
-  assert(load_origin != NULL, "");
+  assert(load_origin != nullptr, "");
   initialize_load_origin(load_origin);
 }
 
@@ -562,28 +569,11 @@ ResolvingSignatureStream::ResolvingSignatureStream(const Method* method)
   initialize_load_origin(method->method_holder());
 }
 
-ResolvingSignatureStream::ResolvingSignatureStream(fieldDescriptor& field)
-  : SignatureStream(field.signature(), false)
-{
-  initialize_load_origin(field.field_holder());
-}
-
 void ResolvingSignatureStream::cache_handles() {
-  assert(_load_origin != NULL, "");
+  assert(_load_origin != nullptr, "");
   JavaThread* current = JavaThread::current();
   _class_loader = Handle(current, _load_origin->class_loader());
   _protection_domain = Handle(current, _load_origin->protection_domain());
-}
-
-Klass* ResolvingSignatureStream::as_klass_if_loaded(TRAPS) {
-  Klass* klass = as_klass(CachedOrNull, THREAD);
-  // SD::find does not trigger loading, so there should be no throws
-  // Still, bad things can happen, so we CHECK_NULL and ask callers
-  // to do likewise.
-  if (HAS_PENDING_EXCEPTION) {
-    CLEAR_PENDING_EXCEPTION;
-  }
-  return klass;
 }
 
 #ifdef ASSERT
@@ -610,7 +600,7 @@ bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
   const char* method_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
   ssize_t index = 0;
-  if (method_sig != NULL && len > 1 && method_sig[index] == JVM_SIGNATURE_FUNC) {
+  if (method_sig != nullptr && len > 1 && method_sig[index] == JVM_SIGNATURE_FUNC) {
     ++index;
     while (index < len && method_sig[index] != JVM_SIGNATURE_ENDFUNC) {
       ssize_t res = is_valid_type(&method_sig[index], len - index);
@@ -632,7 +622,7 @@ bool SignatureVerifier::is_valid_method_signature(Symbol* sig) {
 bool SignatureVerifier::is_valid_type_signature(Symbol* sig) {
   const char* type_sig = (const char*)sig->bytes();
   ssize_t len = sig->utf8_length();
-  return (type_sig != NULL && len >= 1 &&
+  return (type_sig != nullptr && len >= 1 &&
           (is_valid_type(type_sig, len) == len));
 }
 

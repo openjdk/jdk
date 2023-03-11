@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,39 +44,43 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class JFCModel {
     private final Map<String, List<ControlElement>> controls = new LinkedHashMap<>();
     private final XmlConfiguration configuration;
+    private final Consumer<String> logger;
 
-    private JFCModel(XmlConfiguration configuration) throws ParseException {
+    private JFCModel(XmlConfiguration configuration) throws JFCModelException {
         configuration.validate();
         this.configuration = configuration;
+        this.logger = x -> { }; // Nothing to log.
     }
 
-    public JFCModel(Reader reader,  Consumer<String> logger) throws ParseException, IOException {
+    public JFCModel(Reader reader,  Consumer<String> logger) throws IOException, JFCModelException, ParseException {
         this(Parser.parse(reader));
         addControls();
         wireConditions();
         wireSettings(logger);
     }
 
-    public JFCModel(List<SafePath> files, Consumer<String> logger) throws IOException, ParseException {
+    public JFCModel(Consumer<String> logger) {
         this.configuration = new XmlConfiguration();
         this.configuration.setAttribute("version", "2.0");
-        for (SafePath file : files) {
-            JFCModel model = JFCModel.create(file, logger);
-            for (var entry : model.controls.entrySet()) {
-                String name = entry.getKey();
-                // Fail-fast checks that prevents an ambiguous file to be written later
-                if (controls.containsKey(name)) {
-                    throw new ParseException("Control with '" + name + "' is declared in multiple files", 0);
-                }
-                controls.put(name, entry.getValue());
+        this.logger = logger;
+    }
+
+    public void parse(SafePath file) throws IOException, JFCModelException, ParseException {
+        JFCModel model = JFCModel.create(file, logger);
+        for (var entry : model.controls.entrySet()) {
+            String name = entry.getKey();
+            // Fail-fast checks that prevents an ambiguous file to be written later
+            if (controls.containsKey(name)) {
+                throw new JFCModelException("Control with '" + name + "' is declared in multiple files");
             }
-            for (XmlElement child : model.configuration.getChildren()) {
-                this.configuration.addChild(child);
-            }
+            controls.put(name, entry.getValue());
+        }
+        for (XmlElement child : model.configuration.getChildren()) {
+            this.configuration.addChild(child);
         }
     }
 
-    public static JFCModel create(SafePath file, Consumer<String> logger) throws ParseException, IOException {
+    public static JFCModel create(SafePath file, Consumer<String> logger) throws IOException, JFCModelException, ParseException{
         if (file.toString().equals("none")) {
             XmlConfiguration configuration = new XmlConfiguration();
             configuration.setAttribute("version", "2.0");

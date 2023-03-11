@@ -53,14 +53,7 @@ import java.io.*;
 
 public class nativemethbind03 {
     static {
-        try {
-            System.loadLibrary("nativemethbind03");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load \"nativemethbind03\" library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("nativemethbind03");
     }
 
     native void registerNative();

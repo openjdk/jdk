@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
-
+import jdk.jfr.internal.periodic.PeriodicEvents;
 /**
  * Implementation of event type.
  *
@@ -64,7 +64,6 @@ public final class PlatformEventType extends Type {
     private boolean markForInstrumentation;
     private boolean registered = true;
     private boolean committable = enabled && registered;
-
 
     // package private
     PlatformEventType(String name, long id, boolean isJDK, boolean dynamicSettings) {
@@ -201,26 +200,34 @@ public final class PlatformEventType extends Type {
     }
 
     public void setEnabled(boolean enabled) {
+        boolean changed = enabled != this.enabled;
         this.enabled = enabled;
         updateCommittable();
         if (isJVM) {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
-                JVM.getJVM().setMethodSamplingInterval(getId(), p);
+                JVM.getJVM().setMethodSamplingPeriod(getId(), p);
             } else {
                 JVM.getJVM().setEnabled(getId(), enabled);
             }
+        }
+        if (changed) {
+            PeriodicEvents.setChanged();
         }
     }
 
     public void setPeriod(long periodMillis, boolean beginChunk, boolean endChunk) {
         if (isMethodSampling) {
             long p = enabled ? periodMillis : 0;
-            JVM.getJVM().setMethodSamplingInterval(getId(), p);
+            JVM.getJVM().setMethodSamplingPeriod(getId(), p);
         }
         this.beginChunk = beginChunk;
         this.endChunk = endChunk;
+        boolean changed = period != periodMillis;
         this.period = periodMillis;
+        if (changed) {
+            PeriodicEvents.setChanged();
+        }
     }
 
     public void setStackTraceEnabled(boolean stackTraceEnabled) {
@@ -237,7 +244,11 @@ public final class PlatformEventType extends Type {
         }
     }
 
-    public boolean isEveryChunk() {
+    /**
+     * Returns true if "beginChunk", "endChunk" or "everyChunk" have
+     * been set.
+     */
+    public boolean isChunkTime() {
         return period == 0;
     }
 
@@ -259,6 +270,7 @@ public final class PlatformEventType extends Type {
 
     public void setEventHook(boolean hasHook) {
         this.hasHook = hasHook;
+        PeriodicEvents.setChanged();
     }
 
     public boolean isBeginChunk() {

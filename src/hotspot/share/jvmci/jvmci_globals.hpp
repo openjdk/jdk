@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,10 @@ class fileStream;
           "Use JVMCI as the default compiler. Defaults to true if "         \
           "EnableJVMCIProduct is true.")                                    \
                                                                             \
-  product(uint, JVMCIThreadsPerNativeLibraryRuntime, 0, EXPERIMENTAL,       \
+  product(uint, JVMCIThreadsPerNativeLibraryRuntime, 1, EXPERIMENTAL,       \
           "Max number of threads per JVMCI native runtime. "                \
-          "Specify 0 to force use of a single JVMCI native runtime. ")      \
+          "Specify 0 to force use of a single JVMCI native runtime. "       \
+          "Specify 1 to force a single JVMCI native runtime per thread. ")  \
           range(0, max_jint)                                                \
                                                                             \
   product(uint, JVMCICompilerIdleDelay, DEFAULT_COMPILER_IDLE_DELAY, EXPERIMENTAL, \
@@ -128,20 +129,25 @@ class fileStream;
           "Maximum size of a compiled method.")                             \
           range(0, max_jint)                                                \
                                                                             \
-  product(ccstr, JVMCILibPath, NULL, EXPERIMENTAL,                          \
+  product(ccstr, JVMCILibPath, nullptr, EXPERIMENTAL,                       \
           "LD path for loading the JVMCI shared library")                   \
                                                                             \
-  product(ccstr, JVMCILibDumpJNIConfig, NULL, EXPERIMENTAL,                 \
+  product(ccstr, JVMCILibDumpJNIConfig, nullptr, EXPERIMENTAL,              \
           "Dumps to the given file a description of the classes, fields "   \
           "and methods the JVMCI shared library must provide")              \
                                                                             \
   product(bool, UseJVMCINativeLibrary, false, EXPERIMENTAL,                 \
-          "Execute JVMCI Java code from a shared library "                  \
+          "Execute JVMCI Java code from a shared library (\"libjvmci\") "   \
           "instead of loading it from class files and executing it "        \
           "on the HotSpot heap. Defaults to true if EnableJVMCIProduct is " \
           "true and a JVMCI native library is available.")                  \
                                                                             \
-  product(ccstr, JVMCINativeLibraryErrorFile, NULL, EXPERIMENTAL,           \
+  product(double, JVMCINativeLibraryThreadFraction, 0.33, EXPERIMENTAL,     \
+          "The fraction of compiler threads used by libjvmci. "             \
+          "The remaining compiler threads are used by C1.")                 \
+          range(0.0, 1.0)                                                   \
+                                                                            \
+  product(ccstr, JVMCINativeLibraryErrorFile, nullptr, EXPERIMENTAL,        \
           "If an error in the JVMCI native library occurs, save the "       \
           "error data to this file"                                         \
           "[default: ./" LIBJVMCI_ERR_FILE "] (%p replaced with pid)")      \

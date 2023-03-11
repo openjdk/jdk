@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
-TemplateInterpreterGenerator::TemplateInterpreterGenerator(StubQueue* _code): AbstractInterpreterGenerator(_code) {
-  _unimplemented_bytecode    = NULL;
-  _illegal_bytecode_sequence = NULL;
+TemplateInterpreterGenerator::TemplateInterpreterGenerator(): AbstractInterpreterGenerator() {
+  _unimplemented_bytecode    = nullptr;
+  _illegal_bytecode_sequence = nullptr;
   generate_all();
 }
 
@@ -171,7 +171,7 @@ void TemplateInterpreterGenerator::generate_all() {
     Interpreter::_throw_ArrayStoreException_entry            = generate_klass_exception_handler("java/lang/ArrayStoreException");
     Interpreter::_throw_ArithmeticException_entry            = generate_exception_handler("java/lang/ArithmeticException", "/ by zero");
     Interpreter::_throw_ClassCastException_entry             = generate_ClassCastException_handler();
-    Interpreter::_throw_NullPointerException_entry           = generate_exception_handler("java/lang/NullPointerException", NULL);
+    Interpreter::_throw_NullPointerException_entry           = generate_exception_handler("java/lang/NullPointerException", nullptr);
     Interpreter::_throw_StackOverflowError_entry             = generate_StackOverflowError_handler();
   }
 
@@ -201,7 +201,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get)
-#ifdef AMD64
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   method_entry(java_lang_Thread_currentThread)
 #endif
   AbstractInterpreter::initialize_method_handle_entries();
@@ -223,7 +223,8 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_Double_longBitsToDouble);
   method_entry(java_lang_Double_doubleToRawLongBits);
 
-  method_entry(java_lang_continuation_doYield)
+  method_entry(java_lang_Float_float16ToFloat);
+  method_entry(java_lang_Float_floatToFloat16);
 
 #undef method_entry
 
@@ -249,7 +250,7 @@ void TemplateInterpreterGenerator::generate_all() {
                    );
     }
     address return_continuation = Interpreter::_normal_table.entry(Bytecodes::_return).entry(vtos);
-    vmassert(return_continuation != NULL, "return entry not generated yet");
+    vmassert(return_continuation != nullptr, "return entry not generated yet");
     Interpreter::_deopt_reexecute_return_entry = generate_deopt_entry_for(vtos, 0, return_continuation);
   }
 
@@ -297,8 +298,8 @@ void TemplateInterpreterGenerator::set_unimplemented(int i) {
 void TemplateInterpreterGenerator::set_entry_points(Bytecodes::Code code) {
   CodeletMark cm(_masm, Bytecodes::name(code), code);
   // initialize entry points
-  assert(_unimplemented_bytecode    != NULL, "should have been generated before");
-  assert(_illegal_bytecode_sequence != NULL, "should have been generated before");
+  assert(_unimplemented_bytecode    != nullptr, "should have been generated before");
+  assert(_illegal_bytecode_sequence != nullptr, "should have been generated before");
   address bep = _illegal_bytecode_sequence;
   address zep = _illegal_bytecode_sequence;
   address cep = _illegal_bytecode_sequence;
@@ -358,10 +359,10 @@ void TemplateInterpreterGenerator::set_short_entry_points(Template* t, address& 
 //------------------------------------------------------------------------------------------------------------------------
 
 void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState tos_out) {
-  if (PrintBytecodeHistogram)                                    histogram_bytecode(t);
 #ifndef PRODUCT
   // debugging code
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt > 0) count_bytecode();
+  if (PrintBytecodeHistogram)                                    histogram_bytecode(t);
   if (PrintBytecodePairHistogram)                                histogram_bytecode_pair(t);
   if (TraceBytecodes)                                            trace_bytecode(t);
   if (StopInterpreterAt > 0)                                     stop_interpreter_at();
@@ -400,7 +401,7 @@ address TemplateInterpreterGenerator::generate_method_entry(
   // determine code generation flags
   bool native = false;
   bool synchronized = false;
-  address entry_point = NULL;
+  address entry_point = nullptr;
 
   switch (kind) {
   case Interpreter::zerolocals             :                                          break;
@@ -425,8 +426,6 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_fmaF    : entry_point = generate_math_entry(kind);      break;
   case Interpreter::java_lang_ref_reference_get
                                            : entry_point = generate_Reference_get_entry(); break;
-  case Interpreter::java_lang_continuation_doYield
-                                           : entry_point = generate_Continuation_doYield_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
                                            : native = true; entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes
@@ -437,11 +436,14 @@ address TemplateInterpreterGenerator::generate_method_entry(
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
                                            : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
-#ifdef AMD64
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   case Interpreter::java_lang_Thread_currentThread
                                            : entry_point = generate_currentThread(); break;
 #endif
-
+  case Interpreter::java_lang_Float_float16ToFloat
+                                           : entry_point = generate_Float_float16ToFloat_entry(); break;
+  case Interpreter::java_lang_Float_floatToFloat16
+                                           : entry_point = generate_Float_floatToFloat16_entry(); break;
 #ifdef IA32
   // On x86_32 platforms, a special entry is generated for the following four methods.
   // On other platforms the normal entry is used to enter these methods.
@@ -473,12 +475,12 @@ address TemplateInterpreterGenerator::generate_method_entry(
   // We expect the normal and native entry points to be generated first so we can reuse them.
   if (native) {
     entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::native_synchronized : Interpreter::native);
-    if (entry_point == NULL) {
+    if (entry_point == nullptr) {
       entry_point = generate_native_entry(synchronized);
     }
   } else {
     entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
-    if (entry_point == NULL) {
+    if (entry_point == nullptr) {
       entry_point = generate_normal_entry(synchronized);
     }
   }

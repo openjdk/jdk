@@ -32,6 +32,7 @@ import java.lang.foreign.*;
 
 import org.testng.annotations.*;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -43,10 +44,9 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 import static org.testng.Assert.*;
 
@@ -68,13 +68,13 @@ public class TestSegmentAllocators {
         for (L alignedLayout : layouts) {
             List<MemorySegment> addressList = new ArrayList<>();
             int elems = ELEMS / ((int)alignedLayout.byteAlignment() / (int)layout.byteAlignment());
-            MemorySession[] sessions = {
-                    MemorySession.openConfined(),
-                    MemorySession.openShared()
+            Arena[] arenas = {
+                    Arena.openConfined(),
+                    Arena.openShared()
             };
-            for (MemorySession session : sessions) {
-                try (session) {
-                    SegmentAllocator allocator = allocationFactory.allocator(alignedLayout.byteSize() * ELEMS, session);
+            for (Arena arena : arenas) {
+                try (arena) {
+                    SegmentAllocator allocator = allocationFactory.allocator(alignedLayout.byteSize() * ELEMS, arena);
                     for (int i = 0; i < elems; i++) {
                         MemorySegment address = allocationFunction.allocate(allocator, alignedLayout, value);
                         assertEquals(address.byteSize(), alignedLayout.byteSize());
@@ -86,16 +86,14 @@ public class TestSegmentAllocators {
                     try {
                         allocationFunction.allocate(allocator, alignedLayout, value);
                         assertFalse(isBound);
-                    } catch (OutOfMemoryError ex) {
+                    } catch (IndexOutOfBoundsException ex) {
                         //failure is expected if bound
                         assertTrue(isBound);
                     }
                 }
-                if (allocationFactory != AllocationFactory.IMPLICIT_ALLOCATOR) {
-                    // addresses should be invalid now
-                    for (MemorySegment address : addressList) {
-                        assertFalse(address.session().isAlive());
-                    }
+                // addresses should be invalid now
+                for (MemorySegment address : addressList) {
+                    assertFalse(address.scope().isAlive());
                 }
             }
         }
@@ -105,50 +103,115 @@ public class TestSegmentAllocators {
 
     @Test
     public void testBigAllocationInUnboundedSession() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
+        try (Arena arena = Arena.openConfined()) {
             for (int i = 8 ; i < SIZE_256M ; i *= 8) {
+                SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(i * 2 + 1));
                 MemorySegment address = allocator.allocate(i, i);
                 //check size
                 assertEquals(address.byteSize(), i);
                 //check alignment
-                assertEquals(address.address().toRawLongValue() % i, 0);
+                assertEquals(address.address() % i, 0);
             }
         }
     }
 
     @Test
     public void testTooBigForBoundedArena() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(10, session);
-            assertThrows(OutOfMemoryError.class, () -> allocator.allocate(12));
-            allocator.allocate(5); // ok
+        try (Arena arena = Arena.openConfined()) {
+            SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(10));
+            assertThrows(IndexOutOfBoundsException.class, () -> allocator.allocate(12));
+            allocator.allocate(5);
+        }
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationSize(SegmentAllocator allocator) {
+        allocator.allocate(-1);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignZero(SegmentAllocator allocator) {
+        allocator.allocate(1, 0);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignNeg(SegmentAllocator allocator) {
+        allocator.allocate(1, -1);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignNotPowerTwo(SegmentAllocator allocator) {
+        allocator.allocate(1, 3);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
+        allocator.allocateArray(ValueLayout.JAVA_BYTE, -1);
+    }
+
+    @Test(expectedExceptions = OutOfMemoryError.class)
+    public void testBadArenaNullReturn() {
+        try (Arena arena = Arena.openConfined()) {
+            arena.allocate(Long.MAX_VALUE, 2);
         }
     }
 
     @Test
-    public void testBiggerThanBlockForBoundedArena() {
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(4 * 1024 * 2, session);
-            allocator.allocate(4 * 1024 + 1); // should be ok
-        }
+    public void testArrayAllocateDelegation() {
+        AtomicInteger calls = new AtomicInteger();
+        SegmentAllocator allocator = new SegmentAllocator() {
+            @Override
+            public MemorySegment allocate(long bytesSize, long byteAlignment) {
+                return null;
+            }
+
+            @Override
+            public MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
+                calls.incrementAndGet();
+                return null;
+            };
+        };
+        allocator.allocateArray(ValueLayout.JAVA_BYTE);
+        allocator.allocateArray(ValueLayout.JAVA_SHORT);
+        allocator.allocateArray(ValueLayout.JAVA_CHAR);
+        allocator.allocateArray(ValueLayout.JAVA_INT);
+        allocator.allocateArray(ValueLayout.JAVA_FLOAT);
+        allocator.allocateArray(ValueLayout.JAVA_LONG);
+        allocator.allocateArray(ValueLayout.JAVA_DOUBLE);
+        assertEquals(calls.get(), 7);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadUnboundedArenaSize() {
-        SegmentAllocator.newNativeArena( -1, MemorySession.global());
+    @Test
+    public void testStringAllocateDelegation() {
+        AtomicInteger calls = new AtomicInteger();
+        SegmentAllocator allocator = new SegmentAllocator() {
+            @Override
+
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                return MemorySegment.allocateNative(byteSize, byteAlignment, SegmentScope.auto());
+            }
+
+            @Override
+            public MemorySegment allocate(long size) {
+                calls.incrementAndGet();
+                return allocate(size, 1);
+            };
+        };
+        allocator.allocateUtf8String("Hello");
+        assertEquals(calls.get(), 1);
     }
+
 
     @Test(dataProvider = "arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
-        MemorySession[] sessions = {
-                MemorySession.openConfined(),
-                MemorySession.openShared()
+        Arena[] arenas = {
+                Arena.openConfined(),
+                Arena.openShared()
         };
-        for (MemorySession session : sessions) {
-            try (session) {
-                SegmentAllocator allocator = allocationFactory.allocator(100, session);
+        for (Arena arena : arenas) {
+            try (arena) {
+                SegmentAllocator allocator = allocationFactory.allocator(100, arena);
                 MemorySegment address = allocationFunction.allocate(allocator, layout, arr);
                 Z found = arrayHelper.toArray(address, layout);
                 assertEquals(found, arr);
@@ -182,7 +245,7 @@ public class TestSegmentAllocators {
             scalarAllocations.add(new Object[] { 42d, factory, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN),
                     (AllocationFunction.OfDouble) SegmentAllocator::allocate,
                     (Function<MemoryLayout, VarHandle>)l -> l.varHandle() });
-            scalarAllocations.add(new Object[] { MemoryAddress.ofLong(42), factory, ValueLayout.ADDRESS.withOrder(ByteOrder.BIG_ENDIAN),
+            scalarAllocations.add(new Object[] { MemorySegment.ofAddress(42), factory, ValueLayout.ADDRESS.withOrder(ByteOrder.BIG_ENDIAN),
                     (AllocationFunction.OfAddress) SegmentAllocator::allocate,
                     (Function<MemoryLayout, VarHandle>)l -> l.varHandle() });
 
@@ -205,7 +268,7 @@ public class TestSegmentAllocators {
             scalarAllocations.add(new Object[] { 42d, factory, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN),
                     (AllocationFunction.OfDouble) SegmentAllocator::allocate,
                     (Function<MemoryLayout, VarHandle>)l -> l.varHandle() });
-            scalarAllocations.add(new Object[] { MemoryAddress.ofLong(42), factory, ValueLayout.ADDRESS.withOrder(ByteOrder.BIG_ENDIAN),
+            scalarAllocations.add(new Object[] { MemorySegment.ofAddress(42), factory, ValueLayout.ADDRESS.withOrder(ByteOrder.BIG_ENDIAN),
                     (AllocationFunction.OfAddress) SegmentAllocator::allocate,
                     (Function<MemoryLayout, VarHandle>)l -> l.varHandle() });
         }
@@ -273,7 +336,7 @@ public class TestSegmentAllocators {
         interface OfFloat extends AllocationFunction<Float, ValueLayout.OfFloat> { }
         interface OfLong extends AllocationFunction<Long, ValueLayout.OfLong> { }
         interface OfDouble extends AllocationFunction<Double, ValueLayout.OfDouble> { }
-        interface OfAddress extends AllocationFunction<MemoryAddress, ValueLayout.OfAddress> { }
+        interface OfAddress extends AllocationFunction<MemorySegment, ValueLayout.OfAddress> { }
 
         interface OfByteArray extends AllocationFunction<byte[], ValueLayout.OfByte> { }
         interface OfCharArray extends AllocationFunction<char[], ValueLayout.OfChar> { }
@@ -285,21 +348,19 @@ public class TestSegmentAllocators {
     }
 
     enum AllocationFactory {
-        ARENA_BOUNDED(true, SegmentAllocator::newNativeArena),
-        ARENA_UNBOUNDED(false, (size, session) -> SegmentAllocator.newNativeArena(session)),
-        NATIVE_ALLOCATOR(false, (size, session) -> session),
-        IMPLICIT_ALLOCATOR(false, (size, session) -> SegmentAllocator.implicitAllocator());
+        SLICING(true, (size, drop) -> SegmentAllocator.slicingAllocator(MemorySegment.allocateNative(size, drop.scope()))),
+        NATIVE_ALLOCATOR(false, (size, drop) -> SegmentAllocator.nativeAllocator(drop.scope()));
 
         private final boolean isBound;
-        private final BiFunction<Long, MemorySession, SegmentAllocator> factory;
+        private final BiFunction<Long, Arena, SegmentAllocator> factory;
 
-        AllocationFactory(boolean isBound, BiFunction<Long, MemorySession, SegmentAllocator> factory) {
+        AllocationFactory(boolean isBound, BiFunction<Long, Arena, SegmentAllocator> factory) {
             this.isBound = isBound;
             this.factory = factory;
         }
 
-        SegmentAllocator allocator(long size, MemorySession session) {
-            return factory.apply(size, session);
+        SegmentAllocator allocator(long size, Arena arena) {
+            return factory.apply(size, arena);
         }
 
         public boolean isBound() {
@@ -415,33 +476,13 @@ public class TestSegmentAllocators {
                 return found;
             }
         };
+    }
 
-        ToArrayHelper<MemoryAddress[]> toAddressArray = new ToArrayHelper<>() {
-            @Override
-            public MemoryAddress[] array() {
-                return switch ((int) ValueLayout.ADDRESS.byteSize()) {
-                    case 4 -> wrap(toIntArray.array());
-                    case 8 -> wrap(toLongArray.array());
-                    default -> throw new IllegalStateException("Cannot get here");
-                };
-            }
-
-            @Override
-            public MemoryAddress[] toArray(MemorySegment segment, ValueLayout layout) {
-                return switch ((int)layout.byteSize()) {
-                    case 4 -> wrap(toIntArray.toArray(segment, layout));
-                    case 8 -> wrap(toLongArray.toArray(segment, layout));
-                    default -> throw new IllegalStateException("Cannot get here");
-                };
-            }
-
-            private MemoryAddress[] wrap(int[] ints) {
-                return IntStream.of(ints).mapToObj(MemoryAddress::ofLong).toArray(MemoryAddress[]::new);
-            }
-
-            private MemoryAddress[] wrap(long[] ints) {
-                return LongStream.of(ints).mapToObj(MemoryAddress::ofLong).toArray(MemoryAddress[]::new);
-            }
+    @DataProvider(name = "allocators")
+    static Object[][] allocators() {
+        return new Object[][] {
+                { SegmentAllocator.nativeAllocator(SegmentScope.global()) },
+                { SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(10, SegmentScope.global())) },
         };
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -40,9 +40,9 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void InterpreterMacroAssembler::narrow(Register result) {
@@ -146,7 +146,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
       ShouldNotReachHere();
   }
   // Clean up tos value in the thread object
-  mvw(t0, (int) ilgl);
+  mv(t0, (int)ilgl);
   sw(t0, tos_addr);
   sw(zr, val_addr);
 }
@@ -182,9 +182,12 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
-  int32_t offset = 0;
-  la_patchable(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
-  addi(xdispatch, xdispatch, offset);
+  ExternalAddress target((address)Interpreter::dispatch_table());
+  relocate(target.rspec(), [&] {
+    int32_t offset;
+    la_patchable(xdispatch, target, offset);
+    addi(xdispatch, xdispatch, offset);
+  });
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
@@ -257,7 +260,7 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                Register tmp,
                                                                int bcp_offset,
                                                                size_t index_size) {
-  assert(cache != tmp, "must use different register");
+  assert_different_registers(cache, tmp);
   get_cache_index_at_bcp(tmp, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry index
@@ -280,11 +283,11 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Load pointer for resolved_references[] objArray
   ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
   ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  resolve_oop_handle(result, tmp);
+  resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
-  load_heap_oop(result, Address(result, 0));
+  load_heap_oop(result, Address(result, 0), tmp, t1);
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
@@ -368,12 +371,12 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister r) {
-  flw(r, esp, 0);
+  flw(r, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister r) {
-  fld(r, esp, 0);
+  fld(r, Address(esp, 0));
   addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 
@@ -466,7 +469,7 @@ void InterpreterMacroAssembler::load_double(Address src) {
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
-  mv(x30, sp);
+  mv(x19_sender_sp, sp);
   // record last_sp
   sd(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 }
@@ -524,7 +527,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     bnez(t1, safepoint);
   }
   if (table == Interpreter::dispatch_table(state)) {
-    li(t1, Interpreter::distance_from_dispatch_table(state));
+    mv(t1, Interpreter::distance_from_dispatch_table(state));
     add(t1, Rs, t1);
     shadd(t1, t1, xdispatch, t1, 3);
   } else {
@@ -548,11 +551,11 @@ void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll
 }
 
 void InterpreterMacroAssembler::dispatch_only_normal(TosState state, Register Rs) {
-  dispatch_base(state, Interpreter::normal_table(state), Rs);
+  dispatch_base(state, Interpreter::normal_table(state), true, false, Rs);
 }
 
 void InterpreterMacroAssembler::dispatch_only_noverify(TosState state, Register Rs) {
-  dispatch_base(state, Interpreter::normal_table(state), false, Rs);
+  dispatch_base(state, Interpreter::normal_table(state), false, false, Rs);
 }
 
 void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {
@@ -783,7 +786,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg = x10;
     const Register tmp = c_rarg2;
@@ -816,7 +819,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     assert(lock_offset == 0,
            "displached header must be first word in BasicObjectLock");
 
-    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
     // Test if the oopMark is an obvious stack pointer, i.e.,
     //  1) (mark & 7) == 0, and
@@ -828,12 +831,12 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // least significant 3 bits clear.
     // NOTE: the oopMark is in swap_reg x10 as the result of cmpxchg
     sub(swap_reg, swap_reg, sp);
-    li(t0, (int64_t)(7 - os::vm_page_size()));
+    mv(t0, (int64_t)(7 - (int)os::vm_page_size()));
     andr(swap_reg, swap_reg, t0);
 
     // Save the test result, for recursive case, the result is zero
     sd(swap_reg, Address(lock_reg, mark_offset));
-    beqz(swap_reg, done);
+    beqz(swap_reg, count);
 
     bind(slow_case);
 
@@ -841,6 +844,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
+
+    j(done);
+
+    bind(count);
+    increment(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
   }
@@ -865,7 +873,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg   = x10;
     const Register header_reg = c_rarg2;  // Will contain the old oopMark
@@ -888,14 +896,19 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
                            BasicLock::displaced_header_offset_in_bytes()));
 
     // Test for recursion
-    beqz(header_reg, done);
+    beqz(header_reg, count);
 
     // Atomic swap back the old header
-    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
     // Call the runtime routine for slow case.
     sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
+
+    j(done);
+
+    bind(count);
+    decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
 
@@ -915,7 +928,7 @@ void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
 void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Label set_mdp;
-  push_reg(0xc00, sp); // save x10, x11
+  push_reg(RegSet::of(x10, x11), sp); // save x10, x11
 
   // Test MDO to avoid the call if it is NULL.
   ld(x10, Address(xmethod, in_bytes(Method::method_data_offset())));
@@ -928,7 +941,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   add(x10, x11, x10);
   sd(x10, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
   bind(set_mdp);
-  pop_reg(0xc00, sp);
+  pop_reg(RegSet::of(x10, x11), sp);
 }
 
 void InterpreterMacroAssembler::verify_method_data_pointer() {
@@ -1484,8 +1497,8 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 
     // Build the base (index * per_case_size_in_bytes()) +
     // case_array_offset_in_bytes()
-    mvw(reg2, in_bytes(MultiBranchData::per_case_size()));
-    mvw(t0, in_bytes(MultiBranchData::case_array_offset()));
+    mv(reg2, in_bytes(MultiBranchData::per_case_size()));
+    mv(t0, in_bytes(MultiBranchData::case_array_offset()));
     Assembler::mul(index, index, reg2);
     Assembler::add(index, index, t0);
 
@@ -1666,7 +1679,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
 
   ld(t0, mdo_addr);
   beqz(t0, none);
-  li(tmp, (u1)TypeEntries::null_seen);
+  mv(tmp, (u1)TypeEntries::null_seen);
   beq(t0, tmp, none);
   // There is a chance that the checks above (re-reading profiling
   // data from memory) fail if another thread has just set the
@@ -1701,10 +1714,10 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
 
     lbu(t0, Address(mdp, in_bytes(DataLayout::tag_offset()) - off_to_start));
     if (is_virtual) {
-      li(tmp, (u1)DataLayout::virtual_call_type_data_tag);
+      mv(tmp, (u1)DataLayout::virtual_call_type_data_tag);
       bne(t0, tmp, profile_continue);
     } else {
-      li(tmp, (u1)DataLayout::call_type_data_tag);
+      mv(tmp, (u1)DataLayout::call_type_data_tag);
       bne(t0, tmp, profile_continue);
     }
 
@@ -1734,7 +1747,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       mv(index, zr); // index < TypeProfileArgsLimit
       bind(loop);
       bgtz(index, profileReturnType);
-      li(t0, (int)MethodData::profile_return());
+      mv(t0, (int)MethodData::profile_return());
       beqz(t0, profileArgument); // (index > 0 || MethodData::profile_return()) == false
       bind(profileReturnType);
       // If return value type is profiled we may have no argument to profile
@@ -1742,7 +1755,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       mv(t1, - TypeStackSlotEntries::per_arg_count());
       mul(t1, index, t1);
       add(tmp, tmp, t1);
-      li(t1, TypeStackSlotEntries::per_arg_count());
+      mv(t1, TypeStackSlotEntries::per_arg_count());
       add(t0, mdp, off_to_args);
       blt(tmp, t1, done);
 
@@ -1753,8 +1766,8 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       // stack offset o (zero based) from the start of the argument
       // list, for n arguments translates into offset n - o - 1 from
       // the end of the argument list
-      li(t0, stack_slot_offset0);
-      li(t1, slot_step);
+      mv(t0, stack_slot_offset0);
+      mv(t1, slot_step);
       mul(t1, index, t1);
       add(t0, t0, t1);
       add(t0, mdp, t0);
@@ -1764,8 +1777,8 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       Address arg_addr = argument_address(tmp);
       ld(tmp, arg_addr);
 
-      li(t0, argument_type_offset0);
-      li(t1, type_step);
+      mv(t0, argument_type_offset0);
+      mv(t1, type_step);
       mul(t1, index, t1);
       add(t0, t0, t1);
       add(mdo_addr, mdp, t0);
@@ -1777,7 +1790,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
 
       // increment index by 1
       addi(index, index, 1);
-      li(t1, TypeProfileArgsLimit);
+      mv(t1, TypeProfileArgsLimit);
       blt(index, t1, loop);
       bind(loopEnd);
 
@@ -1832,13 +1845,13 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       // length
       Label do_profile;
       lbu(t0, Address(xbcp, 0));
-      li(tmp, (u1)Bytecodes::_invokedynamic);
+      mv(tmp, (u1)Bytecodes::_invokedynamic);
       beq(t0, tmp, do_profile);
-      li(tmp, (u1)Bytecodes::_invokehandle);
+      mv(tmp, (u1)Bytecodes::_invokehandle);
       beq(t0, tmp, do_profile);
       get_method(tmp);
       lhu(t0, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
-      li(t1, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
+      mv(t1, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       bne(t0, t1, profile_continue);
       bind(do_profile);
     }

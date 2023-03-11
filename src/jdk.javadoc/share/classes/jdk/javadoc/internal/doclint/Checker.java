@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
@@ -63,6 +65,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
@@ -191,7 +194,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
-            } else if (tree.getFirstSentence().isEmpty() && !isOverridingMethod) {
+            } else if (tree.getFirstSentence().isEmpty() && !isOverridingMethod && !pseudoElement(p)) {
                 if (tree.getBlockTags().isEmpty()) {
                     reportMissing("dc.empty.comment");
                     return null;
@@ -222,7 +225,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
             // this is for html files
             // ... if it is a legacy package.html, the doc comment comes after the <h1> page title
-            // ... otherwise, (e.g. overview file and doc-files/*.html files) no additional headings are inserted
+            // ... otherwise, (e.g. overview file and doc-files/**/*.html files) no additional headings are inserted
             case COMPILATION_UNIT -> fo.isNameCompatible("package", JavaFileObject.Kind.HTML) ? 1 : 0;
 
 
@@ -244,8 +247,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         } else if (isExecutable()) {
             if (!isOverridingMethod) {
                 ExecutableElement ee = (ExecutableElement) env.currElement;
-                checkParamsDocumented(ee.getTypeParameters());
-                checkParamsDocumented(ee.getParameters());
+                if (!isCanonicalRecordConstructor(ee)) {
+                    checkParamsDocumented(ee.getTypeParameters());
+                    checkParamsDocumented(ee.getParameters());
+                }
                 switch (ee.getReturnType().getKind()) {
                     case VOID, NONE -> { }
                     default -> {
@@ -261,6 +266,38 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
 
         return null;
+    }
+
+    private boolean isCanonicalRecordConstructor(ExecutableElement ee) {
+        TypeElement te = (TypeElement) ee.getEnclosingElement();
+        if (te.getKind() != ElementKind.RECORD) {
+            return false;
+        }
+        List<? extends RecordComponentElement> stateComps = te.getRecordComponents();
+        List<? extends VariableElement> params = ee.getParameters();
+        if (stateComps.size() != params.size()) {
+            return false;
+        }
+
+        Iterator<? extends RecordComponentElement> stateIter = stateComps.iterator();
+        Iterator<? extends VariableElement> paramIter = params.iterator();
+        while (paramIter.hasNext() && stateIter.hasNext()) {
+            VariableElement param = paramIter.next();
+            RecordComponentElement comp = stateIter.next();
+            if (!Objects.equals(param.getSimpleName(), comp.getSimpleName())
+                    || !env.types.isSameType(param.asType(), comp.asType())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Checks if the passed tree path corresponds to an entity, such as
+    // the overview file and doc-files/**/*.html files.
+    private boolean pseudoElement(TreePath p) {
+        return p.getLeaf().getKind() == Tree.Kind.COMPILATION_UNIT
+                && p.getCompilationUnit().getSourceFile().getKind() == JavaFileObject.Kind.HTML;
     }
 
     private void reportMissing(String code, Object... args) {
@@ -312,6 +349,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEntity(EntityTree tree, Void ignore) {
+        hasNonWhitespaceText = true;
         checkAllowsText(tree);
         markEnclosingTag(Flag.HAS_TEXT);
         String s = env.trees.getCharacters(tree);
@@ -320,6 +358,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         return null;
 
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitEscape(EscapeTree tree, Void ignore) {
+        hasNonWhitespaceText = true;
+        checkAllowsText(tree);
+        markEnclosingTag(Flag.HAS_TEXT);
+        return null;
     }
 
     void checkAllowsText(DocTree tree) {
@@ -1114,6 +1160,16 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             Element e = env.trees.getElement(new DocTreePath(getCurrentPath(), ref));
             if (!isConstant(e))
                 env.messages.error(REFERENCE, tree, "dc.value.not.a.constant");
+        }
+        TextTree format = tree.getFormat();
+        if (format != null) {
+            String f = format.getBody().toString();
+            long count = format.getBody().toString().chars()
+                    .filter(ch -> ch == '%')
+                    .count();
+            if (count != 1) {
+                env.messages.error(REFERENCE, format, "dc.value.bad.format", f);
+            }
         }
 
         markEnclosingTag(Flag.HAS_INLINE_TAG);

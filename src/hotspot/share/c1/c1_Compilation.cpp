@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,7 +398,7 @@ int Compilation::compile_java_method() {
   {
     PhaseTraceTime timeit(_t_emit_lir);
 
-    _frame_map = new FrameMap(method(), hir()->number_of_locks(), MAX2(4, hir()->max_stack()));
+    _frame_map = new FrameMap(method(), hir()->number_of_locks(), hir()->max_stack());
     emit_lir();
   }
   CHECK_BAILOUT_(no_frame_size);
@@ -710,29 +710,10 @@ void Compilation::print_timers() {
 
 
 #ifndef PRODUCT
-void Compilation::compile_only_this_method() {
-  ResourceMark rm;
-  fileStream stream(os::fopen("c1_compile_only", "wt"));
-  stream.print_cr("# c1 compile only directives");
-  compile_only_this_scope(&stream, hir()->top_scope());
-}
+void CompilationResourceObj::print() const       { print_on(tty); }
 
-void Compilation::compile_only_this_scope(outputStream* st, IRScope* scope) {
-  st->print("CompileOnly=");
-  scope->method()->holder()->name()->print_symbol_on(st);
-  st->print(".");
-  scope->method()->name()->print_symbol_on(st);
-  st->cr();
-}
-
-void Compilation::exclude_this_method() {
-  fileStream stream(os::fopen(".hotspot_compiler", "at"));
-  stream.print("exclude ");
-  method()->holder()->name()->print_symbol_on(&stream);
-  stream.print(" ");
-  method()->name()->print_symbol_on(&stream);
-  stream.cr();
-  stream.cr();
+void CompilationResourceObj::print_on(outputStream* st) const {
+  st->print_cr("CompilationResourceObj(" INTPTR_FORMAT ")", p2i(this));
 }
 
 // Called from debugger to get the interval with 'reg_num' during register allocation.

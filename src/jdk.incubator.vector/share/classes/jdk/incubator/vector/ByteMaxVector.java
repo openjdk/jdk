@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -476,6 +476,22 @@ final class ByteMaxVector extends ByteVector {
 
     @Override
     @ForceInline
+    public ByteMaxVector compress(VectorMask<Byte> m) {
+        return (ByteMaxVector)
+            super.compressTemplate(ByteMaxMask.class,
+                                   (ByteMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ByteMaxVector expand(VectorMask<Byte> m) {
+        return (ByteMaxVector)
+            super.expandTemplate(ByteMaxMask.class,
+                                   (ByteMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public ByteMaxVector selectFrom(Vector<Byte> v) {
         return (ByteMaxVector)
             super.selectFromTemplate((ByteMaxVector) v);  // specialize
@@ -639,6 +655,15 @@ final class ByteMaxVector extends ByteVector {
             return xor(m.not());
         }
 
+        @Override
+        @ForceInline
+        /*package-private*/
+        ByteMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (ByteMaxMask) VectorSupport.indexPartiallyInUpperRange(
+                ByteMaxMask.class, byte.class, VLENGTH, offset, limit,
+                (o, l) -> (ByteMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
+        }
+
         // Unary operations
 
         @Override
@@ -646,6 +671,15 @@ final class ByteMaxVector extends ByteVector {
         public ByteMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public ByteMaxMask compress() {
+            return (ByteMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                ByteMaxVector.class, ByteMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -823,8 +857,8 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m) {
-        return super.fromArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);  // specialize
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
+        return super.fromArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
 
@@ -839,36 +873,22 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m) {
-        return super.fromBooleanArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);  // specialize
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
+        return super.fromBooleanArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    ByteVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
-        return super.fromByteArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
-        return super.fromByteBuffer0Template(ByteMaxMask.class, bb, offset, (ByteMaxMask) m);  // specialize
+    ByteVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Byte> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(ByteMaxMask.class, ms, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -896,22 +916,8 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
-        super.intoByteArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
-        super.intoByteBuffer0Template(ByteMaxMask.class, bb, offset, (ByteMaxMask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Byte> m) {
+        super.intoMemorySegment0Template(ByteMaxMask.class, ms, offset, (ByteMaxMask) m);
     }
 
 
@@ -920,3 +926,4 @@ final class ByteMaxVector extends ByteVector {
     // ================================================
 
 }
+

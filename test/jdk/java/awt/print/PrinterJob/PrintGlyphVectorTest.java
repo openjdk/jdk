@@ -34,13 +34,11 @@ import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Label;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
@@ -51,6 +49,7 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
 public class PrintGlyphVectorTest extends Component implements Printable {
+    private static Frame f;
 
     private static final String INSTRUCTIONS = """
             Note: You must have a printer installed for this test.
@@ -128,7 +127,7 @@ public class PrintGlyphVectorTest extends Component implements Printable {
             PassFailJFrame.forcePass();
         }
 
-        Frame f = new Frame("Test PrintGlyphVector");
+        f = new Frame("Test PrintGlyphVector");
         PrintGlyphVectorTest pvt = new PrintGlyphVectorTest();
         f.add(pvt, BorderLayout.CENTER);
 
@@ -149,13 +148,13 @@ public class PrintGlyphVectorTest extends Component implements Printable {
 
         f.add(printButton, BorderLayout.SOUTH);
         f.pack();
-        f.setVisible(true);
 
         // add the test frame to dispose
-        PassFailJFrame.addTestFrame(f);
+        PassFailJFrame.addTestWindow(f);
 
         // Arrange the test instruction frame and test frame side by side
-        PassFailJFrame.positionTestFrame(f, PassFailJFrame.Position.HORIZONTAL);
+        PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
+        f.setVisible(true);
     }
 
     public static void main(String[] arg) throws Exception {

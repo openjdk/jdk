@@ -56,7 +56,7 @@ public interface AnnotationMirror {
      * values appear in the annotation's source.
      *
      * @apiNote
-     * An annotation mirror of a marker annotation type
+     * An annotation mirror of a marker annotation interface
      * will by definition have an empty map.
      *
      * <p>To fill in default values, use {@link

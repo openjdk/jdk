@@ -169,7 +169,6 @@ ZIPEXE := zip
 UNZIP := unzip
 EXPR := expr
 FILE := file
-HG := hg
 ULIMIT := ulimit
 
 ifeq ($(OPENJDK_BUILD_OS), windows)

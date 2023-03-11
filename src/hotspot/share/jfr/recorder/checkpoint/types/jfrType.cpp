@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,13 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
-
+#include "services/nmtCommon.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
@@ -219,7 +219,6 @@ void MetaspaceObjectTypeConstant::serialize(JfrCheckpointWriter& writer) {
 static const char* reference_type_to_string(ReferenceType rt) {
   switch (rt) {
     case REF_NONE: return "None reference";
-    case REF_OTHER: return "Other reference";
     case REF_SOFT: return "Soft reference";
     case REF_WEAK: return "Weak reference";
     case REF_FINAL: return "Final reference";
@@ -249,11 +248,11 @@ void NarrowOopModeConstant::serialize(JfrCheckpointWriter& writer) {
 }
 
 void CodeBlobTypeConstant::serialize(JfrCheckpointWriter& writer) {
-  static const u4 nof_entries = CodeBlobType::NumTypes;
+  static const u4 nof_entries = static_cast<u4>(CodeBlobType::NumTypes);
   writer.write_count(nof_entries);
   for (u4 i = 0; i < nof_entries; ++i) {
     writer.write_key(i);
-    writer.write(CodeCache::get_code_heap_name(i));
+    writer.write(CodeCache::get_code_heap_name(static_cast<CodeBlobType>(i)));
   }
 };
 
@@ -321,5 +320,14 @@ void CompilerTypeConstant::serialize(JfrCheckpointWriter& writer) {
   for (u4 i = 0; i < nof_entries; ++i) {
     writer.write_key(i);
     writer.write(compilertype2name((CompilerType)i));
+  }
+}
+
+void NMTTypeConstant::serialize(JfrCheckpointWriter& writer) {
+  writer.write_count(mt_number_of_types);
+  for (int i = 0; i < mt_number_of_types; ++i) {
+    writer.write_key(i);
+    MEMFLAGS flag = NMTUtil::index_to_flag(i);
+    writer.write(NMTUtil::flag_to_name(flag));
   }
 }

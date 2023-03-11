@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -50,14 +48,7 @@ import java.io.PrintStream;
 public class exception01 {
 
     static {
-        try {
-            System.loadLibrary("exception01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load exception01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("exception01");
     }
 
     static volatile int result;

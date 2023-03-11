@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,15 +24,14 @@
  */
 
 #include "precompiled.hpp"
+#include "pauth_aarch64.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-
-#include OS_HEADER_INLINE(os)
 
 int VM_Version::_cpu;
 int VM_Version::_model;
@@ -46,6 +45,7 @@ int VM_Version::_dcache_line_size;
 int VM_Version::_icache_line_size;
 int VM_Version::_initial_sve_vector_length;
 bool VM_Version::_rop_protection;
+uintptr_t VM_Version::_pac_mask;
 
 SpinWait VM_Version::_spin_wait;
 
@@ -132,7 +132,7 @@ void VM_Version::initialize() {
   // Enable vendor specific features
 
   // Ampere eMAG
-  if (_cpu == CPU_AMCC && (_model == 0) && (_variant == 0x3)) {
+  if (_cpu == CPU_AMCC && (_model == CPU_MODEL_EMAG) && (_variant == 0x3)) {
     if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
       FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
     }
@@ -141,6 +141,13 @@ void VM_Version::initialize() {
     }
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, !(_revision == 1 || _revision == 2));
+    }
+  }
+
+  // Ampere CPUs: Ampere-1 and Ampere-1A
+  if (_cpu == CPU_AMPERE && ((_model == CPU_MODEL_AMPERE_1) || (_model == CPU_MODEL_AMPERE_1A))) {
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
   }
 
@@ -221,11 +228,9 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _features |= CPU_STXR_PREFETCH;
-
   char buf[512];
-  sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
-  if (_model2) sprintf(buf+strlen(buf), "(0x%03x)", _model2);
+  int buf_used_len = os::snprintf_checked(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  if (_model2) os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
 #define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (VM_Version::supports_##name()) strcat(buf, ", " #name);
   CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
 #undef ADD_FEATURE_IF_SUPPORTED
@@ -239,6 +244,18 @@ void VM_Version::initialize() {
   if (UseCRC32 && !VM_Version::supports_crc32()) {
     warning("UseCRC32 specified, but not supported on this CPU");
     FLAG_SET_DEFAULT(UseCRC32, false);
+  }
+
+  // Neoverse V1
+  if (_cpu == CPU_ARM && (_model == 0xd40 || _model2 == 0xd40)) {
+    if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
+      FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
+    }
+  }
+
+  if (UseCryptoPmullForCRC32 && (!VM_Version::supports_pmull() || !VM_Version::supports_sha3() || !VM_Version::supports_crc32())) {
+    warning("UseCryptoPmullForCRC32 specified, but not supported on this CPU");
+    FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, false);
   }
 
   if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
@@ -337,20 +354,23 @@ void VM_Version::initialize() {
   }
 
   if (UseSHA && VM_Version::supports_sha3()) {
-    // Do not auto-enable UseSHA3Intrinsics until it has been fully tested on hardware
-    // if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
-      // FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
-    // }
+    // Auto-enable UseSHA3Intrinsics on hardware with performance benefit.
+    // Note that the evaluation of UseSHA3Intrinsics shows better performance
+    // on Apple silicon but worse performance on Neoverse V1 and N2.
+    if (_cpu == CPU_APPLE) {  // Apple silicon
+      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+      }
+    }
   } else if (UseSHA3Intrinsics) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
   if (UseSHA && VM_Version::supports_sha512()) {
-    // Do not auto-enable UseSHA512Intrinsics until it has been fully tested on hardware
-    // if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
-      // FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
-    // }
+    if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    }
   } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
@@ -367,6 +387,17 @@ void VM_Version::initialize() {
   } else if (UseGHASHIntrinsics) {
     warning("GHASH intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          UseChaCha20Intrinsics = true;
+      }
+  } else if (UseChaCha20Intrinsics) {
+      if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          warning("ChaCha20 intrinsic requires ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
@@ -423,9 +454,10 @@ void VM_Version::initialize() {
     _rop_protection = false;
   } else if (strcmp(UseBranchProtection, "standard") == 0) {
     _rop_protection = false;
-    // Enable PAC if this code has been built with branch-protection and the CPU/OS supports it.
+    // Enable PAC if this code has been built with branch-protection, the CPU/OS
+    // supports it, and incompatible preview features aren't enabled.
 #ifdef __ARM_FEATURE_PAC_DEFAULT
-    if (VM_Version::supports_paca()) {
+    if (VM_Version::supports_paca() && !Arguments::enable_preview()) {
       _rop_protection = true;
     }
 #endif
@@ -436,6 +468,10 @@ void VM_Version::initialize() {
       warning("ROP-protection specified, but not supported on this CPU.");
       // Disable PAC to prevent illegal instruction crashes.
       _rop_protection = false;
+    } else if (Arguments::enable_preview()) {
+      // Not currently compatible with continuation freeze/thaw.
+      warning("PAC-RET is incompatible with virtual threads preview feature.");
+      _rop_protection = false;
     }
 #else
     warning("ROP-protection specified, but this VM was built without ROP-protection support.");
@@ -444,8 +480,12 @@ void VM_Version::initialize() {
     vm_exit_during_initialization(err_msg("Unsupported UseBranchProtection: %s", UseBranchProtection));
   }
 
-  // The frame pointer must be preserved for ROP protection.
   if (_rop_protection == true) {
+    // Determine the mask of address bits used for PAC. Clear bit 55 of
+    // the input to make it look like a user address.
+    _pac_mask = (uintptr_t)pauth_strip_pointer((address)~(UINT64_C(1) << 55));
+
+    // The frame pointer must be preserved for ROP protection.
     if (FLAG_IS_DEFAULT(PreserveFramePointer) == false && PreserveFramePointer == false ) {
       vm_exit_during_initialization(err_msg("PreserveFramePointer cannot be disabled for ROP-protection"));
     }
@@ -532,6 +572,58 @@ void VM_Version::initialize() {
 #endif
 
   _spin_wait = get_spin_wait_desc();
+
+  check_virtualizations();
+}
+
+#if defined(LINUX)
+static bool check_info_file(const char* fpath,
+                            const char* virt1, VirtualizationType vt1,
+                            const char* virt2, VirtualizationType vt2) {
+  char line[500];
+  FILE* fp = os::fopen(fpath, "r");
+  if (fp == nullptr) {
+    return false;
+  }
+  while (fgets(line, sizeof(line), fp) != nullptr) {
+    if (strcasestr(line, virt1) != 0) {
+      Abstract_VM_Version::_detected_virtualization = vt1;
+      fclose(fp);
+      return true;
+    }
+    if (virt2 != NULL && strcasestr(line, virt2) != 0) {
+      Abstract_VM_Version::_detected_virtualization = vt2;
+      fclose(fp);
+      return true;
+    }
+  }
+  fclose(fp);
+  return false;
+}
+#endif
+
+void VM_Version::check_virtualizations() {
+#if defined(LINUX)
+  const char* pname_file = "/sys/devices/virtual/dmi/id/product_name";
+  const char* tname_file = "/sys/hypervisor/type";
+  if (check_info_file(pname_file, "KVM", KVM, "VMWare", VMWare)) {
+    return;
+  }
+  check_info_file(tname_file, "Xen", XenPVHVM, NULL, NoDetectedVirtualization);
+#endif
+}
+
+void VM_Version::print_platform_virtualization_info(outputStream* st) {
+#if defined(LINUX)
+  VirtualizationType vrt = VM_Version::get_detected_virtualization();
+  if (vrt == KVM) {
+    st->print_cr("KVM virtualization detected");
+  } else if (vrt == VMWare) {
+    st->print_cr("VMWare virtualization detected");
+  } else if (vrt == XenPVHVM) {
+    st->print_cr("Xen virtualization detected");
+  }
+#endif
 }
 
 void VM_Version::initialize_cpu_information(void) {

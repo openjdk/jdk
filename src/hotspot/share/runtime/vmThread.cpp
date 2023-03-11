@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,13 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -101,16 +101,16 @@ static VM_Cleanup       cleanup_op;
 
 bool              VMThread::_should_terminate   = false;
 bool              VMThread::_terminated         = false;
-Monitor*          VMThread::_terminate_lock     = NULL;
-VMThread*         VMThread::_vm_thread          = NULL;
-VM_Operation*     VMThread::_cur_vm_operation   = NULL;
+Monitor*          VMThread::_terminate_lock     = nullptr;
+VMThread*         VMThread::_vm_thread          = nullptr;
+VM_Operation*     VMThread::_cur_vm_operation   = nullptr;
 VM_Operation*     VMThread::_next_vm_operation  = &cleanup_op; // Prevent any thread from setting an operation until VM thread is ready.
-PerfCounter*      VMThread::_perf_accumulated_vm_operation_time = NULL;
-VMOperationTimeoutTask* VMThread::_timeout_task = NULL;
+PerfCounter*      VMThread::_perf_accumulated_vm_operation_time = nullptr;
+VMOperationTimeoutTask* VMThread::_timeout_task = nullptr;
 
 
 void VMThread::create() {
-  assert(vm_thread() == NULL, "we can only allocate one VMThread");
+  assert(vm_thread() == nullptr, "we can only allocate one VMThread");
   _vm_thread = new VMThread();
 
   if (AbortVMOnVMOperationTimeout) {
@@ -125,7 +125,7 @@ void VMThread::create() {
     _timeout_task = new VMOperationTimeoutTask(interval);
     _timeout_task->enroll();
   } else {
-    assert(_timeout_task == NULL, "sanity");
+    assert(_timeout_task == nullptr, "sanity");
   }
 
   _terminate_lock = new Monitor(Mutex::nosafepoint, "VMThreadTerminate_lock");
@@ -144,7 +144,7 @@ VMThread::VMThread() : NamedThread(), _is_running(false) {
 }
 
 void VMThread::destroy() {
-  _vm_thread = NULL;      // VM thread is gone
+  _vm_thread = nullptr;      // VM thread is gone
 }
 
 static VM_Halt halt_op;
@@ -177,7 +177,7 @@ void VMThread::run() {
   // Note the intention to exit before safepointing.
   // 6295565  This has the effect of waiting for any large tty
   // outputs to finish.
-  if (xtty != NULL) {
+  if (xtty != nullptr) {
     ttyLocker ttyl;
     xtty->begin_elem("destroy_vm");
     xtty->stamp();
@@ -212,7 +212,7 @@ void VMThread::run() {
   // signal other threads that VM process is gone
   {
     // Note: we must have the _no_safepoint_check_flag. Mutex::lock() allows
-    // VM thread to enter any lock at Safepoint as long as its _owner is NULL.
+    // VM thread to enter any lock at Safepoint as long as its _owner is null.
     // If that happens after _terminate_lock->wait() has unset _owner
     // but before it actually drops the lock and waits, the notification below
     // may get lost and we will have a hang. To avoid this, we need to use
@@ -257,9 +257,8 @@ void VMThread::wait_for_vm_thread_exit() {
 }
 
 static void post_vm_operation_event(EventExecuteVMOperation* event, VM_Operation* op) {
-  assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
-  assert(op != NULL, "invariant");
+  assert(event != nullptr, "invariant");
+  assert(op != nullptr, "invariant");
   const bool evaluate_at_safepoint = op->evaluate_at_safepoint();
   event->set_operation(op->type());
   event->set_safepoint(evaluate_at_safepoint);
@@ -302,8 +301,8 @@ class HandshakeALotClosure : public HandshakeClosure {
 };
 
 bool VMThread::handshake_alot() {
-  assert(_cur_vm_operation == NULL, "should not have an op yet");
-  assert(_next_vm_operation == NULL, "should not have an op yet");
+  assert(_cur_vm_operation == nullptr, "should not have an op yet");
+  assert(_next_vm_operation == nullptr, "should not have an op yet");
   if (!HandshakeALot) {
     return false;
   }
@@ -321,10 +320,10 @@ bool VMThread::handshake_alot() {
 }
 
 void VMThread::setup_periodic_safepoint_if_needed() {
-  assert(_cur_vm_operation  == NULL, "Already have an op");
-  assert(_next_vm_operation == NULL, "Already have an op");
+  assert(_cur_vm_operation  == nullptr, "Already have an op");
+  assert(_next_vm_operation == nullptr, "Already have an op");
   // Check for a cleanup before SafepointALot to keep stats correct.
-  long interval_ms = SafepointTracing::time_since_last_safepoint_ms();
+  jlong interval_ms = SafepointTracing::time_since_last_safepoint_ms();
   bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
                            (interval_ms >= GuaranteedSafepointInterval);
   if (!max_time_exceeded) {
@@ -338,7 +337,7 @@ void VMThread::setup_periodic_safepoint_if_needed() {
 }
 
 bool VMThread::set_next_operation(VM_Operation *op) {
-  if (_next_vm_operation != NULL) {
+  if (_next_vm_operation != nullptr) {
     return false;
   }
   log_debug(vmthread)("Adding VM operation: %s", op->name());
@@ -385,15 +384,15 @@ static void self_destruct_if_needed() {
   if ((SelfDestructTimer != 0.0) && !VMError::is_error_reported() &&
       (os::elapsedTime() > SelfDestructTimer * 60.0)) {
     tty->print_cr("VM self-destructed");
-    exit(-1);
+    os::exit(-1);
   }
 }
 
 void VMThread::inner_execute(VM_Operation* op) {
   assert(Thread::current()->is_VM_thread(), "Must be the VM thread");
 
-  VM_Operation* prev_vm_operation = NULL;
-  if (_cur_vm_operation != NULL) {
+  VM_Operation* prev_vm_operation = nullptr;
+  if (_cur_vm_operation != nullptr) {
     // Check that the VM operation allows nested VM operation.
     // This is normally not the case, e.g., the compiler
     // does not allow nested scavenges or compiles.
@@ -408,10 +407,10 @@ void VMThread::inner_execute(VM_Operation* op) {
   _cur_vm_operation = op;
 
   HandleMark hm(VMThread::vm_thread());
-  EventMarkVMOperation em("Executing %sVM operation: %s", prev_vm_operation != NULL ? "nested " : "", op->name());
+  EventMarkVMOperation em("Executing %sVM operation: %s", prev_vm_operation != nullptr ? "nested " : "", op->name());
 
   log_debug(vmthread)("Evaluating %s %s VM operation: %s",
-                       prev_vm_operation != NULL ? "nested" : "",
+                       prev_vm_operation != nullptr ? "nested" : "",
                       _cur_vm_operation->evaluate_at_safepoint() ? "safepoint" : "non-safepoint",
                       _cur_vm_operation->name());
 
@@ -444,13 +443,13 @@ void VMThread::wait_for_operation() {
 
   // Clear previous operation.
   // On first call this clears a dummy place-holder.
-  _next_vm_operation = NULL;
+  _next_vm_operation = nullptr;
   // Notify operation is done and notify a next operation can be installed.
   ml_op_lock.notify_all();
 
   while (!should_terminate()) {
     self_destruct_if_needed();
-    if (_next_vm_operation != NULL) {
+    if (_next_vm_operation != nullptr) {
       return;
     }
     if (handshake_alot()) {
@@ -460,15 +459,15 @@ void VMThread::wait_for_operation() {
         Handshake::execute(&hal_cl);
       }
       // When we unlocked above someone might have setup a new op.
-      if (_next_vm_operation != NULL) {
+      if (_next_vm_operation != nullptr) {
         return;
       }
     }
-    assert(_next_vm_operation == NULL, "Must be");
-    assert(_cur_vm_operation  == NULL, "Must be");
+    assert(_next_vm_operation == nullptr, "Must be");
+    assert(_cur_vm_operation  == nullptr, "Must be");
 
     setup_periodic_safepoint_if_needed();
-    if (_next_vm_operation != NULL) {
+    if (_next_vm_operation != nullptr) {
       return;
     }
 
@@ -479,7 +478,7 @@ void VMThread::wait_for_operation() {
 }
 
 void VMThread::loop() {
-  assert(_cur_vm_operation == NULL, "no current one should be executing");
+  assert(_cur_vm_operation == nullptr, "no current one should be executing");
 
   SafepointSynchronize::init(_vm_thread);
 
@@ -492,7 +491,7 @@ void VMThread::loop() {
     if (should_terminate()) break;
     wait_for_operation();
     if (should_terminate()) break;
-    assert(_next_vm_operation != NULL, "Must have one");
+    assert(_next_vm_operation != nullptr, "Must have one");
     inner_execute(_next_vm_operation);
   }
 }
@@ -552,5 +551,5 @@ void VMThread::execute(VM_Operation* op) {
 }
 
 void VMThread::verify() {
-  oops_do(&VerifyOopClosure::verify_oop, NULL);
+  oops_do(&VerifyOopClosure::verify_oop, nullptr);
 }

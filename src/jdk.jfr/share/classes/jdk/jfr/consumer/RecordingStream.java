@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
+import jdk.jfr.internal.management.StreamBarrier;
 
 /**
  * A recording stream produces events from the current JVM (Java Virtual
@@ -381,6 +382,43 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     }
 
     /**
+     * Stops the recording stream.
+     * <p>
+     * Stops a started stream and waits until all events in the recording have
+     * been consumed.
+     * <p>
+     * Invoking this method in an action, for example in the
+     * {@link #onEvent(Consumer)} method, could block the stream indefinitely.
+     * To stop the stream abruptly, use the {@link #close} method.
+     * <p>
+     * The following code snippet illustrates how this method can be used in
+     * conjunction with the {@link #startAsync()} method to monitor what happens
+     * during a test method:
+     *
+     * {@snippet class="Snippets" region="RecordingStreamStop"}
+     *
+     * @return {@code true} if recording is stopped, {@code false} otherwise
+     *
+     * @throws IllegalStateException if the recording is not started or is already stopped
+     *
+     * @since 20
+     */
+    public boolean stop() {
+        boolean stopped = false;
+        try {
+            try (StreamBarrier sb = directoryStream.activateStreamBarrier()) {
+                stopped = recording.stop();
+                directoryStream.setCloseOnComplete(false);
+                sb.setStreamEnd(recording.getStopTime().toEpochMilli());
+            }
+            directoryStream.awaitTermination();
+        } catch (InterruptedException | IOException e) {
+            // OK, return
+        }
+        return stopped;
+    }
+
+    /**
      * Writes recording data to a file.
      * <p>
      * The recording stream must be started, but not closed.
@@ -403,7 +441,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @since 17
      */
     public void dump(Path destination) throws IOException {
-        Objects.requireNonNull(destination);
+        Objects.requireNonNull(destination, "destination");
         Object recorder = PrivateAccess.getInstance().getPlatformRecorder();
         synchronized (recorder) {
             RecordingState state = recording.getState();

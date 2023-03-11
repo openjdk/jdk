@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
-import sun.hotspot.code.NMethod;
-import sun.hotspot.cpuinfo.CPUInfo;
+import jdk.test.whitebox.code.NMethod;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;

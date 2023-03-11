@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -75,7 +76,7 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
  * Extra Members: these are members enclosed in an undocumented
  * package-private type element, and may not be linkable (or documented),
  * however, the members of such a type element may be documented, as if
- * declared in the sub type, only if the enclosing type is not being
+ * declared in the subtype, only if the enclosing type is not being
  * documented by a filter such as -public, -protected, etc.
  * <p>
  * Visible Members: these are the members that are "visible"
@@ -205,8 +206,8 @@ public class VisibleMemberTable {
      * sole {@code {@inheritDoc}} or devoid of any API comments.
      * <p>
      * b.The list may contain (extra) members, inherited by inaccessible
-     * super types, primarily package private types. These members are
-     * required to be documented in the subtype when the super type is
+     * supertypes, primarily package private types. These members are
+     * required to be documented in the subtype when the supertype is
      * not documented.
      *
      * @param kind the member kind
@@ -242,7 +243,7 @@ public class VisibleMemberTable {
     public List<Element> getVisibleMembers(Kind kind) {
         Predicate<Element> declaredAndLeafMembers = e -> {
             TypeElement encl = utils.getEnclosingTypeElement(e);
-            return encl == te || utils.isUndocumentedEnclosure(encl);
+            return Objects.equals(encl, te) || utils.isUndocumentedEnclosure(encl);
         };
         return getVisibleMembers(kind, declaredAndLeafMembers);
     }
@@ -255,7 +256,7 @@ public class VisibleMemberTable {
      * @return a list of visible enclosed members in this type
      */
     public List<Element> getMembers(Kind kind) {
-        Predicate<Element> onlyLocallyDeclaredMembers = e -> utils.getEnclosingTypeElement(e) == te;
+        Predicate<Element> onlyLocallyDeclaredMembers = e -> Objects.equals(utils.getEnclosingTypeElement(e), te);
         return getVisibleMembers(kind, onlyLocallyDeclaredMembers);
     }
 
@@ -294,8 +295,8 @@ public class VisibleMemberTable {
     /**
      * Returns a set of visible type elements in this type element's lineage.
      * <p>
-     * This method returns the super-types in the inheritance
-     * order C, B, A, j.l.O. The super-interfaces however are
+     * This method returns the supertypes in the inheritance
+     * order C, B, A, j.l.O. The superinterfaces however are
      * alpha sorted and appended to the resulting set.
      *
      * @return the set of visible classes in this map
@@ -307,12 +308,12 @@ public class VisibleMemberTable {
         // Add this type element first.
         result.add(te);
 
-        // Add the super classes.
+        // Add the superclasses.
         allSuperclasses.stream()
                 .map(vmt -> vmt.te)
                 .forEach(result::add);
 
-        // ... and finally the sorted super interfaces.
+        // ... and finally the sorted superinterfaces.
         allSuperinterfaces.stream()
                 .map(vmt -> vmt.te)
                 .sorted(utils.comparators.makeGeneralPurposeComparator())
@@ -419,7 +420,7 @@ public class VisibleMemberTable {
             VisibleMemberTable vmt = mcache.getVisibleMemberTable(parent);
             allSuperclasses.add(vmt);
             allSuperclasses.addAll(vmt.getAllSuperclasses());
-            // Add direct super interfaces of a super class, if any.
+            // Add direct superinterfaces of a superclass, if any.
             allSuperinterfaces.addAll(vmt.getAllSuperinterfaces());
             parents.add(vmt);
         }
@@ -904,7 +905,7 @@ public class VisibleMemberTable {
 
         List<ExecutableElement> propertyMethods = list.stream()
                 .map(e -> (ExecutableElement) e)
-                .filter(e -> utils.getEnclosingTypeElement(e) == te)
+                .filter(e -> Objects.equals(utils.getEnclosingTypeElement(e), te))
                 .toList();
 
         // Compute additional properties related sundries.

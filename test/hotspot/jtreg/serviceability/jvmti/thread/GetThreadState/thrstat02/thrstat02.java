@@ -30,8 +30,8 @@
  * VM Testbase readme:
  * DESCRIPTION
  *     The test exercises JVMDI function GetThreadState.  Java program launches
- *     a thread and for various thread states calls Thread.suspend()/resume()
- *     methods or JVMDI functions SuspendThread/ResumeThread. Then native method
+ *     a thread and for various thread states calls
+ *     JVMTI functions SuspendThread/ResumeThread. Then native method
  *     checkStatus is invoked. This method calls GetThreadState and checks if
  *     the returned values are correct and JVMTI_THREAD_STATE_SUSPENDED bit
  *     is set (or clear after resume).
@@ -59,7 +59,6 @@
  * @run main/othervm/native -agentlib:thrstat02 thrstat02 5
  */
 
-import java.io.PrintStream;
 import java.util.concurrent.CountDownLatch;
 
 public class thrstat02 {
@@ -121,30 +120,13 @@ public class thrstat02 {
             checkStatus(STATUS_MONITOR, false);
             System.out.println("thrstat02.meth after checkStatus(STATUS_MONITOR,false)");
 
-            thr.suspend();
-            System.out.println("thrstat02.meth after thr.suspend()");
-            checkStatus(STATUS_MONITOR, true);
-            System.out.println("thrstat02.meth after checkStatus(STATUS_MONITOR,true)");
-
-            thr.resume();
-            System.out.println("thrstat02.meth after thr.resume()");
-            checkStatus(STATUS_MONITOR, false);
-            System.out.println("thrstat02.meth after checkStatus(STATUS_MONITOR,false)");
         }
 
         runningBarrier.await();
         checkStatus(STATUS_RUNNING, false);
-        thr.suspend();
-        checkStatus(STATUS_RUNNING, true);
-        thr.resume();
-        checkStatus(STATUS_RUNNING, false);
         thr.letItGo();
 
         synchronized (endingMonitor) {
-            checkStatus(STATUS_WAIT, false);
-            thr.suspend();
-            checkStatus(STATUS_WAIT, true);
-            thr.resume();
             checkStatus(STATUS_WAIT, false);
             endingMonitor.val++;
             endingMonitor.notifyAll();

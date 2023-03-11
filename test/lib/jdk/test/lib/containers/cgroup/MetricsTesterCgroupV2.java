@@ -121,6 +121,11 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
         Path filePath = Paths.get(UNIFIED.getPath(), file);
         try {
             String strVal = Files.lines(filePath).filter(l -> l.startsWith(metric)).collect(Collectors.joining());
+            if (strVal.isEmpty()) {
+                // sometimes the match for the metric does not exist, e.g. cpu.stat's nr_periods iff the controller
+                // is not enabled
+                return UNLIMITED;
+            }
             String[] keyValues = strVal.split("\\s+");
             String value = keyValues[1];
             return convertStringToLong(value);

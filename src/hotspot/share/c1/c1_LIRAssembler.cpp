@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -146,7 +147,7 @@ void LIR_Assembler::emit_stubs(CodeStubList* stub_list) {
       stringStream st;
       s->print_name(&st);
       st.print(" slow case");
-      _masm->block_comment(st.as_string());
+      _masm->block_comment(st.freeze());
     }
 #endif
     s->emit_code(this);
@@ -261,7 +262,7 @@ void LIR_Assembler::emit_block(BlockBegin* block) {
   if (CommentedAssembly) {
     stringStream st;
     st.print_cr(" block B%d [%d, %d]", block->block_id(), block->bci(), block->end()->printable_bci());
-    _masm->block_comment(st.as_string());
+    _masm->block_comment(st.freeze());
   }
 #endif
 
@@ -291,7 +292,7 @@ void LIR_Assembler::emit_lir_list(LIR_List* list) {
           (op->code() == lir_leal && op->as_Op1()->patch_code() != lir_patch_none)) {
         stringStream st;
         op->print_on(&st);
-        _masm->block_comment(st.as_string());
+        _masm->block_comment(st.freeze());
       }
     }
     if (PrintLIRWithAssembly) {
@@ -449,15 +450,20 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
   rt_call(op->result_opr(), op->addr(), op->arguments(), op->tmp(), op->info());
 }
 
-
 void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   verify_oop_map(op->info());
 
   // must align calls sites, otherwise they can't be updated atomically
   align_call(op->code());
 
-  // emit the static call stub stuff out of line
-  emit_static_call_stub();
+  if (CodeBuffer::supports_shared_stubs() && op->method()->can_be_statically_bound()) {
+    // Calls of the same statically bound method can share
+    // a stub to the interpreter.
+    CodeBuffer::csize_t call_offset = pc() - _masm->code()->insts_begin();
+    _masm->code()->shared_stub_to_interp_for(op->method(), call_offset);
+  } else {
+    emit_static_call_stub();
+  }
   CHECK_BAILOUT();
 
   switch (op->code()) {
@@ -720,6 +726,8 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
     case lir_sqrt:
     case lir_tan:
     case lir_log10:
+    case lir_f2hf:
+    case lir_hf2f:
       intrinsic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op);
       break;
 

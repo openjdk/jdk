@@ -28,7 +28,6 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
@@ -60,7 +59,7 @@ public class DowncallLinker {
             MH_INVOKE_INTERP_BINDINGS = lookup.findVirtual(DowncallLinker.class, "invokeInterpBindings",
                     methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
             MH_CHECK_SYMBOL = lookup.findStatic(SharedUtils.class, "checkSymbol",
-                    methodType(void.class, Addressable.class));
+                    methodType(void.class, MemorySegment.class));
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -86,7 +85,8 @@ public class DowncallLinker {
             toStorageArray(argMoves),
             toStorageArray(retMoves),
             leafType,
-            callingSequence.needsReturnBuffer()
+            callingSequence.needsReturnBuffer(),
+            callingSequence.capturedStateMask()
         );
         MethodHandle handle = JLIA.nativeMethodHandle(nep);
 
@@ -110,7 +110,7 @@ public class DowncallLinker {
          }
 
         assert handle.type().parameterType(0) == SegmentAllocator.class;
-        assert handle.type().parameterType(1) == Addressable.class;
+        assert handle.type().parameterType(1) == MemorySegment.class;
         handle = foldArguments(handle, 1, MH_CHECK_SYMBOL);
 
         handle = SharedUtils.swapArguments(handle, 0, 1); // normalize parameter order
@@ -169,9 +169,7 @@ public class DowncallLinker {
             for (int i = 0; i < args.length; i++) {
                 Object arg = args[i];
                 BindingInterpreter.unbox(arg, callingSequence.argumentBindings(i),
-                        (storage, type, value) -> {
-                            leafArgs[invData.argIndexMap.get(storage)] = value;
-                        }, unboxContext);
+                        (storage, type, value) -> leafArgs[invData.argIndexMap.get(storage)] = value, unboxContext);
             }
 
             // call leaf
@@ -188,7 +186,7 @@ public class DowncallLinker {
                             int retBufReadOffset = 0;
                             @Override
                             public Object load(VMStorage storage, Class<?> type) {
-                                Object result1 = SharedUtils.read(finalReturnBuffer.asSlice(retBufReadOffset), type);
+                                Object result1 = SharedUtils.read(finalReturnBuffer, retBufReadOffset, type);
                                 retBufReadOffset += abi.arch.typeSize(storage.type());
                                 return result1;
                             }

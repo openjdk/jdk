@@ -221,15 +221,10 @@ public class DeferredAttr extends JCTree.Visitor {
         SpeculativeCache speculativeCache;
 
         DeferredType(JCExpression tree, Env<AttrContext> env) {
-            super(null, TypeMetadata.EMPTY);
+            super(null, List.nil());
             this.tree = tree;
             this.env = attr.copyEnv(env);
             this.speculativeCache = new SpeculativeCache();
-        }
-
-        @Override
-        public DeferredType cloneWithMetadata(TypeMetadata md) {
-            throw new AssertionError("Cannot add metadata to a deferred type");
         }
 
         @Override
@@ -464,9 +459,28 @@ public class DeferredAttr extends JCTree.Visitor {
      * disabled during speculative type-checking.
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
+        /* When performing speculative attribution on an argument expression, we should make sure that argument type
+         * cache does not get polluted with local types, as that leads to spurious type errors (see JDK-8295019)
+         */
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                null, AttributionMode.SPECULATIVE, null);
+                null, AttributionMode.SPECULATIVE, !hasTypeDeclaration(tree) ? null : argumentAttr.withLocalCacheContext());
     }
+
+    // where
+        private boolean hasTypeDeclaration(JCTree tree) {
+            TypeDeclVisitor typeDeclVisitor = new TypeDeclVisitor();
+            typeDeclVisitor.scan(tree);
+            return typeDeclVisitor.result;
+        }
+
+        private static class TypeDeclVisitor extends TreeScanner {
+            boolean result = false;
+
+            @Override
+            public void visitClassDef(JCClassDecl that) {
+                result = true;
+            }
+        }
 
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, LocalCacheContext localCache) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,

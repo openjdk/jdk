@@ -25,20 +25,16 @@
 
 package javax.security.auth;
 
-import java.util.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.security.*;
 import java.text.MessageFormat;
-import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.DomainCombiner;
-import java.security.Principal;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
-import java.security.ProtectionDomain;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.util.ResourcesMgr;
 
 /**
@@ -90,7 +86,7 @@ import sun.security.util.ResourcesMgr;
  * While the Principals associated with the {@code Subject} are serialized,
  * the credentials associated with the {@code Subject} are not.
  * Note that the {@code java.security.Principal} class
- * does not implement {@code Serializable}.  Therefore all concrete
+ * does not implement {@code Serializable}.  Therefore, all concrete
  * {@code Principal} implementations associated with Subjects
  * must implement {@code Serializable}.
  *
@@ -144,8 +140,8 @@ public final class Subject implements java.io.Serializable {
      * has been set read-only before permitting subsequent modifications.
      * The newly created Sets also prevent illegal modifications
      * by ensuring that callers have sufficient permissions.  These Sets
-     * also prohibit null elements, and attempts to add or query a null
-     * element will result in a {@code NullPointerException}.
+     * also prohibit null elements, and attempts to add, query, or remove
+     * a null element will result in a {@code NullPointerException}.
      *
      * <p> To modify the Principals Set, the caller must have
      * {@code AuthPermission("modifyPrincipals")}.
@@ -174,8 +170,8 @@ public final class Subject implements java.io.Serializable {
      * has been set read-only before permitting subsequent modifications.
      * The newly created Sets also prevent illegal modifications
      * by ensuring that callers have sufficient permissions.  These Sets
-     * also prohibit null elements, and attempts to add or query a null
-     * element will result in a {@code NullPointerException}.
+     * also prohibit null elements, and attempts to add, query, or remove
+     * a null element will result in a {@code NullPointerException}.
      *
      * <p> To modify the Principals Set, the caller must have
      * {@code AuthPermission("modifyPrincipals")}.
@@ -320,18 +316,6 @@ public final class Subject implements java.io.Serializable {
         });
     }
 
-    // Store the current subject in a ThreadLocal when a system property is set.
-    private static final boolean USE_TL = GetBooleanAction
-            .privilegedGetProperty("jdk.security.auth.subject.useTL");
-
-    private static final InheritableThreadLocal<Subject> SUBJECT_THREAD_LOCAL =
-            USE_TL ?
-            new InheritableThreadLocal<>() {
-                @Override protected Subject initialValue() {
-                    return null;
-                }
-            } : null;
-
     /**
      * Returns the current subject.
      * <p>
@@ -341,20 +325,13 @@ public final class Subject implements java.io.Serializable {
      * retrieved by this method. After {@code action} is finished, the current
      * subject is reset to its previous value. The current
      * subject is {@code null} before the first call of {@code callAs()}.
-     * <p>
-     * When a new thread is created, its current subject is the same as
-     * the one of its parent thread, and will not change even if
-     * its parent thread's current subject is changed to another value.
      *
      * @implNote
-     * By default, this method returns the same value as
+     * This method returns the same value as
      * {@code Subject.getSubject(AccessController.getContext())}. This
      * preserves compatibility with code that may still be calling {@code doAs}
-     * which installs the subject in an {@code AccessControlContext}. However,
-     * if the system property {@systemProperty jdk.security.auth.subject.useTL}
-     * is set to {@code true}, the subject is retrieved from an inheritable
-     * {@code ThreadLocal} object. This behavior is subject to
-     * change in a future version.
+     * which installs the subject in an {@code AccessControlContext}. This
+     * behavior is subject to change in a future version.
      *
      * @return the current subject, or {@code null} if a current subject is
      *      not installed or the current subject is set to {@code null}.
@@ -363,9 +340,7 @@ public final class Subject implements java.io.Serializable {
      */
     @SuppressWarnings("removal")
     public static Subject current() {
-        return USE_TL
-            ? SUBJECT_THREAD_LOCAL.get()
-            : getSubject(AccessController.getContext());
+        return getSubject(AccessController.getContext());
     }
 
     /**
@@ -373,18 +348,15 @@ public final class Subject implements java.io.Serializable {
      * current subject.
      *
      * @implNote
-     * By default, this method calls {@link #doAs(Subject, PrivilegedExceptionAction)
+     * This method calls {@link #doAs(Subject, PrivilegedExceptionAction)
      * Subject.doAs(subject, altAction)} which stores the subject in
      * a new {@code AccessControlContext}, where {@code altAction.run()}
      * is equivalent to {@code action.call()} and the exception thrown is
      * modified to match the specification of this method. This preserves
      * compatibility with code that may still be calling
      * {@code getSubject(AccessControlContext)} which retrieves the subject
-     * from an {@code AccessControlContext}. However,
-     * if the system property {@code jdk.security.auth.subject.useTL}
-     * is set to {@code true}, the current subject will be stored in an inheritable
-     * {@code ThreadLocal} object. This behavior is subject to change in a
-     * future version.
+     * from an {@code AccessControlContext}. This behavior is subject
+     * to change in a future version.
      *
      * @param subject the {@code Subject} that the specified {@code action}
      *               will run as.  This parameter may be {@code null}.
@@ -403,27 +375,15 @@ public final class Subject implements java.io.Serializable {
     public static <T> T callAs(final Subject subject,
             final Callable<T> action) throws CompletionException {
         Objects.requireNonNull(action);
-        if (USE_TL) {
-            Subject oldSubject = SUBJECT_THREAD_LOCAL.get();
-            SUBJECT_THREAD_LOCAL.set(subject);
-            try {
-                return action.call();
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            } finally {
-                SUBJECT_THREAD_LOCAL.set(oldSubject);
-            }
-        } else {
-            try {
-                PrivilegedExceptionAction<T> pa = () -> action.call();
-                @SuppressWarnings("removal")
-                var result = doAs(subject, pa);
-                return result;
-            } catch (PrivilegedActionException e) {
-                throw new CompletionException(e.getCause());
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            }
+        try {
+            PrivilegedExceptionAction<T> pa = () -> action.call();
+            @SuppressWarnings("removal")
+            var result = doAs(subject, pa);
+            return result;
+        } catch (PrivilegedActionException e) {
+            throw new CompletionException(e.getCause());
+        } catch (Exception e) {
+            throw new CompletionException(e);
         }
     }
 
@@ -784,7 +744,7 @@ public final class Subject implements java.io.Serializable {
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
-        return new ClassSet<T>(PRINCIPAL_SET, c);
+        return new ClassSet<>(PRINCIPAL_SET, c);
     }
 
     /**
@@ -878,7 +838,7 @@ public final class Subject implements java.io.Serializable {
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
-        return new ClassSet<T>(PUB_CREDENTIAL_SET, c);
+        return new ClassSet<>(PUB_CREDENTIAL_SET, c);
     }
 
     /**
@@ -922,7 +882,7 @@ public final class Subject implements java.io.Serializable {
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
-        return new ClassSet<T>(PRIV_CREDENTIAL_SET, c);
+        return new ClassSet<>(PRIV_CREDENTIAL_SET, c);
     }
 
     /**
@@ -955,9 +915,7 @@ public final class Subject implements java.io.Serializable {
             return true;
         }
 
-        if (o instanceof Subject) {
-
-            final Subject that = (Subject)o;
+        if (o instanceof final Subject that) {
 
             // check the principal and credential sets
             Set<Principal> thatPrincipals;
@@ -1212,7 +1170,7 @@ public final class Subject implements java.io.Serializable {
         SecureSet(Subject subject, int which) {
             this.subject = subject;
             this.which = which;
-            this.elements = new LinkedList<E>();
+            this.elements = new LinkedList<>();
         }
 
         SecureSet(Subject subject, int which, LinkedList<E> list) {
@@ -1227,10 +1185,12 @@ public final class Subject implements java.io.Serializable {
 
         public Iterator<E> iterator() {
             final LinkedList<E> list = elements;
-            return new Iterator<E>() {
-                ListIterator<E> i = list.listIterator(0);
+            return new Iterator<>() {
+                final ListIterator<E> i = list.listIterator(0);
 
-                public boolean hasNext() {return i.hasNext();}
+                public boolean hasNext() {
+                    return i.hasNext();
+                }
 
                 public E next() {
                     if (which != Subject.PRIV_CREDENTIAL_SET) {
@@ -1369,7 +1329,7 @@ public final class Subject implements java.io.Serializable {
                     // For private credentials:
                     // If the caller does not have read permission
                     // for o.getClass(), we throw a SecurityException.
-                    // Otherwise we check the private cred set to see whether
+                    // Otherwise, we check the private cred set to see whether
                     // it contains the Object
 
                     SecurityManager sm = System.getSecurityManager();
@@ -1504,7 +1464,7 @@ public final class Subject implements java.io.Serializable {
                 // The next() method performs a security manager check
                 // on each element in the SecureSet.  If we make it all
                 // the way through we should be able to simply return
-                // element's toArray results.  Otherwise we'll let
+                // element's toArray results.  Otherwise, we'll let
                 // the SecurityException pass up the call stack.
                 e.next();
             }
@@ -1518,7 +1478,7 @@ public final class Subject implements java.io.Serializable {
                 // The next() method performs a security manager check
                 // on each element in the SecureSet.  If we make it all
                 // the way through we should be able to simply return
-                // element's toArray results.  Otherwise we'll let
+                // element's toArray results.  Otherwise, we'll let
                 // the SecurityException pass up the call stack.
                 e.next();
             }
@@ -1618,14 +1578,14 @@ public final class Subject implements java.io.Serializable {
      */
     private class ClassSet<T> extends AbstractSet<T> {
 
-        private int which;
-        private Class<T> c;
-        private Set<T> set;
+        private final int which;
+        private final Class<T> c;
+        private final Set<T> set;
 
         ClassSet(int which, Class<T> c) {
             this.which = which;
             this.c = c;
-            set = new HashSet<T>();
+            set = new HashSet<>();
 
             switch (which) {
             case Subject.PRINCIPAL_SET:

@@ -25,8 +25,6 @@
 #ifndef CPU_ARM_FRAME_ARM_HPP
 #define CPU_ARM_FRAME_ARM_HPP
 
-#include "runtime/synchronizer.hpp"
-
  public:
   enum {
     pc_return_offset                                 =  0,
@@ -56,6 +54,13 @@
     // Entry frames
     entry_frame_call_wrapper_offset                  =  0,
     metadata_words                                   = sender_sp_offset,
+    // size, in words, of metadata at frame bottom, i.e. it is not part of the
+    // caller/callee overlap
+    metadata_words_at_bottom                         = metadata_words,
+    // size, in words, of frame metadata at the frame top, i.e. it is located
+    // between a callee frame and its stack arguments, where it is part
+    // of the caller/callee overlap
+    metadata_words_at_top                            = 0,
     frame_alignment                                  = 16,
     // size, in words, of maximum shift in frame position due to alignment
     align_wiggle                                     =  1
@@ -105,7 +110,7 @@
 
   frame(intptr_t* sp, intptr_t* fp);
 
-  void init(intptr_t* sp, intptr_t* fp, address pc);
+  void init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
   // accessors for the instance variables
   // Note: not necessarily the real 'frame pointer' (see real_fp)

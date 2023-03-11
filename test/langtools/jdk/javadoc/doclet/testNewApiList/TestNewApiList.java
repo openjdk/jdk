@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8263468 8269401 8268422
+ * @bug      8263468 8269401 8268422 8287524
  * @summary  New page for "recent" new API
  * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -102,36 +102,36 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("new-list.html", true,
             """
                 <h1 title="New API in recent releases" class="title">New API in recent releases</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#module">Modules</a></li>
-                <li><a href="#package">Packages</a></li>
-                <li><a href="#interface">Interfaces</a></li>
-                <li><a href="#class">Classes</a></li>
-                <li><a href="#enum-class">Enum Classes</a></li>
-                <li><a href="#exception-class">Exception Classes</a></li>
-                <li><a href="#record-class">Record Classes</a></li>
-                <li><a href="#annotation-interface">Annotation Interfaces</a></li>
-                <li><a href="#field">Fields</a></li>
-                <li><a href="#method">Methods</a></li>
-                <li><a href="#constructor">Constructors</a></li>
-                <li><a href="#enum-constant">Enum Constants</a></li>
-                <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
-                </ul>
                 </div>
-                <div class="checkboxes">Show API added in:<label for="release-1">
+                <div class="checkboxes">Show API added in: <label for="release-1">
                 <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                <span>0.9</span></label><label for="release-2">
+                <span>0.9</span></label> <label for="release-2">
                 <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '2', 3)">
-                <span>v1.0</span></label><label for="release-3">
+                <span>v1.0</span></label> <label for="release-3">
                 <input type="checkbox" id="release-3" disabled checked onclick="toggleGlobal(this, '3', 3)">
-                <span>1.2</span></label><label for="release-4">
+                <span>1.2</span></label> <label for="release-4">
                 <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
-                <span>2.0b</span></label><label for="release-5">
+                <span>2.0b</span></label> <label for="release-5">
                 <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
-                <span>3.2</span></label><label for="release-6">
+                <span>3.2</span></label> <label for="release-6">
                 <input type="checkbox" id="release-6" disabled checked onclick="toggleGlobal(this, '6', 3)">
-                <span>5</span></label></div>""");
+                <span>5</span></label></div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-module"><a href="#module">Modules</a></li>
+                <li id="contents-package"><a href="#package">Packages</a></li>
+                <li id="contents-interface"><a href="#interface">Interfaces</a></li>
+                <li id="contents-class"><a href="#class">Classes</a></li>
+                <li id="contents-enum-class"><a href="#enum-class">Enum Classes</a></li>
+                <li id="contents-exception-class"><a href="#exception-class">Exception Classes</a></li>
+                <li id="contents-record-class"><a href="#record-class">Record Classes</a></li>
+                <li id="contents-annotation-interface"><a href="#annotation-interface">Annotation Interfaces</a></li>
+                <li id="contents-field"><a href="#field">Fields</a></li>
+                <li id="contents-method"><a href="#method">Methods</a></li>
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                <li id="contents-enum-constant"><a href="#enum-constant">Enum Constants</a></li>
+                <li id="contents-annotation-interface-member"><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
+                </ul>""");
     }
 
     private void checkMultiReleaseNewElements() {
@@ -476,161 +476,9 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Element</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color for-removal for-removal-tab6"><a hr\
-                ef="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color for-removal for-removal-tab6">5</div>
-                <div class="col-last even-row-color for-removal for-removal-tab6"></div>
-                </div>""",
-            """
-                <div id="method">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
-                <div class="caption"><span>Deprecated Methods</span></div>
-                </div>
-                <div id="method.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="method-tab0">
-                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
-                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color method method-tab6"><a href="mdl/pk\
-                g/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color method method-tab6">5</div>
-                <div class="col-last even-row-color method method-tab6"></div>
-                </div>""",
-            """
-                <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
-                <div class="caption"><span>Deprecated Constructors</span></div>
-                </div>
-                <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
-                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
-                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color constructor constructor-tab6"><a hr\
-                ef="mdl/pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab6">5</div>
-                <div class="col-last even-row-color constructor constructor-tab6"></div>
-                </div>""",
-            """
-                <div id="enum-constant">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
-                <div class="caption"><span>Deprecated Enum Constants</span></div>
-                </div>
-                <div id="enum-constant.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="enum-constant-tab0">
-                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Enum Constant</div>
-                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color enum-constant enum-constant-tab6"><\
-                a href="mdl/pkg/TestEnum.html#DEPRECATED">pkg.TestEnum.DEPRECATED</a></div>
-                <div class="col-second even-row-color enum-constant enum-constant-tab6">5</div>
-                <div class="col-last even-row-color enum-constant enum-constant-tab6"></div>
-                </div>""",
-            """
-                <div id="annotation-interface-member">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
-                <div class="caption"><span>Deprecated Annotation Interface Elements</span></div>
-                </div>
-                <div id="annotation-interface-member.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="annotation-interface-member-tab0">
-                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Annotation Interface Element</div>
-                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color annotation-interface-member annotat\
-                ion-interface-member-tab6"><a href="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color annotation-interface-member annotation-interface-member-tab6">5</div>
-                <div class="col-last even-row-color annotation-interface-member annotation-interface-member-tab6"></div>
-                </div>""");
-    }
-
-    private void checkSingleReleaseContents() {
-        checkOutput("new-list.html", true,
-            """
-                <h1 title="New API" class="title">New API</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#method">Methods</a></li>
-                <li><a href="#constructor">Constructors</a></li>
-                </ul>
-                </div>
-                <div class="checkboxes">Show API added in:<label for="release-1">""");
-    }
-
-    private void checkSingleReleaseNewElements() {
-        checkOutput("new-list.html", true,
-                """
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
-                <div class="caption"><span>New Methods</span></div>
-                </div>
-                <div id="method.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="method-tab0">
-                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
-                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color method method-tab1"><a href="mdl/pk\
-                g/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<\
-                wbr>(String)</a></div>
-                <div class="col-second even-row-color method method-tab1">5</div>
-                <div class="col-last even-row-color method method-tab1">
-                <div class="block">TestClass overloaded method.</div>
-                </div>
-                <div class="col-summary-item-name odd-row-color method method-tab1"><a href="mdl/pkg\
-                /TestRecord.html#x()">pkg.TestRecord.x()</a></div>
-                <div class="col-second odd-row-color method method-tab1">5</div>
-                <div class="col-last odd-row-color method method-tab1">
-                <div class="block">Test record getter.</div>
-                </div>""",
-            """
-                <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
-                <div class="caption"><span>New Constructors</span></div>
-                </div>
-                <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
-                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
-                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color constructor constructor-tab1"><a hr\
-                ef="mdl/pkg/TestError.html#%3Cinit%3E()">pkg.TestError()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab1">5</div>
-                <div class="col-last even-row-color constructor constructor-tab1">
-                <div class="block">Test error constructor.</div>
-                </div>
-                <div class="col-summary-item-name odd-row-color constructor constructor-tab1"><a hre\
-                f="mdl/pkg/TestException.html#%3Cinit%3E()">pkg.TestException()</a></div>
-                <div class="col-second odd-row-color constructor constructor-tab1">5</div>
-                <div class="col-last odd-row-color constructor constructor-tab1">
-                <div class="block">Exception constructor.</div>
-                </div>""");
-    }
-
-    private void checkSingleReleaseDeprecatedElements() {
-        checkOutput("deprecated-list.html", true,
-            """
-                <h1 title="Deprecated API" class="title">Deprecated API</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#for-removal">Terminally Deprecated</a></li>
-                <li><a href="#method">Methods</a></li>
-                <li><a href="#constructor">Constructors</a></li>
-                <li><a href="#enum-constant">Enum Constants</a></li>
-                <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
-                </ul>
-                </div>
-                <div class="checkboxes">Show API deprecated in:<label for="release-1">""",
-            """
-                <div id="for-removal">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
-                <div class="caption"><span>Terminally Deprecated Elements</span></div>
-                </div>
-                <div id="for-removal.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="for-removal-tab0">
-                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Element</div>
-                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
-                <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color for-removal for-removal-tab1"><a hr\
                 ef="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color for-removal for-removal-tab1">5</div>
+                <div class="col-second even-row-color for-removal for-removal-tab1">3.2</div>
                 <div class="col-last even-row-color for-removal for-removal-tab1"></div>
                 </div>""",
             """
@@ -645,7 +493,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color method method-tab1"><a href="mdl/pk\
                 g/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color method method-tab1">5</div>
+                <div class="col-second even-row-color method method-tab1">3.2</div>
                 <div class="col-last even-row-color method method-tab1"></div>
                 </div>""",
             """
@@ -658,10 +506,159 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color constructor constructor-tab1"><a hr\
-                ef="mdl/pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab1">5</div>
-                <div class="col-last even-row-color constructor constructor-tab1"></div>
+                <div class="col-summary-item-name even-row-color constructor"><a href="mdl/pkg/TestC\
+                lass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
+                <div class="col-second even-row-color constructor">6</div>
+                <div class="col-last even-row-color constructor"></div>
+                </div>""",
+            """
+                <div id="enum-constant">
+                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="caption"><span>Deprecated Enum Constants</span></div>
+                </div>
+                <div id="enum-constant.tabpanel" role="tabpanel">
+                <div class="summary-table three-column-release-summary" aria-labelledby="enum-constant-tab0">
+                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Enum Constant</div>
+                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-summary-item-name even-row-color enum-constant enum-constant-tab2"><\
+                a href="mdl/pkg/TestEnum.html#DEPRECATED">pkg.TestEnum.DEPRECATED</a></div>
+                <div class="col-second even-row-color enum-constant enum-constant-tab2">5</div>
+                <div class="col-last even-row-color enum-constant enum-constant-tab2"></div>
+                </div>""",
+            """
+                <div id="annotation-interface-member">
+                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="caption"><span>Deprecated Annotation Interface Elements</span></div>
+                </div>
+                <div id="annotation-interface-member.tabpanel" role="tabpanel">
+                <div class="summary-table three-column-release-summary" aria-labelledby="annotation-interface-member-tab0">
+                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Annotation Interface Element</div>
+                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-summary-item-name even-row-color annotation-interface-member annotat\
+                ion-interface-member-tab1"><a href="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
+                <div class="col-second even-row-color annotation-interface-member annotation-interface-member-tab1">3.2</div>
+                <div class="col-last even-row-color annotation-interface-member annotation-interface-member-tab1"></div>
+                </div>""");
+    }
+
+    private void checkSingleReleaseContents() {
+        checkOutput("new-list.html", true,
+            """
+                <h1 title="New API" class="title">New API</h1>
+                </div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-method"><a href="#method">Methods</a></li>
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                </ul>
+                <ul class="block-list">""");
+    }
+
+    private void checkSingleReleaseNewElements() {
+        checkOutput("new-list.html", true,
+                """
+                <div class="caption"><span>New Methods</span></div>
+                <div class="summary-table three-column-release-summary">
+                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
+                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-summary-item-name even-row-color"><a href="mdl/pkg/TestClass.html#ov\
+                erloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<wbr>(String)</a></div>
+                <div class="col-second even-row-color">5</div>
+                <div class="col-last even-row-color">
+                <div class="block">TestClass overloaded method.</div>
+                </div>
+                <div class="col-summary-item-name odd-row-color"><a href="mdl/pkg/TestRecord.html#x(\
+                )">pkg.TestRecord.x()</a></div>
+                <div class="col-second odd-row-color">5</div>
+                <div class="col-last odd-row-color">
+                <div class="block">Test record getter.</div>
+                </div>""",
+            """
+                <div id="constructor">
+                <div class="caption"><span>New Constructors</span></div>
+                <div class="summary-table three-column-release-summary">
+                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
+                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-summary-item-name even-row-color"><a href="mdl/pkg/TestError.html#%3\
+                Cinit%3E()">pkg.TestError()</a></div>
+                <div class="col-second even-row-color">5</div>
+                <div class="col-last even-row-color">
+                <div class="block">Test error constructor.</div>
+                </div>
+                <div class="col-summary-item-name odd-row-color"><a href="mdl/pkg/TestException.html\
+                #%3Cinit%3E()">pkg.TestException()</a></div>
+                <div class="col-second odd-row-color">5</div>
+                <div class="col-last odd-row-color">
+                <div class="block">Exception constructor.</div>
+                </div>""");
+    }
+
+    private void checkSingleReleaseDeprecatedElements() {
+        checkOutput("deprecated-list.html", true,
+            """
+                <h1 title="Deprecated API" class="title">Deprecated API</h1>
+                </div>
+                <div class="checkboxes">Show API deprecated in: <label for="release-1">
+                <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
+                <span>5</span></label> <label for="release-2">
+                <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '', 3)">
+                <span>other</span></label></div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
+                <li id="contents-method"><a href="#method">Methods</a></li>
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                <li id="contents-enum-constant"><a href="#enum-constant">Enum Constants</a></li>
+                <li id="contents-annotation-interface-member"><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
+                </ul>""",
+            """
+                <div id="for-removal">
+                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="caption"><span>Terminally Deprecated Elements</span></div>
+                </div>
+                <div id="for-removal.tabpanel" role="tabpanel">
+                <div class="summary-table three-column-release-summary" aria-labelledby="for-removal-tab0">
+                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Element</div>
+                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-summary-item-name even-row-color for-removal"><a href="mdl/pkg/TestA\
+                nnotation.html#required()">pkg.TestAnnotation.required()</a></div>
+                <div class="col-second even-row-color for-removal">3.2</div>
+                <div class="col-last even-row-color for-removal"></div>
+                </div>""",
+            """
+                <div id="method">
+                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="caption"><span>Deprecated Methods</span></div>
+                </div>
+                <div id="method.tabpanel" role="tabpanel">
+                <div class="summary-table three-column-release-summary" aria-labelledby="method-tab0">
+                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
+                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-summary-item-name even-row-color method"><a href="mdl/pkg/TestAnnota\
+                tion.html#required()">pkg.TestAnnotation.required()</a></div>
+                <div class="col-second even-row-color method">3.2</div>
+                <div class="col-last even-row-color method"></div>
+                </div>""",
+            """
+                <div id="constructor">
+                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                <div class="caption"><span>Deprecated Constructors</span></div>
+                </div>
+                <div id="constructor.tabpanel" role="tabpanel">
+                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
+                <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
+                <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-summary-item-name even-row-color constructor"><a href="mdl/pkg/TestC\
+                lass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
+                <div class="col-second even-row-color constructor">6</div>
+                <div class="col-last even-row-color constructor"></div>
                 </div>""");
     }
 
@@ -669,25 +666,25 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("new-list.html", true,
             """
                 <h1 title="New API" class="title">New API</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#class">Classes</a></li>
-                <li><a href="#field">Fields</a></li>
-                <li><a href="#method">Methods</a></li>
-                <li><a href="#constructor">Constructors</a></li>
-                </ul>
                 </div>
-                <div class="checkboxes">Show API added in:<label for="release-1">
+                <div class="checkboxes">Show API added in: <label for="release-1">
                 <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                <span>1.2</span></label><label for="release-2">
+                <span>1.2</span></label> <label for="release-2">
                 <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '2', 3)">
-                <span>2.0b</span></label><label for="release-3">
+                <span>2.0b</span></label> <label for="release-3">
                 <input type="checkbox" id="release-3" disabled checked onclick="toggleGlobal(this, '3', 3)">
-                <span>3.2</span></label><label for="release-4">
+                <span>3.2</span></label> <label for="release-4">
                 <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
-                <span>5</span></label><label for="release-5">
+                <span>5</span></label> <label for="release-5">
                 <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
-                <span>6</span></label></div>""");
+                <span>6</span></label></div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-class"><a href="#class">Classes</a></li>
+                <li id="contents-field"><a href="#field">Fields</a></li>
+                <li id="contents-method"><a href="#method">Methods</a></li>
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                </ul>""");
     }
 
     private void checkPackageNewElements() {
@@ -781,27 +778,24 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("deprecated-list.html", true,
             """
                 <h1 title="Deprecated API" class="title">Deprecated API</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#constructor">Constructors</a></li>
-                </ul>
                 </div>
-                <div class="checkboxes">Show API deprecated in:<label for="release-1">
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                </ul>
+                <ul class="block-list">
                 """,
             """
                 <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                 <div class="caption"><span>Deprecated Constructors</span></div>
-                </div>
-                <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color constructor constructor-tab4"><a hr\
-                ef="pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab4">5</div>
-                <div class="col-last even-row-color constructor constructor-tab4"></div>
+                <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cini\
+                t%3E()">pkg.TestClass()</a></div>
+                <div class="col-second even-row-color">5</div>
+                <div class="col-last even-row-color"></div>
                 </div>""");
     }
 }

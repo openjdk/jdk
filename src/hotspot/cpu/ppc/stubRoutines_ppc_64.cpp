@@ -25,8 +25,10 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/byteswap.hpp"
 
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
@@ -73,12 +75,6 @@ static julong compute_inverse_poly(julong long_poly) {
   return div;
 }
 
-#ifndef VM_LITTLE_ENDIAN
-static void reverse_bytes(juint &w) {
-  w = ((w >> 24) & 0xFF) | (((w >> 16) & 0xFF) << 8) | (((w >> 8) & 0xFF) << 16) | ((w & 0xFF) << 24);
-}
-#endif
-
 // Constants to fold n words as needed by macroAssembler.
 address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   // Layout of constant table:
@@ -89,7 +85,7 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   const int vector_size = 16 * (CRC32_UNROLL_FACTOR2 + CRC32_UNROLL_FACTOR / CRC32_UNROLL_FACTOR2);
 
   const int size = use_vector ? CRC32_TABLE_SIZE + vector_size : (4 BIG_ENDIAN_ONLY(+1)) * CRC32_TABLE_SIZE;
-  const address consts = (address)malloc(size);
+  const address consts = (address)os::malloc(size, mtInternal);
   if (consts == NULL) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CRC constants: no enough space");
   }
@@ -111,10 +107,10 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
             c = fold_byte(b, reverse_poly),
             d = fold_byte(c, reverse_poly);
 #ifndef VM_LITTLE_ENDIAN
-      reverse_bytes(a);
-      reverse_bytes(b);
-      reverse_bytes(c);
-      reverse_bytes(d);
+      a = byteswap(a);
+      b = byteswap(b);
+      c = byteswap(c);
+      d = byteswap(d);
 #endif
       ptr[i         ] = a;
       ptr[i +    256] = b;

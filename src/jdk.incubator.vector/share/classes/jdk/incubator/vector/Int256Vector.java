@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -476,6 +476,22 @@ final class Int256Vector extends IntVector {
 
     @Override
     @ForceInline
+    public Int256Vector compress(VectorMask<Integer> m) {
+        return (Int256Vector)
+            super.compressTemplate(Int256Mask.class,
+                                   (Int256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Int256Vector expand(VectorMask<Integer> m) {
+        return (Int256Vector)
+            super.expandTemplate(Int256Mask.class,
+                                   (Int256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Int256Vector selectFrom(Vector<Integer> v) {
         return (Int256Vector)
             super.selectFromTemplate((Int256Vector) v);  // specialize
@@ -653,6 +669,15 @@ final class Int256Vector extends IntVector {
             return xor(m.not());
         }
 
+        @Override
+        @ForceInline
+        /*package-private*/
+        Int256Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Int256Mask) VectorSupport.indexPartiallyInUpperRange(
+                Int256Mask.class, int.class, VLENGTH, offset, limit,
+                (o, l) -> (Int256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
+        }
+
         // Unary operations
 
         @Override
@@ -660,6 +685,15 @@ final class Int256Vector extends IntVector {
         public Int256Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Int256Mask compress() {
+            return (Int256Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Int256Vector.class, Int256Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -837,8 +871,8 @@ final class Int256Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m) {
-        return super.fromArray0Template(Int256Mask.class, a, offset, (Int256Mask) m);  // specialize
+    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m, int offsetInRange) {
+        return super.fromArray0Template(Int256Mask.class, a, offset, (Int256Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -853,29 +887,15 @@ final class Int256Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    IntVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m) {
-        return super.fromByteArray0Template(Int256Mask.class, a, offset, (Int256Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m) {
-        return super.fromByteBuffer0Template(Int256Mask.class, bb, offset, (Int256Mask) m);  // specialize
+    IntVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Integer> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(Int256Mask.class, ms, offset, (Int256Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -903,22 +923,8 @@ final class Int256Vector extends IntVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Integer> m) {
-        super.intoByteArray0Template(Int256Mask.class, a, offset, (Int256Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m) {
-        super.intoByteBuffer0Template(Int256Mask.class, bb, offset, (Int256Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Integer> m) {
+        super.intoMemorySegment0Template(Int256Mask.class, ms, offset, (Int256Mask) m);
     }
 
 
@@ -927,3 +933,4 @@ final class Int256Vector extends IntVector {
     // ================================================
 
 }
+

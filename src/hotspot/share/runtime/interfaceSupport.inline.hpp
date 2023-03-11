@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,13 +29,14 @@
 // No interfaceSupport.hpp
 
 #include "gc/shared/gc_globals.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -79,7 +80,7 @@ class ThreadStateTransition : public StackObj {
 
  public:
   ThreadStateTransition(JavaThread *thread) : _thread(thread) {
-    assert(thread != NULL, "must be active Java thread");
+    assert(thread != nullptr, "must be active Java thread");
     assert(thread == Thread::current(), "must be current thread");
   }
 
@@ -97,7 +98,11 @@ class ThreadStateTransition : public StackObj {
     assert(to == _thread_in_vm || to == _thread_in_Java, "invalid transition");
     assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native transition");
 
-    thread->set_thread_state_fence(_thread_in_vm);
+    if (!UseSystemMemoryBarrier) {
+      thread->set_thread_state_fence(_thread_in_vm);
+    } else {
+      thread->set_thread_state(_thread_in_vm);
+    }
     SafepointMechanism::process_if_requested_with_exit_check(thread, to != _thread_in_Java ? false : check_asyncs);
     thread->set_thread_state(to);
   }
@@ -140,7 +145,7 @@ class ThreadInVMfromJava : public ThreadStateTransition {
 class ThreadInVMfromUnknown {
   JavaThread* _thread;
  public:
-  ThreadInVMfromUnknown() : _thread(NULL) {
+  ThreadInVMfromUnknown() : _thread(nullptr) {
     Thread* t = Thread::current();
     if (t->is_Java_thread()) {
       JavaThread* t2 = JavaThread::cast(t);

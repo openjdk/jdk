@@ -21,9 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
-
 /*
  * @test
  *
@@ -47,14 +44,7 @@ import java.io.PrintStream;
 public class fieldmod02 {
 
     static {
-        try {
-            System.loadLibrary("fieldmod02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldmod02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldmod02");
     }
 
     static volatile int result;

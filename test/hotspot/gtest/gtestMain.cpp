@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,23 @@
  *
  */
 
+#include "jni.h"
+#include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "unittest.hpp"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #ifdef __APPLE__
-#  include <dlfcn.h>
+#include <dlfcn.h>
 #endif
-
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <pthread.h>
 #endif
-
-#include "jni.h"
-#include "unittest.hpp"
-
-#include "runtime/thread.inline.hpp"
 
 // Default value for -new-thread option: true on AIX because we run into
 // problems when attempting to initialize the JVM on the primordial thread.
@@ -92,6 +92,7 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
   JNIEnv* env;
 
   int ret = JNI_CreateJavaVM(jvm_ptr, (void**)&env, &args);
+  delete[] options;
   if (ret == JNI_OK) {
     // CreateJavaVM leaves WXExec context, while gtests
     // calls internal functions assuming running in WXWwrite.
@@ -123,7 +124,7 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
       int ret_val = init_jvm(_argc, _argv, false, &_jvm);
       if (ret_val != 0) {
         ADD_FAILURE() << "Could not initialize the JVM: " << ret_val;
-        exit(1);
+        os::exit(1);
       }
     }
   }
@@ -192,7 +193,7 @@ static int num_args_to_skip(char* arg) {
 
 static char** remove_test_runner_arguments(int* argcp, char **argv) {
   int argc = *argcp;
-  char** new_argv = (char**) malloc(sizeof(char*) * argc);
+  ALLOW_C_FUNCTION(::malloc, char** new_argv = (char**) malloc(sizeof(char*) * argc);)
   int new_argc = 0;
 
   int i = 0;
@@ -230,7 +231,7 @@ static void runUnitTestsInner(int argc, char** argv) {
   bool is_vmassert_test = false;
   bool is_othervm_test = false;
   // death tests facility is used for both regular death tests, other vm and vmassert tests
-  if (::testing::internal::GTEST_FLAG(internal_run_death_test).length() > 0) {
+  if (::testing::GTEST_FLAG(internal_run_death_test).length() > 0) {
     // when we execute death test, filter value equals to test name
     const char* test_name = ::testing::GTEST_FLAG(filter).c_str();
     const char* const othervm_suffix = "_other_vm"; // TEST_OTHER_VM
@@ -244,8 +245,8 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   char* java_home = get_java_home_arg(argc, argv);
   if (java_home == NULL) {
-    fprintf(stderr, "ERROR: You must specify a JDK to use for running the unit tests.\n");
-    exit(1);
+    fprintf(stderr, "ERROR: You must specify a JDK (-jdk <image>, --jdk=<image> or -jdk:<image>) to use for running the unit tests.\n");
+    os::exit(1);
   }
 #ifndef _WIN32
   int overwrite = 1; // overwrite an eventual existing value for JAVA_HOME
@@ -288,13 +289,15 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   int result = RUN_ALL_TESTS();
 
+  ALLOW_C_FUNCTION(::free, ::free(argv);)
+
   // vm_assert and other_vm tests never reach this point as they either abort, or call
   // exit() - see TEST_OTHER_VM macro. We will reach here when all same_vm tests have
   // completed for this run, so we can terminate the VM used for that case.
 
   if (result != 0) {
     fprintf(stderr, "ERROR: RUN_ALL_TESTS() failed. Error %d\n", result);
-    exit(2);
+    os::exit(2);
   }
 
   if (jvm_listener != NULL) {
@@ -323,7 +326,7 @@ static void run_in_new_thread(const args_t* args) {
   hdl = CreateThread(NULL, STACK_SIZE, thread_wrapper, (void*)args, 0, NULL);
   if (hdl == NULL) {
     fprintf(stderr, "Failed to create main thread\n");
-    exit(2);
+    os::exit(2);
   }
   WaitForSingleObject(hdl, INFINITE);
 }
@@ -345,12 +348,12 @@ static void run_in_new_thread(const args_t* args) {
 
   if (pthread_create(&tid, &attr, thread_wrapper, (void*)args) != 0) {
     fprintf(stderr, "Failed to create main thread\n");
-    exit(2);
+    os::exit(2);
   }
 
   if (pthread_join(tid, NULL) != 0) {
     fprintf(stderr, "Failed to join main thread\n");
-    exit(2);
+    os::exit(2);
   }
 }
 

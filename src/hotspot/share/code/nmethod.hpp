@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "code/compiledMethod.hpp"
 
+class CompileTask;
 class DepChange;
 class DirectiveSet;
 class DebugInformationRecorder;
@@ -66,13 +67,10 @@ class JVMCINMethodData;
 class nmethod : public CompiledMethod {
   friend class VMStructs;
   friend class JVMCIVMStructs;
-  friend class NMethodSweeper;
   friend class CodeCache;  // scavengable oops
   friend class JVMCINMethodData;
 
  private:
-  // Shared fields for all nmethod's
-  int       _entry_bci;        // != InvocationEntryBci if this nmethod is an on-stack replacement method
 
   uint64_t  _gc_epoch;
 
@@ -103,7 +101,7 @@ class nmethod : public CompiledMethod {
   //
   // _oops_do_mark_link special values:
   //
-  //   _oops_do_mark_link == NULL: the nmethod has not been visited at all yet, i.e.
+  //   _oops_do_mark_link == nullptr: the nmethod has not been visited at all yet, i.e.
   //      is Unclaimed.
   //
   // For other values, its lowest two bits indicate the following states of the nmethod:
@@ -175,7 +173,7 @@ class nmethod : public CompiledMethod {
 
   // Attempt Unclaimed -> N|SD transition. Returns the current link.
   oops_do_mark_link* oops_do_try_claim_strong_done();
-  // Attempt N|WR -> X|WD transition. Returns NULL if successful, X otherwise.
+  // Attempt N|WR -> X|WD transition. Returns nullptr if successful, X otherwise.
   nmethod* oops_do_try_add_to_list_as_weak_done();
 
   // Attempt X|WD -> N|SR transition. Returns the current link.
@@ -197,6 +195,11 @@ class nmethod : public CompiledMethod {
   address _entry_point;                      // entry point with class check
   address _verified_entry_point;             // entry point without class check
   address _osr_entry_point;                  // entry point for on stack replacement
+
+  nmethod* _unlinked_next;
+
+  // Shared fields for all nmethod's
+  int _entry_bci;      // != InvocationEntryBci if this nmethod is an on-stack replacement method
 
   // Offsets for different nmethod parts
   int  _exception_offset;
@@ -225,50 +228,12 @@ class nmethod : public CompiledMethod {
   int _orig_pc_offset;
 
   int _compile_id;                           // which compilation made this nmethod
-  int _comp_level;                           // compilation level
-
-  // protected by CodeCache_lock
-  bool _has_flushed_dependencies;            // Used for maintenance of dependencies (CodeCache_lock)
-
-  // used by jvmti to track if an event has been posted for this nmethod.
-  bool _unload_reported;
-  bool _load_reported;
-
-  // Protected by CompiledMethod_lock
-  volatile signed char _state;               // {not_installed, in_use, not_entrant, zombie, unloaded}
-
-#ifdef ASSERT
-  bool _oops_are_stale;  // indicates that it's no longer safe to access oops section
-#endif
 
 #if INCLUDE_RTM_OPT
   // RTM state at compile time. Used during deoptimization to decide
   // whether to restart collecting RTM locking abort statistic again.
   RTMState _rtm_state;
 #endif
-
-  // Nmethod Flushing lock. If non-zero, then the nmethod is not removed
-  // and is not made into a zombie. However, once the nmethod is made into
-  // a zombie, it will be locked one final time if CompiledMethodUnload
-  // event processing needs to be done.
-  volatile jint _lock_count;
-
-  // not_entrant method removal. Each mark_sweep pass will update
-  // this mark to current sweep invocation count if it is seen on the
-  // stack.  An not_entrant method can be removed when there are no
-  // more activations, i.e., when the _stack_traversal_mark is less than
-  // current sweep traversal index.
-  volatile int64_t _stack_traversal_mark;
-
-  // The _hotness_counter indicates the hotness of a method. The higher
-  // the value the hotter the method. The hotness counter of a nmethod is
-  // set to [(ReservedCodeCacheSize / (1024 * 1024)) * 2] each time the method
-  // is active while stack scanning (do_stack_scanning()). The hotness
-  // counter is decreased (by 1) while sweeping.
-  int _hotness_counter;
-
-  // Local state used to keep track of whether unloading is happening or not
-  volatile uint8_t _is_unloading_state;
 
   // These are used for compiled synchronized native methods to
   // locate the owner and stack slot for the BasicLock. They are
@@ -281,7 +246,21 @@ class nmethod : public CompiledMethod {
   ByteSize _native_receiver_sp_offset;
   ByteSize _native_basic_lock_sp_offset;
 
-  friend class nmethodLocker;
+  CompLevel _comp_level;               // compilation level
+
+  // Local state used to keep track of whether unloading is happening or not
+  volatile uint8_t _is_unloading_state;
+
+  // protected by CodeCache_lock
+  bool _has_flushed_dependencies;      // Used for maintenance of dependencies (CodeCache_lock)
+
+  // used by jvmti to track if an event has been posted for this nmethod.
+  bool _load_reported;
+
+  // Protected by CompiledMethod_lock
+  volatile signed char _state;         // {not_installed, in_use, not_used, not_entrant}
+
+  int _skipped_instructions_size;
 
   // For native wrappers
   nmethod(Method* method,
@@ -311,7 +290,7 @@ class nmethod : public CompiledMethod {
           ExceptionHandlerTable* handler_table,
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
-          int comp_level
+          CompLevel comp_level
 #if INCLUDE_JVMCI
           , char* speculations,
           int speculations_len,
@@ -321,6 +300,10 @@ class nmethod : public CompiledMethod {
 
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
+  // For method handle intrinsics: Try MethodNonProfiled, MethodProfiled and NonNMethod.
+  // Attention: Only allow NonNMethod space for special nmethods which don't need to be
+  // findable by nmethod iterators! In particular, they must not contain oops!
+  void* operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw();
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 
@@ -328,7 +311,6 @@ class nmethod : public CompiledMethod {
 
   // Returns true if this thread changed the state of the nmethod or
   // false if another thread performed the transition.
-  bool make_not_entrant_or_zombie(int state);
   bool make_entrant() { Unimplemented(); return false; }
   void inc_decompile_count();
 
@@ -359,22 +341,22 @@ class nmethod : public CompiledMethod {
                               ExceptionHandlerTable* handler_table,
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
-                              int comp_level
+                              CompLevel comp_level
 #if INCLUDE_JVMCI
-                              , char* speculations = NULL,
+                              , char* speculations = nullptr,
                               int speculations_len = 0,
                               int nmethod_mirror_index = -1,
-                              const char* nmethod_mirror_name = NULL,
-                              FailedSpeculation** failed_speculations = NULL
+                              const char* nmethod_mirror_name = nullptr,
+                              FailedSpeculation** failed_speculations = nullptr
 #endif
   );
 
   // Only used for unit tests.
   nmethod()
     : CompiledMethod(),
-      _is_unloading_state(0),
       _native_receiver_sp_offset(in_ByteSize(-1)),
-      _native_basic_lock_sp_offset(in_ByteSize(-1)) {}
+      _native_basic_lock_sp_offset(in_ByteSize(-1)),
+      _is_unloading_state(0) {}
 
 
   static nmethod* new_native_nmethod(const methodHandle& method,
@@ -398,7 +380,7 @@ class nmethod : public CompiledMethod {
   address stub_begin            () const          { return           header_begin() + _stub_offset          ; }
   address stub_end              () const          { return           header_begin() + _oops_offset          ; }
   address exception_begin       () const          { return           header_begin() + _exception_offset     ; }
-  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : NULL; }
+  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const          { return (oop*)   (header_begin() + _oops_offset)         ; }
   oop*    oops_end              () const          { return (oop*)   (header_begin() + _metadata_offset)     ; }
 
@@ -413,6 +395,9 @@ class nmethod : public CompiledMethod {
   address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
+
+  int skipped_instructions_size () const          { return           _skipped_instructions_size             ; }
+
 #if INCLUDE_JVMCI
   address nul_chk_table_end     () const          { return           header_begin() + _speculations_offset  ; }
   address speculations_begin    () const          { return           header_begin() + _speculations_offset  ; }
@@ -437,10 +422,6 @@ class nmethod : public CompiledMethod {
 
   int total_size        () const;
 
-  void dec_hotness_counter()        { _hotness_counter--; }
-  void set_hotness_counter(int val) { _hotness_counter = val; }
-  int  hotness_counter() const      { return _hotness_counter; }
-
   // Containment
   bool oops_contains         (oop*    addr) const { return oops_begin         () <= addr && addr < oops_end         (); }
   bool metadata_contains     (Metadata** addr) const   { return metadata_begin     () <= addr && addr < metadata_end     (); }
@@ -454,14 +435,16 @@ class nmethod : public CompiledMethod {
   // flag accessing and manipulation
   bool  is_not_installed() const                  { return _state == not_installed; }
   bool  is_in_use() const                         { return _state <= in_use; }
-  bool  is_alive() const                          { return _state < unloaded; }
   bool  is_not_entrant() const                    { return _state == not_entrant; }
-  bool  is_zombie() const                         { return _state == zombie; }
-  bool  is_unloaded() const                       { return _state == unloaded; }
 
   void clear_unloading_state();
+  // Heuristically deduce an nmethod isn't worth keeping around
+  bool is_cold();
   virtual bool is_unloading();
   virtual void do_unloading(bool unloading_occurred);
+
+  nmethod* unlinked_next() const                  { return _unlinked_next; }
+  void set_unlinked_next(nmethod* next)           { _unlinked_next = next; }
 
 #if INCLUDE_RTM_OPT
   // rtm state accessing and manipulating
@@ -476,22 +459,16 @@ class nmethod : public CompiledMethod {
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant() {
-    assert(!method()->is_method_handle_intrinsic(), "Cannot make MH intrinsic not entrant");
-    return make_not_entrant_or_zombie(not_entrant);
-  }
+  bool  make_not_entrant();
   bool  make_not_used()    { return make_not_entrant(); }
-  bool  make_zombie()      { return make_not_entrant_or_zombie(zombie); }
 
   int get_state() const {
     return _state;
   }
 
-  void  make_unloaded();
-
   bool has_dependencies()                         { return dependencies_size() != 0; }
   void print_dependencies()                       PRODUCT_RETURN;
-  void flush_dependencies(bool delete_immediately);
+  void flush_dependencies();
   bool has_flushed_dependencies()                 { return _has_flushed_dependencies; }
   void set_has_flushed_dependencies()             {
     assert(!has_flushed_dependencies(), "should only happen once");
@@ -509,13 +486,12 @@ class nmethod : public CompiledMethod {
   oop*  oop_addr_at(int index) const {  // for GC
     // relocation indexes are biased by 1 (because 0 is reserved)
     assert(index > 0 && index <= oops_count(), "must be a valid non-zero index");
-    assert(!_oops_are_stale, "oops are stale");
     return &oops_begin()[index - 1];
   }
 
   // Support for meta data in scopes and relocs:
   // Note: index 0 is reserved for null.
-  Metadata*     metadata_at(int index) const      { return index == 0 ? NULL: *metadata_addr_at(index); }
+  Metadata*     metadata_at(int index) const      { return index == 0 ? nullptr: *metadata_addr_at(index); }
   Metadata**  metadata_addr_at(int index) const {  // for GC
     // relocation indexes are biased by 1 (because 0 is reserved)
     assert(index > 0 && index <= metadata_count(), "must be a valid non-zero index");
@@ -532,11 +508,7 @@ private:
 
 public:
   void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
-  void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
-
-  // Sweeper support
-  int64_t stack_traversal_mark()                  { return _stack_traversal_mark; }
-  void    set_stack_traversal_mark(int64_t l)     { _stack_traversal_mark = l; }
+  void fix_oop_relocations()                           { fix_oop_relocations(nullptr, nullptr, false); }
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
@@ -548,24 +520,15 @@ public:
   // Verify calls to dead methods have been cleaned.
   void verify_clean_inline_caches();
 
-  // unlink and deallocate this nmethod
-  // Only NMethodSweeper class is expected to use this. NMethodSweeper is not
-  // expected to use any other private methods/data in this class.
+  // Unlink this nmethod from the system
+  void unlink();
 
- protected:
+  // Deallocate this nmethod - called by the GC
   void flush();
 
- public:
-  // When true is returned, it is unsafe to remove this nmethod even if
-  // it is a zombie, since the VM or the ServiceThread might still be
-  // using it.
-  bool is_locked_by_vm() const                    { return _lock_count >0; }
-
   // See comment at definition of _last_seen_on_stack
-  void mark_as_seen_on_stack();
-  void mark_as_maybe_on_continuation();
-  bool is_maybe_on_continuation_stack();
-  bool can_convert_to_zombie();
+  void mark_as_maybe_on_stack();
+  bool is_maybe_on_stack();
 
   // Evolution support. We make old (discarded) compiled methods point to new Method*s.
   void set_method(Method* method) { _method = method; }
@@ -579,10 +542,10 @@ public:
   void update_speculation(JavaThread* thread);
 
   // Gets the data specific to a JVMCI compiled method.
-  // This returns a non-NULL value iff this nmethod was
+  // This returns a non-nullptr value iff this nmethod was
   // compiled by the JVMCI compiler.
   JVMCINMethodData* jvmci_nmethod_data() const {
-    return jvmci_data_size() == 0 ? NULL : (JVMCINMethodData*) jvmci_data_begin();
+    return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
   }
 #endif
 
@@ -623,9 +586,7 @@ public:
 
   address* orig_pc_addr(const frame* fr);
 
-  // used by jvmti to track if the load and unload events has been reported
-  bool  unload_reported() const                   { return _unload_reported; }
-  void  set_unload_reported()                     { _unload_reported = true; }
+  // used by jvmti to track if the load events has been reported
   bool  load_reported() const                     { return _load_reported; }
   void  set_load_reported()                       { _load_reported = true; }
 
@@ -636,8 +597,11 @@ public:
 
   int orig_pc_offset() { return _orig_pc_offset; }
 
+  // Post successful compilation
+  void post_compiled_method(CompileTask* task);
+
   // jvmti support:
-  void post_compiled_method_load_event(JvmtiThreadState* state = NULL);
+  void post_compiled_method_load_event(JvmtiThreadState* state = nullptr);
 
   // verify operations
   void verify();
@@ -680,7 +644,7 @@ public:
   void print_calls(outputStream* st)              PRODUCT_RETURN;
   static void print_statistics()                  PRODUCT_RETURN;
 
-  void maybe_print_nmethod(DirectiveSet* directive);
+  void maybe_print_nmethod(const DirectiveSet* directive);
   void print_nmethod(bool print_code);
 
   // need to re-define this from CodeBlob else the overload hides it
@@ -728,9 +692,6 @@ public:
   // corresponds to the given method as well.
   virtual bool is_dependent_on_method(Method* dependee);
 
-  // is it ok to patch at address?
-  bool is_patchable_at(address instr_address);
-
   // JVMTI's GetLocalInstance() support
   ByteSize native_receiver_sp_offset() {
     return _native_receiver_sp_offset;
@@ -756,52 +717,6 @@ public:
 
   virtual void  make_deoptimized();
   void finalize_relocations();
-};
-
-// Locks an nmethod so its code will not get removed and it will not
-// be made into a zombie, even if it is a not_entrant method. After the
-// nmethod becomes a zombie, if CompiledMethodUnload event processing
-// needs to be done, then lock_nmethod() is used directly to keep the
-// generated code from being reused too early.
-class nmethodLocker : public StackObj {
-  CompiledMethod* _nm;
-
- public:
-
-  // note: nm can be NULL
-  // Only JvmtiDeferredEvent::compiled_method_unload_event()
-  // should pass zombie_ok == true.
-  static void lock_nmethod(CompiledMethod* nm, bool zombie_ok = false);
-  static void unlock_nmethod(CompiledMethod* nm); // (ditto)
-
-  nmethodLocker(address pc); // derive nm from pc
-  nmethodLocker(nmethod *nm) { _nm = nm; lock_nmethod(_nm); }
-  nmethodLocker(CompiledMethod *nm) {
-    _nm = nm;
-    lock(_nm);
-  }
-
-  static void lock(CompiledMethod* method, bool zombie_ok = false) {
-    if (method == NULL) return;
-    lock_nmethod(method, zombie_ok);
-  }
-
-  static void unlock(CompiledMethod* method) {
-    if (method == NULL) return;
-    unlock_nmethod(method);
-  }
-
-  nmethodLocker() { _nm = NULL; }
-  ~nmethodLocker() {
-    unlock(_nm);
-  }
-
-  CompiledMethod* code() { return _nm; }
-  void set_code(CompiledMethod* new_nm, bool zombie_ok = false) {
-    unlock(_nm);   // note:  This works even if _nm==new_nm.
-    _nm = new_nm;
-    lock(_nm, zombie_ok);
-  }
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP

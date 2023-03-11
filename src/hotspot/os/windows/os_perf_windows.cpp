@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+
 #include <math.h>
 #include <psapi.h>
 #include <TlHelp32.h>
@@ -86,9 +87,9 @@ static const char* const PROCESS_OBJECT_WITH_INSTANCES_WILDCARD_FMT = "\\%s(%s*)
 static const size_t PROCESS_OBJECT_WITH_INSTANCES_WILDCARD_FMT_LEN = 5;
 
 /* pdh string constants built up from fmts on initialization */
-static const char* process_image_name = NULL; // e.g. "java" but could have another image name
-static char* pdh_process_instance_IDProcess_counter_fmt = NULL; // "\Process(java#%d)\ID Process" */
-static char* pdh_process_instance_wildcard_IDProcess_counter = NULL; // "\Process(java*)\ID Process" */
+static const char* process_image_name = nullptr; // e.g. "java" but could have another image name
+static char* pdh_process_instance_IDProcess_counter_fmt = nullptr; // "\Process(java#%d)\ID Process" */
+static char* pdh_process_instance_wildcard_IDProcess_counter = nullptr; // "\Process(java*)\ID Process" */
 
 /*
 * Structs for PDH queries.
@@ -124,7 +125,7 @@ typedef struct {
 } ProcessQueryS, *ProcessQueryP;
 
 static int open_query(HQUERY* pdh_query_handle) {
-  return PdhDll::PdhOpenQuery(NULL, 0, pdh_query_handle) != ERROR_SUCCESS ? OS_ERR : OS_OK;
+  return PdhDll::PdhOpenQuery(nullptr, 0, pdh_query_handle) != ERROR_SUCCESS ? OS_ERR : OS_OK;
 }
 
 static int open_query(UpdateQueryP query) {
@@ -137,21 +138,21 @@ static int open_query(QueryP query) {
 }
 
 static void close_query(HQUERY* const pdh_query_handle, HCOUNTER* const counter) {
-  if (counter != NULL && *counter != NULL) {
+  if (counter != nullptr && *counter != nullptr) {
     PdhDll::PdhRemoveCounter(*counter);
-    *counter = NULL;
+    *counter = nullptr;
   }
-  if (pdh_query_handle != NULL && *pdh_query_handle != NULL) {
+  if (pdh_query_handle != nullptr && *pdh_query_handle != nullptr) {
     PdhDll::PdhCloseQuery(*pdh_query_handle);
-    *pdh_query_handle = NULL;
+    *pdh_query_handle = nullptr;
   }
 }
 
 static void close_query(MultiCounterQueryP query) {
   for (int i = 0; i < query->noOfCounters; ++i) {
-    close_query(NULL, &query->counters[i]);
+    close_query(nullptr, &query->counters[i]);
   }
-  close_query(&query->query.pdh_query_handle, NULL);
+  close_query(&query->query.pdh_query_handle, nullptr);
   query->initialized = false;
 }
 
@@ -168,18 +169,18 @@ static MultiCounterQueryP create_multi_counter_query() {
 }
 
 static void destroy(CounterQueryP query) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   close_query(&query->query.pdh_query_handle, &query->counter);
   FREE_C_HEAP_OBJ(query);
 }
 
 static void destroy(MultiCounterQueryP query) {
-  if (query != NULL) {
+  if (query != nullptr) {
     for (int i = 0; i < query->noOfCounters; ++i) {
-      close_query(NULL, &query->counters[i]);
+      close_query(nullptr, &query->counters[i]);
     }
     FREE_C_HEAP_ARRAY(char, query->counters);
-    close_query(&query->query.pdh_query_handle, NULL);
+    close_query(&query->query.pdh_query_handle, nullptr);
     FREE_C_HEAP_ARRAY(MultiCounterQueryS, query);
   }
 }
@@ -187,10 +188,10 @@ static void destroy(MultiCounterQueryP query) {
 static void destroy_query_set(MultiCounterQuerySetP query_set) {
   for (int i = 0; i < query_set->size; i++) {
     for (int j = 0; j < query_set->queries[i].noOfCounters; ++j) {
-      close_query(NULL, &query_set->queries[i].counters[j]);
+      close_query(nullptr, &query_set->queries[i].counters[j]);
     }
     FREE_C_HEAP_ARRAY(char, query_set->queries[i].counters);
-    close_query(&query_set->queries[i].query.pdh_query_handle, NULL);
+    close_query(&query_set->queries[i].query.pdh_query_handle, nullptr);
   }
   FREE_C_HEAP_ARRAY(MultiCounterQueryS, query_set->queries);
 }
@@ -206,17 +207,17 @@ static void destroy(ProcessQueryP query) {
 }
 
 static void allocate_counters(MultiCounterQueryP query, size_t nofCounters) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   assert(!query->initialized, "invariant");
   assert(0 == query->noOfCounters, "invariant");
-  assert(query->counters == NULL, "invariant");
+  assert(query->counters == nullptr, "invariant");
   query->counters = NEW_C_HEAP_ARRAY(HCOUNTER, nofCounters, mtInternal);
   memset(query->counters, 0, nofCounters * sizeof(HCOUNTER));
   query->noOfCounters = (int)nofCounters;
 }
 
 static void allocate_counters(MultiCounterQuerySetP query, size_t nofCounters) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   assert(!query->initialized, "invariant");
   for (int i = 0; i < query->size; ++i) {
     allocate_counters(&query->queries[i], nofCounters);
@@ -224,26 +225,26 @@ static void allocate_counters(MultiCounterQuerySetP query, size_t nofCounters) {
 }
 
 static void allocate_counters(ProcessQueryP query, size_t nofCounters) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   allocate_counters(&query->set, nofCounters);
 }
 
 static void deallocate_counters(MultiCounterQueryP query) {
   FREE_C_HEAP_ARRAY(char, query->counters);
-  query->counters = NULL;
+  query->counters = nullptr;
   query->noOfCounters = 0;
 }
 
 static OSReturn add_counter(UpdateQueryP query, HCOUNTER* counter, const char* counter_path, bool first_sample_on_init) {
-  assert(query != NULL, "invariant");
-  assert(counter != NULL, "invariant");
-  assert(counter_path != NULL, "invariant");
-  if (query->pdh_query_handle == NULL) {
+  assert(query != nullptr, "invariant");
+  assert(counter != nullptr, "invariant");
+  assert(counter_path != nullptr, "invariant");
+  if (query->pdh_query_handle == nullptr) {
     if (open_query(query) != OS_OK) {
       return OS_ERR;
     }
   }
-  assert(query->pdh_query_handle != NULL, "invariant");
+  assert(query->pdh_query_handle != nullptr, "invariant");
   PDH_STATUS status = PdhDll::PdhAddCounter(query->pdh_query_handle, counter_path, 0, counter);
   if (PDH_CSTATUS_NO_OBJECT == status || PDH_CSTATUS_NO_COUNTER == status) {
     return OS_ERR;
@@ -267,9 +268,9 @@ static OSReturn add_counter(UpdateQueryP query, HCOUNTER* counter, const char* c
 
 template <typename QueryP>
 static OSReturn add_counter(QueryP query, HCOUNTER* counter, const char* counter_path, bool first_sample_on_init) {
-  assert(query != NULL, "invariant");
-  assert(counter != NULL, "invariant");
-  assert(counter_path != NULL, "invariant");
+  assert(query != nullptr, "invariant");
+  assert(counter != nullptr, "invariant");
+  assert(counter_path != nullptr, "invariant");
   return add_counter(&query->query, counter, counter_path, first_sample_on_init);
 }
 
@@ -279,9 +280,9 @@ static OSReturn add_counter(CounterQueryP query, const char* counter_path, bool 
 }
 
 static OSReturn add_counter(MultiCounterQueryP query, int counter_idx, const char* counter_path, bool first_sample_on_init) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   assert(counter_idx < query->noOfCounters, "invariant");
-  assert(query->counters[counter_idx] == NULL, "invariant");
+  assert(query->counters[counter_idx] == nullptr, "invariant");
   return add_counter(query, &query->counters[counter_idx], counter_path, first_sample_on_init);
 }
 
@@ -291,7 +292,7 @@ static OSReturn add_counter(MultiCounterQueryP query, int counter_idx, const cha
 static const int min_update_interval_millis = 500;
 
 static int collect(UpdateQueryP query) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   const s8 now = os::javaTimeNanos();
   if (nanos_to_millis(now - query->lastUpdate) > min_update_interval_millis) {
     if (PdhDll::PdhCollectQueryData(query->pdh_query_handle) != ERROR_SUCCESS) {
@@ -304,31 +305,31 @@ static int collect(UpdateQueryP query) {
 
 template <typename QueryP>
 static int collect(QueryP query) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   return collect(&query->query);
 }
 
 static int formatted_counter_value(HCOUNTER counter, DWORD format, PDH_FMT_COUNTERVALUE* const value) {
-  assert(value != NULL, "invariant");
-  return PdhDll::PdhGetFormattedCounterValue(counter, format, NULL, value) != ERROR_SUCCESS ? OS_ERR : OS_OK;
+  assert(value != nullptr, "invariant");
+  return PdhDll::PdhGetFormattedCounterValue(counter, format, nullptr, value) != ERROR_SUCCESS ? OS_ERR : OS_OK;
 }
 
 static int read_counter(CounterQueryP query, DWORD format, PDH_FMT_COUNTERVALUE* const value) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   return formatted_counter_value(query->counter, format, value);
 }
 
 static int read_counter(MultiCounterQueryP query, int counter_idx, DWORD format, PDH_FMT_COUNTERVALUE* const value) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   assert(counter_idx < query->noOfCounters, "invariant");
-  assert(query->counters[counter_idx] != NULL, "invariant");
+  assert(query->counters[counter_idx] != nullptr, "invariant");
   return formatted_counter_value(query->counters[counter_idx], format, value);
 }
 
 static int read_counter(ProcessQueryP query, int counter_idx, DWORD format, PDH_FMT_COUNTERVALUE* const value) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   MultiCounterQueryP const current_query = &query->set.queries[query->process_idx];
-  assert(current_query != NULL, "invariant");
+  assert(current_query != nullptr, "invariant");
   return read_counter(current_query, counter_idx, format, value);
 }
 
@@ -338,17 +339,17 @@ static int read_counter(ProcessQueryP query, int counter_idx, DWORD format, PDH_
 * A tally of this list is returned to the caller.
 */
 static int number_of_live_process_instances() {
-  char* buffer = NULL;
+  char* buffer = nullptr;
   DWORD size = 0;
   // determine size
-  PDH_STATUS status = PdhDll::PdhExpandWildCardPath(NULL,
+  PDH_STATUS status = PdhDll::PdhExpandWildCardPath(nullptr,
                                                     pdh_process_instance_wildcard_IDProcess_counter,
                                                     buffer,
                                                     &size,
                                                     PDH_NOEXPANDCOUNTERS);
   while (status == PDH_MORE_DATA) {
     buffer = NEW_RESOURCE_ARRAY(char, size);
-    status = PdhDll::PdhExpandWildCardPath(NULL,
+    status = PdhDll::PdhExpandWildCardPath(nullptr,
                                            pdh_process_instance_wildcard_IDProcess_counter,
                                            buffer,
                                            &size,
@@ -366,11 +367,11 @@ static int number_of_live_process_instances() {
 }
 
 static PDH_STATUS pdh_process_idx_to_pid(HQUERY& pdh_query_handle, int idx, LONG* pid) {
-  assert(pid != NULL, "invariant");
+  assert(pid != nullptr, "invariant");
   char counter_path[PDH_MAX_COUNTER_PATH];
   jio_snprintf(counter_path, sizeof(counter_path) - 1, pdh_process_instance_IDProcess_counter_fmt, idx);
   assert(strlen(counter_path) < sizeof(counter_path), "invariant");
-  HCOUNTER counter = NULL;
+  HCOUNTER counter = nullptr;
   PDH_STATUS status = PdhDll::PdhAddCounter(pdh_query_handle, counter_path, 0, &counter);
   if (status != ERROR_SUCCESS) {
     close_query(&pdh_query_handle, &counter);
@@ -378,7 +379,7 @@ static PDH_STATUS pdh_process_idx_to_pid(HQUERY& pdh_query_handle, int idx, LONG
   }
   status = PdhDll::PdhCollectQueryData(pdh_query_handle);
   if (status != ERROR_SUCCESS) {
-    close_query(NULL, &counter);
+    close_query(nullptr, &counter);
     return PDH_NO_DATA;
   }
   PDH_FMT_COUNTERVALUE counter_value;
@@ -388,7 +389,7 @@ static PDH_STATUS pdh_process_idx_to_pid(HQUERY& pdh_query_handle, int idx, LONG
     return status;
   }
   *pid = counter_value.longValue;
-  close_query(NULL, &counter);
+  close_query(nullptr, &counter);
   return ERROR_SUCCESS;
 }
 
@@ -450,10 +451,10 @@ static int max_process_query_idx = 0;
 static int current_process_query_index(int previous_query_idx = 0) {
   assert(max_process_query_idx >= 0, "invariant");
   assert(max_process_query_idx >= previous_query_idx, "invariant");
-  assert(process_image_name != NULL, "invariant");
-  assert(pdh_process_instance_IDProcess_counter_fmt != NULL, "invariant");
+  assert(process_image_name != nullptr, "invariant");
+  assert(pdh_process_instance_IDProcess_counter_fmt != nullptr, "invariant");
   int result = OS_ERR;
-  HQUERY tmp_pdh_query_handle = NULL;
+  HQUERY tmp_pdh_query_handle = nullptr;
   if (open_query(&tmp_pdh_query_handle) != OS_OK) {
     return OS_ERR;
   }
@@ -479,12 +480,12 @@ static int current_process_query_index(int previous_query_idx = 0) {
       break;
     }
   }
-  close_query(&tmp_pdh_query_handle, NULL);
+  close_query(&tmp_pdh_query_handle, nullptr);
   return result;
 }
 
 static int ensure_current_process_query_index(ProcessQueryP query) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   const int previous_query_idx = query->process_idx;
   if (previous_query_idx == 0) {
     return previous_query_idx;
@@ -507,18 +508,18 @@ static int ensure_current_process_query_index(ProcessQueryP query) {
 }
 
 static MultiCounterQueryP current_process_query(ProcessQueryP query) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   if (ensure_current_process_query_index(query) == OS_ERR) {
-    return NULL;
+    return nullptr;
   }
   assert(query->process_idx < query->set.size, "invariant");
   return &query->set.queries[query->process_idx];
 }
 
 static int collect(ProcessQueryP query) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   MultiCounterQueryP current_query = current_process_query(query);
-  return current_query != NULL ? collect(current_query) : OS_ERR;
+  return current_query != nullptr ? collect(current_query) : OS_ERR;
 }
 
 /*
@@ -536,10 +537,10 @@ static int collect(ProcessQueryP query) {
  */
 static const char* make_fully_qualified_counter_path(const char* object_name,
                                                      const char* counter_name,
-                                                     const char* image_name = NULL,
-                                                     const char* instance = NULL) {
-  assert(object_name != NULL, "invariant");
-  assert(counter_name != NULL, "invariant");
+                                                     const char* image_name = nullptr,
+                                                     const char* instance = nullptr) {
+  assert(object_name != nullptr, "invariant");
+  assert(counter_name != nullptr, "invariant");
   size_t counter_path_len = strlen(object_name) + strlen(counter_name);
 
   char* counter_path;
@@ -561,7 +562,7 @@ static const char* make_fully_qualified_counter_path(const char* object_name,
     *
     * Examples: "\Process(java#0)", \Process(java#1"), ...
     */
-    assert(instance != NULL, "invariant");
+    assert(instance != nullptr, "invariant");
     counter_path_len += strlen(instance);
     counter_path = NEW_RESOURCE_ARRAY(char, counter_path_len + 1);
     jio_snprintf_result = jio_snprintf(counter_path,
@@ -619,7 +620,7 @@ static void log_invalid_pdh_index(DWORD index) {
 
 static bool is_valid_pdh_index(DWORD index) {
   DWORD dummy = 0;
-  if (PdhDll::PdhLookupPerfNameByIndex(NULL, index, NULL, &dummy) != PDH_MORE_DATA) {
+  if (PdhDll::PdhLookupPerfNameByIndex(nullptr, index, nullptr, &dummy) != PDH_MORE_DATA) {
     log_invalid_pdh_index(index);
     return false;
   }
@@ -636,19 +637,19 @@ static bool is_valid_pdh_index(DWORD index) {
  * @return         OS_OK if successful, OS_ERR on failure.
  */
 static OSReturn lookup_name_by_index(DWORD index, char** p_string) {
-  assert(p_string != NULL, "invariant");
+  assert(p_string != nullptr, "invariant");
   if (!is_valid_pdh_index(index)) {
     return OS_ERR;
   }
   // determine size needed
   DWORD size = 0;
-  PDH_STATUS status = PdhDll::PdhLookupPerfNameByIndex(NULL, index, NULL, &size);
+  PDH_STATUS status = PdhDll::PdhLookupPerfNameByIndex(nullptr, index, nullptr, &size);
   assert(status == PDH_MORE_DATA, "invariant");
   *p_string = NEW_RESOURCE_ARRAY(char, size);
-  if (PdhDll::PdhLookupPerfNameByIndex(NULL, index, *p_string, &size) != ERROR_SUCCESS) {
+  if (PdhDll::PdhLookupPerfNameByIndex(nullptr, index, *p_string, &size) != ERROR_SUCCESS) {
     return OS_ERR;
   }
-  if (0 == size || *p_string == NULL) {
+  if (0 == size || *p_string == nullptr) {
     return OS_ERR;
   }
   // windows vista does not null-terminate the string (although the docs says it will)
@@ -657,7 +658,7 @@ static OSReturn lookup_name_by_index(DWORD index, char** p_string) {
 }
 
 static const char* copy_string_to_c_heap(const char* string) {
-  assert(string != NULL, "invariant");
+  assert(string != nullptr, "invariant");
   const size_t len = strlen(string);
   char* const cheap_allocated_string = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cheap_allocated_string, string, len + 1);
@@ -670,13 +671,13 @@ static const char* copy_string_to_c_heap(const char* string) {
 * Caller will need a ResourceMark.
 *
 * @param pdh_artifact_idx   the counter index as specified in the registry
-* @return                   localized pdh artifact string if successful, NULL on failure.
+* @return                   localized pdh artifact string if successful, null on failure.
 */
 static const char* pdh_localized_artifact(DWORD pdh_artifact_idx) {
-  char* pdh_localized_artifact_string = NULL;
+  char* pdh_localized_artifact_string = nullptr;
   // get localized name for the pdh artifact idx
   if (lookup_name_by_index(pdh_artifact_idx, &pdh_localized_artifact_string) != OS_OK) {
-    return NULL;
+    return nullptr;
   }
   return pdh_localized_artifact_string;
 }
@@ -690,17 +691,17 @@ static const char* pdh_localized_artifact(DWORD pdh_artifact_idx) {
  *
  * Caller needs ResourceMark.
  *
- * @return the process image string description, NULL if the call failed.
+ * @return the process image string description, null if the call failed.
 */
 static const char* pdh_process_image_name() {
   char* module_name = NEW_RESOURCE_ARRAY(char, MAX_PATH);
   // Find our module name and use it to extract the image name used by PDH
-  DWORD getmfn_return = GetModuleFileName(NULL, module_name, MAX_PATH);
+  DWORD getmfn_return = GetModuleFileName(nullptr, module_name, MAX_PATH);
   if (getmfn_return >= MAX_PATH || 0 == getmfn_return) {
-    return NULL;
+    return nullptr;
   }
   if (os::get_last_error() == ERROR_INSUFFICIENT_BUFFER) {
-    return NULL;
+    return nullptr;
   }
   char* process_image_name = strrchr(module_name, '\\'); //drop path
   process_image_name++;                                  //skip slash
@@ -711,28 +712,28 @@ static const char* pdh_process_image_name() {
 
 static void deallocate_pdh_constants() {
   FREE_C_HEAP_ARRAY(char, process_image_name);
-  process_image_name = NULL;
+  process_image_name = nullptr;
   FREE_C_HEAP_ARRAY(char, pdh_process_instance_IDProcess_counter_fmt);
-  pdh_process_instance_IDProcess_counter_fmt = NULL;
+  pdh_process_instance_IDProcess_counter_fmt = nullptr;
   FREE_C_HEAP_ARRAY(char, pdh_process_instance_wildcard_IDProcess_counter);
-  pdh_process_instance_wildcard_IDProcess_counter = NULL;
+  pdh_process_instance_wildcard_IDProcess_counter = nullptr;
 }
 
 static OSReturn allocate_pdh_constants() {
-  assert(process_image_name == NULL, "invariant");
+  assert(process_image_name == nullptr, "invariant");
   const char* pdh_image_name = pdh_process_image_name();
-  if (pdh_image_name == NULL) {
+  if (pdh_image_name == nullptr) {
     return OS_ERR;
   }
   process_image_name = copy_string_to_c_heap(pdh_image_name);
 
   const char* pdh_localized_process_object = pdh_localized_artifact(PDH_PROCESS_IDX);
-  if (pdh_localized_process_object == NULL) {
+  if (pdh_localized_process_object == nullptr) {
     return OS_ERR;
   }
 
   const char* pdh_localized_IDProcess_counter = pdh_localized_artifact(PDH_ID_PROCESS_IDX);
-  if (pdh_localized_IDProcess_counter == NULL) {
+  if (pdh_localized_IDProcess_counter == nullptr) {
     return OS_ERR;
   }
 
@@ -744,7 +745,7 @@ static OSReturn allocate_pdh_constants() {
                                                PROCESS_OBJECT_WITH_INSTANCES_COUNTER_FMT_LEN +
                                                2; // "%d"
 
-  assert(pdh_process_instance_IDProcess_counter_fmt == NULL, "invariant");
+  assert(pdh_process_instance_IDProcess_counter_fmt == nullptr, "invariant");
   pdh_process_instance_IDProcess_counter_fmt = NEW_C_HEAP_ARRAY(char, pdh_IDProcess_counter_fmt_len + 1, mtInternal);
 
   /* "\Process(java#%d)\ID Process" */
@@ -756,14 +757,14 @@ static OSReturn allocate_pdh_constants() {
                             "%d",
                             pdh_localized_IDProcess_counter);
 
-  assert(pdh_process_instance_IDProcess_counter_fmt != NULL, "invariant");
+  assert(pdh_process_instance_IDProcess_counter_fmt != nullptr, "invariant");
   assert(len == pdh_IDProcess_counter_fmt_len, "invariant");
 
 
   const size_t pdh_IDProcess_wildcard_fmt_len = id_process_base_length +
                                                 PROCESS_OBJECT_WITH_INSTANCES_WILDCARD_FMT_LEN;
 
-  assert(pdh_process_instance_wildcard_IDProcess_counter == NULL, "invariant");
+  assert(pdh_process_instance_wildcard_IDProcess_counter == nullptr, "invariant");
   pdh_process_instance_wildcard_IDProcess_counter = NEW_C_HEAP_ARRAY(char, pdh_IDProcess_wildcard_fmt_len + 1, mtInternal);
 
   /* "\Process(java*)\ID Process" */
@@ -774,7 +775,7 @@ static OSReturn allocate_pdh_constants() {
                      process_image_name,
                      pdh_localized_IDProcess_counter);
 
-  assert(pdh_process_instance_wildcard_IDProcess_counter != NULL, "invariant");
+  assert(pdh_process_instance_wildcard_IDProcess_counter != nullptr, "invariant");
   assert(len == pdh_IDProcess_wildcard_fmt_len, "invariant");
   return OS_OK;
 }
@@ -783,44 +784,44 @@ static OSReturn allocate_pdh_constants() {
  * Enuerate the Processor PDH object and returns a buffer containing the enumerated instances.
  * Caller needs ResourceMark;
  *
- * @return  buffer if successful, NULL on failure.
+ * @return  buffer if successful, null on failure.
 */
 static const char* enumerate_cpu_instances() {
   char* processor; //'Processor' == PDH_PROCESSOR_IDX
   if (lookup_name_by_index(PDH_PROCESSOR_IDX, &processor) != OS_OK) {
-    return NULL;
+    return nullptr;
   }
   DWORD c_size = 0;
   DWORD i_size = 0;
   // enumerate all processors.
-  PDH_STATUS pdhStat = PdhDll::PdhEnumObjectItems(NULL, // reserved
-                                                  NULL, // local machine
+  PDH_STATUS pdhStat = PdhDll::PdhEnumObjectItems(nullptr, // reserved
+                                                  nullptr, // local machine
                                                   processor, // object to enumerate
-                                                  NULL,
+                                                  nullptr,
                                                   &c_size,
-                                                  NULL, // instance buffer is NULL and
+                                                  nullptr, // instance buffer is null and
                                                   &i_size,  // pass 0 length in order to get the required size
                                                   PERF_DETAIL_WIZARD, // counter detail level
                                                   0);
   if (PdhDll::PdhStatusFail((pdhStat))) {
-    return NULL;
+    return nullptr;
   }
   char* const instances = NEW_RESOURCE_ARRAY(char, i_size);
   c_size = 0;
-  pdhStat = PdhDll::PdhEnumObjectItems(NULL, // reserved
-                                       NULL, // local machine
+  pdhStat = PdhDll::PdhEnumObjectItems(nullptr, // reserved
+                                       nullptr, // local machine
                                        processor, // object to enumerate
-                                       NULL,
+                                       nullptr,
                                        &c_size,
                                        instances, // now instance buffer is allocated to be filled in
                                        &i_size, // and the required size is known
                                        PERF_DETAIL_WIZARD, // counter detail level
                                        0);
-  return PdhDll::PdhStatusFail(pdhStat) ? NULL : instances;
+  return PdhDll::PdhStatusFail(pdhStat) ? nullptr : instances;
 }
 
 static int count_logical_cpus(const char* instances) {
-  assert(instances != NULL, "invariant");
+  assert(instances != nullptr, "invariant");
   // count logical instances.
   DWORD count;
   char* tmp;
@@ -834,7 +835,7 @@ static int number_of_logical_cpus() {
   static int numberOfCPUS = 0;
   if (numberOfCPUS == 0) {
     const char* instances = enumerate_cpu_instances();
-    if (instances == NULL) {
+    if (instances == nullptr) {
       return OS_ERR;
     }
     numberOfCPUS = count_logical_cpus(instances);
@@ -859,22 +860,22 @@ static void log_error_message_on_no_PDH_artifact(const char* counter_path) {
 }
 
 static int initialize_cpu_query_counters(MultiCounterQueryP query, DWORD pdh_counter_idx) {
-  assert(query != NULL, "invariant");
-  assert(query->counters != NULL, "invariant");
+  assert(query != nullptr, "invariant");
+  assert(query->counters != nullptr, "invariant");
   char* processor; //'Processor' == PDH_PROCESSOR_IDX
   if (lookup_name_by_index(PDH_PROCESSOR_IDX, &processor) != OS_OK) {
     return OS_ERR;
   }
-  char* counter_name = NULL;
+  char* counter_name = nullptr;
   if (lookup_name_by_index(pdh_counter_idx, &counter_name) != OS_OK) {
     return OS_ERR;
   }
-  if (query->query.pdh_query_handle == NULL) {
+  if (query->query.pdh_query_handle == nullptr) {
     if (open_query(query) != OS_OK) {
       return OS_ERR;
     }
   }
-  assert(query->query.pdh_query_handle != NULL, "invariant");
+  assert(query->query.pdh_query_handle != nullptr, "invariant");
   size_t counter_len = strlen(processor);
   counter_len += strlen(counter_name);
   counter_len += OBJECT_WITH_INSTANCES_COUNTER_FMT_LEN; // "\\%s(%s)\\%s"
@@ -903,7 +904,7 @@ static int initialize_cpu_query_counters(MultiCounterQueryP query, DWORD pdh_cou
 }
 
 static int initialize_cpu_query(MultiCounterQueryP query) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   assert(!query->initialized, "invariant");
   const int logical_cpu_count = number_of_logical_cpus();
   assert(logical_cpu_count >= os::processor_count(), "invariant");
@@ -918,17 +919,17 @@ static int initialize_cpu_query(MultiCounterQueryP query) {
 }
 
 static int initialize_query(CounterQueryP query, DWORD pdh_object_idx, DWORD pdh_counter_idx) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   assert(!query->initialized, "invariant");
   if (!((is_valid_pdh_index(pdh_object_idx) && is_valid_pdh_index(pdh_counter_idx)))) {
     return OS_ERR;
   }
   const char* object = pdh_localized_artifact(pdh_object_idx);
-  assert(object != NULL, "invariant");
+  assert(object != nullptr, "invariant");
   const char* counter = pdh_localized_artifact(pdh_counter_idx);
-  assert(counter != NULL, "invariant");
+  assert(counter != nullptr, "invariant");
   const char* counter_path = make_fully_qualified_counter_path(object, counter);
-  assert(counter_path != NULL, "invariant");
+  assert(counter_path != nullptr, "invariant");
   if (add_counter(query, counter_path, true) != OS_OK) {
     return OS_ERR;
   }
@@ -943,7 +944,7 @@ static int initialize_context_switches_query(CounterQueryP query) {
 static ProcessQueryP create_process_query() {
   const int current_process_query_idx = current_process_query_index();
   if (current_process_query_idx == OS_ERR) {
-    return NULL;
+    return nullptr;
   }
   ProcessQueryP const query = NEW_C_HEAP_OBJ(ProcessQueryS, mtInternal);
   memset(query, 0, sizeof(ProcessQueryS));
@@ -960,19 +961,19 @@ static int initialize_process_counter(ProcessQueryP process_query, int counter_i
   if (lookup_name_by_index(PDH_PROCESS_IDX, &localized_process_object) != OS_OK) {
     return OS_ERR;
   }
-  assert(localized_process_object != NULL, "invariant");
+  assert(localized_process_object != nullptr, "invariant");
   char* localized_counter_name;
   if (lookup_name_by_index(pdh_counter_idx, &localized_counter_name) != OS_OK) {
     return OS_ERR;
   }
-  assert(localized_counter_name != NULL, "invariant");
+  assert(localized_counter_name != nullptr, "invariant");
   for (int i = 0; i < process_query->set.size; ++i) {
     char instanceIndexBuffer[32];
     const char* counter_path = make_fully_qualified_counter_path(localized_process_object,
                                                                  localized_counter_name,
                                                                  process_image_name,
                                                                  itoa(i, instanceIndexBuffer, 10));
-    assert(counter_path != NULL, "invariant");
+    assert(counter_path != nullptr, "invariant");
     MultiCounterQueryP const query = &process_query->set.queries[i];
     if (add_counter(query, counter_idx, counter_path, true) != OS_OK) {
       return OS_ERR;
@@ -986,7 +987,7 @@ static int initialize_process_counter(ProcessQueryP process_query, int counter_i
 }
 
 static int initialize_process_query(ProcessQueryP query) {
-  assert(query != NULL, "invariant");
+  assert(query != nullptr, "invariant");
   assert(!query->set.initialized, "invariant");
   allocate_counters(query, 2);
   if (initialize_process_counter(query, 0, PDH_PROCESSOR_TIME_IDX) != OS_OK) {
@@ -1092,20 +1093,20 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
   bool initialize();
 };
 
-CPUPerformanceInterface::CPUPerformance::CPUPerformance() : _context_switches(NULL), _process_cpu_load(NULL), _machine_cpu_load(NULL) {}
+CPUPerformanceInterface::CPUPerformance::CPUPerformance() : _context_switches(nullptr), _process_cpu_load(nullptr), _machine_cpu_load(nullptr) {}
 
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
   if (pdh_acquire() != OS_OK) {
     return false;
   }
   _context_switches = create_counter_query();
-  assert(_context_switches != NULL, "invariant");
+  assert(_context_switches != nullptr, "invariant");
   if (initialize_context_switches_query(_context_switches) != OS_OK) {
     return false;
   }
   assert(_context_switches->initialized, "invariant");
   _process_cpu_load = create_process_query();
-  if (_process_cpu_load == NULL) {
+  if (_process_cpu_load == nullptr) {
     return false;
   }
   if (initialize_process_query(_process_cpu_load) != OS_OK) {
@@ -1113,7 +1114,7 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
   }
   assert(_process_cpu_load->set.initialized, "invariant");
   _machine_cpu_load = create_multi_counter_query();
-  assert(_machine_cpu_load != NULL, "invariant");
+  assert(_machine_cpu_load != nullptr, "invariant");
   if (initialize_cpu_query(_machine_cpu_load) != OS_OK) {
     return false;
   }
@@ -1122,22 +1123,22 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
 }
 
 CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
-  if (_context_switches != NULL) {
+  if (_context_switches != nullptr) {
     destroy(_context_switches);
-    _context_switches = NULL;
+    _context_switches = nullptr;
   }
-  if (_process_cpu_load != NULL) {
+  if (_process_cpu_load != nullptr) {
     destroy(_process_cpu_load);
-    _process_cpu_load = NULL;
+    _process_cpu_load = nullptr;
   }
-  if (_machine_cpu_load != NULL) {
+  if (_machine_cpu_load != nullptr) {
     destroy(_machine_cpu_load);
-    _machine_cpu_load = NULL;
+    _machine_cpu_load = nullptr;
   }
   pdh_release();
 }
 
-CPUPerformanceInterface::CPUPerformanceInterface() : _impl(NULL) {}
+CPUPerformanceInterface::CPUPerformanceInterface() : _impl(nullptr) {}
 
 bool CPUPerformanceInterface::initialize() {
   _impl = new CPUPerformanceInterface::CPUPerformance();
@@ -1145,7 +1146,7 @@ bool CPUPerformanceInterface::initialize() {
 }
 
 CPUPerformanceInterface::~CPUPerformanceInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
   }
 }
@@ -1170,7 +1171,7 @@ int CPUPerformanceInterface::cpu_loads_process(double* jvm_user_load,
 
 int CPUPerformanceInterface::CPUPerformance::cpu_load(int which_logical_cpu, double* cpu_load) {
   *cpu_load = .0;
-  if (_machine_cpu_load == NULL || !_machine_cpu_load->initialized) {
+  if (_machine_cpu_load == nullptr || !_machine_cpu_load->initialized) {
     return OS_ERR;
   }
   assert(which_logical_cpu < _machine_cpu_load->noOfCounters, "invariant");
@@ -1189,7 +1190,7 @@ int CPUPerformanceInterface::CPUPerformance::cpu_load(int which_logical_cpu, dou
 
 int CPUPerformanceInterface::CPUPerformance::cpu_load_total_process(double* cpu_load) {
   *cpu_load = .0;
-  if (_process_cpu_load == NULL || !_process_cpu_load->set.initialized) {
+  if (_process_cpu_load == nullptr || !_process_cpu_load->set.initialized) {
     return OS_ERR;
   }
   if (collect(_process_cpu_load) != OS_OK) {
@@ -1209,14 +1210,14 @@ int CPUPerformanceInterface::CPUPerformance::cpu_load_total_process(double* cpu_
 int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* jvm_user_load,
                                                                double* jvm_kernel_load,
                                                                double* system_total_load) {
-  assert(jvm_user_load != NULL, "jvm_user_load is NULL!");
-  assert(jvm_kernel_load != NULL, "jvm_kernel_load is NULL!");
-  assert(system_total_load != NULL, "system_total_load is NULL!");
+  assert(jvm_user_load != nullptr, "jvm_user_load is null!");
+  assert(jvm_kernel_load != nullptr, "jvm_kernel_load is null!");
+  assert(system_total_load != nullptr, "system_total_load is null!");
   *jvm_user_load = .0;
   *jvm_kernel_load = .0;
   *system_total_load = .0;
 
-  if (_process_cpu_load == NULL || !_process_cpu_load->set.initialized) {
+  if (_process_cpu_load == nullptr || !_process_cpu_load->set.initialized) {
     return OS_ERR;
   }
   if (collect(_process_cpu_load) != OS_OK) {
@@ -1262,9 +1263,9 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* jvm_user_
 }
 
 int CPUPerformanceInterface::CPUPerformance::context_switch_rate(double* rate) {
-  assert(rate != NULL, "invariant");
+  assert(rate != nullptr, "invariant");
   *rate = .0;
-  if (_context_switches == NULL || !_context_switches->initialized) {
+  if (_context_switches == nullptr || !_context_switches->initialized) {
     return OS_ERR;
   }
   if (collect(_context_switches) != OS_OK) {
@@ -1337,10 +1338,10 @@ SystemProcessInterface::SystemProcesses::ProcessIterator::~ProcessIterator() {
 
 int SystemProcessInterface::SystemProcesses::ProcessIterator::current(SystemProcess* process_info) {
   assert(is_valid(), "no current process to be fetched!");
-  assert(process_info != NULL, "process_info is NULL!");
-  char* exePath = NULL;
+  assert(process_info != nullptr, "process_info is null!");
+  char* exePath = nullptr;
   HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, _pe32.th32ProcessID);
-  if (hProcess != NULL) {
+  if (hProcess != nullptr) {
     HMODULE hMod;
     DWORD cbNeeded;
     if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded) != 0) {
@@ -1357,7 +1358,7 @@ int SystemProcessInterface::SystemProcesses::ProcessIterator::current(SystemProc
 }
 
 char* SystemProcessInterface::SystemProcesses::ProcessIterator::allocate_string(const char* str) const {
-  return str != NULL ? os::strdup_check_oom(str, mtInternal) : NULL;
+  return str != nullptr ? os::strdup_check_oom(str, mtInternal) : nullptr;
 }
 
 int SystemProcessInterface::SystemProcesses::ProcessIterator::next_process() {
@@ -1365,7 +1366,7 @@ int SystemProcessInterface::SystemProcesses::ProcessIterator::next_process() {
   return OS_OK;
 }
 
-SystemProcessInterface::SystemProcesses::SystemProcesses() : _iterator(NULL) {}
+SystemProcessInterface::SystemProcesses::SystemProcesses() : _iterator(nullptr) {}
 
 bool SystemProcessInterface::SystemProcesses::initialize() {
   _iterator = new SystemProcessInterface::SystemProcesses::ProcessIterator();
@@ -1373,20 +1374,20 @@ bool SystemProcessInterface::SystemProcesses::initialize() {
 }
 
 SystemProcessInterface::SystemProcesses::~SystemProcesses() {
-  if (_iterator != NULL) {
+  if (_iterator != nullptr) {
     delete _iterator;
   }
 }
 
 int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** system_processes,
                                                               int* no_of_sys_processes) const {
-  assert(system_processes != NULL, "system_processes pointer is NULL!");
-  assert(no_of_sys_processes != NULL, "system_processes counter pointers is NULL!");
-  assert(_iterator != NULL, "iterator is NULL!");
+  assert(system_processes != nullptr, "system_processes pointer is null!");
+  assert(no_of_sys_processes != nullptr, "system_processes counter pointers is null!");
+  assert(_iterator != nullptr, "iterator is null!");
 
   // initialize pointers
   *no_of_sys_processes = 0;
-  *system_processes = NULL;
+  *system_processes = nullptr;
 
   // take process snapshot
   if (_iterator->snapshot() != OS_OK) {
@@ -1398,7 +1399,7 @@ int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** sy
     _iterator->current(tmp);
 
     //if already existing head
-    if (*system_processes != NULL) {
+    if (*system_processes != nullptr) {
       //move "first to second"
       tmp->set_next(*system_processes);
     }
@@ -1417,7 +1418,7 @@ int SystemProcessInterface::system_processes(SystemProcess** system_procs,
   return _impl->system_processes(system_procs, no_of_sys_processes);
 }
 
-SystemProcessInterface::SystemProcessInterface() : _impl(NULL) {}
+SystemProcessInterface::SystemProcessInterface() : _impl(nullptr) {}
 
 bool SystemProcessInterface::initialize() {
   _impl = new SystemProcessInterface::SystemProcesses();
@@ -1425,12 +1426,12 @@ bool SystemProcessInterface::initialize() {
 }
 
 SystemProcessInterface::~SystemProcessInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
   }
 }
 
-CPUInformationInterface::CPUInformationInterface() : _cpu_info(NULL) {}
+CPUInformationInterface::CPUInformationInterface() : _cpu_info(nullptr) {}
 
 bool CPUInformationInterface::initialize() {
   _cpu_info = new CPUInformation();
@@ -1444,17 +1445,17 @@ bool CPUInformationInterface::initialize() {
 }
 
 CPUInformationInterface::~CPUInformationInterface() {
-  if (_cpu_info != NULL) {
+  if (_cpu_info != nullptr) {
     FREE_C_HEAP_ARRAY(char, _cpu_info->cpu_name());
-    _cpu_info->set_cpu_name(NULL);
+    _cpu_info->set_cpu_name(nullptr);
     FREE_C_HEAP_ARRAY(char, _cpu_info->cpu_description());
-    _cpu_info->set_cpu_description(NULL);
+    _cpu_info->set_cpu_description(nullptr);
     delete _cpu_info;
   }
 }
 
 int CPUInformationInterface::cpu_information(CPUInformation& cpu_info) {
-  if (NULL == _cpu_info) {
+  if (nullptr == _cpu_info) {
     return OS_ERR;
   }
   cpu_info = *_cpu_info; // shallow copy assignment
@@ -1493,14 +1494,14 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
     return OS_ERR;
   }
 
-  NetworkInterface* ret = NULL;
+  NetworkInterface* ret = nullptr;
   for (ULONG i = 0; i < table->NumEntries; ++i) {
     if (table->Table[i].InterfaceAndOperStatusFlags.FilterInterface) {
       continue;
     }
 
     char buf[256];
-    if (WideCharToMultiByte(CP_UTF8, 0, table->Table[i].Description, -1, buf, sizeof(buf), NULL, NULL) == 0) {
+    if (WideCharToMultiByte(CP_UTF8, 0, table->Table[i].Description, -1, buf, sizeof(buf), nullptr, nullptr) == 0) {
       continue;
     }
 
@@ -1514,10 +1515,10 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
   return OS_OK;
 }
 
-NetworkPerformanceInterface::NetworkPerformanceInterface() : _impl(NULL) {}
+NetworkPerformanceInterface::NetworkPerformanceInterface() : _impl(nullptr) {}
 
 NetworkPerformanceInterface::~NetworkPerformanceInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
   }
 }

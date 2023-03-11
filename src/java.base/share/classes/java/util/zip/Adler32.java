@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package java.util.zip;
 
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
-import sun.nio.ch.DirectBuffer;
+
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.ch.DirectBuffer;
+
+import static java.util.zip.ZipUtils.NIO_ACCESS;
 
 /**
  * A class that can be used to compute the Adler-32 checksum of a data
@@ -74,7 +76,7 @@ public class Adler32 implements Checksum {
         if (b == null) {
             throw new NullPointerException();
         }
-        Preconditions.checkFromIndexSize(len, off, b.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, b.length, Preconditions.AIOOBE_FORMATTER);
         adler = updateBytes(adler, b, off, len);
     }
 
@@ -96,10 +98,11 @@ public class Adler32 implements Checksum {
         if (rem <= 0)
             return;
         if (buffer.isDirect()) {
+            NIO_ACCESS.acquireSession(buffer);
             try {
                 adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
             } finally {
-                Reference.reachabilityFence(buffer);
+                NIO_ACCESS.releaseSession(buffer);
             }
         } else if (buffer.hasArray()) {
             adler = updateBytes(adler, buffer.array(), pos + buffer.arrayOffset(), rem);

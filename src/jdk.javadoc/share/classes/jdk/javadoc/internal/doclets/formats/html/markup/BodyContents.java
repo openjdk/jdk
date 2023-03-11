@@ -42,7 +42,7 @@ import java.util.Objects;
  */
 public class BodyContents extends Content {
 
-    private List<Content> mainContents = new ArrayList<>();
+    private final List<Content> mainContents = new ArrayList<>();
     private HtmlTree header = null;
     private HtmlTree footer = null;
 
@@ -74,8 +74,8 @@ public class BodyContents extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        return toContent().write(out, atNewline);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        return toContent().write(out, newline, atNewline);
     }
 
     /**

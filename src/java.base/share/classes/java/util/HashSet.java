@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,10 @@ public class HashSet<E>
      * Constructs a new, empty set; the backing {@code HashMap} instance has
      * the specified initial capacity and the specified load factor.
      *
+     * @apiNote
+     * To create a {@code HashSet} with an initial capacity that accommodates
+     * an expected number of elements, use {@link #newHashSet(int) newHashSet}.
+     *
      * @param      initialCapacity   the initial capacity of the hash map
      * @param      loadFactor        the load factor of the hash map
      * @throws     IllegalArgumentException if the initial capacity is less
@@ -137,6 +141,10 @@ public class HashSet<E>
     /**
      * Constructs a new, empty set; the backing {@code HashMap} instance has
      * the specified initial capacity and default load factor (0.75).
+     *
+     * @apiNote
+     * To create a {@code HashSet} with an initial capacity that accommodates
+     * an expected number of elements, use {@link #newHashSet(int) newHashSet}.
      *
      * @param      initialCapacity   the initial capacity of the hash table
      * @throws     IllegalArgumentException if the initial capacity is less
@@ -314,7 +322,7 @@ public class HashSet<E>
                                              loadFactor);
         }
         // Clamp load factor to range of 0.25...4.0.
-        loadFactor = Math.min(Math.max(0.25f, loadFactor), 4.0f);
+        loadFactor = Math.clamp(loadFactor, 0.25f, 4.0f);
 
         // Read size and verify non-negative.
         int size = s.readInt();
@@ -372,4 +380,24 @@ public class HashSet<E>
     public <T> T[] toArray(T[] a) {
         return map.keysToArray(map.prepareArray(a));
     }
+
+    /**
+     * Creates a new, empty HashSet suitable for the expected number of elements.
+     * The returned set uses the default load factor of 0.75, and its initial capacity is
+     * generally large enough so that the expected number of elements can be added
+     * without resizing the set.
+     *
+     * @param numElements    the expected number of elements
+     * @param <T>         the type of elements maintained by the new set
+     * @return the newly created set
+     * @throws IllegalArgumentException if numElements is negative
+     * @since 19
+     */
+    public static <T> HashSet<T> newHashSet(int numElements) {
+        if (numElements < 0) {
+            throw new IllegalArgumentException("Negative number of elements: " + numElements);
+        }
+        return new HashSet<>(HashMap.calculateHashMapCapacity(numElements));
+    }
+
 }

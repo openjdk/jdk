@@ -41,8 +41,10 @@ tier1_part3 = \
     :jdk_math \
     :jdk_svc_sanity \
     :jdk_foreign \
+    :jdk_vector_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
+    jdk/classfile \
     sun/nio/cs/ISO8859x.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
@@ -76,6 +78,7 @@ tier3 = \
     :jdk_rmi \
     :jdk_svc \
    -:jdk_svc_sanity \
+   -:jdk_vector_sanity \
    -:svc_tools
 
 # Everything not in other tiers
@@ -110,7 +113,8 @@ jdk_lang = \
     jdk/internal/jimage \
     jdk/internal/math \
     jdk/internal/vm \
-    jdk/modules
+    jdk/modules \
+    jni/nullCaller
 
 # All of the java.util package
 jdk_util = \
@@ -123,6 +127,7 @@ jdk_util = \
 jdk_util_other = \
     java/util \
     sun/util \
+    jdk/internal/util \
     -:jdk_collections \
     -:jdk_concurrent \
     -:jdk_stream
@@ -273,6 +278,7 @@ jdk_loom = \
     java/util/concurrent \
     java/net/vthread \
     java/nio/channels/vthread \
+    jdk/incubator/concurrent \
     jdk/internal/misc/ThreadFlock \
     jdk/internal/vm/Continuation \
     jdk/jfr/threading
@@ -312,6 +318,7 @@ jdk_other = \
     javax/xml \
     -javax/xml/crypto \
     jdk/dynalink \
+    jdk/incubator/concurrent \
     jdk/internal/jline \
     com/sun/jndi \
     lib/testlibrary
@@ -357,6 +364,31 @@ jdk_foreign = \
 
 jdk_vector = \
     jdk/incubator/vector
+
+jdk_vector_sanity = \
+    jdk/incubator/vector/AddTest.java \
+    jdk/incubator/vector/ByteMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/ByteMaxVectorTests.java \
+    jdk/incubator/vector/CovarOverrideTest.java \
+    jdk/incubator/vector/DoubleMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/DoubleMaxVectorTests.java \
+    jdk/incubator/vector/FloatMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/FloatMaxVectorTests.java \
+    jdk/incubator/vector/ImageTest.java \
+    jdk/incubator/vector/IntMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/IntMaxVectorTests.java \
+    jdk/incubator/vector/LoadJsvmlTest.java \
+    jdk/incubator/vector/LongMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/LongMaxVectorTests.java \
+    jdk/incubator/vector/MethodOverideTest.java \
+    jdk/incubator/vector/MismatchTest.java \
+    jdk/incubator/vector/PreferredSpeciesTest.java \
+    jdk/incubator/vector/ShortMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/ShortMaxVectorTests.java \
+    jdk/incubator/vector/VectorHash.java \
+    jdk/incubator/vector/VectorMaxConversionTests.java \
+    jdk/incubator/vector/VectorReshapeTests.java \
+    jdk/incubator/vector/VectorRuns.java
 
 #############################
 
@@ -491,6 +523,7 @@ jdk_jdi_sanity = \
     com/sun/jdi/ResumeOneThreadTest.java \
     com/sun/jdi/RunToExit.java \
     com/sun/jdi/SourceNameFilterTest.java \
+    com/sun/jdi/SuspendAfterDeath.java \
     com/sun/jdi/VarargsTest.java \
     com/sun/jdi/Vars.java \
     com/sun/jdi/redefineMethod/RedefineTest.java \
@@ -580,7 +613,9 @@ jdk_core_manual_no_input = \
     javax/net/ssl/compatibility/BasicConnectTest.java \
     javax/net/ssl/compatibility/HrrTest.java \
     javax/net/ssl/compatibility/SniTest.java \
-    jdk/nio/zipfs/TestLocOffsetFromZip64EF.java
+    jdk/nio/zipfs/TestLocOffsetFromZip64EF.java \
+    java/util/ArrayList/Bug8146568.java \
+    java/util/Vector/Bug8148174.java
 
 jdk_core_manual_no_input_security = \
     com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
@@ -590,9 +625,6 @@ jdk_core_manual_no_input_security = \
     com/sun/security/sasl/gsskerb/ConfSecurityLayer.java \
     com/sun/security/sasl/gsskerb/NoSecurityLayer.java \
     sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java \
-    sun/security/provider/PolicyParser/ExtDirs.java \
-    sun/security/provider/PolicyParser/ExtDirsChange.java \
-    sun/security/provider/PolicyParser/ExtDirsDefaultPolicy.java \
     sun/security/provider/PolicyParser/PrincipalExpansionError.java \
     sun/security/smartcardio/TestChannel.java \
     sun/security/smartcardio/TestConnect.java \
@@ -605,11 +637,12 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
     sun/security/tools/jarsigner/compatibility/Compatibility.java \
-    sun/security/tools/keytool/i18n.java
+    java/security/Policy/Root/Root.java
 
 jdk_core_manual_requires_human_input = \
     com/sun/jndi/dns/Test6991580.java \
-    java/util/TimeZone/DefaultTimeZoneTest.java
+    java/util/TimeZone/DefaultTimeZoneTest.java \
+    sun/security/tools/keytool/i18n.java
 
 
 # Test sets for running inside container environment

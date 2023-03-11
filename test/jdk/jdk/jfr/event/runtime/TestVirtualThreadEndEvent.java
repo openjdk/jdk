@@ -35,10 +35,11 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} TestVirtualThreadEndEvent.java LatchedThread.java
- * @run main/othervm --enable-preview jdk.jfr.event.runtime.TestVirtualThreadEndEvent
+ * @enablePreview
+ * @compile TestVirtualThreadEndEvent.java LatchedThread.java
+ * @run main/othervm jdk.jfr.event.runtime.TestVirtualThreadEndEvent
  */
 public class TestVirtualThreadEndEvent {
     private final static String EVENT_NAME_THREAD_END = EventNames.VirtualThreadEnd;

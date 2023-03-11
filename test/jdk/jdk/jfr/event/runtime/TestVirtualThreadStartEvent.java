@@ -35,10 +35,11 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} TestVirtualThreadStartEvent.java LatchedThread.java
- * @run main/othervm --enable-preview jdk.jfr.event.runtime.TestVirtualThreadStartEvent
+ * @enablePreview
+ * @compile TestVirtualThreadStartEvent.java LatchedThread.java
+ * @run main/othervm jdk.jfr.event.runtime.TestVirtualThreadStartEvent
  */
 public class TestVirtualThreadStartEvent {
     private final static String EVENT_NAME_THREAD_START = EventNames.VirtualThreadStart;

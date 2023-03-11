@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,11 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
-  // unextended sp must be within the stack and above or equal sp
-  if (!thread->is_in_stack_range_incl(unextended_sp, sp)) {
+  // unextended sp must be within the stack
+  // Note: sp can be greater than unextended_sp in the case of
+  // interpreted -> interpreted calls that go through a method handle linker,
+  // since those pop the last argument (the appendix) from the stack.
+  if (!thread->is_in_stack_range_incl(unextended_sp, sp - Interpreter::stackElementSize)) {
     return false;
   }
 
@@ -177,13 +180,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_pc == NULL ||  sender_blob == NULL) {
-      return false;
-    }
-
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
       return false;
     }
 
@@ -311,6 +309,14 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
   int index = (Interpreter::expr_offset_in_bytes(offset)/wordSize);
   // Entry frame's arguments are always in relation to unextended_sp()
   return &unextended_sp()[index];
+}
+
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  ptr_at_put(interpreter_frame_locals_offset, (intptr_t) (locs - fp()));
 }
 
 // sender_sp
@@ -517,7 +523,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
 
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals =  (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
@@ -619,13 +625,21 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
 #endif // AMD64
   }
 
-  intptr_t* ret_pc_loc = sp() - return_addr_offset;
-  address ret_pc = *(address*)ret_pc_loc;
-  if (Continuation::is_return_barrier_entry(ret_pc))
-    values.describe(frame_no, ret_pc_loc, "return address (return barrier)");
-  else
-    values.describe(frame_no, ret_pc_loc, err_msg("return address for #%d", frame_no));
-  values.describe(frame_no, sp() - sender_sp_offset, err_msg("saved fp for #%d", frame_no), 0);
+  if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
+    intptr_t* ret_pc_loc;
+    intptr_t* fp_loc;
+    if (is_interpreted_frame()) {
+      ret_pc_loc = fp() + return_addr_offset;
+      fp_loc = fp();
+    } else {
+      ret_pc_loc = real_fp() - return_addr_offset;
+      fp_loc = real_fp() - sender_sp_offset;
+    }
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
+      Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
+    values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
+  }
 }
 
 #endif // !PRODUCT

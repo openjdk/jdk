@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +27,10 @@
  * @summary Vectorization test on multiple loops in a method
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -39,6 +40,8 @@
  */
 
 package compiler.vectorization.runner;
+
+import compiler.lib.ir_framework.*;
 
 public class MultipleLoopsTest extends VectorizationTestRunner {
 
@@ -60,6 +63,8 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] consecutiveLoops() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];
@@ -77,6 +82,8 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] consecutiveLoopsNested() {
         int[] res = new int[SIZE];
         for (int outer = 0; outer < 30; outer++) {
@@ -91,6 +98,8 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nestedLoopOuterNonCounted() {
         int i = 1;
         int[] res = new int[SIZE];
@@ -105,6 +114,8 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nestedLoopIndexCompute() {
         int[] res = new int[SIZE];
         for (int i = 50; i < 100; i++) {
@@ -114,5 +125,25 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
         }
         return res;
     }
-}
 
+    @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    public float reductionLoopWithAnotherReductionInput() {
+        float res = 0.0F;
+        int N = 400;
+        int[] arr = new int[N];
+        int i1 = 0, i2 = 0, i3, i4;
+        for (int j = 0; j < N; ++j) {
+            for (i3 = 1; i3 < 63; ++i3) {
+                arr[i3] -= 1;
+                i1 += i3;
+            }
+            for (i4 = 2; i4 < 63; ++i4) {
+                res += i4 - i2;
+                i2 = i1;
+            }
+        }
+        return res;
+    }
+}

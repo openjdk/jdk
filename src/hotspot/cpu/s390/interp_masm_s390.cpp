@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,9 +39,9 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -111,7 +111,6 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
 #endif
 
   // TODO: Maybe implement +VerifyActivationFrameSize here.
-  // verify_thread(); // Too slow. We will just verify on method entry & exit.
   verify_oop(Z_tos, state);
 
   // Dispatch table to use.
@@ -954,7 +953,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   }
 
   verify_oop(Z_tos, state);
-  verify_thread();
 
   pop_interpreter_frame(return_pc, Z_ARG2, Z_ARG3);
   BLOCK_COMMENT("} remove_activation");
@@ -1920,7 +1918,7 @@ void InterpreterMacroAssembler::get_method_counters(Register Rmethod,
 // Return (invocation_counter+backedge_counter) as "result" in RctrSum.
 // Counter values are all unsigned.
 void InterpreterMacroAssembler::increment_invocation_counter(Register Rcounters, Register RctrSum) {
-  assert(UseCompiler || LogTouchedMethods, "incrementing must be useful");
+  assert(UseCompiler, "incrementing must be useful");
   assert_different_registers(Rcounters, RctrSum);
 
   int increment          = InvocationCounter::count_increment;

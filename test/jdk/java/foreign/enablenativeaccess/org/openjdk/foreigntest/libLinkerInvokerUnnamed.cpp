@@ -23,9 +23,10 @@
  */
 
 #include "jni.h"
-#include <thread>
+#include "testlib_threads.h"
 
-void call(JavaVM *jvm) {
+void call(void* ctxt) {
+    JavaVM* jvm = (JavaVM*) ctxt;
     JNIEnv* env;
     jvm->AttachCurrentThread((void**)&env, NULL);
     jclass linkerClass = env->FindClass("java/lang/foreign/Linker");
@@ -39,7 +40,6 @@ extern "C" {
     Java_org_openjdk_foreigntest_PanamaMainUnnamedModule_nativeLinker0(JNIEnv *env, jclass cls) {
         JavaVM* jvm;
         env->GetJavaVM(&jvm);
-        std::thread thrd(call, jvm);
-        thrd.join();
+        run_in_new_thread_and_join(call, jvm);
     }
 }

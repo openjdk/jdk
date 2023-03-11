@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,24 +100,29 @@ public class ReadXBytes {
     // Creates a temporary file of a specified length with random content
     static Path createFileWithRandomContent(long length) throws IOException {
         Path file = createFile(length);
-        try (FileChannel fc = FileChannel.open(file, WRITE);) {
-            long pos = 0L;
-            // if the length exceeds 2 GB, skip the first 2 GB - 1 MB bytes
-            if (length >= 2L*1024*1024*1024) {
-                // write the last (length - 2GB - 1MB) bytes
-                pos = 2047L*1024*1024;
-            } else if (length > 0) {
-                // write either the first or last bytes only
-                long p = Math.min(Math.abs(RAND.nextLong()), length - 1);
-                pos = RAND.nextBoolean() ? p : length - 1 - p;
-            }
-            fc.position(pos);
-            int bufLength = Math.min(32768, (int)Math.min(length - pos, BIG_LENGTH));
-            byte[] buf = new byte[bufLength];
-            while (pos < length) {
+        try (FileChannel fc = FileChannel.open(file, WRITE)) {
+            if (length < 65536) {
+                // if the length is less than 64k, write the entire file
+                byte[] buf = new byte[(int)length];
                 RAND.nextBytes(buf);
-                int len = (int)Math.min(bufLength, length - pos);
-                pos += fc.write(ByteBuffer.wrap(buf, 0, len));
+                ByteBuffer bb = ByteBuffer.wrap(buf);
+                while (bb.hasRemaining()) {
+                    fc.write(bb);
+                }
+            } else {
+                // write the first and the last 32k only
+                byte[] buf = new byte[32768];
+                RAND.nextBytes(buf);
+                ByteBuffer bb = ByteBuffer.wrap(buf);
+                while (bb.hasRemaining()) {
+                    fc.write(bb);
+                }
+                bb.clear();
+                fc.position(length - buf.length);
+                RAND.nextBytes(buf);
+                while (bb.hasRemaining()) {
+                    fc.write(bb);
+                }
             }
         }
         return file;

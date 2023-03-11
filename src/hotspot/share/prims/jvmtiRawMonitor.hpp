@@ -26,8 +26,10 @@
 #define SHARE_PRIMS_JVMTIRAWMONITOR_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/park.hpp"
 #include "utilities/growableArray.hpp"
+
+class ParkEvent;
+class Thread;
 
 //
 // class JvmtiRawMonitor

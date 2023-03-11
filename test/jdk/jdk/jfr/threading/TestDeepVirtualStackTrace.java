@@ -39,11 +39,11 @@ import jdk.test.lib.jfr.Events;
  * @summary Tests emitting an event, both in Java and native, in a virtual
  *          thread with the maximum number of allowed stack frames for JFR
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
- * @compile --enable-preview -source ${jdk.version} TestDeepVirtualStackTrace.java
- * @run main/othervm --enable-preview -XX:FlightRecorderOptions:stackdepth=2048
+ * @enablePreview
+ * @run main/othervm -XX:FlightRecorderOptions:stackdepth=2048
  *      jdk.jfr.threading.TestDeepVirtualStackTrace
  */
 public class TestDeepVirtualStackTrace {
@@ -92,6 +92,9 @@ public class TestDeepVirtualStackTrace {
         System.out.println();
         System.out.println("Testing event: " + eventName);
         System.out.println("=============================");
+
+        boolean isTargetEventFound = false;
+
         try (Recording r = new Recording()) {
             r.enable(eventName).withoutThreshold();
             r.start();
@@ -99,25 +102,40 @@ public class TestDeepVirtualStackTrace {
             vt.join();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            Asserts.assertEquals(events.size(), 1, "No event found in virtual thread");
-            RecordedEvent event = events.get(0);
-            System.out.println(event);
-            RecordedStackTrace stackTrace = event.getStackTrace();
-            List<RecordedFrame> frames = stackTrace.getFrames();
-            Asserts.assertTrue(stackTrace.isTruncated());
-            int count = 0;
-            for (RecordedFrame frame : frames) {
-                Asserts.assertTrue(frame.isJavaFrame());
-                Asserts.assertNotNull(frame.getMethod());
-                RecordedMethod m = frame.getMethod();
-                Asserts.assertNotNull(m.getType());
-                if (m.getName().contains(stackMethod)) {
-                    count++;
+            Asserts.assertFalse(events.isEmpty(), "No event found in virtual thread");
+            for (RecordedEvent event : events) {
+                System.out.println(event);
+                RecordedStackTrace stackTrace = event.getStackTrace();
+                if (stackTrace == null) {
+                    continue;
+                }
+                List<RecordedFrame> frames = stackTrace.getFrames();
+                int count = 0;
+                boolean isTargetEvent = false;
+                boolean isFirstFrame = true;
+                for (int c = 0; c < frames.size(); c++) {
+                    RecordedFrame frame = frames.get(c);
+                    Asserts.assertTrue(frame.isJavaFrame());
+                    Asserts.assertNotNull(frame.getMethod());
+                    RecordedMethod m = frame.getMethod();
+                    Asserts.assertNotNull(m.getType());
+                    if (m.getName().contains(stackMethod)) {
+                        if (c == 0) {
+                            isTargetEvent = true;
+                        }
+                        count++;
+                    }
+                }
+                if (isTargetEvent) {
+                    isTargetEventFound = true;
+                    Asserts.assertTrue(stackTrace.isTruncated());
+                    Asserts.assertEquals(count, FRAME_COUNT);
+                    Asserts.assertEquals(frames.size(), FRAME_COUNT);
                 }
             }
-            Asserts.assertEquals(count, FRAME_COUNT);
-            Asserts.assertEquals(frames.size(), FRAME_COUNT);
         }
+
+        Asserts.assertTrue(isTargetEventFound, "At least one target event found");
     }
 
 }

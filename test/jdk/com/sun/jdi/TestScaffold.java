@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import com.sun.jdi.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.io.*;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Framework used by all JDI regression tests
@@ -66,6 +67,7 @@ abstract public class TestScaffold extends TargetAdapter {
     final String[] args;
     protected boolean testFailed = false;
     protected long startTime;
+    public static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
 
     static private class ArgInfo {
         String targetVMArgs = "";
@@ -359,10 +361,10 @@ abstract public class TestScaffold extends TargetAdapter {
     }
 
     protected void startUp(String targetName) {
-        List argList = new ArrayList(Arrays.asList(args));
+        List<String> argList = new ArrayList(Arrays.asList(args));
         argList.add(targetName);
         println("run args: " + argList);
-        connect((String[]) argList.toArray(args));
+        connect(argList.toArray(args));
         waitForVMStart();
     }
 
@@ -452,6 +454,10 @@ abstract public class TestScaffold extends TargetAdapter {
 
     protected void failure(String str) {
         println(str);
+        StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement traceElement : trace) {
+            System.err.println("\tat " + traceElement);
+        }
         testFailed = true;
     }
 
@@ -460,6 +466,9 @@ abstract public class TestScaffold extends TargetAdapter {
         String mainWrapper = System.getProperty("main.wrapper");
         if ("Virtual".equals(mainWrapper)) {
             argInfo.targetAppCommandLine = TestScaffold.class.getName() + " " + mainWrapper + " ";
+            argInfo.targetVMArgs += "--enable-preview ";
+        } else if ("true".equals(System.getProperty("test.enable.preview"))) {
+            // the test specified @enablePreview.
             argInfo.targetVMArgs += "--enable-preview ";
         }
 
@@ -843,6 +852,14 @@ abstract public class TestScaffold extends TargetAdapter {
         return (Location)locs.get(0);
     }
 
+    public Location findMethodLocation(ReferenceType rt, String methodName,
+                                       String methodSignature, int methodLineNumber)
+        throws AbsentInformationException {
+        Method m = findMethod(rt, methodName, methodSignature);
+        int lineNumber = m.location().lineNumber() + methodLineNumber - 1;
+        return findLocation(rt, lineNumber);
+    }
+
     public BreakpointEvent resumeTo(String clsName, String methodName,
                                          String methodSignature) {
         return resumeTo(clsName, methodName, methodSignature, false /* suspendThread */);
@@ -948,6 +965,8 @@ abstract public class TestScaffold extends TargetAdapter {
         vmDisconnected = true;
     }
 
+    private static ThreadFactory threadFactory = r -> new Thread(r);
+
     public static void main(String[] args) throws Throwable {
         String wrapper = args[0];
         String className = args[1];
@@ -958,9 +977,10 @@ abstract public class TestScaffold extends TargetAdapter {
         mainMethod.setAccessible(true);
 
         if (wrapper.equals("Virtual")) {
+            threadFactory = r -> newVirtualThread(r);
             MainThreadGroup tg = new MainThreadGroup();
             // TODO fix to set virtual scheduler group when become available
-            Thread vthread = startVirtualThread(() -> {
+            Thread vthread = newVirtualThread(() -> {
                 try {
                     mainMethod.invoke(null, new Object[] { classArgs });
                 } catch (InvocationTargetException e) {
@@ -969,6 +989,9 @@ abstract public class TestScaffold extends TargetAdapter {
                     tg.uncaughtThrowable = error;
                 }
             });
+            Thread.currentThread().setName(OLD_MAIN_THREAD_NAME);
+            vthread.setName("main");
+            vthread.start();
             vthread.join();
         } else if (wrapper.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();
@@ -1006,16 +1029,27 @@ abstract public class TestScaffold extends TargetAdapter {
         Throwable uncaughtThrowable = null;
     }
 
-    static Thread startVirtualThread(Runnable task) {
+    // Need to use reflection while virtual threads --enable-preview feature
+    private static Thread newVirtualThread(Runnable task) {
         try {
             Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
             Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            java.lang.reflect.Method start = clazz.getMethod("start", Runnable.class);
-            return (Thread) start.invoke(builder, task);
+            java.lang.reflect.Method unstarted = clazz.getMethod("unstarted", Runnable.class);
+            return (Thread) unstarted.invoke(builder, task);
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Thread newThread(Runnable task) {
+        return threadFactory.newThread(task);
+    }
+
+    public static Thread newThread(Runnable task, String name) {
+        Thread t = newThread(task);
+        t.setName(name);
+        return t;
     }
 }

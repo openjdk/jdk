@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 
+#include "os_posix.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -46,8 +47,7 @@ extern "C" char _SafeFetchN_fault[] __attribute__ ((visibility ("hidden")));
 
 bool handle_safefetch(int sig, address pc, void* context) {
   ucontext_t* uc = (ucontext_t*)context;
-  if ((sig == SIGSEGV || sig == SIGBUS) && uc != NULL) {
-    address pc = os::Posix::ucontext_get_pc(uc);
+  if ((sig == SIGSEGV || sig == SIGBUS) && uc != nullptr) {
     if (pc == (address)_SafeFetch32_fault) {
       os::Posix::ucontext_set_pc(uc, (address)_SafeFetch32_continuation);
       return true;

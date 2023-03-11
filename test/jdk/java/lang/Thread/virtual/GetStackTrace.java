@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
  * @test
  * @summary Test Thread.getStackTrace to examine the stack trace of a virtual
  *     thread and its carrier
+ * @requires vm.continuations
+ * @enablePreview
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} GetStackTrace.java
- * @run testng/othervm --enable-preview GetStackTrace
+ * @run main GetStackTrace
  */
 
 import java.util.Objects;

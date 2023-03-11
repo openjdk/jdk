@@ -22,5 +22,5 @@
  */
 
 class PreviewPluralBar {
-    Runnable r = () -> {};
+    record R() {}
 }

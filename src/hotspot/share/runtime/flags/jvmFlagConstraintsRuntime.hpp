@@ -34,10 +34,9 @@
  */
 
 #define RUNTIME_CONSTRAINTS(f)                        \
-  f(intx,   ObjectAlignmentInBytesConstraintFunc)     \
+  f(int,    ObjectAlignmentInBytesConstraintFunc)     \
   f(intx,   ContendedPaddingWidthConstraintFunc)      \
   f(intx,   PerfDataSamplingIntervalFunc)             \
-  f(intx,   ExtentLocalCacheSizeConstraintFunc)        \
   f(uintx,  VMPageSizeConstraintFunc)                 \
   f(size_t, NUMAInterleaveGranularityConstraintFunc)
 

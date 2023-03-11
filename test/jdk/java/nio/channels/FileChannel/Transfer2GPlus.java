@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,50 +26,66 @@
  * @bug 8271308
  * @summary Verify that transferTo() copies more than Integer.MAX_VALUE bytes
  * @library .. /test/lib
- * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform jdk.test.lib.RandomFactory FileChannelUtils
  * @run main/othervm/timeout=300 Transfer2GPlus
+ * @key randomness
  */
 
-import java.io.File;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 import jdk.test.lib.Platform;
+import jdk.test.lib.RandomFactory;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class Transfer2GPlus {
     private static final long BASE   = (long)Integer.MAX_VALUE;
     private static final int  EXTRA  = 1024;
     private static final long LENGTH = BASE + EXTRA;
+    private static final Random GEN  = RandomFactory.getRandom();
 
     public static void main(String[] args) throws IOException {
-        Path src = Files.createTempFile("src", ".dat");
+        Path src = FileChannelUtils.createSparseTempFile("src", ".dat");
         src.toFile().deleteOnExit();
+        long t0 = System.nanoTime();
         byte[] b = createSrcFile(src);
+        long t1 = System.nanoTime();
+        System.out.printf("  Wrote large file in %d ns (%d ms) %n",
+                t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
+        t0 = t1;
         testToFileChannel(src, b);
+        t1 = System.nanoTime();
+        System.out.printf("  Copied to file channel in %d ns (%d ms) %n",
+                t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
+        t0 = t1;
         testToWritableByteChannel(src, b);
+        t1 = System.nanoTime();
+        System.out.printf("  Copied to byte channel in %d ns (%d ms) %n",
+                t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
     }
 
     // Create a file of size LENGTH with EXTRA random bytes at offset BASE.
     private static byte[] createSrcFile(Path src)
         throws IOException {
-        RandomAccessFile raf = new RandomAccessFile(src.toString(), "rw");
-        raf.setLength(LENGTH);
-        raf.seek(BASE);
-        Random r = new Random(System.nanoTime());
-        byte[] b = new byte[EXTRA];
-        r.nextBytes(b);
-        raf.write(b);
-        return b;
+        try (FileChannel fc = FileChannel.open(src, WRITE)) {
+            fc.position(BASE);
+            byte[] b = new byte[EXTRA];
+            GEN.nextBytes(b);
+            fc.write(ByteBuffer.wrap(b));
+            return b;
+        }
     }
 
     // Exercises transferToDirectly() on Linux and transferToTrustedChannel()
@@ -79,8 +95,7 @@ public class Transfer2GPlus {
         Path dst = Files.createTempFile("dst", ".dat");
         dst.toFile().deleteOnExit();
         try (FileChannel srcCh = FileChannel.open(src)) {
-            try (FileChannel dstCh = FileChannel.open(dst,
-                 StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            try (FileChannel dstCh = FileChannel.open(dst, READ, WRITE)) {
                 long total = 0L;
                 if ((total = srcCh.transferTo(0, LENGTH, dstCh)) < LENGTH) {
                     if (!Platform.isLinux())
@@ -115,28 +130,58 @@ public class Transfer2GPlus {
     // Exercises transferToArbitraryChannel() on all platforms.
     private static void testToWritableByteChannel(Path src, byte[] expected)
         throws IOException {
-        File file = File.createTempFile("dst", ".dat");
-        file.deleteOnExit();
-        try (FileChannel srcCh = FileChannel.open(src)) {
-            // The FileOutputStream is wrapped so that newChannel() does not
-            // return a FileChannelImpl and so make a faster path be taken.
-            try (DataOutputStream stream =
-                new DataOutputStream(new FileOutputStream(file))) {
-                try (WritableByteChannel wbc = Channels.newChannel(stream)) {
-                    long n;
-                    if ((n = srcCh.transferTo(0, LENGTH, wbc)) < LENGTH)
-                        throw new RuntimeException("Too few bytes transferred: " +
-                            n + " < " + LENGTH);
+        // transfer src to channel that is not FileChannelImpl
+        try (FileChannel srcCh = FileChannel.open(src);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream(EXTRA);
+             OutputStream os = new SkipBytesStream(baos, BASE);
+             WritableByteChannel wbc = Channels.newChannel(os)){
 
-                    System.out.println("Transferred " + n + " bytes");
+            long n;
+            if ((n = srcCh.transferTo(0, LENGTH, wbc)) < LENGTH)
+                throw new RuntimeException("Too few bytes transferred: " +
+                        n + " < " + LENGTH);
 
-                    RandomAccessFile raf = new RandomAccessFile(file, "r");
-                    raf.seek(BASE);
-                    byte[] b = new byte[EXTRA];
-                    raf.read(b);
-                    if (!Arrays.equals(b, expected))
-                        throw new RuntimeException("Unexpected values");
-                }
+            System.out.println("Transferred " + n + " bytes");
+
+            byte[] b = baos.toByteArray();
+            if (!Arrays.equals(b, expected))
+                throw new RuntimeException("Unexpected values");
+        }
+    }
+
+    /**
+     * Stream that discards the first bytesToSkip bytes, then passes through
+     */
+    static class SkipBytesStream extends FilterOutputStream {
+
+        private long bytesToSkip;
+
+        public SkipBytesStream(OutputStream out, long bytesToSkip) {
+            super(out);
+            this.bytesToSkip = bytesToSkip;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            if (bytesToSkip > 0) {
+                bytesToSkip--;
+            } else {
+                super.write(b);
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            // check copied from FilterOutputStream
+            if ((off | len | (b.length - (len + off)) | (off + len)) < 0)
+                throw new IndexOutOfBoundsException();
+
+            if (bytesToSkip >= len) {
+                bytesToSkip -= len;
+            } else {
+                int skip = (int)bytesToSkip;
+                bytesToSkip = 0;
+                super.write(b, off + skip, len - skip);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ int ArrayKlass::static_size(int header_size) {
 
 
 InstanceKlass* ArrayKlass::java_super() const {
-  if (super() == NULL)  return NULL;  // bootstrap case
+  if (super() == nullptr)  return nullptr;  // bootstrap case
   // Array klasses have primary supertypes which are not reported to Java.
   // Example super chain:  String[][] -> Object[][] -> Object[] -> Object
   return vmClasses::Object_klass();
@@ -61,7 +61,7 @@ InstanceKlass* ArrayKlass::java_super() const {
 
 oop ArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 // find field according to JVM spec 5.4.3.2, returns the klass in which the field is defined
@@ -86,13 +86,13 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
 ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
   Klass(kind),
   _dimension(1),
-  _higher_dimension(NULL),
-  _lower_dimension(NULL) {
+  _higher_dimension(nullptr),
+  _lower_dimension(nullptr) {
   // Arrays don't add any new methods, so their vtable is the same size as
   // the vtable of klass Object.
   set_vtable_length(Universe::base_vtable_size());
   set_name(name);
-  set_super(Universe::is_bootstrapping() ? NULL : vmClasses::Object_klass());
+  set_super(Universe::is_bootstrapping() ? nullptr : vmClasses::Object_klass());
   set_layout_helper(Klass::_lh_neutral_value);
   set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
   JFR_ONLY(INIT_ID(this);)
@@ -102,15 +102,15 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
 // Initialization of vtables and mirror object is done separately from base_create_array_klass,
 // since a GC can happen. At this point all instance variables of the ArrayKlass must be setup.
 void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module_entry, TRAPS) {
-  k->initialize_supers(super_klass, NULL, CHECK);
+  k->initialize_supers(super_klass, nullptr, CHECK);
   k->vtable().initialize_vtable();
 
   // During bootstrapping, before java.base is defined, the module_entry may not be present yet.
   // These classes will be put on a fixup list and their module fields will be patched once
   // java.base is defined.
-  assert((module_entry != NULL) || ((module_entry == NULL) && !ModuleEntryTable::javabase_defined()),
+  assert((module_entry != nullptr) || ((module_entry == nullptr) && !ModuleEntryTable::javabase_defined()),
          "module entry not available post " JAVA_BASE_NAME " definition");
-  oop module = (module_entry != NULL) ? module_entry->module() : (oop)NULL;
+  oop module = (module_entry != nullptr) ? module_entry->module() : (oop)nullptr;
   java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(), Handle(), CHECK);
 }
 
@@ -118,10 +118,10 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
                                                             Array<InstanceKlass*>* transitive_interfaces) {
   // interfaces = { cloneable_klass, serializable_klass };
   assert(num_extra_slots == 0, "sanity of primitive array type");
-  assert(transitive_interfaces == NULL, "sanity");
+  assert(transitive_interfaces == nullptr, "sanity");
   // Must share this for correct bootstrapping!
   set_secondary_supers(Universe::the_array_interfaces_array());
-  return NULL;
+  return nullptr;
 }
 
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
@@ -131,7 +131,7 @@ objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   ArrayKlass* ak = ArrayKlass::cast(k);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
-  // initialization to NULL not necessary, area already cleared
+  // initialization to null not necessary, area already cleared
   return o;
 }
 
@@ -156,9 +156,10 @@ void ArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push((Klass**)&_lower_dimension);
 }
 
+#if INCLUDE_CDS
 void ArrayKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
-  if (_higher_dimension != NULL) {
+  if (_higher_dimension != nullptr) {
     ArrayKlass *ak = ArrayKlass::cast(higher_dimension());
     ak->remove_unshareable_info();
   }
@@ -166,7 +167,7 @@ void ArrayKlass::remove_unshareable_info() {
 
 void ArrayKlass::remove_java_mirror() {
   Klass::remove_java_mirror();
-  if (_higher_dimension != NULL) {
+  if (_higher_dimension != nullptr) {
     ArrayKlass *ak = ArrayKlass::cast(higher_dimension());
     ak->remove_java_mirror();
   }
@@ -177,11 +178,12 @@ void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle p
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
   // Klass recreates the component mirror also
 
-  if (_higher_dimension != NULL) {
+  if (_higher_dimension != nullptr) {
     ArrayKlass *ak = ArrayKlass::cast(higher_dimension());
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }
 }
+#endif // INCLUDE_CDS
 
 // Printing
 

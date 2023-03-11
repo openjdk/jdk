@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,14 +131,15 @@ public final class ModulePatcher {
 
                     // exploded directory without following sym links
                     Path top = file;
-                    Files.find(top, Integer.MAX_VALUE,
-                               ((path, attrs) -> attrs.isRegularFile()))
-                            .filter(path -> (!isAutomatic
-                                    || path.toString().endsWith(".class"))
-                                    && !isHidden(path))
+                    try (Stream<Path> stream = Files.find(top, Integer.MAX_VALUE,
+                            ((path, attrs) -> attrs.isRegularFile()))) {
+                        stream.filter(path -> (!isAutomatic
+                                      || path.toString().endsWith(".class"))
+                                      && !isHidden(path))
                             .map(path -> toPackageName(top, path))
                             .filter(Checks::isPackageName)
                             .forEach(packages::add);
+                    }
 
                 }
             }
@@ -453,7 +454,9 @@ public final class ModulePatcher {
                 public URL getURL() {
                     String encodedPath = ParseUtil.encodePath(name, false);
                     try {
-                        return new URL("jar:" + csURL + "!/" + encodedPath);
+                        @SuppressWarnings("deprecation")
+                        var result = new URL("jar:" + csURL + "!/" + encodedPath);
+                        return result;
                     } catch (MalformedURLException e) {
                         return null;
                     }

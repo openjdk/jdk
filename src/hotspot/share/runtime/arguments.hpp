@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,14 @@ struct SpecialFlag {
 };
 
 struct LegacyGCLogging {
-    const char* file;        // NULL -> stdout
+    const char* file;        // null -> stdout
     int lastFlag;            // 0 not set; 1 -> -verbose:gc; 2 -> -Xloggc
 };
 
 // PathString is used as:
 //  - the underlying value for a SystemProperty
 //  - the path portion of an --patch-module module/path pair
-//  - the string that represents the system boot class path, Arguments::_system_boot_class_path.
+//  - the string that represents the boot class path, Arguments::_boot_class_path.
 class PathString : public CHeapObj<mtArguments> {
  protected:
   char* _value;
@@ -86,7 +86,6 @@ public:
   ModulePatchPath(const char* module_name, const char* path);
   ~ModulePatchPath();
 
-  inline void set_path(const char* path) { _path->set_value(path); }
   inline const char* module_name() const { return _module_name; }
   inline char* path_string() const { return _path->value(); }
 };
@@ -114,7 +113,7 @@ class SystemProperty : public PathString {
 
   bool readable() const {
     return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
-                          value() != NULL);
+                          value() != nullptr);
   }
 
   // A system property should only have its value set
@@ -144,7 +143,7 @@ class SystemProperty : public PathString {
 class AgentLibrary : public CHeapObj<mtArguments> {
   friend class AgentLibraryList;
 public:
-  // Is this library valid or not. Don't rely on os_lib == NULL as statically
+  // Is this library valid or not. Don't rely on os_lib == nullptr as statically
   // linked lib could have handle of RTLD_DEFAULT which == 0 on some platforms
   enum AgentState {
     agent_invalid = 0,
@@ -174,7 +173,6 @@ public:
   void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
-  void set_invalid()                        { _state = agent_invalid; }
 
   // Constructor
   AgentLibrary(const char* name, const char* options, bool is_absolute_path,
@@ -187,7 +185,7 @@ class AgentLibraryList {
   AgentLibrary*   _first;
   AgentLibrary*   _last;
  public:
-  bool is_empty() const                     { return _first == NULL; }
+  bool is_empty() const                     { return _first == nullptr; }
   AgentLibrary* first() const               { return _first; }
 
   // add to the end of the list
@@ -198,23 +196,23 @@ class AgentLibraryList {
       _last->_next = lib;
       _last = lib;
     }
-    lib->_next = NULL;
+    lib->_next = nullptr;
   }
 
   // search for and remove a library known to be in the list
   void remove(AgentLibrary* lib) {
     AgentLibrary* curr;
-    AgentLibrary* prev = NULL;
-    for (curr = first(); curr != NULL; prev = curr, curr = curr->next()) {
+    AgentLibrary* prev = nullptr;
+    for (curr = first(); curr != nullptr; prev = curr, curr = curr->next()) {
       if (curr == lib) {
         break;
       }
     }
-    assert(curr != NULL, "always should be found");
+    assert(curr != nullptr, "always should be found");
 
-    if (curr != NULL) {
+    if (curr != nullptr) {
       // it was found, by-pass this library
-      if (prev == NULL) {
+      if (prev == nullptr) {
         _first = curr->_next;
       } else {
         prev->_next = curr->_next;
@@ -222,13 +220,13 @@ class AgentLibraryList {
       if (curr == _last) {
         _last = prev;
       }
-      curr->_next = NULL;
+      curr->_next = nullptr;
     }
   }
 
   AgentLibraryList() {
-    _first = NULL;
-    _last = NULL;
+    _first = nullptr;
+    _last = nullptr;
   }
 };
 
@@ -305,10 +303,10 @@ class Arguments : AllStatic {
   // calls to AddToBootstrapClassLoaderSearch.  This is the
   // final form before ClassLoader::setup_bootstrap_search().
   // Note: since --patch-module is a module name/path pair, the
-  // system boot class path string no longer contains the "prefix"
+  // boot class path string no longer contains the "prefix"
   // to the boot class path base piece as it did when
   // -Xbootclasspath/p was supported.
-  static PathString *_system_boot_class_path;
+  static PathString* _boot_class_path;
 
   // Set if a modular java runtime image is present vs. a build with exploded modules
   static bool _has_jimage;
@@ -438,7 +436,7 @@ class Arguments : AllStatic {
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {
-    return is_bad_option(option, ignore, NULL);
+    return is_bad_option(option, ignore, nullptr);
   }
 
   static void describe_range_error(ArgsRange errcode);
@@ -469,9 +467,10 @@ class Arguments : AllStatic {
   static JVMFlag* find_jvm_flag(const char* name, size_t name_length);
 
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
-  // Return NULL if the arg has expired.
+  // Return nullptr if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg);
 
+  static char*  _default_shared_archive_path;
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
@@ -518,7 +517,7 @@ class Arguments : AllStatic {
   // convenient methods to get and set jvm_flags_file
   static const char* get_jvm_flags_file()  { return _jvm_flags_file; }
   static void set_jvm_flags_file(const char *value) {
-    if (_jvm_flags_file != NULL) {
+    if (_jvm_flags_file != nullptr) {
       os::free(_jvm_flags_file);
     }
     _jvm_flags_file = os::strdup_check_oom(value);
@@ -588,8 +587,6 @@ class Arguments : AllStatic {
   static const char* PropertyList_get_readable_value(SystemProperty* plist, const char* key);
   static int  PropertyList_count(SystemProperty* pl);
   static int  PropertyList_readable_count(SystemProperty* pl);
-  static const char* PropertyList_get_key_at(SystemProperty* pl,int index);
-  static char* PropertyList_get_value_at(SystemProperty* pl,int index);
 
   static bool is_internal_module_property(const char* option);
 
@@ -599,31 +596,29 @@ class Arguments : AllStatic {
   static void set_library_path(const char *value) { _java_library_path->set_value(value); }
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
 
-  // Set up the underlying pieces of the system boot class path
+  // Set up the underlying pieces of the boot class path
   static void add_patch_mod_prefix(const char *module_name, const char *path, bool* patch_mod_javabase);
-  static void set_sysclasspath(const char *value, bool has_jimage) {
+  static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
-    assert(get_sysclasspath() == NULL, "System boot class path previously set");
-    _system_boot_class_path->set_value(value);
+    assert(get_boot_class_path() == nullptr, "Boot class path previously set");
+    _boot_class_path->set_value(value);
     _has_jimage = has_jimage;
   }
   static void append_sysclasspath(const char *value) {
-    _system_boot_class_path->append_value(value);
+    _boot_class_path->append_value(value);
     _jdk_boot_class_path_append->append_value(value);
   }
 
   static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
-  static char* get_sysclasspath() { return _system_boot_class_path->value(); }
-  static char* get_jdk_boot_class_path_append() { return _jdk_boot_class_path_append->value(); }
+  static char* get_boot_class_path() { return _boot_class_path->value(); }
   static bool has_jimage() { return _has_jimage; }
 
   static char* get_java_home()    { return _java_home->value(); }
   static char* get_dll_dir()      { return _sun_boot_library_path->value(); }
-  static char* get_ext_dirs()     { return _ext_dirs;  }
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
-  static char* get_default_shared_archive_path() NOT_CDS_RETURN_(NULL);
+  static char* get_default_shared_archive_path() NOT_CDS_RETURN_(nullptr);
   static void  init_shared_archive_paths() NOT_CDS_RETURN;
 
   // Operation modi
@@ -668,15 +663,15 @@ do {                                                     \
   }                                                      \
 } while(0)
 
-// similar to UNSUPPORTED_OPTION but sets flag to NULL
-#define UNSUPPORTED_OPTION_NULL(opt)                     \
-do {                                                     \
-  if (opt) {                                             \
-    if (FLAG_IS_CMDLINE(opt)) {                          \
+// similar to UNSUPPORTED_OPTION but sets flag to nullptr
+#define UNSUPPORTED_OPTION_NULL(opt)                         \
+do {                                                         \
+  if (opt) {                                                 \
+    if (FLAG_IS_CMDLINE(opt)) {                              \
       warning("-XX flag " #opt " not supported in this VM"); \
-    }                                                    \
-    FLAG_SET_DEFAULT(opt, NULL);                         \
-  }                                                      \
+    }                                                        \
+    FLAG_SET_DEFAULT(opt, nullptr);                          \
+  }                                                          \
 } while(0)
 
 // Initialize options not supported in this release, with a warning

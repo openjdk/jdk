@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,20 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.events.Event;
 import org.w3c.dom.events.EventListener;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSParser;
 
 /*
  * @test
- * @bug 8213117 8222743
+ * @bug 8213117 8222743 8287076
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml
  * @modules java.xml/com.sun.org.apache.xerces.internal.dom
@@ -55,6 +60,53 @@ import org.w3c.dom.events.EventListener;
 public class DocumentTest {
     static final int DOC1 = 1;
     static final int DOC2 = 2;
+
+    /*
+     * @bug 8287076
+     * Verifies that Document::normalizeDocument returns the same result as that
+     * prior to JDK 10 (JDK-8181150).
+     * Attribute Name:
+     *     JDK 9:                   NS1:wsu and NS2:wsu2
+     *     After the JDK 10 change: wsu and wsu2
+    */
+    @Test
+    public void testNormalizeDocument() throws Exception {
+        final DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
+        final DOMImplementationLS impl = (DOMImplementationLS) registry.getDOMImplementation("LS");
+        final LSParser builder = impl.createLSParser(DOMImplementationLS.MODE_SYNCHRONOUS, null);
+        final LSInput input = impl.createLSInput();
+        input.setStringData("<xml/>");
+        final Document document = builder.parse(input);
+        final Element root = document.getDocumentElement();
+
+        // Generate a single element
+        final Element element = document.createElement("token");
+        final Attr attr = element.getOwnerDocument().createAttributeNS("http://blah.xsd", "wsu");
+        attr.setValue("Id");
+        element.setAttributeNodeNS(attr);
+
+        final Attr attr2 = element.getOwnerDocument().createAttributeNS("http://blah2.xsd", "wsu2");
+        element.setAttributeNodeNS(attr2);
+
+        final Attr attr3 = element.getOwnerDocument().createAttribute("aa");
+        element.setAttributeNodeNS(attr3);
+
+        final Attr attr4 = element.getOwnerDocument().createAttribute("zz");
+        element.setAttributeNodeNS(attr4);
+
+        final Attr attr5 = element.getOwnerDocument().createAttribute("tt");
+        element.setAttributeNodeNS(attr5);
+
+        root.appendChild(element);
+
+        document.normalizeDocument();
+
+        Node wsu = element.getAttributes().getNamedItemNS("http://blah.xsd", "wsu");
+        Node wsu2 = element.getAttributes().getNamedItemNS("http://blah2.xsd", "wsu2");
+
+        Assert.assertEquals(wsu.getNodeName(), "NS1:wsu");
+        Assert.assertEquals(wsu2.getNodeName(), "NS2:wsu2");
+    }
 
     /**
      * Verifies the adoptNode method. Before a node from a deferred DOM can be

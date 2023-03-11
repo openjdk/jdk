@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,8 +45,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   Label Lmiss;
 
   verify_oop(receiver, FILE_AND_LINE);
-  MacroAssembler::null_check(receiver, oopDesc::klass_offset_in_bytes(), &Lmiss);
-  load_klass(temp_reg, receiver);
+  load_klass_check_null(temp_reg, receiver, &Lmiss);
 
   if (TrapBasedICMissChecks && TrapBasedNullChecks) {
     trap_ic_miss_check(temp_reg, iCache);
@@ -149,6 +148,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   bne(CCR0, slow_int);
 
   bind(done);
+
+  inc_held_monitor_count(Rmark /*tmp*/);
 }
 
 
@@ -160,7 +161,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   Address mark_addr(Roop, oopDesc::mark_offset_in_bytes());
   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
 
-  // Test first it it is a fast recursive unlock.
+  // Test first if it is a fast recursive unlock.
   ld(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
   cmpdi(CCR0, Rmark, 0);
   beq(CCR0, done);
@@ -186,6 +187,8 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
 
   // Done
   bind(done);
+
+  dec_held_monitor_count(Rmark /*tmp*/);
 }
 
 
@@ -200,11 +203,7 @@ void C1_MacroAssembler::try_allocate(
   if (UseTLAB) {
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
   } else {
-    eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
-    RegisterOrConstant size_in_bytes = var_size_in_bytes->is_valid()
-                                       ? RegisterOrConstant(var_size_in_bytes)
-                                       : RegisterOrConstant(con_size_in_bytes);
-    incr_allocated_bytes(size_in_bytes, t1, t2);
+    b(slow_case);
   }
 }
 
@@ -357,11 +356,7 @@ void C1_MacroAssembler::allocate_array(
   clrrdi(arr_size, arr_size, LogMinObjAlignmentInBytes);                              // Align array size.
 
   // Allocate space & initialize header.
-  if (UseTLAB) {
-    tlab_allocate(obj, arr_size, 0, t2, slow_case);
-  } else {
-    eden_allocate(obj, arr_size, 0, t2, t3, slow_case);
-  }
+  try_allocate(obj, arr_size, 0, t2, t3, slow_case);
   initialize_header(obj, klass, len, t2, t3);
 
   // Initialize body.

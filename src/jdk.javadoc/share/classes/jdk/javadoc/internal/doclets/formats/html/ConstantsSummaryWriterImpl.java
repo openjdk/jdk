@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.Collection;
-import java.util.Set;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
@@ -93,24 +92,20 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     @Override
     public Content getContentsHeader() {
-        return new HtmlTree(TagName.UL);
+        return HtmlTree.UL(HtmlStyle.contentsList);
     }
 
     @Override
-    public void addLinkToPackageContent(PackageElement pkg,
-            Set<PackageElement> printedPackageHeaders, Content content) {
+    public void addLinkToPackageContent(String abbrevPackageName, Content content) {
         //add link to summary
         Content link;
-        if (pkg.isUnnamed()) {
+        if (abbrevPackageName.isEmpty()) {
             link = links.createLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR,
                     contents.defaultPackageLabel, "");
         } else {
-            String parsedPackageName = utils.parsePackageName(pkg);
-            Content packageNameContent = Text.of(parsedPackageName + ".*");
-            link = links.createLink(DocLink.fragment(parsedPackageName),
+            Content packageNameContent = Text.of(abbrevPackageName + ".*");
+            link = links.createLink(DocLink.fragment(abbrevPackageName),
                     packageNameContent, "");
-            PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(pkg);
-            printedPackageHeaders.add(abbrevPkg);
         }
         content.add(HtmlTree.LI(link));
     }
@@ -121,13 +116,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         var div = HtmlTree.DIV(HtmlStyle.header, pHeading);
+        bodyContents.addMainContent(div);
         Content headingContent = contents.contentsHeading;
         var heading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent);
         var section = HtmlTree.SECTION(HtmlStyle.packages, heading);
         section.add(content);
-        div.add(section);
-        bodyContents.addMainContent(div);
+        bodyContents.addMainContent(section);
     }
 
     @Override
@@ -136,26 +131,25 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     }
 
     @Override
-    public void addPackageName(PackageElement pkg, Content toContent, boolean first) {
-        Content pkgNameContent;
+    public void addPackageGroup(String abbrevPackageName, Content toContent) {
+        Content headingContent;
         HtmlId anchorName;
-        if (!first) {
-            toContent.add(summarySection);
-        }
-        if (pkg.isUnnamed()) {
+        if (abbrevPackageName.isEmpty()) {
             anchorName = HtmlIds.UNNAMED_PACKAGE_ANCHOR;
-            pkgNameContent = contents.defaultPackageLabel;
+            headingContent = contents.defaultPackageLabel;
         } else {
-            String parsedPackageName = utils.parsePackageName(pkg);
-            anchorName = htmlIds.forPackage(pkg);
-            pkgNameContent = getPackageLabel(parsedPackageName);
+            anchorName = htmlIds.forPackageName(abbrevPackageName);
+            headingContent = new ContentBuilder(
+                    getPackageLabel(abbrevPackageName),
+                    Text.of(".*"));
         }
-        var headingContent = Text.of(".*");
-        var heading = HtmlTree.HEADING_TITLE(Headings.ConstantsSummary.PACKAGE_HEADING,
-                pkgNameContent);
-        heading.add(headingContent);
+        var heading = HtmlTree.HEADING_TITLE(
+                Headings.ConstantsSummary.PACKAGE_HEADING,
+                headingContent);
         summarySection = HtmlTree.SECTION(HtmlStyle.constantsSummary, heading)
                 .setId(anchorName);
+
+        toContent.add(summarySection);
     }
 
     @Override
@@ -175,9 +169,9 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         currentTypeElement = typeElement;
 
         //generate links backward only to public classes.
-        Content classlink = (utils.isPublic(typeElement) || utils.isProtected(typeElement)) ?
+        Content classLink = (utils.isPublic(typeElement) || utils.isProtected(typeElement)) ?
             getLink(new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.CONSTANT_SUMMARY, typeElement)) :
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, typeElement)) :
             Text.of(utils.getFullyQualifiedName(typeElement));
 
         PackageElement enclosingPackage  = utils.containingPackage(typeElement);
@@ -186,9 +180,9 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
             caption.add(enclosingPackage.getQualifiedName());
             caption.add(".");
         }
-        caption.add(classlink);
+        caption.add(classLink);
 
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(constantsTableHeader)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
@@ -214,7 +208,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
                     .add(Entity.NO_BREAK_SPACE);
         }
         Content type = getLink(new HtmlLinkInfo(configuration,
-                HtmlLinkInfo.Kind.CONSTANT_SUMMARY, member.asType()));
+                HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, member.asType()));
         code.add(type);
         typeContent.add(code);
         return typeContent;
@@ -227,7 +221,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @return the name column of the constant table row
      */
     private Content getNameColumn(VariableElement member) {
-        Content nameContent = getDocLink(HtmlLinkInfo.Kind.CONSTANT_SUMMARY,
+        Content nameContent = getDocLink(HtmlLinkInfo.Kind.PLAIN,
                 member, member.getSimpleName());
         return HtmlTree.CODE(nameContent);
     }
@@ -245,9 +239,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     @Override
     public void addConstantSummaries(Content content) {
-        if (summarySection != null) {
-            content.add(summarySection);
-        }
         bodyContents.addMainContent(content);
     }
 

@@ -26,17 +26,31 @@
 /**
 * @test
 * @summary Basic tests for jdk.internal.vm.Continuation
+* @requires vm.continuations
 * @modules java.base/jdk.internal.vm
 * @build java.base/java.lang.StackWalkerHelper
 *
-* @run testng/othervm --enable-preview -Xint Basic
+* @enablePreview
+* @run testng/othervm -Xint Basic
 *
-* @run testng/othervm --enable-preview -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
-* @run testng/othervm --enable-preview -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
-* @run testng/othervm --enable-preview -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=exclude,Basic.manyArgsDriver Basic
-* @run testng/othervm --enable-preview -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=exclude,jdk/internal/vm/Continuation.enter Basic
-* @run testng/othervm --enable-preview -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=inline,jdk/internal/vm/Continuation.run Basic
+* @run testng/othervm -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
+* @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
+* @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=exclude,Basic.manyArgsDriver Basic
+* @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=exclude,jdk/internal/vm/Continuation.enter Basic
+* @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=inline,jdk/internal/vm/Continuation.run Basic
+*/
+
+/**
+* @test
+* @requires vm.continuations
+* @requires vm.debug
+* @modules java.base/jdk.internal.vm
+* @build java.base/java.lang.StackWalkerHelper
 *
+* @enablePreview
+* @run testng/othervm -XX:+VerifyStack -Xint Basic
+* @run testng/othervm -XX:+VerifyStack -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
+* @run testng/othervm -XX:+VerifyStack -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
 */
 
 import jdk.internal.vm.Continuation;

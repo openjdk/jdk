@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -576,7 +577,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_f2i: {
       bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2i) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : NULL;
+      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CCR0, rsrc, rsrc);
@@ -600,7 +601,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_f2l: {
       bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2l) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : NULL;
+      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CCR0, rsrc, rsrc);
@@ -664,6 +665,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   __ code()->set_insts_mark();
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 
@@ -691,6 +693,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   // serves as dummy and the bl will be patched later.
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 void LIR_Assembler::explicit_null_check(Register addr, CodeEmitInfo* info) {
@@ -728,7 +731,10 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
             __ verify_coop(from_reg->as_register(), FILE_AND_LINE);
           } else {
             __ std(from_reg->as_register(), offset, base);
-            __ verify_oop(from_reg->as_register(), FILE_AND_LINE);
+            if (VerifyOops) {
+              BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+              bs->check_oop(_masm, from_reg->as_register(), FILE_AND_LINE); // kills R0
+            }
           }
           break;
         }
@@ -769,7 +775,10 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicTy
           __ verify_coop(from_reg->as_register(), FILE_AND_LINE); // kills R0
         } else {
           __ stdx(from_reg->as_register(), base, disp);
-          __ verify_oop(from_reg->as_register(), FILE_AND_LINE); // kills R0
+          if (VerifyOops) {
+            BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+            bs->check_oop(_masm, from_reg->as_register(), FILE_AND_LINE); // kills R0
+          }
         }
         break;
       }
@@ -810,7 +819,10 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
           } else {
             __ ld(to_reg->as_register(), offset, base);
           }
-          __ verify_oop(to_reg->as_register(), FILE_AND_LINE);
+          if (VerifyOops) {
+            BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+            bs->check_oop(_masm, to_reg->as_register(), FILE_AND_LINE); // kills R0
+          }
           break;
         }
       case T_FLOAT:  __ lfs(to_reg->as_float_reg(), offset, base); break;
@@ -841,7 +853,10 @@ int LIR_Assembler::load(Register base, Register disp, LIR_Opr to_reg, BasicType 
         } else {
           __ ldx(to_reg->as_register(), base, disp);
         }
-        __ verify_oop(to_reg->as_register(), FILE_AND_LINE);
+        if (VerifyOops) {
+          BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+          bs->check_oop(_masm, to_reg->as_register(), FILE_AND_LINE); // kills R0
+        }
         break;
       }
     case T_FLOAT:  __ lfsx(to_reg->as_float_reg() , base, disp); break;
@@ -2697,6 +2712,10 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
       //       simpler and requires less duplicated code - additionally, the
       //       slow locking code is the same in either case which simplifies
       //       debugging.
+      if (op->info() != NULL) {
+        add_debug_info_for_null_check_here(op->info());
+        __ null_check(obj);
+      }
       __ b(*op->stub()->entry());
     }
   } else {
@@ -2871,6 +2890,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
     __ bctrl();
     assert(info != NULL, "sanity");
     add_call_info_here(info);
+    __ post_call_nop();
     return;
   }
 
@@ -2878,6 +2898,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
   if (info != NULL) {
     add_call_info_here(info);
   }
+  __ post_call_nop();
 }
 
 
@@ -3010,8 +3031,13 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       __ lwarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stwcx_(Rco, Rptr);
     } else {
-      const Register Robj = data->as_register();
-      assert_different_registers(Rptr, Rold, Robj);
+      Register Robj = data->as_register();
+      assert_different_registers(Rptr, Rold, Rtmp);
+      assert_different_registers(Rptr, Robj, Rtmp);
+      if (Robj == Rold) { // May happen with ZGC.
+        __ mr(Rtmp, Robj);
+        Robj = Rtmp;
+      }
       __ ldarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stdcx_(Robj, Rptr);
     }

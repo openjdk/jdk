@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
  *        ../../../../../../jdk/java/lang/invoke/remote/RemoteExample.java
  *        ../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
  *        ../dynamicArchive/test-classes/TestMHApp.java
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MethodHandlesInvokersTest
  */
 
@@ -98,7 +98,7 @@ public class MethodHandlesInvokersTest {
             .setUseVersion(false)
             .addSuffix(mainClass, testPackageName + "." + testClassName);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldMatch(".class.load. test.java.lang.invoke.MethodHandlesInvokersTest[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file")
+        output.shouldMatch(".class.load. test.java.lang.invoke.MethodHandlesInvokersTest[$][$]Lambda.*/0x.*source:.*shared.*objects.*file")
               .shouldHaveExitValue(0);
     }
 }

@@ -136,7 +136,7 @@ class PhasesIterator {
   virtual GCPhase* next() = 0;
 };
 
-class GCTimer : public ResourceObj {
+class GCTimer {
   friend class GCTimerTest;
  protected:
   Ticks _gc_start;
@@ -159,13 +159,13 @@ class GCTimer : public ResourceObj {
   TimePartitions* time_partitions() { return &_time_partitions; }
 };
 
-class STWGCTimer : public GCTimer {
+class STWGCTimer : public GCTimer, public CHeapObj<mtGC> {
  public:
   virtual void register_gc_start(const Ticks& time = Ticks::now());
   virtual void register_gc_end(const Ticks& time = Ticks::now());
 };
 
-class ConcurrentGCTimer : public GCTimer {
+class ConcurrentGCTimer : public GCTimer, public CHeapObj<mtGC> {
  public:
   void register_gc_concurrent_start(const char* name, const Ticks& time = Ticks::now());
   void register_gc_concurrent_end(const Ticks& time = Ticks::now());

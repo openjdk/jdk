@@ -41,13 +41,12 @@ private:
 public:
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
-  static void flush_nmethod(nmethod* nm);
 
   static bool supports_entry_barrier(nmethod* nm);
 
   static bool is_armed(nmethod* nm);
   static void disarm(nmethod* nm);
-  static void arm(nmethod* nm, int arm_value);
+  static void set_guard_value(nmethod* nm, int value);
 
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
   static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);
@@ -61,7 +60,7 @@ public:
   static ZReentrantLock* lock_for_nmethod(nmethod* nm);
 
   static void unlink(ZWorkers* workers, bool unloading_occurred);
-  static void purge(ZWorkers* workers);
+  static void purge();
 };
 
 #endif // SHARE_GC_Z_ZNMETHOD_HPP

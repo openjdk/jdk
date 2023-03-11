@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class UnsafeCopyMemory : public CHeapObj<mtCode> {
   static UnsafeCopyMemory* _table;
   static int               _table_length;
   static int               _table_max_length;
-  UnsafeCopyMemory() : _start_pc(NULL), _end_pc(NULL), _error_exit_pc(NULL) {}
+  UnsafeCopyMemory() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
   void    set_start_pc(address pc)      { _start_pc = pc; }
   void    set_end_pc(address pc)        { _end_pc = pc; }
   void    set_error_exit_pc(address pc) { _error_exit_pc = pc; }
@@ -117,7 +117,7 @@ class UnsafeCopyMemoryMark : public StackObj {
   UnsafeCopyMemory*  _ucm_entry;
   StubCodeGenerator* _cgen;
  public:
-  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = NULL);
+  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
   ~UnsafeCopyMemoryMark();
 };
 
@@ -143,13 +143,9 @@ class StubRoutines: AllStatic {
   static address _throw_delayed_StackOverflowError_entry;
 
   static address _atomic_xchg_entry;
-  static address _atomic_xchg_long_entry;
-  static address _atomic_store_entry;
   static address _atomic_cmpxchg_entry;
-  static address _atomic_cmpxchg_byte_entry;
   static address _atomic_cmpxchg_long_entry;
   static address _atomic_add_entry;
-  static address _atomic_add_long_entry;
   static address _fence_entry;
 
   static BufferBlob* _code1;                               // code buffer for initial routines
@@ -209,8 +205,10 @@ class StubRoutines: AllStatic {
   static address _counterMode_AESCrypt;
   static address _galoisCounterMode_AESCrypt;
   static address _ghash_processBlocks;
+  static address _chacha20Block;
   static address _base64_encodeBlock;
   static address _base64_decodeBlock;
+  static address _poly1305_processBlocks;
 
   static address _md5_implCompress;
   static address _md5_implCompressMB;
@@ -251,8 +249,9 @@ class StubRoutines: AllStatic {
   static address _dlibm_tan_cot_huge;
   static address _dtan;
 
-  static RuntimeStub* _cont_doYield_stub;
-  static address _cont_doYield;
+  static address _f2hf;
+  static address _hf2f;
+
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -274,8 +273,8 @@ class StubRoutines: AllStatic {
 
   static bool contains(address addr) {
     return
-      (_code1 != NULL && _code1->blob_contains(addr)) ||
-      (_code2 != NULL && _code2->blob_contains(addr)) ;
+      (_code1 != nullptr && _code1->blob_contains(addr)) ||
+      (_code2 != nullptr && _code2->blob_contains(addr)) ;
   }
 
   static RuntimeBlob* code1() { return _code1; }
@@ -314,13 +313,9 @@ class StubRoutines: AllStatic {
   static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
 
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
-  static address atomic_xchg_long_entry()                  { return _atomic_xchg_long_entry; }
-  static address atomic_store_entry()                      { return _atomic_store_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
-  static address atomic_cmpxchg_byte_entry()               { return _atomic_cmpxchg_byte_entry; }
   static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
   static address atomic_add_entry()                        { return _atomic_add_entry; }
-  static address atomic_add_long_entry()                   { return _atomic_add_long_entry; }
   static address fence_entry()                             { return _fence_entry; }
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
@@ -386,8 +381,10 @@ class StubRoutines: AllStatic {
   static address cipherBlockChaining_decryptAESCrypt()  { return _cipherBlockChaining_decryptAESCrypt; }
   static address electronicCodeBook_encryptAESCrypt()   { return _electronicCodeBook_encryptAESCrypt; }
   static address electronicCodeBook_decryptAESCrypt()   { return _electronicCodeBook_decryptAESCrypt; }
+  static address poly1305_processBlocks()               { return _poly1305_processBlocks; }
   static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
   static address ghash_processBlocks()   { return _ghash_processBlocks; }
+  static address chacha20Block()         { return _chacha20Block; }
   static address base64_encodeBlock()    { return _base64_encodeBlock; }
   static address base64_decodeBlock()    { return _base64_decodeBlock; }
   static address md5_implCompress()      { return _md5_implCompress; }
@@ -430,8 +427,24 @@ class StubRoutines: AllStatic {
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
 
-  static RuntimeStub* cont_doYield_stub() { return _cont_doYield_stub; }
-  static address cont_doYield()        { return _cont_doYield; }
+  // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
+  // methods which perform the same operations as the intrinsic version.
+  // They are used for constant folding in JIT compiler to ensure equivalence.
+  //
+  static address f2hf_adr()            { return _f2hf; }
+  static address hf2f_adr()            { return _hf2f; }
+
+  static jshort f2hf(jfloat x) {
+    assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    typedef jshort (*f2hf_stub_t)(jfloat x);
+    return ((f2hf_stub_t)_f2hf)(x);
+  }
+  static jfloat hf2f(jshort x) {
+    assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    typedef jfloat (*hf2f_stub_t)(jshort x);
+    return ((hf2f_stub_t)_hf2f)(x);
+  }
+
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }

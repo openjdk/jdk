@@ -583,7 +583,6 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
     char    *name;
     char    *value;
     int     rc;
-    char    *splashscreen_name = NULL;
 
     if ((fd = JLI_Open(jarfile, O_RDONLY
 #ifdef O_LARGEFILE

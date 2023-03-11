@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
 
 static bool thread_inclusion_predicate(Thread* t) {
@@ -36,6 +36,9 @@ static bool thread_inclusion_predicate(Thread* t) {
 static bool java_thread_inclusion_predicate(JavaThread* jt, bool live_only) {
   assert(jt != NULL, "invariant");
   if (live_only && jt->thread_state() == _thread_new) {
+    return false;
+  }
+  if (jt->is_attaching_via_jni()) {
     return false;
   }
   return thread_inclusion_predicate(jt);

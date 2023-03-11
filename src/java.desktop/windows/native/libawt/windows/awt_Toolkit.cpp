@@ -266,7 +266,7 @@ extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
 #ifdef DEBUG
         DTrace_DisableMutex();
         DMem_DisableMutex();
-#endif DEBUG
+#endif // DEBUG
         break;
     }
     return TRUE;
@@ -628,7 +628,7 @@ BOOL AwtToolkit::Initialize(BOOL localPump) {
     // Set up operator new/malloc out of memory handler.
     NewHandler::init();
 
-        //\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        //*************************************************************************
         // Bugs 4032109, 4047966, and 4071991 to fix AWT
         //      crash in 16 color display mode.  16 color mode is supported.  Less
         //      than 16 color is not.
@@ -1040,7 +1040,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
            if (AwtWindow::IsResizing()) {
                return 0;
            }
-          // Create an artifical MouseExit message if the mouse left to
+          // Create an artificial MouseExit message if the mouse left to
           // a non-java window (bad mouse!)
           POINT pt;
           AwtToolkit& tk = AwtToolkit::GetInstance();
@@ -1082,9 +1082,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
       // Special awt message to call Imm APIs.
       // ImmXXXX() API must be used in the main thread.
-      // In other thread these APIs does not work correctly even if
-      // it returs with no error. (This restriction is not documented)
-      // So we must use thse messages to call these APIs in main thread.
+      // In other threads these APIs do not work correctly even if
+      // it returns with no error. (This restriction is not documented)
+      // So we must use these messages to call these APIs in main thread.
       case WM_AWT_CREATECONTEXT: {
           AwtToolkit& tk = AwtToolkit::GetInstance();
           tk.m_inputMethodData = reinterpret_cast<LRESULT>(
@@ -1177,7 +1177,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
       }
       case WM_AWT_ENDCOMPOSITION: {
           /*right now we just cancel the composition string
-          may need to commit it in the furture
+          may need to commit it in the future
           Changed to commit it according to the flag 10/29/98*/
           ImmNotifyIME((HIMC)wParam, NI_COMPOSITIONSTR,
                        (lParam ? CPS_COMPLETE : CPS_CANCEL), 0);
@@ -1603,7 +1603,7 @@ void AwtToolkit::QuitMessageLoop(int status) {
 
     /*
      * Fix for 4623377.
-     * Modal loop may not exit immediatelly after WM_CANCELMODE, so it still can
+     * Modal loop may not exit immediately after WM_CANCELMODE, so it still can
      * eat WM_QUIT message and the nested message loop will never exit.
      * The fix is to use AwtToolkit instance variables instead of WM_QUIT to
      * guarantee that we exit from the nested message loop when any possible
@@ -1946,7 +1946,7 @@ HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
     //Note: should not exceed 10 because of the current implementation.
     static const int securityWarningIconCounter = 3;
 
-    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};;
+    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};
     static UINT securityWarningIconWidth[securityWarningIconCounter]  = {0, 0, 0};
     static UINT securityWarningIconHeight[securityWarningIconCounter] = {0, 0, 0};
 
@@ -2154,8 +2154,8 @@ void AwtToolkit::PreloadAction::Clean(bool reInit) {
 // PreloadThread implementation
 AwtToolkit::PreloadThread::PreloadThread()
     : status(None), wrongThread(false), threadId(0),
-    pActionChain(NULL), pLastProcessedAction(NULL),
-    execFunc(NULL), execParam(NULL)
+    execFunc(NULL), execParam(NULL),
+    pActionChain(NULL), pLastProcessedAction(NULL)
 {
     hFinished = ::CreateEvent(NULL, TRUE, FALSE, NULL);
     hAwake = ::CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -2861,8 +2861,10 @@ Java_sun_awt_windows_WToolkit_loadSystemColors(JNIEnv *env, jobject self,
     jint* colorsPtr = NULL;
     try {
         colorsPtr = (jint *)env->GetPrimitiveArrayCritical(colors, 0);
-        for (int i = 0; i < (sizeof indexMap)/(sizeof *indexMap) && i < colorLen; i++) {
-            colorsPtr[i] = DesktopColor2RGB(indexMap[i]);
+        if (colorsPtr != NULL) {
+            for (int i = 0; i < (sizeof indexMap)/(sizeof *indexMap) && i < colorLen; i++) {
+                colorsPtr[i] = DesktopColor2RGB(indexMap[i]);
+            }
         }
     } catch (...) {
         if (colorsPtr != NULL) {
@@ -3200,8 +3202,8 @@ BOOL AwtToolkit::TICloseTouchInputHandle(HTOUCHINPUT hTouchInput) {
 }
 
 /*
- * The fuction intended for access to an IME API. It posts IME message to the queue and
- * waits untill the message processing is completed.
+ * The function intended for access to an IME API. It posts IME message to the queue and
+ * waits until the message processing is completed.
  *
  * On Windows 10 the IME may process the messages send via SenMessage() from other threads
  * when the IME is called by TranslateMessage(). This may cause an reentrancy issue when

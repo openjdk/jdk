@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import com.sun.tools.javac.code.Type.TypeVar;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.NONE;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
@@ -210,7 +211,6 @@ public class Flow {
     private final JCDiagnostic.Factory diags;
     private Env<AttrContext> attrEnv;
     private       Lint lint;
-    private final boolean allowEffectivelyFinalInInnerClasses;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -335,7 +335,6 @@ public class Flow {
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
-        allowEffectivelyFinalInInnerClasses = Feature.EFFECTIVELY_FINAL_IN_INNER_CLASSES.allowedInSource(source);
     }
 
     /**
@@ -646,7 +645,21 @@ public class Flow {
         }
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            visitVarDef(tree.var);
+            if(tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
+                visitVarDef(jcVariableDecl);
+            } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                visitRecordPattern(jcRecordPattern);
+
+                Set<Symbol> coveredSymbols =
+                        coveredSymbols(jcRecordPattern.pos(), List.of(jcRecordPattern));
+
+                boolean isExhaustive =
+                        isExhaustive(jcRecordPattern.pos(), tree.elementType, coveredSymbols);
+
+                if (!isExhaustive) {
+                    log.error(tree, Errors.ForeachNotExhaustiveOnType(jcRecordPattern.type, tree.elementType));
+                }
+            }
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             scan(tree.expr);
             pendingExits = new ListBuffer<>();
@@ -690,13 +703,13 @@ public class Flow {
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
+                Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.cases);
                 tree.isExhaustive |= isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
                 if (!tree.isExhaustive) {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
             }
-            if (!tree.hasUnconditionalPattern) {
+            if (!tree.hasUnconditionalPattern && !exhaustiveSwitch) {
                 alive = Liveness.ALIVE;
             }
             alive = alive.or(resolveBreaks(tree, prevPendingExits));
@@ -725,7 +738,7 @@ public class Flow {
                     }
                 }
             }
-            Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
+            Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.cases);
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
                                 isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
@@ -737,60 +750,60 @@ public class Flow {
         }
 
         private Set<Symbol> coveredSymbolsForCases(DiagnosticPosition pos,
-                                                   JCExpression selector, List<JCCase> cases) {
-            HashSet<JCCaseLabel> labels = cases.stream()
+                                                   List<JCCase> cases) {
+            HashSet<JCTree> labelValues = cases.stream()
                                                .flatMap(c -> c.labels.stream())
                                                .filter(TreeInfo::unguardedCaseLabel)
+                                               .filter(l -> !l.hasTag(DEFAULTCASELABEL))
+                                               .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
+                                                                                     : ((JCPatternCaseLabel) l).pat)
                                                .collect(Collectors.toCollection(HashSet::new));
-            return coveredSymbols(pos, selector.type, labels);
+            return coveredSymbols(pos, labelValues);
         }
 
-        private Set<Symbol> coveredSymbols(DiagnosticPosition pos, Type targetType,
-                                           Iterable<? extends JCCaseLabel> labels) {
+        private Set<Symbol> coveredSymbols(DiagnosticPosition pos,
+                                           Iterable<? extends JCTree> labels) {
             Set<Symbol> coveredSymbols = new HashSet<>();
-            Map<Symbol, List<JCRecordPattern>> deconstructionPatternsBySymbol = new HashMap<>();
+            Map<UniqueType, List<JCRecordPattern>> deconstructionPatternsByType = new HashMap<>();
 
-            for (JCCaseLabel label : labels) {
-                switch (label.getTag()) {
+            for (JCTree labelValue : labels) {
+                switch (labelValue.getTag()) {
                     case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
-                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) label);
+                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) labelValue);
                         if (!primaryPatternType.hasTag(NONE)) {
                             coveredSymbols.add(primaryPatternType.tsym);
                         }
                     }
                     case RECORDPATTERN -> {
-                        JCRecordPattern dpat = (JCRecordPattern) label;
-                        Symbol type = dpat.record;
+                        JCRecordPattern dpat = (JCRecordPattern) labelValue;
+                        UniqueType type = new UniqueType(dpat.type, types);
                         List<JCRecordPattern> augmentedPatterns =
-                                deconstructionPatternsBySymbol.getOrDefault(type, List.nil())
+                                deconstructionPatternsByType.getOrDefault(type, List.nil())
                                                                  .prepend(dpat);
 
-                        deconstructionPatternsBySymbol.put(type, augmentedPatterns);
+                        deconstructionPatternsByType.put(type, augmentedPatterns);
                     }
 
-
-                    case DEFAULTCASELABEL -> {}
                     default -> {
-                        if (label.isExpression()) {
-                            JCExpression expr = (JCExpression) label;
-                            if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
-                                coveredSymbols.add(((JCIdent) expr).sym);
-                        } else {
-                            throw new AssertionError(label.getTag());
-                        }
+                        Assert.check(labelValue instanceof JCExpression, labelValue.getTag().name());
+                        JCExpression expr = (JCExpression) labelValue;
+                        if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
+                            coveredSymbols.add(((JCIdent) expr).sym);
                     }
                 }
             }
-            for (Entry<Symbol, List<JCRecordPattern>> e : deconstructionPatternsBySymbol.entrySet()) {
-                if (coversDeconstructionFromComponent(pos, targetType, e.getValue(), 0)) {
-                    coveredSymbols.add(e.getKey());
+            for (Entry<UniqueType, List<JCRecordPattern>> e : deconstructionPatternsByType.entrySet()) {
+                if (e.getValue().stream().anyMatch(r -> r.nested.size() != r.record.getRecordComponents().size())) {
+                    coveredSymbols.add(syms.errSymbol);
+                } else if (coversDeconstructionFromComponent(pos, e.getKey().type, e.getValue(), 0)) {
+                    coveredSymbols.add(e.getKey().type.tsym);
                 }
             }
             return coveredSymbols;
         }
 
         private boolean coversDeconstructionFromComponent(DiagnosticPosition pos,
-                                                          Type targetType,
+                                                          Type recordType,
                                                           List<JCRecordPattern> deconstructionPatterns,
                                                           int component) {
             //Given a set of record patterns for the same record, and a starting component,
@@ -813,9 +826,9 @@ public class Flow {
             }
 
             //for the first tested component, gather symbols covered by the nested patterns:
-            Type instantiatedComponentType = types.memberType(targetType, components.get(component));
+            Type instantiatedComponentType = types.memberType(recordType, components.get(component));
             List<JCPattern> nestedComponentPatterns = deconstructionPatterns.map(d -> d.nested.get(component));
-            Set<Symbol> coveredSymbolsForComponent = coveredSymbols(pos, instantiatedComponentType,
+            Set<Symbol> coveredSymbolsForComponent = coveredSymbols(pos,
                                                                     nestedComponentPatterns);
 
             //for each of the symbols covered by the starting component, find all deconstruction patterns
@@ -855,7 +868,7 @@ public class Flow {
             Set<Symbol> covered = new HashSet<>();
 
             for (Entry<Symbol, List<JCRecordPattern>> e : coveredSymbol2Patterns.entrySet()) {
-                if (coversDeconstructionFromComponent(pos, targetType, e.getValue(), component + 1)) {
+                if (coversDeconstructionFromComponent(pos, recordType, e.getValue(), component + 1)) {
                     covered.add(e.getKey());
                 }
             }
@@ -936,7 +949,7 @@ public class Flow {
                 }
                 case TYPEVAR -> isExhaustive(pos, ((TypeVar) seltype).getUpperBound(), covered);
                 default -> {
-                    yield covered.contains(seltype.tsym);
+                    yield covered.contains(types.erasure(seltype).tsym);
                 }
             };
         }
@@ -1203,7 +1216,7 @@ public class Flow {
                     }
                 }
 
-                // add intersection of all thrown clauses of initial constructors
+                // add intersection of all throws clauses of initial constructors
                 // to set of caught exceptions, unless class is anonymous.
                 if (!anonymousClass) {
                     boolean firstConstructor = true;
@@ -1359,7 +1372,11 @@ public class Flow {
         }
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            visitVarDef(tree.var);
+            if(tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
+                visitVarDef(jcVariableDecl);
+            } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                visitRecordPattern(jcRecordPattern);
+            }
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             scan(tree.expr);
             pendingExits = new ListBuffer<>();
@@ -2180,10 +2197,6 @@ public class Flow {
             Lint lintPrev = lint;
             lint = lint.augment(tree.sym);
             try {
-                if (tree.sym == null) {
-                    return;
-                }
-
                 JCClassDecl classDefPrev = classDef;
                 int firstadrPrev = firstadr;
                 int nextadrPrev = nextadr;
@@ -2270,15 +2283,6 @@ public class Flow {
             Lint lintPrev = lint;
             lint = lint.augment(tree.sym);
             try {
-                if (tree.body == null) {
-                    return;
-                }
-                /*  Ignore synthetic methods, except for translated lambda methods.
-                 */
-                if ((tree.sym.flags() & (SYNTHETIC | LAMBDA_METHOD)) == SYNTHETIC) {
-                    return;
-                }
-
                 final Bits initsPrev = new Bits(inits);
                 final Bits uninitsPrev = new Bits(uninits);
                 int nextadrPrev = nextadr;
@@ -2306,7 +2310,8 @@ public class Flow {
                     // leave caught unchanged.
                     scan(tree.body);
 
-                    boolean isCompactConstructor = (tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0;
+                    boolean isCompactOrGeneratedRecordConstructor = (tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0 ||
+                            (tree.sym.flags() & (GENERATEDCONSTR | RECORD)) == (GENERATEDCONSTR | RECORD);
                     if (isInitialConstructor) {
                         boolean isSynthesized = (tree.sym.flags() &
                                                  GENERATEDCONSTR) != 0;
@@ -2316,10 +2321,10 @@ public class Flow {
                             if (var.owner == classDef.sym) {
                                 // choose the diagnostic position based on whether
                                 // the ctor is default(synthesized) or not
-                                if (isSynthesized && !isCompactConstructor) {
+                                if (isSynthesized && !isCompactOrGeneratedRecordConstructor) {
                                     checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
                                             var, Errors.VarNotInitializedInDefaultConstructor(var));
-                                } else if (isCompactConstructor) {
+                                } else if (isCompactOrGeneratedRecordConstructor) {
                                     boolean isInstanceRecordField = var.enclClass().isRecord() &&
                                             (var.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0 &&
                                             !var.isStatic() &&
@@ -2520,8 +2525,6 @@ public class Flow {
         }
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            visitVarDef(tree.var);
-
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             FlowKind prevFlowKind = flowKind;
             flowKind = FlowKind.NORMAL;
@@ -2530,7 +2533,13 @@ public class Flow {
             final Bits initsStart = new Bits(inits);
             final Bits uninitsStart = new Bits(uninits);
 
-            letInit(tree.pos(), tree.var.sym);
+            if(tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
+                visitVarDef(jcVariableDecl);
+                letInit(tree.pos(), jcVariableDecl.sym);
+            } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                visitRecordPattern(jcRecordPattern);
+            }
+
             pendingExits = new ListBuffer<>();
             int prevErrors = log.nerrors;
             do {
@@ -2585,8 +2594,7 @@ public class Flow {
                 if (l.head.stats.isEmpty() &&
                     l.tail.nonEmpty() &&
                     l.tail.head.labels.size() == 1 &&
-                    l.tail.head.labels.head.isExpression() &&
-                    TreeInfo.isNull(l.tail.head.labels.head)) {
+                    TreeInfo.isNullCaseLabel(l.tail.head.labels.head)) {
                     //handling:
                     //case Integer i:
                     //case null:
@@ -2968,18 +2976,21 @@ public class Flow {
         }
 
         @Override
-        public void visitBindingPattern(JCBindingPattern tree) {
-            scan(tree.var);
-            initParam(tree.var);
-            scan(tree.guard);
+        public void visitTypeTest(JCInstanceOf tree) {
+            scanExpr(tree.expr);
+            scan(tree.pattern);
         }
 
         @Override
-        public void visitRecordPattern(JCRecordPattern tree) {
-            super.visitRecordPattern(tree);
-            if (tree.var != null) {
-                initParam(tree.var);
-            }
+        public void visitBindingPattern(JCBindingPattern tree) {
+            scan(tree.var);
+            initParam(tree.var);
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            scan(tree.pat);
+            scan(tree.guard);
         }
 
         void referenced(Symbol sym) {
@@ -3065,13 +3076,7 @@ public class Flow {
                     sym.pos < currentTree.getStartPosition()) {
                 switch (currentTree.getTag()) {
                     case CLASSDEF:
-                        if (!allowEffectivelyFinalInInnerClasses) {
-                            if ((sym.flags() & FINAL) == 0) {
-                                reportInnerClsNeedsFinalError(pos, sym);
-                            }
-                            break;
-                        }
-                    case BINDINGPATTERN, PARENTHESIZEDPATTERN:
+                    case PATTERNCASELABEL:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
                            reportEffectivelyFinalError(pos, sym);
@@ -3091,10 +3096,6 @@ public class Flow {
                         ((VarSymbol)sym).pos < currentTree.getStartPosition()) {
                     switch (currentTree.getTag()) {
                         case CLASSDEF:
-                            if (!allowEffectivelyFinalInInnerClasses) {
-                                reportInnerClsNeedsFinalError(tree, sym);
-                                break;
-                            }
                         case CASE:
                         case LAMBDA:
                             reportEffectivelyFinalError(tree, sym);
@@ -3106,16 +3107,11 @@ public class Flow {
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
             Fragment subKey = switch (currentTree.getTag()) {
                 case LAMBDA -> Fragments.Lambda;
-                case BINDINGPATTERN, PARENTHESIZEDPATTERN -> Fragments.Guard;
+                case PATTERNCASELABEL -> Fragments.Guard;
                 case CLASSDEF -> Fragments.InnerCls;
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };
             log.error(pos, Errors.CantRefNonEffectivelyFinalVar(sym, diags.fragment(subKey)));
-        }
-
-        void reportInnerClsNeedsFinalError(DiagnosticPosition pos, Symbol sym) {
-            log.error(pos,
-                      Errors.LocalVarAccessedFromIclsNeedsFinal(sym));
         }
 
     /*************************************************************************
@@ -3148,18 +3144,16 @@ public class Flow {
         @Override
         public void visitBindingPattern(JCBindingPattern tree) {
             scan(tree.var);
-            JCTree prevTree = currentTree;
-            try {
-                currentTree = tree;
-                scan(tree.guard);
-            } finally {
-                currentTree = prevTree;
-            }
         }
 
         @Override
         public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
             scan(tree.pattern);
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+             scan(tree.pat);
             JCTree prevTree = currentTree;
             try {
                 currentTree = tree;
@@ -3173,13 +3167,6 @@ public class Flow {
         public void visitRecordPattern(JCRecordPattern tree) {
             scan(tree.deconstructor);
             scan(tree.nested);
-            JCTree prevTree = currentTree;
-            try {
-                currentTree = tree;
-                scan(tree.guard);
-            } finally {
-                currentTree = prevTree;
-            }
         }
 
         @Override

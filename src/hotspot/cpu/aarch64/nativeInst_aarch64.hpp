@@ -29,6 +29,11 @@
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
+#include "runtime/os.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciExceptions.hpp"
+#endif
+
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
@@ -79,7 +84,7 @@ public:
   bool is_safepoint_poll();
   bool is_movz();
   bool is_movk();
-  bool is_sigill_zombie_not_entrant();
+  bool is_sigill_not_entrant();
   bool is_stop();
 
 protected:
@@ -251,7 +256,9 @@ public:
   void set_destination_mt_safe(address dest, bool assert_lock = true);
 
   address get_trampoline();
-  address trampoline_jump(CodeBuffer &cbuf, address dest);
+#if INCLUDE_JVMCI
+  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
+#endif
 };
 
 inline NativeCall* nativeCall_at(address address) {
@@ -666,10 +673,33 @@ inline NativeLdSt* NativeLdSt_at(address addr) {
   return (NativeLdSt*)addr;
 }
 
+// A NativePostCallNop takes the form of three instructions:
+//     nop; movk zr, lo; movk zr, hi
+//
+// The nop is patchable for a deoptimization trap. The two movk
+// instructions execute as nops but have a 16-bit payload in which we
+// can store an offset from the initial nop to the nmethod.
+
 class NativePostCallNop: public NativeInstruction {
 public:
-  bool check() const { return is_nop(); }
-  int displacement() const { return 0; }
+  bool check() const {
+    uint64_t insns = *(uint64_t*)addr_at(0);
+    // Check for two instructions: nop; movk zr, xx
+    // These instructions only ever appear together in a post-call
+    // NOP, so it's unnecessary to check that the third instruction is
+    // a MOVK as well.
+    return (insns & 0xffe0001fffffffff) == 0xf280001fd503201f;
+  }
+
+  jint displacement() const {
+    uint64_t movk_insns = *(uint64_t*)addr_at(4);
+    uint32_t lo = (movk_insns >> 5) & 0xffff;
+    uint32_t hi = (movk_insns >> (5 + 32)) & 0xffff;
+    uint32_t result = (hi << 16) | lo;
+
+    return (jint)result;
+  }
+
   void patch(jint diff);
   void make_deopt();
 };

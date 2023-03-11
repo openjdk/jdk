@@ -85,7 +85,8 @@ typedef struct {
     jboolean assertOn;
     jboolean assertFatal;
     jboolean vthreadsSupported; /* If true, debugging support for vthreads is enabled. */
-    jboolean enumerateVThreads; /* If true, JDWP APIs return vthreads in thread lists. */
+    jboolean includeVThreads;   /* If true, VM.AllThreads includes vthreads. */
+    jboolean rememberVThreadsWhenDisconnected;
     jboolean doerrorexit;
     jboolean modifiedUtf8;
     jboolean quiet;
@@ -106,7 +107,6 @@ typedef struct {
     jclass              systemClass;
     jmethodID           threadConstructor;
     jmethodID           threadSetDaemon;
-    jmethodID           threadResume;
     jmethodID           systemGetProperty;
     jmethodID           setProperty;
     jthreadGroup        systemThreadGroup;
@@ -160,7 +160,7 @@ typedef enum {
         EI_THREAD_START         =  5,
         EI_THREAD_END           =  6,
         EI_CLASS_PREPARE        =  7,
-        EI_GC_FINISH            =  8,
+        EI_CLASS_UNLOAD         =  8,
         EI_CLASS_LOAD           =  9,
         EI_FIELD_ACCESS         = 10,
         EI_FIELD_MODIFICATION   = 11,

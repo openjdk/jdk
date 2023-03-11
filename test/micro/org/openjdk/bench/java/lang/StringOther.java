@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Fork(3)
 public class StringOther {
@@ -49,17 +49,9 @@ public class StringOther {
     private String testString;
     private Random rnd;
 
-    private String str1, str2, str3, str4;
-    private String str1UP;
-
     @Setup
     public void setup() {
         testString = "Idealism is what precedes experience; cynicism is what follows.";
-        str1 = "vm-guld vm-guld vm-guld";
-        str1UP = str1.toUpperCase(Locale.ROOT);
-        str2 = "vm-guld vm-guld vm-guldx";
-        str3 = "vm-guld vm-guld vm-guldx";
-        str4 = "adadaskasdjierudks";
         rnd = new Random();
     }
 
@@ -68,15 +60,6 @@ public class StringOther {
         for (int i = 0; i < testString.length(); i++) {
             bh.consume(testString.charAt(i));
         }
-    }
-
-    @Benchmark
-    public int compareTo() {
-        int total = 0;
-        total += str1.compareTo(str2);
-        total += str2.compareTo(str3);
-        total += str3.compareTo(str4);
-        return total;
     }
 
     /**
@@ -94,10 +77,4 @@ public class StringOther {
         return String.valueOf(rnd.nextInt()).intern();
     }
 
-    @Benchmark
-    public void regionMatchesLatin1(Blackhole bh) {
-        bh.consume(str1.regionMatches(true, 0, str2, 0, str1.length()));
-        bh.consume(str2.regionMatches(true, 16, str1UP, 0, 8));
-        bh.consume(str3.regionMatches(true, 6, str4, 1, 2));
-    }
 }

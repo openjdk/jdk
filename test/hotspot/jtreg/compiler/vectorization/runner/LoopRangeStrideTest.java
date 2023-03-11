@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +27,28 @@
  * @summary Vectorization test on different loop ranges and strides
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.LoopRangeStrideTest
  *
  * @requires vm.compiler2.enabled & vm.flagless
+ * @requires (os.arch=="amd64" | os.arch=="x86_64" | os.simpleArch == "aarch64")
  */
 
 package compiler.vectorization.runner;
+
+import compiler.lib.ir_framework.*;
 
 import java.util.Random;
 
 public class LoopRangeStrideTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] a;
     private int[] b;
@@ -60,8 +64,8 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
         }
 
         Random ran = new Random(0);
-        start = Math.abs(ran.nextInt() % 1000);
-        end = start + 1315;
+        start = Math.abs(ran.nextInt() % 100);
+        end = start + 315;
     }
 
     // ---------------- Range ----------------
@@ -75,6 +79,8 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nonConstantRange() {
         int[] res = new int[SIZE];
         for (int i = start; i < end; i++) {
@@ -84,6 +90,8 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] crossZeroRange() {
         int[] res = new int[SIZE];
         for (int i = -20; i < 20; i++) {
@@ -93,6 +101,8 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nonEqualTestRange() {
         int[] res = new int[SIZE];
         for (int i = start; i != end; i++) {
@@ -102,15 +112,19 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] shortInductionLoop() {
         int[] res = new int[SIZE];
-        for (short s = 123; s < 789; s++) {
+        for (short s = 123; s < 456; s++) {
             res[s] = a[s] * b[s];
         }
         return res;
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] whileLoop() {
         int[] res = new int[SIZE];
         int i = start;
@@ -122,6 +136,8 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] doWhileLoop() {
         int[] res = new int[SIZE];
         int i = start;
@@ -160,8 +176,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
         return res;
     }
 
-
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countDownLoop() {
         int[] res = new int[SIZE];
         for (int i = SIZE - 1; i > 0; i--) {
@@ -181,6 +198,8 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
 
     // ---------- Stride with scale ----------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countupLoopWithNegScale() {
         int[] res = new int[SIZE];
         for (int i = SIZE / 2; i < SIZE; i++) {
@@ -190,6 +209,8 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countDownLoopWithNegScale() {
         int[] res = new int[SIZE];
         for (int i = SIZE / 2; i > 0; i--) {
@@ -198,4 +219,3 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
         return res;
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,18 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 MutableSpace::MutableSpace(size_t alignment) :
-  _mangler(NULL),
+  _mangler(nullptr),
   _last_setup_region(),
   _alignment(alignment),
-  _bottom(NULL),
-  _top(NULL),
-  _end(NULL)
+  _bottom(nullptr),
+  _top(nullptr),
+  _end(nullptr)
 {
   assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
@@ -203,7 +203,7 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
              "checking alignment");
       return obj;
     } else {
-      return NULL;
+      return nullptr;
     }
   } while (true);
 }
@@ -249,14 +249,14 @@ void MutableSpace::print_short_on( outputStream* st) const {
 void MutableSpace::print() const { print_on(tty); }
 void MutableSpace::print_on(outputStream* st) const {
   MutableSpace::print_short_on(st);
-  st->print_cr(" [" INTPTR_FORMAT "," INTPTR_FORMAT "," INTPTR_FORMAT ")",
+  st->print_cr(" [" PTR_FORMAT "," PTR_FORMAT "," PTR_FORMAT ")",
                  p2i(bottom()), p2i(top()), p2i(end()));
 }
 
 void MutableSpace::verify() {
   HeapWord* p = bottom();
   HeapWord* t = top();
-  HeapWord* prev_p = NULL;
+  HeapWord* prev_p = nullptr;
   while (p < t) {
     oopDesc::verify(cast_to_oop(p));
     prev_p = p;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -476,6 +476,22 @@ final class Short64Vector extends ShortVector {
 
     @Override
     @ForceInline
+    public Short64Vector compress(VectorMask<Short> m) {
+        return (Short64Vector)
+            super.compressTemplate(Short64Mask.class,
+                                   (Short64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Short64Vector expand(VectorMask<Short> m) {
+        return (Short64Vector)
+            super.expandTemplate(Short64Mask.class,
+                                   (Short64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Short64Vector selectFrom(Vector<Short> v) {
         return (Short64Vector)
             super.selectFromTemplate((Short64Vector) v);  // specialize
@@ -645,6 +661,15 @@ final class Short64Vector extends ShortVector {
             return xor(m.not());
         }
 
+        @Override
+        @ForceInline
+        /*package-private*/
+        Short64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Short64Mask) VectorSupport.indexPartiallyInUpperRange(
+                Short64Mask.class, short.class, VLENGTH, offset, limit,
+                (o, l) -> (Short64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
+        }
+
         // Unary operations
 
         @Override
@@ -652,6 +677,15 @@ final class Short64Vector extends ShortVector {
         public Short64Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Short64Mask compress() {
+            return (Short64Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Short64Vector.class, Short64Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -829,8 +863,8 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m) {
-        return super.fromArray0Template(Short64Mask.class, a, offset, (Short64Mask) m);  // specialize
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromArray0Template(Short64Mask.class, a, offset, (Short64Mask) m, offsetInRange);  // specialize
     }
 
 
@@ -844,37 +878,23 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m) {
-        return super.fromCharArray0Template(Short64Mask.class, a, offset, (Short64Mask) m);  // specialize
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromCharArray0Template(Short64Mask.class, a, offset, (Short64Mask) m, offsetInRange);  // specialize
     }
 
 
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    ShortVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m) {
-        return super.fromByteArray0Template(Short64Mask.class, a, offset, (Short64Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m) {
-        return super.fromByteBuffer0Template(Short64Mask.class, bb, offset, (Short64Mask) m);  // specialize
+    ShortVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(Short64Mask.class, ms, offset, (Short64Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -896,22 +916,8 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Short> m) {
-        super.intoByteArray0Template(Short64Mask.class, a, offset, (Short64Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m) {
-        super.intoByteBuffer0Template(Short64Mask.class, bb, offset, (Short64Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m) {
+        super.intoMemorySegment0Template(Short64Mask.class, ms, offset, (Short64Mask) m);
     }
 
     @ForceInline
@@ -926,3 +932,4 @@ final class Short64Vector extends ShortVector {
     // ================================================
 
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ protected:
     : BarrierSet(barrier_set_assembler,
                  barrier_set_c1,
                  barrier_set_c2,
-                 NULL /* barrier_set_nmethod */,
+                 nullptr /* barrier_set_nmethod */,
+                 nullptr /* barrier_set_stack_chunk */,
                  fake_rtti.add_tag(BarrierSet::ModRef)) { }
   ~ModRefBarrierSet() { }
 
@@ -48,11 +49,12 @@ public:
   inline void write_ref_field_pre(T* addr) {}
 
   template <DecoratorSet decorators, typename T>
-  inline void write_ref_field_post(T *addr, oop new_value) {}
+  inline void write_ref_field_post(T *addr) {}
 
-  // Causes all refs in "mr" to be assumed to be modified.
+  // Causes all refs in "mr" to be assumed to be modified (by this JavaThread).
   virtual void invalidate(MemRegion mr) = 0;
-  virtual void write_region(MemRegion mr) = 0;
+  // Causes all refs in "mr" to be assumed to be modified by the given JavaThread.
+  virtual void write_region(JavaThread* thread, MemRegion mr) = 0;
 
   // Operations on arrays, or general regions (e.g., for "clone") may be
   // optimized by some barriers.

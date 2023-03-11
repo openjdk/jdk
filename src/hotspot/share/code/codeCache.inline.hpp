@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,21 +37,22 @@ inline CodeBlob* CodeCache::find_blob_fast(void* pc) {
 inline CodeBlob* CodeCache::find_blob_and_oopmap(void* pc, int& slot) {
   NativePostCallNop* nop = nativePostCallNop_at((address) pc);
   CodeBlob* cb;
-  if (nop != NULL && nop->displacement() != 0) {
+  if (nop != nullptr && nop->displacement() != 0) {
     int offset = (nop->displacement() & 0xffffff);
     cb = (CodeBlob*) ((address) pc - offset);
     slot = ((nop->displacement() >> 24) & 0xff);
+    assert(cb == CodeCache::find_blob(pc), "must be");
   } else {
     cb = CodeCache::find_blob(pc);
     slot = -1;
   }
-  assert(cb != NULL, "must be");
+  assert(cb != nullptr, "must be");
   return cb;
 }
 
 inline int CodeCache::find_oopmap_slot_fast(void* pc) {
   NativePostCallNop* nop = nativePostCallNop_at((address) pc);
-  return (nop != NULL && nop->displacement() != 0)
+  return (nop != nullptr && nop->displacement() != 0)
       ? ((nop->displacement() >> 24) & 0xff)
       : -1;
 }

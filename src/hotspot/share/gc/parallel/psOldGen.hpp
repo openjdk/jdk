@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/parallel/psGenerationCounters.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 class PSOldGen : public CHeapObj<mtGC> {
@@ -70,7 +71,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   HeapWord* cas_allocate_noexpand(size_t word_size) {
     assert_locked_or_safepoint(Heap_lock);
     HeapWord* res = object_space()->cas_allocate(word_size);
-    if (res != NULL) {
+    if (res != nullptr) {
       DEBUG_ONLY(assert_block_in_covered_region(MemRegion(res, word_size)));
       _start_array.allocate_block(res);
     }

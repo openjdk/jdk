@@ -28,9 +28,13 @@
 #include "oops/stackChunkOop.hpp"
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetStackChunk.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/registerMap.hpp"
@@ -46,11 +50,11 @@ inline stackChunkOop stackChunkOopDesc::cast(oop obj) {
 }
 
 inline stackChunkOop stackChunkOopDesc::parent() const         { return stackChunkOopDesc::cast(jdk_internal_vm_StackChunk::parent(as_oop())); }
-template<typename P>
-inline bool stackChunkOopDesc::is_parent_null() const          { return jdk_internal_vm_StackChunk::is_parent_null<P>(as_oop()); }
 inline void stackChunkOopDesc::set_parent(stackChunkOop value) { jdk_internal_vm_StackChunk::set_parent(this, value); }
 template<typename P>
 inline void stackChunkOopDesc::set_parent_raw(oop value)       { jdk_internal_vm_StackChunk::set_parent_raw<P>(this, value); }
+template<DecoratorSet decorators>
+inline void stackChunkOopDesc::set_parent_access(oop value)    { jdk_internal_vm_StackChunk::set_parent_access<decorators>(this, value); }
 
 inline int stackChunkOopDesc::stack_size() const        { return jdk_internal_vm_StackChunk::size(as_oop()); }
 
@@ -82,18 +86,25 @@ inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
   jdk_internal_vm_StackChunk::set_maxThawingSize(this, (jint)value);
 }
 
-inline oop stackChunkOopDesc::cont() const              { return UseCompressedOops ? cont<narrowOop>() : cont<oop>(); /* jdk_internal_vm_StackChunk::cont(as_oop()); */ }
+inline oop stackChunkOopDesc::cont() const                { return UseCompressedOops ? cont<narrowOop>() : cont<oop>(); /* jdk_internal_vm_StackChunk::cont(as_oop()); */ }
 template<typename P>
-inline oop stackChunkOopDesc::cont() const              {
+inline oop stackChunkOopDesc::cont() const                {
+  // The state of the cont oop is used by ZCollectedHeap::requires_barriers,
+  // to determine the age of the stackChunkOopDesc. For that to work, it is
+  // only the GC that is allowed to perform a load barrier on the oop.
+  // This function is used by non-GC code and therfore create a stack-local
+  // copy on the oop and perform the load barrier on that copy instead.
   oop obj = jdk_internal_vm_StackChunk::cont_raw<P>(as_oop());
   obj = (oop)NativeAccess<>::oop_load(&obj);
   return obj;
 }
-inline void stackChunkOopDesc::set_cont(oop value)      { jdk_internal_vm_StackChunk::set_cont(this, value); }
+inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
-inline void stackChunkOopDesc::set_cont_raw(oop value)  {  jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+inline void stackChunkOopDesc::set_cont_raw(oop value)    { jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+template<DecoratorSet decorators>
+inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
-inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize(); }
+inline int stackChunkOopDesc::bottom() const { return stack_size() - argsize() - frame::metadata_words_at_top; }
 
 inline HeapWord* stackChunkOopDesc::start_of_stack() const {
    return (HeapWord*)(cast_from_oop<intptr_t>(as_oop()) + InstanceStackChunkKlass::offset_of_stack());
@@ -107,7 +118,7 @@ inline intptr_t* stackChunkOopDesc::sp_address()  const { return start_address()
 inline int stackChunkOopDesc::to_offset(intptr_t* p) const {
   assert(is_in_chunk(p)
     || (p >= start_address() && (p - start_address()) <= stack_size() + frame::metadata_words),
-    "p: " INTPTR_FORMAT " start: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
+    "p: " PTR_FORMAT " start: " PTR_FORMAT " end: " PTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
   return p - start_address();
 }
 
@@ -118,7 +129,7 @@ inline intptr_t* stackChunkOopDesc::from_offset(int offset) const {
 
 inline bool stackChunkOopDesc::is_empty() const {
   assert(sp() <= stack_size(), "");
-  assert((sp() == stack_size()) == (sp() >= stack_size() - argsize()),
+  assert((sp() == stack_size()) == (sp() >= stack_size() - argsize() - frame::metadata_words_at_top),
     "sp: %d size: %d argsize: %d", sp(), stack_size(), argsize());
   return sp() == stack_size();
 }
@@ -130,12 +141,7 @@ inline bool stackChunkOopDesc::is_in_chunk(void* p) const {
 }
 
 bool stackChunkOopDesc::is_usable_in_chunk(void* p) const {
-#if (defined(X86) || defined(AARCH64)) && !defined(ZERO)
-  HeapWord* start = (HeapWord*)start_address() + sp() - frame::sender_sp_offset;
-#else
-  Unimplemented();
-  HeapWord* start = NULL;
-#endif
+  HeapWord* start = (HeapWord*)start_address() + sp() - frame::metadata_words_at_bottom;
   HeapWord* end = start + stack_size();
   return (HeapWord*)p >= start && (HeapWord*)p < end;
 }
@@ -197,7 +203,10 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
   bool should_continue = true;
 
   if (f.is_stub()) {
-    RegisterMap full_map((JavaThread*)nullptr, true, false, true);
+    RegisterMap full_map(nullptr,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::skip,
+                         RegisterMap::WalkContinuation::include);
     full_map.set_include_argument_oops(false);
 
     f.next(&full_map);
@@ -223,11 +232,17 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
 inline frame stackChunkOopDesc::relativize(frame fr)   const { relativize_frame(fr);   return fr; }
 inline frame stackChunkOopDesc::derelativize(frame fr) const { derelativize_frame(fr); return fr; }
 
-inline BitMapView stackChunkOopDesc::bitmap() const {
+inline void* stackChunkOopDesc::gc_data() const {
   int stack_sz = stack_size();
+  assert(stack_sz != 0, "stack should not be empty");
 
-  // The bitmap is located after the stack.
-  HeapWord* bitmap_addr = start_of_stack() + stack_sz;
+  // The gc data is located after the stack.
+  return start_of_stack() + stack_sz;
+}
+
+inline BitMapView stackChunkOopDesc::bitmap() const {
+  HeapWord* bitmap_addr = static_cast<HeapWord*>(gc_data());
+  int stack_sz = stack_size();
   size_t bitmap_size_in_bits = InstanceStackChunkKlass::bitmap_size_in_bits(stack_sz);
 
   BitMapView bitmap((BitMap::bm_word_t*)bitmap_addr, bitmap_size_in_bits);
@@ -307,33 +322,46 @@ inline intptr_t* stackChunkOopDesc::interpreter_frame_local_at(const frame& fr, 
 }
 
 inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t* to, int size) {
-  log_develop_trace(continuations)("Copying from v: " INTPTR_FORMAT " - " INTPTR_FORMAT " (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying from v: " PTR_FORMAT " - " PTR_FORMAT " (%d words, %d bytes)",
     p2i(from), p2i(from + size), size, size << LogBytesPerWord);
-  log_develop_trace(continuations)("Copying to h: " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying to h: " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
     p2i(to), to - start_address(), relative_base() - to, p2i(to + size), to + size - start_address(),
     relative_base() - (to + size), size, size << LogBytesPerWord);
 
   assert(to >= start_address(), "Chunk underflow");
   assert(to + size <= end_address(), "Chunk overflow");
 
+#if !(defined(AMD64) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)) || defined(ZERO)
+  // Suppress compilation warning-as-error on unimplemented architectures
+  // that stub out arch-specific methods. Some compilers are smart enough
+  // to figure out the argument is always null and then warn about it.
+  if (to != nullptr)
+#endif
   memcpy(to, from, size << LogBytesPerWord);
 }
 
 inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t* to, int size) {
-  log_develop_trace(continuations)("Copying from h: " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " INTPTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
+  log_develop_trace(continuations)("Copying from h: " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") - " PTR_FORMAT "(" INTPTR_FORMAT "," INTPTR_FORMAT ") (%d words, %d bytes)",
     p2i(from), from - start_address(), relative_base() - from, p2i(from + size), from + size - start_address(),
     relative_base() - (from + size), size, size << LogBytesPerWord);
-  log_develop_trace(continuations)("Copying to v: " INTPTR_FORMAT " - " INTPTR_FORMAT " (%d words, %d bytes)", p2i(to),
+  log_develop_trace(continuations)("Copying to v: " PTR_FORMAT " - " PTR_FORMAT " (%d words, %d bytes)", p2i(to),
     p2i(to + size), size, size << LogBytesPerWord);
 
   assert(from >= start_address(), "");
   assert(from + size <= end_address(), "");
 
-#if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
-  // Suppress compilation error from dummy function (somewhere).
+#if !(defined(AMD64) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)) || defined(ZERO)
+  // Suppress compilation warning-as-error on unimplemented architectures
+  // that stub out arch-specific methods. Some compilers are smart enough
+  // to figure out the argument is always null and then warn about it.
   if (to != nullptr)
 #endif
   memcpy(to, from, size << LogBytesPerWord);
+}
+
+template <typename OopT>
+inline oop stackChunkOopDesc::load_oop(OopT* addr) {
+  return BarrierSet::barrier_set()->barrier_set_stack_chunk()->load_oop(this, addr);
 }
 
 inline intptr_t* stackChunkOopDesc::relative_base() const {

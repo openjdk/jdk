@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTrace.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 //
 // class JvmtiTrace
@@ -79,7 +79,7 @@ void JvmtiTrace::initialize() {
 
   const char *very_end;
   const char *curr;
-  if (TraceJVMTI != NULL) {
+  if (TraceJVMTI != nullptr) {
     curr = TraceJVMTI;
   } else {
     curr = "";  // hack in fixed tracing here
@@ -98,18 +98,18 @@ void JvmtiTrace::initialize() {
   very_end = curr + strlen(curr);
   while (curr < very_end) {
     const char *curr_end = strchr(curr, ',');
-    if (curr_end == NULL) {
+    if (curr_end == nullptr) {
       curr_end = very_end;
     }
     const char *op_pos = strchr(curr, '+');
     const char *minus_pos = strchr(curr, '-');
-    if (minus_pos != NULL && (minus_pos < op_pos || op_pos == NULL)) {
+    if (minus_pos != nullptr && (minus_pos < op_pos || op_pos == nullptr)) {
       op_pos = minus_pos;
     }
     char op;
     const char *flags = op_pos + 1;
     const char *flags_end = curr_end;
-    if (op_pos == NULL || op_pos > curr_end) {
+    if (op_pos == nullptr || op_pos > curr_end) {
       flags = "ies";
       flags_end = flags + strlen(flags);
       op_pos = curr_end;
@@ -190,7 +190,7 @@ void JvmtiTrace::initialize() {
             do_op = true;
           } else {
             const char *fname = function_name(i);
-            if (fname != NULL) {
+            if (fname != nullptr) {
               size_t fnlen = strlen(fname);
               if (len==fnlen && strncmp(curr, fname, fnlen)==0) {
                 log_trace(jvmti)("Tracing the function: %s", fname);
@@ -219,7 +219,7 @@ void JvmtiTrace::initialize() {
           do_op = true;
         } else {
           const char *ename = event_name(i);
-          if (ename != NULL) {
+          if (ename != nullptr) {
             size_t evtlen = strlen(ename);
             if (len==evtlen && strncmp(curr, ename, evtlen)==0) {
               log_trace(jvmti)("Tracing the event: %s", ename);
@@ -271,22 +271,22 @@ const char* JvmtiTrace::enum_name(const char** names, const jint* values, jint v
 
 // return a valid string no matter what state the thread is in
 const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
-  if (thread == NULL) {
-    return "NULL";
+  if (thread == nullptr) {
+    return "null";
   }
   if (!thread->is_Java_thread()) {
     return thread->name();
   }
   JavaThread* java_thread = JavaThread::cast(thread);
   oop threadObj = java_thread->jvmti_vthread();
-  if (threadObj == NULL) {
+  if (threadObj == nullptr) {
     threadObj = java_thread->threadObj();
   }
-  if (threadObj == NULL) {
-    return "NULL";
+  if (threadObj == nullptr) {
+    return "null";
   }
   oop name = java_lang_Thread::name(threadObj);
-  if (name == NULL) {
+  if (name == nullptr) {
     return "<NOT FILLED IN>";
   }
   return java_lang_String::as_utf8_string(name);
@@ -308,7 +308,7 @@ const char * JvmtiTrace::get_class_name(oop k_mirror) {
     return "primitive";
   }
   Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
-  if (k_oop == NULL) {
+  if (k_oop == nullptr) {
     return "INVALID";
   }
   return k_oop->external_name();

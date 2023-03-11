@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,20 @@ package com.sun.hotspot.igv.coordinator;
 
 import com.sun.hotspot.igv.connection.Server;
 import com.sun.hotspot.igv.coordinator.actions.*;
+import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.Group;
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GroupCallback;
+import com.sun.hotspot.igv.data.services.InputGraphProvider;
+import com.sun.hotspot.igv.util.LookupHistory;
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import org.openide.ErrorManager;
@@ -42,10 +48,9 @@ import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
-import org.openide.util.LookupEvent;
-import org.openide.util.LookupListener;
+import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
-import org.openide.util.actions.NodeAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
@@ -53,15 +58,17 @@ import org.openide.windows.WindowManager;
  *
  * @author Thomas Wuerthinger
  */
-public final class OutlineTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener {
+public final class OutlineTopComponent extends TopComponent implements ExplorerManager.Provider, ChangedListener<InputGraphProvider> {
 
     public static OutlineTopComponent instance;
     public static final String PREFERRED_ID = "OutlineTopComponent";
     private ExplorerManager manager;
-    private GraphDocument document;
+    private final GraphDocument document;
     private FolderNode root;
-    private Server server;
-    private Server binaryServer;
+    private SaveAllAction saveAllAction;
+    private RemoveAllAction removeAllAction;
+    private GraphNode[] selectedGraphs = new GraphNode[0];
+    private final Set<FolderNode> selectedFolders = new HashSet<>();
 
     private OutlineTopComponent() {
         initComponents();
@@ -85,46 +92,55 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     private void initToolbar() {
-
         Toolbar toolbar = new Toolbar();
-        Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
-        toolbar.setBorder(b);
+        toolbar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolbar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+
         this.add(toolbar, BorderLayout.NORTH);
 
         toolbar.add(ImportAction.get(ImportAction.class));
+        toolbar.add(SaveAsAction.get(SaveAsAction.class).createContextAwareInstance(this.getLookup()));
 
-        toolbar.add(((NodeAction) SaveAsAction.get(SaveAsAction.class)).createContextAwareInstance(this.getLookup()));
-        toolbar.add(SaveAllAction.get(SaveAllAction.class));
+        saveAllAction = SaveAllAction.get(SaveAllAction.class);
+        saveAllAction.setEnabled(false);
+        toolbar.add(saveAllAction);
 
-        toolbar.add(((NodeAction) RemoveAction.get(RemoveAction.class)).createContextAwareInstance(this.getLookup()));
-        toolbar.add(RemoveAllAction.get(RemoveAllAction.class));
+        toolbar.add(RemoveAction.get(RemoveAction.class).createContextAwareInstance(this.getLookup()));
+
+        removeAllAction = RemoveAllAction.get(RemoveAllAction.class);
+        removeAllAction.setEnabled(false);
+        toolbar.add(removeAllAction);
 
         toolbar.add(GarbageCollectAction.get(GarbageCollectAction.class).getToolbarPresenter());
 
         for (Toolbar tb : ToolbarPool.getDefault().getToolbars()) {
             tb.setVisible(false);
         }
+
+        document.getChangedEvent().addListener(g -> documentChanged());
+    }
+
+    private void documentChanged() {
+        boolean enableButton = !document.getElements().isEmpty();
+        saveAllAction.setEnabled(enableButton);
+        removeAllAction.setEnabled(enableButton);
     }
 
     private void initReceivers() {
 
-        final GroupCallback callback = new GroupCallback() {
-
-            @Override
-            public void started(Group g) {
-                synchronized(OutlineTopComponent.this) {
-                    getDocument().addElement(g);
-                    g.setParent(getDocument());
-                }
+        final GroupCallback callback = g -> {
+            synchronized(OutlineTopComponent.this) {
+                g.setParent(getDocument());
+                getDocument().addElement(g);
             }
         };
 
-        server = new Server(getDocument(), callback, false);
-        binaryServer = new Server(getDocument(), callback, true);
+        new Server(callback);
     }
 
     public void clear() {
         document.clear();
+        FolderNode.clearGraphNodeMap();
         root = new FolderNode(document);
         manager.setRootContext(root);
     }
@@ -141,7 +157,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized OutlineTopComponent getDefault() {
         if (instance == null) {
@@ -173,11 +189,13 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     @Override
     public void componentOpened() {
+        LookupHistory.addListener(InputGraphProvider.class, this);
         this.requestActive();
     }
 
     @Override
     public void componentClosed() {
+        LookupHistory.removeListener(InputGraphProvider.class, this);
     }
 
     @Override
@@ -204,7 +222,52 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     @Override
-    public void resultChanged(LookupEvent lookupEvent) {
+    public void changed(InputGraphProvider lastProvider) {
+        for (GraphNode graphNode : selectedGraphs) {
+            graphNode.setSelected(false);
+        }
+        for (FolderNode folderNode : selectedFolders) {
+            folderNode.setSelected(false);
+        }
+        selectedGraphs = new GraphNode[0];
+        selectedFolders.clear();
+        if (lastProvider != null) {
+            // Try to fetch and select the latest active graph.
+            InputGraph graph = lastProvider.getGraph();
+            if (graph != null) {
+                if (graph.isDiffGraph()) {
+                    EditorTopComponent editor = EditorTopComponent.getActive();
+                    if (editor != null) {
+                        InputGraph firstGraph = editor.getModel().getFirstGraph();
+                        GraphNode firstNode = FolderNode.getGraphNode(firstGraph);
+                        InputGraph secondGraph = editor.getModel().getSecondGraph();
+                        GraphNode secondNode = FolderNode.getGraphNode(secondGraph);
+                        if (firstNode != null && secondNode != null) {
+                            selectedGraphs = new GraphNode[]{firstNode, secondNode};
+                        }
+                    }
+                } else {
+                    GraphNode graphNode = FolderNode.getGraphNode(graph);
+                    if (graphNode != null) {
+                        selectedGraphs = new GraphNode[]{graphNode};
+                    }
+                }
+            }
+        }
+        try {
+            for (GraphNode graphNode : selectedGraphs) {
+                Node parentNode = graphNode.getParentNode();
+                if (parentNode instanceof FolderNode) {
+                    FolderNode folderNode = (FolderNode) graphNode.getParentNode();
+                    folderNode.setSelected(true);
+                    selectedFolders.add(folderNode);
+                }
+                graphNode.setSelected(true);
+            }
+            manager.setSelectedNodes(selectedGraphs);
+        } catch (Exception e) {
+            Exceptions.printStackTrace(e);
+        }
     }
 
     @Override
@@ -217,15 +280,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     @Override
     public void writeExternal(ObjectOutput objectOutput) throws IOException {
         super.writeExternal(objectOutput);
-    }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return OutlineTopComponent.getDefault();
-        }
     }
 
     /** This method is called from within the constructor to

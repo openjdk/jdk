@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
-G1FullGCCompactionPoint::G1FullGCCompactionPoint() :
-    _current_region(NULL),
-    _compaction_top(NULL) {
-  _compaction_regions = new (ResourceObj::C_HEAP, mtGC) GrowableArray<HeapRegion*>(32, mtGC);
+G1FullGCCompactionPoint::G1FullGCCompactionPoint(G1FullCollector* collector) :
+    _collector(collector),
+    _current_region(nullptr),
+    _compaction_top(nullptr) {
+  _compaction_regions = new (mtGC) GrowableArray<HeapRegion*>(32, mtGC);
   _compaction_region_iterator = _compaction_regions->begin();
 }
 
@@ -41,12 +43,12 @@ G1FullGCCompactionPoint::~G1FullGCCompactionPoint() {
 
 void G1FullGCCompactionPoint::update() {
   if (is_initialized()) {
-    _current_region->set_compaction_top(_compaction_top);
+    _collector->set_compaction_top(_current_region, _compaction_top);
   }
 }
 
 void G1FullGCCompactionPoint::initialize_values() {
-  _compaction_top = _current_region->compaction_top();
+  _compaction_top = _collector->compaction_top(_current_region);
 }
 
 bool G1FullGCCompactionPoint::has_regions() {
@@ -83,7 +85,7 @@ bool G1FullGCCompactionPoint::object_will_fit(size_t size) {
 
 void G1FullGCCompactionPoint::switch_region() {
   // Save compaction top in the region.
-  _current_region->set_compaction_top(_compaction_top);
+  _collector->set_compaction_top(_current_region, _compaction_top);
   // Get the next region and re-initialize the values.
   _current_region = next_region();
   initialize_values();
@@ -114,6 +116,17 @@ void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
-HeapRegion* G1FullGCCompactionPoint::remove_last() {
-  return _compaction_regions->pop();
+void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
+  HeapRegion* cur = current_region();
+  assert(cur->hrm_index() >= bottom, "Sanity!");
+
+  int start_index = 0;
+  for (HeapRegion* r : *_compaction_regions) {
+    if (r->hrm_index() < bottom) {
+      start_index++;
+    }
+  }
+
+  assert(start_index >= 0, "Should have at least one region");
+  _compaction_regions->trunc_to(start_index);
 }

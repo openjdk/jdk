@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.misc.InternalLock;
 
@@ -53,6 +54,8 @@ import jdk.internal.misc.InternalLock;
  * @since   1.0
  */
 public class PushbackInputStream extends FilterInputStream {
+
+    // initialized to null when PushbackInputStream is sub-classed
     private final InternalLock closeLock;
 
     /**
@@ -405,4 +408,27 @@ public class PushbackInputStream extends FilterInputStream {
             buf = null;
         }
     }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        ensureOpen();
+        if (getClass() == PushbackInputStream.class) {
+            int avail = buf.length - pos;
+            if (avail > 0) {
+                // Prevent poisoning and leaking of buf
+                byte[] buffer = Arrays.copyOfRange(buf, pos, buf.length);
+                out.write(buffer);
+                pos = buffer.length;
+            }
+            try {
+                return Math.addExact(avail, in.transferTo(out));
+            } catch (ArithmeticException ignore) {
+                return Long.MAX_VALUE;
+            }
+        } else {
+            return super.transferTo(out);
+        }
+    }
+
 }

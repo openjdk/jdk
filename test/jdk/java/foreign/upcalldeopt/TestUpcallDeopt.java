@@ -25,11 +25,11 @@
  * @test id=default_gc
  * @enablePreview
  * @bug 8277602
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @library /test/lib
  * @library ../
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm
  *   -Xbootclasspath/a:.
@@ -40,16 +40,16 @@
  *   TestUpcallDeopt
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import static java.lang.invoke.MethodHandles.lookup;
 
@@ -79,8 +79,8 @@ public class TestUpcallDeopt extends NativeTestHelper {
     // we need to deoptimize through an uncommon trap in the callee of the optimized upcall stub
     // that is created when calling upcallStub below
     public static void main(String[] args) throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), arena.scope());
             armed = false;
             for (int i = 0; i < 20_000; i++) {
                 payload(stub); // warmup
@@ -91,8 +91,8 @@ public class TestUpcallDeopt extends NativeTestHelper {
         }
     }
 
-    static void payload(Addressable cb) throws Throwable {
-        MH_foo.invokeExact((Addressable) cb, 0, 1, 2, 3);
+    static void payload(MemorySegment cb) throws Throwable {
+        MH_foo.invokeExact(cb, 0, 1, 2, 3);
         Reference.reachabilityFence(cb); // keep oop alive across call
     }
 

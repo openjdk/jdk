@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -46,7 +47,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
-    public final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
+    private final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
             new StandardBundlerParam<>(
             "mac.app.imageRoot",
             Path.class,
@@ -95,7 +96,8 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             },
             (s, p) -> s);
 
-    static String getInstallDir(
+     // Returns full path to installation directory
+     static String getInstallDir(
             Map<String, ? super Object>  params, boolean defaultOnly) {
         String returnValue = INSTALL_DIR.fetchFrom(params);
         if (defaultOnly && returnValue != null) {
@@ -112,8 +114,21 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         return returnValue;
     }
 
+    // Returns display name of installation directory. Display name is used to
+    // show user installation location and for well known (default only) we will
+    // use "Applications" or "JavaVirtualMachines".
+    static String getInstallDirDisplayName(
+            Map<String, ? super Object>  params) {
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            return "JavaVirtualMachines";
+        } else {
+            return "Applications";
+        }
+    }
+
     public MacBaseInstallerBundler() {
-        appImageBundler = new MacAppBundler().setDependentTask(true);
+        appImageBundler = new MacAppBundler()
+                .setDependentTask(true);
     }
 
     protected void validateAppImageAndBundeler(
@@ -136,18 +151,20 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                         I18N.getString(
                             "message.app-image-requires-app-name.advice"));
             }
-            if (Optional.ofNullable(
-                    SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
-                // if signing bundle with app-image, warn user if app-image
-                // is not already signed.
-                try {
-                    if (!(AppImageFile.load(applicationImage).isSigned())) {
-                        Log.info(MessageFormat.format(I18N.getString(
-                                 "warning.unsigned.app.image"), getID()));
-                    }
-                } catch (IOException ioe) {
-                    // Ignore - In case of a forign or tampered with app-image,
-                    // user is notified of this when the name is extracted.
+            if (AppImageFile.load(applicationImage).isSigned()) {
+                if (!Files.exists(
+                        PackageFile.getPathInAppImage(applicationImage))) {
+                    Log.info(MessageFormat.format(I18N.getString(
+                            "warning.per.user.app.image.signed"),
+                            PackageFile.getPathInAppImage(applicationImage)));
+                }
+            } else {
+                if (Optional.ofNullable(
+                        SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
+                    // if signing bundle with app-image, warn user if app-image
+                    // is not already signed.
+                    Log.info(MessageFormat.format(I18N.getString(
+                            "warning.unsigned.app.image"), getID()));
                 }
             }
         } else {
@@ -156,15 +173,27 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
     }
 
     protected Path prepareAppBundle(Map<String, ? super Object> params)
-            throws PackagerException {
+            throws PackagerException, IOException {
+        Path appDir;
+        Path appImageRoot = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
         Path predefinedImage =
                 StandardBundlerParam.getPredefinedAppImage(params);
         if (predefinedImage != null) {
-            return predefinedImage;
-        }
-        Path appImageRoot = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
+            appDir = appImageRoot.resolve(APP_NAME.fetchFrom(params) + ".app");
+            IOUtils.copyRecursive(predefinedImage, appDir,
+                    LinkOption.NOFOLLOW_LINKS);
 
-        return appImageBundler.execute(params, appImageRoot);
+            // Create PackageFile if predefined app image is not signed
+            if (!StandardBundlerParam.isRuntimeInstaller(params) &&
+                    !AppImageFile.load(predefinedImage).isSigned()) {
+                new PackageFile(APP_NAME.fetchFrom(params)).save(
+                        ApplicationLayout.macAppImage().resolveAt(appDir));
+            }
+        } else {
+            appDir = appImageBundler.execute(params, appImageRoot);
+        }
+
+        return appDir;
     }
 
     @Override

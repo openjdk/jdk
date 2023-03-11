@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
@@ -85,7 +86,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_pool_obj points to or implies.
   oop pool_obj = Atomic::load_acquire(&_memory_pool_obj).resolve();
-  if (pool_obj == NULL) {
+  if (pool_obj == nullptr) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra pool instances will just be gc'ed.
     InstanceKlass* ik = Management::sun_management_ManagementFactoryHelper_klass(CHECK_NULL);
@@ -123,7 +124,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
       // _memory_pool_obj here because some other thread may have
       // initialized it while we were executing the code before the lock.
       pool_obj = Atomic::load(&_memory_pool_obj).resolve();
-      if (pool_obj != NULL) {
+      if (pool_obj != nullptr) {
          return (instanceOop)pool_obj;
       }
 
@@ -157,7 +158,7 @@ void MemoryPool::record_peak_memory_usage() {
 }
 
 static void set_sensor_obj_at(SensorInfo** sensor_ptr, instanceHandle sh) {
-  assert(*sensor_ptr == NULL, "Should be called only once");
+  assert(*sensor_ptr == nullptr, "Should be called only once");
   SensorInfo* sensor = new SensorInfo();
   sensor->set_sensor(sh());
   *sensor_ptr = sensor;

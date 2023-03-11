@@ -39,11 +39,12 @@ import static jdk.test.lib.Asserts.assertTrue;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @compile --enable-preview -source ${jdk.version} TestThreadExclusion.java LatchedThread.java
- * @run main/othervm --enable-preview jdk.jfr.jvm.TestThreadExclusion
+ * @enablePreview
+ * @compile TestThreadExclusion.java LatchedThread.java
+ * @run main/othervm jdk.jfr.jvm.TestThreadExclusion
  */
 
 /**

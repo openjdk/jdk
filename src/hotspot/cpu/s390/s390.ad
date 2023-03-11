@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -810,6 +810,8 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 
+#include "gc/shared/barrierSetAssembler.hpp"
+
 #if !defined(PRODUCT)
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   Compile* C = ra_->C;
@@ -817,11 +819,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("\t");
   for (int i = 0; i < OptoPrologueNops; i++) {
     st->print_cr("NOP"); st->print("\t");
-  }
-
-  if (VerifyThread) {
-    st->print_cr("Verify_Thread");
-    st->print("\t");
   }
 
   long framesize = C->output()->frame_size_in_bytes();
@@ -837,14 +834,16 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
   st->print_cr("push_frame %d", (int)-framesize);
   st->print("\t");
+
+  if (C->stub_function() == NULL) {
+    st->print("nmethod entry barrier\n\t");
+  }
 }
 #endif
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-
-  __ verify_thread();
 
   size_t framesize = C->output()->frame_size_in_bytes();
   size_t bangsize  = C->output()->bang_size_in_bytes();
@@ -890,6 +889,13 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
+  }
+
+  C->output()->set_frame_complete(cbuf.insts_size());
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
@@ -918,7 +924,6 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
   Compile* C = ra_->C;
-  __ verify_thread();
 
   // If this does safepoint polling, then do it here.
   bool need_polling = do_polling() && C->is_method_compilation();
@@ -1505,6 +1510,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
@@ -1513,6 +1522,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 }
 
 const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -5279,54 +5292,6 @@ instruct castVV(iRegL dst) %{
   size(0);
   format %{ "# castVV of $dst" %}
   ins_encode(/*empty*/);
-  ins_pipe(pipe_class_dummy);
-%}
-
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(MEMORY_REF_COST);
-  size(Z_DISP3_SIZE);
-  format %{ "LG      $dst,$mem\t # LoadPLocked" %}
-  opcode(LG_ZOPC, LG_ZOPC);
-  ins_encode(z_form_rt_mem_opt(dst, mem));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off. Needed to pass
-// option tests.  Mem_ptr must be a memory operand, else this node
-// does not get Flag_needs_anti_dependence_check set by adlc. If this
-// is not set this node can be rematerialized which leads to errors.
-instruct storePConditional(indirect mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
-  match(Set cr (StorePConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
-  ins_pipe(pipe_class_dummy);
-%}
-
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java. Mem_ptr must be a memory
-// operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set
-// this node can be rematerialized which leads to errors.
-instruct storeLConditional(indirect mem_ptr, rarg5RegL oldval, iRegL newval, flagsReg cr) %{
-  match(Set cr (StoreLConditional mem_ptr (Binary oldval newval)));
-  effect(KILL oldval);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "storePConditional $oldval,$newval,$mem_ptr" %}
-  ins_encode(z_enc_casL(oldval, newval, mem_ptr));
   ins_pipe(pipe_class_dummy);
 %}
 

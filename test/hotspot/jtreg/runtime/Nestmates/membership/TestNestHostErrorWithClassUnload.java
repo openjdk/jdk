@@ -34,8 +34,10 @@
  *          PackagedNestHost.java
  *          PackagedNestHost2.java
  * @compile PackagedNestHost2Member.jcod
- *
- * @run main/othervm -Xlog:class+unload=trace TestNestHostErrorWithClassUnload
+
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=trace TestNestHostErrorWithClassUnload
  */
 
 // Test setup:

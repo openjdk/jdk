@@ -59,6 +59,9 @@ source_hpp %{
 // To keep related declarations/definitions/uses close together,
 // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
+
 // Does destination need to be loaded in a register then passed to a
 // branch instruction?
 extern bool maybe_far_call(const CallNode *n);
@@ -236,7 +239,9 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
 
   Register r = as_Register(ra_->get_encode(this));
   CodeSection* consts_section = __ code()->consts();
-  int consts_size = consts_section->align_at_start(consts_section->size());
+  CodeSection* insts_section = __ code()->insts();
+  // constants section size is aligned according to the align_at_start settings of the next section
+  int consts_size = insts_section->align_at_start(consts_section->size());
   assert(constant_table.size() == consts_size, "must be: %d == %d", constant_table.size(), consts_size);
 
   // Materialize the constant table base.
@@ -252,7 +257,7 @@ uint MachConstantBaseNode::size(PhaseRegAlloc*) const {
 #ifndef PRODUCT
 void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   char reg[128];
-  ra_->dump_register(this, reg);
+  ra_->dump_register(this, reg, sizeof(reg));
   st->print("MOV_SLOW    &constanttable,%s\t! constant table base", reg);
 }
 #endif
@@ -284,6 +289,17 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   if (framesize != 0) {
     st->print   ("SUB    R_SP, R_SP, " SIZE_FORMAT,framesize);
   }
+
+  if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+    st->print("ldr t0, [guard]\n\t");
+    st->print("ldr t1, [Rthread, #thread_disarmed_guard_value_offset]\n\t");
+    st->print("cmp t0, t1\n\t");
+    st->print("beq skip\n\t");
+    st->print("blr #nmethod_entry_barrier_stub\n\t");
+    st->print("b skip\n\t");
+    st->print("guard: int\n\t");
+    st->print("skip:\n\t");
+  }
 }
 #endif
 
@@ -314,6 +330,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   __ raw_push(FP, LR);
   if (framesize != 0) {
     __ sub_slow(SP, SP, framesize);
+  }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
   }
 
   // offset from scratch buffer is not valid
@@ -981,6 +1002,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true;  // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
 
   // TODO
@@ -993,6 +1018,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 }
 
 const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -5420,63 +5449,6 @@ instruct addL_reg_immRot(iRegL dst, iRegL src1, immLlowRot con, flagsReg ccr) %{
     __ adc($dst$$Register->successor(), $src1$$Register->successor(), 0);
   %}
   ins_pipe(ialu_reg_imm);
-%}
-
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.
-
-// LoadP-locked.
-instruct loadPLocked(iRegP dst, memoryex mem) %{
-  match(Set dst (LoadPLocked mem));
-  size(4);
-  format %{ "LDREX  $dst,$mem" %}
-  ins_encode %{
-    __ ldrex($dst$$Register,$mem$$Address);
-  %}
-  ins_pipe(iload_mem);
-%}
-
-instruct storePConditional( memoryex heap_top_ptr, iRegP oldval, iRegP newval, iRegI tmp, flagsRegP pcc ) %{
-  predicate(_kids[1]->_kids[0]->_leaf->Opcode() == Op_LoadPLocked); // only works in conjunction with a LoadPLocked node
-  match(Set pcc (StorePConditional heap_top_ptr (Binary oldval newval)));
-  effect( TEMP tmp );
-  size(8);
-  format %{ "STREX  $tmp,$newval,$heap_top_ptr\n\t"
-            "CMP    $tmp, 0" %}
-  ins_encode %{
-    __ strex($tmp$$Register, $newval$$Register, $heap_top_ptr$$Address);
-    __ cmp($tmp$$Register, 0);
-  %}
-  ins_pipe( long_memory_op );
-%}
-
-// Conditional-store of an intx value.
-instruct storeXConditional( memoryex mem, iRegX oldval, iRegX newval, iRegX tmp, flagsReg icc ) %{
-  match(Set icc (StoreIConditional mem (Binary oldval newval)));
-  effect( TEMP tmp );
-  size(28);
-  format %{ "loop: \n\t"
-            "LDREX    $tmp, $mem\t! If $oldval==[$mem] Then store $newval into [$mem], DOESN'T set $newval=[$mem] in any case\n\t"
-            "XORS     $tmp,$tmp, $oldval\n\t"
-            "STREX.eq $tmp, $newval, $mem\n\t"
-            "CMP.eq   $tmp, 1 \n\t"
-            "B.eq     loop \n\t"
-            "TEQ      $tmp, 0\n\t"
-            "membar   LoadStore|LoadLoad" %}
-  ins_encode %{
-    Label loop;
-    __ bind(loop);
-    __ ldrex($tmp$$Register, $mem$$Address);
-    __ eors($tmp$$Register, $tmp$$Register, $oldval$$Register);
-    __ strex($tmp$$Register, $newval$$Register, $mem$$Address, eq);
-    __ cmp($tmp$$Register, 1, eq);
-    __ b(loop, eq);
-    __ teq($tmp$$Register, 0);
-    __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadStore | MacroAssembler::LoadLoad), noreg);
-  %}
-  ins_pipe( long_memory_op );
 %}
 
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them

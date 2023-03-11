@@ -36,11 +36,12 @@ import jdk.incubator.vector.VectorSpecies;
  * @test
  * @bug 8259610
  * @key randomness
+ * @enablePreview
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector reinterpret intrinsics work as intended.
  * @library /test/lib /
- * @run driver compiler.vectorapi.reshape.TestVectorReinterpret
+ * @run main compiler.vectorapi.reshape.TestVectorReinterpret
  */
 public class TestVectorReinterpret {
     private static final List<VectorShape> SHAPE_LIST = List.of(VectorShape.values());

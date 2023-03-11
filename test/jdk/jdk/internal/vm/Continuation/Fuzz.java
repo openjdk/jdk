@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,39 @@
 */
 
 /*
- * @test
+ * @test id=default
  * @key randomness
  * @summary Fuzz tests for jdk.internal.vm.Continuation
- * @modules java.base/jdk.internal.vm
- *
+ * @requires vm.continuations
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
- * @modules java.base java.base/jdk.internal.vm.annotation
+ * @modules java.base java.base/jdk.internal.vm.annotation java.base/jdk.internal.vm
  * @library /test/lib
  * @build java.base/java.lang.StackWalkerHelper
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. Fuzz
- * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PreserveFramePointer Fuzz
- *
+ * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                               Fuzz
  */
 
-// * @run main/othervm/timeout=3000 -XX:StartFlightRecording=filename=test.jfr,settings=profile -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. Fuzz
-
-// Anything excluded or not compileonly is not compiled; see CompilerOracle::should_exclude
-
-// @run driver jdk.test.lib.FileInstaller compilerDirectives.json compilerDirectives.json
-// -XX:CompilerDirectivesFile=compilerDirectives.json
+/*
+ * @test id=preserve-fp
+ * @key randomness
+ * @summary Fuzz tests for jdk.internal.vm.Continuation
+ * @requires vm.continuations
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @modules java.base java.base/jdk.internal.vm.annotation java.base/jdk.internal.vm
+ * @library /test/lib
+ * @build java.base/java.lang.StackWalkerHelper
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                               -XX:+PreserveFramePointer
+ *                               Fuzz
+ */
 
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
@@ -61,7 +70,10 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
+
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 public class Fuzz implements Runnable {
     static final boolean VERIFY_STACK = true; // could add significant time
@@ -69,11 +81,19 @@ public class Fuzz implements Runnable {
     static final boolean RANDOM  = true;
     static final boolean VERBOSE = false;
 
-    static final int COMPILATION_TIMEOUT = 5_000; // ms
+    static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
+    static int COMPILATION_TIMEOUT = (int)(5_000 * timeoutFactor); // ms
 
     static final Path TEST_DIR = Path.of(System.getProperty("test.src", "."));
 
     public static void main(String[] args) {
+        if (Platform.isSlowDebugBuild() && Platform.isOSX() && Platform.isAArch64()) {
+            throw new SkippedException("Test is unstable with slowdebug bits "
+                                       + "on macosx-aarch64");
+        }
+        if (Platform.isPPC()) {
+            COMPILATION_TIMEOUT = COMPILATION_TIMEOUT * 2;
+        }
         warmup();
         for (int compileLevel : new int[]{4}) {
             for (boolean compileRun : new boolean[]{true}) {

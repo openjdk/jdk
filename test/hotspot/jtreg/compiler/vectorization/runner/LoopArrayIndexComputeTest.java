@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +27,28 @@
  * @summary Vectorization test on loop array index computation
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.LoopArrayIndexComputeTest
  *
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] ints;
     private short[] shorts;
@@ -75,6 +79,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     // ---------------- Linear Indexes ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.ADD_VI, ">0"})
     public int[] indexPlusConstant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE / 2; i++) {
@@ -84,6 +92,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public int[] indexMinusConstant() {
         int[] res = new int[SIZE];
         for (int i = SIZE / 2; i < SIZE; i++) {
@@ -93,6 +105,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public int[] indexPlusInvariant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -103,6 +119,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public int[] indexMinusInvariant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -113,6 +133,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public int[] indexWithInvariantAndConstant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -123,6 +147,10 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public int[] indexWithTwoInvariants() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -133,7 +161,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int[] indexWithDifferentConstants() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE / 4; i++) {
@@ -143,7 +172,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int[] indexWithDifferentInvariants() {
         int[] res = new int[SIZE];
         for (int i = SIZE / 4; i < SIZE / 2; i++) {
@@ -204,8 +234,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence
-    // between src and dest of the assignment.
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int[] sameArrayWithDifferentIndex() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -217,7 +247,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     // ---------------- Subword Type Arrays ----------------
     @Test
-    // Note that this case cannot be vectorized due to data dependence
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public short[] shortArrayWithDependence() {
         short[] res = new short[SIZE];
         System.arraycopy(shorts, 0, res, 0, SIZE);
@@ -228,7 +259,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public char[] charArrayWithDependence() {
         char[] res = new char[SIZE];
         System.arraycopy(chars, 0, res, 0, SIZE);
@@ -239,7 +271,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public byte[] byteArrayWithDependence() {
         byte[] res = new byte[SIZE];
         System.arraycopy(bytes, 0, res, 0, SIZE);
@@ -250,7 +283,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public boolean[] booleanArrayWithDependence() {
         boolean[] res = new boolean[SIZE];
         System.arraycopy(booleans, 0, res, 0, SIZE);
@@ -262,6 +296,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     // ---------------- Multiple Operations ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] differentIndexWithDifferentTypes() {
         int[] res1 = new int[SIZE];
         short[] res2 = new short[SIZE];
@@ -273,7 +309,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int[] differentIndexWithSameType() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];
@@ -284,4 +321,3 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
         return res2;
     }
 }
-

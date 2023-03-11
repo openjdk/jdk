@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,52 +26,82 @@
  * @bug 4511556
  * @summary Verify BitString value containing padding bits is accepted.
  * @modules java.base/sun.security.util
+ * @library /test/lib
  */
-
 import java.io.*;
-import java.util.Arrays;
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HexFormat;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
+import sun.security.util.BitArray;
 import sun.security.util.DerInputStream;
 
 public class PaddedBitString {
 
     // Relaxed the BitString parsing routine to accept bit strings
-    // with padding bits, ex. treat DER_BITSTRING_PAD6 as the same
-    // bit string as DER_BITSTRING_NOPAD.
+    // with padding bits, ex. treat DER_BITSTRING_PAD6_b as the same
+    // bit string as DER_BITSTRING_PAD6_0/DER_BITSTRING_NOPAD.
     // Note:
     // 1. the number of padding bits has to be in [0...7]
     // 2. value of the padding bits is ignored
 
-    // bit string (01011101 11000000)
-    // With 6 padding bits (01011101 11001011)
-    private final static byte[] DER_BITSTRING_PAD6 = { 3, 3, 6,
-                                                   (byte)0x5d, (byte)0xcb };
-
     // With no padding bits
     private final static byte[] DER_BITSTRING_NOPAD = { 3, 3, 0,
                                                    (byte)0x5d, (byte)0xc0 };
+    // With 6 zero padding bits (01011101 11000000)
+    private final static byte[] DER_BITSTRING_PAD6_0 = { 3, 3, 6,
+                                                   (byte)0x5d, (byte)0xc0 };
+
+    // With 6 nonzero padding bits (01011101 11001011)
+    private final static byte[] DER_BITSTRING_PAD6_b = { 3, 3, 6,
+                                                   (byte)0x5d, (byte)0xcb };
+
+    // With 8 padding bits
+    private final static byte[] DER_BITSTRING_PAD8_0 = { 3, 3, 8,
+                                                   (byte)0x5d, (byte)0xc0 };
+
+    private final static byte[] BITS = { (byte)0x5d, (byte)0xc0 };
+
+    static enum Type {
+        BIT_STRING,
+        UNALIGNED_BIT_STRING;
+    }
 
     public static void main(String args[]) throws Exception {
-        byte[] ba0, ba1;
-        try {
-            DerInputStream derin = new DerInputStream(DER_BITSTRING_PAD6);
-            ba1 = derin.getBitString();
-        } catch( IOException e ) {
-            e.printStackTrace();
-            throw new Exception("Unable to parse BitString with 6 padding bits");
-        }
+        test(DER_BITSTRING_NOPAD, new BitArray(16, BITS));
+        test(DER_BITSTRING_PAD6_0, new BitArray(10, BITS));
+        test(DER_BITSTRING_PAD6_b, new BitArray(10, BITS));
+        test(DER_BITSTRING_PAD8_0, null);
+        System.out.println("Tests Passed");
+    }
 
-        try {
-            DerInputStream derin = new DerInputStream(DER_BITSTRING_NOPAD);
-            ba0 = derin.getBitString();
-        } catch( IOException e ) {
-            e.printStackTrace();
-            throw new Exception("Unable to parse BitString with no padding");
-        }
-
-        if (Arrays.equals(ba1, ba0) == false ) {
-            throw new Exception("BitString comparison check failed");
+    private static void test(byte[] in, BitArray ans) throws IOException {
+        System.out.println("Testing " +
+                HexFormat.of().withUpperCase().formatHex(in));
+        for (Type t : Type.values()) {
+            DerInputStream derin = new DerInputStream(in);
+            boolean shouldPass = (ans != null);
+            switch (t) {
+            case BIT_STRING:
+                if (shouldPass) {
+                    Asserts.assertTrue(Arrays.equals(ans.toByteArray(),
+                            derin.getBitString()));
+                } else {
+                    Utils.runAndCheckException(() -> derin.getBitString(),
+                            IOException.class);
+                }
+                break;
+            case UNALIGNED_BIT_STRING:
+                if (shouldPass) {
+                    Asserts.assertEQ(ans, derin.getUnalignedBitString());
+                } else {
+                    Utils.runAndCheckException(() ->
+                            derin.getUnalignedBitString(), IOException.class);
+                }
+                break;
+            }
         }
     }
 }

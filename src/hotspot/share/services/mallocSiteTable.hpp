@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,12 @@ class MallocSite : public AllocationSite {
 
   // Memory allocated from this code path
   size_t size()  const { return _c.size(); }
+  // Peak memory ever allocated from this code path
+  size_t peak_size()  const { return _c.peak_size(); }
   // The number of calls were made
   size_t count() const { return _c.count(); }
+
+  const MemoryCounter* counter() const { return &_c; }
 };
 
 // Malloc site hashtable entry
@@ -60,7 +64,7 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  public:
 
   MallocSiteHashtableEntry(NativeCallStack stack, MEMFLAGS flags):
-    _malloc_site(stack, flags), _hash(stack.calculate_hash()), _next(NULL) {
+    _malloc_site(stack, flags), _hash(stack.calculate_hash()), _next(nullptr) {
     assert(flags != mtNone, "Expect a real memory type");
   }
 
@@ -102,14 +106,7 @@ class MallocSiteTable : AllStatic {
   // be tuned if malloc activities changed significantly.
   // The statistics data can be obtained via Jcmd
   // jcmd <pid> VM.native_memory statistics.
-
-  // Currently, (number of buckets / number of entries) ratio is
-  // about 1 / 6
-  enum {
-    table_base_size = 128,   // The base size is calculated from statistics to give
-                             // table ratio around 1:6
-    table_size = (table_base_size * NMT_TrackingStackDepth - 1)
-  };
+  static const int table_size = 4099;
 
   // Table cannot be wider than a 16bit bucket idx can hold
 #define MAX_MALLOCSITE_TABLE_SIZE (USHRT_MAX - 1)
@@ -136,7 +133,7 @@ class MallocSiteTable : AllStatic {
   // acquired before access the entry.
   static inline bool access_stack(NativeCallStack& stack, uint32_t marker) {
     MallocSite* site = malloc_site(marker);
-    if (site != NULL) {
+    if (site != nullptr) {
       stack = *site->call_stack();
       return true;
     }
@@ -152,15 +149,15 @@ class MallocSiteTable : AllStatic {
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
       uint32_t* marker, MEMFLAGS flags) {
     MallocSite* site = lookup_or_add(stack, marker, flags);
-    if (site != NULL) site->allocate(size);
-    return site != NULL;
+    if (site != nullptr) site->allocate(size);
+    return site != nullptr;
   }
 
   // Record memory deallocation. marker indicates where the allocation
   // information was recorded.
   static inline bool deallocation_at(size_t size, uint32_t marker) {
     MallocSite* site = malloc_site(marker);
-    if (site != NULL) {
+    if (site != nullptr) {
       site->deallocate(size);
       return true;
     }
@@ -174,10 +171,6 @@ class MallocSiteTable : AllStatic {
 
  private:
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MEMFLAGS flags);
-  static void reset();
-
-  // Delete a bucket linked list
-  static void delete_linked_list(MallocSiteHashtableEntry* head);
 
   static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags);
   static MallocSite* malloc_site(uint32_t marker);
@@ -188,19 +181,19 @@ class MallocSiteTable : AllStatic {
   }
 
   static inline const NativeCallStack* hash_entry_allocation_stack() {
-    assert(_hash_entry_allocation_stack != NULL, "Must be set");
+    assert(_hash_entry_allocation_stack != nullptr, "Must be set");
     return _hash_entry_allocation_stack;
   }
 
   static inline const MallocSiteHashtableEntry* hash_entry_allocation_site() {
-    assert(_hash_entry_allocation_site != NULL, "Must be set");
+    assert(_hash_entry_allocation_site != nullptr, "Must be set");
     return _hash_entry_allocation_site;
   }
 
  private:
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static MallocSiteHashtableEntry*        _table[table_size];
+  static MallocSiteHashtableEntry**       _table;
   static const NativeCallStack*           _hash_entry_allocation_stack;
   static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
 };

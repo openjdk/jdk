@@ -23,12 +23,14 @@
  * questions.
  */
 
-// This library is client-side only, and only supports the default credentials.
-// It speaks krb5 and SPNEGO. NTLM is excluded from SPNEGO negotiation.
-//
-// This library can be built directly with the following command:
-//   cl -I %OPENJDK%\src\java.security.jgss\share\native\libj2gss\ sspi.cpp \
-//      -link -dll -out:sspi_bridge.dll
+/*
+ * This library is client-side only, and only supports the default credentials.
+ * It speaks krb5 and SPNEGO. NTLM is excluded from SPNEGO negotiation.
+ *
+ * This library can be built directly with the following command:
+ *   cl -I %OPENJDK%\src\java.security.jgss\share\native\libj2gss\ sspi.cpp \
+ *      -link -dll -out:sspi_bridge.dll
+ */
 
 #define UNICODE
 #define _UNICODE
@@ -47,15 +49,13 @@
 #define SECURITY_WIN32
 #include <sspi.h>
 
-#pragma comment(lib, "secur32.lib")
-
 // Otherwise an exception will be thrown
 #define new new (std::nothrow)
 
 // A debugging macro
 #define PP(fmt, ...) \
         if (trace) { \
-            fprintf(stderr, "[SSPI:%ld] "fmt"\n", __LINE__, ##__VA_ARGS__); \
+            fprintf(stderr, "[SSPI:%ld] " fmt "\n", __LINE__, ##__VA_ARGS__); \
             fflush(stderr); \
         }
 #define SEC_SUCCESS(status) ((*minor_status = (status)), (status) >= SEC_E_OK)
@@ -736,8 +736,6 @@ gss_acquire_cred(OM_uint32 *minor_status,
             PP("Cannot get owner name of default creds");
             goto err;
         }
-        SEC_WCHAR* rnames = realname->name;
-        SEC_WCHAR* dnames = desired_name->name;
         int equals = 0;
         gss_compare_name(minor_status, realname, desired_name, &equals);
         gss_release_name(minor_status, &realname);
@@ -897,7 +895,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     gss_buffer_desc tn;
     gss_display_name(&minor, target_name, &tn, NULL);
     int len = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)tn.value, (int)tn.length,
-            outName, sizeof(outName) - 1);
+            outName, (sizeof(outName) / sizeof(outName[0])) - 1);
     if (len == 0) {
         goto err;
     }

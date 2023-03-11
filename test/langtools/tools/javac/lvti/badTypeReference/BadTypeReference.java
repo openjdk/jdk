@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8177466
  * @summary Add compiler support for local variable type-inference
- * @compile -source 8 pkg/var.java
+ * @compile --release 8 pkg/var.java
  * @compile pkg/nested/var/A.java
  * @compile/fail/ref=BadTypeReference.out -XDrawDiagnostics BadTypeReference.java
  */

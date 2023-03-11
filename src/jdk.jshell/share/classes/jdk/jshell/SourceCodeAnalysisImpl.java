@@ -52,6 +52,7 @@ import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacScope;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
@@ -127,6 +128,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
@@ -512,7 +514,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                                              IS_VOID.negate() :
                                              TRUE;
                             case PARAMETERIZED_TYPE -> FALSE; // TODO: JEP 218: Generics over Primitive Types
-                            case TYPE_PARAMETER, CLASS, INTERFACE, ENUM -> FALSE;
+                            case TYPE_PARAMETER, CLASS, INTERFACE, ENUM, RECORD -> FALSE;
                             default -> TRUE;
                         };
                         addElements(primitivesOrVoid(at), accept, smartFilter, result);
@@ -526,7 +528,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private static final Set<Kind> CLASS_KINDS = EnumSet.of(
-            Kind.ANNOTATION_TYPE, Kind.CLASS, Kind.ENUM, Kind.INTERFACE
+            Kind.ANNOTATION_TYPE, Kind.CLASS, Kind.ENUM, Kind.INTERFACE, Kind.RECORD
     );
 
     private Predicate<Element> smartFilterFromList(AnalyzeTask at, TreePath base, Collection<? extends Tree> types, Tree current) {
@@ -932,7 +934,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         Scope scope = at.trees().getScope(tp);
         return el -> {
             switch (el.getKind()) {
-                case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE:
+                case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: case RECORD:
                     return at.trees().isAccessible(scope, (TypeElement) el);
                 case PACKAGE:
                 case EXCEPTION_PARAMETER: case PARAMETER: case LOCAL_VARIABLE: case RESOURCE_VARIABLE:
@@ -1030,7 +1032,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case DECLARED: {
                 TypeElement element = (TypeElement) at.getTypes().asElement(site);
                 List<Element> result = new ArrayList<>();
-                result.addAll(at.getElements().getAllMembers(element));
+                at.getElements().getAllMembers(element).forEach(m -> result.add(
+                    element.equals(m.getEnclosingElement())
+                        ? m
+                        : (m instanceof Symbol.MethodSymbol ms)
+                            ? ms.clone((Symbol)element)
+                            : (m instanceof Symbol.VarSymbol vs)
+                                ? vs.clone((Symbol)element)
+                                : m));
                 if (shouldGenerateDotClassItem) {
                     result.add(createDotClassSymbol(at, site));
                 }
@@ -1679,17 +1688,46 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return availableSources = result;
     }
 
+    private Element getOriginalEnclosingElement(Element el) {
+        if (el instanceof Symbol s) el = s.baseSymbol();
+        return el.getEnclosingElement();
+    }
+
     private String elementHeader(AnalyzeTask at, Element el, boolean includeParameterNames, boolean useFQN) {
         switch (el.getKind()) {
-            case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: {
+            case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE, RECORD: {
                 TypeElement type = (TypeElement)el;
                 String fullname = type.getQualifiedName().toString();
                 Element pkg = at.getElements().getPackageOf(el);
                 String name = pkg == null || useFQN ? fullname :
                         proc.maps.fullClassNameAndPackageToClass(fullname, ((PackageElement)pkg).getQualifiedName().toString());
+                String typeParameters = typeParametersOpt(at, type.getTypeParameters(), includeParameterNames);
+                String recordParameters;
 
-                return name + typeParametersOpt(at, type.getTypeParameters(), includeParameterNames);
+                if (el.getKind() == ElementKind.RECORD) {
+                    StringBuilder params = new StringBuilder();
+                    String sep = "";
+
+                    params.append("(");
+
+                    for (RecordComponentElement component : type.getRecordComponents()) {
+                        params.append(sep);
+                        params.append(component.asType());
+                        params.append(" ");
+                        params.append(component.getSimpleName());
+                        sep = ", ";
+                    }
+
+                    params.append(")");
+
+                    recordParameters = params.toString();
+                } else {
+                    recordParameters = "";
+                }
+
+                return name + typeParameters + recordParameters;
             }
+
             case TYPE_PARAMETER: {
                 TypeParameterElement tp = (TypeParameterElement)el;
                 String name = tp.getSimpleName().toString();
@@ -1705,9 +1743,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                                 .collect(joining(" & "));
             }
             case FIELD:
-                return appendDot(elementHeader(at, el.getEnclosingElement(), includeParameterNames, false)) + el.getSimpleName() + ":" + el.asType();
+                return appendDot(elementHeader(at, getOriginalEnclosingElement(el), includeParameterNames, false)) + el.getSimpleName() + ":" + el.asType();
             case ENUM_CONSTANT:
-                return appendDot(elementHeader(at, el.getEnclosingElement(), includeParameterNames, false)) + el.getSimpleName();
+                return appendDot(elementHeader(at, getOriginalEnclosingElement(el), includeParameterNames, false)) + el.getSimpleName();
             case EXCEPTION_PARAMETER: case LOCAL_VARIABLE: case PARAMETER: case RESOURCE_VARIABLE:
                 return el.getSimpleName() + ":" + el.asType();
             case CONSTRUCTOR: case METHOD: {
@@ -1728,7 +1766,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 }
 
                 // receiver type
-                String clazz = elementHeader(at, el.getEnclosingElement(), includeParameterNames, false);
+                String clazz = elementHeader(at, getOriginalEnclosingElement(el), includeParameterNames, false);
                 header.append(clazz);
 
                 if (isMethod) {
@@ -1790,7 +1828,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     @Override
     public String analyzeType(String code, int cursor) {
         switch (guessKind(code)) {
-            case IMPORT: case METHOD: case CLASS: case ENUM:
+            case IMPORT: case METHOD: case CLASS: case ENUM: case RECORD:
             case INTERFACE: case ANNOTATION_TYPE: case VARIABLE:
                 return null;
             default:

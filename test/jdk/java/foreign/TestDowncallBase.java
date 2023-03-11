@@ -22,24 +22,23 @@
  *
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class TestDowncallBase extends CallGeneratorHelper {
 
-    static Linker LINKER = Linker.nativeLinker();
-
-    Object doCall(Addressable symbol, SegmentAllocator allocator, FunctionDescriptor descriptor, Object[] args) throws Throwable {
+    Object doCall(MemorySegment symbol, SegmentAllocator allocator, FunctionDescriptor descriptor, Object[] args) throws Throwable {
         MethodHandle mh = downcallHandle(LINKER, symbol, allocator, descriptor);
-        Object res = mh.invokeWithArguments(args);
-        return res;
+        return mh.invokeWithArguments(args);
     }
 
     static FunctionDescriptor function(Ret ret, List<ParamType> params, List<StructFieldType> fields, List<MemoryLayout> prefix) {
@@ -50,15 +49,17 @@ public class TestDowncallBase extends CallGeneratorHelper {
                 FunctionDescriptor.of(paramLayouts[prefix.size()], paramLayouts);
     }
 
-    static Object[] makeArgs(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<MemoryLayout> prefix) throws ReflectiveOperationException {
-        Object[] args = new Object[prefix.size() + params.size()];
+    static Object[] makeArgs(Arena arena, FunctionDescriptor descriptor, List<Consumer<Object>> checks, int returnIdx) {
+        List<MemoryLayout> argLayouts = descriptor.argumentLayouts();
+        TestValue[] args = new TestValue[argLayouts.size()];
         int argNum = 0;
-        for (MemoryLayout layout : prefix) {
-            args[argNum++] = makeArg(layout, null, false);
+        for (MemoryLayout layout : argLayouts) {
+            args[argNum++] = genTestValue(layout, arena);
         }
-        for (int i = 0 ; i < params.size() ; i++) {
-            args[argNum++] = makeArg(params.get(i).layout(fields), checks, i == 0);
+
+        if (descriptor.returnLayout().isPresent()) {
+            checks.add(args[returnIdx].check());
         }
-        return args;
+        return Stream.of(args).map(TestValue::value).toArray();
     }
 }

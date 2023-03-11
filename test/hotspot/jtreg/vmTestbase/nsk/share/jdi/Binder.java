@@ -739,8 +739,8 @@ public class Binder extends DebugeeBinder {
             arg.setValue(argumentHandler.getLaunchExecName());
         }
 
-        // This flag is needed so VirtualThread.allThreads() includes known vthreads.
-        arg = (Connector.StringArgument) arguments.get("enumeratevthreads");
+        // This flag is needed so VirtualMachine.allThreads() includes known vthreads.
+        arg = (Connector.StringArgument) arguments.get("includevirtualthreads");
         arg.setValue("y");
 
         String vmArgs = "";
@@ -751,10 +751,12 @@ public class Binder extends DebugeeBinder {
             vmArgs = vmUserArgs;
         }
 
-        /* Need --enable-preview on the debuggee in order to support virtual threads. */
         boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
         if (vthreadMode) {
+            /* Need --enable-preview on the debuggee in order to support virtual threads. */
             vmArgs += " --enable-preview";
+            /* Some tests need more carrier threads than the default provided. */
+            vmArgs += " -Djdk.virtualThreadScheduler.parallelism=15";
         }
 
 /*

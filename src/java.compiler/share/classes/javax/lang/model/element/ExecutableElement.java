@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,11 @@ import javax.lang.model.type.*;
 
 /**
  * Represents a method, constructor, or initializer (static or
- * instance) of a class or interface, including annotation type
+ * instance) of a class or interface, including annotation interface
  * elements.
+ * Annotation interface elements are methods restricted to have no
+ * formal parameters, no type parameters, and no {@code throws}
+ * clause, among other restrictions; see JLS {@jls 9.6.1} for details
  *
  * @see ExecutableType
  * @since 1.6
@@ -139,7 +142,7 @@ public interface ExecutableElement extends Element, Parameterizable {
      * initializer}  For a constructor, the name {@code "<init>"} is
      * returned, for a static initializer, the name {@code "<clinit>"}
      * is returned, and for an anonymous class or instance
-     * initializer, an <a href=Name.html#empty_name>empty name</a> is
+     * initializer, an {@linkplain Name##empty_name empty name} is
      * returned.
      */
     @Override

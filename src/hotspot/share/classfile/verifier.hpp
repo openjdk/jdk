@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ class TypeOrigin {
       : _origin(origin), _index(index), _frame(frame), _type(type) {}
 
  public:
-  TypeOrigin() : _origin(NONE), _index(0), _frame(NULL) {}
+  TypeOrigin() : _origin(NONE), _index(0), _frame(nullptr) {}
 
   static TypeOrigin null();
   static TypeOrigin local(u2 index, StackMapFrame* frame);
@@ -285,7 +285,7 @@ class ClassVerifier : public StackObj {
   Symbol* _exception_type;
   char* _message;
 
-  method_signatures_table_type* _method_signatures_table;
+  method_signatures_table_type _method_signatures_table;
 
   ErrorContext _error_context;  // contains information about an error
 
@@ -422,7 +422,7 @@ class ClassVerifier : public StackObj {
 
   // Return status modes
   Symbol* result() const { return _exception_type; }
-  bool has_error() const { return result() != NULL; }
+  bool has_error() const { return result() != nullptr; }
   char* exception_message() {
     stringStream ss;
     ss.print("%s", _message);
@@ -437,12 +437,8 @@ class ClassVerifier : public StackObj {
 
   Klass* load_class(Symbol* name, TRAPS);
 
-  method_signatures_table_type* method_signatures_table() const {
-    return _method_signatures_table;
-  }
-
-  void set_method_signatures_table(method_signatures_table_type* method_signatures_table) {
-    _method_signatures_table = method_signatures_table;
+  method_signatures_table_type* method_signatures_table() {
+    return &_method_signatures_table;
   }
 
   int change_sig_to_verificationType(
@@ -463,8 +459,8 @@ class ClassVerifier : public StackObj {
     }
     if (!s->is_permanent()) {
       s->increment_refcount();
-      if (_symbols == NULL) {
-        _symbols = new GrowableArray<Symbol*>(50, 0, NULL);
+      if (_symbols == nullptr) {
+        _symbols = new GrowableArray<Symbol*>(50, 0, nullptr);
       }
       _symbols->push(s);
     }

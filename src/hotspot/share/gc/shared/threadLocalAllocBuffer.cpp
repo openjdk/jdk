@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "compiler/compilerDefinitions.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -32,8 +32,8 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/copy.hpp"
 
@@ -42,11 +42,11 @@ int          ThreadLocalAllocBuffer::_reserve_for_allocation_prefetch = 0;
 unsigned int ThreadLocalAllocBuffer::_target_refills = 0;
 
 ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
-  _start(NULL),
-  _top(NULL),
-  _pf_top(NULL),
-  _end(NULL),
-  _allocation_end(NULL),
+  _start(nullptr),
+  _top(nullptr),
+  _pf_top(nullptr),
+  _end(nullptr),
+  _allocation_end(nullptr),
   _desired_size(0),
   _refill_waste_limit(0),
   _allocated_before_last_gc(0),
@@ -66,7 +66,7 @@ size_t ThreadLocalAllocBuffer::min_size()                       { return align_o
 size_t ThreadLocalAllocBuffer::refill_waste_limit_increment()   { return TLABWasteIncrement; }
 
 size_t ThreadLocalAllocBuffer::remaining() {
-  if (end() == NULL) {
+  if (end() == nullptr) {
     return 0;
   }
 
@@ -117,14 +117,14 @@ void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocSta
 }
 
 void ThreadLocalAllocBuffer::insert_filler() {
-  assert(end() != NULL, "Must not be retired");
+  assert(end() != nullptr, "Must not be retired");
   if (top() < hard_end()) {
     Universe::heap()->fill_with_dummy_object(top(), hard_end(), true);
   }
 }
 
 void ThreadLocalAllocBuffer::make_parsable() {
-  if (end() != NULL) {
+  if (end() != nullptr) {
     invariants();
     if (ZeroTLAB) {
       retire();
@@ -135,15 +135,15 @@ void ThreadLocalAllocBuffer::make_parsable() {
 }
 
 void ThreadLocalAllocBuffer::retire(ThreadLocalAllocStats* stats) {
-  if (stats != NULL) {
+  if (stats != nullptr) {
     accumulate_and_reset_statistics(stats);
   }
 
-  if (end() != NULL) {
+  if (end() != nullptr) {
     invariants();
     thread()->incr_allocated_bytes(used_bytes());
     insert_filler();
-    initialize(NULL, NULL, NULL);
+    initialize(nullptr, nullptr, nullptr);
   }
 }
 
@@ -163,7 +163,7 @@ void ThreadLocalAllocBuffer::resize() {
 
   size_t aligned_new_size = align_object_size(new_size);
 
-  log_trace(gc, tlab)("TLAB new size: thread: " INTPTR_FORMAT " [id: %2d]"
+  log_trace(gc, tlab)("TLAB new size: thread: " PTR_FORMAT " [id: %2d]"
                       " refills %d  alloc: %8.6f desired_size: " SIZE_FORMAT " -> " SIZE_FORMAT,
                       p2i(thread()), thread()->osthread()->thread_id(),
                       _target_refills, _allocation_fraction.average(), desired_size(), aligned_new_size);
@@ -206,9 +206,9 @@ void ThreadLocalAllocBuffer::initialize(HeapWord* start,
 }
 
 void ThreadLocalAllocBuffer::initialize() {
-  initialize(NULL,                    // start
-             NULL,                    // top
-             NULL);                   // end
+  initialize(nullptr,                    // start
+             nullptr,                    // top
+             nullptr);                   // end
 
   set_desired_size(initial_desired_size());
 
@@ -296,7 +296,7 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
   size_t waste = _gc_waste + _refill_waste;
   double waste_percent = percent_of(waste, _allocated_size);
   size_t tlab_used  = Universe::heap()->tlab_used(thrd);
-  log.trace("TLAB: %s thread: " INTPTR_FORMAT " [id: %2d]"
+  log.trace("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
             " desired_size: " SIZE_FORMAT "KB"
             " slow allocs: %d  refill waste: " SIZE_FORMAT "B"
             " alloc:%8.5f %8.0fKB refills: %d waste %4.1f%% gc: %dB"
@@ -471,7 +471,7 @@ void ThreadLocalAllocStats::publish() {
 }
 
 size_t ThreadLocalAllocBuffer::end_reserve() {
-  size_t reserve_size = Universe::heap()->tlab_alloc_reserve();
+  size_t reserve_size = CollectedHeap::lab_alignment_reserve();
   return MAX2(reserve_size, (size_t)_reserve_for_allocation_prefetch);
 }
 

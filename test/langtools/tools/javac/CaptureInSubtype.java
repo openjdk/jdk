@@ -37,14 +37,4 @@ public class CaptureInSubtype {
 
         Flaw<?> m(){return fn;}
     }
-
-    public static void main(String[] args) {
-        SuperOfShowFlaw sosf = new ShowFlaw();
-        SuperOfFlaw<List<?>> sof = sosf.m();
-        List<String> ls = new ArrayList<String>();
-        ls.add("Smalltalk rules!");
-        sof.put(ls);
-        Number n = ShowFlaw.fn.get().get(0);
-    }
-
 }

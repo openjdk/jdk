@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,17 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
 // States:
 //                                 _run_to     _want_idle    _is_stopped
-// (1) No active request            NULL         false          false
-// (2) Active run_to() running     non-NULL      false          false
-// (3) Active run_to() in at()      NULL         false          true
-// (4) Active run_to_idle()         NULL         true           false
-const char* ConcurrentGCBreakpoints::_run_to = NULL;
+// (1) No active request            null         false          false
+// (2) Active run_to() running     non-null      false          false
+// (3) Active run_to() in at()      null         false          true
+// (4) Active run_to_idle()         null         true           false
+const char* ConcurrentGCBreakpoints::_run_to = nullptr;
 bool ConcurrentGCBreakpoints::_want_idle = false;
 bool ConcurrentGCBreakpoints::_is_stopped = false;
 
@@ -46,7 +46,7 @@ bool ConcurrentGCBreakpoints::_is_stopped = false;
 bool ConcurrentGCBreakpoints::_is_idle = true;
 
 void ConcurrentGCBreakpoints::reset_request_state() {
-  _run_to = NULL;
+  _run_to = nullptr;
   _want_idle = false;
   _is_stopped = false;
 }
@@ -57,7 +57,7 @@ Monitor* ConcurrentGCBreakpoints::monitor() {
 
 bool ConcurrentGCBreakpoints::is_controlled() {
   assert_locked_or_safepoint(monitor());
-  return _want_idle || _is_stopped || (_run_to != NULL);
+  return _want_idle || _is_stopped || (_run_to != nullptr);
 }
 
 #define assert_Java_thread() \
@@ -99,7 +99,7 @@ void ConcurrentGCBreakpoints::run_to_idle() {
 
 bool ConcurrentGCBreakpoints::run_to(const char* breakpoint) {
   assert_Java_thread();
-  assert(breakpoint != NULL, "precondition");
+  assert(breakpoint != nullptr, "precondition");
 
   MonitorLocker ml(monitor());
   assert(is_controlled(), "precondition");
@@ -132,18 +132,18 @@ bool ConcurrentGCBreakpoints::run_to(const char* breakpoint) {
 
 void ConcurrentGCBreakpoints::at(const char* breakpoint) {
   assert(Thread::current()->is_ConcurrentGC_thread(), "precondition");
-  assert(breakpoint != NULL, "precondition");
+  assert(breakpoint != nullptr, "precondition");
   MonitorLocker ml(monitor(), Mutex::_no_safepoint_check_flag);
 
   // Ignore non-matching request state.
-  if ((_run_to == NULL) || (strcmp(_run_to, breakpoint) != 0)) {
+  if ((_run_to == nullptr) || (strcmp(_run_to, breakpoint) != 0)) {
     log_trace(gc, breakpoint)("unmatched breakpoint %s", breakpoint);
     return;
   }
   log_trace(gc, breakpoint)("matched breakpoint %s", breakpoint);
 
   // Notify request.
-  _run_to = NULL;
+  _run_to = nullptr;
   _is_stopped = true;
   ml.notify_all();              // Wakeup waiting request.
   // Wait for request to be cancelled.
@@ -158,10 +158,10 @@ void ConcurrentGCBreakpoints::notify_active_to_idle() {
   assert(!_is_stopped, "invariant");
   // Notify pending run_to request of miss by replacing the run_to() request
   // with a run_to_idle() request.
-  if (_run_to != NULL) {
+  if (_run_to != nullptr) {
     log_debug(gc, breakpoint)
              ("Concurrent cycle completed without reaching breakpoint %s", _run_to);
-    _run_to = NULL;
+    _run_to = nullptr;
     _want_idle = true;
   }
   _is_idle = true;

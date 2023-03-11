@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
@@ -108,6 +109,8 @@
 
 class BootstrapInfo;
 class ClassFileStream;
+class ConstantPoolCache;
+class ConstantPoolCacheEntry;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
@@ -124,8 +127,8 @@ class SharedClassLoadingMark {
  public:
   SharedClassLoadingMark(Thread* current, InstanceKlass* ik) : THREAD(current), _klass(ik) {}
   ~SharedClassLoadingMark() {
-    assert(THREAD != NULL, "Current thread is NULL");
-    assert(_klass != NULL, "InstanceKlass is NULL");
+    assert(THREAD != nullptr, "Current thread is nullptr");
+    assert(_klass != nullptr, "InstanceKlass is nullptr");
     if (HAS_PENDING_EXCEPTION) {
       if (_klass->is_shared()) {
         _klass->set_shared_loading_failed();
@@ -137,6 +140,20 @@ class SharedClassLoadingMark {
 class SystemDictionaryShared: public SystemDictionary {
   friend class ExcludeDumpTimeSharedClasses;
   friend class CleanupDumpTimeLambdaProxyClassTable;
+
+  struct ArchiveInfo {
+    RunTimeSharedDictionary _builtin_dictionary;
+    RunTimeSharedDictionary _unregistered_dictionary;
+    LambdaProxyClassDictionary _lambda_proxy_class_dictionary;
+
+    const RunTimeLambdaProxyClassInfo* lookup_lambda_proxy_class(LambdaProxyClassKey* key) {
+      return _lambda_proxy_class_dictionary.lookup(key, key->hash(), 0);
+    }
+
+    void print_on(const char* prefix, outputStream* st);
+    void print_table_statistics(const char* prefix, outputStream* st);
+  };
+
 public:
   enum {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
@@ -150,14 +167,13 @@ private:
   static DumpTimeSharedClassTable* _cloned_dumptime_table;
   static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
   static DumpTimeLambdaProxyClassDictionary* _cloned_dumptime_lambda_proxy_class_dictionary;
-  // SystemDictionaries in the base layer static archive
-  static RunTimeSharedDictionary _builtin_dictionary;
-  static RunTimeSharedDictionary _unregistered_dictionary;
-  static LambdaProxyClassDictionary _lambda_proxy_class_dictionary;
-  // SystemDictionaries in the top layer dynamic archive
-  static RunTimeSharedDictionary _dynamic_builtin_dictionary;
-  static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
-  static LambdaProxyClassDictionary _dynamic_lambda_proxy_class_dictionary;
+
+  static ArchiveInfo _static_archive;
+  static ArchiveInfo _dynamic_archive;
+
+  static ArchiveInfo* get_archive(bool is_static_archive) {
+    return is_static_archive ? &_static_archive : &_dynamic_archive;
+  }
 
   static InstanceKlass* load_shared_class_for_builtin_loader(
                                                Symbol* class_name,
@@ -169,8 +185,12 @@ private:
                                  Handle protection_domain,
                                  const ClassFileStream* cfs,
                                  TRAPS);
-  static DumpTimeClassInfo* find_or_allocate_info_for(InstanceKlass* k);
-  static DumpTimeClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
+
+  // Guaranteed to return non-null value for non-shared classes.
+  // k must not be a shared class.
+  static DumpTimeClassInfo* get_info(InstanceKlass* k);
+  static DumpTimeClassInfo* get_info_locked(InstanceKlass* k);
+
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
@@ -182,13 +202,7 @@ private:
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
 
-  static bool _dump_in_progress;
-  DEBUG_ONLY(static bool _no_class_loading_should_happen;)
-  static void print_on(const char* prefix,
-                       RunTimeSharedDictionary* builtin_dictionary,
-                       RunTimeSharedDictionary* unregistered_dictionary,
-                       LambdaProxyClassDictionary* lambda_dictionary,
-                       outputStream* st) NOT_CDS_RETURN;
+  DEBUG_ONLY(static bool _class_loading_may_happen;)
 
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
@@ -217,6 +231,7 @@ public:
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
                                                             Symbol* super_name,  bool is_superclass);
 
+  static void initialize() NOT_CDS_RETURN;
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
 
@@ -263,10 +278,10 @@ public:
                                                       Symbol* invoked_type,
                                                       Symbol* method_type,
                                                       Method* member_method,
-                                                      Symbol* instantiated_method_type) NOT_CDS_RETURN_(NULL);
-  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(NULL);
+                                                      Symbol* instantiated_method_type) NOT_CDS_RETURN_(nullptr);
+  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(nullptr);
   static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(NULL);
+                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(nullptr);
   static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2) NOT_CDS_RETURN;
@@ -303,20 +318,21 @@ public:
   static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool is_dumptime_table_empty() NOT_CDS_RETURN_(true);
-  static void start_dumping() NOT_CDS_RETURN;
-  static void stop_dumping() NOT_CDS_RETURN;
   static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
-  DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
+  DEBUG_ONLY(static bool class_loading_may_happen() {return _class_loading_may_happen;})
 
 #ifdef ASSERT
+  // This object marks a critical period when writing the CDS archive. During this
+  // period, the JVM must not load any new classes, so as to avoid adding new
+  // items in the SystemDictionaryShared::_dumptime_table.
   class NoClassLoadingMark: public StackObj {
   public:
     NoClassLoadingMark() {
-      assert(!_no_class_loading_should_happen, "must not be nested");
-      _no_class_loading_should_happen = true;
+      assert(_class_loading_may_happen, "must not be nested");
+      _class_loading_may_happen = false;
     }
     ~NoClassLoadingMark() {
-      _no_class_loading_should_happen = false;
+      _class_loading_may_happen = true;
     }
   };
 #endif
@@ -330,14 +346,6 @@ public:
   }
 
   static unsigned int hash_for_shared_dictionary(address ptr);
-
-#if INCLUDE_CDS_JAVA_HEAP
-private:
-  static void update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict);
-  static void update_archived_mirror_native_pointers_for(LambdaProxyClassDictionary* dict);
-public:
-  static void update_archived_mirror_native_pointers() NOT_CDS_RETURN;
-#endif
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

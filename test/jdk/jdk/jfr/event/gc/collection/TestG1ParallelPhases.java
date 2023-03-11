@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import static java.util.stream.IntStream.range;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.jfr.Events.fromRecording;
-import static sun.hotspot.WhiteBox.getWhiteBox;
+import static jdk.test.whitebox.WhiteBox.getWhiteBox;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -47,7 +47,7 @@ import gc.testlibrary.g1.MixedGCProvoker;
 import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test
@@ -55,8 +55,8 @@ import sun.hotspot.WhiteBox;
  * @requires vm.hasJFR
  * @requires vm.gc == "G1" | vm.gc == null
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+AlwaysTenure
  *      -Xms20M -Xmx20M -Xlog:gc=debug,gc+heap*=debug,gc+ergo*=debug,gc+start=debug
  *      -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0 -XX:G1HeapRegionSize=1m
@@ -87,6 +87,8 @@ public class TestG1ParallelPhases {
             .collect(toSet());
 
         Set<String> allPhases = of(
+            "RetireTLABsAndFlushLogs",
+            "NonJavaThreadFlushLogs",
             "ExtRootScan",
             "ThreadRoots",
             "VM Global",
@@ -97,7 +99,6 @@ public class TestG1ParallelPhases {
             "CLDGRoots",
             "CMRefRoots",
             "MergeER",
-            "MergeHCC",
             "MergeRS",
             "MergeLB",
             "ScanHR",
@@ -106,9 +107,8 @@ public class TestG1ParallelPhases {
             "Termination",
             "RedirtyCards",
             "RecalculateUsed",
-            "ResetHotCardCache",
+            "ResizeTLABs",
             "FreeCSet",
-            "PurgeCodeRoots",
             "UpdateDerivedPointers",
             "EagerlyReclaimHumongousObjects",
             "ClearLoggedCards",
@@ -117,7 +117,6 @@ public class TestG1ParallelPhases {
             "YoungFreeCSet",
             "RebuildFreeList",
             "SampleCandidates",
-            "CLDClearClaimedMarks",
             "ResetMarkingState",
             "NoteStartOfMark"
         );
@@ -125,10 +124,12 @@ public class TestG1ParallelPhases {
         // Some GC phases may or may not occur depending on environment. Filter them out
         // since we can not reliably guarantee that they occur (or not).
         Set<String> optPhases = of(
-            // The following two phases only occur on evacuation failure.
+            // The following phases only occur on evacuation failure.
             "RestoreRetainedRegions",
+            "RemoveSelfForwards",
             "RestorePreservedMarks",
-
+            "ClearRetainedRegionsBitmap",
+            // Generally optional phases.
             "OptScanHR",
             "OptMergeRS",
             "OptCodeRoots",

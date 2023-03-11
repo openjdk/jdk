@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 
 package sun.security.ssl;
 
-import sun.security.util.ByteArrays;
-
-import java.io.*;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import sun.security.util.ByteArrays;
 
 /*
  * RandomCookie ... SSL hands standard format random cookies (nonces)
@@ -99,7 +97,7 @@ final class RandomCookie {
         }
     }
 
-    RandomCookie(ByteBuffer m) throws IOException {
+    RandomCookie(ByteBuffer m) {
         m.get(randomBytes);
     }
 

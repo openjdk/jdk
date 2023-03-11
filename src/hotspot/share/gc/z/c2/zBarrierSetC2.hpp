@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ const uint8_t ZLoadBarrierWeak        = 2;
 const uint8_t ZLoadBarrierPhantom     = 4;
 const uint8_t ZLoadBarrierNoKeepalive = 8;
 
-class ZLoadBarrierStubC2 : public ResourceObj {
+class ZLoadBarrierStubC2 : public ArenaObj {
 private:
   const MachNode* _node;
   const Address   _ref_addr;
@@ -91,6 +91,10 @@ public:
   virtual void late_barrier_analysis() const;
   virtual int estimate_stub_size() const;
   virtual void emit_stubs(CodeBuffer& cb) const;
+
+#ifndef PRODUCT
+  virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const;
+#endif
 };
 
 #endif // SHARE_GC_Z_C2_ZBARRIERSETC2_HPP

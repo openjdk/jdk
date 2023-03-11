@@ -45,12 +45,12 @@ import java.util.regex.Pattern;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(1)
-@Warmup(iterations = 1)
-@Measurement(iterations = 4)
+@Warmup(iterations = 2, time = 3, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 3, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Benchmark)
 public class Primality {
     /** Number to be primality tested. */
-    @Param({"16", "17", "256", "257", "4096", "4099"})
+    @Param({"16", "17", /* "256", "257", */ "4096", "4099"})
     //  "64", "67", "1024", "1031", "16384", "16411"})
     int n;
 

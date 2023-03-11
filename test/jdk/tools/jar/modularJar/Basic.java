@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 import java.io.*;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -38,6 +40,8 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.module.ModuleReferenceImpl;
+import jdk.internal.module.ModuleResolution;
 import jdk.test.lib.util.FileUtils;
 import jdk.test.lib.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
@@ -53,6 +57,7 @@ import static java.lang.System.out;
  * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
+ *          java.base/jdk.internal.module
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
  *        jdk.test.lib.JDKToolFinder
@@ -940,6 +945,137 @@ public class Basic {
                                 " in [", r.output, "]")
                 );
         }
+    }
+
+    @DataProvider(name = "resolutionWarnings")
+    public Object[][] resolutionWarnings() {
+        return new Object[][] {
+            {"incubating", (Predicate<ModuleResolution>) ModuleResolution::hasIncubatingWarning},
+            {"deprecated", (Predicate<ModuleResolution>) ModuleResolution::hasDeprecatedWarning},
+            {"deprecated-for-removal",
+                (Predicate<ModuleResolution>) ModuleResolution::hasDeprecatedForRemovalWarning}
+        };
+    }
+
+    /**
+     * Validate that you can create a jar only specifying --warn-if-resolved
+     * @throws IOException
+     */
+    @Test(dataProvider = "resolutionWarnings")
+    public void shouldAddWarnIfResolved(String resolutionName,
+                                        Predicate<ModuleResolution> hasWarning) throws IOException {
+        Path mp = Paths.get("moduleWarnIfResolved-" + resolutionName);
+        createTestDir(mp);
+        Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
+        Path modularJar = mp.resolve(FOO.moduleName + ".jar");
+
+        jar("--create",
+            "--file=" + modularJar.toString(),
+            "--main-class=" + FOO.mainClass,
+            "--warn-if-resolved=" + resolutionName,
+            "--no-manifest",
+            "-C", modClasses.toString(), ".")
+            .assertSuccess();
+
+        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar)
+            .find(FOO.moduleName)
+            .map(ModuleReferenceImpl.class::cast)
+            .orElseThrow();
+        ModuleResolution moduleResolution = moduleReference.moduleResolution();
+
+        assertTrue(hasWarning.test(moduleResolution));
+    }
+
+    /**
+     * Validate that you can create a jar only specifying --do-not-resolve-by-default
+     * @throws IOException
+     */
+    @Test
+    public void shouldAddDoNotResolveByDefault() throws IOException {
+        Path mp = Paths.get("moduleDoNotResolveByDefault");
+        createTestDir(mp);
+        Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
+        Path modularJar = mp.resolve(FOO.moduleName + ".jar");
+
+        jar("--create",
+            "--file=" + modularJar.toString(),
+            "--main-class=" + FOO.mainClass,
+            "--do-not-resolve-by-default",
+            "--no-manifest",
+            "-C", modClasses.toString(), ".")
+            .assertSuccess();
+
+        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar)
+            .find(FOO.moduleName)
+            .map(ModuleReferenceImpl.class::cast)
+            .orElseThrow();
+        ModuleResolution moduleResolution = moduleReference.moduleResolution();
+
+        assertTrue(moduleResolution.doNotResolveByDefault());
+    }
+
+    /**
+     * Validate that you can create a jar specifying --warn-if-resolved and
+     * --do-not-resolve-by-default
+     * @throws IOException
+     */
+    @Test(dataProvider = "resolutionWarnings")
+    public void shouldAddWarnIfResolvedAndDoNotResolveByDefault(String resolutionName,
+                                        Predicate<ModuleResolution> hasWarning) throws IOException {
+        Path mp = Paths.get("moduleResolutionWarnThenNotResolve-" + resolutionName);
+        createTestDir(mp);
+        Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
+        Path modularJar = mp.resolve(FOO.moduleName + ".jar");
+
+        jar("--create",
+            "--file=" + modularJar.toString(),
+            "--main-class=" + FOO.mainClass,
+            "--warn-if-resolved=" + resolutionName,
+            "--do-not-resolve-by-default",
+            "--no-manifest",
+            "-C", modClasses.toString(), ".")
+            .assertSuccess();
+
+        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar)
+            .find(FOO.moduleName)
+            .map(ModuleReferenceImpl.class::cast)
+            .orElseThrow();
+        ModuleResolution moduleResolution = moduleReference.moduleResolution();
+
+        assertTrue(hasWarning.test(moduleResolution));
+        assertTrue(moduleResolution.doNotResolveByDefault());
+    }
+
+    /**
+     * Validate that you can create a jar specifying --do-not-resolve-by-default and
+     * --warn-if-resolved
+     * @throws IOException
+     */
+    @Test(dataProvider = "resolutionWarnings")
+    public void shouldAddResolutionDoNotResolveByDefaultAndWarnIfResolved(String resolutionName,
+                                        Predicate<ModuleResolution> hasWarning) throws IOException {
+        Path mp = Paths.get("moduleResolutionNotResolveThenWarn-" + resolutionName);
+        createTestDir(mp);
+        Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
+        Path modularJar = mp.resolve(FOO.moduleName + ".jar");
+
+        jar("--create",
+            "--file=" + modularJar.toString(),
+            "--main-class=" + FOO.mainClass,
+            "--do-not-resolve-by-default",
+            "--warn-if-resolved=" + resolutionName,
+            "--no-manifest",
+            "-C", modClasses.toString(), ".")
+            .assertSuccess();
+
+        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar)
+            .find(FOO.moduleName)
+            .map(ModuleReferenceImpl.class::cast)
+            .orElseThrow();
+        ModuleResolution moduleResolution = moduleReference.moduleResolution();
+
+        assertTrue(hasWarning.test(moduleResolution));
+        assertTrue(moduleResolution.doNotResolveByDefault());
     }
 
     @DataProvider(name = "autoNames")

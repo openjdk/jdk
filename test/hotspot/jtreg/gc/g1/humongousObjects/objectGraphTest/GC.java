@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package gc.g1.humongousObjects.objectGraphTest;
 
 import gc.testlibrary.Helpers;
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,9 +41,7 @@ public enum GC {
         @Override
         public Runnable get() {
             return () -> {
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.g1RunConcurrentGC();
             };
         }
 
@@ -67,13 +65,15 @@ public enum GC {
         @Override
         public Runnable get() {
             return () -> {
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.concurrentGCAcquireControl();
+                try {
+                    WHITE_BOX.youngGC();
+                    WHITE_BOX.youngGC();
+                    WHITE_BOX.concurrentGCRunTo(WHITE_BOX.AFTER_MARKING_STARTED);
+                    WHITE_BOX.concurrentGCRunToIdle();
+                } finally {
+                    WHITE_BOX.concurrentGCReleaseControl();
+                }
             };
         }
 
@@ -141,19 +141,18 @@ public enum GC {
         @Override
         public Runnable get() {
             return () -> {
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                // Provoking Mixed GC
-                WHITE_BOX.youngGC();// second evacuation pause will be mixed
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.concurrentGCAcquireControl();
+                try {
+                    WHITE_BOX.youngGC();
+                    WHITE_BOX.youngGC();
+                    WHITE_BOX.concurrentGCRunTo(WHITE_BOX.AFTER_MARKING_STARTED);
+                    WHITE_BOX.concurrentGCRunToIdle();
+                    WHITE_BOX.youngGC();
+                    // Provoking Mixed GC
+                    WHITE_BOX.youngGC();// second evacuation pause will be mixed
+                } finally {
+                    WHITE_BOX.concurrentGCReleaseControl();
+                }
             };
         }
 

@@ -52,7 +52,7 @@ public:
                        Register dst,
                        Address src,
                        Register tmp1,
-                       Register tmp_thread);
+                       Register tmp2);
 
 #ifdef ASSERT
   virtual void store_at(MacroAssembler* masm,
@@ -61,7 +61,8 @@ public:
                         Address dst,
                         Register val,
                         Register tmp1,
-                        Register tmp2);
+                        Register tmp2,
+                        Register tmp3);
 #endif // ASSERT
 
   virtual void arraycopy_prologue(MacroAssembler* masm,
@@ -77,6 +78,8 @@ public:
                                              Register robj,
                                              Register tmp,
                                              Label& slowpath);
+
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
 
 #ifdef COMPILER1
   void generate_c1_load_barrier_test(LIR_Assembler* ce,
@@ -96,6 +99,8 @@ public:
   void generate_c2_load_barrier_stub(MacroAssembler* masm,
                                      ZLoadBarrierStubC2* stub) const;
 #endif // COMPILER2
+
+  void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
 #endif // CPU_RISCV_GC_Z_ZBARRIERSETASSEMBLER_RISCV_HPP

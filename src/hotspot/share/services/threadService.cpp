@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
@@ -62,19 +63,19 @@ bool ThreadService::_thread_monitoring_contention_enabled = false;
 bool ThreadService::_thread_cpu_time_enabled = false;
 bool ThreadService::_thread_allocated_memory_enabled = false;
 
-PerfCounter*  ThreadService::_total_threads_count = NULL;
-PerfVariable* ThreadService::_live_threads_count = NULL;
-PerfVariable* ThreadService::_peak_threads_count = NULL;
-PerfVariable* ThreadService::_daemon_threads_count = NULL;
+PerfCounter*  ThreadService::_total_threads_count = nullptr;
+PerfVariable* ThreadService::_live_threads_count = nullptr;
+PerfVariable* ThreadService::_peak_threads_count = nullptr;
+PerfVariable* ThreadService::_daemon_threads_count = nullptr;
 volatile int ThreadService::_atomic_threads_count = 0;
 volatile int ThreadService::_atomic_daemon_threads_count = 0;
 
-ThreadDumpResult* ThreadService::_threaddump_list = NULL;
+ThreadDumpResult* ThreadService::_threaddump_list = nullptr;
 
 static const int INITIAL_ARRAY_SIZE = 10;
 
 // OopStorage for thread stack sampling
-static OopStorage* _thread_service_storage = NULL;
+static OopStorage* _thread_service_storage = nullptr;
 
 void ThreadService::init() {
   EXCEPTION_MARK;
@@ -163,7 +164,8 @@ void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
 
   assert(!thread->is_terminated(), "must not be terminated");
   if (!thread->is_exiting()) {
-    // JavaThread::exit() skipped calling current_thread_exiting()
+    // We did not get here via JavaThread::exit() so current_thread_exiting()
+    // was not called, e.g., JavaThread::cleanup_failed_attach_current_thread().
     decrement_thread_counts(thread, daemon);
   }
 
@@ -219,7 +221,7 @@ void ThreadService::current_thread_exiting(JavaThread* jt, bool daemon) {
 
 // FIXME: JVMTI should call this function
 Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
-  assert(thread != NULL, "should be non-NULL");
+  assert(thread != nullptr, "should be non-null");
   debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   // This function can be called on a target JavaThread that is not
@@ -232,13 +234,13 @@ Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
   // by the caller.
   ObjectMonitor *wait_obj = thread->current_waiting_monitor();
 
-  oop obj = NULL;
-  if (wait_obj != NULL) {
+  oop obj = nullptr;
+  if (wait_obj != nullptr) {
     // thread is doing an Object.wait() call
     obj = wait_obj->object();
   } else {
     ObjectMonitor *enter_obj = thread->current_pending_monitor();
-    if (enter_obj != NULL) {
+    if (enter_obj != nullptr) {
       // thread is trying to enter() an ObjectMonitor.
       obj = enter_obj->object();
     }
@@ -276,14 +278,14 @@ bool ThreadService::set_thread_allocated_memory_enabled(bool flag) {
 }
 
 void ThreadService::metadata_do(void f(Metadata*)) {
-  for (ThreadDumpResult* dump = _threaddump_list; dump != NULL; dump = dump->next()) {
+  for (ThreadDumpResult* dump = _threaddump_list; dump != nullptr; dump = dump->next()) {
     dump->metadata_do(f);
   }
 }
 
 void ThreadService::add_thread_dump(ThreadDumpResult* dump) {
   MutexLocker ml(Management_lock);
-  if (_threaddump_list == NULL) {
+  if (_threaddump_list == nullptr) {
     _threaddump_list = dump;
   } else {
     dump->set_next(_threaddump_list);
@@ -294,11 +296,11 @@ void ThreadService::add_thread_dump(ThreadDumpResult* dump) {
 void ThreadService::remove_thread_dump(ThreadDumpResult* dump) {
   MutexLocker ml(Management_lock);
 
-  ThreadDumpResult* prev = NULL;
+  ThreadDumpResult* prev = nullptr;
   bool found = false;
-  for (ThreadDumpResult* d = _threaddump_list; d != NULL; prev = d, d = d->next()) {
+  for (ThreadDumpResult* d = _threaddump_list; d != nullptr; prev = d, d = d->next()) {
     if (d == dump) {
-      if (prev == NULL) {
+      if (prev == nullptr) {
         _threaddump_list = dump->next();
       } else {
         prev->set_next(dump->next());
@@ -339,11 +341,11 @@ Handle ThreadService::dump_stack_traces(GrowableArray<instanceHandle>* threads,
   assert(num_snapshots == num_threads, "Must have num_threads thread snapshots");
   assert(num_snapshots == 0 || dump_result.t_list_has_been_set(), "ThreadsList must have been set if we have a snapshot");
   int i = 0;
-  for (ThreadSnapshot* ts = dump_result.snapshots(); ts != NULL; i++, ts = ts->next()) {
+  for (ThreadSnapshot* ts = dump_result.snapshots(); ts != nullptr; i++, ts = ts->next()) {
     ThreadStackTrace* stacktrace = ts->get_stack_trace();
-    if (stacktrace == NULL) {
+    if (stacktrace == nullptr) {
       // No stack trace
-      result_obj->obj_at_put(i, NULL);
+      result_obj->obj_at_put(i, nullptr);
     } else {
       // Construct an array of java/lang/StackTraceElement object
       Handle backtrace_h = stacktrace->allocate_fill_stack_trace_element_array(CHECK_NH);
@@ -356,16 +358,29 @@ Handle ThreadService::dump_stack_traces(GrowableArray<instanceHandle>* threads,
 
 void ThreadService::reset_contention_count_stat(JavaThread* thread) {
   ThreadStatistics* stat = thread->get_thread_stat();
-  if (stat != NULL) {
+  if (stat != nullptr) {
     stat->reset_count_stat();
   }
 }
 
 void ThreadService::reset_contention_time_stat(JavaThread* thread) {
   ThreadStatistics* stat = thread->get_thread_stat();
-  if (stat != NULL) {
+  if (stat != nullptr) {
     stat->reset_time_stat();
   }
+}
+
+bool ThreadService::is_virtual_or_carrier_thread(JavaThread* jt) {
+  oop threadObj = jt->threadObj();
+  if (threadObj != nullptr && threadObj->is_a(vmClasses::BaseVirtualThread_klass())) {
+    // a virtual thread backed by JavaThread
+    return true;
+  }
+  if (jt->is_vthread_mounted()) {
+    // carrier thread
+    return true;
+  }
+  return false;
 }
 
 // Find deadlocks involving raw monitors, object monitors and concurrent locks
@@ -378,25 +393,29 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
 
   // This code was modified from the original Threads::find_deadlocks code.
   int globalDfn = 0, thisDfn;
-  ObjectMonitor* waitingToLockMonitor = NULL;
-  JvmtiRawMonitor* waitingToLockRawMonitor = NULL;
-  oop waitingToLockBlocker = NULL;
+  ObjectMonitor* waitingToLockMonitor = nullptr;
+  JvmtiRawMonitor* waitingToLockRawMonitor = nullptr;
+  oop waitingToLockBlocker = nullptr;
   bool blocked_on_monitor = false;
   JavaThread *currentThread, *previousThread;
   int num_deadlocks = 0;
 
   // Initialize the depth-first-number for each JavaThread.
   JavaThreadIterator jti(t_list);
-  for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
-    if (jt->is_vthread_mounted()) continue;
-    jt->set_depth_first_number(-1);
+  for (JavaThread* jt = jti.first(); jt != nullptr; jt = jti.next()) {
+    if (!is_virtual_or_carrier_thread(jt)) {
+      jt->set_depth_first_number(-1);
+    }
   }
 
-  DeadlockCycle* deadlocks = NULL;
-  DeadlockCycle* last = NULL;
+  DeadlockCycle* deadlocks = nullptr;
+  DeadlockCycle* last = nullptr;
   DeadlockCycle* cycle = new DeadlockCycle();
-  for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
-    if (jt->is_vthread_mounted()) continue;
+  for (JavaThread* jt = jti.first(); jt != nullptr; jt = jti.next()) {
+    if (is_virtual_or_carrier_thread(jt)) {
+      // skip virtual and carrier threads
+      continue;
+    }
     if (jt->depth_first_number() >= 0) {
       // this thread was already visited
       continue;
@@ -424,23 +443,21 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
       waitingToLockBlocker = jt->current_park_blocker();
     }
 
-    while (waitingToLockMonitor != NULL ||
-           waitingToLockRawMonitor != NULL ||
-           waitingToLockBlocker != NULL) {
+    while (waitingToLockMonitor != nullptr ||
+           waitingToLockRawMonitor != nullptr ||
+           waitingToLockBlocker != nullptr) {
       cycle->add_thread(currentThread);
       // Give preference to the raw monitor
-      if (waitingToLockRawMonitor != NULL) {
+      if (waitingToLockRawMonitor != nullptr) {
         Thread* owner = waitingToLockRawMonitor->owner();
-        if (owner != NULL && // the raw monitor could be released at any time
+        if (owner != nullptr && // the raw monitor could be released at any time
             owner->is_Java_thread()) {
           currentThread = JavaThread::cast(owner);
         }
-      } else if (waitingToLockMonitor != NULL) {
-        address currentOwner = (address)waitingToLockMonitor->owner();
-        if (currentOwner != NULL) {
-          currentThread = Threads::owning_thread_from_monitor_owner(t_list,
-                                                                    currentOwner);
-          if (currentThread == NULL) {
+      } else if (waitingToLockMonitor != nullptr) {
+        if (waitingToLockMonitor->has_owner()) {
+          currentThread = Threads::owning_thread_from_monitor(t_list, waitingToLockMonitor);
+          if (currentThread == nullptr) {
             // This function is called at a safepoint so the JavaThread
             // that owns waitingToLockMonitor should be findable, but
             // if it is not findable, then the previous currentThread is
@@ -448,7 +465,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
             num_deadlocks++;
 
             // add this cycle to the deadlocks list
-            if (deadlocks == NULL) {
+            if (deadlocks == nullptr) {
               deadlocks = cycle;
             } else {
               last->set_next(cycle);
@@ -464,14 +481,14 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
             oop threadObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
             // This JavaThread (if there is one) is protected by the
             // ThreadsListSetter in VM_FindDeadlocks::doit().
-            currentThread = threadObj != NULL ? java_lang_Thread::thread(threadObj) : NULL;
+            currentThread = threadObj != nullptr ? java_lang_Thread::thread(threadObj) : nullptr;
           } else {
-            currentThread = NULL;
+            currentThread = nullptr;
           }
         }
       }
 
-      if (currentThread == NULL || currentThread->is_vthread_mounted()) {
+      if (currentThread == nullptr || is_virtual_or_carrier_thread(currentThread)) {
         // No dependency on another thread
         break;
       }
@@ -489,7 +506,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         num_deadlocks++;
 
         // add this cycle to the deadlocks list
-        if (deadlocks == NULL) {
+        if (deadlocks == nullptr) {
           deadlocks = cycle;
         } else {
           last->set_next(cycle);
@@ -510,7 +527,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
   return deadlocks;
 }
 
-ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snapshots(NULL), _last(NULL), _next(NULL), _setter() {
+ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snapshots(nullptr), _last(nullptr), _next(nullptr), _setter() {
 
   // Create a new ThreadDumpResult object and append to the list.
   // If GC happens before this function returns, Method*
@@ -518,7 +535,7 @@ ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snap
   ThreadService::add_thread_dump(this);
 }
 
-ThreadDumpResult::ThreadDumpResult(int num_threads) : _num_threads(num_threads), _num_snapshots(0), _snapshots(NULL), _last(NULL), _next(NULL), _setter() {
+ThreadDumpResult::ThreadDumpResult(int num_threads) : _num_threads(num_threads), _num_snapshots(0), _snapshots(nullptr), _last(nullptr), _next(nullptr), _setter() {
   // Create a new ThreadDumpResult object and append to the list.
   // If GC happens before this function returns, oops
   // will be visited.
@@ -531,7 +548,7 @@ ThreadDumpResult::~ThreadDumpResult() {
   // free all the ThreadSnapshot objects created during
   // the VM_ThreadDump operation
   ThreadSnapshot* ts = _snapshots;
-  while (ts != NULL) {
+  while (ts != nullptr) {
     ThreadSnapshot* p = ts;
     ts = ts->next();
     delete p;
@@ -555,7 +572,7 @@ void ThreadDumpResult::link_thread_snapshot(ThreadSnapshot* ts) {
   assert(_num_threads == 0 || _num_snapshots < _num_threads,
          "_num_snapshots must be less than _num_threads");
   _num_snapshots++;
-  if (_snapshots == NULL) {
+  if (_snapshots == nullptr) {
     _snapshots = ts;
   } else {
     _last->set_next(ts);
@@ -564,7 +581,7 @@ void ThreadDumpResult::link_thread_snapshot(ThreadSnapshot* ts) {
 }
 
 void ThreadDumpResult::metadata_do(void f(Metadata*)) {
-  for (ThreadSnapshot* ts = _snapshots; ts != NULL; ts = ts->next()) {
+  for (ThreadSnapshot* ts = _snapshots; ts != nullptr; ts = ts->next()) {
     ts->metadata_do(f);
   }
 }
@@ -577,7 +594,7 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
   _method = jvf->method();
   _bci = jvf->bci();
   _class_holder = OopHandle(_thread_service_storage, _method->method_holder()->klass_holder());
-  _locked_monitors = NULL;
+  _locked_monitors = nullptr;
   if (with_lock_info) {
     Thread* current_thread = Thread::current();
     ResourceMark rm(current_thread);
@@ -585,10 +602,10 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
     GrowableArray<MonitorInfo*>* list = jvf->locked_monitors();
     int length = list->length();
     if (length > 0) {
-      _locked_monitors = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<OopHandle>(length, mtServiceability);
+      _locked_monitors = new (mtServiceability) GrowableArray<OopHandle>(length, mtServiceability);
       for (int i = 0; i < length; i++) {
         MonitorInfo* monitor = list->at(i);
-        assert(monitor->owner() != NULL, "This monitor must have an owning object");
+        assert(monitor->owner() != nullptr, "This monitor must have an owning object");
         _locked_monitors->append(OopHandle(_thread_service_storage, monitor->owner()));
       }
     }
@@ -596,7 +613,7 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
 }
 
 StackFrameInfo::~StackFrameInfo() {
-  if (_locked_monitors != NULL) {
+  if (_locked_monitors != nullptr) {
     for (int i = 0; i < _locked_monitors->length(); i++) {
       _locked_monitors->at(i).release(_thread_service_storage);
     }
@@ -612,7 +629,7 @@ void StackFrameInfo::metadata_do(void f(Metadata*)) {
 void StackFrameInfo::print_on(outputStream* st) const {
   ResourceMark rm;
   java_lang_Throwable::print_stack_element(st, method(), bci());
-  int len = (_locked_monitors != NULL ? _locked_monitors->length() : 0);
+  int len = (_locked_monitors != nullptr ? _locked_monitors->length() : 0);
   for (int i = 0; i < len; i++) {
     oop o = _locked_monitors->at(i).resolve();
     st->print_cr("\t- locked <" INTPTR_FORMAT "> (a %s)", p2i(o), o->klass()->external_name());
@@ -637,13 +654,13 @@ public:
 
 ThreadStackTrace::ThreadStackTrace(JavaThread* t, bool with_locked_monitors) {
   _thread = t;
-  _frames = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<StackFrameInfo*>(INITIAL_ARRAY_SIZE, mtServiceability);
+  _frames = new (mtServiceability) GrowableArray<StackFrameInfo*>(INITIAL_ARRAY_SIZE, mtServiceability);
   _depth = 0;
   _with_locked_monitors = with_locked_monitors;
   if (_with_locked_monitors) {
-    _jni_locked_monitors = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<OopHandle>(INITIAL_ARRAY_SIZE, mtServiceability);
+    _jni_locked_monitors = new (mtServiceability) GrowableArray<OopHandle>(INITIAL_ARRAY_SIZE, mtServiceability);
   } else {
-    _jni_locked_monitors = NULL;
+    _jni_locked_monitors = nullptr;
   }
 }
 
@@ -656,7 +673,7 @@ ThreadStackTrace::~ThreadStackTrace() {
     delete _frames->at(i);
   }
   delete _frames;
-  if (_jni_locked_monitors != NULL) {
+  if (_jni_locked_monitors != nullptr) {
     for (int i = 0; i < _jni_locked_monitors->length(); i++) {
       _jni_locked_monitors->at(i).release(_thread_service_storage);
     }
@@ -668,7 +685,10 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHasht
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
   if (_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(_thread);
+    RegisterMap reg_map(_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
 
     // If full, we want to print both vthread and carrier frames
     vframe* start_vf = !full && _thread->is_vthread_mounted()
@@ -723,7 +743,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
     GrowableArray<OopHandle>* locked_monitors = frame->locked_monitors();
     for (int j = 0; j < len; j++) {
       oop monitor = locked_monitors->at(j).resolve();
-      assert(monitor != NULL, "must be a Java object");
+      assert(monitor != nullptr, "must be a Java object");
       if (monitor == object) {
         found = true;
         break;
@@ -735,7 +755,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
 
 Handle ThreadStackTrace::allocate_fill_stack_trace_element_array(TRAPS) {
   InstanceKlass* ik = vmClasses::StackTraceElement_klass();
-  assert(ik != NULL, "must be loaded in 1.4+");
+  assert(ik != nullptr, "must be loaded in 1.4+");
 
   // Allocate an array of java/lang/StackTraceElement object
   objArrayOop ste = oopFactory::new_objArray(ik, _depth, CHECK_NH);
@@ -768,7 +788,7 @@ ConcurrentLocksDump::~ConcurrentLocksDump() {
     return;
   }
 
-  for (ThreadConcurrentLocks* t = _map; t != NULL;)  {
+  for (ThreadConcurrentLocks* t = _map; t != nullptr;)  {
     ThreadConcurrentLocks* tcl = t;
     t = t->next();
     delete tcl;
@@ -779,7 +799,7 @@ void ConcurrentLocksDump::dump_at_safepoint() {
   // dump all locked concurrent locks
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
-  GrowableArray<oop>* aos_objects = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(INITIAL_ARRAY_SIZE, mtServiceability);
+  GrowableArray<oop>* aos_objects = new (mtServiceability) GrowableArray<oop>(INITIAL_ARRAY_SIZE, mtServiceability);
 
   // Find all instances of AbstractOwnableSynchronizer
   HeapInspection::find_instances_at_safepoint(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass(),
@@ -797,7 +817,7 @@ void ConcurrentLocksDump::build_map(GrowableArray<oop>* aos_objects) {
   for (int i = 0; i < length; i++) {
     oop o = aos_objects->at(i);
     oop owner_thread_obj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(o);
-    if (owner_thread_obj != NULL) {
+    if (owner_thread_obj != nullptr) {
       // See comments in ThreadConcurrentLocks to see how this
       // JavaThread* is protected.
       JavaThread* thread = java_lang_Thread::thread(owner_thread_obj);
@@ -809,7 +829,7 @@ void ConcurrentLocksDump::build_map(GrowableArray<oop>* aos_objects) {
 
 void ConcurrentLocksDump::add_lock(JavaThread* thread, instanceOop o) {
   ThreadConcurrentLocks* tcl = thread_concurrent_locks(thread);
-  if (tcl != NULL) {
+  if (tcl != nullptr) {
     tcl->add_lock(o);
     return;
   }
@@ -817,7 +837,7 @@ void ConcurrentLocksDump::add_lock(JavaThread* thread, instanceOop o) {
   // First owned lock found for this thread
   tcl = new ThreadConcurrentLocks(thread);
   tcl->add_lock(o);
-  if (_map == NULL) {
+  if (_map == nullptr) {
     _map = tcl;
   } else {
     _last->set_next(tcl);
@@ -826,19 +846,19 @@ void ConcurrentLocksDump::add_lock(JavaThread* thread, instanceOop o) {
 }
 
 ThreadConcurrentLocks* ConcurrentLocksDump::thread_concurrent_locks(JavaThread* thread) {
-  for (ThreadConcurrentLocks* tcl = _map; tcl != NULL; tcl = tcl->next()) {
+  for (ThreadConcurrentLocks* tcl = _map; tcl != nullptr; tcl = tcl->next()) {
     if (tcl->java_thread() == thread) {
       return tcl;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void ConcurrentLocksDump::print_locks_on(JavaThread* t, outputStream* st) {
   st->print_cr("   Locked ownable synchronizers:");
   ThreadConcurrentLocks* tcl = thread_concurrent_locks(t);
-  GrowableArray<OopHandle>* locks = (tcl != NULL ? tcl->owned_locks() : NULL);
-  if (locks == NULL || locks->is_empty()) {
+  GrowableArray<OopHandle>* locks = (tcl != nullptr ? tcl->owned_locks() : nullptr);
+  if (locks == nullptr || locks->is_empty()) {
     st->print_cr("\t- None");
     st->cr();
     return;
@@ -853,8 +873,8 @@ void ConcurrentLocksDump::print_locks_on(JavaThread* t, outputStream* st) {
 
 ThreadConcurrentLocks::ThreadConcurrentLocks(JavaThread* thread) {
   _thread = thread;
-  _owned_locks = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<OopHandle>(INITIAL_ARRAY_SIZE, mtServiceability);
-  _next = NULL;
+  _owned_locks = new (mtServiceability) GrowableArray<OopHandle>(INITIAL_ARRAY_SIZE, mtServiceability);
+  _next = nullptr;
 }
 
 ThreadConcurrentLocks::~ThreadConcurrentLocks() {
@@ -892,8 +912,8 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   _sleep_ticks = stat->sleep_ticks();
   _sleep_count = stat->sleep_count();
 
-  // If thread is still attaching then threadObj will be NULL.
-  _thread_status = threadObj == NULL ? JavaThreadStatus::NEW
+  // If thread is still attaching then threadObj will be null.
+  _thread_status = threadObj == nullptr ? JavaThreadStatus::NEW
                                      : java_lang_Thread::get_thread_status(threadObj);
 
   _is_suspended = thread->is_suspended();
@@ -901,27 +921,27 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
 
   Handle obj = ThreadService::get_current_contended_monitor(thread);
 
-  oop blocker_object = NULL;
-  oop blocker_object_owner = NULL;
+  oop blocker_object = nullptr;
+  oop blocker_object_owner = nullptr;
 
   if (thread->is_vthread_mounted() && thread->vthread() != threadObj) { // ThreadSnapshot only captures platform threads
     _thread_status = JavaThreadStatus::IN_OBJECT_WAIT;
     oop vthread = thread->vthread();
-    assert(vthread != NULL, "");
+    assert(vthread != nullptr, "");
     blocker_object = vthread;
     blocker_object_owner = vthread;
   } else if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
       _thread_status == JavaThreadStatus::IN_OBJECT_WAIT ||
       _thread_status == JavaThreadStatus::IN_OBJECT_WAIT_TIMED) {
 
-    if (obj() == NULL) {
+    if (obj() == nullptr) {
       // monitor no longer exists; thread is not blocked
       _thread_status = JavaThreadStatus::RUNNABLE;
     } else {
       blocker_object = obj();
       JavaThread* owner = ObjectSynchronizer::get_lock_owner(t_list, obj);
-      if ((owner == NULL && _thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)
-          || (owner != NULL && owner->is_attaching_via_jni())) {
+      if ((owner == nullptr && _thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)
+          || (owner != nullptr && owner->is_attaching_via_jni())) {
         // ownership information of the monitor is not available
         // (may no longer be owned or releasing to some other thread)
         // make this thread in RUNNABLE state.
@@ -929,22 +949,22 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
         // is not completely initialized. For example thread name and id
         // and may not be set, so hide the attaching thread.
         _thread_status = JavaThreadStatus::RUNNABLE;
-        blocker_object = NULL;
-      } else if (owner != NULL) {
+        blocker_object = nullptr;
+      } else if (owner != nullptr) {
         blocker_object_owner = owner->threadObj();
       }
     }
   } else if (_thread_status == JavaThreadStatus::PARKED || _thread_status == JavaThreadStatus::PARKED_TIMED) {
     blocker_object = thread->current_park_blocker();
-    if (blocker_object != NULL && blocker_object->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
+    if (blocker_object != nullptr && blocker_object->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
       blocker_object_owner = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(blocker_object);
     }
   }
 
-  if (blocker_object != NULL) {
+  if (blocker_object != nullptr) {
     _blocker_object = OopHandle(_thread_service_storage, blocker_object);
   }
-  if (blocker_object_owner != NULL) {
+  if (blocker_object_owner != nullptr) {
     _blocker_object_owner = OopHandle(_thread_service_storage, blocker_object_owner);
   }
 }
@@ -969,15 +989,15 @@ void ThreadSnapshot::dump_stack_at_safepoint(int max_depth, bool with_locked_mon
 
 
 void ThreadSnapshot::metadata_do(void f(Metadata*)) {
-  if (_stack_trace != NULL) {
+  if (_stack_trace != nullptr) {
     _stack_trace->metadata_do(f);
   }
 }
 
 
 DeadlockCycle::DeadlockCycle() {
-  _threads = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JavaThread*>(INITIAL_ARRAY_SIZE, mtServiceability);
-  _next = NULL;
+  _threads = new (mtServiceability) GrowableArray<JavaThread*>(INITIAL_ARRAY_SIZE, mtServiceability);
+  _next = nullptr;
 }
 
 DeadlockCycle::~DeadlockCycle() {
@@ -1005,11 +1025,11 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
 
     // Note: As the JVM TI "monitor contended enter" event callback is executed after ObjectMonitor
     // sets the current pending monitor, it is possible to then see a pending raw monitor as well.
-    if (waitingToLockRawMonitor != NULL) {
+    if (waitingToLockRawMonitor != nullptr) {
       st->print("  waiting to lock JVM TI raw monitor " INTPTR_FORMAT, p2i(waitingToLockRawMonitor));
       Thread* owner = waitingToLockRawMonitor->owner();
-      // Could be NULL as the raw monitor could be released at any time if held by non-JavaThread
-      if (owner != NULL) {
+      // Could be null as the raw monitor could be released at any time if held by non-JavaThread
+      if (owner != nullptr) {
         if (owner->is_Java_thread()) {
           currentThread = JavaThread::cast(owner);
           st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
@@ -1021,7 +1041,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       }
     }
 
-    if (waitingToLockMonitor != NULL) {
+    if (waitingToLockMonitor != nullptr) {
       st->print("  waiting to lock monitor " INTPTR_FORMAT, p2i(waitingToLockMonitor));
       oop obj = waitingToLockMonitor->object();
       st->print(" (object " INTPTR_FORMAT ", a %s)", p2i(obj),
@@ -1030,9 +1050,8 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
       if (!currentThread->current_pending_monitor_is_from_java()) {
         owner_desc = "\n  in JNI, which is held by";
       }
-      currentThread = Threads::owning_thread_from_monitor_owner(t_list,
-                                                                (address)waitingToLockMonitor->owner());
-      if (currentThread == NULL) {
+      currentThread = Threads::owning_thread_from_monitor(t_list, waitingToLockMonitor);
+      if (currentThread == nullptr) {
         // The deadlock was detected at a safepoint so the JavaThread
         // that owns waitingToLockMonitor should be findable, but
         // if it is not findable, then the previous currentThread is
@@ -1049,7 +1068,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
              "Must be an AbstractOwnableSynchronizer");
       oop ownerObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
       currentThread = java_lang_Thread::thread(ownerObj);
-      assert(currentThread != NULL, "AbstractOwnableSynchronizer owning thread is unexpectedly NULL");
+      assert(currentThread != nullptr, "AbstractOwnableSynchronizer owning thread is unexpectedly nullptr");
     }
     st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
   }
@@ -1071,7 +1090,8 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
 
 ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
                                              bool include_jvmti_agent_threads,
-                                             bool include_jni_attaching_threads) {
+                                             bool include_jni_attaching_threads,
+                                             bool include_bound_virtual_threads) {
   assert(cur_thread == Thread::current(), "Check current thread");
 
   int init_size = ThreadService::get_live_thread_count();
@@ -1082,7 +1102,7 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
     // and also skips VM internal JavaThreads
     // Threads in _thread_new or _thread_new_trans state are included.
     // i.e. threads have been started but not yet running.
-    if (jt->threadObj() == NULL   ||
+    if (jt->threadObj() == nullptr   ||
         jt->is_exiting() ||
         !java_lang_Thread::is_alive(jt->threadObj())   ||
         jt->is_hidden_from_external_view()) {
@@ -1096,6 +1116,11 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
 
     // skip jni threads in the process of attaching
     if (!include_jni_attaching_threads && jt->is_attaching_via_jni()) {
+      continue;
+    }
+
+    // skip instances of BoundVirtualThread
+    if (!include_bound_virtual_threads && jt->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
       continue;
     }
 

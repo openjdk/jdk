@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -47,34 +45,23 @@ import sun.security.util.*;
  * </pre>
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
  * @see Extension
  */
-public class BasicConstraintsExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.BasicConstraints";
-    /**
-     * Attribute names.
-     */
+public class BasicConstraintsExtension extends Extension {
+
     public static final String NAME = "BasicConstraints";
-    public static final String IS_CA = "is_ca";
-    public static final String PATH_LEN = "path_len";
 
     // Private data members
     private boolean     ca = false;
     private int pathLen = -1;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         DerOutputStream out = new DerOutputStream();
         DerOutputStream tmp = new DerOutputStream();
 
         if (ca) {
-            tmp.putBoolean(ca);
+            tmp.putBoolean(true);
             // Only encode pathLen when ca == true
             if (pathLen >= 0) {
                 tmp.putInteger(pathLen);
@@ -91,7 +78,7 @@ implements CertAttrSet<String> {
      * @param ca true, if the subject of the Certificate is a CA.
      * @param len specifies the depth of the certification path.
      */
-    public BasicConstraintsExtension(boolean ca, int len) throws IOException {
+    public BasicConstraintsExtension(boolean ca, int len) {
         this(Boolean.valueOf(ca), ca, len);
     }
 
@@ -102,8 +89,7 @@ implements CertAttrSet<String> {
      * @param ca true, if the subject of the Certificate is a CA.
      * @param len specifies the depth of the certification path.
      */
-    public BasicConstraintsExtension(Boolean critical, boolean ca, int len)
-    throws IOException {
+    public BasicConstraintsExtension(Boolean critical, boolean ca, int len) {
         this.ca = ca;
         this.pathLen = len;
         this.extensionId = PKIXExtensions.BasicConstraints_Id;
@@ -190,88 +176,29 @@ implements CertAttrSet<String> {
       *
       * @param out the DerOutputStream to encode the extension to.
       */
-     public void encode(OutputStream out) throws IOException {
-         DerOutputStream tmp = new DerOutputStream();
+     @Override
+     public void encode(DerOutputStream out) {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
-             if (ca) {
-                 critical = true;
-             } else {
-                 critical = false;
-             }
+             critical = ca;
              encodeThis();
          }
-         super.encode(tmp);
-
-         out.write(tmp.toByteArray());
+         super.encode(out);
      }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(IS_CA)) {
-            if (!(obj instanceof Boolean)) {
-              throw new IOException("Attribute value should be of type Boolean.");
-            }
-            ca = ((Boolean)obj).booleanValue();
-        } else if (name.equalsIgnoreCase(PATH_LEN)) {
-            if (!(obj instanceof Integer)) {
-              throw new IOException("Attribute value should be of type Integer.");
-            }
-            pathLen = ((Integer)obj).intValue();
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:BasicConstraints.");
-        }
-        encodeThis();
+    public boolean isCa() {
+        return ca;
+    }
+
+    public int getPathLen() {
+        return pathLen;
     }
 
     /**
-     * Get the attribute value.
+     * Return the name of this extension.
      */
-    public Object get(String name) throws IOException {
-        if (name.equalsIgnoreCase(IS_CA)) {
-            return (Boolean.valueOf(ca));
-        } else if (name.equalsIgnoreCase(PATH_LEN)) {
-            return (Integer.valueOf(pathLen));
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:BasicConstraints.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(IS_CA)) {
-            ca = false;
-        } else if (name.equalsIgnoreCase(PATH_LEN)) {
-            pathLen = -1;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:BasicConstraints.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(IS_CA);
-        elements.addElement(PATH_LEN);
-
-        return (elements.elements());
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

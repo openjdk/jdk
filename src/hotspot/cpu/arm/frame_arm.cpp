@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -43,7 +44,6 @@
 #include "c1/c1_Runtime1.hpp"
 #include "runtime/vframeArray.hpp"
 #endif
-#include "prims/methodHandles.hpp"
 
 #ifdef ASSERT
 void RegisterMap::check_location_valid() {
@@ -72,7 +72,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
   bool fp_safe = thread->is_in_stack_range_incl(fp, sp);
 
-  if (_cb != NULL ) {
+  if (_cb != nullptr ) {
 
     // First check if frame is complete and tester is reliable
     // Unfortunately we can only check frame complete for runtime stubs and nmethod
@@ -96,8 +96,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return fp_safe && is_entry_frame_valid(thread);
     }
 
-    intptr_t* sender_sp = NULL;
-    address   sender_pc = NULL;
+    intptr_t* sender_sp = nullptr;
+    address   sender_pc = nullptr;
 
     if (is_interpreted_frame()) {
       // fp must be safe
@@ -123,8 +123,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
-    if (sender_pc == NULL || sender_blob == NULL) {
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
+    if (sender_pc == nullptr || sender_blob == nullptr) {
       return false;
     }
 
@@ -146,10 +146,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
       frame sender(sender_sp, saved_fp, sender_pc);
 
       return sender.is_interpreted_frame_valid(thread);
-    }
-
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
-      return false;
     }
 
     // Could just be some random pointer within the codeBlob
@@ -214,7 +210,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
   // Will the pc we fetch be non-zero (which we'll find at the oldest frame)
 
-  if ((address) this->fp()[return_addr_offset] == NULL) return false;
+  if ((address) this->fp()[return_addr_offset] == nullptr) return false;
 
 
   // could try and do some more potential verification of native frame if we could think of some...
@@ -234,7 +230,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   *pc_addr = pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
+  if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
     // leave _pc as is
@@ -256,7 +252,16 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
   return &unextended_sp()[index];
 }
 
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  ptr_at_put(interpreter_frame_locals_offset, (intptr_t) (locs - fp()));
+}
+
 // sender_sp
+
 intptr_t* frame::interpreter_frame_sender_sp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   return (intptr_t*) at(interpreter_frame_sender_sp_offset);
@@ -295,7 +300,7 @@ void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
 
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender
   JavaFrameAnchor* jfa = entry_frame_call_wrapper()->anchor();
@@ -303,7 +308,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
-  if (jfa->last_Java_pc() != NULL) {
+  if (jfa->last_Java_pc() != nullptr) {
     frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
     return fr;
   }
@@ -353,8 +358,8 @@ void frame::adjust_unextended_sp() {
   // simplest way to tell whether we are returning to such a call site
   // is as follows:
 
-  CompiledMethod* sender_cm = (_cb == NULL) ? NULL : _cb->as_compiled_method_or_null();
-  if (sender_cm != NULL) {
+  CompiledMethod* sender_cm = (_cb == nullptr) ? nullptr : _cb->as_compiled_method_or_null();
+  if (sender_cm != nullptr) {
     // If the sender PC is a deoptimization point, get the original
     // PC.  For MethodHandle call site the unextended_sp is stored in
     // saved_fp.
@@ -440,7 +445,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
 
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals =  (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
@@ -518,7 +523,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
 
 // This is a generic constructor which is only used by pns() in debug.cpp.
 frame::frame(void* sp, void* fp, void* pc) {
-  init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
+  init((intptr_t*)sp, (intptr_t*)sp, (intptr_t*)fp, (address)pc);
 }
 
 #endif
@@ -541,7 +546,7 @@ intptr_t* frame::real_fp() const {
 #endif
     return new_fp;
   }
-  if (_cb != NULL) {
+  if (_cb != nullptr) {
     // use the frame size if valid
     int size = _cb->frame_size();
     if (size > 0) {

@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/ostream.hpp"
@@ -89,7 +90,7 @@ bool NativeInstruction::is_movptr_at(address instr) {
          is_addi_at(instr + instruction_size) && // Addi
          is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
          is_addi_at(instr + instruction_size * 3) && // Addi
-         is_slli_shift_at(instr + instruction_size * 4, 5) && // Slli Rd, Rs, 5
+         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
          (is_addi_at(instr + instruction_size * 5) ||
           is_jalr_at(instr + instruction_size * 5) ||
           is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
@@ -124,7 +125,7 @@ address NativeCall::destination() const {
   address destination = MacroAssembler::target_addr_for_insn(instruction_address());
 
   // Do we use a trampoline stub for this call?
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // Else we get assertion if nmethod is zombie.
+  CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
   if (nm != NULL && nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
@@ -265,6 +266,13 @@ void NativeJump::verify() { }
 
 
 void NativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
+  // Patching to not_entrant can happen while activations of the method are
+  // in use. The patching in that instance must happen only when certain
+  // alignment restrictions are true. These guarantees check those
+  // conditions.
+
+  // Must be 4 bytes aligned
+  MacroAssembler::assert_alignment(verified_entry);
 }
 
 
@@ -273,7 +281,7 @@ address NativeJump::jump_destination() const {
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
-  // As a special case we also use sequence movptr_with_offset(r,0), jalr(r,0)
+  // As a special case we also use sequence movptr(r,0), jalr(r,0)
   // i.e. jump to 0 when we need leave space for a wide immediate
   // load
 
@@ -328,7 +336,7 @@ bool NativeInstruction::is_lwu_to_zr(address instr) {
 }
 
 // A 16-bit instruction with all bits ones is permanently reserved as an illegal instruction.
-bool NativeInstruction::is_sigill_zombie_not_entrant() {
+bool NativeInstruction::is_sigill_not_entrant() {
   // jvmci
   return uint_at(0) == 0xffffffff;
 }
@@ -345,15 +353,17 @@ bool NativeInstruction::is_stop() {
 //-------------------------------------------------------------------
 
 // MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant_or_zombie)
+// nmethod::make_not_entrant)
 
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
 
   assert(nativeInstruction_at(verified_entry)->is_jump_or_nop() ||
-         nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
+         nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
          "riscv cannot replace non-jump with jump");
+
+  check_verified_entry_alignment(entry, verified_entry);
 
   // Patch this nmethod atomically.
   if (Assembler::reachable_from_branch_at(verified_entry, dest)) {
@@ -371,7 +381,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
     *(unsigned int*)verified_entry = insn;
   } else {
     // We use an illegal instruction for marking a method as
-    // not_entrant or zombie.
+    // not_entrant.
     NativeIllegalInstruction::insert(verified_entry);
   }
 
@@ -381,9 +391,10 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
+  Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
-  a.movptr_with_offset(t0, entry, offset); // lui, addi, slli, addi, slli
+  a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
   a.jalr(x0, t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
@@ -426,4 +437,33 @@ void NativeMembar::set_kind(uint32_t order_kind) {
 
   address membar = addr_at(0);
   *(unsigned int*) membar = insn;
+}
+
+void NativePostCallNop::make_deopt() {
+  MacroAssembler::assert_alignment(addr_at(0));
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+int NativePostCallNop::displacement() const {
+  // Discard the high 32 bits
+  return (int)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
+}
+
+void NativePostCallNop::patch(jint diff) {
+  assert(diff != 0, "must be");
+  assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
+
+  MacroAssembler::patch_imm_in_li32(addr_at(4), diff);
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos) {
+  // 0xc0201073 encodes CSRRW x0, instret, x0
+  uint32_t insn = 0xc0201073;
+  uint32_t *pos = (uint32_t *) code_pos;
+  *pos = insn;
+  ICache::invalidate_range(code_pos, 4);
 }

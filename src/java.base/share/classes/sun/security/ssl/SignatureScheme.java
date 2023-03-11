@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
 import sun.security.util.SignatureUtil;
@@ -450,13 +449,13 @@ enum SignatureScheme {
     static SignatureScheme getPreferableAlgorithm(
             AlgorithmConstraints constraints,
             List<SignatureScheme> schemes,
-            SignatureScheme certScheme,
+            String keyAlgorithm,
             ProtocolVersion version) {
 
         for (SignatureScheme ss : schemes) {
             if (ss.isAvailable &&
                     ss.handshakeSupportedProtocols.contains(version) &&
-                    certScheme.keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
+                    keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
                     ss.isPermitted(constraints)) {
                 return ss;
             }
@@ -466,6 +465,7 @@ enum SignatureScheme {
     }
 
     static Map.Entry<SignatureScheme, Signature> getSignerOfPreferableAlgorithm(
+            SSLConfiguration sslConfig,
             AlgorithmConstraints constraints,
             List<SignatureScheme> schemes,
             X509Possession x509Possession,
@@ -519,7 +519,7 @@ enum SignatureScheme {
                     if (params != null) {
                         NamedGroup keyGroup = NamedGroup.valueOf(params);
                         if (keyGroup != null &&
-                                SupportedGroups.isSupported(keyGroup)) {
+                                NamedGroup.isEnabled(sslConfig, keyGroup)) {
                             Signature signer = ss.getSigner(signingKey);
                             if (signer != null) {
                                 return new SimpleImmutableEntry<>(ss, signer);

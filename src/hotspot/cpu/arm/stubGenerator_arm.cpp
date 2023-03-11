@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_arm.hpp"
@@ -815,7 +816,7 @@ class StubGenerator: public StubCodeGenerator {
     __ str_32(tmp2, Address(tmp1));
 
     // make sure object is 'reasonable'
-    __ cbz(oop, exit);                           // if obj is NULL it is ok
+    __ cbz(oop, exit);                           // if obj is null it is ok
 
     // Check if the oop is in the right area of memory
     // Note: oop_mask and oop_bits must be updated if the code is saved/reused
@@ -829,7 +830,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // make sure klass is 'reasonable'
     __ load_klass(klass, oop);                   // get klass
-    __ cbz(klass, error);                        // if klass is NULL it is broken
+    __ cbz(klass, error);                        // if klass is null it is broken
 
     // return if everything seems ok
     __ bind(exit);
@@ -869,11 +870,11 @@ class StubGenerator: public StubCodeGenerator {
   //  input registers are preserved
   //
   void array_overlap_test(address no_overlap_target, int log2_elem_size, Register tmp1, Register tmp2) {
-    assert(no_overlap_target != NULL, "must be generated");
-    array_overlap_test(no_overlap_target, NULL, log2_elem_size, tmp1, tmp2);
+    assert(no_overlap_target != nullptr, "must be generated");
+    array_overlap_test(no_overlap_target, nullptr, log2_elem_size, tmp1, tmp2);
   }
   void array_overlap_test(Label& L_no_overlap, int log2_elem_size, Register tmp1, Register tmp2) {
-    array_overlap_test(NULL, &L_no_overlap, log2_elem_size, tmp1, tmp2);
+    array_overlap_test(nullptr, &L_no_overlap, log2_elem_size, tmp1, tmp2);
   }
   void array_overlap_test(address no_overlap_target, Label* NOLp, int log2_elem_size, Register tmp1, Register tmp2) {
     const Register from       = R0;
@@ -891,12 +892,12 @@ class StubGenerator: public StubCodeGenerator {
     if (log2_elem_size != 0) {
       __ mov(byte_count, AsmOperand(count, lsl, log2_elem_size));
     }
-    if (NOLp == NULL)
+    if (NOLp == nullptr)
       __ b(no_overlap_target,lo);
     else
       __ b((*NOLp), lo);
     __ cmp(to_from, byte_count);
-    if (NOLp == NULL)
+    if (NOLp == nullptr)
       __ b(no_overlap_target, ge);
     else
       __ b((*NOLp), ge);
@@ -1973,7 +1974,7 @@ class StubGenerator: public StubCodeGenerator {
         return &SharedRuntime::_jlong_array_copy_ctr;
       default:
         ShouldNotReachHere();
-        return NULL;
+        return nullptr;
     }
   }
 #endif // !PRODUCT
@@ -1997,7 +1998,7 @@ class StubGenerator: public StubCodeGenerator {
   //      to:    R1
   //      count: R2 treated as signed 32-bit int
   //
-  address generate_primitive_copy(bool aligned, const char * name, bool status, int bytes_per_count, bool disjoint, address nooverlap_target = NULL) {
+  address generate_primitive_copy(bool aligned, const char * name, bool status, int bytes_per_count, bool disjoint, address nooverlap_target = nullptr) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2015,7 +2016,7 @@ class StubGenerator: public StubCodeGenerator {
     __ zap_high_non_significant_bits(R2);
 
     if (!disjoint) {
-      assert (nooverlap_target != NULL, "must be specified for conjoint case");
+      assert (nooverlap_target != nullptr, "must be specified for conjoint case");
       array_overlap_test(nooverlap_target, exact_log2(bytes_per_count), tmp1, tmp2);
     }
 
@@ -2171,7 +2172,7 @@ class StubGenerator: public StubCodeGenerator {
   //      to:    R1
   //      count: R2 treated as signed 32-bit int
   //
-  address generate_oop_copy(bool aligned, const char * name, bool status, bool disjoint, address nooverlap_target = NULL) {
+  address generate_oop_copy(bool aligned, const char * name, bool status, bool disjoint, address nooverlap_target = nullptr) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2190,7 +2191,7 @@ class StubGenerator: public StubCodeGenerator {
     __ zap_high_non_significant_bits(R2);
 
     if (!disjoint) {
-      assert (nooverlap_target != NULL, "must be specified for conjoint case");
+      assert (nooverlap_target != nullptr, "must be specified for conjoint case");
       array_overlap_test(nooverlap_target, LogBytesPerHeapOop, tmp1, tmp2);
     }
 
@@ -2507,7 +2508,7 @@ class StubGenerator: public StubCodeGenerator {
     // ======== loop entry is here ========
     __ BIND(load_element);
     __ load_heap_oop(R5, Address(from, BytesPerHeapOop, post_indexed));  // load the oop
-    __ cbz(R5, store_element); // NULL
+    __ cbz(R5, store_element); // null
 
     __ load_klass(R6, R5);
 
@@ -2639,20 +2640,20 @@ class StubGenerator: public StubCodeGenerator {
     // (2) src_pos must not be negative.
     // (3) dst_pos must not be negative.
     // (4) length  must not be negative.
-    // (5) src klass and dst klass should be the same and not NULL.
+    // (5) src klass and dst klass should be the same and not null.
     // (6) src and dst should be arrays.
     // (7) src_pos + length must not exceed length of src.
     // (8) dst_pos + length must not exceed length of dst.
     BLOCK_COMMENT("arraycopy initial argument checks");
 
-    //  if (src == NULL) return -1;
+    //  if (src == nullptr) return -1;
     __ cbz(src, L_failed);
 
     //  if (src_pos < 0) return -1;
     __ cmp_32(src_pos, 0);
     __ b(L_failed, lt);
 
-    //  if (dst == NULL) return -1;
+    //  if (dst == nullptr) return -1;
     __ cbz(dst, L_failed);
 
     //  if (dst_pos < 0) return -1;
@@ -2905,6 +2906,53 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  address generate_method_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    Label deoptimize_label;
+
+    address start = __ pc();
+
+    // No need to save PC on Arm
+    __ set_last_Java_frame(SP, FP, false, Rtemp);
+
+    __ enter();
+
+    __ add(Rtemp, SP, wordSize);  // Rtemp points to the saved lr
+    __ sub(SP, SP, 4 * wordSize); // four words for the returned {sp, fp, lr, pc}
+
+    const RegisterSet saved_regs = RegisterSet(R0, R10);
+    __ push(saved_regs);
+    __ fpush(FloatRegisterSet(D0, 16));
+
+    __ mov(c_rarg0, Rtemp);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier), c_rarg0);
+
+    __ reset_last_Java_frame(Rtemp);
+
+    __ mov(Rtemp, R0);
+
+    __ fpop(FloatRegisterSet(D0, 16));
+    __ pop(saved_regs);
+
+    __ cbnz(Rtemp, deoptimize_label);
+
+    __ leave();
+    __ bx(LR);
+
+    __ BIND(deoptimize_label);
+
+    __ ldr(Rtemp, Address(SP, 0));
+    __ ldr(FP, Address(SP, wordSize));
+    __ ldr(LR, Address(SP, wordSize * 2));
+    __ ldr(R5, Address(SP, wordSize * 3));
+    __ mov(SP, Rtemp);
+    __ bx(R5);
+
+    return start;
+  }
+
 #define COMPILE_CRYPTO
 #include "stubRoutinesCrypto_arm.cpp"
 
@@ -2959,6 +3007,73 @@ class StubGenerator: public StubCodeGenerator {
     return stub->entry_point();
   }
 
+  address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_thaw() {
+    return generate_cont_thaw("Cont thaw", Continuation::thaw_top);
+  }
+
+  address generate_cont_returnBarrier() {
+    return generate_cont_thaw("Cont thaw return barrier", Continuation::thaw_return_barrier);
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
+  }
+
+#if INCLUDE_JFR
+
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  static RuntimeStub* generate_jfr_write_checkpoint() {
+    enum layout {
+      r1_off,
+      r2_off,
+      return_off,
+      framesize // inclusive of return address
+    };
+
+    CodeBuffer code("jfr_write_checkpoint", 512, 64);
+    MacroAssembler* masm = new MacroAssembler(&code);
+
+    address start = __ pc();
+    __ raw_push(R1, R2, LR);
+    address the_pc = __ pc();
+
+    int frame_complete = the_pc - start;
+
+    __ set_last_Java_frame(SP, FP, true, Rtemp);
+    __ mov(c_rarg0, Rthread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), c_rarg0);
+    __ reset_last_Java_frame(Rtemp);
+
+    // R0 is jobject handle result, unpack and process it through a barrier.
+    __ resolve_global_jobject(R0, Rtemp, R1);
+
+    __ raw_pop(R1, R2, LR);
+    __ ret();
+
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
+
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps,
+                                    false);
+    return stub;
+  }
+
+#endif // INCLUDE_JFR
+
   //---------------------------------------------------------------------------
   // Initialization
 
@@ -2991,6 +3106,15 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  void generate_phase1() {
+    // Continuation stubs:
+    StubRoutines::_cont_thaw          = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
+    StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+  }
 
   void generate_all() {
     // Generates all stubs and initializes the entry points
@@ -3015,6 +3139,11 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != nullptr) {
+      StubRoutines::Arm::_method_entry_barrier = generate_method_entry_barrier();
+    }
+
 #ifdef COMPILE_CRYPTO
     // generate AES intrinsics code
     if (UseAESIntrinsics) {
@@ -3029,18 +3158,20 @@ class StubGenerator: public StubCodeGenerator {
 
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    if (all) {
-      generate_all();
-    } else {
+  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
+    if (phase == 0) {
       generate_initial();
+    } else if (phase == 1) {
+      generate_phase1();
+    } else {
+      generate_all();
     }
   }
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 32
 void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == NULL) {
+  if (UnsafeCopyMemory::_table == nullptr) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
   StubGenerator g(code, phase);

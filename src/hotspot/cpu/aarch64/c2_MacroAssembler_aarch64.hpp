@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,14 @@
 
 // C2_MacroAssembler contains high-level macros for C2
 
- public:
+ private:
+  // Return true if the phase output is in the scratch emit size mode.
+  virtual bool in_scratch_emit_size() override;
 
+  void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
+                                  enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
+
+ public:
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
@@ -64,14 +70,29 @@
   void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
                         FloatRegister vtmp1, FloatRegister vtmp2);
 
+  // Unpack the mask, a long value in src, into predicate register dst based on the
+  // corresponding data type. Note that dst can support at most 64 lanes.
+  void sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
+                          FloatRegister vtmp1, FloatRegister vtmp2);
+
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
                     FloatRegister src2, int cond, bool isQ);
+
+  void neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
+                         Condition cond, bool isQ);
 
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
                    FloatRegister zn, FloatRegister zm, int cond);
 
   void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
+
+  // Vector cast
+  void neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
+                          FloatRegister src, BasicType src_bt);
+
+  void neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
+                          FloatRegister src, BasicType src_bt, unsigned src_vlen_in_bytes);
 
   void sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
                          FloatRegister src, SIMD_RegVariant src_size);
@@ -85,24 +106,70 @@
   void sve_vmaskcast_narrow(PRegister dst, PRegister src,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
+  // Vector reduction
+  void neon_reduce_add_integral(Register dst, BasicType bt,
+                                Register isrc, FloatRegister vsrc,
+                                unsigned vector_length_in_bytes, FloatRegister vtmp);
+
+  void neon_reduce_mul_integral(Register dst, BasicType bt,
+                                Register isrc, FloatRegister vsrc,
+                                unsigned vector_length_in_bytes,
+                                FloatRegister vtmp1, FloatRegister vtmp2);
+
+  void neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
+                          FloatRegister fsrc, FloatRegister vsrc,
+                          unsigned vector_length_in_bytes, FloatRegister vtmp);
+
+  void neon_reduce_logical(int opc, Register dst, BasicType bt, Register isrc,
+                           FloatRegister vsrc, unsigned vector_length_in_bytes);
+
+  void neon_reduce_minmax_integral(int opc, Register dst, BasicType bt,
+                                   Register isrc, FloatRegister vsrc,
+                                   unsigned vector_length_in_bytes, FloatRegister vtmp);
+
   void sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                            FloatRegister src2, PRegister pg, FloatRegister tmp);
 
-  // Set elements of the dst predicate to true if the element number is
-  // in the range of [0, lane_cnt), or to false otherwise.
-  void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
+  // Set elements of the dst predicate to true for lanes in the range of
+  // [0, lane_cnt), or to false otherwise. The input "lane_cnt" should be
+  // smaller than or equal to the supported max vector length of the basic
+  // type. Clobbers: rscratch1 and the rFlagsReg.
+  void sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t lane_cnt);
 
   // Extract a scalar element from an sve vector at position 'idx'.
   // The input elements in src are expected to be of integral type.
-  void sve_extract_integral(Register dst, SIMD_RegVariant size, FloatRegister src, int idx,
-                            bool is_signed, FloatRegister vtmp);
+  void sve_extract_integral(Register dst, BasicType bt, FloatRegister src,
+                            int idx, FloatRegister vtmp);
 
   // java.lang.Math::round intrinsics
   void vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
                          FloatRegister tmp2, FloatRegister tmp3,
                          SIMD_Arrangement T);
   void vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
-                        FloatRegister tmp2, PRegister ptmp,
+                        FloatRegister tmp2, PRegister pgtmp,
                         SIMD_RegVariant T);
+
+  // Pack active elements of src, under the control of mask, into the
+  // lowest-numbered elements of dst. Any remaining elements of dst will
+  // be filled with zero.
+  void sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
+                         FloatRegister vtmp1, FloatRegister vtmp2,
+                         FloatRegister vtmp3, FloatRegister vtmp4,
+                         PRegister ptmp, PRegister pgtmp);
+
+  void sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
+                          FloatRegister vtmp1, FloatRegister vtmp2,
+                          PRegister pgtmp);
+
+  void neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
+
+  void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
+
+  // java.lang.Math::signum intrinsics
+  void vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                          FloatRegister one, SIMD_Arrangement T);
+
+  void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                         FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
 
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

@@ -24,11 +24,14 @@ package org.openjdk.bench.java.lang.invoke;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -40,6 +43,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
+@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(3)
 public class MethodHandlesIdentity {
 
     private MethodHandle mh;
@@ -49,16 +55,6 @@ public class MethodHandlesIdentity {
     public void setup() {
         cachedArg = new Object();
         mh = MethodHandles.identity(Object.class);
-    }
-
-    @Benchmark
-    public Object baselineRaw() throws Throwable {
-        return new Object();
-    }
-
-    @Benchmark
-    public Object baselineRawCached() throws Throwable {
-        return cachedArg;
     }
 
     @Benchmark

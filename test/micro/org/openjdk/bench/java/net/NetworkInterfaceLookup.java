@@ -45,9 +45,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
-@Fork(2)
-@Warmup(iterations = 5, time = 2)
-@Measurement(iterations = 10, time = 2)
+@Fork(value = 2, jvmArgsAppend = "--add-opens=java.base/java.net=ALL-UNNAMED")
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 public class NetworkInterfaceLookup {
 
     static final InetAddress address = InetAddress.getLoopbackAddress();

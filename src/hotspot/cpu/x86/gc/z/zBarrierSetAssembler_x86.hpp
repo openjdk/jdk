@@ -96,6 +96,8 @@ public:
   void generate_c2_load_barrier_stub(MacroAssembler* masm,
                                      ZLoadBarrierStubC2* stub) const;
 #endif // COMPILER2
+
+  void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
 #endif // CPU_X86_GC_Z_ZBARRIERSETASSEMBLER_X86_HPP

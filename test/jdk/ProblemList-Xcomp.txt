@@ -28,4 +28,4 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
-java/lang/ref/ReferenceEnqueue.java 8284236 generic-all
+

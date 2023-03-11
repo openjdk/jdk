@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ final class LdapAttribute extends BasicAttribute {
             // remove any security credentials - otherwise the serialized form
             // would store them in the clear
             for (String key : realEnv.keySet()){
-                if (key.indexOf("security") != -1 ) {
+                if (key.contains("security")) {
 
                     //if we need to remove props, we must do it to a clone
                     //of the environment. cloning is expensive, so we only do

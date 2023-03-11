@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@ import sun.jvm.hotspot.oops.*;
 
 /** Describes a path from an object back to the root which is keeping
     it alive. Elements of the path are (object, field) pairs, where
-    the object is expressed as a @link{sun.jvm.hotspot.oops.Oop}, and
+    the object is expressed as a {@link sun.jvm.hotspot.oops.Oop}, and
     where the field is expressed as a
-    @link{sun.jvm.hotspot.oops.FieldIdentifier}. If the element
+    {@link sun.jvm.hotspot.oops.FieldIdentifier}. If the element
     reflects a root, the Oop will be null. If the element is the end
     of the path, the FieldIdentifier will be null. */
 
@@ -48,7 +48,7 @@ public class LivenessPath {
 
   /** Fetch the element at the given index; 0-based */
   public LivenessPathElement get(int index) throws ArrayIndexOutOfBoundsException {
-    return (LivenessPathElement) stack.get(index);
+    return stack.get(index);
   }
 
   public void printOn(PrintStream tty) {
@@ -78,7 +78,7 @@ public class LivenessPath {
 
   // Convenience routine for LivenessAnalysis
   LivenessPathElement peek() {
-    return (LivenessPathElement) stack.peek();
+    return stack.peek();
   }
 
   // Convenience routine for LivenessAnalysis

@@ -49,12 +49,6 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
                      p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
 }
 
-bool G1BlockOffsetTable::is_card_boundary(HeapWord* p) const {
-  assert(p >= _reserved.start(), "just checking");
-  size_t delta = pointer_delta(p, _reserved.start());
-  return (delta & right_n_bits((int)BOTConstants::log_card_size_in_words())) == (size_t)NoBits;
-}
-
 #ifdef ASSERT
 void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
   assert((index) < (_reserved.word_size() >> BOTConstants::log_card_size_in_words()),
@@ -77,19 +71,6 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
   _bot(array),
   _hr(hr)
 {
-}
-
-void G1BlockOffsetTablePart::update() {
-  HeapWord* next_addr = _hr->bottom();
-  HeapWord* const limit = _hr->top();
-
-  HeapWord* prev_addr;
-  while (next_addr < limit) {
-    prev_addr = next_addr;
-    next_addr  = prev_addr + block_size(prev_addr);
-    update_for_block(prev_addr, next_addr);
-  }
-  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 // Write the backskip value for each region.
@@ -147,9 +128,10 @@ void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_c
     start_card_for_region = reach + 1;
   }
   assert(start_card_for_region > end_card, "Sanity check");
-  DEBUG_ONLY(check_all_cards(start_card, end_card);)
+  check_all_cards(start_card, end_card);
 }
 
+#ifdef ASSERT
 // The card-interval [start_card, end_card] is a closed interval; this
 // is an expensive check -- use with care and only under protection of
 // suitable flag.
@@ -187,6 +169,7 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
     }
   }
 }
+#endif
 
 //
 //              cur_card_boundary
@@ -275,7 +258,7 @@ void G1BlockOffsetTablePart::verify() const {
       HeapWord* obj_end = card_address - entry;
       while (obj_end < card_address) {
         HeapWord* obj = obj_end;
-        size_t obj_size = block_size(obj);
+        size_t obj_size = _hr->block_size(obj);
         obj_end = obj + obj_size;
         guarantee(obj_end > obj && obj_end <= _hr->top(),
                   "Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,

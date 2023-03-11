@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.toolkit;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -60,7 +59,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.util.DocTreePath;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -74,7 +72,6 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileFactory;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.Extern;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 import jdk.javadoc.internal.doclets.toolkit.util.MetaKeywords;
@@ -85,9 +82,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberCache;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.DocLint;
+import jdk.javadoc.internal.doclint.Env;
 
 /**
- * Configure the output based on the options. Doclets should sub-class
+ * Configure the output based on the options. Doclets should subclass
  * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the standard doclet.
  */
@@ -473,9 +471,13 @@ public abstract class BaseConfiguration {
                     tagletManager.addCustomTag(args.get(1), fileManager);
                     continue;
                 }
-                List<String> tokens = tokenize(args.get(1), TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
+                /* Since there are few constraints on the characters in a tag name,
+                 * and real world examples with ':' in the tag name, we cannot simply use
+                 * String.split(regex);  instead, we tokenize the string, allowing
+                 * special characters to be escaped with '\'. */
+                List<String> tokens = tokenize(args.get(1), 3);
                 switch (tokens.size()) {
-                    case 1:
+                    case 1 -> {
                         String tagName = args.get(1);
                         if (tagletManager.isKnownCustomTag(tagName)) {
                             //reorder a standard tag
@@ -486,18 +488,16 @@ public abstract class BaseConfiguration {
                             heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
                             tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
                         }
-                        break;
+                    }
 
-                    case 2:
+                    case 2 ->
                         //Add simple taglet without heading, probably to excluding it in the output.
                         tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(1), "");
-                        break;
 
-                    case 3:
+                    case 3 ->
                         tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
-                        break;
 
-                    default:
+                    default ->
                         messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
                 }
             }
@@ -507,18 +507,17 @@ public abstract class BaseConfiguration {
     }
 
     /**
-     * Given a string, return an array of tokens.  The separator can be escaped
-     * with the '\' character.  The '\' character may also be escaped by the
-     * '\' character.
+     * Given a string, return an array of tokens, separated by ':'.
+     * The separator character can be escaped with the '\' character.
+     * The '\' character may also be escaped with the '\' character.
      *
-     * @param s         the string to tokenize.
-     * @param separator the separator char.
+     * @param s         the string to tokenize
      * @param maxTokens the maximum number of tokens returned.  If the
      *                  max is reached, the remaining part of s is appended
      *                  to the end of the last token.
-     * @return an array of tokens.
+     * @return an array of tokens
      */
-    private List<String> tokenize(String s, char separator, int maxTokens) {
+    private List<String> tokenize(String s, int maxTokens) {
         List<String> tokens = new ArrayList<>();
         StringBuilder token = new StringBuilder();
         boolean prevIsEscapeChar = false;
@@ -528,7 +527,7 @@ public abstract class BaseConfiguration {
                 // Case 1:  escaped character
                 token.appendCodePoint(currentChar);
                 prevIsEscapeChar = false;
-            } else if (currentChar == separator && tokens.size() < maxTokens - 1) {
+            } else if (currentChar == ':' && tokens.size() < maxTokens - 1) {
                 // Case 2:  separator
                 tokens.add(token.toString());
                 token = new StringBuilder();
@@ -639,10 +638,6 @@ public abstract class BaseConfiguration {
      * @return JavaFileManager
      */
     public abstract JavaFileManager getFileManager();
-
-    public abstract boolean showMessage(DocTreePath path, String key);
-
-    public abstract boolean showMessage(Element e, String key);
 
     /*
      * Splits the elements in a collection to its individual
@@ -803,8 +798,20 @@ public abstract class BaseConfiguration {
                 doclintOpts.toArray(new String[0]));
     }
 
-    public boolean haveDocLint() {
-        return (doclint != null);
+    public boolean isDocLintReferenceGroupEnabled() {
+        return isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group.REFERENCE);
+    }
+
+    public boolean isDocLintSyntaxGroupEnabled() {
+        return isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group.SYNTAX);
+    }
+
+    private boolean isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group group) {
+        // Use AccessKind.PUBLIC as a stand-in, since it is not common to
+        // set DocLint options per access kind (as is common with javac.)
+        // A more sophisticated solution might be to derive the access kind from the
+        // element owning the comment, and its enclosing elements.
+        return doclint != null && doclint.isGroupEnabled(group, Env.AccessKind.PUBLIC);
     }
     //</editor-fold>
 }

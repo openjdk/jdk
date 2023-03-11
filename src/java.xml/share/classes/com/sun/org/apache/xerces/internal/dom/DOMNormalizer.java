@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -89,7 +89,7 @@ import org.w3c.dom.Text;
  *
  * @author Elena Litani, IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
- * @LastModified: Apr 2019
+ * @LastModified: June 2022
  */
 public class DOMNormalizer implements XMLDocumentHandler {
 
@@ -139,9 +139,6 @@ public class DOMNormalizer implements XMLDocumentHandler {
 
     /** Stores all namespace bindings on the current element */
     protected final NamespaceContext fLocalNSBinder = new NamespaceSupport();
-
-    /** list of attributes */
-    protected final List<Node> fAttributeList = new ArrayList<>(5);
 
     /** DOM Locator -  for namespace fixup algorithm */
     protected final DOMLocatorImpl fLocator = new DOMLocatorImpl();
@@ -885,9 +882,9 @@ public class DOMNormalizer implements XMLDocumentHandler {
         if (attributes != null) {
 
             // clone content of the attributes
-            attributes.cloneMap(fAttributeList);
-            for (int i = 0; i < fAttributeList.size(); i++) {
-                Attr attr = (Attr) fAttributeList.get(i);
+            List<Node> attrList = attributes.cloneMap(new ArrayList<>());
+            for (int i = 0; i < attrList.size(); i++) {
+                Attr attr = (Attr) attrList.get(i);
                 fLocator.fRelatedNode = attr;
 
                 if (DEBUG) {

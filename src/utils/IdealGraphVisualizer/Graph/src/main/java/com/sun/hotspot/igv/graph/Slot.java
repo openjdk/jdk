@@ -78,24 +78,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         }
         return p;
     }
-    public static final Comparator<Slot> slotIndexComparator = new Comparator<Slot>() {
-
-        @Override
-        public int compare(Slot o1, Slot o2) {
-            return o1.wantedIndex - o2.wantedIndex;
-        }
-    };
-    public static final Comparator<Slot> slotFigureComparator = new Comparator<Slot>() {
-
-        @Override
-        public int compare(Slot o1, Slot o2) {
-            return o1.figure.getId() - o2.figure.getId();
-        }
-    };
-
-    public InputNode getAssociatedNode() {
-        return associatedNode;
-    }
+    public static final Comparator<Slot> slotIndexComparator = Comparator.comparingInt(o -> o.wantedIndex);
 
     public void setAssociatedNode(InputNode node) {
         associatedNode = node;
@@ -107,7 +90,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         } else {
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             Graphics g = image.getGraphics();
-            g.setFont(figure.getDiagram().getSlotFont().deriveFont(Font.BOLD));
+            g.setFont(Diagram.SLOT_FONT.deriveFont(Font.BOLD));
             FontMetrics metrics = g.getFontMetrics();
             return Math.max(Figure.SLOT_WIDTH, metrics.stringWidth(shortName) + 6);
         }

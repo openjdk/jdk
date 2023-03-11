@@ -148,7 +148,7 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCImport Import(JCTree qualid, boolean importStatic) {
+    public JCImport Import(JCFieldAccess qualid, boolean importStatic) {
         JCImport tree = new JCImport(qualid, importStatic);
         tree.pos = pos;
         return tree;
@@ -273,8 +273,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCEnhancedForLoop ForeachLoop(JCVariableDecl var, JCExpression expr, JCStatement body) {
-        JCEnhancedForLoop tree = new JCEnhancedForLoop(var, expr, body);
+    public JCEnhancedForLoop ForeachLoop(JCTree varOrRecordPattern, JCExpression expr, JCStatement body) {
+        JCEnhancedForLoop tree = new JCEnhancedForLoop(varOrRecordPattern, expr, body);
         tree.pos = pos;
         return tree;
     }
@@ -494,15 +494,26 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCConstantCaseLabel ConstantCaseLabel(JCExpression expr) {
+        JCConstantCaseLabel tree = new JCConstantCaseLabel(expr);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCPatternCaseLabel PatternCaseLabel(JCPattern pat, JCExpression guard) {
+        JCPatternCaseLabel tree = new JCPatternCaseLabel(pat, guard);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCParenthesizedPattern ParenthesizedPattern(JCPattern pattern) {
         JCParenthesizedPattern tree = new JCParenthesizedPattern(pattern);
         tree.pos = pos;
         return tree;
     }
 
-    public JCRecordPattern RecordPattern(JCExpression deconstructor, List<JCPattern> nested,
-                                         JCVariableDecl var) {
-        JCRecordPattern tree = new JCRecordPattern(deconstructor, nested, var);
+    public JCRecordPattern RecordPattern(JCExpression deconstructor, List<JCPattern> nested) {
+        JCRecordPattern tree = new JCRecordPattern(deconstructor, nested);
         tree.pos = pos;
         return tree;
     }
@@ -712,8 +723,8 @@ public class TreeMaker implements JCTree.Factory {
     /** Create a selection node from a qualifier tree and a symbol.
      *  @param base   The qualifier tree.
      */
-    public JCExpression Select(JCExpression base, Symbol sym) {
-        return new JCFieldAccess(base, sym.name, sym).setPos(pos).setType(sym.type);
+    public JCFieldAccess Select(JCExpression base, Symbol sym) {
+        return (JCFieldAccess)new JCFieldAccess(base, sym.name, sym).setPos(pos).setType(sym.type);
     }
 
     /** Create a qualified identifier from a symbol, adding enough qualifications

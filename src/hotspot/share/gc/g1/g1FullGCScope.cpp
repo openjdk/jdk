@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
+#include "gc/shared/gc_globals.hpp"
 
 G1FullGCJFRTracerMark::G1FullGCJFRTracerMark(STWGCTimer* timer, GCTracer* tracer)
   : G1JFRTracerMark(timer, tracer) {
@@ -38,17 +39,19 @@ G1FullGCJFRTracerMark::~G1FullGCJFRTracerMark() {
 G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              bool explicit_gc,
                              bool clear_soft,
-                             bool do_maximal_compaction) :
+                             bool do_maximal_compaction,
+                             G1FullGCTracer* tracer) :
     _rm(),
     _explicit_gc(explicit_gc),
+    _do_maximal_compaction(do_maximal_compaction),
     _g1h(G1CollectedHeap::heap()),
     _svc_marker(SvcGCMarker::FULL),
     _timer(),
-    _tracer(),
+    _tracer(tracer),
     _active(),
-    _tracer_mark(&_timer, &_tracer),
+    _tracer_mark(&_timer, _tracer),
     _soft_refs(clear_soft, _g1h->soft_ref_policy()),
-    _monitoring_scope(monitoring_support, true /* full_gc */, true /* all_memory_pools_affected */),
+    _monitoring_scope(monitoring_support),
     _heap_printer(_g1h),
     _region_compaction_threshold(do_maximal_compaction ?
                                  HeapRegion::GrainWords :
@@ -67,7 +70,7 @@ STWGCTimer* G1FullGCScope::timer() {
 }
 
 G1FullGCTracer* G1FullGCScope::tracer() {
-  return &_tracer;
+  return _tracer;
 }
 
 size_t G1FullGCScope::region_compaction_threshold() const {

@@ -91,9 +91,6 @@ public class SimpleDeconstructionPattern {
         if (!testC(new P6(new P3("")))) {
             throw new IllegalStateException();
         }
-        if (!testD(new P4("test"))) {
-            throw new IllegalStateException();
-        }
         if (!testE(new P6(new P3(null)))) {
             throw new IllegalStateException();
         }
@@ -110,6 +107,9 @@ public class SimpleDeconstructionPattern {
             throw new IllegalStateException();
         }
         if (!testGen3(new GenRecord1<>(3, ""))) {
+            throw new IllegalStateException();
+        }
+        if (!I.testInInterface(new P2(new P(0), ""))) {
             throw new IllegalStateException();
         }
     }
@@ -168,10 +168,6 @@ public class SimpleDeconstructionPattern {
         return o instanceof P6(P3(String s)) && s.isEmpty();
     }
 
-    private static boolean testD(Object o) throws Throwable {
-        return o instanceof P4(String s) p && (s.isEmpty() || "test".equals(p.o()));
-    }
-
     private static boolean testE(Object o) throws Throwable {
         return o instanceof P6(P3(String s)) && s == null;
     }
@@ -188,6 +184,11 @@ public class SimpleDeconstructionPattern {
         return o instanceof GenRecord1<Integer, String>(var i, var s) && i.intValue() == 3 && s.length() == 0;
     }
 
+    interface I {
+        public static boolean testInInterface(Object o) {
+            return o instanceof P2(P(int i), var s) && i == 0;
+        }
+    }
     public record P(int i) {
     }
 

@@ -36,8 +36,8 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 
 EventEmitter::EventEmitter(const JfrTicks& start_time, const JfrTicks& end_time) :

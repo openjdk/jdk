@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ public class KeyPairGeneratorBench extends CryptoBase {
     @Setup
     public void setup() throws NoSuchAlgorithmException {
         setupProvider();
-        generator = (prov == null) ? KeyPairGenerator.getInstance(algorithm) : KeyPairGenerator.getInstance(algorithm, prov);
+        generator = (prov == null) ? KeyPairGenerator.getInstance(algorithm)
+                                : KeyPairGenerator.getInstance(algorithm, prov);
         generator.initialize(keyLength);
     }
 
@@ -57,9 +58,17 @@ public class KeyPairGeneratorBench extends CryptoBase {
         @Param({"RSA"})
         private String algorithm;
 
-        @Param({"1024", "2048", "3072"})
+        @Param({"1024", "2048", "3072", "4096"})
         private int keyLength;
+    }
 
+    public static class RSASSAPSS extends KeyPairGeneratorBench {
+
+        @Param({"RSASSA-PSS"})
+        private String algorithm;
+
+        @Param({"1024", "2048", "3072", "4096"})
+        private int keyLength;
     }
 
     public static class EC extends KeyPairGeneratorBench {
@@ -69,7 +78,23 @@ public class KeyPairGeneratorBench extends CryptoBase {
 
         @Param({"256", "384", "521"})
         private int keyLength;
-
     }
 
+    public static class EdDSA extends KeyPairGeneratorBench {
+
+        @Param({"EdDSA"})
+        private String algorithm;
+
+        @Param({"255", "448"})
+        private int keyLength;
+    }
+
+    public static class XDH extends KeyPairGeneratorBench {
+
+        @Param({"XDH"})
+        private String algorithm;
+
+        @Param({"255", "448"})
+        private int keyLength;
+    }
 }

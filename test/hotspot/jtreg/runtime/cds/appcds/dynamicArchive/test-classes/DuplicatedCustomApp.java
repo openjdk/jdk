@@ -24,7 +24,7 @@
 
 import java.io.*;
 import java.net.*;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class DuplicatedCustomApp {
     static WhiteBox wb = WhiteBox.getWhiteBox();

@@ -27,7 +27,6 @@ package sun.jvm.hotspot.utilities;
 import java.io.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.shared.OopStorage;
-import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 
@@ -437,8 +436,8 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
     protected void handleRuntimeException(RuntimeException re)
         throws IOException {
         Throwable cause = re.getCause();
-        if (cause != null && cause instanceof IOException) {
-            throw (IOException) cause;
+        if (cause instanceof IOException io) {
+            throw io;
         } else {
             // some other RuntimeException, just re-throw
             throw re;

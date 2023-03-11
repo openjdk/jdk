@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ final class BootstrapMethodInvoker {
         catch (Error e) {
             // Pass through an Error, including BootstrapMethodError, any other
             // form of linkage error, such as IllegalAccessError if the bootstrap
-            // method is inaccessible, or say ThreadDeath/OutOfMemoryError
+            // method is inaccessible, or say OutOfMemoryError
             // See the "Linking Exceptions" section for the invokedynamic
             // instruction in JVMS 6.5.
             throw e;
@@ -255,7 +255,7 @@ final class BootstrapMethodInvoker {
 
     /**
      * @return true iff the BSM method type exactly matches
-     *         {@see java.lang.invoke.StringConcatFactory#makeConcatWithConstants(MethodHandles.Lookup,
+     *         {@link java.lang.invoke.StringConcatFactory#makeConcatWithConstants(MethodHandles.Lookup,
      *                 String,MethodType,String,Object...))}
      */
     private static boolean isStringConcatFactoryBSM(MethodType bsmType) {
@@ -264,7 +264,7 @@ final class BootstrapMethodInvoker {
 
     /**
      * @return true iff the BSM method type exactly matches
-     *         {@see java.lang.invoke.LambdaMetafactory#metafactory(
+     *         {@link java.lang.invoke.LambdaMetafactory#metafactory(
      *          MethodHandles.Lookup,String,Class,MethodType,MethodHandle,MethodType)}
      */
     private static boolean isLambdaMetafactoryCondyBSM(MethodType bsmType) {
@@ -273,7 +273,7 @@ final class BootstrapMethodInvoker {
 
     /**
      * @return true iff the BSM method type exactly matches
-     *         {@see java.lang.invoke.LambdaMetafactory#metafactory(
+     *         {@link java.lang.invoke.LambdaMetafactory#metafactory(
      *          MethodHandles.Lookup,String,MethodType,MethodType,MethodHandle,MethodType)}
      */
     private static boolean isLambdaMetafactoryIndyBSM(MethodType bsmType) {
@@ -282,7 +282,7 @@ final class BootstrapMethodInvoker {
 
     /**
      * @return true iff the BSM method type exactly matches
-     *         {@see java.lang.invoke.LambdaMetafactory#altMetafactory(
+     *         {@link java.lang.invoke.LambdaMetafactory#altMetafactory(
      *          MethodHandles.Lookup,String,MethodType,Object[])}
      */
     private static boolean isLambdaMetafactoryAltMetafactoryBSM(MethodType bsmType) {

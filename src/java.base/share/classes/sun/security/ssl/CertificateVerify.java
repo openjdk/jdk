@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.X509Authentication.X509Credentials;
 import sun.security.ssl.X509Authentication.X509Possession;
@@ -172,11 +173,12 @@ final class CertificateVerify {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"CertificateVerify\": '{'\n" +
-                    "  \"signature\": '{'\n" +
-                    "{0}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                    """
+                            "CertificateVerify": '{'
+                              "signature": '{'
+                            {0}
+                              '}'
+                            '}'""",
                     Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -210,12 +212,10 @@ final class CertificateVerify {
                         + algorithm);
             }
 
-            if (signer != null) {
-                if (key instanceof PublicKey) {
-                    signer.initVerify((PublicKey)(key));
-                } else {
-                    signer.initSign((PrivateKey)key);
-                }
+            if (key instanceof PublicKey) {
+                signer.initVerify((PublicKey)(key));
+            } else {
+                signer.initSign((PrivateKey)key);
             }
 
             return signer;
@@ -426,11 +426,12 @@ final class CertificateVerify {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"CertificateVerify\": '{'\n" +
-                    "  \"signature\": '{'\n" +
-                    "{0}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                    """
+                            "CertificateVerify": '{'
+                              "signature": '{'
+                            {0}
+                              '}'
+                            '}'""",
                     Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -467,12 +468,10 @@ final class CertificateVerify {
                         + algorithm);
             }
 
-            if (signer != null) {
-                if (key instanceof PublicKey) {
-                    signer.initVerify((PublicKey)(key));
-                } else {
-                    signer.initSign((PrivateKey)key);
-                }
+            if (key instanceof PublicKey) {
+                signer.initVerify((PublicKey)(key));
+            } else {
+                signer.initSign((PrivateKey)key);
             }
 
             return signer;
@@ -591,12 +590,13 @@ final class CertificateVerify {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
             Map.Entry<SignatureScheme, Signature> schemeAndSigner =
                     SignatureScheme.getSignerOfPreferableAlgorithm(
+                    chc.sslConfig,
                     chc.algorithmConstraints,
                     chc.peerRequestedSignatureSchemes,
                     x509Possession,
                     chc.negotiatedProtocol);
             if (schemeAndSigner == null) {
-                // Unlikely, the credentials generator should have
+                // Unlikely, the credential's generator should have
                 // selected the preferable signature algorithm properly.
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No supported CertificateVerify signature algorithm for " +
@@ -708,12 +708,13 @@ final class CertificateVerify {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"CertificateVerify\": '{'\n" +
-                    "  \"signature algorithm\": {0}\n" +
-                    "  \"signature\": '{'\n" +
-                    "{1}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                    """
+                            "CertificateVerify": '{'
+                              "signature algorithm": {0}
+                              "signature": '{'
+                            {1}
+                              '}'
+                            '}'""",
                     Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -901,12 +902,13 @@ final class CertificateVerify {
 
             Map.Entry<SignatureScheme, Signature> schemeAndSigner =
                     SignatureScheme.getSignerOfPreferableAlgorithm(
+                    context.sslConfig,
                     context.algorithmConstraints,
                     context.peerRequestedSignatureSchemes,
                     x509Possession,
                     context.negotiatedProtocol);
             if (schemeAndSigner == null) {
-                // Unlikely, the credentials generator should have
+                // Unlikely, the credential's generator should have
                 // selected the preferable signature algorithm properly.
                 throw context.conContext.fatal(Alert.INTERNAL_ERROR,
                     "No supported CertificateVerify signature algorithm for " +
@@ -1044,12 +1046,13 @@ final class CertificateVerify {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"CertificateVerify\": '{'\n" +
-                    "  \"signature algorithm\": {0}\n" +
-                    "  \"signature\": '{'\n" +
-                    "{1}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                    """
+                            "CertificateVerify": '{'
+                              "signature algorithm": {0}
+                              "signature": '{'
+                            {1}
+                              '}'
+                            '}'""",
                     Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();

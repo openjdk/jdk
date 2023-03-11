@@ -79,7 +79,7 @@ inline address Assembler::emit_fd(address entry, address toc, address env) {
 
 // Issue an illegal instruction. 0 is guaranteed to be an illegal instruction.
 inline void Assembler::illtrap() { Assembler::emit_int32(0); }
-inline bool Assembler::is_illtrap(int x) { return x == 0; }
+inline bool Assembler::is_illtrap(address instr_addr) { return *(uint32_t*)instr_addr == 0u; }
 
 // PPC 1, section 3.3.8, Fixed-Point Arithmetic Instructions
 inline void Assembler::addi(   Register d, Register a, int si16)   { assert(a != R0, "r0 not allowed"); addi_r0ok( d, a, si16); }
@@ -1020,7 +1020,10 @@ inline void Assembler::vsrh(    VectorRegister d, VectorRegister a, VectorRegist
 inline void Assembler::vsrab(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VSRAB_OPCODE    | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vsraw(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VSRAW_OPCODE    | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vsrah(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VSRAH_OPCODE    | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vpopcntb(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTB_OPCODE | vrt(d) | vrb(b)); }
+inline void Assembler::vpopcnth(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTH_OPCODE | vrt(d) | vrb(b)); }
 inline void Assembler::vpopcntw(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTW_OPCODE | vrt(d) | vrb(b)); }
+inline void Assembler::vpopcntd(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTD_OPCODE | vrt(d) | vrb(b)); }
 inline void Assembler::mtvscr(  VectorRegister b)                                     { emit_int32( MTVSCR_OPCODE   | vrb(b)); }
 inline void Assembler::mfvscr(  VectorRegister d)                                     { emit_int32( MFVSCR_OPCODE   | vrt(d)); }
 

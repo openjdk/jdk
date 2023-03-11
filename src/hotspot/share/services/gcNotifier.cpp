@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,15 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 
-GCNotificationRequest *GCNotifier::first_request = NULL;
-GCNotificationRequest *GCNotifier::last_request = NULL;
+GCNotificationRequest *GCNotifier::first_request = nullptr;
+GCNotificationRequest *GCNotifier::last_request = nullptr;
 
 void GCNotifier::pushNotification(GCMemoryManager *mgr, const char *action, const char *cause) {
   // Make a copy of the last GC statistics
   // GC may occur between now and the creation of the notification
   int num_pools = MemoryService::num_memory_pools();
   // stat is deallocated inside GCNotificationRequest
-  GCStatInfo* stat = new(ResourceObj::C_HEAP, mtGC) GCStatInfo(num_pools);
+  GCStatInfo* stat = new GCStatInfo(num_pools);
   mgr->get_last_gc_stat(stat);
   // timestamp is current time in ms
   GCNotificationRequest *request = new GCNotificationRequest(os::javaTimeMillis(),mgr,action,cause,stat);
@@ -57,7 +57,7 @@ void GCNotifier::pushNotification(GCMemoryManager *mgr, const char *action, cons
 
 void GCNotifier::addRequest(GCNotificationRequest *request) {
   MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
-  if(first_request == NULL) {
+  if(first_request == nullptr) {
     first_request = request;
   } else {
     last_request->next = request;
@@ -69,14 +69,14 @@ void GCNotifier::addRequest(GCNotificationRequest *request) {
 GCNotificationRequest *GCNotifier::getRequest() {
   MutexLocker ml(Notification_lock, Mutex::_no_safepoint_check_flag);
   GCNotificationRequest *request = first_request;
-  if(first_request != NULL) {
+  if(first_request != nullptr) {
     first_request = first_request->next;
   }
   return request;
 }
 
 bool GCNotifier::has_event() {
-  return first_request != NULL;
+  return first_request != nullptr;
 }
 
 static Handle getGcInfoBuilder(GCMemoryManager *gcManager,TRAPS) {
@@ -183,7 +183,7 @@ public:
     _request = r;
   }
   ~NotificationMark() {
-    assert(_request != NULL, "Sanity check");
+    assert(_request != nullptr, "Sanity check");
     delete _request;
   }
 };
@@ -192,7 +192,7 @@ void GCNotifier::sendNotificationInternal(TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
   GCNotificationRequest *request = getRequest();
-  if (request != NULL) {
+  if (request != nullptr) {
     NotificationMark nm(request);
     Handle objGcInfo = createGcInfo(request->gcManager, request->gcStatInfo, CHECK);
 

@@ -73,9 +73,9 @@ static int prepare() {
   jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Prepare: 11\n");
-    return NSK_FALSE;
+    return JNI_FALSE;
   }
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 static int clean() {
@@ -84,7 +84,7 @@ static int clean() {
   if (err != JVMTI_ERROR_NONE) {
     set_agent_fail_status();
   }
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 static void JNICALL
@@ -104,7 +104,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
   eventsCount = 0;
 
   /* resume debugee to catch MonitorWait event */
-  if (!((agent_resume_sync() == NSK_TRUE) && (agent_wait_for_sync(timeout) == NSK_TRUE))) {
+  if (!((agent_resume_sync() == JNI_TRUE) && (agent_wait_for_sync(timeout) == JNI_TRUE))) {
     return;
   }
 

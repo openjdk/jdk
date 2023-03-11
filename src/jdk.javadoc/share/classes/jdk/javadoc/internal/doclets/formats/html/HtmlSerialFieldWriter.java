@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,15 +33,14 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 
+import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 /**
  * Generate serialized form for serializable fields.
@@ -88,7 +87,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         content.add(heading);
         var pre = new HtmlTree(TagName.PRE);
         Content fieldContent = writer.getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.SERIAL_MEMBER, fieldType));
+                configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, fieldType));
         pre.add(fieldContent);
         pre.add(" ");
         pre.add(fieldName);
@@ -130,11 +129,12 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param content the content to which the deprecated info will be added
      */
     @Override
-    public void addMemberDescription(VariableElement field, DocTree serialFieldTag, Content content) {
-        CommentHelper ch = utils.getCommentHelper(field);
-        List<? extends DocTree> description = ch.getDescription(serialFieldTag);
+    public void addMemberDescription(VariableElement field, SerialFieldTree serialFieldTag, Content content) {
+        List<? extends DocTree> description = serialFieldTag.getDescription();
         if (!description.isEmpty()) {
-            Content serialFieldContent = new RawHtml(ch.getText(description));
+            Content serialFieldContent = writer.commentTagsToContent(field,
+                    description,
+                    new TagletWriterImpl.Context(false, false));
             var div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
             content.add(div);
         }

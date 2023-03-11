@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,60 +26,81 @@
 
 package jdk.internal.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
-import java.lang.ref.Reference;
 import java.util.Objects;
 import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.ForceInline;
-import sun.nio.ch.DirectBuffer;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well
  * as thread confinement. A session has a liveness bit, which is updated when the session is closed
- * (this operation is triggered by {@link MemorySession#close()}). This bit is consulted prior
- * to memory access (see {@link #checkValidState()}).
+ * (this operation is triggered by {@link MemorySessionImpl#close()}). This bit is consulted prior
+ * to memory access (see {@link #checkValidStateRaw()}).
  * There are two kinds of memory session: confined memory session and shared memory session.
  * A confined memory session has an associated owner thread that confines some operations to
- * associated owner thread such as {@link #close()} or {@link #checkValidState()}.
+ * associated owner thread such as {@link #close()} or {@link #checkValidStateRaw()}.
  * Shared sessions do not feature an owner thread - meaning their operations can be called, in a racy
  * manner, by multiple threads. To guarantee temporal safety in the presence of concurrent thread,
  * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySession, SegmentAllocator {
-    final ResourceList resourceList;
-    final Cleaner.Cleanable cleanable;
-    final Thread owner;
-
+public abstract sealed class MemorySessionImpl
+        implements SegmentScope, SegmentAllocator
+        permits ConfinedSession, GlobalSession, SharedSession {
     static final int OPEN = 0;
     static final int CLOSING = -1;
     static final int CLOSED = -2;
 
-    int state = OPEN;
-
     static final VarHandle STATE;
+    static final int MAX_FORKS = Integer.MAX_VALUE;
+
+    public static final MemorySessionImpl GLOBAL = new GlobalSession(null);
+
+    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
+    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
+
+    final ResourceList resourceList;
+    final Thread owner;
+    int state = OPEN;
 
     static {
         try {
             STATE = MethodHandles.lookup().findVarHandle(MemorySessionImpl.class, "state", int.class);
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
     }
 
-    static final int MAX_FORKS = Integer.MAX_VALUE;
+    public Arena asArena() {
+        return new Arena() {
+            @Override
+            public SegmentScope scope() {
+                return MemorySessionImpl.this;
+            }
 
-    @Override
+            @Override
+            public void close() {
+                MemorySessionImpl.this.close();
+            }
+
+            @Override
+            public boolean isCloseableBy(Thread thread) {
+                Objects.requireNonNull(thread);
+                return ownerThread() == null || // shared
+                        ownerThread() == thread;
+            }
+        };
+    }
+
     public void addCloseAction(Runnable runnable) {
         Objects.requireNonNull(runnable);
-        addInternal(runnable instanceof ResourceList.ResourceCleanup cleanup ?
-                cleanup : ResourceList.ResourceCleanup.ofRunnable(runnable));
+        addInternal(ResourceList.ResourceCleanup.ofRunnable(runnable));
     }
 
     /**
@@ -97,56 +118,47 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
             addInternal(resource);
         } catch (Throwable ex) {
             resource.cleanup();
+            throw ex;
         }
     }
 
     void addInternal(ResourceList.ResourceCleanup resource) {
-        try {
-            checkValidStateSlow();
-            resourceList.add(resource);
-        } catch (ScopedMemoryAccess.ScopedAccessError err) {
-            throw new IllegalStateException("Already closed");
-        }
+        checkValidState();
+        // Note: from here on we no longer check the session state. Two cases are possible: either the resource cleanup
+        // is added to the list when the session is still open, in which case everything works ok; or the resource
+        // cleanup is added while the session is being closed. In this latter case, what matters is whether we have already
+        // called `ResourceList::cleanup` to run all the cleanup actions. If not, we can still add this resource
+        // to the list (and, in case of an add vs. close race, it might happen that the cleanup action will be
+        // called immediately after).
+        resourceList.add(resource);
     }
 
-    protected MemorySessionImpl(Thread owner, ResourceList resourceList, Cleaner cleaner) {
+    protected MemorySessionImpl(Thread owner, ResourceList resourceList) {
         this.owner = owner;
         this.resourceList = resourceList;
-        cleanable = (cleaner != null) ?
-            cleaner.register(this, resourceList) : null;
     }
 
-    public static MemorySession createConfined(Thread thread, Cleaner cleaner) {
-        return new ConfinedSession(thread, cleaner);
+    public static MemorySessionImpl createConfined(Thread thread) {
+        return new ConfinedSession(thread);
     }
 
-    public static MemorySession createShared(Cleaner cleaner) {
-        return new SharedSession(cleaner);
+    public static MemorySessionImpl createShared() {
+        return new SharedSession();
     }
 
-    public static MemorySessionImpl createImplicit() {
-        return new ImplicitSession();
+    public static MemorySessionImpl createImplicit(Cleaner cleaner) {
+        return new ImplicitSession(cleaner);
     }
 
     @Override
-    public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        return MemorySegment.allocateNative(bytesSize, bytesAlignment, this);
+    public MemorySegment allocate(long byteSize, long byteAlignment) {
+        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
     }
 
     public abstract void release0();
 
     public abstract void acquire0();
-
-    @Override
-    public boolean equals(Object o) {
-        return (o instanceof MemorySession other) &&
-            toSessionImpl(other) == this;
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
 
     @Override
     public void whileAlive(Runnable action) {
@@ -159,50 +171,44 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
         }
     }
 
-    /**
-     * Returns "owner" thread of this session.
-     * @return owner thread (or null for a shared session)
-     */
     public final Thread ownerThread() {
         return owner;
+    }
+
+    public static boolean sameOwnerThread(SegmentScope scope1, SegmentScope scope2) {
+        return ((MemorySessionImpl) scope1).ownerThread() ==
+                ((MemorySessionImpl) scope2).ownerThread();
+    }
+
+    @Override
+    public final boolean isAccessibleBy(Thread thread) {
+        Objects.requireNonNull(thread);
+        return owner == null || owner == thread;
     }
 
     /**
      * Returns true, if this session is still open. This method may be called in any thread.
      * @return {@code true} if this session is not closed yet.
      */
-    public abstract boolean isAlive();
-
-    @Override
-    public MemorySession asNonCloseable() {
-        return isCloseable() ?
-                new NonCloseableView(this) : this;
-    }
-
-    public static MemorySessionImpl toSessionImpl(MemorySession session) {
-        return ((Scoped)session).sessionImpl();
-    }
-
-    @Override
-    public MemorySessionImpl sessionImpl() {
-        return this;
+    public boolean isAlive() {
+        return state >= OPEN;
     }
 
     /**
-     * This is a faster version of {@link #checkValidStateSlow()}, which is called upon memory access, and which
+     * This is a faster version of {@link #checkValidState()}, which is called upon memory access, and which
      * relies on invariants associated with the memory session implementations (volatile access
      * to the closed state bit is replaced with plain access). This method should be monomorphic,
      * to avoid virtual calls in the memory access hot path. This method is not intended as general purpose method
      * and should only be used in the memory access handle hot path; for liveness checks triggered by other API methods,
-     * please use {@link #checkValidStateSlow()}.
+     * please use {@link #checkValidState()}.
      */
     @ForceInline
-    public final void checkValidState() {
+    public void checkValidStateRaw() {
         if (owner != null && owner != Thread.currentThread()) {
-            throw new WrongThreadException("Attempted access outside owning thread");
+            throw WRONG_THREAD;
         }
         if (state < OPEN) {
-            throw ScopedMemoryAccess.ScopedAccessError.INSTANCE;
+            throw ALREADY_CLOSED;
         }
     }
 
@@ -211,11 +217,11 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
      * @throws IllegalStateException if this session is already closed or if this is
      * a confined session and this method is called outside of the owner thread.
      */
-    public final void checkValidStateSlow() {
-        if (owner != null && Thread.currentThread() != owner) {
-            throw new WrongThreadException("Attempted access outside owning thread");
-        } else if (!isAlive()) {
-            throw new IllegalStateException("Already closed");
+    public void checkValidState() {
+        try {
+            checkValidStateRaw();
+        } catch (ScopedMemoryAccess.ScopedAccessError error) {
+            throw error.newRuntimeException();
         }
     }
 
@@ -224,7 +230,6 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
         throw new CloneNotSupportedException();
     }
 
-    @Override
     public boolean isCloseable() {
         return true;
     }
@@ -234,182 +239,15 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
      * @throws IllegalStateException if this session is already closed or if this is
      * a confined session and this method is called outside of the owner thread.
      */
-    @Override
     public void close() {
-        try {
-            justClose();
-            if (cleanable != null) {
-                cleanable.clean();
-            } else {
-                resourceList.cleanup();
-            }
-        } finally {
-            Reference.reachabilityFence(this);
-        }
+        justClose();
+        resourceList.cleanup();
     }
 
     abstract void justClose();
 
-    /**
-     * The global, non-closeable, shared session. Similar to a shared session, but its {@link #close()} method throws unconditionally.
-     * Adding new resources to the global session, does nothing: as the session can never become not-alive, there is nothing to track.
-     * Acquiring and or releasing a memory session similarly does nothing.
-     */
-    static class GlobalSessionImpl extends MemorySessionImpl {
-
-        final Object ref;
-
-        public GlobalSessionImpl(Object ref) {
-            super(null, null ,null);
-            this.ref = ref;
-        }
-
-        @Override
-        @ForceInline
-        public void release0() {
-            // do nothing
-        }
-
-        @Override
-        public boolean isCloseable() {
-            return false;
-        }
-
-        @Override
-        @ForceInline
-        public void acquire0() {
-            // do nothing
-        }
-
-        @Override
-        void addInternal(ResourceList.ResourceCleanup resource) {
-            // do nothing
-        }
-
-        @Override
-        public boolean isAlive() {
-            return true;
-        }
-
-        @Override
-        public void justClose() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public static final MemorySessionImpl GLOBAL = new GlobalSessionImpl(null);
-
     public static MemorySessionImpl heapSession(Object ref) {
-        return new GlobalSessionImpl(ref);
-    }
-
-    /**
-     * This is an implicit, GC-backed memory session. Implicit sessions cannot be closed explicitly.
-     * While it would be possible to model an implicit session as a non-closeable view of a shared
-     * session, it is better to capture the fact that an implicit session is not just a non-closeable
-     * view of some session which might be closeable. This is useful e.g. in the implementations of
-     * {@link DirectBuffer#address()}, where obtaining an address of a buffer instance associated
-     * with a potentially closeable session is forbidden.
-     */
-    static class ImplicitSession extends SharedSession {
-
-        public ImplicitSession() {
-            super(CleanerFactory.cleaner());
-        }
-
-        @Override
-        public void release0() {
-            Reference.reachabilityFence(this);
-        }
-
-        @Override
-        public void acquire0() {
-            // do nothing
-        }
-
-        @Override
-        public boolean isCloseable() {
-            return false;
-        }
-
-        @Override
-        public boolean isAlive() {
-            return true;
-        }
-
-        @Override
-        public MemorySession asNonCloseable() {
-            return this;
-        }
-
-        @Override
-        public void justClose() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    /**
-     * This is a non-closeable view of another memory session. Instances of this class are used in resource session
-     * accessors (see {@link MemorySegment#session()}). This class forwards all session methods to the underlying
-     * "root" session implementation, and throws {@link UnsupportedOperationException} on close. This class contains
-     * a strong reference to the original session, so even if the original session is dropped by the client
-     * it would still be reachable by the GC, which is important if the session is implicitly closed.
-     */
-    public final static class NonCloseableView implements MemorySession, Scoped {
-        final MemorySessionImpl session;
-
-        public NonCloseableView(MemorySessionImpl session) {
-            this.session = session;
-        }
-
-        public MemorySessionImpl sessionImpl() {
-            return session;
-        }
-
-        @Override
-        public boolean isAlive() {
-            return session.isAlive();
-        }
-
-        @Override
-        public boolean isCloseable() {
-            return false;
-        }
-
-        @Override
-        public Thread ownerThread() {
-            return session.ownerThread();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return session.equals(o);
-        }
-
-        @Override
-        public int hashCode() {
-            return session.hashCode();
-        }
-
-        @Override
-        public void whileAlive(Runnable action) {
-            session.whileAlive(action);
-        }
-
-        @Override
-        public MemorySession asNonCloseable() {
-            return this;
-        }
-
-        @Override
-        public void addCloseAction(Runnable runnable) {
-            session.addCloseAction(runnable);
-        }
-
-        @Override
-        public void close() {
-            throw new UnsupportedOperationException();
-        }
+        return new GlobalSession(ref);
     }
 
     /**
@@ -458,6 +296,28 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
                 };
             }
         }
-
     }
+
+    // helper functions to centralize error handling
+
+    static IllegalStateException tooManyAcquires() {
+        return new IllegalStateException("Session acquire limit exceeded");
+    }
+
+    static IllegalStateException alreadyAcquired(int acquires) {
+        return new IllegalStateException(String.format("Session is acquired by %d clients", acquires));
+    }
+
+    static IllegalStateException alreadyClosed() {
+        return new IllegalStateException("Already closed");
+    }
+
+    static WrongThreadException wrongThread() {
+        return new WrongThreadException("Attempted access outside owning thread");
+    }
+
+    static UnsupportedOperationException nonCloseable() {
+        return new UnsupportedOperationException("Attempted to close a non-closeable session");
+    }
+
 }

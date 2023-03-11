@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
@@ -31,13 +30,14 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
@@ -78,7 +78,7 @@ static size_t get_dump_directory() {
   }
   const size_t path_len = strlen(_path_buffer);
   const int result = jio_snprintf(_path_buffer + path_len,
-                                  sizeof(_path_buffer),
+                                  sizeof(_path_buffer) - path_len,
                                   "%s",
                                   os::file_separator());
   return (result == -1) ? 0 : strlen(_path_buffer);
@@ -328,7 +328,7 @@ RepositoryIterator::RepositoryIterator(const char* repository_path) :
     if (_path_buffer_file_name_offset == -1) {
       return;
     }
-    _file_names = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(10, mtTracing);
+    _file_names = new (mtTracing) GrowableArray<const char*>(10, mtTracing);
     if (_file_names == NULL) {
       log_error(jfr, system)("Unable to malloc memory during jfr emergency dump");
       return;

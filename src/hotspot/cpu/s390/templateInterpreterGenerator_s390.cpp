@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -482,11 +482,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   return __ addr_at(entry_offset);
 }
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  Unimplemented();
-  return NULL;
-}
-
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Inputs:
   //  Z_ARG1 - receiver
@@ -792,7 +787,7 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
 
 void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_size, Register tmp1) {
   Register tmp2 = Z_R1_scratch;
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   NearLabel after_frame_check;
 
   BLOCK_COMMENT("stack_overflow_check {");
@@ -1085,8 +1080,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     generate_stack_overflow_check(frame_size, fp/*tmp1*/);
   }
 
-  DEBUG_ONLY(__ z_cg(Z_R14, _z_abi16(return_pc), Z_SP));
-  __ asm_assert_eq("killed Z_R14", 0);
+  // asm_assert* is a nop in product builds
+  NOT_PRODUCT(__ z_cg(Z_R14, _z_abi16(return_pc), Z_SP));
+  NOT_PRODUCT(__ asm_assert_eq("killed Z_R14", 0));
   __ resize_frame_absolute(sp_after_resize, fp, true);
   __ save_return_pc(Z_R14);
 
@@ -1300,7 +1296,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Determine code generation flags.
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // Interpreter entry for ordinary Java methods.
   //
@@ -1356,10 +1352,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 #endif // ASSERT
 
-#ifdef ASSERT
   // Save the return PC into the callers frame for assertion in generate_fixed_frame.
-  __ save_return_pc(Z_R14);
-#endif
+  NOT_PRODUCT(__ save_return_pc(Z_R14));
 
   // Generate the code to allocate the interpreter stack frame.
   generate_fixed_frame(true);
@@ -1657,7 +1651,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   address entry_point = __ pc();
 
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // Interpreter entry for ordinary Java methods.
   //
@@ -1724,10 +1718,8 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 #endif // ASSERT
 
-#ifdef ASSERT
   // Save the return PC into the callers frame for assertion in generate_fixed_frame.
-  __ save_return_pc(Z_R14);
-#endif
+  NOT_PRODUCT(__ save_return_pc(Z_R14));
 
   // Generate the code to allocate the interpreter stack frame.
   generate_fixed_frame(false);
@@ -1781,8 +1773,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
 #ifdef ASSERT
   __ verify_esp(Z_esp, Z_R1_scratch);
-
-  __ verify_thread();
 #endif
 
   // jvmti support
@@ -2013,6 +2003,10 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return NULL;
 }
 
+// Not supported
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
+
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Quick & dirty stack overflow checking: bang the stack & handle trap.
   // Note that we do the banging after the frame is setup, since the exception
@@ -2025,7 +2019,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked. Only true for non-native. For native, we only bang the last page.
-  const int page_size      = os::vm_page_size();
+  const size_t page_size      = os::vm_page_size();
   const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
   const int start_page_num = native_call ? n_shadow_pages : 1;
   for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {

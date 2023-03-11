@@ -39,7 +39,7 @@
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
 #define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
-#define CURRENT_CDS_ARCHIVE_VERSION 14
+#define CURRENT_CDS_ARCHIVE_VERSION 17
 
 typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
@@ -50,18 +50,30 @@ typedef struct CDSFileMapRegion {
   int     _mapped_from_file;  // Is this region mapped from a file?
                               // If false, this region was initialized using ::read().
   size_t  _file_offset;       // Data for this region starts at this offset in the archive file.
-  size_t  _mapping_offset;    // This region should be mapped at this offset from the base address
-                              // - for non-heap regions, the base address is SharedBaseAddress
-                              // - for heap regions, the base address is the compressed oop encoding base
+  size_t  _mapping_offset;    // This encodes the requested address for this region to be mapped at runtime.
+                              // However, the JVM may choose to map at an alternative location (e.g., for ASLR,
+                              // or to adapt to the available ranges in the Java heap range).
+                              // - For an RO/RW region, the requested address is:
+                              //     FileMapHeader::requested_base_address() + _mapping_offset
+                              // - For a heap region, the requested address is:
+                              //     +UseCompressedOops: /*runtime*/ CompressedOops::base() + _mapping_offset
+                              //     -UseCompressedOops: FileMapHeader::heap_begin() + _mapping_offset
+                              //     See FileMapInfo::heap_region_requested_address().
+                              // - For bitmap regions, the _mapping_offset is always zero. The runtime address
+                              //   is picked by the OS.
   size_t  _used;              // Number of bytes actually used by this region (excluding padding bytes added
                               // for alignment purposed.
-  size_t  _oopmap_offset;     // Bitmap for relocating embedded oops (offset from SharedBaseAddress).
+  size_t  _oopmap_offset;     // Bitmap for relocating oop fields in archived heap objects.
+                              // (The base address is the bottom of the BM region)
   size_t  _oopmap_size_in_bits;
+  size_t  _ptrmap_offset;     // Bitmap for relocating native pointer fields in archived heap objects.
+                              // (The base address is the bottom of the BM region).
+  size_t  _ptrmap_size_in_bits;
   char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
 } CDSFileMapRegion;
 
 // This portion of the archive file header must remain unchanged for
-// _version >= CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION (12).
+// _version >= CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION (13).
 // This makes it possible to read important information from a CDS archive created by
 // a different version of HotSpot, so that we can automatically regenerate the archive as necessary.
 typedef struct GenericCDSFileMapHeader {
@@ -81,6 +93,7 @@ typedef struct GenericCDSFileMapHeader {
                                           //   dynamic:
                                           //     0 for default base archive
                                           //     non-zero for non-default base archive
+
 } GenericCDSFileMapHeader;
 
 // This type is used by the Serviceability Agent to access the contents of
@@ -89,7 +102,7 @@ typedef struct CDSFileMapHeaderBase {
   // We cannot inherit from GenericCDSFileMapHeader as this type may be used
   // by both C and C++ code.
   GenericCDSFileMapHeader _generic_header;
-  CDSFileMapRegion _space[NUM_CDS_REGIONS];
+  CDSFileMapRegion _regions[NUM_CDS_REGIONS];
 } CDSFileMapHeaderBase;
 
 #endif // SHARE_INCLUDE_CDS_H

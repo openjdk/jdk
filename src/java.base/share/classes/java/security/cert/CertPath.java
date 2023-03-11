@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,9 +302,9 @@ public abstract class CertPath implements Serializable {
         private static final long serialVersionUID = 3015633072427920915L;
 
         /** The type of {@code Certificate}s in the {@code CertPath}. */
-        private String type;
+        private final String type;
         /** The encoded form of the {@code CertPath}. */
-        private byte[] data;
+        private final byte[] data;
 
         /**
          * Creates a {@code CertPathRep} with the specified

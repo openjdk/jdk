@@ -26,9 +26,6 @@
 
 package javax.management.openmbean;
 
-
-// java import
-//
 import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
@@ -46,9 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jdk.internal.access.SharedSecrets;
-
-// jmx import
-//
 
 
 /**
@@ -162,8 +156,8 @@ public class TabularDataSupport
         // Construct the empty contents HashMap
         //
         this.dataMap = useHashMap ?
-            new HashMap<Object,CompositeData>(initialCapacity, loadFactor) :
-            new LinkedHashMap<Object, CompositeData>(initialCapacity, loadFactor);
+            new HashMap<>(initialCapacity, loadFactor) :
+            new LinkedHashMap<>(initialCapacity, loadFactor);
     }
 
 
@@ -512,7 +506,7 @@ public class TabularDataSupport
 
         // create the list of indexes corresponding to each value
         List<List<?>> indexes =
-            new ArrayList<List<?>>(values.length + 1);
+            new ArrayList<>(values.length + 1);
 
         // Check all elements in values and build index list
         //
@@ -677,7 +671,7 @@ public class TabularDataSupport
     public Object clone() {
         try {
             TabularDataSupport c = (TabularDataSupport) super.clone();
-            c.dataMap = new HashMap<Object,CompositeData>(c.dataMap);
+            c.dataMap = new HashMap<>(c.dataMap);
             return c;
         }
         catch (CloneNotSupportedException e) {

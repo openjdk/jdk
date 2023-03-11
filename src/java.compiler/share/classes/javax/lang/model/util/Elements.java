@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public interface Elements {
      *     <li>find non-empty packages with the given name returned by
      *         {@link #getPackageElement(ModuleElement, CharSequence)},
      *         where the provided ModuleSymbol is any
-     *         <a href="../../../../../java.base/java/lang/module/package-summary.html#root-modules">root module</a>,
+     *         {@linkplain java.lang.module##root-modules root module},
      *     </li>
      *     <li>if the above yields an empty list, search
      *         {@link #getAllModuleElements() all modules} for observable
@@ -144,7 +144,7 @@ public interface Elements {
      *     <li>find type elements with the given name returned by
      *         {@link #getTypeElement(ModuleElement, CharSequence)},
      *         where the provided ModuleSymbol is any
-     *         <a href="../../../../../java.base/java/lang/module/package-summary.html#root-modules">root module</a>,
+     *         {@linkplain java.lang.module##root-modules root module},
      *     </li>
      *     <li>if the above yields an empty list, search
      *         {@link #getAllModuleElements() all modules} for observable
@@ -350,7 +350,7 @@ public interface Elements {
      *
      * @param c the construct the annotation mirror modifies
      * @param a the annotation mirror being examined
-     * @jls 9.6.3 Repeatable Annotation Types
+     * @jls 9.6.3 Repeatable Annotation Interfaces
      * @jls 9.7.5 Multiple Annotations of the Same Interface
      * @since 9
      */
@@ -425,7 +425,7 @@ public interface Elements {
          * @jls 8.8.9 Default Constructor
          * @jls 8.9.3 Enum Members
          * @jls 8.10.3 Record Members
-         * @jls 9.6.3 Repeatable Annotation Types
+         * @jls 9.6.3 Repeatable Annotation Interfaces
          * @jls 9.7.5 Multiple Annotations of the Same Interface
          */
         MANDATED,
@@ -622,6 +622,8 @@ public interface Elements {
      * overrides another method.
      * When a non-abstract method overrides an abstract one, the
      * former is also said to <i>implement</i> the latter.
+     * As implied by JLS {@jls 8.4.8.1}, a method does <em>not</em>
+     * override itself. The overrides relation is <i>irreflexive</i>.
      *
      * <p> In the simplest and most typical usage, the value of the
      * {@code type} parameter will simply be the class or interface
@@ -761,12 +763,57 @@ public interface Elements {
     }
 
     /**
+     * {@return {@code true} if the executable element can be
+     * determined to be a canonical constructor of a record, {@code
+     * false} otherwise}
+     * Note that in some cases there may be insufficient information
+     * to determine if a constructor is a canonical constructor, such
+     * as if the executable element is built backed by a class
+     * file. In such cases, {@code false} is returned.
+     *
+     * @implSpec
+     * The default implementation of this method unconditionally
+     * returns {@code false}.
+     *
+     * @param e  the executable being examined
+     * @jls 8.10.4.1 Normal Canonical Constructors
+     * @since 20
+     */
+    default boolean isCanonicalConstructor(ExecutableElement e) {
+        return false;
+    }
+
+    /**
+     * {@return {@code true} if the executable element can be
+     * determined to be a compact constructor of a record, {@code
+     * false} otherwise}
+     * By definition, a compact constructor is also a {@linkplain
+     * #isCanonicalConstructor(ExecutableElement) canonical
+     * constructor}.
+     * Note that in some cases there may be insufficient information
+     * to determine if a constructor is a compact constructor, such as
+     * if the executable element is built backed by a class file. In
+     * such cases, {@code false} is returned.
+     *
+     * @implSpec
+     * The default implementation of this method unconditionally
+     * returns {@code false}.
+     *
+     * @param e  the executable being examined
+     * @jls 8.10.4.2 Compact Canonical Constructors
+     * @since 20
+     */
+    default boolean isCompactConstructor(ExecutableElement e) {
+        return false;
+    }
+
+    /**
      * {@return the file object for this element or {@code null} if
      * there is no such file object}
      *
-     * <p>The returned file object is for the <a
-     * href="../element/package-summary.html#accurate_model">reference
-     * representation</a> of the information used to construct the
+     * <p>The returned file object is for the {@linkplain
+     * javax.lang.model.element##accurate_model reference
+     * representation} of the information used to construct the
      * element. For example, if during compilation or annotation
      * processing, a source file for class {@code Foo} is compiled
      * into a class file, the file object returned for the element

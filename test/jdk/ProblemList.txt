@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -119,15 +119,13 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
-java/awt/Focus/UnaccessibleChoice/AccessibleChoiceTest.java 8239801 macosx-all
+java/awt/Frame/MaximizedToIconified/MaximizedToIconified.java 8296972 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
-java/awt/Frame/FrameLocation/FrameLocation.java 8238436 linux-all
+java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
-java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java 8164464 linux-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
-javax/swing/dnd/7171812/bug7171812.java 8041447 macosx-all
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
 java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java 8198618 macosx-all
 java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java 6986252 macosx-all
@@ -139,7 +137,6 @@ java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
 java/awt/Frame/ExceptionOnSetExtendedStateTest/ExceptionOnSetExtendedStateTest.java 8198237 macosx-all
 java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
-java/awt/KeyboardFocusmanager/TypeAhead/SubMenuShowTest/SubMenuShowTest.java 8273520 macosx-all
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
@@ -189,21 +186,19 @@ java/awt/Focus/6981400/Test1.java 8029675 windows-all,macosx-all
 java/awt/Focus/6981400/Test3.java 8173264 generic-all
 java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows-all,macosx-all
 java/awt/event/KeyEvent/KeyChar/KeyCharTest.java 8169474,8224055 macosx-all,windows-all
-java/awt/event/KeyEvent/KeyTyped/CtrlASCII.java 8252713 linux-all
+java/awt/event/KeyEvent/KeyTyped/CtrlASCII.java 8298910 linux-all
 
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.java 8194947 generic-all
 java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
-java/awt/GridLayout/LayoutExtraGaps/LayoutExtraGaps.java 8196100 windows-all
-java/awt/Scrollbar/ScrollbarMouseWheelTest/ScrollbarMouseWheelTest.java 8196018 windows-all,linux-all
 java/awt/TrayIcon/ActionCommand/ActionCommand.java 8150540 windows-all
-java/awt/TrayIcon/ActionEventMask/ActionEventMask.java 8150540 windows-all
+java/awt/TrayIcon/ActionEventMask/ActionEventMask.java 8150540,8295300 windows-all,linux-all
 java/awt/TrayIcon/ActionEventTest/ActionEventTest.java 8150540,8242801 windows-all,macosx-all
-java/awt/TrayIcon/ModalityTest/ModalityTest.java 8150540 windows-all,macosx-all
-java/awt/TrayIcon/MouseEventMask/MouseEventMaskTest.java 8150540 windows-all
-java/awt/TrayIcon/MouseMovedTest/MouseMovedTest.java 8150540 windows-all
-java/awt/TrayIcon/SecurityCheck/FunctionalityCheck/FunctionalityCheck.java 8150540 windows-all
-java/awt/TrayIcon/TrayIconEventModifiers/TrayIconEventModifiersTest.java 8150540 windows-all
-java/awt/TrayIcon/TrayIconEvents/TrayIconEventsTest.java 8150540 windows-all
+java/awt/TrayIcon/ModalityTest/ModalityTest.java 8150540,8295300 windows-all,macosx-all,linux-all
+java/awt/TrayIcon/MouseEventMask/MouseEventMaskTest.java 8150540,8295300 windows-all,linux-all
+java/awt/TrayIcon/MouseMovedTest/MouseMovedTest.java 8150540,8295300 windows-all,linux-all
+java/awt/TrayIcon/SecurityCheck/FunctionalityCheck/FunctionalityCheck.java 8150540,8295300 windows-all,linux-all
+java/awt/TrayIcon/TrayIconEventModifiers/TrayIconEventModifiersTest.java 8150540,8295300 windows-all,linux-all
+java/awt/TrayIcon/TrayIconEvents/TrayIconEventsTest.java 8150540,8295300 windows-all,linux-all
 java/awt/TrayIcon/TrayIconMouseTest/TrayIconMouseTest.java 8150540 windows-all
 java/awt/TrayIcon/TrayIconPopup/TrayIconPopupClickTest.java 8150540 windows-all,macosx-all
 java/awt/TrayIcon/TrayIconPopup/TrayIconPopupTest.java 8150540 windows-all
@@ -223,16 +218,13 @@ java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
 java/awt/image/BufferedImage/ICMColorDataTest/ICMColorDataTest.java 8233028 generic-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
-java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187,8252812 macosx-all,windows-all,linux-x64
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
-sun/java2d/DirectX/MultiPaintEventTest/MultiPaintEventTest.java 8284825 windows-all
-sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
-sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191406 generic-all
+sun/java2d/SunGraphics2D/DrawImageBilinear.java 8297175 linux-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
@@ -247,7 +239,6 @@ java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java 8165863 macosx-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.java 8017454 macosx-all
 java/awt/Frame/MiscUndecorated/RepaintTest.java 8266244 macosx-aarch64
-java/awt/Robot/ModifierRobotKey/ModifierRobotKeyTest.java 8157173 generic-all
 java/awt/Modal/FileDialog/FileDialogAppModal1Test.java 7186009 macosx-all
 java/awt/Modal/FileDialog/FileDialogAppModal2Test.java 7186009 macosx-all
 java/awt/Modal/FileDialog/FileDialogAppModal3Test.java 7186009 macosx-all
@@ -382,7 +373,6 @@ java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs4Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs5Test.java 8198665 macosx-all
 java/awt/Mouse/EnterExitEvents/DragWindowOutOfFrameTest.java 8177326 macosx-all
-java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8023562 macosx-all
 java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407 macosx-all
@@ -419,7 +409,6 @@ java/awt/Modal/ToBack/ToBackNonModal2Test.java 8196441 macosx-all,linux-all
 java/awt/Modal/ToBack/ToBackNonModal3Test.java 8196441 macosx-all,linux-all
 java/awt/Modal/ToBack/ToBackNonModal4Test.java 8196441 macosx-all,linux-all
 java/awt/Modal/ToBack/ToBackNonModal5Test.java 8196441 macosx-all
-java/awt/SplashScreen/MultiResolutionSplash/MultiResolutionSplashTest.java 8061235 macosx-all
 javax/print/PrintSEUmlauts/PrintSEUmlauts.java 8135174 generic-all
 java/awt/font/TextLayout/LigatureCaretTest.java 8266312  generic-all
 java/awt/image/VolatileImage/CustomCompositeTest.java 8199002 windows-all,linux-all
@@ -427,7 +416,6 @@ java/awt/image/VolatileImage/GradientPaints.java 8199003 linux-all
 java/awt/JAWT/JAWT.sh 8197798 windows-all,linux-all
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
 java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java 8202882 linux-all
-java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java 7124275 macosx-all
 java/awt/Focus/TranserFocusToWindow/TranserFocusToWindow.java 6848810 macosx-all,linux-all
 java/awt/FileDialog/ModalFocus/FileDialogModalFocusTest.java 8194751 linux-all
@@ -436,8 +424,6 @@ java/awt/SplashScreen/MultiResolutionSplash/unix/UnixMultiResolutionSplashTest.j
 java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java 7107528 linux-all,macosx-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java 8080676 linux-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersInKeyEvent.java 8157147 linux-all,windows-all,macosx-all
-java/awt/Mouse/TitleBarDoubleClick/TitleBarDoubleClick.java 8148041 linux-all
-java/awt/Toolkit/DesktopProperties/rfe4758438.java 8193547 linux-all
 java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163
 java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsDocModalTest.java 8164473 linux-all
@@ -451,7 +437,6 @@ java/awt/event/MouseEvent/MultipleMouseButtonsTest/MultipleMouseButtonsTest.java
 java/awt/event/MouseEvent/ClickDuringKeypress/ClickDuringKeypress.java 8233568 macosx-all
 java/awt/event/KeyEvent/DeadKey/DeadKeyMacOSXInputText.java 8233568 macosx-all
 java/awt/event/KeyEvent/DeadKey/deadKeyMacOSX.java 8233568 macosx-all
-java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.java 7185258 macosx-all
 java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.java 8238720 windows-all
 java/awt/PopupMenu/PopupMenuLocation.java 8238720 windows-all
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 windows-all
@@ -471,6 +456,8 @@ java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
 java/awt/GraphicsDevice/CheckDisplayModes.java 8266242 macosx-aarch64
+java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
+java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
 
 ############################################################################
 
@@ -485,8 +472,8 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_foreign
 
-java/foreign/TestUpcallStack.java 8275584 macosx-aarch64
-java/foreign/TestDowncallStack.java 8275584 macosx-aarch64
+java/foreign/callarranger/TestAarch64CallArranger.java generic-x86
+java/foreign/TestLargeSegmentCopy.java generic-x86
 
 ############################################################################
 
@@ -535,8 +522,6 @@ javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-all
 
-javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
-
 javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
 
 ############################################################################
@@ -556,11 +541,13 @@ java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc6
 
 # jdk_nio
 
-java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-all
+java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
+
+jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
 ############################################################################
 
@@ -595,15 +582,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
-sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
-
-javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
-javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
-
-sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
-
-security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
@@ -620,12 +598,17 @@ com/sun/security/auth/callback/TextCallbackHandler/Password.java 8039280 generic
 com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
 com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
-javax/security/auth/kerberos/KerberosHashEqualsTest.java        8039280 generic-all
-javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-all
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
-sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
-sun/security/ssl/SSLSessionImpl/NoInvalidateSocketException.java 8277970 linux-all,macosx-x64
+
+sun/security/tools/keytool/NssTest.java                         8295343 linux-all
+sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343 linux-all
+sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-all
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
+sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
+sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
+
+sun/security/provider/certpath/OCSP/OCSPNoContentLength.java    8300939 generic-all
 
 ############################################################################
 
@@ -639,7 +622,6 @@ javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 javax/sound/midi/Sequencer/Recording.java 8167580,8265485 linux-all,macosx-aarch64
-javax/sound/midi/Sequencer/MetaCallback.java 8178698 linux-all
 javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
 
 ############################################################################
@@ -652,7 +634,6 @@ javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
 
 javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,windows-all
 
-javax/swing/border/TestTitledBorderLeak.java 8213531 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
@@ -660,31 +641,31 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 80134
 javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
 # The next test below is an intermittent failure
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
-javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
+javax/swing/JTree/4633594/JTreeFocusTest.java 7105441 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
-javax/swing/JPopupMenu/6580930/bug6580930.java 7124313 macosx-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
 javax/swing/JTabbedPane/4624207/bug4624207.java 8064922 macosx-all
 javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java 8160720 generic-all
-javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 windows-all
-javax/swing/text/DefaultCaret/HidingSelection/MultiSelectionTest.java 8213562 linux-all
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
-javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
-javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8273573 macosx-all
+javax/swing/JRadioButton/4314194/bug4314194.java 8298153 linux-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
-sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
+java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
+java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows-x64
+java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
+java/awt/Mixing/AWT_Mixing/ViewportOverlapping.java 8253184,8295813 windows-x64
+
+sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
-javax/swing/JTable/8236907/LastVisibleRow.java 8284619 macosx-all
 
 ############################################################################
 
@@ -698,15 +679,16 @@ javax/swing/JTable/8236907/LastVisibleRow.java 8284619 macosx-all
 
 # core_tools
 
-tools/jlink/plugins/CompressorPluginTest.java                   8247407 generic-all
+
+############################################################################
+
+# core_svc
 
 ############################################################################
 
 # jdk_jdi
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
-
-com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
@@ -722,6 +704,8 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
 sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
+java/util/concurrent/forkjoin/AsyncShutdownNow.java             8286352 linux-all,windows-x64
+java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-aarch64
 
 ############################################################################
 
@@ -731,16 +715,16 @@ sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x
 
 # svc_tools
 
-sun/tools/jhsdb/BasicLauncherTest.java                          8228649 linux-ppc64,linux-ppc64le
-
 sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
-sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259 windows-all
+sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259,8293577 generic-all
 sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
 
 sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
+
+sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aarch64
 
 ############################################################################
 
@@ -750,15 +734,17 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 javax/script/Test7.java                                         8239361 generic-all
 
+jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
+
 ############################################################################
 
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
-jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
+jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
 
 ############################################################################
 
@@ -769,25 +755,25 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 # jdk_jpackage
 
 ############################################################################
-
 # Client manual tests
+
+javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
+javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
+javax/swing/JTabbedPane/4666224/bug4666224.html 8144124  macosx-all
+javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
 
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,8022539 generic-all
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java 7187741 linux-all,macosx-all
 java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004031 generic-all
-javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
-javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
 java/awt/Modal/PrintDialogsTest/PrintDialogsTest.java 8068378 generic-all
 java/awt/dnd/DnDFileGroupDescriptor/DnDFileGroupDescriptor.html 8080185 macosx-all,linux-all
-javax/swing/JTabbedPane/4666224/bug4666224.html 8144124  macosx-all
 java/awt/event/MouseEvent/AltGraphModifierTest/AltGraphModifierTest.java 8162380 generic-all
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all
 java/awt/TrayIcon/DblClickActionEventTest/DblClickActionEventTest.html 8203867 macosx-all
 java/awt/Frame/FrameStateTest/FrameStateTest.html 8203920 macosx-all,linux-all
-javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
 java/awt/font/TextLayout/TestJustification.html 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
@@ -799,185 +785,3 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
-
-# Loom is not implemented on x86_32 yet
-
-com/sun/jdi/JdbOptions.java                                     8286642 generic-i586
-com/sun/management/HotSpotDiagnosticMXBean/DumpThreads.java     8286642 generic-i586
-java/foreign/TestAdaptVarHandles.java                           8286642 generic-i586
-java/foreign/TestArrayCopy.java                                 8286642 generic-i586
-java/foreign/TestArrays.java                                    8286642 generic-i586
-java/foreign/TestByteBuffer.java                                8286642 generic-i586
-java/foreign/TestFree.java                                      8286642 generic-i586
-java/foreign/TestHandshake.java                                 8286642 generic-i586
-java/foreign/TestLayoutEquality.java                            8286642 generic-i586
-java/foreign/TestLayoutPaths.java                               8286642 generic-i586
-java/foreign/TestLayouts.java                                   8286642 generic-i586
-java/foreign/TestMemoryAccess.java                              8286642 generic-i586
-java/foreign/TestMemoryAccessInstance.java                      8286642 generic-i586
-java/foreign/TestMemoryAlignment.java                           8286642 generic-i586
-java/foreign/TestMemoryDereference.java                         8286642 generic-i586
-java/foreign/TestMemorySession.java                             8286642 generic-i586
-java/foreign/TestMismatch.java                                  8286642 generic-i586
-java/foreign/TestReshape.java                                   8286642 generic-i586
-java/foreign/TestSegmentAllocators.java                         8286642 generic-i586
-java/foreign/TestSegmentCopy.java                               8286642 generic-i586
-java/foreign/TestSegmentOffset.java                             8286642 generic-i586
-java/foreign/TestSegmentOverlap.java                            8286642 generic-i586
-java/foreign/TestSharedAccess.java                              8286642 generic-i586
-java/foreign/TestSlices.java                                    8286642 generic-i586
-java/foreign/TestSpliterator.java                               8286642 generic-i586
-java/foreign/TestTypeAccess.java                                8286642 generic-i586
-java/foreign/TestUnsupportedPlatform.java                       8286642 generic-i586
-java/foreign/TestVarHandleCombinators.java                      8286642 generic-i586
-java/foreign/callarranger/TestAarch64CallArranger.java          8286642 generic-i586
-java/foreign/callarranger/TestSysVCallArranger.java             8286642 generic-i586
-java/foreign/callarranger/TestWindowsCallArranger.java          8286642 generic-i586
-java/foreign/channels/TestAsyncSocketChannels.java              8286642 generic-i586
-java/foreign/channels/TestSocketChannels.java                   8286642 generic-i586
-java/lang/instrument/ParallelTransformerLoaderTest.java         8286642 generic-i586
-java/lang/management/ThreadMXBean/VirtualThreadDeadlocks.java   8286642 generic-i586
-java/lang/management/ThreadMXBean/VirtualThreads.java           8286642 generic-i586
-java/lang/invoke/VarHandles/VarHandleTestExact.java             8286642 generic-i586
-java/lang/ref/CleanerTest.java                                  8286642 generic-i586
-java/lang/runtime/SwitchBootstrapsTest.java                     8286642 generic-i586
-java/lang/Thread/BuilderTest.java                               8286642 generic-i586
-java/lang/Thread/virtual/Collectable.java                       8286642 generic-i586
-java/lang/Thread/virtual/CustomScheduler.java                   8286642 generic-i586
-java/lang/Thread/virtual/GetStackTrace.java                     8286642 generic-i586
-java/lang/Thread/virtual/GetStackTraceWhenRunnable.java         8286642 generic-i586
-java/lang/Thread/virtual/HoldsLock.java                         8286642 generic-i586
-java/lang/Thread/virtual/JfrEvents.java                         8286642 generic-i586
-java/lang/Thread/virtual/Locking.java                           8286642 generic-i586
-java/lang/Thread/virtual/ParkWithFixedThreadPool.java           8286642 generic-i586
-java/lang/Thread/virtual/Parking.java                           8286642 generic-i586
-java/lang/Thread/virtual/Reflection.java                        8286642 generic-i586
-java/lang/Thread/virtual/ShutdownHook.java                      8286642 generic-i586
-java/lang/Thread/virtual/StackTraces.java                       8286642 generic-i586
-java/lang/Thread/virtual/ThreadAPI.java                         8286642 generic-i586
-java/lang/Thread/virtual/ThreadLocals.java                      8286642 generic-i586
-java/lang/Thread/virtual/TracePinnedThreads.java                8286642 generic-i586
-java/lang/Thread/virtual/WaitNotify.java                        8286642 generic-i586
-java/lang/Thread/virtual/stress/GetStackTraceALot.java#id0      8286642 generic-i586
-java/lang/Thread/virtual/stress/GetStackTraceALot.java#id1      8286642 generic-i586
-java/lang/Thread/virtual/stress/PinALot.java#id0                8286642 generic-i586
-java/lang/Thread/virtual/stress/PinALot.java#id1                8286642 generic-i586
-java/lang/Thread/virtual/stress/PingPong.java                   8286642 generic-i586
-java/lang/Thread/virtual/stress/Skynet.java#id0                 8286642 generic-i586
-java/lang/Thread/virtual/stress/Skynet.java#id1                 8286642 generic-i586
-java/lang/Thread/virtual/stress/SleepALot.java#id0              8286642 generic-i586
-java/lang/Thread/virtual/stress/SleepALot.java#id1              8286642 generic-i586
-java/lang/Thread/virtual/stress/TimedGet.java                   8286642 generic-i586
-java/lang/Thread/virtual/stress/YieldALot.java#id0              8286642 generic-i586
-java/lang/Thread/virtual/stress/YieldALot.java#id1              8286642 generic-i586
-java/net/Socket/Timeouts.java                                   8286642 generic-i586
-java/net/vthread/BlockingSocketOps.java                         8286642 generic-i586
-java/net/vthread/HttpALot.java                                  8286642 generic-i586
-java/net/vthread/InterruptHttp.java                             8286642 generic-i586
-java/nio/channels/FileChannel/LargeMapTest.java                 8286642 generic-i586
-java/nio/channels/FileChannel/MapToMemorySegmentTest.java       8286642 generic-i586
-java/nio/channels/vthread/BlockingChannelOps.java               8286642 generic-i586
-java/util/concurrent/ExecutorService/CloseTest.java             8286642 generic-i586
-java/util/concurrent/ThreadPerTaskExecutor/ThreadPerTaskExecutorTest.java               8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/lang/invoke/DeserializeMethodTest.java     8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/lang/invoke/MHProxiesTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/lang/invoke/SerializedLambdaTest.java      8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/FillableStringTest.java               8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/MapTest.java                          8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/SplittableRandomTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/CollectAndSummaryStatisticsTest.java   8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/CollectionAndMapModifyStreamTest.java  8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/CollectorExample.java          8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/CollectorToUnmodListTest.java  8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/CollectorsTest.java            8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/ConcatOpTest.java              8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/ConcatTest.java                8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/CountLargeTest.java            8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/CountTest.java                 8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/DistinctOpTest.java            8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/DoublePrimitiveOpsTests.java   8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/FilterOpTest.java              8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/FindAnyOpTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/FindFirstOpTest.java           8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/FlatMapOpTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/ForEachOpTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/GroupByOpTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/InfiniteStreamWithLimitOpTest.java 8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntPrimitiveOpsTests.java      8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntReduceTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntSliceOpTest.java            8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntUniqOpTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/IterateTest.java               8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/LongPrimitiveOpsTests.java     8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/MapOpTest.java                 8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/MatchOpTest.java               8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/MinMaxTest.java                8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/PrimitiveAverageOpTest.java    8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/PrimitiveSumTest.java          8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/RangeTest.java                 8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/ReduceByOpTest.java            8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/ReduceTest.java                8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/SegmentTestDataProvider.java   8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/SequentialOpTest.java          8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/SliceOpTest.java               8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/SortedOpTest.java              8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/SpliteratorTest.java           8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/StreamBuilderTest.java         8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/StreamCloseTest.java           8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/StreamLinkTest.java            8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/StreamParSeqTest.java          8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/StreamSpliteratorTest.java     8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/TeeOpTest.java                 8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/ToArrayOpTest.java             8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/ToListOpTest.java              8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpStatefulTest.java       8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpTest.java               8286642 generic-i586
-java/util/stream/test/org/openjdk/tests/java/util/stream/mapMultiOpTest.java            8286642 generic-i586
-jdk/incubator/vector/Byte128VectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/Byte256VectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/Byte512VectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/Byte64VectorLoadStoreTests.java            8286642 generic-i586
-jdk/incubator/vector/ByteMaxVectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/Double128VectorLoadStoreTests.java         8286642 generic-i586
-jdk/incubator/vector/Double256VectorLoadStoreTests.java         8286642 generic-i586
-jdk/incubator/vector/Double512VectorLoadStoreTests.java         8286642 generic-i586
-jdk/incubator/vector/Double64VectorLoadStoreTests.java          8286642 generic-i586
-jdk/incubator/vector/DoubleMaxVectorLoadStoreTests.java         8286642 generic-i586
-jdk/incubator/vector/Float128VectorLoadStoreTests.java          8286642 generic-i586
-jdk/incubator/vector/Float256VectorLoadStoreTests.java          8286642 generic-i586
-jdk/incubator/vector/Float512VectorLoadStoreTests.java          8286642 generic-i586
-jdk/incubator/vector/Float64VectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/FloatMaxVectorLoadStoreTests.java          8286642 generic-i586
-jdk/incubator/vector/Int128VectorLoadStoreTests.java            8286642 generic-i586
-jdk/incubator/vector/Int256VectorLoadStoreTests.java            8286642 generic-i586
-jdk/incubator/vector/Int512VectorLoadStoreTests.java            8286642 generic-i586
-jdk/incubator/vector/Int64VectorLoadStoreTests.java             8286642 generic-i586
-jdk/incubator/vector/IntMaxVectorLoadStoreTests.java            8286642 generic-i586
-jdk/incubator/vector/Long128VectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/Long256VectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/Long512VectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/Long64VectorLoadStoreTests.java            8286642 generic-i586
-jdk/incubator/vector/LongMaxVectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/Short128VectorLoadStoreTests.java          8286642 generic-i586
-jdk/incubator/vector/Short256VectorLoadStoreTests.java          8286642 generic-i586
-jdk/incubator/vector/Short512VectorLoadStoreTests.java          8286642 generic-i586
-jdk/incubator/vector/Short64VectorLoadStoreTests.java           8286642 generic-i586
-jdk/incubator/vector/ShortMaxVectorLoadStoreTests.java          8286642 generic-i586
-jdk/internal/misc/ThreadFlock/ThreadFlockTest.java              8286642 generic-i586
-jdk/internal/vm/Continuation/Basic.java                         8286642 generic-i586
-jdk/internal/vm/Continuation/ClassUnloading.java                8286642 generic-i586
-jdk/internal/vm/Continuation/Fuzz.java                          8286642 generic-i586
-jdk/internal/vm/Continuation/HumongousStack.java                8286642 generic-i586
-jdk/internal/vm/Continuation/LiveFramesDriver.java              8286642 generic-i586
-jdk/internal/vm/Continuation/Scoped.java                        8286642 generic-i586
-jdk/jfr/event/runtime/TestThreadEndEvent.java                   8286642 generic-i586
-jdk/jfr/event/runtime/TestThreadSleepEvent.java                 8286642 generic-i586
-jdk/jfr/event/runtime/TestThreadStartEvent.java                 8286642 generic-i586
-jdk/jfr/event/runtime/TestVirtualThreadEndEvent.java            8286642 generic-i586
-jdk/jfr/event/runtime/TestVirtualThreadStartEvent.java          8286642 generic-i586
-jdk/jfr/jvm/TestThreadExclusion.java                            8286642 generic-i586
-jdk/jfr/jvm/TestVirtualThreadExclusion.java                     8286642 generic-i586
-jdk/jfr/jvm/TestGetEventWriter.java                             8286642 generic-i586
-jdk/jfr/threading/TestDeepVirtualStackTrace.java                8286642 generic-i586
-jdk/jfr/threading/TestManyVirtualThreads.java                   8286642 generic-i586
-jdk/jfr/threading/TestNestedVirtualThreads.java                 8286642 generic-i586

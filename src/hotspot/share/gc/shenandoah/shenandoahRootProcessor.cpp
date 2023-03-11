@@ -33,8 +33,9 @@
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 
 ShenandoahJavaThreadsIterator::ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase, uint n_workers) :
   _threads(),
@@ -127,7 +128,7 @@ ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
    _java_threads(phase, n_workers),
   _vm_roots(phase),
   _cld_roots(phase, n_workers, false /*heap iteration*/),
-  _codecache_snapshot(NULL),
+  _codecache_snapshot(nullptr),
   _phase(phase) {
   if (!ShenandoahHeap::heap()->unload_classes()) {
     MutexLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -217,7 +218,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
 
   // Process heavy-weight/fully parallel roots the last
   _code_roots.code_blobs_do(adjust_code_closure, worker_id);
-  _thread_roots.oops_do(oops, NULL, worker_id);
+  _thread_roots.oops_do(oops, nullptr, worker_id);
 }
 
 ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner(uint n_workers) :
@@ -257,7 +258,7 @@ void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
   // Must use _claim_other to avoid interfering with concurrent CLDG iteration
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_other);
   ShenandoahMarkCodeBlobClosure code(oops);
-  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, nullptr);
 
   ResourceMark rm;
 

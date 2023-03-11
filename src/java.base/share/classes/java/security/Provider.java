@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.event.SecurityProviderServiceEvent;
+
 import java.io.*;
 import java.util.*;
 import static java.util.Locale.ENGLISH;
@@ -119,14 +121,14 @@ public abstract class Provider extends Properties {
      *
      * @serial
      */
-    private String name;
+    private final String name;
 
     /**
      * A description of the provider and its services.
      *
      * @serial
      */
-    private String info;
+    private final String info;
 
     /**
      * The provider version number.
@@ -171,7 +173,7 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Constructs a provider with the specified name, version number,
+     * Constructs a {@code Provider} with the specified name, version number,
      * and information. Calling this constructor is equivalent to call the
      * {@link #Provider(String, String, String)} with {@code name}
      * name, {@code Double.toString(version)}, and {@code info}.
@@ -192,13 +194,13 @@ public abstract class Provider extends Properties {
         this.info = info;
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos = new LinkedHashSet<String>(6);
+        this.prngAlgos = new LinkedHashSet<>(6);
         putId();
         initialized = true;
     }
 
     /**
-     * Constructs a provider with the specified name, version string,
+     * Constructs a {@code Provider} with the specified name, version string,
      * and information.
      *
      * <p>The version string contains a version number optionally followed
@@ -232,16 +234,17 @@ public abstract class Provider extends Properties {
         this.info = info;
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos = new LinkedHashSet<String>(6);
+        this.prngAlgos = new LinkedHashSet<>(6);
         putId();
         initialized = true;
     }
 
     /**
-     * Apply the supplied configuration argument to this provider instance
-     * and return the configured provider. Note that if this provider cannot
-     * be configured in-place, a new provider will be created and returned.
-     * Therefore, callers should always use the returned provider.
+     * Apply the supplied configuration argument to this {@code Provider}
+     * instance and return the configured {@code Provider}. Note that if
+     * this {@code Provider} cannot be configured in-place, a new
+     * {@code Provider} will be created and returned. Therefore,
+     * callers should always use the returned {@code Provider}.
      *
      * @implSpec
      * The default implementation throws {@code UnsupportedOperationException}.
@@ -254,10 +257,11 @@ public abstract class Provider extends Properties {
      * @throws UnsupportedOperationException if a configuration argument is
      *         not supported.
      * @throws NullPointerException if the supplied configuration argument is
-     *         null.
+     *         {@code null}.
      * @throws InvalidParameterException if the supplied configuration argument
      *         is invalid.
-     * @return a provider configured with the supplied configuration argument.
+     * @return a {@code Provider} configured with the supplied configuration
+     *         argument.
      *
      * @since 9
      */
@@ -266,14 +270,15 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Check if this provider instance has been configured.
+     * Check if this {@code Provider} instance has been configured.
      *
      * @implSpec
-     * The default implementation returns true.
-     * Subclasses should override this method if the provider instance requires
+     * The default implementation returns {@code true}.
+     * Subclasses should override this method if the {@code Provider} requires
      * an explicit {@code configure} call after being constructed.
      *
-     * @return true if no further configuration is needed, false otherwise.
+     * @return {@code true} if no further configuration is needed,
+     * {@code false} otherwise.
      *
      * @since 9
      */
@@ -283,18 +288,18 @@ public abstract class Provider extends Properties {
 
 
     /**
-     * Returns the name of this provider.
+     * Returns the name of this {@code Provider}.
      *
-     * @return the name of this provider.
+     * @return the name of this {@code Provider}.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns the version number for this provider.
+     * Returns the version number for this {@code Provider}.
      *
-     * @return the version number for this provider.
+     * @return the version number for this {@code Provider}.
      *
      * @deprecated use {@link #getVersionStr} instead.
      */
@@ -304,9 +309,9 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Returns the version string for this provider.
+     * Returns the version string for this {@code Provider}.
      *
-     * @return the version string for this provider.
+     * @return the version string for this {@code Provider}.
      *
      * @since 9
      */
@@ -315,10 +320,10 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Returns a human-readable description of the provider and its
+     * Returns a human-readable description of the {@code Provider} and its
      * services.  This may return an HTML page, with relevant links.
      *
-     * @return a description of the provider and its services.
+     * @return a description of the {@code Provider} and its services.
      */
     public String getInfo() {
         return info;
@@ -326,10 +331,10 @@ public abstract class Provider extends Properties {
 
     /**
      * Returns a string with the name and the version string
-     * of this provider.
+     * of this {@code Provider}.
      *
      * @return the string with the name and the version string
-     * for this provider.
+     * for this {@code Provider}.
      */
     public String toString() {
         return name + " version " + versionStr;
@@ -342,8 +347,8 @@ public abstract class Provider extends Properties {
      */
 
     /**
-     * Clears this provider so that it no longer contains the properties
-     * used to look up facilities implemented by the provider.
+     * Clears this {@code Provider} so that it no longer contains the properties
+     * used to look up facilities implemented by the {@code Provider}.
      *
      * <p>If a security manager is enabled, its {@code checkSecurityAccess}
      * method is called with the string {@code "clearProviderProperties."+name}
@@ -386,8 +391,8 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Copies all of the mappings from the specified Map to this provider.
-     * These mappings will replace any properties that this provider had
+     * Copies all the mappings from the specified Map to this {@code Provider}.
+     * These mappings will replace any properties that this {@code Provider} had
      * for any of the keys currently in the specified Map.
      *
      * @since 1.2
@@ -403,7 +408,7 @@ public abstract class Provider extends Properties {
 
     /**
      * Returns an unmodifiable Set view of the property entries contained
-     * in this Provider.
+     * in this {@code Provider}.
      *
      * @see   java.util.Map.Entry
      * @since 1.2
@@ -431,7 +436,7 @@ public abstract class Provider extends Properties {
 
     /**
      * Returns an unmodifiable Set view of the property keys contained in
-     * this provider.
+     * this {@code Provider}.
      *
      * @since 1.2
      */
@@ -443,7 +448,7 @@ public abstract class Provider extends Properties {
 
     /**
      * Returns an unmodifiable Collection view of the property values
-     * contained in this provider.
+     * contained in this {@code Provider}.
      *
      * @since 1.2
      */
@@ -727,10 +732,10 @@ public abstract class Provider extends Properties {
 
     /**
      * If the specified key is not already associated with a value or is
-     * associated with null, associates it with the given value. Otherwise,
-     * replaces the value with the results of the given remapping function,
-     * or removes if the result is null. This method may be of use when
-     * combining multiple mapped values for a key.
+     * associated with {@code null}, associates it with the given value.
+     * Otherwise, replaces the value with the results of the given remapping
+     * function, or removes if the result is {@code null}. This method may be
+     * of use when combining multiple mapped values for a key.
      *
      * <p>If a security manager is enabled, its {@code checkSecurityAccess}
      * method is called with the strings {@code "putProviderProperty."+name}
@@ -856,9 +861,10 @@ public abstract class Provider extends Properties {
    /**
     * Reads the {@code ObjectInputStream} for the default serializable fields.
     * If the serialized field {@code versionStr} is found in the STREAM FIELDS,
-    * its String value will be used to populate both the version string and
-    * version number. If {@code versionStr} is not found, but {@code version}
-    * is, then its double value will be used to populate both fields.
+    * its {@code String} value will be used to populate both the version string
+    * and version number. If {@code versionStr} is not found, but
+    * {@code version} is, then its double value will be used to populate
+    * both fields.
     *
     * @param in the {@code ObjectInputStream} to read
     * @throws IOException if an I/O error occurs
@@ -883,14 +889,14 @@ public abstract class Provider extends Properties {
         }
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos = new LinkedHashSet<String>(6);
+        this.prngAlgos = new LinkedHashSet<>(6);
         implClear();
         initialized = true;
         putAll(copy);
     }
 
     // returns false if no update necessary, i.e. key isn't String or
-    // is String but it's provider-related (name/version/info/className)
+    // is String, but it's provider-related (name/version/info/className)
     private static boolean checkLegacy(Object key) {
         if (key instanceof String && ((String)key).startsWith("Provider.")) {
             // ignore provider related updates
@@ -901,7 +907,7 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Copies all of the mappings from the specified Map to this provider.
+     * Copies all the mappings from the specified Map to this provider.
      * Internal method to be called AFTER the security check has been
      * performed.
      */
@@ -1093,6 +1099,9 @@ public abstract class Provider extends Properties {
                 && this.type.equals(other.type)
                 && this.algorithm.equals(other.algorithm);
         }
+
+        // Don't change '==' to equals.
+        // This method tests for equality of pointers.
         boolean matches(String type, String algorithm) {
             return (this.type == type) && (this.originalAlgorithm == algorithm);
         }
@@ -1119,8 +1128,8 @@ public abstract class Provider extends Properties {
     private static final String ALIAS_PREFIX_LOWER = "alg.alias.";
     private static final int ALIAS_LENGTH = ALIAS_PREFIX.length();
 
-    private static enum OPType {
-        ADD, REMOVE;
+    private enum OPType {
+        ADD, REMOVE
     }
 
     private void parseLegacy(String name, String value, OPType opType) {
@@ -1247,20 +1256,20 @@ public abstract class Provider extends Properties {
     /**
      * Get the service describing this Provider's implementation of the
      * specified type of this algorithm or alias. If no such
-     * implementation exists, this method returns null. If there are two
+     * implementation exists, this method returns {@code null}. If there are two
      * matching services, one added to this provider using
      * {@link #putService putService()} and one added via {@link #put put()},
      * the service added via {@link #putService putService()} is returned.
      *
      * @param type the type of {@link Service service} requested
      * (for example, {@code MessageDigest})
-     * @param algorithm the case insensitive algorithm name (or alternate
+     * @param algorithm the case-insensitive algorithm name (or alternate
      * alias) of the service requested (for example, {@code SHA-1})
      *
      * @return the service describing this Provider's matching service
-     * or null if no such service exists
+     * or {@code null} if no such service exists
      *
-     * @throws NullPointerException if type or algorithm is null
+     * @throws NullPointerException if type or algorithm is {@code null}
      *
      * @since 1.5
      */
@@ -1268,24 +1277,28 @@ public abstract class Provider extends Properties {
         checkInitialized();
         // avoid allocating a new ServiceKey object if possible
         ServiceKey key = previousKey;
-        if (key.matches(type, algorithm) == false) {
+        if (!key.matches(type, algorithm)) {
             key = new ServiceKey(type, algorithm, false);
             previousKey = key;
         }
 
         Service s = serviceMap.get(key);
-        if (s != null) {
-            return s;
+        if (s == null) {
+            s = legacyMap.get(key);
+            if (s != null && !s.isValid()) {
+                legacyMap.remove(key, s);
+            }
         }
 
-        s = legacyMap.get(key);
-        if (s != null && !s.isValid()) {
-            legacyMap.remove(key, s);
-        } else {
-            return s;
+        if (s != null && SecurityProviderServiceEvent.isTurnedOn()) {
+            var e  = new SecurityProviderServiceEvent();
+            e.provider = getName();
+            e.type = type;
+            e.algorithm = algorithm;
+            e.commit();
         }
 
-        return null;
+        return s;
     }
 
     // ServiceKey from previous getService() call
@@ -1299,10 +1312,10 @@ public abstract class Provider extends Properties {
 
     /**
      * Get an unmodifiable Set of all services supported by
-     * this Provider.
+     * this {@code Provider}.
      *
      * @return an unmodifiable Set of all services supported by
-     * this Provider
+     * this {@code Provider}
      *
      * @since 1.5
      */
@@ -1314,7 +1327,13 @@ public abstract class Provider extends Properties {
                 set.addAll(serviceMap.values());
             }
             if (!legacyMap.isEmpty()) {
-                set.addAll(legacyMap.values());
+                legacyMap.entrySet().forEach(entry -> {
+                    if (!entry.getValue().isValid()) {
+                        legacyMap.remove(entry.getKey(), entry.getValue());
+                    } else {
+                        set.add(entry.getValue());
+                    }
+                });
             }
             serviceSet = Collections.unmodifiableSet(set);
             servicesChanged = false;
@@ -1325,7 +1344,7 @@ public abstract class Provider extends Properties {
 
     /**
      * Add a service. If a service of the same type with the same algorithm
-     * name exists and it was added using {@link #putService putService()},
+     * name exists, and it was added using {@link #putService putService()},
      * it is replaced by the new service.
      * This method also places information about this service
      * in the provider's Hashtable values in the format described in the
@@ -1348,7 +1367,7 @@ public abstract class Provider extends Properties {
      *      if a security manager exists and its {@link
      *      java.lang.SecurityManager#checkSecurityAccess} method denies
      *      access to set property values.
-     * @throws NullPointerException if s is null
+     * @throws NullPointerException if s is {@code null}
      *
      * @since 1.5
      */
@@ -1449,7 +1468,7 @@ public abstract class Provider extends Properties {
     /**
      * Remove a service previously added using
      * {@link #putService putService()}. The specified service is removed from
-     * this provider. It will no longer be returned by
+     * this {@code Provider}. It will no longer be returned by
      * {@link #getService getService()} and its information will be removed
      * from this provider's Hashtable.
      *
@@ -1470,7 +1489,7 @@ public abstract class Provider extends Properties {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method denies
      *          access to remove this provider's properties.
-     * @throws NullPointerException if s is null
+     * @throws NullPointerException if s is {@code null}
      *
      * @since 1.5
      */
@@ -1506,7 +1525,7 @@ public abstract class Provider extends Properties {
         checkAndUpdateSecureRandom(type, algorithm, false);
     }
 
-    // Wrapped String that behaves in a case insensitive way for equals/hashCode
+    // Wrapped String that behaves in a case-insensitive way for equals/hashCode
     private static class UString {
         final String string;
         final String lowerString;
@@ -1624,7 +1643,7 @@ public abstract class Provider extends Properties {
      * an algorithm name, and the name of the class that implements the
      * service. Optionally, it also includes a list of alternate algorithm
      * names for this service (aliases) and attributes, which are a map of
-     * (name, value) String pairs.
+     * (name, value) {@code String} pairs.
      *
      * <p>This class defines the methods {@link #supportsParameter
      * supportsParameter()} and {@link #newInstance newInstance()}
@@ -1665,7 +1684,7 @@ public abstract class Provider extends Properties {
         // flag indicating whether this service has its attributes for
         // supportedKeyFormats or supportedKeyClasses set
         // if null, the values have not been initialized
-        // if TRUE, at least one of supportedFormats/Classes is non null
+        // if TRUE, at least one of supportedFormats/Classes is non-null
         private volatile Boolean hasKeyAttributes;
 
         // supported encoding formats
@@ -1687,8 +1706,8 @@ public abstract class Provider extends Properties {
             this.type = type;
             this.algorithm = algorithm;
             engineDescription = knownEngines.get(type);
-            aliases = Collections.<String>emptyList();
-            attributes = Collections.<UString,String>emptyMap();
+            aliases = Collections.emptyList();
+            attributes = Collections.emptyMap();
         }
 
         private boolean isValid() {
@@ -1734,12 +1753,13 @@ public abstract class Provider extends Properties {
          * @param type the type of this service
          * @param algorithm the algorithm name
          * @param className the name of the class implementing this service
-         * @param aliases List of aliases or null if algorithm has no aliases
-         * @param attributes Map of attributes or null if this implementation
-         *                   has no attributes
+         * @param aliases List of aliases or {@code null} if algorithm has no
+         *                   aliases
+         * @param attributes Map of attributes or {@code null} if this
+         *                   implementation has no attributes
          *
          * @throws NullPointerException if provider, type, algorithm, or
-         * className is null
+         * className is {@code null}
          */
         public Service(Provider provider, String type, String algorithm,
                 String className, List<String> aliases,
@@ -1754,12 +1774,12 @@ public abstract class Provider extends Properties {
             this.algorithm = algorithm;
             this.className = className;
             if (aliases == null) {
-                this.aliases = Collections.<String>emptyList();
+                this.aliases = Collections.emptyList();
             } else {
                 this.aliases = new ArrayList<>(aliases);
             }
             if (attributes == null) {
-                this.attributes = Collections.<UString,String>emptyMap();
+                this.attributes = Collections.emptyMap();
             } else {
                 this.attributes = new HashMap<>();
                 for (Map.Entry<String,String> entry : attributes.entrySet()) {
@@ -1806,20 +1826,20 @@ public abstract class Provider extends Properties {
         }
 
         // internal only
-        private final List<String> getAliases() {
+        private List<String> getAliases() {
             return aliases;
         }
 
         /**
-         * Return the value of the specified attribute or null if this
+         * Return the value of the specified attribute or {@code null} if this
          * attribute is not set for this Service.
          *
          * @param name the name of the requested attribute
          *
-         * @return the value of the specified attribute or null if the
+         * @return the value of the specified attribute or {@code null} if the
          *         attribute is not present
          *
-         * @throws NullPointerException if name is null
+         * @throws NullPointerException if name is {@code null}
          */
         public final String getAttribute(String name) {
             if (name == null) {
@@ -1844,7 +1864,8 @@ public abstract class Provider extends Properties {
          * Java Cryptography Architecture (JCA) Reference Guide}.
          *
          * @param constructorParameter the value to pass to the constructor,
-         * or null if this type of service does not use a constructorParameter.
+         * or {@code null} if this type of service does not use a
+         * constructorParameter.
          *
          * @return a new implementation of this service
          *
@@ -1855,7 +1876,7 @@ public abstract class Provider extends Properties {
          */
         public Object newInstance(Object constructorParameter)
                 throws NoSuchAlgorithmException {
-            if (registered == false) {
+            if (!registered) {
                 if (provider.getService(type, algorithm) != this) {
                     throw new NoSuchAlgorithmException
                         ("Service not registered with Provider "
@@ -1882,7 +1903,7 @@ public abstract class Provider extends Properties {
                                 + " engines");
                         } else {
                             Class<?> argClass = constructorParameter.getClass();
-                            if (ctrParamClz.isAssignableFrom(argClass) == false) {
+                            if (!ctrParamClz.isAssignableFrom(argClass)) {
                                 throw new InvalidParameterException
                                     ("constructorParameter must be instanceof "
                                     + cap.constructorParameterClassName.replace('$', '.')
@@ -2005,9 +2026,9 @@ public abstract class Provider extends Properties {
 
         /**
          * Test whether this Service can use the specified parameter.
-         * Returns false if this service cannot use the parameter. Returns
-         * true if this service can use the parameter, if a fast test is
-         * infeasible, or if the status is unknown.
+         * Returns {@code false} if this service cannot use the parameter.
+         * Returns {@code true} if this service can use the parameter,
+         * if a fast test is infeasible, or if the status is unknown.
          *
          * <p>The security provider framework uses this method with
          * some types of services to quickly exclude non-matching
@@ -2022,8 +2043,8 @@ public abstract class Provider extends Properties {
          *
          * @param parameter the parameter to test
          *
-         * @return false if this service cannot use the specified
-         * parameter; true if it can possibly use the parameter
+         * @return {@code false} if this service cannot use the specified
+         * parameter; {@code true} if it can possibly use the parameter
          *
          * @throws InvalidParameterException if the value of parameter is
          * invalid for this type of service or if this method cannot be
@@ -2054,10 +2075,7 @@ public abstract class Provider extends Properties {
             if (supportsKeyFormat(key)) {
                 return true;
             }
-            if (supportsKeyClass(key)) {
-                return true;
-            }
-            return false;
+            return supportsKeyClass(key);
         }
 
         /**
@@ -2088,9 +2106,8 @@ public abstract class Provider extends Properties {
                             }
                             supportedClasses = classList.toArray(CLASS0);
                         }
-                        boolean bool = (supportedFormats != null)
+                        b = (supportedFormats != null)
                             || (supportedClasses != null);
-                        b = Boolean.valueOf(bool);
                         hasKeyAttributes = b;
                     }
                 }
@@ -2146,9 +2163,9 @@ public abstract class Provider extends Properties {
         }
 
         /**
-         * Return a String representation of this service.
+         * Return a {@code String} representation of this service.
          *
-         * @return a String representation of this service.
+         * @return a {@code String} representation of this service.
          */
         public String toString() {
             String aString = aliases.isEmpty()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /**
  * @test
- * @summary Basic test for JFR jdk.VirtualThreadXXX events.
+ * @summary Basic test for JFR jdk.VirtualThreadXXX events
+ * @requires vm.continuations
  * @modules jdk.jfr java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} JfrEvents.java
- * @run testng/othervm --enable-preview JfrEvents
+ * @enablePreview
+ * @run junit/othervm JfrEvents
  */
 
 import java.io.IOException;
@@ -47,17 +48,17 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class JfrEvents {
+class JfrEvents {
     private static final Object lock = new Object();
 
     /**
      * Test jdk.VirtualThreadStart and jdk.VirtualThreadEnd events.
      */
     @Test
-    public void testVirtualThreadStartAndEnd() throws Exception {
+    void testVirtualThreadStartAndEnd() throws Exception {
         try (Recording recording = new Recording()) {
             recording.enable("jdk.VirtualThreadStart");
             recording.enable("jdk.VirtualThreadEnd");
@@ -88,7 +89,7 @@ public class JfrEvents {
      * Test jdk.VirtualThreadPinned event.
      */
     @Test
-    public void testVirtualThreadPinned() throws Exception {
+    void testVirtualThreadPinned() throws Exception {
         try (Recording recording = new Recording()) {
             recording.enable("jdk.VirtualThreadPinned")
                      .withThreshold(Duration.ofMillis(500));
@@ -125,7 +126,7 @@ public class JfrEvents {
      * Test jdk.VirtualThreadSubmitFailed event.
      */
     @Test
-    public void testVirtualThreadSubmitFailed() throws Exception {
+    void testVirtualThreadSubmitFailed() throws Exception {
         try (Recording recording = new Recording()) {
             recording.enable("jdk.VirtualThreadSubmitFailed");
 
