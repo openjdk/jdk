@@ -1040,7 +1040,6 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool clear_all_soft_refs,
                                          bool do_maximal_compaction) {
   assert_at_safepoint_on_vm_thread();
-  assert(!do_maximal_compaction || do_maximal_compaction == clear_all_soft_refs, "Maximal compaction should also clear soft references");
 
   if (GCLocker::check_active_before_gc()) {
     // Full GC was not completed.
@@ -1067,7 +1066,7 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // the caller that the collection did not succeed (e.g., because it was locked
   // out by the GC locker). So, right now, we'll ignore the return value.
 
-  do_full_collection(true,                /* explicit_gc */
+  do_full_collection(false,                /* explicit_gc */
                      clear_all_soft_refs,
                      false /* do_maximal_compaction */);
 }
