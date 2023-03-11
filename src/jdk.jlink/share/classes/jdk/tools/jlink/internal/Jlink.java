@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,8 @@ public final class Jlink {
          *
          * @param output Output directory, must not exist.
          * @param modules The possibly-empty set of root modules to resolve
-         * @param endian Jimage byte order. Native order by default
+         * @param endian Jimage byte order. Can be null, which implies the byte order for
+         *               the generated image will be determined during image generation
          * @param finder the ModuleFinder for this configuration
          */
         public JlinkConfiguration(Path output,
@@ -164,12 +165,13 @@ public final class Jlink {
                                   ModuleFinder finder) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
-            this.endian = Objects.requireNonNull(endian);
+            this.endian = endian;
             this.finder = finder;
         }
 
         /**
-         * @return the byte ordering
+         * @return the byte ordering, can be null which implies no specific ByteOrder has been
+         * explicitly set
          */
         public ByteOrder getByteOrder() {
             return endian;

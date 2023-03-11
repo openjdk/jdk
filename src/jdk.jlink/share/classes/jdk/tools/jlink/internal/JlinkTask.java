@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.module.ModuleReferenceImpl;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
@@ -219,7 +220,7 @@ public class JlinkTask {
         Path output;
         final Map<String, String> launchers = new HashMap<>();
         Path packagedModulesPath;
-        ByteOrder endian = ByteOrder.nativeOrder();
+        ByteOrder endian;
         boolean ignoreSigning = false;
         boolean bindServices = false;
         boolean suggestProviders = false;
@@ -812,7 +813,26 @@ public class JlinkTask {
                     ByteOrder order,
                     Path packagedModulesPath,
                     boolean ignoreSigning) throws IOException {
-            this.order = order;
+            if (order != null) {
+                this.order = order;
+            } else {
+                // Use the java.base module of the target platform to determine the endianness
+                // of the target image
+                String targetPlatform = null;
+                Optional<ResolvedModule> javaBase = cf.findModule("java.base");
+                if (javaBase.isPresent()) {
+                    ModuleReference ref = javaBase.get().reference();
+                    if (ref instanceof ModuleReferenceImpl modRefImpl
+                            && modRefImpl.moduleTarget() != null) {
+                        targetPlatform = modRefImpl.moduleTarget().targetPlatform();
+                    }
+                }
+                if (targetPlatform != null) {
+                    this.order = getNativeEndianOfTargetPlatform(targetPlatform);
+                } else {
+                    this.order = ByteOrder.nativeOrder();
+                }
+            }
             this.packagedModulesPath = packagedModulesPath;
             this.ignoreSigning = ignoreSigning;
 
@@ -882,6 +902,30 @@ public class JlinkTask {
                 throw new IllegalArgumentException(taskHelper.getMessage(
                     "err.cannot.read.module.info", modInfoPath), exp);
             }
+        }
+
+        // returns the endianness of the target platform, if known. Else returns the
+        // current platform's endianness
+        private static ByteOrder getNativeEndianOfTargetPlatform(String targetPlatform) {
+            int index = targetPlatform.indexOf("-"); // of the form <operating system>-<arch>
+            if (index < 0) {
+                // unknown arch, return current platform's endianness
+                return ByteOrder.nativeOrder();
+            }
+            String archName = targetPlatform.substring(index + 1);
+            return switch (archName) {
+                case "x86", "x86_64",
+                        "alpha", "amd64",
+                        "arm", "aarch64",
+                        "ia64", "mipsel",
+                        "mips64el", "loongarch64",
+                        "ppc64le", "riscv32", "riscv64" -> ByteOrder.LITTLE_ENDIAN;
+                case "m68k", "mips",
+                        "mips64", "ppc",
+                        "s390", "s390x",
+                        "sh", "sparc", "sparcv9" -> ByteOrder.BIG_ENDIAN;
+                default -> ByteOrder.nativeOrder();
+            };
         }
 
         @Override
