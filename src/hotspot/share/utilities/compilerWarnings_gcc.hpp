@@ -34,7 +34,7 @@
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
 
-#define PRAGMA_DISABLE_GCC_WARNING(option) PRAGMA(GCC diagnostic ignored option)
+#define PRAGMA_DISABLE_GCC_WARNING(option) _Pragma(STR(GCC diagnostic ignored option))
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
@@ -62,8 +62,8 @@
       (__clang_major__ >= 3 && __clang_minor__ >= 1)) || \
     ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
 // Tested to work with clang version 3.1 and better.
-#define PRAGMA_DIAG_PUSH             PRAGMA(GCC diagnostic push)
-#define PRAGMA_DIAG_POP              PRAGMA(GCC diagnostic pop)
+#define PRAGMA_DIAG_PUSH             _Pragna("GCC diagnostic push")
+#define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
 
 #endif // clang/gcc version check
 
