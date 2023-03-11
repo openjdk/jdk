@@ -1784,10 +1784,10 @@ bool VMError::check_timeout() {
 
   // Global timeout hit?
   if (!ignore_global_timeout) {
-    const jlong reporting_start_time_l = get_reporting_start_time();
+    const jlong reporting_start_time = get_reporting_start_time();
     // Timestamp is stored in nanos.
-    if (reporting_start_time_l > 0) {
-      const jlong end = reporting_start_time_l + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
+    if (reporting_start_time > 0) {
+      const jlong end = reporting_start_time + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
       if (end <= now && !_reporting_did_timeout) {
         // We hit ErrorLogTimeout and we haven't interrupted the reporting
         // thread yet.
@@ -1799,14 +1799,14 @@ bool VMError::check_timeout() {
   }
 
   // Reporting step timeout?
-  const jlong step_start_time_l = get_step_start_time();
-  if (step_start_time_l > 0) {
+  const jlong step_start_time = get_step_start_time();
+  if (step_start_time > 0) {
     // A step times out after a quarter of the total timeout. Steps are mostly fast unless they
     // hang for some reason, so this simple rule allows for three hanging step and still
     // hopefully leaves time enough for the rest of the steps to finish.
     const int max_step_timeout_secs = 5;
     const jlong timeout_duration = MAX2((jlong)max_step_timeout_secs, (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4);
-    const jlong end = step_start_time_l + timeout_duration;
+    const jlong end = step_start_time + timeout_duration;
     if (end <= now && !_step_did_timeout) {
       // The step timed out and we haven't interrupted the reporting
       // thread yet.
