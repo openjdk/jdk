@@ -138,6 +138,7 @@ class Node_Array;
 class Node_List;
 class Node_Stack;
 class OopMap;
+class OverflowNode;
 class ParmNode;
 class PCTableNode;
 class PhaseCCP;
@@ -751,9 +752,10 @@ public:
 
     DEFINE_CLASS_ID(Sub,   Node, 6)
       DEFINE_CLASS_ID(Cmp,   Sub, 0)
-        DEFINE_CLASS_ID(FastLock,   Cmp, 0)
-        DEFINE_CLASS_ID(FastUnlock, Cmp, 1)
-        DEFINE_CLASS_ID(SubTypeCheck,Cmp, 2)
+        DEFINE_CLASS_ID(FastLock,     Cmp, 0)
+        DEFINE_CLASS_ID(FastUnlock,   Cmp, 1)
+        DEFINE_CLASS_ID(SubTypeCheck, Cmp, 2)
+        DEFINE_CLASS_ID(Overflow,     Cmp, 3)
 
     DEFINE_CLASS_ID(MergeMem, Node, 7)
     DEFINE_CLASS_ID(Bool,     Node, 8)
@@ -943,6 +945,7 @@ public:
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
+  DEFINE_CLASS_QUERY(Overflow)
   DEFINE_CLASS_QUERY(Type)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)

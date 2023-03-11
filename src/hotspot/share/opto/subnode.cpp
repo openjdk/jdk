@@ -1478,19 +1478,27 @@ static Node* get_reverse_cmp(int cmp_op, Node* cmp1, Node* cmp2) {
 }
 
 static bool is_arithmetic_cmp(Node* cmp) {
-  int cop = cmp->Opcode();
+  if (!cmp->is_Cmp()) {
+    return false;
+  }
+  const int cop = cmp->Opcode();
   if (cop == Op_FastLock || cop == Op_FastUnlock ||
-      cmp->is_SubTypeCheck() || cop == Op_VectorTest) {
+      cop == Op_SubTypeCheck || cop == Op_VectorTest ||
+      cmp->is_Overflow()) {
     return false;
   }
   return true;
 }
 
-//------------------------------Identity-----------------------------------------
 Node* BoolNode::Identity(PhaseGVN* phase) {
   // "Bool (CmpX a b)" is equivalent to "Bool (CmpX b a)"
   Node *cmp = in(1);
   if (!is_arithmetic_cmp(cmp)) {
+    return this;
+  }
+  if (phase->is_IterGVN() && outcnt() == 0) {
+    // During parsing, empty uses of bool is tolerable. During iterative GVN,
+    // we don't aggressively replace bool whose use is empty with existing node.
     return this;
   }
   Node* cmp1 = cmp->in(1);
@@ -1514,10 +1522,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Change "bool tst (cmp con x)" into "bool ~tst (cmp x con)".
   // This moves the constant to the right.  Helps value-numbering.
   Node* cmp = in(1);
-  if (!cmp->is_Sub()) {
-    return nullptr;
-  }
-
   if (!is_arithmetic_cmp(cmp)) {
     return nullptr;
   }
