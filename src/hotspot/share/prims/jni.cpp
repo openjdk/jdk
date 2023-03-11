@@ -58,7 +58,6 @@
 #include "oops/arrayOop.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/klass.inline.hpp"
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -1014,7 +1013,7 @@ JNI_ENTRY(jobject, jni_NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, 
   DT_RETURN_MARK(NewObject, jobject, (const jobject&)obj);
 
   instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(clazz), CHECK_NULL);
-    obj = JNIHandles::make_local(THREAD, i);
+  obj = JNIHandles::make_local(THREAD, i);
   va_list args;
   va_start(args, methodID);
   JavaValue jvalue(T_VOID);

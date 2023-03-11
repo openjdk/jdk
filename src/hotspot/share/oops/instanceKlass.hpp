@@ -843,7 +843,7 @@ public:
 
   // Check whether reflection/jni/jvm code is allowed to instantiate this class;
   // if not, throw either an Error or an Exception.
-  void check_valid_for_instantiation(bool throwError, TRAPS);
+  virtual void check_valid_for_instantiation(bool throwError, TRAPS);
 
   // initialization
   void call_class_initializer(TRAPS);
