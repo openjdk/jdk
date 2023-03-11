@@ -147,7 +147,7 @@ public class IteratorsTest {
         }
     }
 
-    static class TestConverter<I, O>  implements Function<I, Iterator<O>> {
+    static class TestConverter<I, O> implements Function<I, Iterator<O>> {
         int applyCalls;
         final Function<I, Iterator<O>> delegate;
 
