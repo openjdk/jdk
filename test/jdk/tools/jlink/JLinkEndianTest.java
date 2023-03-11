@@ -52,9 +52,9 @@ public class JLinkEndianTest {
 
     private static final String HELLO_WORLD_APP = """
             public class Hello {
-                public static void main(final String[] args) throws Exception {
-                    System.out.print("Hello world");
-                }
+            	public static void main(final String[] args) throws Exception {
+            		System.out.print("Hello world");
+            	}
             }
             """;
 
