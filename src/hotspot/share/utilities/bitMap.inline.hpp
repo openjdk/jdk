@@ -29,7 +29,9 @@
 
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
+#include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 inline void BitMap::set_bit(idx_t bit) {
   verify_index(bit);
@@ -165,44 +167,49 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
   }
 }
 
+// General notes regarding find_{first,last}_bit_impl.
+//
+// The first (last) word often contains an interesting bit, either due to
+// density or because of features of the calling algorithm.  So it's important
+// to examine that word with a minimum of fuss, minimizing setup time for
+// additional words that will be wasted if the that word is indeed
+// interesting.
+//
+// The first (last) bit is similarly often interesting.  When it matters
+// (density or features of the calling algorithm make it likely that bit is
+// set), going straight to counting bits compares poorly to examining that bit
+// first; the counting operations can be relatively expensive, plus there is
+// the additional range check (unless aligned).  But when that bit isn't set,
+// the cost of having tested for it is relatively small compared to the rest
+// of the search.
+//
+// The benefit from aligned_right being true is relatively small.  It saves an
+// operation in the setup of the word search loop.  It also eliminates the
+// range check on the final result.  However, callers often have a comparison
+// with end, and inlining may allow the two comparisons to be combined.  It is
+// important when !aligned_right that return paths either return end or a
+// value dominated by a comparison with end.  aligned_right is still helpful
+// when the caller doesn't have a range check because features of the calling
+// algorithm guarantee an interesting bit will be present.
+//
+// The benefit from aligned_left is even smaller, as there is no savings in
+// the setup of the word search loop.
+
 template<BitMap::bm_word_t flip, bool aligned_right>
 inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(beg, end);
   assert(!aligned_right || is_aligned(end, BitsPerWord), "end not aligned");
 
-  // The first word often contains an interesting bit, either due to
-  // density or because of features of the calling algorithm.  So it's
-  // important to examine that first word with a minimum of fuss,
-  // minimizing setup time for later words that will be wasted if the
-  // first word is indeed interesting.
-
-  // The benefit from aligned_right being true is relatively small.
-  // It saves an operation in the setup for the word search loop.
-  // It also eliminates the range check on the final result.
-  // However, callers often have a comparison with end, and
-  // inlining often allows the two comparisons to be combined; it is
-  // important when !aligned_right that return paths either return
-  // end or a value dominated by a comparison with end.
-  // aligned_right is still helpful when the caller doesn't have a
-  // range check because features of the calling algorithm guarantee
-  // an interesting bit will be present.
-
   if (beg < end) {
-    // Get the word containing beg, and shift out low bits.
+    // Get the word containing beg.
     idx_t word_index = to_words_align_down(beg);
-    bm_word_t cword = flipped_word(word_index, flip) >> bit_in_word(beg);
-    if ((cword & 1) != 0) {
-      // The first bit is similarly often interesting. When it matters
-      // (density or features of the calling algorithm make it likely
-      // the first bit is set), going straight to the next clause compares
-      // poorly with doing this check first; count_trailing_zeros can be
-      // relatively expensive, plus there is the additional range check.
-      // But when the first bit isn't set, the cost of having tested for
-      // it is relatively small compared to the rest of the search.
+    bm_word_t cword = flipped_word(word_index, flip);
+    // Shift out low bits so beg bit is bit 0 of cword.
+    cword >>= bit_in_word(beg);
+    if ((cword & 1) != 0) {     // Test the beg bit.
       return beg;
-    } else if (cword != 0) {
-      // Flipped and shifted first word is non-zero.
+    } else if (cword != 0) {    // Test for other bits in the first word.
       idx_t result = beg + count_trailing_zeros(cword);
       if (aligned_right || (result < end)) return result;
       // Result is beyond range bound; return end.
@@ -228,6 +235,45 @@ inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
   return end;
 }
 
+template<BitMap::bm_word_t flip, bool aligned_left>
+inline BitMap::idx_t BitMap::find_last_bit_impl(idx_t beg, idx_t end) const {
+  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  verify_range(beg, end);
+  assert(!aligned_left || is_aligned(beg, BitsPerWord), "beg not aligned");
+
+  if (beg < end) {
+    // Get the last partial and flipped word in the range.
+    idx_t last_bit_index = end - 1;
+    idx_t word_index = to_words_align_down(last_bit_index);
+    bm_word_t cword = flipped_word(word_index, flip);
+    // Shift out high bits so last bit of range is in the sign position of cword.
+    cword <<= (bit_index(word_index + 1) - end);
+    if ((cword & bit_mask(BitsPerWord - 1)) != 0) { // Test the last bit.
+      return last_bit_index;
+    } else if (cword != 0) {    // Test for other bits in the last word.
+      idx_t result = last_bit_index - count_leading_zeros(cword);
+      if (aligned_left || (result >= beg)) return result;
+      // Result is below range bound; return end.
+    } else {
+      // Flipped and shifted last word is zero.  Word search through
+      // aligned down beg for a non-zero flipped word.
+      idx_t word_limit = to_words_align_down(beg);
+      while (word_index-- > word_limit) {
+        cword = flipped_word(word_index, flip);
+        if (cword != 0) {
+          idx_t result = bit_index(word_index) + log2i(cword);
+          if (aligned_left || (result >= beg)) return result;
+          // Result is below range bound; return end.
+          assert(word_index == word_limit, "invariant");
+          break;
+        }
+      }
+      // No bits in range; return end.
+    }
+  }
+  return end;
+}
+
 inline BitMap::idx_t
 BitMap::find_first_set_bit(idx_t beg, idx_t end) const {
   return find_first_bit_impl<find_ones_flip, false>(beg, end);
@@ -241,6 +287,21 @@ BitMap::find_first_clear_bit(idx_t beg, idx_t end) const {
 inline BitMap::idx_t
 BitMap::find_first_set_bit_aligned_right(idx_t beg, idx_t end) const {
   return find_first_bit_impl<find_ones_flip, true>(beg, end);
+}
+
+inline BitMap::idx_t
+BitMap::find_last_set_bit(idx_t beg, idx_t end) const {
+  return find_last_bit_impl<find_ones_flip, false>(beg, end);
+}
+
+inline BitMap::idx_t
+BitMap::find_last_clear_bit(idx_t beg, idx_t end) const {
+  return find_last_bit_impl<find_zeros_flip, false>(beg, end);
+}
+
+inline BitMap::idx_t
+BitMap::find_last_set_bit_aligned_left(idx_t beg, idx_t end) const {
+  return find_last_bit_impl<find_ones_flip, true>(beg, end);
 }
 
 // IterateInvoker supports conditionally stopping iteration early.  The
