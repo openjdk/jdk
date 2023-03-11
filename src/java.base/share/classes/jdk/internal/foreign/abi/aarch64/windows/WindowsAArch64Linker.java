@@ -58,7 +58,7 @@ public final class WindowsAArch64Linker extends AbstractLinker {
 
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
-        return  CallArranger.WINDOWS.arrangeUpcall(targetType, function);
+        return CallArranger.WINDOWS.arrangeUpcall(targetType, function);
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
