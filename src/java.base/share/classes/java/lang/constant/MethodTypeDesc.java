@@ -189,6 +189,13 @@ public sealed interface MethodTypeDesc
                              returnType().displayName());
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @apiNote {@linkplain MethodTypeDesc} can represent method type descriptors
+     * that are not representable by {@linkplain MethodType}, such as methods with
+     * more than 255 parameter slots, so attempts to resolve these may result in errors.
+     */
     @Override
     MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
