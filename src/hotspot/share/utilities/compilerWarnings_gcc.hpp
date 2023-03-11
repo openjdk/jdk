@@ -62,7 +62,7 @@
       (__clang_major__ >= 3 && __clang_minor__ >= 1)) || \
     ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
 // Tested to work with clang version 3.1 and better.
-#define PRAGMA_DIAG_PUSH             _Pragna("GCC diagnostic push")
+#define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
 #define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
 
 #endif // clang/gcc version check
