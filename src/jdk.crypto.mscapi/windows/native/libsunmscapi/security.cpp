@@ -647,7 +647,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                     // or SAN.
                     if (pszNameString)
                     {
-                        PP("%S: %s", pszNameString, pCertContext->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId);
+                        PP("%ls: %s", pszNameString, pCertContext->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId);
                         jsize nameLen = (jsize) std::u16string(pszNameString).length();
                         if (bHasNoPrivateKey)
                         {
