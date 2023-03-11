@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,18 +68,7 @@ public final class ImageReader implements AutoCloseable {
     }
 
     public static ImageReader open(Path imagePath) throws IOException {
-        ByteOrder byteOrder = ByteOrder.nativeOrder();
-        try {
-            // try to determine the byteorder of the image file
-            final ByteOrder detectedOrder = ImageHeader.tryDetectByteOrder(imagePath);
-            if (detectedOrder != null) {
-                // use the detected ByteOrder to open the image file
-                byteOrder = detectedOrder;
-            }
-        } catch (IOException ioe) {
-            // ignore and use native ByteOrder to open the image file
-        }
-        return open(imagePath, byteOrder);
+        return open(imagePath, ByteOrder.nativeOrder());
     }
 
     @Override

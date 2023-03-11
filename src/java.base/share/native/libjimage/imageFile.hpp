@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -429,8 +429,6 @@ private:
     u1* _location_bytes; // Location attributes
     u1* _string_bytes;   // String table
     ImageModuleData *_module_data;       // The ImageModuleData for this image
-    bool _invalid_magic; // true, if opening the image file failed due to the header having
-                         // an invalid magic
 
     ImageFileReader(const char* name, bool big_endian);
     ~ImageFileReader();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,8 @@
 
 package jdk.internal.jimage;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Objects;
 
 /**
@@ -184,40 +179,5 @@ public final class ImageHeader {
     int getStringsOffset() {
         return getLocationsOffset() +
                getLocationsSize();
-    }
-
-    /**
-     * Tries to determine the {@link ByteOrder} of a image file present at {@code imageFile}.
-     * The implementation reads the first few relevant bytes of the image file and compares it to
-     * the expected magic bytes of a jimage. If those bytes correspond to the magic bytes, then
-     * this method returns the ByteOrder of the image file, else it returns null.
-     *
-     * @param imageFile The path to the image file
-     * @return The ByteOrder if one could be determined. Else null.
-     * @throws IOException If any error occurred reading the contents of the image file.
-     */
-    static ByteOrder tryDetectByteOrder(final Path imageFile) throws IOException {
-        final byte[] bytes = new byte[Integer.SIZE]; // read only as much as the size of magic bytes
-        try (final InputStream is = Files.newInputStream(imageFile)) {
-            final int numRead = is.read(bytes);
-            if (numRead != bytes.length) {
-                // not enough bytes to ascertain if this is a jimage
-                return null;
-            }
-        }
-        final ByteBuffer bb = ByteBuffer.wrap(bytes);
-        if (bb.getInt() == MAGIC) {
-            return bb.order();
-        }
-        // try with the other byte order
-        final ByteOrder altByteOrder = bb.order() == ByteOrder.BIG_ENDIAN
-                ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
-        bb.flip();
-        bb.order(altByteOrder);
-        if (bb.getInt() == MAGIC) {
-            return bb.order();
-        }
-        // doesn't match the magic bytes
-        return null;
     }
 }

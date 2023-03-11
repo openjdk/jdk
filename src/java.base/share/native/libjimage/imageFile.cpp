@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -284,20 +284,8 @@ ImageFileReader* ImageFileReader::open(const char* name, bool big_endian) {
     reader = new ImageFileReader(name, big_endian);
     if (reader == NULL || !reader->open()) {
         // Failed to open.
-        if (reader != NULL && reader->_invalid_magic) {
-            // failed due to invalid magic bytes. now attempt with the other byte order
-            delete reader;
-            reader = new ImageFileReader(name, !big_endian);
-            if (reader == NULL || !reader->open()) {
-                // still failed to open.
-                delete reader;
-                return NULL;
-            }
-        } else {
-            // failed to open for some other reason than invalid magic bytes in header
-            delete reader;
-            return NULL;
-        }
+        delete reader;
+        return NULL;
     }
 
     // Lock to update
@@ -363,7 +351,6 @@ ImageFileReader::ImageFileReader(const char* name, bool big_endian) :
     _fd = -1;
     _endian = Endian::get_handler(big_endian);
     _index_data = NULL;
-    _invalid_magic = false;
 }
 
 // Close image and free up data structures.
@@ -393,16 +380,9 @@ bool ImageFileReader::open() {
     // Read image file header and verify it has a valid header.
     size_t header_size = sizeof(ImageHeader);
     if (_file_size < header_size ||
-        !read_at((u1*)&_header, header_size, 0)) {
-        close();
-        return false;
-    }
-    if (_header.magic(_endian) != IMAGE_MAGIC) {
-        _invalid_magic = true;
-        close();
-        return false;
-    }
-    if (_header.major_version(_endian) != MAJOR_VERSION ||
+        !read_at((u1*)&_header, header_size, 0) ||
+        _header.magic(_endian) != IMAGE_MAGIC ||
+        _header.major_version(_endian) != MAJOR_VERSION ||
         _header.minor_version(_endian) != MINOR_VERSION) {
         close();
         return false;
