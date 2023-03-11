@@ -108,7 +108,8 @@ public class EndOfCenValidation {
         Path zip = zipWithModifiedEndRecord(size, true, 0, CEN_TOO_LARGE_ZIP);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
-            openZip(zip);
+            try (ZipFile zf = new ZipFile(zip.toFile())) {
+            }
         });
 
         assertEquals(ex.getMessage(), INVALID_CEN_SIZE_TOO_LARGE);
@@ -126,7 +127,8 @@ public class EndOfCenValidation {
         Path zip = zipWithModifiedEndRecord(size, false, 0, INVALID_CEN_SIZE);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
-            openZip(zip);
+            try (ZipFile zf = new ZipFile(zip.toFile())) {
+            }
         });
 
         assertEquals(ex.getMessage(), INVALID_CEN_BAD_SIZE);
@@ -145,7 +147,8 @@ public class EndOfCenValidation {
         Path zip = zipWithModifiedEndRecord(size, true, 100, BAD_CEN_OFFSET_ZIP);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
-            openZip(zip);
+            try (ZipFile zf = new ZipFile(zip.toFile())) {
+            }
         });
 
         assertEquals(ex.getMessage(), INVALID_CEN_BAD_OFFSET);
@@ -221,9 +224,5 @@ public class EndOfCenValidation {
         }
         byte[] zipBytes = bout.toByteArray();
         return zipBytes;
-    }
-    private static void openZip(Path zip) throws IOException {
-        try (ZipFile zf = new ZipFile(zip.toFile())) {
-        }
     }
 }
