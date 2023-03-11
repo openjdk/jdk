@@ -27,6 +27,7 @@
  * @run testng/othervm EndOfCenValidation
  */
 
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -57,11 +58,16 @@ import static org.testng.Assert.*;
  */
 public class EndOfCenValidation {
 
-    private static final int ENDHDR = 22;          // End of central directory record size
-    private static final int CEN_SIZE_OFFSET = 12; // Offset of CEN size field within ENDHDR
-    private static final int CEN_OFF_OFFSET = 16; // Offset of CEN offset field within ENDHDR
+    // Zip files produced by this test
+    public static final Path CEN_TOO_LARGE_ZIP = Path.of("cen-size-too-large.zip");
+    public static final Path INVALID_CEN_SIZE = Path.of("invalid-zen-size.zip");
+    public static final Path BAD_CEN_OFFSET_ZIP = Path.of("bad-cen-offset.zip");
+    // Some ZipFile constants for manipulating the END header
+    private static final int ENDHDR = ZipFile.ENDHDR; // End of central directory record size
+    private static final int ENDSIZ = ZipFile.ENDSIZ; // Offset of CEN size field within ENDHDR
+    private static final int ENDOFF = ZipFile.ENDOFF; // Offset of CEN offset field within ENDHDR
     // Maximum allowed CEN size allowed by ZipFile
-    private static int MAX_CEN_SIZE = Integer.MAX_VALUE - ENDHDR -1;
+    private static int MAX_CEN_SIZE = Integer.MAX_VALUE - ENDHDR - 1;
 
     // Expected message when CEN size does not match file size
     private static final String INVALID_CEN_BAD_SIZE = "invalid END header (bad central directory size)";
@@ -82,14 +88,24 @@ public class EndOfCenValidation {
     }
 
     /**
+     * Delete big files after test, in case the file system did not support sparse files.
+     */
+    @AfterTest
+    public void cleanup() throws IOException {
+        Files.deleteIfExists(CEN_TOO_LARGE_ZIP);
+        Files.deleteIfExists(INVALID_CEN_SIZE);
+        Files.deleteIfExists(BAD_CEN_OFFSET_ZIP);
+    }
+
+    /**
      * Validates that an end of central directory record with
      * a CEN length exceeding {@link #MAX_CEN_SIZE} limit is rejected
      */
     @Test
     public void shouldRejectTooLargeCenSize() throws IOException {
-        int size = MAX_CEN_SIZE +1;
+        int size = MAX_CEN_SIZE + 1;
 
-        Path zip = zipWithModifiedEndRecord(size, true, 0, "cen-size-too-large.zip");
+        Path zip = zipWithModifiedEndRecord(size, true, 0, CEN_TOO_LARGE_ZIP);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
             openZip(zip);
@@ -107,7 +123,7 @@ public class EndOfCenValidation {
 
         int size = MAX_CEN_SIZE;
 
-        Path zip = zipWithModifiedEndRecord(size, false, 0, "invalid-zen-size.zip");
+        Path zip = zipWithModifiedEndRecord(size, false, 0, INVALID_CEN_SIZE);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
             openZip(zip);
@@ -126,7 +142,7 @@ public class EndOfCenValidation {
 
         int size = MAX_CEN_SIZE;
 
-        Path zip = zipWithModifiedEndRecord(size, true, 100, "bad-cen-offset.zip");
+        Path zip = zipWithModifiedEndRecord(size, true, 100, BAD_CEN_OFFSET_ZIP);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
             openZip(zip);
@@ -153,8 +169,8 @@ public class EndOfCenValidation {
     private Path zipWithModifiedEndRecord(int cenSize,
                                           boolean inflateCen,
                                           int cenOffAdjust,
-                                          String name) throws IOException {
-        Path zip = Path.of(name);
+                                          Path zip) throws IOException {
+
         Files.deleteIfExists(zip);
 
         // A byte buffer for reading the EOC
@@ -165,13 +181,13 @@ public class EndOfCenValidation {
         int eocOff = buffer.limit() - ENDHDR;
 
         // Modify the CEN size
-        int sizeOffset = eocOff + CEN_SIZE_OFFSET;
+        int sizeOffset = eocOff + ENDSIZ;
         int currentCenSize = buffer.getInt(sizeOffset);
         buffer.putInt(sizeOffset, cenSize);
 
         // Optionally modify the CEN offset
         if (cenOffAdjust != 0) {
-            int offOffset = eocOff + CEN_OFF_OFFSET;
+            int offOffset = eocOff + ENDOFF;
             int currentCenOff = buffer.getInt(offOffset);
             buffer.putInt(offOffset, currentCenOff + cenOffAdjust);
         }
