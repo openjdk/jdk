@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             div.add(pkgNameDiv);
         }
         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                HtmlLinkInfo.Kind.CLASS_HEADER, typeElement);
+                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement);
         //Let's not link to ourselves in the header.
         linkInfo.linkToSelf = false;
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
@@ -240,7 +240,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         Content result = new ContentBuilder();
         if (utils.typeUtils.isSameType(type, typeElement.asType())) {
             Content typeParameters = getTypeParameterLinks(
-                    new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.TREE,
+                    new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                     typeElement));
             if (configuration.shouldExcludeQualifier(utils.containingPackage(typeElement).toString())) {
                 result.add(utils.asTypeElement(type).getSimpleName());
@@ -251,7 +251,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             }
         } else {
             Content link = getLink(new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.CLASS_TREE_PARENT, type)
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, type)
                     .label(configuration.getClassName(utils.asTypeElement(type))));
             result.add(link);
         }
@@ -289,7 +289,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             if (!subclasses.isEmpty()) {
                 var dl = HtmlTree.DL(HtmlStyle.notes);
                 dl.add(HtmlTree.DT(contents.subclassesLabel));
-                dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.SUBCLASSES, subclasses)));
+                dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.PLAIN, subclasses)));
                 target.add(dl);
             }
         }
@@ -302,7 +302,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             if (!subInterfaces.isEmpty()) {
                 var dl = HtmlTree.DL(HtmlStyle.notes);
                 dl.add(HtmlTree.DT(contents.subinterfacesLabel));
-                dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.SUBINTERFACES, subInterfaces)));
+                dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, subInterfaces)));
                 target.add(dl);
             }
         }
@@ -322,7 +322,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (!implcl.isEmpty()) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.implementingClassesLabel));
-            dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.IMPLEMENTED_CLASSES, implcl)));
+            dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.PLAIN, implcl)));
             target.add(dl);
         }
     }
@@ -334,7 +334,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (utils.isClass(typeElement) && !interfaces.isEmpty()) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.allImplementedInterfacesLabel));
-            dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.IMPLEMENTED_INTERFACES, interfaces)));
+            dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, interfaces)));
             target.add(dl);
         }
     }
@@ -348,7 +348,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         if (utils.isPlainInterface(typeElement) && !interfaces.isEmpty()) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.allSuperinterfacesLabel));
-            dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.SUPER_INTERFACES, interfaces)));
+            dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, interfaces)));
             target.add(dl);
         }
     }
@@ -365,7 +365,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 dl.add(HtmlTree.DT(utils.isPlainInterface(e)
                         ? contents.enclosingInterfaceLabel
                         : contents.enclosingClassLabel));
-                dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.CLASS, List.of(e))));
+                dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, List.of(e))));
                 target.add(dl);
                 return null;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,116 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       Register dst1,
+                                       Register dst2,
+                                       Address src,
+                                       Register tmp) {
+  if (bytes == 1) {
+    assert(dst2 == noreg, "invariant");
+    __ ldrb(dst1, src);
+  } else if (bytes == 2) {
+    assert(dst2 == noreg, "invariant");
+    __ ldrh(dst1, src);
+  } else if (bytes == 4) {
+    assert(dst2 == noreg, "invariant");
+    __ ldrw(dst1, src);
+  } else if (bytes == 8) {
+    assert(dst2 == noreg, "invariant");
+    __ ldr(dst1, src);
+  } else if (bytes == 16) {
+    assert(dst2 != noreg, "invariant");
+    assert(dst2 != dst1, "invariant");
+    __ ldp(dst1, dst2, src);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ decode_heap_oop(dst1);
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        Register src1,
+                                        Register src2,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        Register tmp3) {
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ encode_heap_oop(src1);
+  }
+  if (bytes == 1) {
+    assert(src2 == noreg, "invariant");
+    __ strb(src1, dst);
+  } else if (bytes == 2) {
+    assert(src2 == noreg, "invariant");
+    __ strh(src1, dst);
+  } else if (bytes == 4) {
+    assert(src2 == noreg, "invariant");
+    __ strw(src1, dst);
+  } else if (bytes == 8) {
+    assert(src2 == noreg, "invariant");
+    __ str(src1, dst);
+  } else if (bytes == 16) {
+    assert(src2 != noreg, "invariant");
+    assert(src2 != src1, "invariant");
+    __ stp(src1, src2, dst);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+}
+
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       FloatRegister dst1,
+                                       FloatRegister dst2,
+                                       Address src,
+                                       Register tmp1,
+                                       Register tmp2,
+                                       FloatRegister vec_tmp) {
+  if (bytes == 32) {
+    __ ldpq(dst1, dst2, src);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        FloatRegister src1,
+                                        FloatRegister src2,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        Register tmp3,
+                                        FloatRegister vec_tmp1,
+                                        FloatRegister vec_tmp2,
+                                        FloatRegister vec_tmp3) {
+  if (bytes == 32) {
+    __ stpq(src1, src2, dst);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andr(obj, obj, ~JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(JNIHandles::tag_mask == 0b11);
+  __ andr(obj, obj, ~JNIHandles::tag_mask);
   __ ldr(obj, Address(obj, 0));             // *obj
 }
 
@@ -299,3 +404,18 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ bind(method_live);
 }
 
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if the oop is in the right area of memory
+  __ mov(tmp2, (intptr_t) Universe::verify_oop_mask());
+  __ andr(tmp1, obj, tmp2);
+  __ mov(tmp2, (intptr_t) Universe::verify_oop_bits());
+
+  // Compare tmp1 and tmp2.  We don't use a compare
+  // instruction here because the flags register is live.
+  __ eor(tmp1, tmp1, tmp2);
+  __ cbnz(tmp1, error);
+
+  // make sure klass is 'reasonable', which is not zero.
+  __ load_klass(obj, obj); // get klass
+  __ cbz(obj, error);      // if klass is NULL it is broken
+}

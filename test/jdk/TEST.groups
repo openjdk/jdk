@@ -44,6 +44,7 @@ tier1_part3 = \
     :jdk_vector_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
+    jdk/classfile \
     sun/nio/cs/ISO8859x.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
@@ -635,7 +636,8 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestMultiplePresent.java \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
-    sun/security/tools/jarsigner/compatibility/Compatibility.java
+    sun/security/tools/jarsigner/compatibility/Compatibility.java \
+    java/security/Policy/Root/Root.java
 
 jdk_core_manual_requires_human_input = \
     com/sun/jndi/dns/Test6991580.java \

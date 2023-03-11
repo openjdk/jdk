@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,21 @@ class PhaseIdealLoop;
 // correspond 1-to-1 with RegionNode inputs.  The zero input of a PhiNode is
 // the RegionNode, and the zero input of the RegionNode is itself.
 class RegionNode : public Node {
+public:
+  enum LoopStatus {
+    // No guarantee: the region may be an irreducible loop entry, thus we have to
+    // be careful when removing entry control to it.
+    MaybeIrreducibleEntry,
+    // Limited guarantee: this region may be (nested) inside an irreducible loop,
+    // but it will never be an irreducible loop entry.
+    NeverIrreducibleEntry,
+    // Strong guarantee: this region is not (nested) inside an irreducible loop.
+    Reducible,
+  };
+
 private:
   bool _is_unreachable_region;
+  LoopStatus _loop_status;
 
   bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
   bool is_unreachable_from_root(const PhaseGVN* phase) const;
@@ -76,25 +89,33 @@ public:
          Control                // Control arcs are [1..len)
   };
 
-  RegionNode(uint required) : Node(required), _is_unreachable_region(false) {
+  RegionNode(uint required)
+    : Node(required),
+      _is_unreachable_region(false),
+      _loop_status(LoopStatus::NeverIrreducibleEntry)
+  {
     init_class_id(Class_Region);
     init_req(0, this);
   }
 
   Node* is_copy() const {
     const Node* r = _in[Region];
-    if (r == NULL)
+    if (r == nullptr)
       return nonnull_req();
-    return NULL;  // not a copy!
+    return nullptr;  // not a copy!
   }
-  PhiNode* has_phi() const;        // returns an arbitrary phi user, or NULL
-  PhiNode* has_unique_phi() const; // returns the unique phi user, or NULL
+  PhiNode* has_phi() const;        // returns an arbitrary phi user, or null
+  PhiNode* has_unique_phi() const; // returns the unique phi user, or null
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
 #ifdef ASSERT
   bool is_in_infinite_subgraph();
   static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
 #endif //ASSERT
+  LoopStatus loop_status() const { return _loop_status; };
+  void set_loop_status(LoopStatus status);
+  DEBUG_ONLY(void verify_can_be_irreducible_entry() const;)
+
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual bool pinned() const { return (const Node*)in(0) == this; }
@@ -105,9 +126,11 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  void remove_unreachable_subgraph(PhaseIterGVN* igvn);
   virtual const RegMask &out_RegMask() const;
   bool try_clean_mem_phi(PhaseGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
+  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
 //------------------------------JProjNode--------------------------------------
@@ -151,13 +174,15 @@ class PhiNode : public TypeNode {
   static Node* clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn);
   static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
 
+  bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
+
 public:
   // Node layout (parallels RegionNode):
   enum { Region,                // Control input is the Phi's region.
          Input                  // Input values are [1..len)
   };
 
-  PhiNode( Node *r, const Type *t, const TypePtr* at = NULL,
+  PhiNode( Node *r, const Type *t, const TypePtr* at = nullptr,
            const int imid = -1,
            const int iid = TypeOopPtr::InstanceTop,
            const int iidx = Compile::AliasIdxTop,
@@ -176,7 +201,7 @@ public:
   // create a new phi with in edges matching r and set (initially) to x
   static PhiNode* make( Node* r, Node* x );
   // extra type arguments override the new phi's bottom_type and adr_type
-  static PhiNode* make( Node* r, Node* x, const Type *t, const TypePtr* at = NULL );
+  static PhiNode* make( Node* r, Node* x, const Type *t, const TypePtr* at = nullptr );
   // create a new phi with narrowed memory type
   PhiNode* slice_memory(const TypePtr* adr_type) const;
   PhiNode* split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) const;
@@ -189,11 +214,11 @@ public:
   bool is_tripcount(BasicType bt) const;
 
   // Determine a unique non-trivial input, if any.
-  // Ignore casts if it helps.  Return NULL on failure.
+  // Ignore casts if it helps.  Return null on failure.
   Node* unique_input(PhaseTransform *phase, bool uncast);
   Node* unique_input(PhaseTransform *phase) {
     Node* uin = unique_input(phase, false);
-    if (uin == NULL) {
+    if (uin == nullptr) {
       uin = unique_input(phase, true);
     }
     return uin;
@@ -401,7 +426,7 @@ public:
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.
-  // Returns NULL is it couldn't improve the type.
+  // Returns null is it couldn't improve the type.
   static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
 
 #ifndef PRODUCT

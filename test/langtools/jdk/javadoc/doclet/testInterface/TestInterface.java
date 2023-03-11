@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200
-             8186332 8186703 8182765 8187288 8261976
+             8186332 8186703 8182765 8187288 8261976 8303349
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -208,5 +208,82 @@ public class TestInterface extends JavadocTester {
                 a href="Spliterator.OfPrimitive.html" title="type parameter in Spliterator.OfPri\
                 mitive">T_CONS</a>,<wbr><a href="Spliterator.OfPrimitive.html" title="type param\
                 eter in Spliterator.OfPrimitive">T_SPLITR</a>&gt;&gt;</code>""");
+        checkOutput("pkg2/Spliterator.html", true,
+            """
+                <div class="caption"><span>Nested Classes</span></div>
+                <div class="summary-table three-column-summary">
+                <div class="table-header col-first">Modifier and Type</div>
+                <div class="table-header col-second">Interface</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-second even-row-color"><code><a href="Spliterator.OfDouble.html"\
+                 class="type-name-link" title="interface in pkg2">Spliterator.OfDouble</a></code\
+                ></div>
+                <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-second odd-row-color"><code><a href="Spliterator.OfInt.html" cla\
+                ss="type-name-link" title="interface in pkg2">Spliterator.OfInt</a>&lt;<a href="\
+                Spliterator.OfInt.html" title="type parameter in Spliterator.OfInt">Integer</a>&\
+                gt;</code></div>
+                <div class="col-last odd-row-color">&nbsp;</div>
+                <div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-second even-row-color"><code><a href="Spliterator.OfPrimitive.ht\
+                ml" class="type-name-link" title="interface in pkg2">Spliterator.OfPrimitive</a>\
+                &lt;<a href="Spliterator.OfPrimitive.html" title="type parameter in Spliterator.\
+                OfPrimitive">T</a>,<wbr><a href="Spliterator.OfPrimitive.html" title="type param\
+                eter in Spliterator.OfPrimitive">T_CONS</a>,<wbr><a href="Spliterator.OfPrimitiv\
+                e.html" title="type parameter in Spliterator.OfPrimitive">T_SPLITR</a> extends <\
+                a href="Spliterator.OfPrimitive.html" title="interface in pkg2">Spliterator.OfPr\
+                imitive</a>&lt;<a href="Spliterator.OfPrimitive.html" title="type parameter in S\
+                pliterator.OfPrimitive">T</a>,<wbr><a href="Spliterator.OfPrimitive.html" title=\
+                "type parameter in Spliterator.OfPrimitive">T_CONS</a>,<wbr><a href="Spliterator\
+                .OfPrimitive.html" title="type parameter in Spliterator.OfPrimitive">T_SPLITR</a\
+                >&gt;&gt;</code></div>
+                <div class="col-last even-row-color">&nbsp;</div>
+                </div>""");
+        checkOutput("allclasses-index.html", true,
+                """
+                <div class="col-first even-row-color all-classes-table all-classes-table-tab2"><\
+                a href="pkg2/Abstract.html" title="class in pkg2">Abstract</a></div>
+                <div class="col-last even-row-color all-classes-table all-classes-table-tab2">&n\
+                bsp;</div>
+                <div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a\
+                 href="pkg2/Spliterator.html" title="interface in pkg2">Spliterator&lt;T&gt;</a>\
+                </div>
+                <div class="col-last odd-row-color all-classes-table all-classes-table-tab1">&nb\
+                sp;</div>
+                <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><\
+                a href="pkg2/Spliterator.OfDouble.html" title="interface in pkg2">Spliterator.Of\
+                Double</a></div>
+                <div class="col-last even-row-color all-classes-table all-classes-table-tab1">&n\
+                bsp;</div>
+                <div class="col-first odd-row-color all-classes-table all-classes-table-tab1"><a\
+                 href="pkg2/Spliterator.OfInt.html" title="interface in pkg2">Spliterator.OfInt&\
+                lt;Integer&gt;</a></div>
+                <div class="col-last odd-row-color all-classes-table all-classes-table-tab1">&nb\
+                sp;</div>
+                <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><\
+                a href="pkg2/Spliterator.OfPrimitive.html" title="interface in pkg2">Spliterator\
+                .OfPrimitive&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</a></div>
+                <div class="col-last even-row-color all-classes-table all-classes-table-tab1">&n\
+                bsp;</div>""");
+        checkOutput("index-all.html", true,
+                """
+                <dt><a href="pkg2/Spliterator.html" class="type-name-link" title="interface in p\
+                kg2">Spliterator&lt;T&gt;</a> - Interface in <a href="pkg2/package-summary.html"\
+                >pkg2</a></dt>
+                <dd>&nbsp;</dd>
+                <dt><a href="pkg2/Spliterator.OfDouble.html" class="type-name-link" title="inter\
+                face in pkg2">Spliterator.OfDouble</a> - Interface in <a href="pkg2/package-summ\
+                ary.html">pkg2</a></dt>
+                <dd>&nbsp;</dd>
+                <dt><a href="pkg2/Spliterator.OfInt.html" class="type-name-link" title="interfac\
+                e in pkg2">Spliterator.OfInt&lt;Integer&gt;</a> - Interface in <a href="pkg2/pac\
+                kage-summary.html">pkg2</a></dt>
+                <dd>&nbsp;</dd>
+                <dt><a href="pkg2/Spliterator.OfPrimitive.html" class="type-name-link" title="in\
+                terface in pkg2">Spliterator.OfPrimitive&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</a> \
+                - Interface in <a href="pkg2/package-summary.html">pkg2</a></dt>
+                <dd>&nbsp;</dd>""");
     }
 }

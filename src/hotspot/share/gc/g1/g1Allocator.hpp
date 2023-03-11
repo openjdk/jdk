@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,62 +223,6 @@ public:
                             uint node_index);
 
   void undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size_t word_sz, uint node_index);
-};
-
-// G1ArchiveAllocator is used to allocate memory in archive
-// regions. Such regions are not scavenged nor compacted by GC.
-// There are two types of archive regions, which are
-// differ in the kind of references allowed for the contained objects:
-//
-// - 'Closed' archive region contain no references outside of other
-//   closed archive regions. The region is immutable by GC. GC does
-//   not mark object header in 'closed' archive region.
-// - An 'open' archive region allow references to any other regions,
-//   including closed archive, open archive and other java heap regions.
-//   GC can adjust pointers and mark object header in 'open' archive region.
-class G1ArchiveAllocator : public CHeapObj<mtGC> {
-protected:
-  bool _open; // Indicate if the region is 'open' archive.
-  G1CollectedHeap* _g1h;
-
-  // The current allocation region
-  HeapRegion* _allocation_region;
-
-  // Regions allocated for the current archive range.
-  GrowableArrayCHeap<HeapRegion*, mtGC> _allocated_regions;
-
-  // Current allocation window within the current region.
-  HeapWord* _bottom;
-  HeapWord* _top;
-  HeapWord* _max;
-
-  // Allocate a new region for this archive allocator.
-  // Allocation is from the top of the reserved heap downward.
-  bool alloc_new_region();
-
-public:
-  G1ArchiveAllocator(G1CollectedHeap* g1h, bool open) :
-    _open(open),
-    _g1h(g1h),
-    _allocation_region(NULL),
-    _allocated_regions(2),
-    _bottom(NULL),
-    _top(NULL),
-    _max(NULL) { }
-
-  virtual ~G1ArchiveAllocator() {
-    assert(_allocation_region == NULL, "_allocation_region not NULL");
-  }
-
-  static G1ArchiveAllocator* create_allocator(G1CollectedHeap* g1h, bool open);
-
-  // Allocate memory for an individual object.
-  HeapWord* archive_mem_allocate(size_t word_size);
-
-  // Return the memory ranges used in the current archive, after
-  // aligning to the requested alignment.
-  void complete_archive(GrowableArray<MemRegion>* ranges,
-                        size_t end_alignment_in_bytes);
 };
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_HPP

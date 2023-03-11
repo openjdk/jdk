@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-BarrierSet* BarrierSet::_barrier_set = NULL;
+BarrierSet* BarrierSet::_barrier_set = nullptr;
 
 void BarrierSet::set_barrier_set(BarrierSet* barrier_set) {
-  assert(_barrier_set == NULL, "Already initialized");
+  assert(_barrier_set == nullptr, "Already initialized");
   _barrier_set = barrier_set;
 
   // Notify barrier set of the current (main) thread.  Normally the
@@ -53,19 +53,18 @@ void BarrierSet::set_barrier_set(BarrierSet* barrier_set) {
 }
 
 static BarrierSetNMethod* select_barrier_set_nmethod(BarrierSetNMethod* barrier_set_nmethod) {
-  if (barrier_set_nmethod != NULL) {
+  if (barrier_set_nmethod != nullptr) {
     // The GC needs nmethod entry barriers to do concurrent GC
     return barrier_set_nmethod;
   } else {
-    // The GC needs nmethod entry barriers for code cache unloading (recently
-    // used heuristics) and, if it's a SATB GC, to keep alive constant objects
-    // of nmethods because they are weakly referenced.
+    // The GC needs nmethod entry barriers to deal with continuations
+    // and code cache unloading
     return new BarrierSetNMethod();
   }
 }
 
 static BarrierSetStackChunk* select_barrier_set_stack_chunk(BarrierSetStackChunk* barrier_set_stack_chunk) {
-  if (barrier_set_stack_chunk != NULL) {
+  if (barrier_set_stack_chunk != nullptr) {
     return barrier_set_stack_chunk;
   } else {
     return new BarrierSetStackChunk();

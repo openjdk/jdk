@@ -50,7 +50,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -792,7 +791,7 @@ G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1Concu
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
 
-  G1CollectedHeap::start_codecache_marking_cycle_if_inactive();
+  G1CollectedHeap::start_codecache_marking_cycle_if_inactive(true /* concurrent_mark_start */);
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
 
@@ -1072,14 +1071,14 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type,
 
   const char* caller = verify_location_string(location);
 
-  if (VerifyDuringGC) {
+  if (VerifyDuringGC && G1HeapVerifier::should_verify(type)) {
     GCTraceTime(Debug, gc, phases) debug(caller, _gc_timer_cm);
 
     size_t const BufLen = 512;
     char buffer[BufLen];
 
     jio_snprintf(buffer, BufLen, "During GC (%s)", caller);
-    verifier->verify(type, VerifyOption::G1UseConcMarking, buffer);
+    verifier->verify(VerifyOption::G1UseConcMarking, buffer);
 
     // Only check bitmap in Remark, and not at After-Verification because the regions
     // already have their TAMS'es reset.
@@ -1300,6 +1299,8 @@ void G1ConcurrentMark::remark() {
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
+
+    G1CollectedHeap::finish_codecache_marking_cycle();
   } else {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
@@ -1315,9 +1316,6 @@ void G1ConcurrentMark::remark() {
     GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
     report_object_count(mark_finished);
   }
-
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
 
   // Statistics
   double now = os::elapsedTime();
@@ -1400,7 +1398,7 @@ public:
                                    cl.archive_regions_removed(),
                                    cl.humongous_regions_removed());
     {
-      MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
       _g1h->decrement_summary_bytes(cl.freed_bytes());
 
       _cleanup_list->add_ordered(&local_cleanup_list);
@@ -1779,18 +1777,14 @@ public:
 
 class G1RemarkThreadsClosure : public ThreadClosure {
   G1SATBMarkQueueSet& _qset;
-  uintx _claim_token;
 
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, G1CMTask* task) :
-    _qset(G1BarrierSet::satb_mark_queue_set()),
-    _claim_token(Threads::thread_claim_token()) {}
+    _qset(G1BarrierSet::satb_mark_queue_set()) {}
 
   void do_thread(Thread* thread) {
-    if (thread->claim_threads_do(true, _claim_token)) {
-      // Transfer any partial buffer to the qset for completed buffer processing.
-      _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
-    }
+    // Transfer any partial buffer to the qset for completed buffer processing.
+    _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
   }
 };
 
@@ -1804,7 +1798,7 @@ public:
       ResourceMark rm;
 
       G1RemarkThreadsClosure threads_f(G1CollectedHeap::heap(), task);
-      Threads::threads_do(&threads_f);
+      Threads::possibly_parallel_threads_do(true /* is_par */, &threads_f);
     }
 
     do {

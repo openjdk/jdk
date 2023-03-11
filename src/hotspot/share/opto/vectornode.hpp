@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1270,13 +1270,13 @@ class VectorLoadConstNode : public VectorNode {
 // Extract a scalar from a vector at position "pos"
 class ExtractNode : public Node {
  public:
-  ExtractNode(Node* src, ConINode* pos) : Node(NULL, src, (Node*)pos) {
+  ExtractNode(Node* src, ConINode* pos) : Node(nullptr, src, (Node*)pos) {
     assert(in(2)->get_int() >= 0, "positive constants");
   }
   virtual int Opcode() const;
   uint  pos() const { return in(2)->get_int(); }
 
-  static Node* make(Node* v, uint position, BasicType bt);
+  static Node* make(Node* v, ConINode* pos, BasicType bt);
   static int opcode(BasicType bt);
 };
 
@@ -1676,13 +1676,13 @@ class VectorBoxNode : public Node {
   };
   VectorBoxNode(Compile* C, Node* box, Node* val,
                 const TypeInstPtr* box_type, const TypeVect* vt)
-    : Node(NULL, box, val), _box_type(box_type), _vec_type(vt) {
+    : Node(nullptr, box, val), _box_type(box_type), _vec_type(vt) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
-  const  TypeInstPtr* box_type() const { assert(_box_type != NULL, ""); return _box_type; };
-  const  TypeVect*    vec_type() const { assert(_vec_type != NULL, ""); return _vec_type; };
+  const  TypeInstPtr* box_type() const { assert(_box_type != nullptr, ""); return _box_type; };
+  const  TypeVect*    vec_type() const { assert(_vec_type != nullptr, ""); return _vec_type; };
 
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return _box_type; }
@@ -1695,7 +1695,7 @@ class VectorBoxNode : public Node {
 class VectorBoxAllocateNode : public CallStaticJavaNode {
  public:
   VectorBoxAllocateNode(Compile* C, const TypeInstPtr* vbox_type)
-    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), NULL, NULL) {
+    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), nullptr, nullptr) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }

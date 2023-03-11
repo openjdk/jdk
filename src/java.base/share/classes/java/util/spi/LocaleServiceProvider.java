@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,8 @@ import java.util.Locale;
  * methods of installed providers for the appropriate interface to find one that
  * supports the requested locale. If such a provider is found, its other
  * methods are called to obtain the requested object or name.  When checking
- * whether a locale is supported, the <a href="../Locale.html#def_extensions">
- * locale's extensions</a> are ignored by default. (If locale's extensions should
+ * whether a locale is supported, the {@linkplain Locale##def_extensions
+ * locale's extensions} are ignored by default. (If locale's extensions should
  * also be checked, the {@code isSupportedLocale} method must be overridden.)
  * If neither the Java runtime environment itself nor an installed provider
  * supports the requested locale, the methods go through a list of candidate
@@ -175,23 +175,22 @@ public abstract class LocaleServiceProvider {
     }
 
     /**
-     * Returns an array of all locales for which this locale service provider
-     * can provide localized objects or names. This information is used to
-     * compose {@code getAvailableLocales()} values of the locale-dependent
-     * services, such as {@code DateFormat.getAvailableLocales()}.
+     * {@return an array of all locales for which this locale service provider
+     * can provide localized objects or names}
+     *
+     * This information is used to compose {@code getAvailableLocales()}
+     * values of the locale-dependent services, such as
+     * {@code DateFormat.getAvailableLocales()}.
      *
      * <p>The array returned by this method should not include two or more
      * {@code Locale} objects only differing in their extensions.
-     *
-     * @return An array of all locales for which this locale service provider
-     * can provide localized objects or names.
      */
     public abstract Locale[] getAvailableLocales();
 
     /**
      * Returns {@code true} if the given {@code locale} is supported by
      * this locale service provider. The given {@code locale} may contain
-     * <a href="../Locale.html#def_extensions">extensions</a> that should be
+     * {@linkplain Locale##def_extensions extensions} that should be
      * taken into account for the support determination.
      *
      * <p>The default implementation returns {@code true} if the given {@code locale}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -505,7 +505,20 @@ class Address {
   }
 
   bool uses(Register reg) const {
-    return base() == reg || index() == reg;
+    switch (_mode) {
+    case literal:
+    case no_mode:
+      return false;
+    case base_plus_offset:
+    case base_plus_offset_reg:
+    case pre:
+    case post:
+    case post_reg:
+      return base() == reg || index() == reg;
+    default:
+      ShouldNotReachHere();
+      return false;
+    }
   }
 
   address target() const {
@@ -2640,12 +2653,6 @@ template<typename R, typename... Rx>
   INSN(cnt,    0, 0b100000010110, 0); // accepted arrangements: T8B, T16B
   INSN(uaddlp, 1, 0b100000001010, 2); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(uaddlv, 1, 0b110000001110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
-  // Zero compare.
-  INSN(cmeq,   0, 0b100000100110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
-  INSN(cmge,   1, 0b100000100010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
-  INSN(cmgt,   0, 0b100000100010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
-  INSN(cmle,   1, 0b100000100110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
-  INSN(cmlt,   0, 0b100000101010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
 
 #undef INSN
 
@@ -3176,6 +3183,48 @@ public:
 #undef MSG
 
 #undef INSN
+
+  // AdvSIMD compare with zero (vector)
+  void cm(Condition cond, FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
+    starti;
+    assert(T != T1Q && T != T1D, "invalid arrangement");
+    int cond_op;
+    switch (cond) {
+      case EQ: cond_op = 0b001; break;
+      case GE: cond_op = 0b100; break;
+      case GT: cond_op = 0b000; break;
+      case LE: cond_op = 0b101; break;
+      case LT: cond_op = 0b010; break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+
+    f(0, 31), f((int)T & 1, 30), f((cond_op >> 2) & 1, 29);
+    f(0b01110, 28, 24), f((int)T >> 1, 23, 22), f(0b10000010, 21, 14);
+    f(cond_op & 0b11, 13, 12), f(0b10, 11, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
+  // AdvSIMD Floating-point compare with zero (vector)
+  void fcm(Condition cond, FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
+    starti;
+    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+    int cond_op;
+    switch (cond) {
+      case EQ: cond_op = 0b010; break;
+      case GT: cond_op = 0b000; break;
+      case GE: cond_op = 0b001; break;
+      case LE: cond_op = 0b011; break;
+      case LT: cond_op = 0b100; break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+
+    f(0, 31), f((int)T & 1, 30), f(cond_op & 1, 29), f(0b011101, 28, 23);
+    f(((int)(T >> 1) & 1), 22), f(0b10000011, 21, 14);
+    f((cond_op >> 1) & 0b11, 13, 12), f(0b10, 11, 10), rf(Vn, 5), rf(Vd, 0);
+  }
 
   void ext(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index)
   {
@@ -3930,9 +3979,29 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
     starti;
     assert(T_src != B && T_dst != B && T_src != Q && T_dst != Q &&
            T_src != T_dst, "invalid register variant");
-    guarantee(T_src != H && T_dst != H, "half-precision unsupported");
-    f(0b01100101, 31, 24), f(0b11, 23, 22), f(0b0010, 21, 18);
-    f(T_dst, 17, 16), f(0b101, 15, 13);
+    // The encodings of fields op1 (bits 17-16) and op2 (bits 23-22)
+    // depend on T_src and T_dst as given below -
+    // +-----+------+---------------------------------------------+
+    // | op2 | op1  |             Instruction Details             |
+    // +-----+------+---------------------------------------------+
+    // |  10 |  01  | FCVT - half-precision to single-precision   |
+    // |  11 |  01  | FCVT - half-precision to double-precision   |
+    // |  10 |  00  | FCVT - single-precision to half-precision   |
+    // |  11 |  11  | FCVT - single-precision to double-precision |
+    // |  11 |  00  | FCVT - double-preciison to half-precision   |
+    // |  11 |  10  | FCVT - double-precision to single-precision |
+    // +-----+------+---+-----------------------------------------+
+    int op1 = 0b00;
+    int op2 = (T_src == D || T_dst == D) ? 0b11 : 0b10;
+    if (T_src == H) {
+      op1 = 0b01;
+    } else if (T_dst == S) {
+      op1 = 0b10;
+    } else if (T_dst == D) {
+      op1 = 0b11;
+    }
+    f(0b01100101, 31, 24), f(op2, 23, 22), f(0b0010, 21, 18);
+    f(op1, 17, 16), f(0b101, 15, 13);
     pgrf(Pg, 10), rf(Zn, 5), rf(Zd, 0);
   }
 

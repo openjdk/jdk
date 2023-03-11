@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@
   static_field(CompilerToVM::Data,             cardtable_start_address,                CardTable::CardValue*)                        \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
-  static_field(CompilerToVM::Data,             vm_page_size,                           int)                                          \
+  static_field(CompilerToVM::Data,             vm_page_size,                           size_t)                                       \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             sizeof_vtableEntry,                     int)                                          \
   static_field(CompilerToVM::Data,             sizeof_ExceptionTableElement,           int)                                          \
@@ -158,9 +158,9 @@
                                                                                                                                      \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
-  nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
-  nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
-  nonstatic_field(InstanceKlass,               _misc_status._flags,                           u2)                                    \
+  volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
+  volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
+  nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
@@ -270,8 +270,6 @@
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
                                                                                                                                      \
-  static_field(os,                             _polling_page,                                 address)                               \
-                                                                                                                                     \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \
   static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
@@ -319,6 +317,7 @@
   static_field(StubRoutines,                _md5_implCompress,                                address)                               \
   static_field(StubRoutines,                _md5_implCompressMB,                              address)                               \
   static_field(StubRoutines,                _chacha20Block,                                   address)                               \
+  static_field(StubRoutines,                _poly1305_processBlocks,                          address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompress,                             address)                               \
@@ -344,6 +343,15 @@
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
+  JFR_ONLY(nonstatic_field(Thread,          _jfr_thread_local,                                JfrThreadLocal))                       \
+                                                                                                                                     \
+  static_field(java_lang_Thread,            _tid_offset,                                      int)                                   \
+  JFR_ONLY(static_field(java_lang_Thread,   _jfr_epoch_offset,                                int))                                  \
+                                                                                                                                     \
+  JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_id,                                      traceid))                              \
+  JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_epoch,                                   u2))                                   \
+  JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread_excluded,                                bool))                                 \
+  JFR_ONLY(nonstatic_field(JfrThreadLocal,  _vthread,                                         bool))                                 \
                                                                                                                                      \
   nonstatic_field(ThreadLocalAllocBuffer,   _start,                                           HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,   _top,                                             HeapWord*)                             \
@@ -653,8 +661,8 @@
   /* InstanceKlass _misc_flags */                                         \
   /*********************************/                                     \
                                                                           \
-  declare_constant(InstanceKlassMiscStatus::_misc_has_nonstatic_concrete_methods)   \
-  declare_constant(InstanceKlassMiscStatus::_misc_declares_nonstatic_concrete_methods) \
+  declare_constant(InstanceKlassFlags::_misc_has_nonstatic_concrete_methods)   \
+  declare_constant(InstanceKlassFlags::_misc_declares_nonstatic_concrete_methods) \
                                                                           \
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \

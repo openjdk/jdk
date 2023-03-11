@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,13 @@ import java.nio.channels.UnsupportedAddressTypeException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
+import java.util.Objects;
 
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
 import sun.security.action.GetPropertyAction;
 
 public class Net {
-
     private Net() { }
 
     // unspecified protocol family
@@ -65,52 +65,42 @@ public class Net {
     };
 
     // set to true if exclusive binding is on for Windows
-    private static final boolean exclusiveBind;
+    private static final boolean EXCLUSIVE_BIND;
 
     // set to true if the fast tcp loopback should be enabled on Windows
-    private static final boolean fastLoopback;
+    private static final boolean FAST_LOOPBACK;
 
     // -- Miscellaneous utilities --
 
-    private static volatile boolean checkedIPv6;
-    private static volatile boolean isIPv6Available;
-    private static volatile boolean checkedReusePort;
-    private static volatile boolean isReusePortAvailable;
+    private static final boolean IPV6_AVAILABLE;
+    private static final boolean SO_REUSEPORT_AVAILABLE;
 
     /**
      * Tells whether dual-IPv4/IPv6 sockets should be used.
      */
     static boolean isIPv6Available() {
-        if (!checkedIPv6) {
-            isIPv6Available = isIPv6Available0();
-            checkedIPv6 = true;
-        }
-        return isIPv6Available;
+        return IPV6_AVAILABLE;
     }
 
     /**
      * Tells whether SO_REUSEPORT is supported.
      */
     static boolean isReusePortAvailable() {
-        if (!checkedReusePort) {
-            isReusePortAvailable = isReusePortAvailable0();
-            checkedReusePort = true;
-        }
-        return isReusePortAvailable;
+        return SO_REUSEPORT_AVAILABLE;
     }
 
     /**
      * Returns true if exclusive binding is on
      */
     static boolean useExclusiveBind() {
-        return exclusiveBind;
+        return EXCLUSIVE_BIND;
     }
 
     /**
      * Tells whether both IPV6_XXX and IP_XXX socket options should be set on
      * IPv6 sockets. On some kernels, both IPV6_XXX and IP_XXX socket options
-     * need to be set so that the settings are effective for IPv4 multicast
-     * datagrams sent using the socket.
+     * need to be set so that the settings are effective for IPv4 connections
+     * and datagrams.
      */
     static boolean shouldSetBothIPv4AndIPv6Options() {
         return shouldSetBothIPv4AndIPv6Options0();
@@ -140,16 +130,14 @@ public class Net {
     }
 
     public static InetSocketAddress checkAddress(SocketAddress sa) {
-        if (sa == null)
-            throw new NullPointerException();
-        if (!(sa instanceof InetSocketAddress))
+        Objects.requireNonNull(sa);
+        if (!(sa instanceof InetSocketAddress isa))
             throw new UnsupportedAddressTypeException(); // ## needs arg
-        InetSocketAddress isa = (InetSocketAddress)sa;
         if (isa.isUnresolved())
             throw new UnresolvedAddressException(); // ## needs arg
         InetAddress addr = isa.getAddress();
         if (!(addr instanceof Inet4Address || addr instanceof Inet6Address))
-            throw new IllegalArgumentException("Invalid address type");
+            throw new IllegalArgumentException("Invalid address type: " + addr.getClass().getName());
         return isa;
     }
 
@@ -164,49 +152,53 @@ public class Net {
     }
 
     static InetSocketAddress asInetSocketAddress(SocketAddress sa) {
-        if (!(sa instanceof InetSocketAddress))
+        if (!(sa instanceof InetSocketAddress isa))
             throw new UnsupportedAddressTypeException();
-        return (InetSocketAddress)sa;
+        return isa;
     }
 
     static void translateToSocketException(Exception x)
         throws SocketException
     {
-        if (x instanceof SocketException)
-            throw (SocketException)x;
+        if (x instanceof SocketException se)
+            throw se;
         Exception nx = x;
         if (x instanceof ClosedChannelException)
-            nx = new SocketException("Socket is closed");
+            nx = newSocketException("Socket is closed");
         else if (x instanceof NotYetConnectedException)
-            nx = new SocketException("Socket is not connected");
+            nx = newSocketException("Socket is not connected");
         else if (x instanceof AlreadyBoundException)
-            nx = new SocketException("Already bound");
+            nx = newSocketException("Already bound");
         else if (x instanceof NotYetBoundException)
-            nx = new SocketException("Socket is not bound yet");
+            nx = newSocketException("Socket is not bound yet");
         else if (x instanceof UnsupportedAddressTypeException)
-            nx = new SocketException("Unsupported address type");
+            nx = newSocketException("Unsupported address type");
         else if (x instanceof UnresolvedAddressException)
-            nx = new SocketException("Unresolved address");
+            nx = newSocketException("Unresolved address");
         else if (x instanceof IOException) {
-            nx = new SocketException(x.getMessage());
+            nx = newSocketException(x.getMessage());
         }
         if (nx != x)
             nx.initCause(x);
 
-        if (nx instanceof SocketException)
-            throw (SocketException)nx;
-        else if (nx instanceof RuntimeException)
-            throw (RuntimeException)nx;
+        if (nx instanceof SocketException se)
+            throw se;
+        else if (nx instanceof RuntimeException re)
+            throw re;
         else
             throw new Error("Untranslated exception", nx);
+    }
+
+    private static SocketException newSocketException(String msg) {
+        return new SocketException(msg);
     }
 
     static void translateException(Exception x,
                                    boolean unknownHostForUnresolved)
         throws IOException
     {
-        if (x instanceof IOException)
-            throw (IOException)x;
+        if (x instanceof IOException ioe)
+            throw ioe;
         // Throw UnknownHostException from here since it cannot
         // be thrown as a SocketException
         if (unknownHostForUnresolved &&
@@ -255,40 +247,40 @@ public class Net {
         return new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
     }
 
-    private static final InetAddress anyLocalInet4Address;
-    private static final InetAddress anyLocalInet6Address;
-    private static final InetAddress inet4LoopbackAddress;
-    private static final InetAddress inet6LoopbackAddress;
+    private static final InetAddress ANY_LOCAL_INET4ADDRESS;
+    private static final InetAddress ANY_LOCAL_INET6ADDRESS;
+    private static final InetAddress INET4_LOOPBACK_ADDRESS;
+    private static final InetAddress INET6_LOOPBACK_ADDRESS;
     static {
         try {
-            anyLocalInet4Address = inet4FromInt(0);
-            assert anyLocalInet4Address instanceof Inet4Address
-                    && anyLocalInet4Address.isAnyLocalAddress();
+            ANY_LOCAL_INET4ADDRESS = inet4FromInt(0);
+            assert ANY_LOCAL_INET4ADDRESS instanceof Inet4Address
+                    && ANY_LOCAL_INET4ADDRESS.isAnyLocalAddress();
 
-            anyLocalInet6Address = InetAddress.getByAddress(new byte[16]);
-            assert anyLocalInet6Address instanceof Inet6Address
-                    && anyLocalInet6Address.isAnyLocalAddress();
+            ANY_LOCAL_INET6ADDRESS = InetAddress.getByAddress(new byte[16]);
+            assert ANY_LOCAL_INET6ADDRESS instanceof Inet6Address
+                    && ANY_LOCAL_INET6ADDRESS.isAnyLocalAddress();
 
-            inet4LoopbackAddress = inet4FromInt(0x7f000001);
-            assert inet4LoopbackAddress instanceof Inet4Address
-                    && inet4LoopbackAddress.isLoopbackAddress();
+            INET4_LOOPBACK_ADDRESS = inet4FromInt(0x7f000001);
+            assert INET4_LOOPBACK_ADDRESS instanceof Inet4Address
+                    && INET4_LOOPBACK_ADDRESS.isLoopbackAddress();
 
             byte[] bytes = new byte[16];
             bytes[15] = 0x01;
-            inet6LoopbackAddress = InetAddress.getByAddress(bytes);
-            assert inet6LoopbackAddress instanceof Inet6Address
-                    && inet6LoopbackAddress.isLoopbackAddress();
+            INET6_LOOPBACK_ADDRESS = InetAddress.getByAddress(bytes);
+            assert INET6_LOOPBACK_ADDRESS instanceof Inet6Address
+                    && INET6_LOOPBACK_ADDRESS.isLoopbackAddress();
         } catch (Exception e) {
             throw new InternalError(e);
         }
     }
 
     static InetAddress inet4LoopbackAddress() {
-        return inet4LoopbackAddress;
+        return INET4_LOOPBACK_ADDRESS;
     }
 
     static InetAddress inet6LoopbackAddress() {
-        return inet6LoopbackAddress;
+        return INET6_LOOPBACK_ADDRESS;
     }
 
     /**
@@ -298,9 +290,9 @@ public class Net {
      */
     static InetAddress anyLocalAddress(ProtocolFamily family) {
         if (family == StandardProtocolFamily.INET) {
-            return anyLocalInet4Address;
+            return ANY_LOCAL_INET4ADDRESS;
         } else if (family == StandardProtocolFamily.INET6) {
-            return anyLocalInet6Address;
+            return ANY_LOCAL_INET6ADDRESS;
         } else {
             throw new IllegalArgumentException();
         }
@@ -317,8 +309,8 @@ public class Net {
                 Enumeration<InetAddress> addrs = interf.getInetAddresses();
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = addrs.nextElement();
-                    if (addr instanceof Inet4Address) {
-                        return (Inet4Address)addr;
+                    if (addr instanceof Inet4Address inet4Address) {
+                        return inet4Address;
                     }
                 }
                 return null;
@@ -338,7 +330,7 @@ public class Net {
             address |= ((addr[0] << 24) & 0xFF000000);
             return address;
         }
-        throw new AssertionError("Should not reach here");
+        throw shouldNotReachHere();
     }
 
     /**
@@ -354,7 +346,7 @@ public class Net {
         try {
             return InetAddress.getByAddress(addr);
         } catch (UnknownHostException uhe) {
-            throw new AssertionError("Should not reach here");
+            throw shouldNotReachHere();
         }
     }
 
@@ -379,12 +371,12 @@ public class Net {
             return address;
         }
 
-        throw new AssertionError("Should not reach here");
+        throw shouldNotReachHere();
     }
 
     // -- Socket options
 
-    static final ExtendedSocketOptions extendedOptions =
+    static final ExtendedSocketOptions EXTENDED_OPTIONS =
             ExtendedSocketOptions.getInstance();
 
     static void setSocketOption(FileDescriptor fd, SocketOption<?> name, Object value)
@@ -404,13 +396,13 @@ public class Net {
         Class<?> type = name.type();
         boolean isIPv6 = (family == StandardProtocolFamily.INET6);
 
-        if (extendedOptions.isOptionSupported(name)) {
-            extendedOptions.setOption(fd, name, value, isIPv6);
+        if (EXTENDED_OPTIONS.isOptionSupported(name)) {
+            EXTENDED_OPTIONS.setOption(fd, name, value, isIPv6);
             return;
         }
 
         if (type != Integer.class && type != Boolean.class)
-            throw new AssertionError("Should not reach here");
+            throw shouldNotReachHere();
 
         // special handling
         if (name == StandardSocketOptions.SO_RCVBUF ||
@@ -455,6 +447,23 @@ public class Net {
         setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg, isIPv6);
     }
 
+    /**
+     * Sets a IPPROTO_IPV6/IPPROTO level socket. Some platforms require both
+     * IPPROTO_IPV6 and IPPROTO socket options to be set when the socket is IPv6.
+     * In that case, the IPPROTO socket option is set on a best effort basis.
+     */
+    static <T> void setIpSocketOption(FileDescriptor fd, ProtocolFamily family,
+                                      SocketOption<T> opt, T value)
+        throws IOException
+    {
+        setSocketOption(fd, family, opt, value);
+        if (family == StandardProtocolFamily.INET6 && shouldSetBothIPv4AndIPv6Options()) {
+            try {
+                setSocketOption(fd, StandardProtocolFamily.INET, opt, value);
+            } catch (IOException ignore) { }
+        }
+    }
+
     static Object getSocketOption(FileDescriptor fd, SocketOption<?> name)
         throws IOException
     {
@@ -466,14 +475,14 @@ public class Net {
     {
         Class<?> type = name.type();
 
-        if (extendedOptions.isOptionSupported(name)) {
+        if (EXTENDED_OPTIONS.isOptionSupported(name)) {
             boolean isIPv6 = (family == StandardProtocolFamily.INET6);
-            return extendedOptions.getOption(fd, name, isIPv6);
+            return EXTENDED_OPTIONS.getOption(fd, name, isIPv6);
         }
 
         // only simple values supported by this method
         if (type != Integer.class && type != Boolean.class)
-            throw new AssertionError("Should not reach here");
+            throw shouldNotReachHere();
 
         // map option name to platform level/name
         OptionKey key = SocketOptionRegistry.findOption(name, family);
@@ -490,10 +499,10 @@ public class Net {
         }
     }
 
-    public static boolean isFastTcpLoopbackRequested() {
+    private static boolean isFastTcpLoopbackRequested() {
         String loopbackProp = GetPropertyAction
                 .privilegedGetProperty("jdk.net.useFastTcpLoopback", "false");
-        return loopbackProp.isEmpty() ? true : Boolean.parseBoolean(loopbackProp);
+        return loopbackProp.isEmpty() || Boolean.parseBoolean(loopbackProp);
     }
 
     // -- Socket operations --
@@ -522,7 +531,7 @@ public class Net {
     static FileDescriptor socket(ProtocolFamily family, boolean stream) throws IOException {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, false, fastLoopback));
+        return IOUtil.newFD(socket0(preferIPv6, stream, false, FAST_LOOPBACK));
     }
 
     static FileDescriptor serverSocket(boolean stream) {
@@ -532,10 +541,10 @@ public class Net {
     static FileDescriptor serverSocket(ProtocolFamily family, boolean stream) {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, true, fastLoopback));
+        return IOUtil.newFD(socket0(preferIPv6, stream, true, FAST_LOOPBACK));
     }
 
-    // Due to oddities SO_REUSEADDR on windows reuse is ignored
+    // Due to oddities SO_REUSEADDR on Windows reuse is ignored
     private static native int socket0(boolean preferIPv6, boolean stream, boolean reuse,
                                       boolean fastLoopback);
 
@@ -553,7 +562,7 @@ public class Net {
         if (addr.isLinkLocalAddress()) {
             addr = IPAddressUtil.toScopedAddress(addr);
         }
-        bind0(fd, preferIPv6, exclusiveBind, addr, port);
+        bind0(fd, preferIPv6, EXCLUSIVE_BIND, addr, port);
     }
 
     private static native void bind0(FileDescriptor fd, boolean preferIPv6,
@@ -655,7 +664,7 @@ public class Net {
     /**
      * Polls a connecting socket to test if the connection has been established.
      *
-     * @apiNote This method is public to allow it be used by code in jdk.sctp.
+     * @apiNote This method is public to allow it to be used by code in jdk.sctp.
      *
      * @param timeout the timeout to wait; 0 to not wait, -1 to wait indefinitely
      * @return true if connected
@@ -821,17 +830,22 @@ public class Net {
             String exclBindProp = GetPropertyAction
                     .privilegedGetProperty("sun.net.useExclusiveBind");
             if (exclBindProp != null) {
-                exclusiveBind = exclBindProp.isEmpty() ?
-                        true : Boolean.parseBoolean(exclBindProp);
-            } else if (availLevel == 1) {
-                exclusiveBind = true;
+                EXCLUSIVE_BIND = exclBindProp.isEmpty() || Boolean.parseBoolean(exclBindProp);
             } else {
-                exclusiveBind = false;
+                EXCLUSIVE_BIND = (availLevel == 1);
             }
         } else {
-            exclusiveBind = false;
+            EXCLUSIVE_BIND = false;
         }
 
-        fastLoopback = isFastTcpLoopbackRequested();
+        FAST_LOOPBACK = isFastTcpLoopbackRequested();
+
+        IPV6_AVAILABLE = isIPv6Available0();
+        SO_REUSEPORT_AVAILABLE = isReusePortAvailable0();
     }
+
+    private static AssertionError shouldNotReachHere() {
+        return new AssertionError("Should not reach here");
+    }
+
 }

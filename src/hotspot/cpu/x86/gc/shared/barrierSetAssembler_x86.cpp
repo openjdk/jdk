@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,9 +195,116 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       Register dst,
+                                       Address src,
+                                       Register tmp) {
+  assert(bytes <= 8, "can only deal with non-vector registers");
+  switch (bytes) {
+  case 1:
+    __ movb(dst, src);
+    break;
+  case 2:
+    __ movw(dst, src);
+    break;
+  case 4:
+    __ movl(dst, src);
+    break;
+  case 8:
+#ifdef _LP64
+    __ movq(dst, src);
+#else
+    fatal("No support for 8 bytes copy");
+#endif
+    break;
+  default:
+    fatal("Unexpected size");
+  }
+#ifdef _LP64
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ decode_heap_oop(dst);
+  }
+#endif
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        Register src,
+                                        Register tmp) {
+#ifdef _LP64
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ encode_heap_oop(src);
+  }
+#endif
+  assert(bytes <= 8, "can only deal with non-vector registers");
+  switch (bytes) {
+  case 1:
+    __ movb(dst, src);
+    break;
+  case 2:
+    __ movw(dst, src);
+    break;
+  case 4:
+    __ movl(dst, src);
+    break;
+  case 8:
+#ifdef _LP64
+    __ movq(dst, src);
+#else
+    fatal("No support for 8 bytes copy");
+#endif
+    break;
+  default:
+    fatal("Unexpected size");
+  }
+}
+
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       XMMRegister dst,
+                                       Address src,
+                                       Register tmp,
+                                       XMMRegister xmm_tmp) {
+  assert(bytes > 8, "can only deal with vector registers");
+  if (bytes == 16) {
+    __ movdqu(dst, src);
+  } else if (bytes == 32) {
+    __ vmovdqu(dst, src);
+  } else {
+    fatal("No support for >32 bytes copy");
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        XMMRegister src,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        XMMRegister xmm_tmp) {
+  assert(bytes > 8, "can only deal with vector registers");
+  if (bytes == 16) {
+    __ movdqu(dst, src);
+  } else if (bytes == 32) {
+    __ vmovdqu(dst, src);
+  } else {
+    fatal("No support for >32 bytes copy");
+  }
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  __ clear_jweak_tag(obj);
+  __ clear_jobject_tag(obj);
   __ movptr(obj, Address(obj, 0));
 }
 
@@ -365,4 +472,19 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ pop(tmp2);
   __ pop(tmp1);
 #endif
+}
+
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if the oop is in the right area of memory
+  __ movptr(tmp1, obj);
+  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+  __ andptr(tmp1, tmp2);
+  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  __ cmpptr(tmp1, tmp2);
+  __ jcc(Assembler::notZero, error);
+
+  // make sure klass is 'reasonable', which is not zero.
+  __ load_klass(obj, obj, tmp1);  // get klass
+  __ testptr(obj, obj);
+  __ jcc(Assembler::zero, error); // if klass is NULL it is broken
 }

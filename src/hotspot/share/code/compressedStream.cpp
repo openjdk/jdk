@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "code/compressedStream.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/moveBits.hpp"
+#include "utilities/reverse_bits.hpp"
 
 jint CompressedReadStream::read_signed_int() {
   return UNSIGNED5::decode_sign(read_int());
@@ -72,7 +72,7 @@ jlong CompressedReadStream::read_long() {
   return jlong_from(high, low);
 }
 
-CompressedWriteStream::CompressedWriteStream(int initial_size) : CompressedStream(NULL, 0) {
+CompressedWriteStream::CompressedWriteStream(int initial_size) : CompressedStream(nullptr, 0) {
   _buffer   = NEW_RESOURCE_ARRAY(u_char, initial_size);
   _size     = initial_size;
   _position = 0;

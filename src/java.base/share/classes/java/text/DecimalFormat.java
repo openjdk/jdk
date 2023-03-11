@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code DecimalFormat}. If you need to customize the format object, do
  * something like this:
  *
- * <blockquote><pre>
- * NumberFormat f = NumberFormat.getInstance(loc);
- * if (f instanceof DecimalFormat) {
- *     ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
+ * <blockquote>{@snippet lang=java :
+ * NumberFormat numFormat = NumberFormat.getInstance(loc);
+ * if (numFormat instanceof DecimalFormat decFormat) {
+ *     decFormat.setDecimalSeparatorAlwaysShown(true);
  * }
- * </pre></blockquote>
+ * }</blockquote>
  *
  * <p>A {@code DecimalFormat} comprises a <em>pattern</em> and a set of
  * <em>symbols</em>.  The pattern may be set directly using
@@ -338,31 +338,27 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h3>Example</h3>
  *
- * <blockquote><pre><strong>{@code
+ * <blockquote>{@snippet lang=java :
  * // Print out a number using the localized number, integer, currency,
- * // and percent format for each locale}</strong>{@code
+ * // and percent format for each locale
  * Locale[] locales = NumberFormat.getAvailableLocales();
  * double myNumber = -1234.56;
  * NumberFormat form;
  * for (int j = 0; j < 4; ++j) {
  *     System.out.println("FORMAT");
- *     for (int i = 0; i < locales.length; ++i) {
- *         if (locales[i].getCountry().length() == 0) {
- *            continue; // Skip language-only locales
+ *     for (Locale locale : locales) {
+ *         if (locale.getCountry().length() == 0) {
+ *             continue; // Skip language-only locales
  *         }
- *         System.out.print(locales[i].getDisplayName());
- *         switch (j) {
- *         case 0:
- *             form = NumberFormat.getInstance(locales[i]); break;
- *         case 1:
- *             form = NumberFormat.getIntegerInstance(locales[i]); break;
- *         case 2:
- *             form = NumberFormat.getCurrencyInstance(locales[i]); break;
- *         default:
- *             form = NumberFormat.getPercentInstance(locales[i]); break;
- *         }
- *         if (form instanceof DecimalFormat) {
- *             System.out.print(": " + ((DecimalFormat) form).toPattern());
+ *         System.out.print(locale.getDisplayName());
+ *         form = switch (j) {
+ *             case 0 -> NumberFormat.getInstance(locale);
+ *             case 1 -> NumberFormat.getIntegerInstance(locale);
+ *             case 2 -> NumberFormat.getCurrencyInstance(locale);
+ *             default -> NumberFormat.getPercentInstance(locale);
+ *         };
+ *         if (form instanceof DecimalFormat decForm) {
+ *             System.out.print(": " + decForm.toPattern());
  *         }
  *         System.out.print(" -> " + form.format(myNumber));
  *         try {
@@ -370,7 +366,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *         } catch (ParseException e) {}
  *     }
  * }
- * }</pre></blockquote>
+ * }</blockquote>
  *
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat
@@ -3653,13 +3649,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
-        maximumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
-        super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-            DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
+        maximumIntegerDigits = Math.clamp(newValue, 0, MAXIMUM_INTEGER_DIGITS);
+        super.setMaximumIntegerDigits(Math.min(maximumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         if (minimumIntegerDigits > maximumIntegerDigits) {
             minimumIntegerDigits = maximumIntegerDigits;
-            super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-                DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
+            super.setMinimumIntegerDigits(Math.min(minimumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3674,13 +3668,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
-        minimumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
-        super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-            DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
+        minimumIntegerDigits = Math.clamp(newValue, 0, MAXIMUM_INTEGER_DIGITS);
+        super.setMinimumIntegerDigits(Math.min(minimumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         if (minimumIntegerDigits > maximumIntegerDigits) {
             maximumIntegerDigits = minimumIntegerDigits;
-            super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-                DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
+            super.setMaximumIntegerDigits(Math.min(maximumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3695,13 +3687,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
-        maximumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
-        super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-            DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
+        maximumFractionDigits = Math.clamp(newValue, 0, MAXIMUM_FRACTION_DIGITS);
+        super.setMaximumFractionDigits(Math.min(maximumFractionDigits, DOUBLE_FRACTION_DIGITS));
         if (minimumFractionDigits > maximumFractionDigits) {
             minimumFractionDigits = maximumFractionDigits;
-            super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-                DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
+            super.setMinimumFractionDigits(Math.min(minimumFractionDigits, DOUBLE_FRACTION_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3716,13 +3706,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
-        minimumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
-        super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-            DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
+        minimumFractionDigits = Math.clamp(newValue, 0, MAXIMUM_FRACTION_DIGITS);
+        super.setMinimumFractionDigits(Math.min(minimumFractionDigits, DOUBLE_FRACTION_DIGITS));
         if (minimumFractionDigits > maximumFractionDigits) {
             maximumFractionDigits = minimumFractionDigits;
-            super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-                DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
+            super.setMaximumFractionDigits(Math.min(maximumFractionDigits, DOUBLE_FRACTION_DIGITS));
         }
         fastPathCheckNeeded = true;
     }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,9 @@ serviceability/sa/TestJhsdbJstackMixed.java                   8248912   generic-
 serviceability/sa/ClhsdbPstack.java#process                   8248912   generic-all
 serviceability/sa/ClhsdbPstack.java#core                      8248912   generic-all
 
+serviceability/sa/TestSysProps.java                           8302055   generic-all
+
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
 
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded002/TestDescription.java 8298302 generic-all
-vmTestbase/nsk/sysdict/vm/stress/chain/chain008/chain008.java 8298596 linux-x64
+vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 linux-x64

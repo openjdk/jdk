@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,62 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 }
 
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       Register dst,
+                                       Address src,
+                                       Register tmp) {
+  if (bytes == 1) {
+    __ lbu(dst, src);
+  } else if (bytes == 2) {
+    __ lhu(dst, src);
+  } else if (bytes == 4) {
+    __ lwu(dst, src);
+  } else if (bytes == 8) {
+    __ ld(dst, src);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ decode_heap_oop(dst);
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        Register src,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        Register tmp3) {
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ encode_heap_oop(src);
+  }
+
+  if (bytes == 1) {
+    __ sb(src, dst);
+  } else if (bytes == 2) {
+    __ sh(src, dst);
+  } else if (bytes == 4) {
+    __ sw(src, dst);
+  } else if (bytes == 8) {
+    __ sd(src, dst);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andi(obj, obj, ~JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(JNIHandles::tag_mask == 3);
+  __ andi(obj, obj, ~JNIHandles::tag_mask);
   __ ld(obj, Address(obj, 0));             // *obj
 }
 
@@ -307,4 +358,18 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 
   __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
   __ bind(method_live);
+}
+
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if the oop is in the right area of memory
+  __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
+  __ andr(tmp1, obj, tmp2);
+  __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
+
+  // Compare tmp1 and tmp2.
+  __ bne(tmp1, tmp2, error);
+
+  // Make sure klass is 'reasonable', which is not zero.
+  __ load_klass(obj, obj, tmp1); // get klass
+  __ beqz(obj, error);           // if klass is NULL it is broken
 }

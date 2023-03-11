@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -300,6 +300,10 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   return entry_point;
 }
+
+// Not supported
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
@@ -602,7 +606,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const int overhead_size =
     -(frame::interpreter_frame_initial_sp_offset * wordSize) + entry_size;
 
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
 
   Label after_frame_check;
 
@@ -746,15 +750,18 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(xmethod, Address(sp, 7 * wordSize));
   __ sd(ProfileInterpreter ? t0 : zr, Address(sp, 6 * wordSize));
 
+  __ sd(ra, Address(sp, 11 * wordSize));
+  __ sd(fp, Address(sp, 10 * wordSize));
+  __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
+
   __ ld(xcpool, Address(xmethod, Method::const_offset()));
   __ ld(xcpool, Address(xcpool, ConstMethod::constants_offset()));
   __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset_in_bytes()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
-  __ sd(xlocals, Address(sp, 2 * wordSize));
-
-  __ sd(ra, Address(sp, 11 * wordSize));
-  __ sd(fp, Address(sp, 10 * wordSize));
-  __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
+  __ sub(t0, xlocals, fp);
+  __ srli(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
+  // Store relativized xlocals, see frame::interpreter_frame_locals().
+  __ sd(t0, Address(sp, 2 * wordSize));
 
   // set sender sp
   // leave last_sp as null
@@ -776,8 +783,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     // Move SP out of the way
     __ mv(sp, t0);
   } else {
-    __ sd(sp, Address(sp, 5 * wordSize));
+    // Make sure there is room for the exception oop pushed in case method throws
+    // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
+    __ sub(t0, sp, 2 * wordSize);
+    __ sd(t0, Address(sp, 5 * wordSize));
     __ sd(zr, Address(sp, 4 * wordSize));
+    __ mv(sp, t0);
   }
 }
 
@@ -882,7 +893,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.
 
   const int shadow_zone_size = checked_cast<int>(StackOverflow::stack_shadow_zone_size());
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   const int n_shadow_pages = shadow_zone_size / page_size;
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ void MethodLiveness::init_basic_blocks() {
   ciMethodBlocks *mblocks = method()->get_method_blocks();
 
   // Create an array to store the bci->BasicBlock mapping.
-  _block_map = new (arena()) GrowableArray<BasicBlock*>(arena(), method_len, method_len, NULL);
+  _block_map = new (arena()) GrowableArray<BasicBlock*>(arena(), method_len, method_len, nullptr);
 
   _block_count = mblocks->num_blocks();
   _block_list = (BasicBlock **) arena()->Amalloc(sizeof(BasicBlock *) * _block_count);
@@ -132,7 +132,7 @@ void MethodLiveness::init_basic_blocks() {
       int limit = current_block->limit_bci();
       if (limit < method_len) {
         BasicBlock *next = _block_map->at(limit);
-        assert( next != NULL, "must be a block immediately following this one.");
+        assert( next != nullptr, "must be a block immediately following this one.");
         next->add_normal_predecessor(current_block);
       }
       continue;
@@ -143,7 +143,7 @@ void MethodLiveness::init_basic_blocks() {
 
     // Now we need to interpret the instruction's effect
     // on control flow.
-    assert (current_block != NULL, "we must have a current block");
+    assert (current_block != nullptr, "we must have a current block");
     switch (code) {
       case Bytecodes::_ifeq:
       case Bytecodes::_ifne:
@@ -164,21 +164,21 @@ void MethodLiveness::init_basic_blocks() {
         // Two way branch.  Set predecessors at each destination.
         if (bytes.next_bci() < method_len) {
           dest = _block_map->at(bytes.next_bci());
-          assert(dest != NULL, "must be a block immediately following this one.");
+          assert(dest != nullptr, "must be a block immediately following this one.");
           dest->add_normal_predecessor(current_block);
         }
         dest = _block_map->at(bytes.get_dest());
-        assert(dest != NULL, "branch destination must start a block.");
+        assert(dest != nullptr, "branch destination must start a block.");
         dest->add_normal_predecessor(current_block);
         break;
       case Bytecodes::_goto:
         dest = _block_map->at(bytes.get_dest());
-        assert(dest != NULL, "branch destination must start a block.");
+        assert(dest != nullptr, "branch destination must start a block.");
         dest->add_normal_predecessor(current_block);
         break;
       case Bytecodes::_goto_w:
         dest = _block_map->at(bytes.get_far_dest());
-        assert(dest != NULL, "branch destination must start a block.");
+        assert(dest != nullptr, "branch destination must start a block.");
         dest->add_normal_predecessor(current_block);
         break;
       case Bytecodes::_tableswitch:
@@ -188,11 +188,11 @@ void MethodLiveness::init_basic_blocks() {
           int len = tableswitch.length();
 
           dest = _block_map->at(bci + tableswitch.default_offset());
-          assert(dest != NULL, "branch destination must start a block.");
+          assert(dest != nullptr, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
           while (--len >= 0) {
             dest = _block_map->at(bci + tableswitch.dest_offset_at(len));
-            assert(dest != NULL, "branch destination must start a block.");
+            assert(dest != nullptr, "branch destination must start a block.");
             dest->add_normal_predecessor(current_block);
           }
           break;
@@ -205,12 +205,12 @@ void MethodLiveness::init_basic_blocks() {
           int npairs = lookupswitch.number_of_pairs();
 
           dest = _block_map->at(bci + lookupswitch.default_offset());
-          assert(dest != NULL, "branch destination must start a block.");
+          assert(dest != nullptr, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
           while(--npairs >= 0) {
             LookupswitchPair pair = lookupswitch.pair_at(npairs);
             dest = _block_map->at( bci + pair.offset());
-            assert(dest != NULL, "branch destination must start a block.");
+            assert(dest != nullptr, "branch destination must start a block.");
             dest->add_normal_predecessor(current_block);
           }
           break;
@@ -220,20 +220,20 @@ void MethodLiveness::init_basic_blocks() {
         {
           assert(bytes.is_wide()==false, "sanity check");
           dest = _block_map->at(bytes.get_dest());
-          assert(dest != NULL, "branch destination must start a block.");
+          assert(dest != nullptr, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
           BasicBlock *jsrExit = _block_map->at(current_block->limit_bci());
-          assert(jsrExit != NULL, "jsr return bci must start a block.");
+          assert(jsrExit != nullptr, "jsr return bci must start a block.");
           jsr_exit_list->append(jsrExit);
           break;
         }
       case Bytecodes::_jsr_w:
         {
           dest = _block_map->at(bytes.get_far_dest());
-          assert(dest != NULL, "branch destination must start a block.");
+          assert(dest != nullptr, "branch destination must start a block.");
           dest->add_normal_predecessor(current_block);
           BasicBlock *jsrExit = _block_map->at(current_block->limit_bci());
-          assert(jsrExit != NULL, "jsr return bci must start a block.");
+          assert(jsrExit != nullptr, "jsr return bci must start a block.");
           jsr_exit_list->append(jsrExit);
           break;
         }
@@ -325,7 +325,7 @@ void MethodLiveness::propagate_liveness() {
   // blocks, which should be decent for quick convergence (with the
   // possible exception of exception handlers, which are all created
   // early).
-  _work_list = NULL;
+  _work_list = nullptr;
   for (int i = 0; i < num_blocks; i++) {
     block = _block_list[i];
     block->set_next(_work_list);
@@ -334,7 +334,7 @@ void MethodLiveness::propagate_liveness() {
   }
 
 
-  while ((block = work_list_get()) != NULL) {
+  while ((block = work_list_get()) != nullptr) {
     block->propagate(this);
   }
 }
@@ -349,7 +349,7 @@ void MethodLiveness::work_list_add(BasicBlock *block) {
 
 MethodLiveness::BasicBlock *MethodLiveness::work_list_get() {
   BasicBlock *block = _work_list;
-  if (block != NULL) {
+  if (block != nullptr) {
     block->set_on_work_list(false);
     _work_list = block->next();
   }
@@ -374,10 +374,10 @@ MethodLivenessResult MethodLiveness::get_liveness_at(int entry_bci) {
     // We may not be at the block start, so search backwards to find the block
     // containing bci.
     int t = bci;
-    while (block == NULL && t > 0) {
+    while (block == nullptr && t > 0) {
      block = _block_map->at(--t);
     }
-    guarantee(block != NULL, "invalid bytecode index; must be instruction index");
+    guarantee(block != nullptr, "invalid bytecode index; must be instruction index");
     assert(bci >= block->start_bci() && bci < block->limit_bci(), "block must contain bci.");
 
     answer = block->get_liveness_at(method(), bci);
@@ -411,9 +411,9 @@ MethodLiveness::BasicBlock::BasicBlock(MethodLiveness *analyzer, int start, int 
   _start_bci = start;
   _limit_bci = limit;
   _normal_predecessors =
-    new (analyzer->arena()) GrowableArray<MethodLiveness::BasicBlock*>(analyzer->arena(), 5, 0, NULL);
+    new (analyzer->arena()) GrowableArray<MethodLiveness::BasicBlock*>(analyzer->arena(), 5, 0, nullptr);
   _exception_predecessors =
-    new (analyzer->arena()) GrowableArray<MethodLiveness::BasicBlock*>(analyzer->arena(), 5, 0, NULL);
+    new (analyzer->arena()) GrowableArray<MethodLiveness::BasicBlock*>(analyzer->arena(), 5, 0, nullptr);
 }
 
 

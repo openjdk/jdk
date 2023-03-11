@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,18 +67,18 @@ class LogOutputList {
  public:
   LogOutputList() : _active_readers(0) {
     for (size_t i = 0; i < LogLevel::Count; i++) {
-      _level_start[i] = NULL;
+      _level_start[i] = nullptr;
     }
   }
 
   // Test if the outputlist has an output for the given level.
   bool is_level(LogLevelType level) const {
-    return _level_start[level] != NULL;
+    return _level_start[level] != nullptr;
   }
 
   LogLevelType level_for(const LogOutput* output) const {
     LogOutputNode* node = this->find(output);
-    if (node == NULL) {
+    if (node == nullptr) {
       return LogLevel::Off;
     }
     return node->_level;
@@ -142,7 +142,7 @@ class LogOutputList {
   }
 
   LogOutputNode* end() const {
-    return NULL;
+    return nullptr;
   }
 };
 

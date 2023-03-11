@@ -190,6 +190,8 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
+    exports jdk.internal.classfile to
+        jdk.jlink;
     exports jdk.internal.org.objectweb.asm to
         jdk.jartool,
         jdk.jfr,
@@ -272,6 +274,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.random to
         jdk.random;
+    exports jdk.internal.util to
+        java.desktop;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;
