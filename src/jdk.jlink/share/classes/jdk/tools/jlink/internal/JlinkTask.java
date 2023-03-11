@@ -922,8 +922,9 @@ public class JlinkTask {
                         "ppc64le", "riscv32", "riscv64" -> ByteOrder.LITTLE_ENDIAN;
                 case "m68k", "mips",
                         "mips64", "ppc",
-                        "s390", "s390x",
-                        "sh", "sparc", "sparcv9" -> ByteOrder.BIG_ENDIAN;
+                        "ppc64", "s390",
+                        "s390x", "sh",
+                        "sparc", "sparcv9" -> ByteOrder.BIG_ENDIAN;
                 default -> ByteOrder.nativeOrder();
             };
         }
