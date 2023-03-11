@@ -116,11 +116,11 @@ import static jdk.internal.net.http.frame.SettingsFrame.*;
  */
 class Http2Connection  {
 
-    final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
+    final Logger debug = Utils.getDebugLogger(this::dbgString);
     static final Logger DEBUG_LOGGER =
-            Utils.getDebugLogger("Http2Connection"::toString, Utils.DEBUG);
+            Utils.getDebugLogger("Http2Connection"::toString);
     private final Logger debugHpack =
-            Utils.getHpackLogger(this::dbgString, Utils.DEBUG_HPACK);
+            Utils.getHpackLogger(this::dbgString);
     static final ByteBuffer EMPTY_TRIGGER = ByteBuffer.allocate(0);
 
     private static final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647

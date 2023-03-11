@@ -813,24 +813,6 @@ var getJibProfilesProfiles = function (input, common, data) {
         }
     });
 
-    // Define the reference implementation profiles. These are basically the same
-    // as the open profiles, but upload artifacts to a different location.
-    common.main_profile_names.forEach(function (name) {
-        var riName = name + "-ri";
-        var riDebugName = riName + common.debug_suffix;
-        var openName = name + common.open_suffix;
-        var openDebugName = openName + common.debug_suffix;
-        profiles[riName] = clone(profiles[openName]);
-        profiles[riDebugName] = clone(profiles[openDebugName]);
-        // Rewrite all remote dirs to "bundles/openjdk/BCL/..."
-        for (artifactName in profiles[riName].artifacts) {
-            var artifact = profiles[riName].artifacts[artifactName];
-            artifact.remote = replaceAll(
-                "\/GPL\/", "/BCL/",
-                (artifact.remote != null ? artifact.remote : artifact.local));
-        }
-    });
-
     // For open profiles, the non-debug jdk bundles, need an "open" prefix on the
     // remote bundle names, forming the word "openjdk". See JDK-8188789.
     common.main_profile_names.forEach(function (name) {
@@ -1066,7 +1048,7 @@ var getJibProfilesDependencies = function (input, common) {
         linux_x64: "gcc11.2.0-OL6.4+1.0",
         macosx: "Xcode12.4+1.1",
         windows_x64: "VS2022-17.1.0+1.1",
-        linux_aarch64: "gcc11.2.0-OL7.6+1.0",
+        linux_aarch64: input.build_cpu == "x64" ? "gcc11.2.0-OL7.6+1.1" : "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0",

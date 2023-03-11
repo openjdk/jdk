@@ -46,7 +46,6 @@ import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
 import com.sun.tools.javac.comp.Check.CheckContext;
@@ -393,7 +392,7 @@ public class Attr extends JCTree.Visitor {
 
     public Type attribImportQualifier(JCImport tree, Env<AttrContext> env) {
         // Attribute qualifying package or class.
-        JCFieldAccess s = (JCFieldAccess)tree.qualid;
+        JCFieldAccess s = tree.qualid;
         return attribTree(s.selected, env,
                           new ResultInfo(tree.staticImport ?
                                          KindSelector.TYP : KindSelector.TYP_PCK,
@@ -506,9 +505,9 @@ public class Attr extends JCTree.Visitor {
         }
 
         /**
-         * Should {@link Attr#attribTree} use the {@ArgumentAttr} visitor instead of this one?
+         * Should {@link Attr#attribTree} use the {@code ArgumentAttr} visitor instead of this one?
          * @param tree The tree to be type-checked.
-         * @return true if {@ArgumentAttr} should be used.
+         * @return true if {@code ArgumentAttr} should be used.
          */
         protected boolean needsArgumentAttr(JCTree tree) { return false; }
 
@@ -5210,7 +5209,7 @@ public class Attr extends JCTree.Visitor {
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
         Type underlyingType = attribType(tree.underlyingType, env);
-        Type annotatedType = underlyingType.annotatedType(Annotations.TO_BE_SET);
+        Type annotatedType = underlyingType.preannotatedType();
 
         if (!env.info.isNewClass)
             annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);
@@ -5563,6 +5562,7 @@ public class Attr extends JCTree.Visitor {
             // yet different return types).  (JLS 8.4.8.3)
             chk.checkCompatibleSupertypes(tree.pos(), c.type);
             chk.checkDefaultMethodClashes(tree.pos(), c.type);
+            chk.checkPotentiallyAmbiguousOverloads(tree, c.type);
         }
 
         // Check that class does not import the same parameterized interface
@@ -5659,7 +5659,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         public void visitAnnotation(JCAnnotation tree) {
-            chk.validateTypeAnnotation(tree, false);
+            chk.validateTypeAnnotation(tree, null, false);
             super.visitAnnotation(tree);
         }
         public void visitAnnotatedType(JCAnnotatedType tree) {
@@ -5668,7 +5668,7 @@ public class Attr extends JCTree.Visitor {
             }
         }
         public void visitTypeParameter(JCTypeParameter tree) {
-            chk.validateTypeAnnotations(tree.annotations, true);
+            chk.validateTypeAnnotations(tree.annotations, tree.type.tsym, true);
             scan(tree.bounds);
             // Don't call super.
             // This is needed because above we call validateTypeAnnotation with
@@ -5866,7 +5866,7 @@ public class Attr extends JCTree.Visitor {
             // This method will raise an error for such a type.
             for (JCAnnotation ai : annotations) {
                 if (!ai.type.isErroneous() &&
-                        typeAnnotations.annotationTargetType(ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
+                        typeAnnotations.annotationTargetType(ai, ai.attribute, sym) == TypeAnnotations.AnnotationType.DECLARATION) {
                     log.error(ai.pos(), Errors.AnnotationTypeNotApplicableToType(ai.type));
                 }
             }
