@@ -36,7 +36,9 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -175,11 +177,14 @@ public class EndOfCenValidation {
         }
 
         // Open a FileChannel for writing a sparse file
-        try (FileOutputStream out = new FileOutputStream(zip.toFile())) {
-            FileChannel channel = out.getChannel();
+        EnumSet<StandardOpenOption> options = EnumSet.of(StandardOpenOption.CREATE_NEW,
+                StandardOpenOption.WRITE,
+                StandardOpenOption.SPARSE);
+
+        try (FileChannel channel = FileChannel.open(zip, options)) {
 
             // Write everything up to EOC
-            channel.write(buffer.slice(0, buffer.limit()-ENDHDR));
+            channel.write(buffer.slice(0, buffer.limit() - ENDHDR));
 
             if (inflateCen) {
                 // Inject "empty bytes" to make the actual CEN size match the EOC
