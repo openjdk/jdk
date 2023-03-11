@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -47,9 +46,6 @@ public class JLinkEndianTest {
     private static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
             .orElseThrow(() -> new RuntimeException("jlink tool not found"));
 
-    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
-            .orElseThrow(() -> new RuntimeException("javac tool not found"));
-
     private static final String HELLO_WORLD_APP = """
             public class Hello {
             	public static void main(final String[] args) throws Exception {
@@ -63,7 +59,7 @@ public class JLinkEndianTest {
      * the {@code java} command from the newly created image and verifies that the launched
      * java process works fine without running into errors.
      */
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) throws Throwable {
         final String endian = args.length > 0 ? args[0] : "";
         final Path imageDir = Path.of(".", "8206890", System.currentTimeMillis() + endian);
         // invoke jlink:
@@ -95,61 +91,20 @@ public class JLinkEndianTest {
         if (!Files.isRegularFile(imageFile)) {
             throw new AssertionError(imageFile + " is not a file");
         }
-        // compile a trivial Java class which we will then launch using the newly generated image
-        final Path helloWorldClassFile = compileApp();
         // now launch java from the created image and verify it launches correctly.
-        launchJava(imageDir, helloWorldClassFile, false); // launch without security manager
-        launchJava(imageDir, helloWorldClassFile, true); // launch with security manager
-    }
-
-    private static Path compileApp() throws Exception {
-        final Path tmpDir = Files.createTempDirectory("8206890");
-        final Path helloWorldJavaFile = Path.of(tmpDir.toAbsolutePath().toString(), "Hello.java");
-        // write out the .java file
-        Files.writeString(helloWorldJavaFile, HELLO_WORLD_APP);
-        // now compile it
-        final String[] javacArgs = new String[]{"-d", tmpDir.toAbsolutePath().toString(),
-                helloWorldJavaFile.toAbsolutePath().toString()};
-        final int exitCode = JAVAC_TOOL.run(System.out, System.err, javacArgs);
-        if (exitCode != 0) {
-            throw new AssertionError("Failed to compile hello world app");
-        }
-        final Path helloClassFile = Path.of(tmpDir.toAbsolutePath().toString(), "Hello.class");
-        if (!Files.exists(helloClassFile)) {
-            throw new AssertionError("Compiled class file is missing at " + helloClassFile);
-        }
-        System.out.println("Compiled Hello.class to " + helloClassFile);
-        // return the Path to the Hello.class file
-        return Path.of(tmpDir.toAbsolutePath().toString(), "Hello.class");
-    }
-
-    private static void launchJava(final Path imageDir, final Path helloWorldClassFile,
-                                   final boolean withSecurityManager)
-            throws Exception {
         // first try "java --version" from that created image
         final Path java = Path.of(imageDir.toAbsolutePath().toString(), "bin", "java");
         final String[] javaVersionCmd = new String[]{java.toAbsolutePath().toString(), "-version"};
-        final String versionOutput = runProcess(javaVersionCmd, null).getStderr();
+        final String versionOutput = runProcess(javaVersionCmd).getStderr();
         System.out.println("java --version from newly created image returned: " + versionOutput);
 
         // now try launching a Java application from the newly created image
-        final String[] helloWorldProcessCmd;
-        if (withSecurityManager) {
-            helloWorldProcessCmd = new String[]{
-                    java.toAbsolutePath().toString(),
-                    "-cp", ".",
-                    "-Djava.security.manager=default",
-                    "Hello"
-            };
-        } else {
-            helloWorldProcessCmd = new String[]{
-                    java.toAbsolutePath().toString(),
-                    "-cp", ".",
-                    "Hello"
-            };
-        }
-        final String helloWorldOutput = runProcess(helloWorldProcessCmd,
-                helloWorldClassFile.getParent().toFile()).getStdout();
+        final Path tmpDir = Files.createTempDirectory("8206890");
+        final Path helloWorldJavaFile = Path.of(tmpDir.toAbsolutePath().toString(), "Hello.java");
+        Files.writeString(helloWorldJavaFile, HELLO_WORLD_APP);
+        final String[] helloWorldProcessCmd = new String[]{java.toAbsolutePath().toString(),
+                helloWorldJavaFile.toAbsolutePath().toString()};
+        final String helloWorldOutput = runProcess(helloWorldProcessCmd).getStdout();
         if (helloWorldOutput == null || !helloWorldOutput.equals("Hello world")) {
             throw new AssertionError("Unexpected output from hello world application: "
                     + helloWorldOutput);
@@ -158,11 +113,9 @@ public class JLinkEndianTest {
 
     // launches a process and asserts that the process exits with exit code 0.
     // returns the OutputAnalyzer instance of the completed process
-    private static OutputAnalyzer runProcess(final String[] processCmd, final File workingDir)
-            throws Exception {
+    private static OutputAnalyzer runProcess(final String[] processCmd) throws Throwable {
         System.out.println("Launching process: " + Arrays.toString(processCmd));
-        final ProcessBuilder pb = new ProcessBuilder(processCmd).directory(workingDir);
-        final OutputAnalyzer oa = ProcessTools.executeProcess(pb);
+        final OutputAnalyzer oa = ProcessTools.executeProcess(processCmd);
         final int exitCode = oa.getExitValue();
         if (exitCode != 0) {
             // dump the stdout and err of the completed process, for debugging

@@ -32,8 +32,6 @@ import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 
 /**
@@ -196,25 +194,16 @@ public final class ImageHeader {
      *
      * @param imageFile The path to the image file
      * @return The ByteOrder if one could be determined. Else null.
+     * @throws IOException If any error occurred reading the contents of the image file.
      */
-    static ByteOrder tryDetectByteOrder(final Path imageFile) {
+    static ByteOrder tryDetectByteOrder(final Path imageFile) throws IOException {
         final byte[] bytes = new byte[Integer.SIZE]; // read only as much as the size of magic bytes
-        @SuppressWarnings("removal")
-        final int numRead = AccessController.doPrivileged(
-                new PrivilegedAction<Integer>() {
-                    @Override
-                    public Integer run() {
-                        try (final InputStream is = Files.newInputStream(imageFile)) {
-                            return is.read(bytes);
-                        } catch (IOException e) {
-                            // ignore
-                            return -1;
-                        }
-                    }
-                });
-        if (numRead != bytes.length) {
-            // not enough bytes to ascertain if this is a jimage
-            return null;
+        try (final InputStream is = Files.newInputStream(imageFile)) {
+            final int numRead = is.read(bytes);
+            if (numRead != bytes.length) {
+                // not enough bytes to ascertain if this is a jimage
+                return null;
+            }
         }
         final ByteBuffer bb = ByteBuffer.wrap(bytes);
         if (bb.getInt() == MAGIC) {
