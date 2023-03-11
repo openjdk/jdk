@@ -83,6 +83,11 @@ public class HtmlLinkFactory extends LinkFactory {
             title = getClassToolTip(typeElement, isTypeLink);
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
+        if (classLinkInfo.context == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
+            // For this kind of link, type parameters are included in the link label
+            // (and obviously not added after the link).
+            label.add(getTypeParameterLinks(classLinkInfo));
+        }
         Set<ElementFlag> flags;
         Element previewTarget;
         boolean showPreview = !classLinkInfo.skipPreview;

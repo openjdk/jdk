@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
@@ -30,7 +31,6 @@
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"
-#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
@@ -372,6 +372,8 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _tenuring_threshold = MaxTenuringThreshold;
   _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
 
+  _ref_processor = nullptr;
+
   _gc_timer = new STWGCTimer();
 
   _gc_tracer = new DefNewTracer();
@@ -615,6 +617,12 @@ void DefNewGeneration::compute_new_size() {
       }
 }
 
+void DefNewGeneration::ref_processor_init() {
+  assert(_ref_processor == nullptr, "a reference processor already exists");
+  assert(!_reserved.is_empty(), "empty generation?");
+  _span_based_discoverer.set_span(_reserved);
+  _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
+}
 
 size_t DefNewGeneration::capacity() const {
   return eden()->capacity()
@@ -720,11 +728,6 @@ void DefNewGeneration::collect(bool   full,
 
   SerialHeap* heap = SerialHeap::heap();
 
-  _gc_timer->register_gc_start();
-  _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
-
-  _old_gen = heap->old_gen();
-
   // If the next generation is too full to accommodate promotion
   // from this generation, pass on collection; let the next generation
   // do it.
@@ -734,6 +737,11 @@ void DefNewGeneration::collect(bool   full,
     return;
   }
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
+  _gc_timer->register_gc_start();
+  _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
+  _ref_processor->start_discovery(clear_all_soft_refs);
+
+  _old_gen = heap->old_gen();
 
   init_assuming_no_promotion_failure();
 
@@ -1110,7 +1118,7 @@ const char* DefNewGeneration::name() const {
 }
 
 // Moved from inline file as they are not called inline
-CompactibleSpace* DefNewGeneration::first_compaction_space() const {
+ContiguousSpace* DefNewGeneration::first_compaction_space() const {
   return eden();
 }
 
