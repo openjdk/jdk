@@ -1788,7 +1788,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
             }
 
             ::CertGetNameStringW(pTBDCertContext,
-                CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, pszNameString,
+                CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, (LPWSTR) pszNameString,
                 cchNameString);
 
             // Compare the certificate's friendly name with supplied alias name
