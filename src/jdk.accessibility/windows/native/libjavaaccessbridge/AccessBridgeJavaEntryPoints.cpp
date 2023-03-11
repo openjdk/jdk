@@ -980,7 +980,7 @@ AccessBridgeJavaEntryPoints::setTextContents(const jobject accessibleContext, co
     if (setTextContentsMethod != (jmethodID) 0) {
 
         // create a Java String for the text
-        jstring textString = jniEnv->NewString(text, (jsize)wcslen(text));
+        jstring textString = jniEnv->NewString((jchar*) text, (jsize)wcslen(text));
         if (textString == 0) {
             PrintDebugString("[ERROR]:    NewString failed");
             return FALSE;
