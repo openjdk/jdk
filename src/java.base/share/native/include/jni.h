@@ -54,8 +54,12 @@ extern "C" {
 
 #ifndef JNI_TYPES_ALREADY_DEFINED_IN_JNI_MD_H
 
+#ifndef __cplusplus
+#include <uchar.h>
+#endif
+
 typedef unsigned char   jboolean;
-typedef unsigned short  jchar;
+typedef char16_t        jchar;
 typedef short           jshort;
 typedef float           jfloat;
 typedef double          jdouble;
