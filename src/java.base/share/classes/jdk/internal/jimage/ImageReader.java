@@ -69,8 +69,8 @@ public final class ImageReader implements AutoCloseable {
 
     public static ImageReader open(Path imagePath) throws IOException {
         // try to determine the byte order of the image file
-        ByteOrder detectedOrder = ImageHeader.tryDetectByteOrder(imagePath);
-        ByteOrder byteOrder = detectedOrder != null ? detectedOrder : ByteOrder.nativeOrder();
+        final ByteOrder detectedOrder = ImageHeader.tryDetectByteOrder(imagePath);
+        final ByteOrder byteOrder = detectedOrder != null ? detectedOrder : ByteOrder.nativeOrder();
         return open(imagePath, byteOrder);
     }
 

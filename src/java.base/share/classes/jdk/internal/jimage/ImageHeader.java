@@ -197,14 +197,14 @@ public final class ImageHeader {
      * @param imageFile The path to the image file
      * @return The ByteOrder if one could be determined. Else null.
      */
-    static ByteOrder tryDetectByteOrder(Path imageFile) {
-        byte[] bytes = new byte[Integer.SIZE]; // read only as much as the size of magic bytes
+    static ByteOrder tryDetectByteOrder(final Path imageFile) {
+        final byte[] bytes = new byte[Integer.SIZE]; // read only as much as the size of magic bytes
         @SuppressWarnings("removal")
-        int numRead = AccessController.doPrivileged(
+        final int numRead = AccessController.doPrivileged(
                 new PrivilegedAction<Integer>() {
                     @Override
                     public Integer run() {
-                        try (InputStream is = Files.newInputStream(imageFile)) {
+                        try (final InputStream is = Files.newInputStream(imageFile)) {
                             return is.read(bytes);
                         } catch (IOException e) {
                             // ignore
@@ -216,12 +216,12 @@ public final class ImageHeader {
             // not enough bytes to ascertain if this is a jimage
             return null;
         }
-        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        final ByteBuffer bb = ByteBuffer.wrap(bytes);
         if (bb.getInt() == MAGIC) {
             return bb.order();
         }
         // try with the other byte order
-        ByteOrder altByteOrder = bb.order() == ByteOrder.BIG_ENDIAN
+        final ByteOrder altByteOrder = bb.order() == ByteOrder.BIG_ENDIAN
                 ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
         bb.flip();
         bb.order(altByteOrder);
