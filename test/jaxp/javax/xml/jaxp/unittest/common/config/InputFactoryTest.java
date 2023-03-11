@@ -61,13 +61,11 @@ public class InputFactoryTest extends XMLInputFactory {
     @Test(dataProvider = "getImpl")
     public void testInputFactory(String config, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
 
         XMLInputFactory xif = XMLInputFactory.newFactory();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(xif.getClass().getName());
         Assert.assertEquals(xif.getClass().getName(), expected);
     }
 

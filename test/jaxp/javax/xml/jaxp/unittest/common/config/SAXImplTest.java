@@ -52,14 +52,11 @@ public class SAXImplTest extends SAXParserFactory {
 
     @Test(dataProvider = "getImpl")
     public void testSAXImpl(String config, String expected) throws Exception {
-
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
         SAXParserFactory spf = SAXParserFactory.newInstance();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(spf.getClass().getName());
         Assert.assertEquals(spf.getClass().getName(), expected);
     }
 

@@ -56,13 +56,11 @@ public class SchemaFactoryTest extends SchemaFactory {
     @Test(dataProvider = "getImpl")
     public void testFactory(String config, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
 
         SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(sf.getClass().getName());
         Assert.assertEquals(sf.getClass().getName(), expected);
     }
 

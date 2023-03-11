@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
  * @test @bug 8303530
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
- * @run testng/othervm common.config.StAXPropertyTest
+ * @run testng/othervm common.config.XPathPropertyTest
  * @summary verifies that JAXP configuration file is customizable with a system
  * property "jdk.xml.config.file".
  */
@@ -54,12 +54,10 @@ public class XPathPropertyTest extends ConfigurationTest {
     @Test(dataProvider = "getProperty")
     public void testProperty(String config, String property, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
         XPathFactory xf = XPathFactory.newInstance();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(xf.getProperty(property));
         Assert.assertEquals(xf.getProperty(property), expected);
     }
 }

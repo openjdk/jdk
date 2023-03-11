@@ -65,13 +65,11 @@ public class EventFactoryTest extends XMLEventFactory {
     @Test(dataProvider = "getImpl")
     public void testEventFactory(String config, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
 
         XMLEventFactory ef = XMLEventFactory.newFactory();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(ef.getClass().getName());
         Assert.assertEquals(ef.getClass().getName(), expected);
     }
 

@@ -39,11 +39,9 @@ public class DOMPropertyTest extends ConfigurationTest {
    @Test(dataProvider = "getProperty")
     public void testProperty(String config, String property, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(SP_CONFIG, getPath(config));
         }
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        System.out.println(dbf.getAttribute(property));
         Assert.assertEquals(dbf.getAttribute(property), expected);
     }
 }

@@ -40,13 +40,11 @@ public class SAXPropertyTest extends ConfigurationTest {
     @Test(dataProvider = "getProperty")
     public void testProperty(String config, String property, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
         SAXParserFactory spf = SAXParserFactory.newInstance();
         SAXParser sp = spf.newSAXParser();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(sp.getProperty(property));
         Assert.assertEquals(sp.getProperty(property), expected);
         XMLReader reader = sp.getXMLReader();
         Assert.assertEquals(reader.getProperty(property), expected);

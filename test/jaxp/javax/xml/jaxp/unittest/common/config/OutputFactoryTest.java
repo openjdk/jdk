@@ -54,13 +54,11 @@ public class OutputFactoryTest extends XMLOutputFactory {
     @Test(dataProvider = "getImpl")
     public void testOutputFactory(String config, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
 
         XMLOutputFactory xof = XMLOutputFactory.newFactory();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(xof.getClass().getName());
         Assert.assertEquals(xof.getClass().getName(), expected);
     }
 

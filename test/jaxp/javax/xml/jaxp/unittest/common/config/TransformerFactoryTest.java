@@ -56,13 +56,11 @@ public class TransformerFactoryTest extends TransformerFactory {
     @Test(dataProvider = "getImpl")
     public void testFactory(String config, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
 
         TransformerFactory tf = TransformerFactory.newInstance();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(tf.getClass().getName());
         Assert.assertEquals(tf.getClass().getName(), expected);
     }
 

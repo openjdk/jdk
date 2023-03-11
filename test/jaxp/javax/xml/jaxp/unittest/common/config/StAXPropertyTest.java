@@ -38,12 +38,10 @@ public class StAXPropertyTest extends ConfigurationTest {
     @Test(dataProvider = "getProperty")
     public void testProperty(String config, String property, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
         XMLInputFactory xif = XMLInputFactory.newFactory();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(xif.getProperty(property));
         Assert.assertEquals(xif.getProperty(property), expected);
     }
 }

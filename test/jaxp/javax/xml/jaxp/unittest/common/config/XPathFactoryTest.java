@@ -54,13 +54,11 @@ public class XPathFactoryTest extends XPathFactory {
     @Test(dataProvider = "getImpl")
     public void testFactory(String config, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
 
         XPathFactory xf = XPathFactory.newInstance();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(xf.getClass().getName());
         Assert.assertEquals(xf.getClass().getName(), expected);
     }
 

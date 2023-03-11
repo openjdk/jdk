@@ -38,12 +38,10 @@ public class TransformerPropertyTest extends ConfigurationTest {
     @Test(dataProvider = "getProperty")
     public void testProperty(String config, String property, String expected) throws Exception {
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
         TransformerFactory tf = TransformerFactory.newInstance();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        System.out.println(tf.getAttribute(property));
         Assert.assertEquals(tf.getAttribute(property), expected);
     }
 }

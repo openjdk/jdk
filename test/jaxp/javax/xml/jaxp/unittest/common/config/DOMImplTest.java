@@ -57,14 +57,11 @@ public class DOMImplTest extends DocumentBuilderFactory {
 
     @Test(dataProvider = "getImpl")
     public void testDOMImpl(String config, String expected) throws Exception {
-
         if (config != null) {
-            System.out.println(getPath(config));
             System.setProperty(SP_CONFIG, getPath(config));
         }
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         System.clearProperty(SP_CONFIG);
-        System.out.println(dbf.getClass().getName());
         Assert.assertEquals(dbf.getClass().getName(), expected);
     }
 
