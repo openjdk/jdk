@@ -419,20 +419,18 @@ final class StringUTF16 {
         };
     }
 
-    public static int indexOf(byte[] value, int ch, int fromIndex) {
-        int max = value.length >> 1;
-        if (fromIndex < 0) {
-            fromIndex = 0;
-        } else if (fromIndex >= max) {
-            // Note: fromIndex might be near -1>>>1.
+    public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
+        fromIndex = Math.max(fromIndex, 0);
+        toIndex = Math.min(toIndex, value.length >> 1);
+        if (fromIndex >= toIndex) {
             return -1;
         }
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            return indexOfChar(value, ch, fromIndex, max);
+            return indexOfChar(value, ch, fromIndex, toIndex);
         } else {
-            return indexOfSupplementary(value, ch, fromIndex, max);
+            return indexOfSupplementary(value, ch, fromIndex, toIndex);
         }
     }
 

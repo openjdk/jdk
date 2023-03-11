@@ -560,7 +560,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   }
 
   if (AllowArchivingWithJavaAgent) {
-    warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
 
@@ -941,23 +941,32 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   } else {
     set_shared_metaspace_range(nullptr, nullptr, nullptr);
     if (DynamicDumpSharedSpaces) {
-      warning("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+      log_warning(cds)("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
     }
     UseSharedSpaces = false;
     // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
     AutoCreateSharedArchive = false;
     DynamicDumpSharedSpaces = false;
-    FileMapInfo::fail_continue("Unable to map shared spaces");
+    log_info(cds)("Unable to map shared spaces");
     if (PrintSharedArchiveAndExit) {
       vm_exit_during_initialization("Unable to use shared archive.");
+    } else if (RequireSharedSpaces) {
+      FileMapInfo::fail_stop("Unable to map shared spaces");
     }
   }
 
+  // If mapping failed and -XShare:on, the vm should exit
+  bool has_failed = false;
   if (static_mapinfo != nullptr && !static_mapinfo->is_mapped()) {
+    has_failed = true;
     delete static_mapinfo;
   }
   if (dynamic_mapinfo != nullptr && !dynamic_mapinfo->is_mapped()) {
+    has_failed = true;
     delete dynamic_mapinfo;
+  }
+  if (RequireSharedSpaces && has_failed) {
+      FileMapInfo::fail_stop("Unable to map shared spaces");
   }
 }
 
@@ -984,6 +993,9 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
+    if (RequireSharedSpaces) {
+      FileMapInfo::fail_stop("Failed to initialize dynamic archive");
+    }
     return nullptr;
   }
   return mapinfo;

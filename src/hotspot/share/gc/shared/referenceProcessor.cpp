@@ -72,15 +72,13 @@ void ReferenceProcessor::init_statics() {
             "Unrecognized RefDiscoveryPolicy");
 }
 
-void ReferenceProcessor::enable_discovery(bool check_no_refs) {
+void ReferenceProcessor::enable_discovery() {
 #ifdef ASSERT
   // Verify that we're not currently discovering refs
   assert(!_discovering_refs, "nested call?");
 
-  if (check_no_refs) {
-    // Verify that the discovered lists are empty
-    verify_no_references_recorded();
-  }
+  // Verify that the discovered lists are empty
+  verify_no_references_recorded();
 #endif // ASSERT
 
   _discovering_refs = true;

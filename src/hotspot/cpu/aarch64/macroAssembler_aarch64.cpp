@@ -3968,6 +3968,64 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     mvnw(crc, crc);
 }
 
+void MacroAssembler::kernel_crc32c_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2, Register tmp3) {
+    Label CRC_by4_loop, CRC_by1_loop, CRC_less128, CRC_by128_pre, CRC_by32_loop, CRC_less32, L_exit;
+    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
+
+    subs(tmp0, len, 384);
+    br(Assembler::GE, CRC_by128_pre);
+  BIND(CRC_less128);
+    subs(len, len, 32);
+    br(Assembler::GE, CRC_by32_loop);
+  BIND(CRC_less32);
+    adds(len, len, 32 - 4);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by32_loop);
+    ldp(tmp0, tmp1, Address(buf));
+    crc32cx(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 16));
+    crc32cx(crc, crc, tmp1);
+    ldr(tmp3, Address(buf, 24));
+    crc32cx(crc, crc, tmp2);
+    add(buf, buf, 32);
+    subs(len, len, 32);
+    crc32cx(crc, crc, tmp3);
+    br(Assembler::GE, CRC_by32_loop);
+    cmn(len, (u1)32);
+    br(Assembler::NE, CRC_less32);
+    b(L_exit);
+
+  BIND(CRC_by4_loop);
+    ldrw(tmp0, Address(post(buf, 4)));
+    subs(len, len, 4);
+    crc32cw(crc, crc, tmp0);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::LE, L_exit);
+  BIND(CRC_by1_loop);
+    ldrb(tmp0, Address(post(buf, 1)));
+    subs(len, len, 1);
+    crc32cb(crc, crc, tmp0);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by128_pre);
+    kernel_crc32_common_fold_using_crypto_pmull(crc, buf, len, tmp0, tmp1, tmp2,
+      4*256*sizeof(juint) + 8*sizeof(juint) + 0x50);
+    mov(crc, 0);
+    crc32cx(crc, crc, tmp0);
+    crc32cx(crc, crc, tmp1);
+
+    cbnz(len, CRC_less128);
+
+  BIND(L_exit);
+}
+
 void MacroAssembler::kernel_crc32c_using_crc32c(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3) {
@@ -4074,7 +4132,11 @@ void MacroAssembler::kernel_crc32c_using_crc32c(Register crc, Register buf,
 void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3) {
-  kernel_crc32c_using_crc32c(crc, buf, len, table0, table1, table2, table3);
+  if (UseCryptoPmullForCRC32) {
+    kernel_crc32c_using_crypto_pmull(crc, buf, len, table0, table1, table2, table3);
+  } else {
+    kernel_crc32c_using_crc32c(crc, buf, len, table0, table1, table2, table3);
+  }
 }
 
 void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, Register buf,
@@ -4259,6 +4321,11 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   } else {
     ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
+}
+
+void MacroAssembler::load_klass_check_null(Register dst, Register src) {
+  null_check(src, oopDesc::klass_offset_in_bytes());
+  load_klass(dst, src);
 }
 
 // ((OopHandle)result).resolve();
@@ -5531,7 +5598,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
     //                          ASCII-check on lo-parts (no sign).
     FloatRegister vlox = vtmp1; // Merge lower bytes.
                                 ASCII(orr(vlox, T16B, vlo0, vlo1));
-    umov(chk, vhix, D, 1);      ASCII(cmlt(vlox, T16B, vlox));
+    umov(chk, vhix, D, 1);      ASCII(cm(LT, vlox, T16B, vlox));
     fmovd(max, vhix);           ASCII(umaxv(vlox, T16B, vlox));
     orr(chk, chk, max);         ASCII(umov(max, vlox, B, 0));
                                 ASCII(orr(chk, chk, max));
@@ -5557,7 +5624,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
     uzp2(vhi, T16B, vtmp3, vtmp3);
     // ISO-check on hi-parts (all zero).
     //                          ASCII-check on lo-parts (no sign).
-                                ASCII(cmlt(vtmp2, T16B, vlo));
+                                ASCII(cm(LT, vtmp2, T16B, vlo));
     fmovd(chk, vhi);            ASCII(umaxv(vtmp2, T16B, vtmp2));
                                 ASCII(umov(max, vtmp2, B, 0));
                                 ASCII(orr(chk, chk, max));
