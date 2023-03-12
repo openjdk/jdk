@@ -64,7 +64,7 @@ public class CenSizeTooLarge {
             long cenSize = 0;
             // Add entries until MAX_CEN_SIZE is reached
             for (int i = 0; cenSize < MAX_CEN_SIZE; i++) {
-                String name = Long.toString(i);
+                String name = Integer.toString(i);
                 ZipEntry entry = new ZipEntry(name);
                 // Use STORED for faster processing
                 entry.setMethod(ZipEntry.STORED);
