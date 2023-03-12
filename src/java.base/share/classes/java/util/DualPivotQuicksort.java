@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.util;
 
 import java.util.concurrent.CountedCompleter;
+import jdk.internal.misc.Unsafe;
 
 /**
  * This class implements powerful and fully optimized versions, both
@@ -46,7 +47,7 @@ import java.util.concurrent.CountedCompleter;
  *
  * @version 2022.06.14
  *
- * @since 1.7 * 14 ^ 20
+ * @since 1.7 * 14 ^ 22
  */
 final class DualPivotQuicksort {
 
@@ -139,7 +140,7 @@ final class DualPivotQuicksort {
      */
     static void sort(int[] a, int parallelism, int low, int high) {
         if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
-            new Sorter(a, parallelism, low, high - low, 0).invoke();
+            new Sorter<>(a, parallelism, low, high - low, 0).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -155,7 +156,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    static void sort(Sorter sorter, int[] a, int bits, int low, int high) {
+    static void sort(Sorter<int[]> sorter, int[] a, int bits, int low, int high) {
         while (true) {
             int size = high - low;
 
@@ -560,7 +561,7 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
-    static boolean tryMergingSort(Sorter sorter, int[] a, int low, int high) {
+    static boolean tryMergingSort(Sorter<int[]> sorter, int[] a, int low, int high) {
 
         /*
          * The element run[i] holds the start index
@@ -652,9 +653,9 @@ final class DualPivotQuicksort {
         if (count > 1) {
             int[] b; int offset = low;
 
-            if (sorter != null && (b = (int[]) sorter.b) != null) {
+            if (sorter != null && (b = sorter.b) != null) {
                 offset = sorter.offset;
-            } else if ((b = (int[]) tryAllocate(a, high - low)) == null) {
+            } else if ((b = tryAllocate(int[].class, high - low)) == null) {
                 return false;
             }
             mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
@@ -709,7 +710,7 @@ final class DualPivotQuicksort {
          * Merge the left and right parts.
          */
         if (hi1 - lo1 > MIN_PARALLEL_SORT_SIZE && parallel) {
-            new Merger(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
+            new Merger<>(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
         } else {
             mergeParts(null, dst, k, a1, lo1, hi1, a2, lo2, hi2);
         }
@@ -729,7 +730,7 @@ final class DualPivotQuicksort {
      * @param lo2 the start index of the second part, inclusive
      * @param hi2 the end index of the second part, exclusive
      */
-    private static void mergeParts(Merger merger, int[] dst, int k,
+    private static void mergeParts(Merger<int[]> merger, int[] dst, int k,
             int[] a1, int lo1, int hi1, int[] a2, int lo2, int hi2) {
 
         if (merger != null && a1 == a2) {
@@ -816,15 +817,15 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
-    static boolean tryRadixSort(Sorter sorter, int[] a, int low, int high) {
+    static boolean tryRadixSort(Sorter<int[]> sorter, int[] a, int low, int high) {
         int[] b; int offset = low, size = high - low;
 
         /*
          * Allocate additional buffer.
          */
-        if (sorter != null && (b = (int[]) sorter.b) != null) {
+        if (sorter != null && (b = sorter.b) != null) {
             offset = sorter.offset;
-        } else if ((b = (int[]) tryAllocate(a, size)) == null) {
+        } else if ((b = tryAllocate(int[].class, size)) == null) {
             return false;
         }
 
@@ -995,7 +996,7 @@ final class DualPivotQuicksort {
      */
     static void sort(long[] a, int parallelism, int low, int high) {
         if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
-            new Sorter(a, parallelism, low, high - low, 0).invoke();
+            new Sorter<>(a, parallelism, low, high - low, 0).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -1011,7 +1012,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    static void sort(Sorter sorter, long[] a, int bits, int low, int high) {
+    static void sort(Sorter<long[]> sorter, long[] a, int bits, int low, int high) {
         while (true) {
             int size = high - low;
 
@@ -1416,7 +1417,7 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
-    static boolean tryMergingSort(Sorter sorter, long[] a, int low, int high) {
+    static boolean tryMergingSort(Sorter<long[]> sorter, long[] a, int low, int high) {
 
         /*
          * The element run[i] holds the start index
@@ -1508,9 +1509,9 @@ final class DualPivotQuicksort {
         if (count > 1) {
             long[] b; int offset = low;
 
-            if (sorter != null && (b = (long[]) sorter.b) != null) {
+            if (sorter != null && (b = sorter.b) != null) {
                 offset = sorter.offset;
-            } else if ((b = (long[]) tryAllocate(a, high - low)) == null) {
+            } else if ((b = tryAllocate(long[].class, high - low)) == null) {
                 return false;
             }
             mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
@@ -1565,7 +1566,7 @@ final class DualPivotQuicksort {
          * Merge the left and right parts.
          */
         if (hi1 - lo1 > MIN_PARALLEL_SORT_SIZE && parallel) {
-            new Merger(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
+            new Merger<>(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
         } else {
             mergeParts(null, dst, k, a1, lo1, hi1, a2, lo2, hi2);
         }
@@ -1585,7 +1586,7 @@ final class DualPivotQuicksort {
      * @param lo2 the start index of the second part, inclusive
      * @param hi2 the end index of the second part, exclusive
      */
-    private static void mergeParts(Merger merger, long[] dst, int k,
+    private static void mergeParts(Merger<long[]> merger, long[] dst, int k,
             long[] a1, int lo1, int hi1, long[] a2, int lo2, int hi2) {
 
         if (merger != null && a1 == a2) {
@@ -1672,15 +1673,15 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
-    static boolean tryRadixSort(Sorter sorter, long[] a, int low, int high) {
+    static boolean tryRadixSort(Sorter<long[]> sorter, long[] a, int low, int high) {
         long[] b; int offset = low, size = high - low;
 
         /*
          * Allocate additional buffer.
          */
-        if (sorter != null && (b = (long[]) sorter.b) != null) {
+        if (sorter != null && (b = sorter.b) != null) {
             offset = sorter.offset;
-        } else if ((b = (long[]) tryAllocate(a, size)) == null) {
+        } else if ((b = tryAllocate(long[].class, size)) == null) {
             return false;
         }
 
@@ -2622,7 +2623,7 @@ final class DualPivotQuicksort {
          * which are already in place.
          */
         if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
-            new Sorter(a, parallelism, low, high - low, 0).invoke();
+            new Sorter<>(a, parallelism, low, high - low, 0).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -2667,7 +2668,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    static void sort(Sorter sorter, float[] a, int bits, int low, int high) {
+    static void sort(Sorter<float[]> sorter, float[] a, int bits, int low, int high) {
         while (true) {
             int size = high - low;
 
@@ -3072,7 +3073,7 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
-    static boolean tryMergingSort(Sorter sorter, float[] a, int low, int high) {
+    static boolean tryMergingSort(Sorter<float[]> sorter, float[] a, int low, int high) {
 
         /*
          * The element run[i] holds the start index
@@ -3164,9 +3165,9 @@ final class DualPivotQuicksort {
         if (count > 1) {
             float[] b; int offset = low;
 
-            if (sorter != null && (b = (float[]) sorter.b) != null) {
+            if (sorter != null && (b = sorter.b) != null) {
                 offset = sorter.offset;
-            } else if ((b = (float[]) tryAllocate(a, high - low)) == null) {
+            } else if ((b = tryAllocate(float[].class, high - low)) == null) {
                 return false;
             }
             mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
@@ -3221,7 +3222,7 @@ final class DualPivotQuicksort {
          * Merge the left and right parts.
          */
         if (hi1 - lo1 > MIN_PARALLEL_SORT_SIZE && parallel) {
-            new Merger(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
+            new Merger<>(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
         } else {
             mergeParts(null, dst, k, a1, lo1, hi1, a2, lo2, hi2);
         }
@@ -3241,7 +3242,7 @@ final class DualPivotQuicksort {
      * @param lo2 the start index of the second part, inclusive
      * @param hi2 the end index of the second part, exclusive
      */
-    private static void mergeParts(Merger merger, float[] dst, int k,
+    private static void mergeParts(Merger<float[]> merger, float[] dst, int k,
             float[] a1, int lo1, int hi1, float[] a2, int lo2, int hi2) {
 
         if (merger != null && a1 == a2) {
@@ -3328,15 +3329,15 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
-    static boolean tryRadixSort(Sorter sorter, float[] a, int low, int high) {
+    static boolean tryRadixSort(Sorter<float[]> sorter, float[] a, int low, int high) {
         float[] b; int offset = low, size = high - low;
 
         /*
          * Allocate additional buffer.
          */
-        if (sorter != null && (b = (float[]) sorter.b) != null) {
+        if (sorter != null && (b = sorter.b) != null) {
             offset = sorter.offset;
-        } else if ((b = (float[]) tryAllocate(a, size)) == null) {
+        } else if ((b = tryAllocate(float[].class, size)) == null) {
             return false;
         }
 
@@ -3508,7 +3509,7 @@ final class DualPivotQuicksort {
          * which are already in place.
          */
         if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
-            new Sorter(a, parallelism, low, high - low, 0).invoke();
+            new Sorter<>(a, parallelism, low, high - low, 0).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -3553,7 +3554,7 @@ final class DualPivotQuicksort {
      * @param low the index of the first element, inclusive, to be sorted
      * @param high the index of the last element, exclusive, to be sorted
      */
-    static void sort(Sorter sorter, double[] a, int bits, int low, int high) {
+    static void sort(Sorter<double[]> sorter, double[] a, int bits, int low, int high) {
         while (true) {
             int size = high - low;
 
@@ -3958,7 +3959,7 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
-    static boolean tryMergingSort(Sorter sorter, double[] a, int low, int high) {
+    static boolean tryMergingSort(Sorter<double[]> sorter, double[] a, int low, int high) {
 
         /*
          * The element run[i] holds the start index
@@ -4050,9 +4051,9 @@ final class DualPivotQuicksort {
         if (count > 1) {
             double[] b; int offset = low;
 
-            if (sorter != null && (b = (double[]) sorter.b) != null) {
+            if (sorter != null && (b = sorter.b) != null) {
                 offset = sorter.offset;
-            } else if ((b = (double[]) tryAllocate(a, high - low)) == null) {
+            } else if ((b = tryAllocate(double[].class, high - low)) == null) {
                 return false;
             }
             mergeRuns(a, b, offset, 1, sorter != null, run, 0, count);
@@ -4107,7 +4108,7 @@ final class DualPivotQuicksort {
          * Merge the left and right parts.
          */
         if (hi1 - lo1 > MIN_PARALLEL_SORT_SIZE && parallel) {
-            new Merger(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
+            new Merger<>(null, dst, k, a1, lo1, hi1, a2, lo2, hi2).invoke();
         } else {
             mergeParts(null, dst, k, a1, lo1, hi1, a2, lo2, hi2);
         }
@@ -4127,7 +4128,7 @@ final class DualPivotQuicksort {
      * @param lo2 the start index of the second part, inclusive
      * @param hi2 the end index of the second part, exclusive
      */
-    private static void mergeParts(Merger merger, double[] dst, int k,
+    private static void mergeParts(Merger<double[]> merger, double[] dst, int k,
             double[] a1, int lo1, int hi1, double[] a2, int lo2, int hi2) {
 
         if (merger != null && a1 == a2) {
@@ -4214,15 +4215,15 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @return {@code true} if the array is finally sorted, otherwise {@code false}
      */
-    static boolean tryRadixSort(Sorter sorter, double[] a, int low, int high) {
+    static boolean tryRadixSort(Sorter<double[]> sorter, double[] a, int low, int high) {
         double[] b; int offset = low, size = high - low;
 
         /*
          * Allocate additional buffer.
          */
-        if (sorter != null && (b = (double[]) sorter.b) != null) {
+        if (sorter != null && (b = sorter.b) != null) {
             offset = sorter.offset;
-        } else if ((b = (double[]) tryAllocate(a, size)) == null) {
+        } else if ((b = tryAllocate(double[].class, size)) == null) {
             return false;
         }
 
@@ -4411,15 +4412,16 @@ final class DualPivotQuicksort {
     /**
      * This class implements parallel sorting.
      */
-    private static final class Sorter extends CountedCompleter<Void> {
+    private static final class Sorter<T> extends CountedCompleter<Void> {
 
         private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial")
-        private final Object a, b;
+        private final T a, b;
         private final int low, size, offset, depth;
 
-        private Sorter(Object a, int parallelism, int low, int size, int depth) {
+        @SuppressWarnings("unchecked")
+        private Sorter(T a, int parallelism, int low, int size, int depth) {
             this.a = a;
             this.low = low;
             this.size = size;
@@ -4428,12 +4430,12 @@ final class DualPivotQuicksort {
             while ((parallelism >>= 2) > 0 && (size >>= 2) > 0) {
                 depth -= 2;
             }
-            this.b = tryAllocate(a, this.size);
+            this.b = (T) tryAllocate(a.getClass(), this.size);
             this.depth = b == null ? 0 : depth;
         }
 
         private Sorter(CountedCompleter<?> parent,
-                Object a, Object b, int low, int size, int offset, int depth) {
+                T a, T b, int low, int size, int offset, int depth) {
             super(parent);
             this.a = a;
             this.b = b;
@@ -4444,21 +4446,22 @@ final class DualPivotQuicksort {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void compute() {
             if (depth < 0) {
                 setPendingCount(2);
                 int half = size >> 1;
-                new Sorter(this, b, a, low, half, offset, depth + 1).fork();
-                new Sorter(this, b, a, low + half, size - half, offset, depth + 1).compute();
+                new Sorter<>(this, b, a, low, half, offset, depth + 1).fork();
+                new Sorter<>(this, b, a, low + half, size - half, offset, depth + 1).compute();
             } else {
                 if (a instanceof int[]) {
-                    sort(this, (int[]) a, depth, low, low + size);
+                    sort((Sorter<int[]>) this, (int[]) a, depth, low, low + size);
                 } else if (a instanceof long[]) {
-                    sort(this, (long[]) a, depth, low, low + size);
+                    sort((Sorter<long[]>) this, (long[]) a, depth, low, low + size);
                 } else if (a instanceof float[]) {
-                    sort(this, (float[]) a, depth, low, low + size);
+                    sort((Sorter<float[]>) this, (float[]) a, depth, low, low + size);
                 } else if (a instanceof double[]) {
-                    sort(this, (double[]) a, depth, low, low + size);
+                    sort((Sorter<double[]>) this, (double[]) a, depth, low, low + size);
                 } else {
                     throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
                 }
@@ -4467,12 +4470,12 @@ final class DualPivotQuicksort {
         }
 
         @Override
-        public void onCompletion(CountedCompleter<?> parent) {
+        public void onCompletion(CountedCompleter<?> caller) {
             if (depth < 0) {
                 int mi = low + (size >> 1);
                 boolean src = (depth & 1) == 0;
 
-                new Merger(null,
+                new Merger<>(null,
                     a,
                     src ? low : low - offset,
                     b,
@@ -4487,23 +4490,23 @@ final class DualPivotQuicksort {
 
         private void fork(int depth, int low, int high) {
             addToPendingCount(1);
-            new Sorter(this, a, b, low, high - low, offset, depth).fork();
+            new Sorter<>(this, a, b, low, high - low, offset, depth).fork();
         }
     }
 
     /**
      * This class implements parallel merging.
      */
-    private static final class Merger extends CountedCompleter<Void> {
+    private static final class Merger<T> extends CountedCompleter<Void> {
 
         private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial")
-        private final Object dst, a1, a2;
+        private final T dst, a1, a2;
         private final int k, lo1, hi1, lo2, hi2;
 
-        private Merger(CountedCompleter<?> parent, Object dst, int k,
-                Object a1, int lo1, int hi1, Object a2, int lo2, int hi2) {
+        private Merger(CountedCompleter<?> parent, T dst, int k,
+                T a1, int lo1, int hi1, T a2, int lo2, int hi2) {
             super(parent);
             this.dst = dst;
             this.k = k;
@@ -4516,18 +4519,19 @@ final class DualPivotQuicksort {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void compute() {
             if (dst instanceof int[]) {
-                mergeParts(this, (int[]) dst, k,
+                mergeParts((Merger<int[]>) this, (int[]) dst, k,
                     (int[]) a1, lo1, hi1, (int[]) a2, lo2, hi2);
             } else if (dst instanceof long[]) {
-                mergeParts(this, (long[]) dst, k,
+                mergeParts((Merger<long[]>) this, (long[]) dst, k,
                     (long[]) a1, lo1, hi1, (long[]) a2, lo2, hi2);
             } else if (dst instanceof float[]) {
-                mergeParts(this, (float[]) dst, k,
+                mergeParts((Merger<float[]>) this, (float[]) dst, k,
                     (float[]) a1, lo1, hi1, (float[]) a2, lo2, hi2);
             } else if (dst instanceof double[]) {
-                mergeParts(this, (double[]) dst, k,
+                mergeParts((Merger<double[]>) this, (double[]) dst, k,
                     (double[]) a1, lo1, hi1, (double[]) a2, lo2, hi2);
             } else {
                 throw new IllegalArgumentException("Unknown array: " + dst.getClass().getName());
@@ -4537,37 +4541,27 @@ final class DualPivotQuicksort {
 
         private void fork(int k, int lo1, int hi1, int lo2, int hi2) {
             addToPendingCount(1);
-            new Merger(this, dst, k, a1, lo1, hi1, a2, lo2, hi2).fork();
+            new Merger<>(this, dst, k, a1, lo1, hi1, a2, lo2, hi2).fork();
         }
     }
 
     /**
      * Tries to allocate additional buffer.
      *
-     * @param a the given array
+     * @param clazz the given array class
      * @param size the size of additional buffer
-     * @return {@code null} if requested size is too large, otherwise created buffer
-     */
-    private static Object tryAllocate(Object a, int size) {
+     * @return {@code null} if requested size is too large or there is not enough memory,
+     *         otherwise created buffer
+    */
+    @SuppressWarnings("unchecked")
+    private static <T> T tryAllocate(Class<T> clazz, int size) {
         try {
-            if (size > MAX_BUFFER_SIZE) {
-                return null;
-            }
-            if (a instanceof int[]) {
-                return new int[size];
-            }
-            if (a instanceof long[]) {
-                return new long[size];
-            }
-            if (a instanceof float[]) {
-                return new float[size];
-            }
-            if (a instanceof double[]) {
-                return new double[size];
-            }
-            throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
+            return size > MAX_BUFFER_SIZE ? null :
+                (T) U.allocateUninitializedArray(clazz.componentType(), size);
         } catch (OutOfMemoryError e) {
             return null;
         }
     }
+
+    private static final Unsafe U = Unsafe.getUnsafe();
 }
