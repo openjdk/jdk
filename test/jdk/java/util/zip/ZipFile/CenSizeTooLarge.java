@@ -23,9 +23,9 @@
 
 /* @test
  * @bug 8272746
- * @summary ZipFile can't open big file (NegativeArraySizeException)
+ * @summary Verifies that ZipFile rejects ZIP files which CEN size does not fit in a Java byte array
  * @requires (sun.arch.data.model == "64" & os.maxMemory > 8g)
- * @run testng/manual/othervm -Xmx8g TestTooManyEntries
+ * @run testng/manual/othervm -Xmx8g CenSizeTooLarge
  */
 
 import org.testng.annotations.BeforeTest;
@@ -39,51 +39,48 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-import java.util.UUID;
 
-import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.*;
 
-public class TestTooManyEntries {
-    // Number of directories in the zip file
-    private static final int DIR_COUNT = 25000;
-    // Number of entries per directory
-    private static final int ENTRIES_IN_DIR = 1000;
+public class CenSizeTooLarge {
+    // Maximum allowed CEN size allowed by the ZipFile implementation
+    private static int MAX_CEN_SIZE = Integer.MAX_VALUE - ZipFile.ENDHDR - 1;
 
     // Zip file to create for testing
     private File hugeZipFile;
 
     /**
-     * Create a zip file and add entries that exceed the CEN limit.
-     * @throws IOException if an error occurs creating the ZIP File
+     * Create a zip file with a CEN size which does not fit within a Java byte array
      */
     @BeforeTest
     public void setup() throws IOException {
-        hugeZipFile = File.createTempFile("hugeZip", ".zip", new File("."));
+        hugeZipFile = new File("cen-too-large.zip");
         hugeZipFile.deleteOnExit();
-        long startTime = System.currentTimeMillis();
+
         try (ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(hugeZipFile)))) {
-            for (int dirN = 0; dirN < DIR_COUNT; dirN++) {
-                String dirName = UUID.randomUUID() + "/";
-                for (int fileN = 0; fileN < ENTRIES_IN_DIR; fileN++) {
-                    ZipEntry entry = new ZipEntry(dirName + UUID.randomUUID());
-                    zip.putNextEntry(entry);
-                    zip.closeEntry(); // all files are empty
-                }
-                if ((dirN + 1) % 1000 == 0) {
-                    System.out.printf("%s / %s of entries written, file size is %sMb (%ss)%n",
-                            (dirN + 1) * ENTRIES_IN_DIR, DIR_COUNT * ENTRIES_IN_DIR, hugeZipFile.length() / 1024 / 1024,
-                            (System.currentTimeMillis() - startTime) / 1000);
-                }
+            long cenSize = 0;
+            // Add entries until MAX_CEN_SIZE is reached
+            for (int i = 0; cenSize < MAX_CEN_SIZE; i++) {
+                String name = Long.toString(i);
+                ZipEntry entry = new ZipEntry(name);
+                // Use STORED for faster processing
+                entry.setMethod(ZipEntry.STORED);
+                entry.setSize(0);
+                entry.setCrc(0);
+                zip.putNextEntry(entry);
+                // Calculate current cenSize
+                cenSize += ZipFile.CENHDR + name.length();
             }
         }
     }
 
     /**
-     * Validates that the ZipException is thrown when the ZipFile class
-     * is initialized with a zip file whose entries exceed the CEN limit.
+     * Validates that a ZipException is thrown with the expected message when
+     * the ZipFile is initialized with a ZIP whose CEN exeeds {@link #MAX_CEN_SIZE}
      */
     @Test
     public void test() {
-        assertThrows(ZipException.class, () -> new ZipFile(hugeZipFile));
+        ZipException ex = expectThrows(ZipException.class, () -> new ZipFile(hugeZipFile));
+        assertEquals(ex.getMessage(), "invalid END header (central directory size too large)");
     }
 }
