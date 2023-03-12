@@ -123,7 +123,7 @@ public class CenSizeTooLarge {
      * the ZipFile is initialized with a ZIP whose CEN exeeds {@link #MAX_CEN_SIZE}
      */
     @Test
-    public void test() {
+    public void centralDirectoryTooLargeToFitInByteArray() {
         ZipException ex = expectThrows(ZipException.class, () -> new ZipFile(hugeZipFile));
         assertEquals(ex.getMessage(), "invalid END header (central directory size too large)");
     }
