@@ -50,11 +50,11 @@ public class CenSizeTooLarge {
     static final int MAX_CEN_SIZE = Integer.MAX_VALUE - ZipFile.ENDHDR - 1;
 
     // Maximum size (unsigned short) of an extra field allowed by the standard
-    static final int MAX_EXTRA_FIELD_SIZE = 2 * Short.MAX_VALUE;
+    static final int MAX_EXTRA_FIELD_SIZE = 0XFFFF;
 
     // Data size (unsigned short)
     // Field size minus the leading header 'tag' and 'data size' fields (2 bytes each)
-    static final short MAX_DATA_SIZE = (short) ((MAX_EXTRA_FIELD_SIZE - 2 * Short.BYTES) & 0xFFFF);
+    static final short MAX_DATA_SIZE = (short) (MAX_EXTRA_FIELD_SIZE - 2 * Short.BYTES);
 
     // Tag for the 'unknown' field type, specified in APPNOTE.txt 'Third party mappings'
     static final short UNKNOWN_ZIP_TAG = (short) 0x9902;
