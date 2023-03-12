@@ -10787,7 +10787,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * A character is considered to be an Emoji if and only if it has the {@code Emoji}
      * property, defined in
      * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
-     * Unicode Emoji (Technical Report #51)</a>.
+     * Unicode Emoji (Technical Standard #51)</a>.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Emoji;
@@ -10805,7 +10805,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * A character is considered to have the Emoji Presentation if and only if it has
      * the {@code Emoji_Presentation} property, defined in
      * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
-     * Unicode Emoji (Technical Report #51)</a>.
+     * Unicode Emoji (Technical Standard #51)</a>.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character has the Emoji Presentation;
@@ -10823,7 +10823,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * A character is considered to be an Emoji Modifier if and only if it has
      * the {@code Emoji_Modifier} property, defined in
      * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
-     * Unicode Emoji (Technical Report #51)</a>.
+     * Unicode Emoji (Technical Standard #51)</a>.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Emoji Modifier;
@@ -10841,7 +10841,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * A character is considered to be an Emoji Modifier Base if and only if it has
      * the {@code Emoji_Modifier_Base} property, defined in
      * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
-     * Unicode Emoji (Technical Report #51)</a>.
+     * Unicode Emoji (Technical Standard #51)</a>.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Emoji Modifier Base;
@@ -10859,7 +10859,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * A character is considered to be an Emoji Component if and only if it has
      * the {@code Emoji_Component} property, defined in
      * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
-     * Unicode Emoji (Technical Report #51)</a>.
+     * Unicode Emoji (Technical Standard #51)</a>.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Emoji Component;
@@ -10877,7 +10877,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * A character is considered to be an Emoji Component if and only if it has
      * the {@code Extended_Pictographic} property, defined in
      * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
-     * Unicode Emoji (Technical Report #51)</a>.
+     * Unicode Emoji (Technical Standard #51)</a>.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Extended Pictographic;
