@@ -70,7 +70,6 @@ public class CenSizeTooLarge {
     // The number of entries needed to exceed the MAX_CEN_SIZE
     static final int NUM_ENTRIES = (MAX_CEN_SIZE / CEN_HEADER_SIZE) + 1;
 
-
     // Zip file to create for testing
     private File hugeZipFile;
 
