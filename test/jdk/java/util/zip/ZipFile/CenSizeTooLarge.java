@@ -144,7 +144,7 @@ public class CenSizeTooLarge {
         // Little-endian ByteBuffer for updating the header fields
         ByteBuffer buffer = ByteBuffer.wrap(extra).order(ByteOrder.LITTLE_ENDIAN);
 
-        // We use the 'unknown' tag, specifield in APPNOTE.TXT, 4.6.1 Third party mappings'
+        // We use the 'unknown' tag, specified in APPNOTE.TXT, 4.6.1 Third party mappings'
         buffer.putShort(UNKNOWN_ZIP_TAG);
 
         // Size of the actual (empty) data
