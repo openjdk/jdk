@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -58,6 +59,8 @@ public class CenSizeTooLarge {
         hugeZipFile.deleteOnExit();
 
         try (ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(hugeZipFile)))) {
+            // Creating the LocalDataTime once allows faster processing
+            LocalDateTime time = LocalDateTime.now();
             long cenSize = 0;
             // Add entries until MAX_CEN_SIZE is reached
             for (int i = 0; cenSize < MAX_CEN_SIZE; i++) {
@@ -67,6 +70,7 @@ public class CenSizeTooLarge {
                 entry.setMethod(ZipEntry.STORED);
                 entry.setSize(0);
                 entry.setCrc(0);
+                entry.setTimeLocal(time);
                 zip.putNextEntry(entry);
                 // Calculate current cenSize
                 cenSize += ZipFile.CENHDR + name.length();
