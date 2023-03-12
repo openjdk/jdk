@@ -31,10 +31,10 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.PanelUI;
 
 /* @test
-   @bug 8303950
+ * @bug 8303950
  * @summary translucent windows flicker on repaint
-   @author Jeremy Wood
-*/
+ * @author Jeremy Wood
+ */
 public class bug8303950 {
 
     // pick two random and distinct colors:
@@ -94,7 +94,7 @@ public class bug8303950 {
                                         System.exit(1);
                                     } else {
                                         System.out.println("This test passed.");
-                                        System.exit(0);
+                                        return;
                                     }
                                 }
                                 Color c = robot.getPixelColor(loc.x, loc.y);
@@ -152,7 +152,7 @@ public class bug8303950 {
         JLabel label = new JLabel();
 
         public FlickerTestWindow() {
-            instructions.setText("Instructions:\nCheck if the center of this window (which is constantly repainting) ever flickers.");
+            instructions.setText("Instructions:\nCheck if the center of the animation (which is constantly repainting) ever flickers.");
             instructions.setBorder(new EmptyBorder(10, 10, 10, 10));
             instructions.setOpaque(false);
             instructions.setEditable(false);
