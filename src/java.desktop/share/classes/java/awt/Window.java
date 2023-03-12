@@ -69,6 +69,7 @@ import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.DebugSettings;
 import sun.awt.SunToolkit;
+import sun.awt.SunHints;
 import sun.awt.util.IdentityArrayList;
 import sun.java2d.pipe.Region;
 import sun.security.action.GetPropertyAction;
@@ -3947,10 +3948,12 @@ public class Window extends Container implements Accessible {
         if (!isOpaque()) {
             Graphics gg = g.create();
             try {
-                if (gg instanceof Graphics2D) {
-                    gg.setColor(getBackground());
-                    ((Graphics2D)gg).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
-                    gg.fillRect(0, 0, getWidth(), getHeight());
+                if (gg instanceof Graphics2D gg2d) {
+                    if (!SunHints.VALUE_PAINT_WINDOW_BACKGROUND_OFF.equals(gg2d.getRenderingHint(SunHints.KEY_PAINT_WINDOW_BACKGROUND_COLOR))) {
+                        gg2d.setColor(getBackground());
+                        gg2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
+                        gg2d.fillRect(0, 0, getWidth(), getHeight());
+                    }
                 }
             } finally {
                 gg.dispose();

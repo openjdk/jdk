@@ -172,7 +172,7 @@ public class SunHints {
         }
     }
 
-    private static final int NUM_KEYS = 10;
+    private static final int NUM_KEYS = 11;
     private static final int VALS_PER_KEY = 8;
 
     /**
@@ -260,6 +260,13 @@ public class SunHints {
     @Native public static final int INTVAL_RESOLUTION_VARIANT_BASE = 1;
     @Native public static final int INTVAL_RESOLUTION_VARIANT_SIZE_FIT = 2;
     @Native public static final int INTVAL_RESOLUTION_VARIANT_DPI_FIT = 3;
+
+    /**
+     * Paint window background color hint key and values
+     */
+    @Native public static final int INTKEY_PAINT_WINDOW_BACKGROUND_COLOR = 10;
+    @Native public static final int INTVAL_PAINT_WINDOW_BACKGROUND_COLOR_ON = 0;
+    @Native public static final int INTVAL_PAINT_WINDOW_BACKGROUND_COLOR_OFF = 1;
 
     /**
      * LCD text contrast control hint key.
@@ -513,4 +520,19 @@ public class SunHints {
         KEY_TEXT_ANTIALIAS_LCD_CONTRAST =
         new LCDContrastKey(SunHints.INTKEY_AATEXT_LCD_CONTRAST,
                            "Text-specific LCD contrast key");
+
+    /**
+     * Paint window background color key and value objects
+     */
+    public static final Key KEY_PAINT_WINDOW_BACKGROUND_COLOR =
+            new SunHints.Key(SunHints.INTKEY_PAINT_WINDOW_BACKGROUND_COLOR,
+                    "Paint window background color");
+    public static final Object VALUE_PAINT_WINDOW_BACKGROUND_ON =
+            new SunHints.Value(KEY_PAINT_WINDOW_BACKGROUND_COLOR,
+                    SunHints.INTVAL_PAINT_WINDOW_BACKGROUND_COLOR_ON,
+                    "Paint window background color");
+    public static final Object VALUE_PAINT_WINDOW_BACKGROUND_OFF =
+            new SunHints.Value(KEY_PAINT_WINDOW_BACKGROUND_COLOR,
+                    SunHints.INTVAL_PAINT_WINDOW_BACKGROUND_COLOR_OFF,
+                    "Do not paint window background color");
 }

@@ -41,6 +41,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
+import sun.awt.SunHints;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.security.action.GetPropertyAction;
 
@@ -885,6 +886,12 @@ public class RepaintManager
                             // the window, don't do anything.
                             if (g != null) {
                                 g.setClip(rect.x, rect.y, rect.width, rect.height);
+
+                                if (g instanceof Graphics2D g2d) {
+                                    // If Window#paint(Graphics) fills its background color we may see flickering
+                                    g2d.setRenderingHint(SunHints.KEY_PAINT_WINDOW_BACKGROUND_COLOR, SunHints.VALUE_PAINT_WINDOW_BACKGROUND_OFF);
+                                }
+
                                 try {
                                     dirtyComponent.paint(g);
                                 } finally {
