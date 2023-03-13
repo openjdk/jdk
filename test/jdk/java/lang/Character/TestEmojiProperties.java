@@ -48,6 +48,14 @@ import static java.lang.Character.isEmojiComponent;
 import static java.lang.Character.isExtendedPictographic;
 
 public class TestEmojiProperties {
+    // Masks representing Emoji properties (16-bit `B` table masks in
+    // CharacterData.java)
+    private static final int EMOJI = 0x0040;
+    private static final int EMOJI_PRESENTATION = 0x0080;
+    private static final int EMOJI_MODIFIER = 0x0100;
+    private static final int EMOJI_MODIFIER_BASE = 0x0200;
+    private static final int EMOJI_COMPONENT = 0x0400;
+    private static final int EXTENDED_PICTOGRAPHIC = 0x0800;
 
     public static void main(String[] args) throws IOException {
         var emojiProps = Files.readAllLines(UCDFiles.EMOJI_DATA).stream()
@@ -68,7 +76,7 @@ public class TestEmojiProperties {
         final var fails = new Integer[1];
         fails[0] = 0;
         IntStream.rangeClosed(MIN_CODE_POINT, MAX_CODE_POINT).forEach(cp -> {
-            var props = emojiProps.getOrDefault(cp, 0);
+            var props = emojiProps.getOrDefault(cp, 0L);
             if ((props & EMOJI) != 0 ^ isEmoji(cp)) {
                 System.err.printf("""
                         isEmoji(0x%x) failed. Returned: %b
@@ -116,13 +124,7 @@ public class TestEmojiProperties {
         }
     }
 
-    private static final int EMOJI = 0x00000001;
-    private static final int EMOJI_PRESENTATION = 0x00000002;
-    private static final int EMOJI_MODIFIER = 0x00000004;
-    private static final int EMOJI_MODIFIER_BASE = 0x00000008;
-    private static final int EMOJI_COMPONENT = 0x00000010;
-    private static final int EXTENDED_PICTOGRAPHIC = 0x00000020;
-    static int convertType(String type) {
+    private static long convertType(String type) {
         return switch (type) {
             case "Emoji" -> EMOJI;
             case "Emoji_Presentation" -> EMOJI_PRESENTATION;

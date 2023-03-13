@@ -602,11 +602,11 @@ public class GenerateCharacter {
     }
 
     static void addEmojiProps(long[] map, EmojiData emojiData) {
-        emojiData.emojiProps.keySet().stream().forEach(cp -> {
+        for (int cp : emojiData.codepoints()) {
             var index = cp & 0xFFFF;
             if (index < map.length)
-                map[index] |= (long)emojiData.emojiProps.get(cp) << 32;
-        });
+                map[index] |= emojiData.properties(cp) << 32;
+        }
     }
 
     /**

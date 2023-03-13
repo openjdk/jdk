@@ -30,9 +30,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,7 +42,17 @@ import java.util.stream.Stream;
  * https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files
  */
 class EmojiData {
-    final Map<Integer, Integer> emojiProps;
+    // Masks representing Emoji properties (16-bit `B` table masks in
+    // CharacterData.java)
+    private static final int EMOJI = 0x0040;
+    private static final int EMOJI_PRESENTATION = 0x0080;
+    private static final int EMOJI_MODIFIER = 0x0100;
+    private static final int EMOJI_MODIFIER_BASE = 0x0200;
+    private static final int EMOJI_COMPONENT = 0x0400;
+    private static final int EXTENDED_PICTOGRAPHIC = 0x0800;
+
+    // Emoji properties map
+    private final Map<Integer, Long> emojiProps;
 
     static EmojiData readSpecFile(Path file, int plane) throws IOException {
         return new EmojiData(file, plane);
@@ -61,22 +70,25 @@ class EmojiData {
                     return Stream.empty();
                 } else {
                     return range.length == 1 ?
-                            Stream.of(new AbstractMap.SimpleEntry<>(start, convertType(map[1].trim()))) :
-                            IntStream.rangeClosed(start,
-                                            Integer.valueOf(range[1], 16))
-                                    .mapToObj(cp -> new AbstractMap.SimpleEntry<>(cp, convertType(map[1].trim())));
+                        Stream.of(new AbstractMap.SimpleEntry<>(start, convertType(map[1].trim()))) :
+                        IntStream.rangeClosed(start, Integer.valueOf(range[1], 16))
+                            .mapToObj(cp -> new AbstractMap.SimpleEntry<>(cp, convertType(map[1].trim())));
                 }
             })
-            .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue, (v1, v2) -> v1 | v2));
+            .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey,
+                    AbstractMap.SimpleEntry::getValue,
+                    (v1, v2) -> v1 | v2));
     }
 
-    private static final int EMOJI = 0x00000040;
-    private static final int EMOJI_PRESENTATION = 0x00000080;
-    private static final int EMOJI_MODIFIER = 0x00000100;
-    private static final int EMOJI_MODIFIER_BASE = 0x00000200;
-    private static final int EMOJI_COMPONENT = 0x00000400;
-    private static final int EXTENDED_PICTOGRAPHIC = 0x00000800;
-    static int convertType(String type) {
+    long properties(int cp) {
+        return emojiProps.get(cp);
+    }
+
+    Set<Integer> codepoints() {
+        return emojiProps.keySet();
+    }
+
+    private static long convertType(String type) {
         return switch (type) {
             case "Emoji" -> EMOJI;
             case "Emoji_Presentation" -> EMOJI_PRESENTATION;
@@ -87,5 +99,4 @@ class EmojiData {
             default -> throw new InternalError();
         };
     }
-
 }
