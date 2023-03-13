@@ -109,7 +109,7 @@ public enum TypeKind {
             case 9 -> TypeKind.ShortType;
             case 10 -> TypeKind.IntType;
             case 11 -> TypeKind.LongType;
-            default -> throw new IllegalStateException("Bad new array code: " + newarraycode);
+            default -> throw new IllegalArgumentException("Bad new array code: " + newarraycode);
         };
     }
 
@@ -129,7 +129,7 @@ public enum TypeKind {
             case 'J' -> TypeKind.LongType;
             case 'D' -> TypeKind.DoubleType;
             case 'V' -> TypeKind.VoidType;
-            default -> throw new IllegalStateException("Bad type: " + s);
+            default -> throw new IllegalArgumentException("Bad type: " + s);
         };
     }
 }
