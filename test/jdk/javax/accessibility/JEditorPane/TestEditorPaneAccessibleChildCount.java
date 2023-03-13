@@ -33,15 +33,9 @@
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.Point;
-import java.awt.Robot;
 import java.io.IOException;
 import java.net.URL;
 import javax.accessibility.AccessibleContext;
-import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -49,10 +43,9 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.html.HTMLEditorKit;
 
-public class TestEditorPaneAccessibleChildCount implements ActionListener {
+public class TestEditorPaneAccessibleChildCount {
     private static JEditorPane jep;
     private static AccessibleContext ac;
-    private static JButton ChangePageBtn;
     private static URL url;
     private static JFrame frame;
 
@@ -61,75 +54,66 @@ public class TestEditorPaneAccessibleChildCount implements ActionListener {
     }
 
     public void createAndShowUI() {
-        frame = new JFrame("EditorPaneTester Tester");
+        frame = new JFrame("JEditorPane A11Y Child Count Test");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         JPanel panel = new JPanel();
         jep = new JEditorPane();
         jep.setEditable(false);
         jep.setEditorKit(new HTMLEditorKit());
-        url= TestEditorPaneAccessibleChildCount.class.getResource("index.html");
+        url = TestEditorPaneAccessibleChildCount.class.
+                getResource("test1.html");
+        loadHtmlPage(url);
         JScrollPane jScrollPane = new JScrollPane(jep);
         jScrollPane.setPreferredSize(new Dimension(540,400));
         panel.add(jScrollPane);
         frame.getContentPane().add(panel, BorderLayout.CENTER);
-
-        ChangePageBtn = new JButton("Change Page");
-        ChangePageBtn.addActionListener(this);
-        frame.getContentPane().add(ChangePageBtn, BorderLayout.SOUTH);
-
-        try {
-            jep.setPage(url);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         frame.setSize(560, 450);
         frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        url= TestEditorPaneAccessibleChildCount.class.getResource("title.html");
+    public static void loadHtmlPage(URL url) {
         try {
             jep.setPage(url);
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void addDelay(int mSec) {
+        try {
+            Thread.sleep(mSec);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(100);
         try {
             SwingUtilities.invokeAndWait(() -> {
                 new TestEditorPaneAccessibleChildCount();
             });
-            robot.waitForIdle();
-            robot.delay(1000);
+            addDelay(500);
             ac = jep.getAccessibleContext();
             int childCount1 = ac.getAccessibleChildrenCount();
 
-            Point ChangePageBtnLocation = ChangePageBtn.getLocationOnScreen();
-            int width = ChangePageBtn.getWidth();
-            int height = ChangePageBtn.getHeight();
-            robot.mouseMove(ChangePageBtnLocation.x + width/2,
-                            ChangePageBtnLocation.y + height/2);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(100);
-
+            url = TestEditorPaneAccessibleChildCount.class.
+                    getResource("test2.html");
+            loadHtmlPage(url);
+            addDelay(500);
             int childCount2 = ac.getAccessibleChildrenCount();
 
             if ((childCount1 != childCount2) &&
                     (childCount1 != 0 && childCount2 != 0)) {
                 System.out.println("passed");
             } else {
-                System.out.println("Index page accessible children count is: "+
-                        childCount1);
-                System.out.println("Title page accessible children count is: "+
-                        childCount2);
-                throw new RuntimeException("getAccessibleChildrenCount returned"+
-                        " wrong child count");
+                System.out.println("Test1 html page accessible children" +
+                        " count is: "+ childCount1);
+                System.out.println("Test2 html page accessible children" +
+                        " count is: "+ childCount2);
+                throw new RuntimeException("getAccessibleChildrenCount" +
+                        " returned wrong child count");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
