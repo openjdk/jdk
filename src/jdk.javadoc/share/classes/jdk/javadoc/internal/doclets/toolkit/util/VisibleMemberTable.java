@@ -154,21 +154,26 @@ public class VisibleMemberTable {
     private final Utils utils;
     private final VisibleMemberCache mcache;
 
-    /** Tables for direct and indirect superclasses. */
-    private final List<VisibleMemberTable> allSuperclasses;
+    /**
+     * Tables for direct and indirect superclasses.
+     *
+     * Tables for superclasses must be unique: no class can appear multiple
+     * times in the inheritance hierarchy for some other class.
+     */
+    private final Set<VisibleMemberTable> allSuperclasses;
     /**
      * Tables for direct and indirect superinterfaces.
-     * Tables for superinterfaces might not be unique.
+     *
+     * Tables for superinterfaces might not be unique (i.e. an interface
+     * may be added from different lineages).
      */
     private final List<VisibleMemberTable> allSuperinterfaces;
     /**
      * Tables for direct superclass and direct superinterfaces.
      *
      * The position of a table for the superclass in the list is unspecified.
-     * Tables for the superinterfaces might not be unique (i.e. an interface
-     * may be added from different lineages).
      */
-    private final List<VisibleMemberTable> parents;
+    private final Set<VisibleMemberTable> parents;
 
     private Map<Kind, List<Element>> visibleMembers;
     private final Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
@@ -189,9 +194,9 @@ public class VisibleMemberTable {
         te = typeElement;
         parent = (TypeElement) utils.typeUtils.asElement(te.getSuperclass());
         this.mcache = mcache;
-        allSuperclasses = new ArrayList<>();
+        allSuperclasses = new LinkedHashSet<>();
         allSuperinterfaces = new ArrayList<>();
-        parents = new ArrayList<>();
+        parents = new LinkedHashSet<>();
     }
 
     private void ensureInitialized() {
@@ -206,7 +211,7 @@ public class VisibleMemberTable {
         computeVisibleMembers();
     }
 
-    private List<VisibleMemberTable> getAllSuperclasses() {
+    private Set<VisibleMemberTable> getAllSuperclasses() {
         ensureInitialized();
         return allSuperclasses;
     }
@@ -440,7 +445,8 @@ public class VisibleMemberTable {
             if (intfc != null) {
                 VisibleMemberTable vmt = mcache.getVisibleMemberTable(intfc);
                 allSuperinterfaces.add(vmt);
-                parents.add(vmt);
+                boolean added = parents.add(vmt);
+                assert added; // no duplicates
                 allSuperinterfaces.addAll(vmt.getAllSuperinterfaces());
             }
         }
@@ -448,10 +454,12 @@ public class VisibleMemberTable {
         if (parent != null) {
             VisibleMemberTable vmt = mcache.getVisibleMemberTable(parent);
             allSuperclasses.add(vmt);
+            assert Collections.disjoint(allSuperclasses, vmt.getAllSuperclasses()); // no duplicates
             allSuperclasses.addAll(vmt.getAllSuperclasses());
             // Add direct and indirect superinterfaces of a superclass.
             allSuperinterfaces.addAll(vmt.getAllSuperinterfaces());
-            parents.add(vmt);
+            boolean added = parents.add(vmt);
+            assert added; // no duplicates
         }
     }
 
@@ -1148,5 +1156,17 @@ public class VisibleMemberTable {
             return overriddenMethod.getEnclosingElement()
                     + "::" + overriddenMethod + ", simple=" + simpleOverride;
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return te.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof VisibleMemberTable other))
+            return false;
+        return te.equals(other.te);
     }
 }
