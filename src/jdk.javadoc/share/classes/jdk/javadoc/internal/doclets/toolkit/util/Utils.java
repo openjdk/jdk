@@ -1028,7 +1028,9 @@ public class Utils {
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
         // TODO: this computation should be eventually delegated to VisibleMemberTable
         Set<TypeElement> alreadySeen = null;
-        assert (alreadySeen = new HashSet<>()) != null; // create set conditionally
+        // create a set iff assertions are enabled, to assert that no class
+        // appears more than once in a superclass hierarchy
+        assert (alreadySeen = new HashSet<>()) != null;
         for (var t = type; ;) {
             var supertypes = typeUtils.directSupertypes(t);
             if (supertypes.isEmpty()) { // end of hierarchy
@@ -1036,7 +1038,7 @@ public class Utils {
             }
             t = supertypes.get(0); // if non-empty, the first element is always the superclass
             var te = asTypeElement(t);
-            assert alreadySeen.add(te);
+            assert alreadySeen.add(te); // it should be the first time we see `te`
             if (!hasHiddenTag(te) && (isPublic(te) || isLinkable(te))) {
                 return t;
             }
