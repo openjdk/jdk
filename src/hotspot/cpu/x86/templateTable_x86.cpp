@@ -750,8 +750,6 @@ void TemplateTable::index_check(Register array, Register index) {
 
 void TemplateTable::index_check_without_pop(Register array, Register index) {
   // destroys rbx
-  // check array
-  __ null_check(array, arrayOopDesc::length_offset_in_bytes());
   // sign extend index for use by indexed load
   __ movl2ptr(index, index);
   // check index
@@ -4056,7 +4054,6 @@ void TemplateTable::anewarray() {
 
 void TemplateTable::arraylength() {
   transition(atos, itos);
-  __ null_check(rax, arrayOopDesc::length_offset_in_bytes());
   __ movl(rax, Address(rax, arrayOopDesc::length_offset_in_bytes()));
 }
 
