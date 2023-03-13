@@ -118,8 +118,6 @@
 #include "cgroupSubsystem_linux.hpp"
 #endif
 
-#define SIZE_T_MAX_VALUE ((size_t) -1)
-
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
   do {                                                                 \
     JavaThread* THREAD = JavaThread::thread_from_jni_environment(env); \
@@ -347,7 +345,7 @@ WB_ENTRY(jint, WB_StressVirtualSpaceResize(JNIEnv* env, jobject o,
   // sizeof(size_t) depends on whether OS is 32bit or 64bit. sizeof(jlong) is
   // always 8 byte. That's why we should avoid overflow in case of 32bit platform.
   if (sizeof(size_t) < sizeof(jlong)) {
-    jlong size_t_max_value = (jlong) SIZE_T_MAX_VALUE;
+    jlong size_t_max_value = (jlong)SIZE_MAX;
     if (reserved_space_size > size_t_max_value || magnitude > size_t_max_value
         || iterations > size_t_max_value) {
       tty->print_cr("One of variables printed above overflows size_t. Can't proceed.\n");
