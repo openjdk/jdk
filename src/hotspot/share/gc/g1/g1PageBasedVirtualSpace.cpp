@@ -106,12 +106,12 @@ size_t G1PageBasedVirtualSpace::addr_to_page_index(char* addr) const {
 
 bool G1PageBasedVirtualSpace::is_area_committed(size_t start_page, size_t size_in_pages) const {
   size_t end_page = start_page + size_in_pages;
-  return _committed.get_next_zero_offset(start_page, end_page) >= end_page;
+  return _committed.find_first_clear_bit(start_page, end_page) >= end_page;
 }
 
 bool G1PageBasedVirtualSpace::is_area_uncommitted(size_t start_page, size_t size_in_pages) const {
   size_t end_page = start_page + size_in_pages;
-  return _committed.get_next_one_offset(start_page, end_page) >= end_page;
+  return _committed.find_first_set_bit(start_page, end_page) >= end_page;
 }
 
 char* G1PageBasedVirtualSpace::page_start(size_t index) const {
@@ -188,7 +188,7 @@ bool G1PageBasedVirtualSpace::commit(size_t start_page, size_t size_in_pages) {
 
   if (_special) {
     // Check for dirty pages and update zero_filled if any found.
-    if (_dirty.get_next_one_offset(start_page, end_page) < end_page) {
+    if (_dirty.find_first_set_bit(start_page, end_page) < end_page) {
       zero_filled = false;
       _dirty.par_clear_range(start_page, end_page, BitMap::unknown_range);
     }

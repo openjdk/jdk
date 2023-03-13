@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public:
 
   uint next(uint const idx, size_t const size_in_bits) {
     BitMapView bm(_bits, size_in_bits);
-    return static_cast<uint>(bm.get_next_one_offset(idx));
+    return static_cast<uint>(bm.find_first_set_bit(idx));
   }
 
   static size_t header_size_in_bytes();
