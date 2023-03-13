@@ -2755,12 +2755,12 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   }
 
   Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
-  Handle h_eiie = Exceptions::new_exception(current, exception_name, st.as_string());
+  Handle init_error = Exceptions::new_exception(current, exception_name, st.as_string());
   // If new_exception returns a different exception while creating the exception,
   // abandon the attempt to save the initialization error and return null.
-  if (h_eiie->klass()->name() != exception_name) {
+  if (init_error->klass()->name() != exception_name) {
     log_info(class, init)("Exception thrown while saving initialization exception %s",
-                        h_eiie->klass()->external_name());
+                        init_error->klass()->external_name());
     return Handle();
   }
 
@@ -2776,16 +2776,16 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   if (!current->has_pending_exception()){
     Handle stack_trace(current, result.get_oop());
     assert(stack_trace->is_objArray(), "Should be an array");
-    java_lang_Throwable::set_stacktrace(h_eiie(), stack_trace());
+    java_lang_Throwable::set_stacktrace(init_error(), stack_trace());
     // Clear backtrace because the stacktrace should be used instead.
-    set_backtrace(h_eiie(), nullptr);
+    set_backtrace(init_error(), nullptr);
   } else {
     log_info(class, init)("Exception thrown while getting stack trace for initialization exception %s",
-                        h_eiie->klass()->external_name());
+                        init_error->klass()->external_name());
     current->clear_pending_exception();
   }
 
-  return h_eiie;
+  return init_error;
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
