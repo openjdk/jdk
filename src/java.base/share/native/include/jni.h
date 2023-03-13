@@ -55,6 +55,7 @@ extern "C" {
 #ifndef JNI_TYPES_ALREADY_DEFINED_IN_JNI_MD_H
 
 typedef unsigned char   jboolean;
+typedef unsigned short  jchar;
 typedef short           jshort;
 typedef float           jfloat;
 typedef double          jdouble;
@@ -62,8 +63,6 @@ typedef double          jdouble;
 typedef jint            jsize;
 
 #ifdef __cplusplus
-
-typedef char16_t        jchar;
 
 class _jobject {};
 class _jclass : public _jobject {};
@@ -96,10 +95,6 @@ typedef _jdoubleArray *jdoubleArray;
 typedef _jobjectArray *jobjectArray;
 
 #else
-
-#include <stdint.h>
-
-typedef uint_least16_t  jchar;
 
 struct _jobject;
 

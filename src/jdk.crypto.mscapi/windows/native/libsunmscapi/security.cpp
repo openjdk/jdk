@@ -77,6 +77,10 @@
             fflush(stdout); \
         }
 
+// We want the C version instead, char16_t is unsigned short in C so this works
+WINCRYPT32API WINAPI
+DWORD CertGetNameStringW(PCCERT_CONTEXT, DWORD, DWORD, void*, unsigned short*, DWORD);
+
 extern "C" {
 
 char* trace = getenv("CAPI_TRACE");
@@ -429,7 +433,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
     const char* pszCertStoreName = NULL;
     HCERTSTORE hCertStore = NULL;
     PCCERT_CONTEXT pCertContext = NULL;
-    char16_t* pszNameString = NULL; // certificate's friendly name
+    jchar* pszNameString = NULL; // certificate's friendly name
     DWORD cchNameString = 0;
 
     __try
@@ -615,14 +619,14 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                 NULL, 0)) > 1) {
 
                                 // Found friendly name
-                                pszNameString = new (env) char16_t[cchNameString];
+                                pszNameString = new (env) jchar[cchNameString];
                                 if (pszNameString == NULL) {
                                     __leave;
                                 }
 
                                 CertGetNameStringW(pc,
                                     CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL,
-                                    (LPWSTR) pszNameString, cchNameString);
+                                    pszNameString, cchNameString);
                             }
                         }
 
@@ -648,7 +652,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                     if (pszNameString)
                     {
                         PP("%ls: %s", pszNameString, pCertContext->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId);
-                        jsize nameLen = (jsize) std::u16string(pszNameString).length();
+                        jsize nameLen = (jsize) std::u16string(static_cast<char16_t*>(pszNameString)).size();
                         if (bHasNoPrivateKey)
                         {
                             // Generate certificate chain and store into cert chain
@@ -1472,7 +1476,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
     const char* pszCertStoreName = NULL;
     HCERTSTORE hCertStore = NULL;
     PCCERT_CONTEXT pCertContext = NULL;
-    char16_t* pszCertAliasName = NULL;
+    jchar* pszCertAliasName = NULL;
     jbyte* pbCertEncoding = NULL;
     const jchar* jCertAliasChars = NULL;
     const char* pszContainerName = NULL;
@@ -1509,7 +1513,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
 
         // Set the certificate's friendly name
         int size = env->GetStringLength(jCertAliasName);
-        pszCertAliasName = new (env) char16_t[size + 1];
+        pszCertAliasName = new (env) jchar[size + 1];
         if (pszCertAliasName == NULL) {
             __leave;
         }
@@ -1518,7 +1522,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
         if (jCertAliasChars == NULL) {
             __leave;
         }
-        memcpy(pszCertAliasName, jCertAliasChars, size * sizeof(char16_t));
+        memcpy(pszCertAliasName, jCertAliasChars, size * sizeof(jchar));
         pszCertAliasName[size] = 0; // append the string terminator
 
         CRYPT_DATA_BLOB friendlyName = {
@@ -1734,13 +1738,13 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
   jbyteArray jCertEncoding, jint jCertEncodingSize) {
 
     const char* pszCertStoreName = NULL;
-    const char16_t* pszCertAliasName = NULL;
+    const jchar* pszCertAliasName = NULL;
     HCERTSTORE hCertStore = NULL;
     PCCERT_CONTEXT pCertContext = NULL;
     PCCERT_CONTEXT pTBDCertContext = NULL;
     jbyte* pbCertEncoding = NULL;
     DWORD cchNameString = 0;
-    char16_t* pszNameString = NULL; // certificate's friendly name
+    jchar* pszNameString = NULL; // certificate's friendly name
     BOOL bDeleteAttempted = FALSE;
 
     __try
@@ -1782,13 +1786,13 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
         if ((cchNameString = ::CertGetNameStringW(pTBDCertContext,
                 CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, NULL, 0)) > 1) {
 
-            pszNameString = new (env) char16_t[cchNameString];
+            pszNameString = new (env) jchar[cchNameString];
             if (pszNameString == NULL) {
                 __leave;
             }
 
             ::CertGetNameStringW(pTBDCertContext,
-                CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, (LPWSTR) pszNameString,
+                CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, pszNameString,
                 cchNameString);
 
             // Compare the certificate's friendly name with supplied alias name
@@ -1796,7 +1800,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
                 == NULL) {
                 __leave;
             }
-            if (std::u16string(pszCertAliasName) == std::u16string(pszNameString)) {
+            if (std::u16string(static_cast<char16_t*>(pszCertAliasName)) == std::u16string(static_cast<char16_t*>(pszNameString))) {
 
                 // Only delete the certificate if the alias names matches
                 if (! ::CertDeleteCertificateFromStore(pTBDCertContext)) {

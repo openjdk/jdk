@@ -74,6 +74,10 @@
 
 #include <awt_DnDDT.h>
 
+// C version to avoid wchar_t issues
+WINUSERAPI WINAPI
+int ToUnicodeEx(UINT, UINT, const BYTE*, unsigned short*, int, UINT, HKL);
+
 LPCTSTR szAwtComponentClassName = TEXT("SunAwtComponent");
 // register a message that no other window in the process (even in a plugin
 // scenario) will be using
@@ -3627,7 +3631,7 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
     } else {
         UINT scancode = ::MapVirtualKey(wkey, 0);
         converted = ::ToUnicodeEx(wkey, scancode, keyboardState,
-                                              reinterpret_cast<LPWSTR>(wChar), 2, 0, GetKeyboardLayout());
+                                              wChar, 2, 0, GetKeyboardLayout());
     }
 
     UINT translation;
