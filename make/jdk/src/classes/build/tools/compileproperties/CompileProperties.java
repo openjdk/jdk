@@ -270,7 +270,7 @@ public class CompileProperties {
             Writer writer = null;
             try {
                 writer = new BufferedWriter(
-                        new OutputStreamWriter(new FileOutputStream(outputPath), StandardCharsets.ISO_8859_1));
+                        new OutputStreamWriter(new FileOutputStream(outputPath), StandardCharsets.US_ASCII));
                 MessageFormat format = new MessageFormat(FORMAT);
                 writer.write(format.format(new Object[] { packageString, className, superClass, data }));
             } catch ( IOException e ) {
