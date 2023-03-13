@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_FIELDSTREAMS_HPP
 #define SHARE_OOPS_FIELDSTREAMS_HPP
 
-#include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/fieldInfo.hpp"
 #include "runtime/fieldDescriptor.hpp"
 
@@ -39,8 +39,8 @@
 // cases.
 class FieldStreamBase : public StackObj {
  protected:
-  const Array<u1>* _fieldinfo_stream;
-  FieldInfoReader   _reader;
+  const Array<u1>*    _fieldinfo_stream;
+  FieldInfoReader     _reader;
   constantPoolHandle  _constants;
   int                 _index;
   int                 _limit;

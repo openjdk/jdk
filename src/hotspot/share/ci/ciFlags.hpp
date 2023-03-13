@@ -43,12 +43,9 @@ private:
   bool _stable;
   bool _intialized_final_update;
 
-  ciFlags()                  { _flags = 0; _stable = false; _intialized_final_update = false; }
-  ciFlags(AccessFlags flags, bool is_stable= false, bool is_initialized_final_update = false) {
-    _flags = flags.as_int();
-    _stable = is_stable;
-    _intialized_final_update = is_initialized_final_update;
-  }
+  ciFlags() :_flags(0), _stable(false), _intialized_final_update(false) { }
+  ciFlags(AccessFlags flags, bool is_stable = false, bool is_initialized_final_update = false) :
+    _flags(flags.as_int()), _stable(is_stable), _intialized_final_update(is_initialized_final_update) { }
 
 public:
   // Java access flags

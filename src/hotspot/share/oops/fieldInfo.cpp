@@ -27,7 +27,9 @@
 #include "runtime/atomic.hpp"
 
 void FieldInfo::print(outputStream* os, ConstantPool* cp) {
-  os->print_cr("index=%d name_index=%d name=%s signature_index=%d signature=%s offset=%d AccessFlags=%d FieldFlags=%d initval_index=%d gen_signature_index=%d, gen_signature=%s contended_group=%d",
+  os->print_cr("index=%d name_index=%d name=%s signature_index=%d signature=%s offset=%d "
+               "AccessFlags=%d FieldFlags=%d "
+               "initval_index=%d gen_signature_index=%d, gen_signature=%s contended_group=%d",
                 index(),
                 name_index(), name(cp)->as_utf8(),
                 signature_index(), signature(cp)->as_utf8(),
@@ -35,7 +37,8 @@ void FieldInfo::print(outputStream* os, ConstantPool* cp) {
                 access_flags().as_int(),
                 field_flags().as_uint(),
                 initializer_index(),
-                generic_signature_index(), _field_flags.is_injected() ? lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8(),
+                generic_signature_index(),
+                _field_flags.is_injected() ? lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8(),
                 contended_group());
 }
 
@@ -117,7 +120,7 @@ GrowableArray<FieldInfo>* FieldInfoStream::create_FieldInfoArray(const Array<u1>
   FieldInfoReader r(fis);
   *java_fields_count = r.next_uint();
   *injected_fields_count = r.next_uint();
-  while(r.has_next()) {
+  while (r.has_next()) {
     FieldInfo fi;
     r.read_field_info(fi);
     array->append(fi);
@@ -132,7 +135,7 @@ void FieldInfoStream::print_from_fieldinfo_stream(Array<u1>* fis, outputStream* 
   FieldInfoReader r(fis);
   int java_field_count = r.next_uint();
   int injected_fields_count = r.next_uint();
-  while(r.has_next()) {
+  while (r.has_next()) {
     FieldInfo fi;
     r.read_field_info(fi);
     fi.print(os, cp);

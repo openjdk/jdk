@@ -26,10 +26,8 @@
 #define SHARE_OOPS_FIELDINFO_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/metadataFactory.hpp"
-#include "oops/constantPool.hpp"
-#include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "utilities/unsigned5.hpp"
 #include "utilities/vmEnums.hpp"
 
 static constexpr u4 flag_mask(int pos) {
@@ -162,22 +160,22 @@ class FieldInfo {
               }
             }
 
-  u4 index() const { return _index; }
-  void set_index(u4 index) { _index = index; }
-  u2 name_index() const { return _name_index; }
-  void set_name_index(u2 index) { _name_index = index; }
-  u2 signature_index() const { return _signature_index; }
-  void set_signature_index(u2 index) { _signature_index = index; }
-  u4 offset() const { return _offset; }
-  void set_offset(u4 offset) { _offset = offset; }
-  AccessFlags access_flags() const { return _access_flags; }
-  FieldFlags field_flags() const { return _field_flags; }
-  FieldInfo::FieldFlags* field_flags_addr() { return &_field_flags; }
-  u2 initializer_index() const { return _initializer_index; }
-  void set_initializer_index(u2 index) { _initializer_index = index; }
-  u2 generic_signature_index() const { return _generic_signature_index; }
+  u4 index() const                           { return _index; }
+  void set_index(u4 index)                   { _index = index; }
+  u2 name_index() const                      { return _name_index; }
+  void set_name_index(u2 index)              { _name_index = index; }
+  u2 signature_index() const                 { return _signature_index; }
+  void set_signature_index(u2 index)         { _signature_index = index; }
+  u4 offset() const                          { return _offset; }
+  void set_offset(u4 offset)                 { _offset = offset; }
+  AccessFlags access_flags() const           { return _access_flags; }
+  FieldFlags field_flags() const             { return _field_flags; }
+  FieldFlags* field_flags_addr()             { return &_field_flags; }
+  u2 initializer_index() const               { return _initializer_index; }
+  void set_initializer_index(u2 index)       { _initializer_index = index; }
+  u2 generic_signature_index() const         { return _generic_signature_index; }
   void set_generic_signature_index(u2 index) { _generic_signature_index = index; }
-  u2 contention_group() const { return _contention_group; }
+  u2 contention_group() const                { return _contention_group; }
 
   bool is_contended() const {
     return _field_flags.is_contended();
@@ -197,26 +195,11 @@ class FieldInfo {
     return _offset != 0;
   }
 
-  Symbol* name(ConstantPool* cp) const {
-    int index = _name_index;
-    if (_field_flags.is_injected()) {
-      return lookup_symbol(index);
-    }
-    return cp->symbol_at(index);
-  }
+  inline Symbol* name(ConstantPool* cp) const;
 
-  Symbol* signature(ConstantPool* cp) const {
-    int index = _signature_index;
-    if (_field_flags.is_injected()) {
-      return lookup_symbol(index);
-    }
-    return cp->symbol_at(index);
-  }
+  inline Symbol* signature(ConstantPool* cp) const;
 
-  Symbol* lookup_symbol(int symbol_index) const {
-    assert(_field_flags.is_injected(), "only injected fields");
-    return Symbol::vm_symbol_at(static_cast<vmSymbolID>(symbol_index));
-  }
+  inline Symbol* lookup_symbol(int symbol_index) const;
 
   void print(outputStream* os, ConstantPool* cp);
   void static print_from_growable_array(GrowableArray<FieldInfo>* array, outputStream* os, ConstantPool* cp);

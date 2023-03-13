@@ -27,6 +27,31 @@
 
 #include "oops/fieldInfo.hpp"
 
+#include "memory/metadataFactory.hpp"
+#include "oops/constantPool.hpp"
+#include "oops/symbol.hpp"
+
+inline Symbol* FieldInfo::name(ConstantPool* cp) const {
+  int index = _name_index;
+  if (_field_flags.is_injected()) {
+    return lookup_symbol(index);
+  }
+  return cp->symbol_at(index);
+}
+
+inline Symbol* FieldInfo::signature(ConstantPool* cp) const {
+  int index = _signature_index;
+  if (_field_flags.is_injected()) {
+    return lookup_symbol(index);
+  }
+  return cp->symbol_at(index);
+}
+
+inline Symbol* FieldInfo::lookup_symbol(int symbol_index) const {
+  assert(_field_flags.is_injected(), "only injected fields");
+  return Symbol::vm_symbol_at(static_cast<vmSymbolID>(symbol_index));
+}
+
 inline int FieldInfoStream::num_injected_java_fields(const Array<u1>* fis) {
   FieldInfoReader fir(fis);
   fir.skip(1);
@@ -132,7 +157,7 @@ inline void FieldStatus::atomic_set_bits(u1& flags, u1 mask) {
     old_flags = flags;
     new_flags = old_flags | mask;
     witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while(witness != old_flags);
+  } while (witness != old_flags);
 }
 
 inline void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
@@ -152,6 +177,6 @@ inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {
 
 inline void FieldStatus::update_access_watched(bool z) { update_flag(_fs_access_watched, z); }
 inline void FieldStatus::update_modification_watched(bool z) { update_flag(_fs_modification_watched, z); }
-inline void FieldStatus::update_initialized_final_update(bool z) {update_flag(_initialized_final_update, z); }
+inline void FieldStatus::update_initialized_final_update(bool z) { update_flag(_initialized_final_update, z); }
 
 #endif // SHARE_OOPS_FIELDINFO_INLINE_HPP

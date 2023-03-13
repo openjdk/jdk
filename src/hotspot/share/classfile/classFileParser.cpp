@@ -1629,7 +1629,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     const Symbol* sig = nullptr;
     {
       debug_only(NoSafepointVerifier nsv;)
-      for(int i = 0; i < _temp_field_info->length(); i++) {
+      for (int i = 0; i < _temp_field_info->length(); i++) {
         name = _temp_field_info->adr_at(i)->name(_cp);
         sig = _temp_field_info->adr_at(i)->signature(_cp);
         // If no duplicates, add name/signature in hashtable names_and_sigs.
@@ -2009,7 +2009,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
 
 void ClassFileParser::FieldAnnotationCollector::apply_to(FieldInfo* f) {
   if (is_contended())
-  // Setting the contended group also set the contended bit in field flags
+    // Setting the contended group also sets the contended bit in field flags
     f->set_contended_group(contended_group());
   if (is_stable())
     (f->field_flags_addr())->update_stable(true);
@@ -6020,8 +6020,12 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   lb.build_layout();
 
   int injected_fields_count = _temp_field_info->length() - _java_fields_count;
-  _fieldinfo_stream = FieldInfoStream::create_FieldInfoStream(_temp_field_info, _java_fields_count, injected_fields_count, loader_data(), CHECK);
-  _fields_status = MetadataFactory::new_array<FieldStatus>(_loader_data, _temp_field_info->length(), FieldStatus(0), CHECK);
+  _fieldinfo_stream =
+    FieldInfoStream::create_FieldInfoStream(_temp_field_info, _java_fields_count,
+                                            injected_fields_count, loader_data(), CHECK);
+  _fields_status =
+    MetadataFactory::new_array<FieldStatus>(_loader_data, _temp_field_info->length(),
+                                            FieldStatus(0), CHECK);
 }
 
 void ClassFileParser::set_klass(InstanceKlass* klass) {

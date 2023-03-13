@@ -25,9 +25,9 @@
 #ifndef SHARE_OOPS_FIELDSTREAMS_INLINE_HPP
 #define SHARE_OOPS_FIELDSTREAMS_INLINE_HPP
 
-#include "oops/fieldInfo.inline.hpp"
 #include "oops/fieldStreams.hpp"
 
+#include "oops/fieldInfo.hpp"
 #include "runtime/javaThread.hpp"
 
 FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants, int start, int limit) :

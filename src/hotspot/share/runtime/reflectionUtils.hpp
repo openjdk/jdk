@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_REFLECTIONUTILS_HPP
 
 #include "memory/allStatic.hpp"
-#include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
@@ -120,7 +120,7 @@ class MethodStream : public KlassStream {
 
 class FieldStream : public KlassStream {
  private:
-  int length() { return _klass->java_fields_count(); }
+  int length();
 
   fieldDescriptor _fd_buf;
 

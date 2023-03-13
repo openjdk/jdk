@@ -28,7 +28,8 @@
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
-#include "oops/fieldInfo.hpp"
+#include "oops/constantPool.hpp"
+#include "oops/fieldInfo.inline.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
 #include "runtime/handles.hpp"
@@ -271,7 +272,7 @@ class InstanceKlass: public Klass {
   Array<int>*     _default_vtable_indices;
 
   // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
-  Array<u1>* _fieldinfo_stream;
+  Array<u1>*          _fieldinfo_stream;
   Array<FieldStatus>* _fields_status;
 
   // embedded Java vtable follows here

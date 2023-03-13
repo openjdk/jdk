@@ -551,13 +551,13 @@ void FieldLayoutBuilder::regular_field_sorting() {
   for (GrowableArrayIterator<FieldInfo> it = _field_info->begin(); it != _field_info->end(); ++it, ++idx) {
     FieldInfo ctrl = _field_info->at(0);
     FieldGroup* group = nullptr;
-    FieldInfo tfi = *it;
-    if (tfi.access_flags().is_static()) {
+    FieldInfo fieldinfo = *it;
+    if (fieldinfo.access_flags().is_static()) {
       group = _static_fields;
     } else {
       _has_nonstatic_fields = true;
-      if (tfi.field_flags().is_contended()) {
-        int g = tfi.contended_group();
+      if (fieldinfo.field_flags().is_contended()) {
+        int g = fieldinfo.contended_group();
         if (g == 0) {
           group = new FieldGroup(true);
           _contended_groups.append(group);
@@ -569,7 +569,7 @@ void FieldLayoutBuilder::regular_field_sorting() {
       }
     }
     assert(group != nullptr, "invariant");
-    BasicType type = Signature::basic_type(tfi.signature(_constant_pool));
+    BasicType type = Signature::basic_type(fieldinfo.signature(_constant_pool));
     switch(type) {
       case T_BYTE:
       case T_CHAR:

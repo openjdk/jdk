@@ -870,17 +870,20 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
 
       int java_fields;
       int injected_fields;
-      GrowableArray<FieldInfo>* fields = FieldInfoStream::create_FieldInfoArray(InstanceKlass::cast(k)->fieldinfo_stream(), &java_fields, &injected_fields);
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      GrowableArray<FieldInfo>* fields =
+        FieldInfoStream::create_FieldInfoArray(ik->fieldinfo_stream(),
+                                               &java_fields, &injected_fields);
       for (int i = 0; i < fields->length(); i++) {
         FieldInfo* fi = fields->adr_at(i);
         if (fi->access_flags().is_static()) {
           fi->set_offset(fi->offset() + InstanceMirrorKlass::offset_of_static_fields());
         }
       }
-      Array<u1>* old_stream = InstanceKlass::cast(k)->fieldinfo_stream();
+      Array<u1>* old_stream = ik->fieldinfo_stream();
       assert(fields->length() == (java_fields + injected_fields), "Must be");
       Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, k->class_loader_data(), CHECK);
-      InstanceKlass::cast(k)->set_fieldinfo_stream(new_fis);
+      ik->set_fieldinfo_stream(new_fis);
       MetadataFactory::free_array<u1>(k->class_loader_data(), old_stream);
     }
   }
