@@ -88,11 +88,6 @@ just the Java Virtual Machine instead of the entire native codebase, by running:
 make eclipse-hotspot-env
 ```
 
-A quick tip for development with Eclipse in general, which also applies to
-indexing the Java sources in the JDK (see below), is to enable dark mode
-before doing so. Trust us, it looks much better than Eclipse's default look
-and feel. ;)
-
 If you think your particular Eclipse installation can handle the strain, the
 make system also supports generating a combined Java and C/C++ Workspace for
 Eclipse which can then conveniently switch between Java and C/C++ natures

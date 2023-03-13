@@ -37,8 +37,6 @@ include hotspot/lib/JvmFeatures.gmk
 include hotspot/lib/JvmOverrideFiles.gmk
 include hotspot/lib/JvmFlags.gmk
 
-# Warning: This file does not have the best formatting!
-
 # Random number generation, with the amount of specified digits
 # No need to check if the parameter passed is a valid number, the shell will
 # be more than happy to complain if it isn't ;)
@@ -266,7 +264,7 @@ define SetupEclipseWorkspaceBody
     # instead.
     ifeq ($$($1_NATURE), HOTSPOT)
       $1_CXXSETTINGS += $$(foreach src, $$(strip $$(patsubst %,%/include,$$(call FindModuleNativeDirs, java.base))), \
-        $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(src))"/>$$(NEWLINE))
+          $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(src))"/>$$(NEWLINE))
       $1_CXXSETTINGS += $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(TOPDIR)/src/java.base/share/native/libjimage)"/>$$(NEWLINE)
     endif
 
