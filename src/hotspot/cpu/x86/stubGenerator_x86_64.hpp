@@ -469,8 +469,6 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_method_entry_barrier();
 
-  address generate_check_lock_stack();
-
   address generate_mulAdd();
 
   address generate_bigIntegerRightShift();

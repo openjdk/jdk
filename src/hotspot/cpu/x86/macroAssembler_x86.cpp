@@ -9677,26 +9677,13 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   bind(L_stack_ok);
 }
 
-void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow, bool rt_check_stack) {
+void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, thread, tmp);
 
   // First we need to check if the lock-stack has room for pushing the object reference.
-  if (rt_check_stack) {
-    movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
-    cmpptr(tmp, Address(thread, JavaThread::lock_stack_limit_offset()));
-    jcc(Assembler::greaterEqual, slow);
-  }
-#ifdef ASSERT
-  else {
-    Label ok;
-    movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
-    cmpptr(tmp, Address(thread, JavaThread::lock_stack_limit_offset()));
-    jcc(Assembler::less, ok);
-    stop("Not enough room in lock stack; should have been checked in the method prologue");
-    bind(ok);
-  }
-#endif
+  cmpl(Address(thread, JavaThread::lock_stack_offset_offset()), LockStack::end_offset());
+  jcc(Assembler::greaterEqual, slow);
 
   // Now we attempt to take the fast-lock.
   // Clear lowest two header bits (locked state).
@@ -9709,10 +9696,10 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   jcc(Assembler::notEqual, slow);
 
   // If successful, push object to lock-stack.
-  movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
-  movptr(Address(tmp, 0), obj);
-  increment(tmp, oopSize);
-  movptr(Address(thread, JavaThread::lock_stack_current_offset()), tmp);
+  movl(tmp, Address(thread, JavaThread::lock_stack_offset_offset()));
+  movptr(Address(thread, tmp, Address::times_1), obj);
+  incrementl(tmp, oopSize);
+  movl(Address(thread, JavaThread::lock_stack_offset_offset()), tmp);
 }
 
 void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
@@ -9732,5 +9719,5 @@ void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, 
   const Register thread = rax;
   get_thread(thread);
 #endif
-  subptr(Address(thread, JavaThread::lock_stack_current_offset()), oopSize);
+  subl(Address(thread, JavaThread::lock_stack_offset_offset()), oopSize);
 }

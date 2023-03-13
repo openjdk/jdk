@@ -126,8 +126,6 @@ class x86 {
 
   static address _method_entry_barrier;
 
-  static address _check_lock_stack;
-
   // masks and table for CRC32
   static uint64_t _crc_by128_masks[];
   static juint    _crc_table[];
@@ -216,8 +214,6 @@ class x86 {
   static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
   static address k256_addr()      { return _k256_adr; }
   static address method_entry_barrier() { return _method_entry_barrier; }
-
-  static address check_lock_stack() { return _check_lock_stack; }
 
   static address vector_short_to_byte_mask() {
     return _vector_short_to_byte_mask;

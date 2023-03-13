@@ -3192,55 +3192,6 @@ address StubGenerator::generate_method_entry_barrier() {
   return start;
 }
 
-// Call runtime to ensure lock-stack size.
-// Arguments:
-// - c_rarg0: the required _limit pointer
-address StubGenerator::generate_check_lock_stack() {
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "check_lock_stack");
-  address start = __ pc();
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // save rbp
-
-  __ pusha();
-
-  // The method may have floats as arguments, and we must spill them before calling
-  // the VM runtime.
-  assert(Argument::n_float_register_parameters_j == 8, "Assumption");
-  const int xmm_size = wordSize * 2;
-  const int xmm_spill_size = xmm_size * Argument::n_float_register_parameters_j;
-  __ subptr(rsp, xmm_spill_size);
-  __ movdqu(Address(rsp, xmm_size * 7), xmm7);
-  __ movdqu(Address(rsp, xmm_size * 6), xmm6);
-  __ movdqu(Address(rsp, xmm_size * 5), xmm5);
-  __ movdqu(Address(rsp, xmm_size * 4), xmm4);
-  __ movdqu(Address(rsp, xmm_size * 3), xmm3);
-  __ movdqu(Address(rsp, xmm_size * 2), xmm2);
-  __ movdqu(Address(rsp, xmm_size * 1), xmm1);
-  __ movdqu(Address(rsp, xmm_size * 0), xmm0);
-
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<void (*)(oop*)>(LockStack::ensure_lock_stack_size)), rax);
-
-  __ movdqu(xmm0, Address(rsp, xmm_size * 0));
-  __ movdqu(xmm1, Address(rsp, xmm_size * 1));
-  __ movdqu(xmm2, Address(rsp, xmm_size * 2));
-  __ movdqu(xmm3, Address(rsp, xmm_size * 3));
-  __ movdqu(xmm4, Address(rsp, xmm_size * 4));
-  __ movdqu(xmm5, Address(rsp, xmm_size * 5));
-  __ movdqu(xmm6, Address(rsp, xmm_size * 6));
-  __ movdqu(xmm7, Address(rsp, xmm_size * 7));
-  __ addptr(rsp, xmm_spill_size);
-
-  __ popa();
-
-  __ leave();
-
-  __ ret(0);
-
-  return start;
-}
-
  /**
  *  Arguments:
  *
@@ -4136,9 +4087,6 @@ void StubGenerator::generate_all() {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != NULL) {
     StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
-  }
-  if (UseFastLocking) {
-    StubRoutines::x86::_check_lock_stack = generate_check_lock_stack();
   }
 #ifdef COMPILER2
   if (UseMultiplyToLenIntrinsic) {
