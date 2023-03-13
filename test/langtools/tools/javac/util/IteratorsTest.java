@@ -81,7 +81,7 @@ public class IteratorsTest {
 
     @Test
     public void compoundIterator() {
-        TestConverter<TestIterator<String>, String> c = new TestConverter<>(it -> it);
+        TestConverter<String> c = new TestConverter<>(it -> it);
         TestIterator<String> test1 = new TestIterator<>(List.of("1").iterator());
         TestIterator<String> test2 = new TestIterator<>(List.of("2").iterator());
         Iterator<String> compound = Iterators.createCompoundIterator(List.of(test1, test2), c);
@@ -125,7 +125,7 @@ public class IteratorsTest {
         test.nextCalls = 0;
     }
 
-    private void assertAndResetMaxCalls(TestConverter<?, ?> test, int maxExpectedApplyCalls) {
+    private void assertAndResetMaxCalls(TestConverter<?> test, int maxExpectedApplyCalls) {
         if (test.applyCalls > maxExpectedApplyCalls) {
             Assertions.fail("too many apply invocations: " + test.applyCalls +
                             ", expected: " + maxExpectedApplyCalls);
@@ -155,16 +155,16 @@ public class IteratorsTest {
         }
     }
 
-    static class TestConverter<I, O> implements Function<I, Iterator<O>> {
+    static class TestConverter<T> implements Function<TestIterator<T>, Iterator<T>> {
         int applyCalls;
-        final Function<I, Iterator<O>> delegate;
+        final Function<TestIterator<T>, Iterator<T>> delegate;
 
-        public TestConverter(Function<I, Iterator<O>> delegate) {
+        public TestConverter(Function<TestIterator<T>, Iterator<T>> delegate) {
             this.delegate = delegate;
         }
 
         @Override
-        public Iterator<O> apply(I t) {
+        public Iterator<T> apply(TestIterator<T> t) {
             applyCalls++;
             return delegate.apply(t);
         }
