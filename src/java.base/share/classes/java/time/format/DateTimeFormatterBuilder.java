@@ -4321,8 +4321,10 @@ public final class DateTimeFormatterBuilder {
                     if (length >= position + 3 && context.charEquals(text.charAt(position + 2), 'C')) {
                         // There are localized zone texts that start with "UTC", e.g.
                         // "UTC\u221210:00" (MINUS SIGN instead of HYPHEN-MINUS) in French.
-                        // Exclude those ZoneText cases.
-                        if (!(this instanceof ZoneTextPrinterParser)) {
+                        // Exclude those cases.
+                        if (length == position + 3 ||
+                                context.charEquals(text.charAt(position + 3), '+') ||
+                                context.charEquals(text.charAt(position + 3), '-')) {
                             return parseOffsetBased(context, text, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                         }
                     } else {
