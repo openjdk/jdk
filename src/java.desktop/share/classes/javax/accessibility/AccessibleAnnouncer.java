@@ -26,6 +26,7 @@
 package javax.accessibility;
 
 import javax.accessibility.Accessible;
+import java.lang.annotation.Native;
 
 /**
  * This interface provides the ability to speak a given string using screen readers.
@@ -35,12 +36,12 @@ public interface AccessibleAnnouncer {
     /**
      * messages do not interrupt the current speech, they are spoken after the screen reader has spoken the current phrase
      */
-    int ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT = 0;
+    @Native int ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT = 0;
 
     /**
      * messages interrupt the current speech, but only when the focus is on the window of the calling application
      */
-    int ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT = 1;
+    @Native int ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT = 1;
 
     /**
      * This method makes an announcement with the specified priority from an accessible to which the announcing relates

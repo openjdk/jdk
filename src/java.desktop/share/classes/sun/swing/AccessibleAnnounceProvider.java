@@ -34,16 +34,6 @@ import java.lang.annotation.Native;
  */
 public class AccessibleAnnounceProvider {
 
-    /**
-     * messages do not interrupt the current speech, they are spoken after the screen reader has spoken the current phrase
-     */
-    @Native private static final int ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT = AccessibleAnnouncer.ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT;
-
-    /**
-     * messages interrupt the current speech, but only when the focus is on the window of the calling application
-     */
-    @Native private static final int ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT = AccessibleAnnouncer.ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT;
-
     private AccessibleAnnounceProvider() {}
 
     /**
@@ -56,8 +46,8 @@ public class AccessibleAnnounceProvider {
      */
     public static void announce(Accessible a, final String str, final int priority) throws Exception {
         if (str == null ||
-        priority != ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT &&
-        priority != ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT) {
+        priority != AccessibleAnnouncer.ANNOUNCE_WITHOUT_INTERRUPTING_CURRENT_OUTPUT &&
+        priority != AccessibleAnnouncer.ANNOUNCE_WITH_INTERRUPTING_CURRENT_OUTPUT) {
             throw new IllegalArgumentException("Invalid parameters passed for declaration");
         }
 
