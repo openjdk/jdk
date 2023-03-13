@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,19 @@
  * questions.
  */
 
-/*
- * @test
- * @bug      8174839 8175200 8186332
- * @summary  Bad overriding method should not crash
- * @library  ../../lib
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    javadoc.tester.*
- * @run main TestBadOverride
- */
+package pkg3;
 
-import javadoc.tester.JavadocTester;
+public interface I {
 
-public class TestBadOverride extends JavadocTester {
+    int hashCode();
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String... args) throws Exception {
-        var tester = new TestBadOverride();
-        tester.runTests();
-    }
+    boolean equals(Object obj);
 
-    @Test
-    public void test() {
-        javadoc("-d", "out",
-                "-sourcepath", testSrc,
-                "pkg4");
-        // explicitly configure "no crash" check, which is the main interest of this test
-        setAutomaticCheckNoStacktrace(true);
-    }
+    String toString();
+
+    // No matter what your IDE might show you, from JLS 9.6.4.4 it follows that
+    // the "clone" (as well as currently deprecated "finalize") method cannot
+    // be overridden by an interface method in the same way "hashCode", "equals"
+    // and "toString" can. This is because "clone" is not public.
+    Object clone();
 }
