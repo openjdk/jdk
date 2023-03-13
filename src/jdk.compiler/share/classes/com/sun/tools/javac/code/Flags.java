@@ -123,6 +123,8 @@ public class Flags {
      */
     public static final int HASINIT          = 1<<18;
 
+    public static final int MATCHER          = 1<<19;
+
     /** Flag is set for compiler-generated anonymous method symbols
      *  that `own' an initializer block.
      */
@@ -490,6 +492,7 @@ public class Flags {
         ANNOTATION(Flags.ANNOTATION),
         DEPRECATED(Flags.DEPRECATED),
         HASINIT(Flags.HASINIT),
+        MATCHER(Flags.MATCHER),
         BLOCK(Flags.BLOCK),
         FROM_SOURCE(Flags.FROM_SOURCE),
         ENUM(Flags.ENUM),

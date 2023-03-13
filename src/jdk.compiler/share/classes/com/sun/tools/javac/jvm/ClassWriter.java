@@ -58,6 +58,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.main.Option.*;
+import java.util.stream.Collectors;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
@@ -976,13 +977,23 @@ public class ClassWriter extends ClassFile {
      */
     void writeMethod(MethodSymbol m) {
         int flags = adjustFlags(m.flags());
-        databuf.appendChar(flags);
+        databuf.appendChar(flags | ((m.flags() & MATCHER) != 0 ? Flags.STATIC : 0));
         if (dumpMethodModifiers) {
             PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
             pw.println("METHOD  " + m.name);
             pw.println("---" + flagNames(m.flags()));
         }
-        databuf.appendChar(poolWriter.putName(m.name));
+        Name name;
+        if ((m.flags() & MATCHER) != 0) {
+            name = m.owner.name.append('$', names.fromString(m.params().map(param -> {
+                var g = new UnSharedSignatureGenerator(types);
+                g.assembleSig(param.erasure(types));
+                return names.fromString(g.toName().toString().replace("/", "\\\u007C").replace(";", "\\\u003F"));
+            }).stream().collect(Collectors.joining("$"))));
+        } else {
+            name = m.name;
+        }
+        databuf.appendChar(poolWriter.putName(name));
         databuf.appendChar(poolWriter.putDescriptor(m));
         int acountIdx = beginAttrs();
         int acount = 0;
@@ -1017,6 +1028,46 @@ public class ClassWriter extends ClassFile {
             acount += writeParameterAttrs(m.params);
         acount += writeExtraAttributes(m);
         endAttrs(acountIdx, acount);
+    }
+
+    class UnSharedSignatureGenerator extends Types.SignatureGenerator {
+
+        /**
+         * An output buffer for type signatures.
+         */
+        ByteBuffer sigbuf = new ByteBuffer();
+
+        UnSharedSignatureGenerator(Types types) {
+            super(types);
+        }
+
+        @Override
+        protected void append(char ch) {
+            sigbuf.appendByte(ch);
+        }
+
+        @Override
+        protected void append(byte[] ba) {
+            sigbuf.appendBytes(ba);
+        }
+
+        @Override
+        protected void append(Name name) {
+            sigbuf.appendName(name);
+        }
+
+        @Override
+        protected void classReference(ClassSymbol c) {
+//            enterInner(c);
+        }
+
+        protected void reset() {
+            sigbuf.reset();
+        }
+
+        protected Name toName() {
+            return sigbuf.toName(names);
+        }
     }
 
     /** Write code attribute of method.

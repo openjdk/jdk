@@ -31,6 +31,7 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.template.Carriers;
 import java.util.stream.Stream;
 
 import jdk.internal.javac.PreviewFeature;
@@ -288,4 +289,15 @@ public class SwitchBootstraps {
         return labels.length;
     }
 
+    /**
+     * X
+     * @param carrier X
+     * @param params X
+     * @return X
+     * @throws Throwable X
+     */
+    public static Object readComponent(Object carrier, Class<?>... params) throws Throwable {
+        MethodType returnType = MethodType.methodType(Object.class, params);
+        return Carriers.component(returnType, 0).invoke(carrier);
+    }
 }

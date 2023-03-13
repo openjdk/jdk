@@ -83,7 +83,7 @@ import static java.lang.invoke.MethodType.methodType;
  * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-final class Carriers {
+public final class Carriers {
     /**
      * Maximum number of components in a carrier (based on the maximum
      * number of args to a constructor.)
@@ -927,6 +927,17 @@ final class Carriers {
     }
 
     /**
+     * XXX
+     *
+     * @param methodType  {@link MethodType} whose parameter types supply the shape of the
+     *                    carrier's components
+     * @return the factory for the carrier of the given shape
+     */
+    public static MethodHandle factory(MethodType methodType) {
+        return initializingConstructor(methodType);
+    }
+
+    /**
      * {@return the constructor {@link MethodHandle} for the carrier representing {@code
      * methodType}. The carrier constructor will always have a return type of {@link Object} }
      *
@@ -976,7 +987,7 @@ final class Carriers {
      * @param methodType  {@link MethodType} whose parameter types supply the shape of the
      *                    carrier's components
      */
-    static List<MethodHandle> components(MethodType methodType) {
+    public static List<MethodHandle> components(MethodType methodType) {
         return CarrierFactory
                 .of(methodType)
                 .components()
@@ -996,7 +1007,7 @@ final class Carriers {
      *
      * @throws IllegalArgumentException if {@code i} is out of bounds
      */
-    static MethodHandle component(MethodType methodType, int i) {
+    public static MethodHandle component(MethodType methodType, int i) {
         MethodHandle component = CarrierFactory.of(methodType).component(i);
         component = component.asType(component.type().changeParameterType(0, Object.class));
         return component;

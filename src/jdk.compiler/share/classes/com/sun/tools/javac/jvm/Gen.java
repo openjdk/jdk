@@ -1885,6 +1885,10 @@ public class Gen extends JCTree.Visitor {
         int tmpPos = code.pendingStatPos;
         if (tree.expr != null) {
             Assert.check(code.isStatementStart());
+            Type pt = this.pt;
+            if (env.enclMethod != null && (env.enclMethod.sym.flags() & MATCHER) != 0) {
+                pt = syms.objectType;
+            }
             Item r = genExpr(tree.expr, pt).load();
             if (hasFinally(env.enclMethod, env)) {
                 r = makeTemp(pt);

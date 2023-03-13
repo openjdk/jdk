@@ -3634,7 +3634,7 @@ public class Lower extends TreeTranslator {
     public void visitReturn(JCReturn tree) {
         if (tree.expr != null)
             tree.expr = translate(tree.expr,
-                                  types.erasure(currentMethodDef
+                                  types.erasure((currentMethodDef.sym.flags() & MATCHER) != 0 ? syms.objectType : currentMethodDef
                                                 .restype.type));
         result = tree;
     }

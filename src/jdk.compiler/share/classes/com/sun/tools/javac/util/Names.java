@@ -92,6 +92,7 @@ public class Names {
     public final Name hasNext;
     public final Name hashCode;
     public final Name init;
+    public final Name matcher;
     public final Name iterator;
     public final Name length;
     public final Name next;
@@ -281,6 +282,7 @@ public class Names {
         hasNext = fromString("hasNext");
         hashCode = fromString("hashCode");
         init = fromString("<init>");
+        matcher = fromString("<matcher>");
         iterator = fromString("iterator");
         length = fromString("length");
         next = fromString("next");

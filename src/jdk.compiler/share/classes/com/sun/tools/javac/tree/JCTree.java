@@ -2459,6 +2459,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCPattern> nested;
         public ClassSymbol record;
         public List<Type> fullComponentTypes;
+        public MethodSymbol matcher;
 
         protected JCRecordPattern(JCExpression deconstructor, List<JCPattern> nested) {
             this.deconstructor = deconstructor;

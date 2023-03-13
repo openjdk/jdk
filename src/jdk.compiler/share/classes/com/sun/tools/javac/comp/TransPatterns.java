@@ -29,8 +29,12 @@ import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Flags;
+import static com.sun.tools.javac.code.Flags.FINAL;
+import static com.sun.tools.javac.code.Flags.PUBLIC;
+import static com.sun.tools.javac.code.Flags.STATIC;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Kinds.Kind;
+import static com.sun.tools.javac.code.Kinds.Kind.VAR;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.BindingSymbol;
@@ -75,7 +79,18 @@ import java.util.Set;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Type;
+import static com.sun.tools.javac.code.TypeTag.ARRAY;
+import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.BOT;
+import static com.sun.tools.javac.code.TypeTag.BYTE;
+import static com.sun.tools.javac.code.TypeTag.CHAR;
+import static com.sun.tools.javac.code.TypeTag.CLASS;
+import static com.sun.tools.javac.code.TypeTag.DOUBLE;
+import static com.sun.tools.javac.code.TypeTag.FLOAT;
+import static com.sun.tools.javac.code.TypeTag.INT;
+import static com.sun.tools.javac.code.TypeTag.LONG;
+import static com.sun.tools.javac.code.TypeTag.SHORT;
+import static com.sun.tools.javac.code.TypeTag.VOID;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
@@ -105,6 +120,7 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 
 /**
@@ -291,6 +307,98 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private UnrolledRecordPattern unrollRecordPattern(JCRecordPattern recordPattern) {
+//            if (o instanceof Matcher $m && Matcher."Matcher$Ljava\\|lang\\|String\\?$I"($m)) instanceof Object unmatched) {
+//                MethodType returnType = MethodType.methodType(Object.class, String.class, int.class); //TODO: return type of the Carrier constructor?
+//                    os = (String) Carriers.component(returnType, 0).invoke(unmatched);
+//                    oi = (int) Carriers.component(returnType, 1).invoke(unmatched);
+        if (recordPattern.matcher != null) {
+            Type recordType = recordPattern.record.erasure(types);
+            BindingSymbol tempBind = new BindingSymbol(Flags.SYNTHETIC,
+                names.fromString(target.syntheticNameChar() + "b" + target.syntheticNameChar() + variableIndex++), recordType,
+                                 currentMethodSym);
+            JCVariableDecl recordBindingVar = make.VarDef(tempBind, null);
+            BindingSymbol unmatched = new BindingSymbol(Flags.SYNTHETIC,
+                names.fromString(target.syntheticNameChar() + "m" + target.syntheticNameChar() + variableIndex++), syms.objectType,
+                                 currentMethodSym);
+            JCVariableDecl unmatchedVar = make.VarDef(unmatched, null);
+            JCExpression nullCheck = make.TypeTest(make.App(make.Select(make.Ident(recordPattern.matcher.owner), recordPattern.matcher), List.of(make.Ident(tempBind))),
+                          (JCBindingPattern) make.BindingPattern(unmatchedVar).setType(unmatched.type)).setType(syms.booleanType);
+            
+
+
+            VarSymbol recordBinding = recordBindingVar.sym;
+            List<? extends RecordComponent> components = recordPattern.record.getRecordComponents();
+            List<? extends Type> nestedFullComponentTypes = recordPattern.fullComponentTypes;
+            List<? extends JCPattern> nestedPatterns = recordPattern.nested;
+            JCExpression firstLevelChecks = nullCheck;
+            JCExpression secondLevelChecks = null;
+
+            while (components.nonEmpty()) {
+                RecordComponent component = components.head;
+                Type componentType = types.erasure(nestedFullComponentTypes.head);
+                JCPattern nestedPattern = TreeInfo.skipParens(nestedPatterns.head);
+                JCBindingPattern nestedBinding;
+                boolean allowNull;
+                if (nestedPattern instanceof JCRecordPattern nestedRecordPattern) {
+                    UnrolledRecordPattern nestedDesugared = unrollRecordPattern(nestedRecordPattern);
+                    JCExpression newGuard = nestedDesugared.newGuard();
+                    if (newGuard != null) {
+                        if (secondLevelChecks == null) {
+                            secondLevelChecks = newGuard;
+                        } else {
+                            secondLevelChecks = mergeConditions(secondLevelChecks, newGuard);
+                        }
+                    }
+                    nestedBinding = nestedDesugared.primaryPattern();
+                    allowNull = false;
+                } else {
+                    nestedBinding = (JCBindingPattern) nestedPattern;
+                    allowNull = types.isSubtype(componentType,
+                                                types.boxedTypeOrType(types.erasure(nestedBinding.type)));
+                }
+
+
+//                MethodType returnType = MethodType.methodType(Object.class, String.class, int.class); //TODO: return type of the Carrier constructor?
+//                    os = (String) Carriers.component(returnType, 0).invoke(unmatched);
+
+                
+                MethodSymbol msym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.switchBootstrapsType, names.fromString("readComponent"), List.of(syms.objectType, types.makeArrayType(types.erasure(syms.classType))), List.nil());
+                JCMethodInvocation componentAccessor =
+                        make.App(make.QualIdent(msym), recordPattern.matcher.params.map(v -> classOfType(types.erasure(v.type), recordPattern.pos())).prepend(make.Ident(unmatched)))
+                        .setType(types.erasure(component.accessor.getReturnType()));
+//                        make.App(make.Select(convert(make.Ident(recordBinding), recordBinding.type), //TODO - cast needed????
+//                                 component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
+
+
+//                if (deconstructorCalls == null) {
+//                    deconstructorCalls = Collections.newSetFromMap(new IdentityHashMap<>());
+//                }
+//                deconstructorCalls.add(componentAccessor);
+                JCExpression accessedComponentValue =
+                        convert(componentAccessor, componentType);
+                JCInstanceOf firstLevelCheck = (JCInstanceOf) make.TypeTest(accessedComponentValue, nestedBinding).setType(syms.booleanType);
+                //TODO: verify deep/complex nesting with nulls
+                firstLevelCheck.allowNull = allowNull;
+                if (firstLevelChecks == null) {
+                    firstLevelChecks = firstLevelCheck;
+                } else {
+                    firstLevelChecks = mergeConditions(firstLevelChecks, firstLevelCheck);
+                }
+                components = components.tail;
+                nestedFullComponentTypes = nestedFullComponentTypes.tail;
+                nestedPatterns = nestedPatterns.tail;
+            }
+
+            Assert.check(components.isEmpty() == nestedPatterns.isEmpty());
+            JCExpression guard = null;
+            if (firstLevelChecks != null) {
+                guard = firstLevelChecks;
+                if (secondLevelChecks != null) {
+                    guard = mergeConditions(guard, secondLevelChecks);
+                }
+            }
+            return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), guard);
+        }
         //Convert a record pattern in the basic binding pattern and additional conditions
         //implementing the record pattern:
         //$record($nestedPattern1, $nestedPattern2, ...) $r
@@ -367,6 +475,29 @@ public class TransPatterns extends TreeTranslator {
     }
 
     record UnrolledRecordPattern(JCBindingPattern primaryPattern, JCExpression newGuard) {}
+
+    private JCExpression classOfType(Type type, JCDiagnostic.DiagnosticPosition pos) {
+        switch (type.getTag()) {
+        case BYTE: case SHORT: case CHAR: case INT: case LONG: case FLOAT:
+        case DOUBLE: case BOOLEAN: case VOID:
+            // replace with <BoxedClass>.TYPE
+            ClassSymbol c = types.boxedClass(type);
+            Symbol typeSym =
+                rs.accessBase(
+                    rs.findIdentInType(pos, env, c.type, names.TYPE, Kinds.KindSelector.VAR),
+                    pos, c.type, names.TYPE, true);
+            if (typeSym.kind == VAR)
+                ((VarSymbol)typeSym).getConstValue(); // ensure initializer is evaluated
+            return make.QualIdent(typeSym);
+        case CLASS: case ARRAY:
+                VarSymbol sym = new VarSymbol(
+                        STATIC | PUBLIC | FINAL, names._class,
+                        syms.classType, type.tsym);
+                return make.at(pos).Select(make.Type(type), sym);
+        default:
+            throw new AssertionError();
+        }
+    }
 
     @Override
     public void visitSwitch(JCSwitch tree) {

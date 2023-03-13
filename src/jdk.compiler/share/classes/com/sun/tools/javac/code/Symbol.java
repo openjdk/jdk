@@ -362,6 +362,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                                   t.getReturnType(),
                                   t.getThrownTypes(),
                                   t.tsym);
+        } else if ((flags() & MATCHER) != 0) {
+            return new MethodType(List.of(owner.erasure(types)), types.syms.objectType, List.nil(), t.tsym);
         } else {
             return t;
         }

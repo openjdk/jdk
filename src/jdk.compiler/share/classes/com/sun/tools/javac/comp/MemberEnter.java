@@ -240,9 +240,14 @@ public class MemberEnter extends JCTree.Visitor {
             env.dup(tree, env.info.dup(env.info.scope.dupUnshared(tree.sym)));
         localEnv.enclMethod = tree;
         if (tree.sym.type != null) {
+            if ((tree.sym.flags() & MATCHER) != 0) {
+                localEnv.info.returnResult = attr.new ResultInfo(KindSelector.VAL,
+                                                                 syms.objectType);
+            } else {
             //when this is called in the enter stage, there's no type to be set
             localEnv.info.returnResult = attr.new ResultInfo(KindSelector.VAL,
                                                              tree.sym.type.getReturnType());
+            }
         }
         if ((tree.mods.flags & STATIC) != 0) localEnv.info.staticLevel++;
         localEnv.info.yieldResult = null;

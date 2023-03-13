@@ -1755,6 +1755,9 @@ public class Code {
         void pop(int n) {
             if (debugCode) System.err.println("   popping " + n);
             while (n > 0) {
+                if (stacksize == 0) {
+                    System.err.println("!!!");
+                }
                 stack[--stacksize] = null;
                 n--;
             }

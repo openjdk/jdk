@@ -3508,6 +3508,11 @@ public class JavacParser implements Parser {
                     flag = Flags.SEALED;
                     break;
                 }
+                if (token.name() == names.fromString("__matcher")) {
+                    //TODO: checkSourceLevel
+                    flag = Flags.MATCHER;
+                    break;
+                }
                 break loop;
             }
             default: break loop;
@@ -4568,7 +4573,7 @@ public class JavacParser implements Parser {
                         mods.flags |= Flags.COMPACT_RECORD_CONSTRUCTOR;
                     }
                     return List.of(methodDeclaratorRest(
-                        pos, mods, null, names.init, typarams,
+                        pos, mods, null, (mods.flags & Flags.MATCHER) == 0 ? names.init : names.matcher, typarams,
                         isInterface, true, isRecord, dc));
                 } else if (isRecord && type.hasTag(IDENT) && token.kind == THROWS) {
                     // trying to define a compact constructor with a throws clause
