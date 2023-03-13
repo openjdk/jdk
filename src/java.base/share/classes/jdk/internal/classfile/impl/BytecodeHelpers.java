@@ -325,7 +325,7 @@ public class BytecodeHelpers {
         if (constantValue instanceof String value) {
             return constantPool.stringEntry(value);
         }
-        if (constantValue instanceof ClassDesc value) {
+        if (constantValue instanceof ClassDesc value && !value.isPrimitive()) {
             return constantPool.classEntry(value);
         }
         if (constantValue instanceof Long value) {
