@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2454,6 +2454,10 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_
       default      : ShouldNotReachHere();
     }
 #endif // !_LP64
+  } else if (code == lir_f2hf) {
+    __ flt_to_flt16(dest->as_register(), value->as_xmm_float_reg(), tmp->as_xmm_float_reg());
+  } else if (code == lir_hf2f) {
+    __ flt16_to_flt(dest->as_xmm_float_reg(), value->as_register());
   } else {
     Unimplemented();
   }

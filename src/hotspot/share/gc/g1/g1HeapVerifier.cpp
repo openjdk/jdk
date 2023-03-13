@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,28 +310,6 @@ public:
   }
 };
 
-// We want all used regions to be moved to the bottom-end of the heap, so we have
-// a contiguous range of free regions at the top end of the heap. This way, we can
-// avoid fragmentation while allocating the archive regions.
-//
-// Before calling this, a full GC should have been executed with a single worker thread,
-// so that no old regions would be moved to the middle of the heap.
-void G1HeapVerifier::verify_ready_for_archiving() {
-  VerifyReadyForArchivingRegionClosure cl;
-  G1CollectedHeap::heap()->heap_region_iterate(&cl);
-  if (cl.has_holes()) {
-    log_warning(gc, verify)("All free regions should be at the top end of the heap, but"
-                            " we found holes. This is probably caused by (unmovable) humongous"
-                            " allocations or active GCLocker, and may lead to fragmentation while"
-                            " writing archive heap memory regions.");
-  }
-  if (cl.has_humongous()) {
-    log_warning(gc, verify)("(Unmovable) humongous regions have been found and"
-                            " may lead to fragmentation while"
-                            " writing archive heap memory regions.");
-  }
-}
-
 class VerifyArchivePointerRegionClosure: public HeapRegionClosure {
   virtual bool do_heap_region(HeapRegion* r) {
    if (r->is_archive()) {
@@ -389,9 +367,7 @@ public:
          _failures = true;
       }
     } else {
-      bool failures = false;
-      r->verify(_vo, &failures);
-      if (failures) {
+      if (r->verify(_vo)) {
         _failures = true;
       } else if (!r->is_starts_humongous()) {
         VerifyObjsInRegionClosure not_dead_yet_cl(r, _vo);
@@ -575,19 +551,19 @@ void G1HeapVerifier::prepare_for_verify() {
   }
 }
 
-void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg) {
-  if (should_verify(type) && _g1h->total_collections() >= VerifyGCStartAt) {
+void G1HeapVerifier::verify(VerifyOption vo, const char* msg) {
+  if (_g1h->total_collections() >= VerifyGCStartAt) {
     prepare_for_verify();
     Universe::verify(vo, msg);
   }
 }
 
-void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  verify(type, VerifyOption::G1UseConcMarking, "Before GC");
+void G1HeapVerifier::verify_before_gc() {
+  verify(VerifyOption::G1UseConcMarking, "Before GC");
 }
 
-void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  verify(type, VerifyOption::G1UseConcMarking, "After GC");
+void G1HeapVerifier::verify_after_gc() {
+  verify(VerifyOption::G1UseConcMarking, "After GC");
 }
 
 void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {

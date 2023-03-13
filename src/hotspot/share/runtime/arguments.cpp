@@ -96,6 +96,7 @@ size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
+char*  Arguments::_default_shared_archive_path  = nullptr;
 char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
@@ -554,6 +555,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+
+  { "G1ConcRSLogCacheSize",    JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1ConcRSHotCardLimit",   JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -3407,19 +3411,20 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
 // Sharing support
 // Construct the path to the archive
 char* Arguments::get_default_shared_archive_path() {
-  char *default_archive_path;
-  char jvm_path[JVM_MAXPATHLEN];
-  os::jvm_path(jvm_path, sizeof(jvm_path));
-  char *end = strrchr(jvm_path, *os::file_separator());
-  if (end != nullptr) *end = '\0';
-  size_t jvm_path_len = strlen(jvm_path);
-  size_t file_sep_len = strlen(os::file_separator());
-  const size_t len = jvm_path_len + file_sep_len + 20;
-  default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-  jio_snprintf(default_archive_path, len,
-               LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
-               jvm_path, os::file_separator());
-  return default_archive_path;
+  if (_default_shared_archive_path == nullptr) {
+    char jvm_path[JVM_MAXPATHLEN];
+    os::jvm_path(jvm_path, sizeof(jvm_path));
+    char *end = strrchr(jvm_path, *os::file_separator());
+    if (end != nullptr) *end = '\0';
+    size_t jvm_path_len = strlen(jvm_path);
+    size_t file_sep_len = strlen(os::file_separator());
+    const size_t len = jvm_path_len + file_sep_len + 20;
+    _default_shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
+    jio_snprintf(_default_shared_archive_path, len,
+                LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
+                jvm_path, os::file_separator());
+  }
+  return _default_shared_archive_path;
 }
 
 int Arguments::num_archives(const char* archive_path) {
@@ -3471,7 +3476,7 @@ void Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
 
-    if (os::same_files((const char*)get_default_shared_archive_path(), ArchiveClassesAtExit)) {
+    if (os::same_files(get_default_shared_archive_path(), ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
         "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_shared_archive_path());
     }
@@ -4259,79 +4264,4 @@ bool Arguments::copy_expand_pid(const char* src, size_t srclen,
   }
   *b = '\0';
   return (p == src_end); // return false if not all of the source was copied
-}
-
-bool Arguments::parse_malloc_limit_size(const char* s, size_t* out) {
-  julong limit = 0;
-  Arguments::ArgsRange range = parse_memory_size(s, &limit, 1, SIZE_MAX);
-  switch (range) {
-  case ArgsRange::arg_in_range:
-    *out = (size_t)limit;
-    return true;
-  case ArgsRange::arg_too_big: // only possible on 32-bit
-    vm_exit_during_initialization("MallocLimit: too large", s);
-    break;
-  case ArgsRange::arg_too_small:
-    vm_exit_during_initialization("MallocLimit: limit must be > 0");
-    break;
-  default:
-    break;
-  }
-  return false;
-}
-
-// Helper for parse_malloc_limits
-void Arguments::parse_single_category_limit(char* expression, size_t limits[mt_number_of_types]) {
-  // <category>:<limit>
-  char* colon = ::strchr(expression, ':');
-  if (colon == nullptr) {
-    vm_exit_during_initialization("MallocLimit: colon missing", expression);
-  }
-  *colon = '\0';
-  MEMFLAGS f = NMTUtil::string_to_flag(expression);
-  if (f == mtNone) {
-    vm_exit_during_initialization("MallocLimit: invalid nmt category", expression);
-  }
-  if (parse_malloc_limit_size(colon + 1, limits + (int)f) == false) {
-    vm_exit_during_initialization("Invalid MallocLimit size", colon + 1);
-  }
-}
-
-void Arguments::parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]) {
-
-  // Reset output to 0
-  *total_limit = 0;
-  for (int i = 0; i < mt_number_of_types; i ++) {
-    limits[i] = 0;
-  }
-
-  // We are done if the option is not given.
-  if (MallocLimit == nullptr) {
-    return;
-  }
-
-  // Global form?
-  if (parse_malloc_limit_size(MallocLimit, total_limit)) {
-    return;
-  }
-
-  // No. So it must be in category-specific form: MallocLimit=<nmt category>:<size>[,<nmt category>:<size> ..]
-  char* copy = os::strdup(MallocLimit);
-  if (copy == nullptr) {
-    vm_exit_out_of_memory(strlen(MallocLimit), OOM_MALLOC_ERROR, "MallocLimit");
-  }
-
-  char* p = copy, *q;
-  do {
-    q = p;
-    p = ::strchr(q, ',');
-    if (p != nullptr) {
-      *p = '\0';
-      p ++;
-    }
-    parse_single_category_limit(q, limits);
-  } while (p != nullptr);
-
-  os::free(copy);
-
 }

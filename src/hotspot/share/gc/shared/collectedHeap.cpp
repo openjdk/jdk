@@ -152,6 +152,10 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
                           ms_chunk_free_list_summary, class_chunk_free_list_summary);
 }
 
+bool CollectedHeap::contains_null(const oop* p) const {
+  return *p == nullptr;
+}
+
 void CollectedHeap::print_heap_before_gc() {
   LogTarget(Debug, gc, heap) lt;
   if (lt.is_enabled()) {
@@ -223,7 +227,7 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (is_in(object->klass_or_null())) {
+  if (is_in(object->klass_raw())) {
     return false;
   }
 
@@ -298,7 +302,6 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
       do_full_collection(false);        // don't clear all soft refs
       break;
     }
-    case GCCause::_archive_time_gc:
     case GCCause::_metadata_GC_clear_soft_refs: {
       HandleMark hm(thread);
       do_full_collection(true);         // do clear all soft refs

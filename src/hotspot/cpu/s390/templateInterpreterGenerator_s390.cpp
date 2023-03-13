@@ -1773,8 +1773,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
 #ifdef ASSERT
   __ verify_esp(Z_esp, Z_R1_scratch);
-
-  __ verify_thread();
 #endif
 
   // jvmti support
@@ -2004,6 +2002,10 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 
   return NULL;
 }
+
+// Not supported
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Quick & dirty stack overflow checking: bang the stack & handle trap.

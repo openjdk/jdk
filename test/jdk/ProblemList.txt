@@ -126,7 +126,6 @@ java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-a
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
-javax/swing/dnd/7171812/bug7171812.java 8041447 macosx-all
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
 java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java 8198618 macosx-all
 java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java 6986252 macosx-all
@@ -665,6 +664,9 @@ java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows
 java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
 java/awt/Mixing/AWT_Mixing/ViewportOverlapping.java 8253184,8295813 windows-x64
 
+javax/swing/JColorChooser/Test6827032.java 8224968 windows-x64
+java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
+
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
@@ -735,12 +737,13 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 javax/script/Test7.java                                         8239361 generic-all
 
+jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
+
 ############################################################################
 
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
-jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all

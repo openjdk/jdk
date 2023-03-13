@@ -345,7 +345,7 @@ public:
   void doit() {
     ResourceMark rm;
     if (AllowArchivingWithJavaAgent) {
-      warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+      log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
               "for testing purposes only and should not be used in a production environment");
     }
     FileMapInfo::check_nonempty_dir_in_shared_path_table();
@@ -370,7 +370,7 @@ void DynamicArchive::check_for_dynamic_dump() {
       vm_exit_during_initialization("-XX:+RecordDynamicDumpInfo" __THEMSG, nullptr);
     } else {
       assert(ArchiveClassesAtExit != nullptr, "sanity");
-      warning("-XX:ArchiveClassesAtExit" __THEMSG);
+      log_warning(cds)("-XX:ArchiveClassesAtExit" __THEMSG);
     }
 #undef __THEMSG
     DynamicDumpSharedSpaces = false;
@@ -420,14 +420,14 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
 
   // Check the header crc
   if (dynamic_header->base_header_crc() != base_info->crc()) {
-    FileMapInfo::fail_continue("Dynamic archive cannot be used: static archive header checksum verification failed.");
+    log_warning(cds)("Dynamic archive cannot be used: static archive header checksum verification failed.");
     return false;
   }
 
   // Check each space's crc
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     if (dynamic_header->base_region_crc(i) != base_info->region_crc(i)) {
-      FileMapInfo::fail_continue("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
+      log_warning(cds)("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
       return false;
     }
   }
