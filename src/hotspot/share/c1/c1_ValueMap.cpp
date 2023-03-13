@@ -190,7 +190,7 @@ Value ValueMap::find_insert(Value x) {
   LoadField* lf = value->as_LoadField();                                                 \
   bool must_kill = lf != NULL                                                            \
                    && lf->field()->holder() == field->holder()                           \
-                   && (all_offsets || lf->field()->offset() == field->offset());
+                   && (all_offsets || lf->field()->offset_in_bytes() == field->offset_in_bytes());
 
 
 void ValueMap::kill_memory() {

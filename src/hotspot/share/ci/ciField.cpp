@@ -312,7 +312,7 @@ ciConstant ciField::constant_value() {
   if (_constant_value.basic_type() == T_ILLEGAL) {
     // Static fields are placed in mirror objects.
     ciInstance* mirror = _holder->java_mirror();
-    _constant_value = mirror->field_value_impl(type()->basic_type(), offset());
+    _constant_value = mirror->field_value_impl(type()->basic_type(), offset_in_bytes());
   }
   if (FoldStableValues && is_stable() && _constant_value.is_null_or_zero()) {
     return ciConstant();
