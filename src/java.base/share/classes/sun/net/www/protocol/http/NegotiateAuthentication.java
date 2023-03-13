@@ -251,7 +251,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
         if (negotiator != null) {
             try {
                 negotiator.disposeContext();
-            } catch(IOException ioEx) {
+            } catch (IOException ioEx) {
                 //do not rethrow IOException
             }
             negotiator = null;
