@@ -3305,7 +3305,7 @@ public class Resolve {
 
     /**
      * This abstract class embodies the logic that converts one (bound lookup) or two (unbound lookup)
-     * {@code ReferenceLookupResult} objects into a (@code Symbol), which is then regarded as the
+     * {@code ReferenceLookupResult} objects into a {@code Symbol}, which is then regarded as the
      * result of method reference resolution.
      */
     abstract class ReferenceChooser {

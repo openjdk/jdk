@@ -1110,7 +1110,7 @@ const char* DefNewGeneration::name() const {
 }
 
 // Moved from inline file as they are not called inline
-CompactibleSpace* DefNewGeneration::first_compaction_space() const {
+ContiguousSpace* DefNewGeneration::first_compaction_space() const {
   return eden();
 }
 
