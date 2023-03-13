@@ -44,6 +44,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  */
 public class HtmlLinkInfo {
 
+    /**
+     * Enumeration of different kinds of links.
+     */
     public enum Kind {
         /**
          * Link with just the element name as label.
@@ -54,19 +57,25 @@ public class HtmlLinkInfo {
          */
         SHOW_PREVIEW,
         /**
-         * Link with additional type parameters as plain text if appropriate.
+         * Link with optional type parameters appended as plain text.
          */
         SHOW_TYPE_PARAMS,
+
         /**
-         * Link with additional type parameters and bounds as plain text if appropriate.
+         * Link with optional type parameters included in the link label.
+         */
+        SHOW_TYPE_PARAMS_IN_LABEL,
+
+        /**
+         * Link with optional type parameters and bounds appended as plain text.
          */
         SHOW_TYPE_PARAMS_AND_BOUNDS,
         /**
-         * Link with additional type parameters as separate link if appropriate.
+         * Link with optional type parameters but no bounds rendered as separate links.
          */
         LINK_TYPE_PARAMS,
         /**
-         * Link with additional type parameters and bounds as separate links if approprate.
+         * Link with optional type parameters and bounds rendered as separate links.
          */
         LINK_TYPE_PARAMS_AND_BOUNDS;
     }
@@ -297,7 +306,10 @@ public class HtmlLinkInfo {
      * @return true if type parameter links should be included
      */
     public boolean showTypeParameters() {
-        return context != Kind.PLAIN && context != Kind.SHOW_PREVIEW;
+        // Type parameters for these kinds of links are either not desired
+        // or already included in the link label.
+        return context != Kind.PLAIN && context != Kind.SHOW_PREVIEW
+                && context != Kind.SHOW_TYPE_PARAMS_IN_LABEL;
     }
 
     /**

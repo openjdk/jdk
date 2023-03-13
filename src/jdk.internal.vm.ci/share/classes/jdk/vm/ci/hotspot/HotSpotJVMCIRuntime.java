@@ -836,6 +836,26 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return lookupTypeInternal(name, accessingType, resolve);
     }
 
+    /**
+     * Converts a HotSpot heap JNI {@code hotspot_jclass_value} to a {@link ResolvedJavaType},
+     * provided that the {@code hotspot_jclass_value} is a valid JNI reference to a Java Class. If
+     * this requirement is not met, {@link IllegalArgumentException} is thrown.
+     *
+     * @param hotspot_jclass_value a JNI reference to a {@link Class} value in the HotSpot heap
+     * @return a {@link ResolvedJavaType} for the referenced type
+     * @throws IllegalArgumentException if {@code hotspot_jclass_value} is not a valid JNI reference
+     *             to a {@link Class} object in the HotSpot heap. It is the responsibility of the
+     *             caller to make sure the argument is valid. The checks performed by this method
+     *             are best effort. Hence, the caller must not rely on the checks and corresponding
+     *             exceptions!
+     */
+    public HotSpotResolvedJavaType asResolvedJavaType(long hotspot_jclass_value) {
+        if (hotspot_jclass_value == 0L) {
+            return null;
+        }
+        return compilerToVm.lookupJClass(hotspot_jclass_value);
+    }
+
     JavaType lookupTypeInternal(String name, HotSpotResolvedObjectType accessingType, boolean resolve) {
         // If the name represents a primitive type we can short-circuit the lookup.
         if (name.length() == 1) {
@@ -856,6 +876,26 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         } catch (ClassNotFoundException e) {
             throw (NoClassDefFoundError) new NoClassDefFoundError().initCause(e);
         }
+    }
+
+    /**
+     * Gets the {@code jobject} value wrapped by {@code peerObject}. The returned "naked" value is
+     * only valid as long as {@code peerObject} is valid. Note that the latter may be shorter than
+     * the lifetime of {@code peerObject}. As such, this method should only be used to pass an
+     * object parameter across a JNI call from the JVMCI shared library to HotSpot. This method must
+     * only be called from within the JVMCI shared library.
+     *
+     * @param peerObject a reference to an object in the peer runtime
+     * @return the {@code jobject} value wrapped by {@code peerObject}
+     * @throws IllegalArgumentException if the current runtime is not the JVMCI shared library or
+     *             {@code peerObject} is not a peer object reference
+     */
+    public long getJObjectValue(HotSpotObjectConstant peerObject) {
+        if (peerObject instanceof IndirectHotSpotObjectConstantImpl) {
+            IndirectHotSpotObjectConstantImpl remote = (IndirectHotSpotObjectConstantImpl) peerObject;
+            return remote.getHandle();
+        }
+        throw new IllegalArgumentException("Cannot get jobject value for " + peerObject + " (" + peerObject.getClass().getName() + ")");
     }
 
     @Override
