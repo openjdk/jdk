@@ -45,6 +45,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -593,7 +596,8 @@ public class JlinkTask {
 
         Map<String, Path> mods = cf.modules().stream()
             .collect(Collectors.toMap(ResolvedModule::name, JlinkTask::toPathLocation));
-        return new ImageHelper(cf, mods, config.getByteOrder(), retainModulesPath, ignoreSigning);
+        return new ImageHelper(cf, mods, config.getByteOrder(), retainModulesPath, ignoreSigning,
+                verbose, log);
     }
 
     /*
@@ -812,25 +816,49 @@ public class JlinkTask {
                     Map<String, Path> modsPaths,
                     ByteOrder order,
                     Path packagedModulesPath,
-                    boolean ignoreSigning) throws IOException {
+                    boolean ignoreSigning,
+                    boolean verbose,
+                    PrintWriter log) throws IOException {
             if (order != null) {
                 this.order = order;
             } else {
-                // Use the java.base module of the target platform to determine the endianness
-                // of the target image
-                String targetPlatform = null;
-                Optional<ResolvedModule> javaBase = cf.findModule("java.base");
-                if (javaBase.isPresent()) {
+                Path javaBasePath = modsPaths.get("java.base");
+                assert javaBasePath != null : "java.base module path is missing";
+                if (this.isJavaBaseFromCurrentPlatform(javaBasePath)) {
+                    // this implies that the java.base module used for the target image
+                    // will correspond to the current platform. So this isn't an attempt to
+                    // build a cross-platform image. We use the current platform's endianness
+                    // in this case
+                    this.order = ByteOrder.nativeOrder();
+                } else {
+                    // this is an attempt to build a cross-platform image. We now attempt to
+                    // find the target platform's arch and thus its endianness from the java.base
+                    // module's ModuleTarget attribute
+                    Optional<ResolvedModule> javaBase = cf.findModule("java.base");
+                    assert javaBase.isPresent() : "java.base module is missing";
                     ModuleReference ref = javaBase.get().reference();
+                    String targetPlatform = null;
                     if (ref instanceof ModuleReferenceImpl modRefImpl
                             && modRefImpl.moduleTarget() != null) {
                         targetPlatform = modRefImpl.moduleTarget().targetPlatform();
                     }
-                }
-                if (targetPlatform != null) {
-                    this.order = getNativeEndianOfTargetPlatform(targetPlatform);
-                } else {
-                    this.order = ByteOrder.nativeOrder();
+                    if (targetPlatform == null) {
+                        // could not determine target platform
+                        throw new IOException(
+                                taskHelper.getMessage("err.cannot.determine.target.platform"));
+                    }
+                    ByteOrder targetByteOrder = getNativeEndianOfTargetPlatform(targetPlatform);
+                    if (targetByteOrder == null) {
+                        // unsupported target platform
+                        throw new IOException(
+                                taskHelper.getMessage("err.unsupported.target.platform",
+                                        targetPlatform));
+                    }
+                    this.order = targetByteOrder;
+                    if (verbose && log != null) {
+                        log.format("Cross-platform image generation, using %s for target platform" +
+                                        " %s%n", this.order, targetPlatform);
+                    }
                 }
             }
             this.packagedModulesPath = packagedModulesPath;
@@ -849,6 +877,28 @@ public class JlinkTask {
             this.archives = modsPaths.entrySet().stream()
                                 .map(e -> newArchive(e.getKey(), e.getValue()))
                                 .collect(Collectors.toSet());
+        }
+
+        // returns true if the current platform's "jmods" directory is the parent of the
+        // passed javaBasePath
+        private boolean isJavaBaseFromCurrentPlatform(Path javaBasePath) throws IOException {
+            Path currentPlatformJmods = getDefaultModulePath();
+            if (currentPlatformJmods == null) {
+                return false;
+            }
+            boolean ret;
+            try {
+                @SuppressWarnings("removal")
+                var unused = ret = AccessController.doPrivileged(
+                        // check if the current platform's "jmods" directory is the parent of
+                        // the "java.base" module file used to create the image
+                        (PrivilegedExceptionAction<Boolean>) () -> Files.isSameFile(javaBasePath,
+                                currentPlatformJmods.resolve(Path.of("java.base.jmod"))));
+            } catch (PrivilegedActionException e) {
+                // Files.isSameFile() is only expected to throw an IOException
+                throw (IOException) e.getCause();
+            }
+            return ret;
         }
 
         private Archive newArchive(String module, Path path) {
@@ -904,13 +954,13 @@ public class JlinkTask {
             }
         }
 
-        // returns the endianness of the target platform, if known. Else returns the
-        // current platform's endianness
+        // returns the endianness of the target platform, if the target platform is known
+        // and supported for creating an image through jlink. Else returns null.
         private static ByteOrder getNativeEndianOfTargetPlatform(String targetPlatform) {
             int index = targetPlatform.indexOf("-"); // of the form <operating system>-<arch>
             if (index < 0) {
-                // unknown arch, return current platform's endianness
-                return ByteOrder.nativeOrder();
+                // unknown arch
+                return null;
             }
             String archName = targetPlatform.substring(index + 1);
             return switch (archName) {
@@ -925,7 +975,7 @@ public class JlinkTask {
                         "ppc64", "s390",
                         "s390x", "sh",
                         "sparc", "sparcv9" -> ByteOrder.BIG_ENDIAN;
-                default -> ByteOrder.nativeOrder();
+                default -> null;
             };
         }
 
