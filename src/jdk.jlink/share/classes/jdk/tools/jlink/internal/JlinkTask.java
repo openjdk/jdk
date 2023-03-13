@@ -45,9 +45,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -886,19 +883,10 @@ public class JlinkTask {
             if (currentPlatformJmods == null) {
                 return false;
             }
-            boolean ret;
-            try {
-                @SuppressWarnings("removal")
-                var unused = ret = AccessController.doPrivileged(
-                        // check if the current platform's "jmods" directory is the parent of
-                        // the "java.base" module file used to create the image
-                        (PrivilegedExceptionAction<Boolean>) () -> Files.isSameFile(javaBasePath,
-                                currentPlatformJmods.resolve(Path.of("java.base.jmod"))));
-            } catch (PrivilegedActionException e) {
-                // Files.isSameFile() is only expected to throw an IOException
-                throw (IOException) e.getCause();
-            }
-            return ret;
+            // check if the current platform's "jmods" directory is the parent of
+            // the "java.base" module file used to create the image
+            return Files.isSameFile(javaBasePath,
+                    currentPlatformJmods.resolve(Path.of("java.base.jmod")));
         }
 
         private Archive newArchive(String module, Path path) {
