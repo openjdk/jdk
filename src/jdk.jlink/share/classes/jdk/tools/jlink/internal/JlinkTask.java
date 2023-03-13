@@ -885,8 +885,7 @@ public class JlinkTask {
             }
             // check if the current platform's "jmods" directory is the parent of
             // the "java.base" module file used to create the image
-            return Files.isSameFile(javaBasePath,
-                    currentPlatformJmods.resolve(Path.of("java.base.jmod")));
+            return Files.isSameFile(javaBasePath, currentPlatformJmods.resolve("java.base.jmod"));
         }
 
         private Archive newArchive(String module, Path path) {
