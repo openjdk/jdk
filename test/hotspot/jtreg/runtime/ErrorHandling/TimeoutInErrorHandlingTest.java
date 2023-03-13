@@ -37,7 +37,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 
 /*
- * @test TimeoutInErrorHandlingTest-default
+ * @test id=default
  * @bug 8166944
  * @summary Hanging Error Reporting steps may lead to torn error logs
  * @modules java.base/jdk.internal.misc
@@ -48,7 +48,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 /*
- * @test TimeoutInErrorHandlingTest-with-on-error
+ * @test id=@with-on-error
  * @bug 8303861
  * @summary Error handling step timeouts should never be blocked by OnError etc.
  * @modules java.base/jdk.internal.misc
