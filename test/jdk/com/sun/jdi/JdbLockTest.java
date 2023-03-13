@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@ class JdbLockTestTarg {
     static String jj = "jj";
     public static void main(String args[]) {
         synchronized(jj) {
-            sleeper xx = new sleeper();
+            Thread xx = TestScaffold.newThread(new Sleeper());
             xx.start();
             // Give the sleeper a chance to run and get to
             // the synchronized statement.
-            while(sleeper.started == 0) {
+            while(Sleeper.started == 0) {
                 try {
                     Thread.sleep(100);
                 } catch(InterruptedException ee) {
@@ -55,7 +55,7 @@ class JdbLockTestTarg {
     }
 }
 
-class sleeper extends Thread {
+class Sleeper implements Runnable {
     public static int started = 0;
     public void run() {
         started = 1;

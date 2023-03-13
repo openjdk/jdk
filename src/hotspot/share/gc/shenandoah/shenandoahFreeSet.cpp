@@ -690,8 +690,8 @@ void ShenandoahFreeSet::assert_bounds() const {
   assert (_mutator_leftmost == _max || is_mutator_free(_mutator_leftmost),  "leftmost region should be free: " SIZE_FORMAT,  _mutator_leftmost);
   assert (_mutator_rightmost == 0   || is_mutator_free(_mutator_rightmost), "rightmost region should be free: " SIZE_FORMAT, _mutator_rightmost);
 
-  size_t beg_off = _mutator_free_bitmap.get_next_one_offset(0);
-  size_t end_off = _mutator_free_bitmap.get_next_one_offset(_mutator_rightmost + 1);
+  size_t beg_off = _mutator_free_bitmap.find_first_set_bit(0);
+  size_t end_off = _mutator_free_bitmap.find_first_set_bit(_mutator_rightmost + 1);
   assert (beg_off >= _mutator_leftmost, "free regions before the leftmost: " SIZE_FORMAT ", bound " SIZE_FORMAT, beg_off, _mutator_leftmost);
   assert (end_off == _max,      "free regions past the rightmost: " SIZE_FORMAT ", bound " SIZE_FORMAT,  end_off, _mutator_rightmost);
 
@@ -701,8 +701,8 @@ void ShenandoahFreeSet::assert_bounds() const {
   assert (_collector_leftmost == _max || is_collector_free(_collector_leftmost),  "leftmost region should be free: " SIZE_FORMAT,  _collector_leftmost);
   assert (_collector_rightmost == 0   || is_collector_free(_collector_rightmost), "rightmost region should be free: " SIZE_FORMAT, _collector_rightmost);
 
-  beg_off = _collector_free_bitmap.get_next_one_offset(0);
-  end_off = _collector_free_bitmap.get_next_one_offset(_collector_rightmost + 1);
+  beg_off = _collector_free_bitmap.find_first_set_bit(0);
+  end_off = _collector_free_bitmap.find_first_set_bit(_collector_rightmost + 1);
   assert (beg_off >= _collector_leftmost, "free regions before the leftmost: " SIZE_FORMAT ", bound " SIZE_FORMAT, beg_off, _collector_leftmost);
   assert (end_off == _max,      "free regions past the rightmost: " SIZE_FORMAT ", bound " SIZE_FORMAT,  end_off, _collector_rightmost);
 }

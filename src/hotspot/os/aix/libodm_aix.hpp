@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -53,7 +53,7 @@ class dynamicOdm {
  public:
   dynamicOdm();
   ~dynamicOdm();
-  bool odm_loaded() {return _libhandle != NULL; }
+  bool odm_loaded() {return _libhandle != nullptr; }
 };
 
 
@@ -68,8 +68,8 @@ class odmWrapper : private dynamicOdm {
 
  public:
   // Make sure everything gets initialized and cleaned up properly.
-  explicit odmWrapper(const char* odm_class_name, const char* odm_path = NULL) : _odm_class((CLASS_SYMBOL)-1),
-                                                                     _data(NULL), _initialized(false) {
+  explicit odmWrapper(const char* odm_class_name, const char* odm_path = nullptr) : _odm_class((CLASS_SYMBOL)-1),
+                                                                     _data(nullptr), _initialized(false) {
     if (!odm_loaded()) { return; }
     _initialized = ((*_odm_initialize)() != -1);
     if (_initialized) {
@@ -88,9 +88,9 @@ class odmWrapper : private dynamicOdm {
   int class_offset(const char *field, bool is_aix_5);
   char* data() { return _data; }
 
-  char* retrieve_obj(const char* name = NULL) {
+  char* retrieve_obj(const char* name = nullptr) {
     clean_data();
-    char *cnp = (char*)(void*)(*_odm_get_obj)(odm_class(), (char*) name, NULL, (name == NULL) ? ODM_NEXT : ODM_FIRST);
+    char *cnp = (char*)(void*)(*_odm_get_obj)(odm_class(), (char*) name, nullptr, (name == nullptr) ? ODM_NEXT : ODM_FIRST);
     if (cnp != (char*)-1) { _data = cnp; }
     return data();
   }
