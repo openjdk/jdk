@@ -883,9 +883,15 @@ public class JlinkTask {
             if (currentPlatformJmods == null) {
                 return false;
             }
-            // check if the current platform's "jmods" directory is the parent of
-            // the "java.base" module file used to create the image
-            return Files.isSameFile(javaBasePath, currentPlatformJmods.resolve("java.base.jmod"));
+            // resolve, against the current platform's jmods dir, the java.base module file used
+            // for image creation
+            Path javaBaseInDefaultPath = currentPlatformJmods.resolve(javaBasePath.getFileName());
+            if (!Files.exists(javaBaseInDefaultPath)) {
+                // the java.base module used for image creation doesn't exist in the default
+                // module path of current platform
+                return false;
+            }
+            return Files.isSameFile(javaBasePath, javaBaseInDefaultPath);
         }
 
         private Archive newArchive(String module, Path path) {
