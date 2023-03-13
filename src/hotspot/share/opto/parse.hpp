@@ -39,7 +39,6 @@ class Parse;
 class SwitchRange;
 
 
-//------------------------------InlineTree-------------------------------------
 class InlineTree : public AnyObj {
   friend class VMStructs;
 
@@ -145,8 +144,6 @@ public:
 };
 
 
-//-----------------------------------------------------------------------------
-//------------------------------Parse------------------------------------------
 // Parse bytecodes, build a Graph
 class Parse : public GraphKit {
  public:

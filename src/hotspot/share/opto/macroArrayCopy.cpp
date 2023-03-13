@@ -99,7 +99,6 @@ Node* PhaseMacroExpand::make_leaf_call(Node* ctrl, Node* mem,
 }
 
 
-//------------------------------generate_guard---------------------------
 // Helper function for generating guarded fast-slow graph structures.
 // The given 'test', if true, guards a slow path.  If the test fails
 // then a fast path can be taken.  (We generally hope it fails.)

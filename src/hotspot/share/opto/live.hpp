@@ -36,12 +36,10 @@ class PhaseCFG;
 class VectorSet;
 class IndexSet;
 
-//------------------------------LRG_List---------------------------------------
 // Map Node indices to Live RanGe indices.
 // Array lookup in the optimized case.
 typedef GrowableArray<uint> LRG_List;
 
-//------------------------------PhaseLive--------------------------------------
 // Compute live-in/live-out
 class PhaseLive : public Phase {
   // Array of Sets of values live at the start of a block.

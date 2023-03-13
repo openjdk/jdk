@@ -27,7 +27,6 @@
 
 #include "opto/loopnode.hpp"
 
-//------------------------------RootNode---------------------------------------
 // The one-and-only before-all-else and after-all-else RootNode.  The RootNode
 // represents what happens if the user runs the whole program repeatedly.  The
 // RootNode produces the initial values of I/O and memory for the program or
@@ -47,7 +46,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const { return Type::BOTTOM; }
 };
 
-//------------------------------HaltNode---------------------------------------
 // Throw an exception & die
 class HaltNode : public Node {
 protected:

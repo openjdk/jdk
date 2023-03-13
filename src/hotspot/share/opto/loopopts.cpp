@@ -43,8 +43,6 @@
 #include "opto/subtypenode.hpp"
 #include "utilities/macros.hpp"
 
-//=============================================================================
-//------------------------------split_thru_phi---------------------------------
 // Split Node 'n' through merge point if there is enough win.
 Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) {
@@ -250,7 +248,6 @@ bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_diviso
     return _igvn.type(phi_divisor->in(LoopNode::LoopBackControl))->filter_speculative(zero) != Type::TOP;
 }
 
-//------------------------------dominated_by------------------------------------
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
@@ -331,7 +328,6 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   }
 }
 
-//------------------------------has_local_phi_input----------------------------
 // Return TRUE if 'n' has Phi inputs from its local block and no other
 // block-local inputs (all non-local-phi inputs come from earlier blocks)
 Node *PhaseIdealLoop::has_local_phi_input( Node *n ) {
@@ -453,7 +449,6 @@ Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoo
   return nullptr;
 }
 
-//------------------------------remix_address_expressions----------------------
 // Rework addressing expressions to get the most loop-invariant stuff
 // moved out.  We'd like to do all associative operators, but it's especially
 // important (common) to do address expressions.
@@ -616,7 +611,6 @@ Node *PhaseIdealLoop::convert_add_to_muladd(Node* n) {
   return nn;
 }
 
-//------------------------------conditional_move-------------------------------
 // Attempt to replace a Phi with a conditional move.  We have some pretty
 // strict profitability requirements.  All Phis at the merge point must
 // be converted, so we can remove the control flow.  We need to limit the
@@ -1021,7 +1015,6 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
   }
 }
 
-//------------------------------split_if_with_blocks_pre-----------------------
 // Do the real work in a non-recursive function.  Data nodes want to be
 // cloned in the pre-order so they can feed each other nicely.
 Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
@@ -1191,7 +1184,6 @@ static bool merge_point_safe(Node* region) {
 }
 
 
-//------------------------------place_outside_loop---------------------------------
 // Place some computation outside of this loop on the path to the use passed as argument
 Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) const {
   Node* head = loop->_head;
@@ -1310,7 +1302,6 @@ static Node* is_inner_of_stripmined_loop(const Node* out) {
   return out_le;
 }
 
-//------------------------------split_if_with_blocks_post----------------------
 // Do the real work in a non-recursive function.  CFG hackery wants to be
 // in the post-order, so it can dirty the I-DOM info and not use the dirtied
 // info.
@@ -1796,7 +1787,6 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   return true;
 }
 
-//------------------------------split_if_with_blocks---------------------------
 // Check for aggressive application of 'split-if' optimization,
 // using basic block level info.
 void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack &nstack) {
@@ -1844,12 +1834,10 @@ void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack &nstack
 }
 
 
-//=============================================================================
 //
 //                   C L O N E   A   L O O P   B O D Y
 //
 
-//------------------------------clone_iff--------------------------------------
 // Passed in a Phi merging (recursively) some nearly equivalent Bool/Cmps.
 // "Nearly" because all Nodes have been cloned from the original in the loop,
 // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
@@ -1936,7 +1924,6 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
   return b;
 }
 
-//------------------------------clone_bool-------------------------------------
 // Passed in a Phi merging (recursively) some nearly equivalent Bool/Cmps.
 // "Nearly" because all Nodes have been cloned from the original in the loop,
 // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
@@ -2005,7 +1992,6 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   return (CmpNode*)cmp;
 }
 
-//------------------------------sink_use---------------------------------------
 // If 'use' was in the loop-exit block, it now needs to be sunk
 // below the post-loop merge point.
 void PhaseIdealLoop::sink_use( Node *use, Node *post_loop ) {
@@ -2341,7 +2327,6 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
   }
 }
 
-//------------------------------clone_loop-------------------------------------
 //
 //                   C L O N E   A   L O O P   B O D Y
 //
@@ -2636,7 +2621,6 @@ void PhaseIdealLoop::clone_loop_body(const Node_List& body, Node_List &old_new, 
 }
 
 
-//---------------------- stride_of_possible_iv -------------------------------------
 // Looks for an iff/bool/comp with one operand of the compare
 // being a cycle involving an add and a phi,
 // with an optional truncation (left-shift followed by a right-shift)
@@ -2696,7 +2680,6 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
 }
 
 
-//---------------------- stay_in_loop -------------------------------------
 // Return the (unique) control output node that's in the loop (if it exists.)
 Node* PhaseIdealLoop::stay_in_loop( Node* n, IdealLoopTree *loop) {
   Node* unique = nullptr;
@@ -2713,7 +2696,6 @@ Node* PhaseIdealLoop::stay_in_loop( Node* n, IdealLoopTree *loop) {
   return unique;
 }
 
-//------------------------------ register_node -------------------------------------
 // Utility to register node "n" with PhaseIdealLoop
 void PhaseIdealLoop::register_node(Node* n, IdealLoopTree *loop, Node* pred, int ddepth) {
   _igvn.register_new_node_with_optimizer(n);
@@ -2726,7 +2708,6 @@ void PhaseIdealLoop::register_node(Node* n, IdealLoopTree *loop, Node* pred, int
   }
 }
 
-//------------------------------ proj_clone -------------------------------------
 // Utility to create an if-projection
 ProjNode* PhaseIdealLoop::proj_clone(ProjNode* p, IfNode* iff) {
   ProjNode* c = p->clone()->as_Proj();
@@ -2734,7 +2715,6 @@ ProjNode* PhaseIdealLoop::proj_clone(ProjNode* p, IfNode* iff) {
   return c;
 }
 
-//------------------------------ short_circuit_if -------------------------------------
 // Force the iff control output to be the live_proj
 Node* PhaseIdealLoop::short_circuit_if(IfNode* iff, ProjNode* live_proj) {
   guarantee(live_proj != nullptr, "null projection");
@@ -2748,7 +2728,6 @@ Node* PhaseIdealLoop::short_circuit_if(IfNode* iff, ProjNode* live_proj) {
   return con;
 }
 
-//------------------------------ insert_if_before_proj -------------------------------------
 // Insert a new if before an if projection (* - new node)
 //
 // before
@@ -2805,7 +2784,6 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
   return new_exit;
 }
 
-//------------------------------ insert_region_before_proj -------------------------------------
 // Insert a region before an if projection (* - new node)
 //
 // before
@@ -2860,7 +2838,6 @@ RegionNode* PhaseIdealLoop::insert_region_before_proj(ProjNode* proj) {
   return reg;
 }
 
-//------------------------------ insert_cmpi_loop_exit -------------------------------------
 // Clone a signed compare loop exit from an unsigned compare and
 // insert it before the unsigned cmp on the stay-in-loop path.
 // All new nodes inserted in the dominator tree between the original
@@ -2946,7 +2923,6 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *lo
   return cmpi_exit->in(0)->as_If();
 }
 
-//------------------------------ remove_cmpi_loop_exit -------------------------------------
 // Remove a previously inserted signed compare loop exit.
 void PhaseIdealLoop::remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop) {
   Node* lp_proj = stay_in_loop(if_cmp, loop);
@@ -2958,7 +2934,6 @@ void PhaseIdealLoop::remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop) 
   if_cmp->set_req(1, con);
 }
 
-//------------------------------ scheduled_nodelist -------------------------------------
 // Create a post order schedule of nodes that are in the
 // "member" set.  The list is returned in "sched".
 // The first node in "sched" is the loop head, followed by
@@ -3020,7 +2995,6 @@ void PhaseIdealLoop::scheduled_nodelist( IdealLoopTree *loop, VectorSet& member,
 }
 
 
-//------------------------------ has_use_in_set -------------------------------------
 // Has a use in the vector set
 bool PhaseIdealLoop::has_use_in_set( Node* n, VectorSet& vset ) {
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
@@ -3033,7 +3007,6 @@ bool PhaseIdealLoop::has_use_in_set( Node* n, VectorSet& vset ) {
 }
 
 
-//------------------------------ has_use_internal_to_set -------------------------------------
 // Has use internal to the vector set (ie. not in a phi at the loop head)
 bool PhaseIdealLoop::has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoopTree *loop ) {
   Node* head  = loop->_head;
@@ -3047,7 +3020,6 @@ bool PhaseIdealLoop::has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoo
 }
 
 
-//------------------------------ clone_for_use_outside_loop -------------------------------------
 // clone "n" for uses that are outside of loop
 int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist ) {
   int cloned = 0;
@@ -3098,7 +3070,6 @@ int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, No
 }
 
 
-//------------------------------ clone_for_special_use_inside_loop -------------------------------------
 // clone "n" for special uses that are in the not_peeled region.
 // If these def-uses occur in separate blocks, the code generator
 // marks the method as not compilable.  For example, if a "BoolNode"
@@ -3144,7 +3115,6 @@ void PhaseIdealLoop::clone_for_special_use_inside_loop( IdealLoopTree *loop, Nod
 }
 
 
-//------------------------------ insert_phi_for_loop -------------------------------------
 // Insert phi(lp_entry_val, back_edge_val) at use->in(idx) for loop lp if phi does not already exist
 void PhaseIdealLoop::insert_phi_for_loop( Node* use, uint idx, Node* lp_entry_val, Node* back_edge_val, LoopNode* lp ) {
   Node *phi = PhiNode::make(lp, back_edge_val);
@@ -3163,7 +3133,6 @@ void PhaseIdealLoop::insert_phi_for_loop( Node* use, uint idx, Node* lp_entry_va
 }
 
 #ifdef ASSERT
-//------------------------------ is_valid_loop_partition -------------------------------------
 // Validate the loop partition sets: peel and not_peel
 bool PhaseIdealLoop::is_valid_loop_partition( IdealLoopTree *loop, VectorSet& peel, Node_List& peel_list,
                                               VectorSet& not_peel ) {
@@ -3205,7 +3174,6 @@ bool PhaseIdealLoop::is_valid_loop_partition( IdealLoopTree *loop, VectorSet& pe
   return true;
 }
 
-//------------------------------ is_valid_clone_loop_exit_use -------------------------------------
 // Ensure a use outside of loop is of the right form
 bool PhaseIdealLoop::is_valid_clone_loop_exit_use( IdealLoopTree *loop, Node* use, uint exit_idx) {
   Node *use_c = has_ctrl(use) ? get_ctrl(use) : use;
@@ -3217,7 +3185,6 @@ bool PhaseIdealLoop::is_valid_clone_loop_exit_use( IdealLoopTree *loop, Node* us
           loop->is_member( get_loop( use_c->in(exit_idx)->in(0) ) ) );
 }
 
-//------------------------------ is_valid_clone_loop_form -------------------------------------
 // Ensure that all uses outside of loop are of the right form
 bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& peel_list,
                                                uint orig_exit_idx, uint clone_exit_idx) {
@@ -3242,7 +3209,6 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 }
 #endif
 
-//------------------------------ partial_peel -------------------------------------
 // Partially peel (aka loop rotation) the top portion of a loop (called
 // the peel section below) by cloning it and placing one copy just before
 // the new loop head and the other copy at the bottom of the new loop.

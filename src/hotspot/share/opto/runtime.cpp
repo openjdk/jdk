@@ -190,12 +190,9 @@ const char* OptoRuntime::stub_name(address entry) {
 }
 
 
-//=============================================================================
 // Opto compiler runtime routines
-//=============================================================================
 
 
-//=============================allocation======================================
 // We failed the fast-path allocation.  Now we need to do a scavenge or GC
 // and try allocation again.
 
@@ -559,7 +556,6 @@ const TypeFunc *OptoRuntime::uncommon_trap_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//-----------------------------------------------------------------------------
 // Monitor Handling
 const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
   // create input type (domain)
@@ -577,7 +573,6 @@ const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
 }
 
 
-//-----------------------------------------------------------------------------
 const TypeFunc *OptoRuntime::complete_monitor_exit_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(3);
@@ -703,7 +698,6 @@ const TypeFunc* OptoRuntime::Math_DD_D_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//-------------- currentTimeMillis, currentTimeNanos, etc
 
 const TypeFunc* OptoRuntime::void_long_Type() {
   // create input type (domain)
@@ -1306,7 +1300,6 @@ const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
@@ -1321,7 +1314,6 @@ const TypeFunc* OptoRuntime::osr_end_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//-------------------------------------------------------------------------------------
 // register policy
 
 bool OptoRuntime::is_callee_saved_register(MachRegisterNumbers reg) {
@@ -1336,7 +1328,6 @@ bool OptoRuntime::is_callee_saved_register(MachRegisterNumbers reg) {
   return false;
 }
 
-//-----------------------------------------------------------------------
 // Exceptions
 //
 
@@ -1511,7 +1502,6 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   return handler_address;
 }
 
-//------------------------------rethrow----------------------------------------
 // We get here after compiled code has executed a 'RethrowNode'.  The callee
 // is either throwing or rethrowing an exception.  The callee-save registers
 // have been restored, synchronized objects have been unlocked and the callee
@@ -1644,7 +1634,6 @@ const TypeFunc *OptoRuntime::class_id_load_barrier_Type() {
 }
 #endif
 
-//-----------------------------------------------------------------------------
 // Dtrace support.  entry and exit probes have the same signature
 const TypeFunc *OptoRuntime::dtrace_method_entry_exit_Type() {
   // create input type (domain)
@@ -1684,7 +1673,6 @@ JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer(oopDesc* obj, JavaThrea
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
-//-----------------------------------------------------------------------------
 
 NamedCounter * volatile OptoRuntime::_named_counters = nullptr;
 

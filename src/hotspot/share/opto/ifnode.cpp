@@ -45,8 +45,6 @@
 extern int explicit_null_checks_elided;
 #endif
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 // Return a tuple for whichever arm of the IF is reachable
 const Type* IfNode::Value(PhaseGVN* phase) const {
   if( !in(0) ) return Type::TOP;
@@ -68,7 +66,6 @@ const RegMask &IfNode::out_RegMask() const {
   return RegMask::Empty;
 }
 
-//------------------------------split_if---------------------------------------
 // Look for places where we merge constants, then test on the merged value.
 // If the IF test will be constant folded on the path with the constant, we
 // win by splitting the IF to before the merge point.
@@ -483,7 +480,6 @@ ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
 }
 
 
-//------------------------------is_range_check---------------------------------
 // Return 0 if not a range check.  Return 1 if a range check and set index and
 // offset.  Return 2 if we had to negate the test.  Index is null if the check
 // is versus a constant.
@@ -531,7 +527,6 @@ int RangeCheckNode::is_range_check(Node* &range, Node* &index, jint &offset) {
   return flip_test;
 }
 
-//------------------------------adjust_check-----------------------------------
 // Adjust (widen) a prior range check
 static void adjust_check(Node* proj, Node* range, Node* index,
                          int flip, jint off_lo, PhaseIterGVN* igvn) {
@@ -562,7 +557,6 @@ static void adjust_check(Node* proj, Node* range, Node* index,
   iff->set_req_X( 1, new_bol, igvn );
 }
 
-//------------------------------up_one_dom-------------------------------------
 // Walk up the dominator tree one step.  Return null at root or true
 // complex merges.  Skips through small diamonds.
 Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
@@ -607,7 +601,6 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 }
 
 
-//------------------------------filtered_int_type--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow for an if
 const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
   assert(if_proj &&
@@ -672,7 +665,6 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
   return nullptr;
 }
 
-//------------------------------fold_compares----------------------------
 // See if a pair of CmpIs can be converted into a CmpU.  In some cases
 // the direction of this if is determined by the preceding if so it
 // can be eliminate entirely.
@@ -1342,7 +1334,6 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
   return nullptr;
 }
 
-//------------------------------remove_useless_bool----------------------------
 // Check for people making a useless boolean: things like
 // if( (x < y ? true : false) ) { ... }
 // Replace with if( x < y ) { ... }
@@ -1442,7 +1433,6 @@ Node* IfNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   return NodeSentinel;
 }
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -1486,7 +1476,6 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return simple_subsuming(igvn);
 }
 
-//------------------------------dominated_by-----------------------------------
 Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
 #ifndef PRODUCT
   if (TraceIterativeGVN) {
@@ -1706,7 +1695,6 @@ static int subsuming_bool_test_encode(Node* node) {
   }
 }
 
-//------------------------------Identity---------------------------------------
 // If the test is constant & we match, then we are the input Control
 Node* IfProjNode::Identity(PhaseGVN* phase) {
   // Can only optimize if cannot go the other way
@@ -1739,13 +1727,11 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
 }
 
 #ifndef PRODUCT
-//------------------------------dump_spec--------------------------------------
 void IfNode::dump_spec(outputStream *st) const {
   st->print("P=%f, C=%f",_prob,_fcnt);
 }
 #endif
 
-//------------------------------idealize_test----------------------------------
 // Try to canonicalize tests better.  Peek at the Cmp/Bool/If sequence and
 // come up with a canonical sequence.  Bools getting 'eq', 'gt' and 'ge' forms
 // converted to 'ne', 'le' and 'lt' forms.  IfTrue/IfFalse get swapped as

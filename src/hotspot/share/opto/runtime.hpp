@@ -33,7 +33,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/vframe.hpp"
 
-//------------------------------OptoRuntime------------------------------------
 // Opto compiler runtime routines
 //
 // These are all generated from Ideal graphs.  They are called with the

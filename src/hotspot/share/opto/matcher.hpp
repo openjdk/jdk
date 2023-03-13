@@ -40,7 +40,6 @@ class MachNode;
 class MachTypeNode;
 class MachOper;
 
-//---------------------------Matcher-------------------------------------------
 class Matcher : public PhaseTransform {
   friend class VMStructs;
 

@@ -32,7 +32,6 @@
 
 class LRG;
 
-//-------------Non-zero bit search methods used by RegMask---------------------
 // Find lowest 1, undefined if empty/0
 static unsigned int find_lowest_bit(uintptr_t mask) {
   return count_trailing_zeros(mask);
@@ -42,7 +41,6 @@ static unsigned int find_highest_bit(uintptr_t mask) {
   return count_leading_zeros(mask) ^ (BitsPerWord - 1U);
 }
 
-//------------------------------RegMask----------------------------------------
 // The ADL file describes how to print the machine-specific registers, as well
 // as any notion of register classes.  We provide a register mask, which is
 // just a collection of Register numbers.

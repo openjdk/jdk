@@ -43,9 +43,7 @@
 
 //
 //                  S U P E R W O R D   T R A N S F O R M
-//=============================================================================
 
-//------------------------------SuperWord---------------------------
 SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _phase(phase),
   _arena(phase->C->comp_arena()),
@@ -94,7 +92,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 
 static const bool _do_vector_loop_experimental = false; // Experimental vectorization which uses data from loop unrolling.
 
-//------------------------------transform_loop---------------------------
 bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(UseSuperWord, "should be");
   // SuperWord only works with power of two vector sizes.
@@ -198,7 +195,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   return success;
 }
 
-//------------------------------max vector size------------------------------
 int SuperWord::max_vector_size(BasicType bt) {
   int max_vector = Matcher::max_vector_size(bt);
   int sw_max_vector_limit = SuperWordMaxVectorSize / type2aelembytes(bt);
@@ -208,7 +204,6 @@ int SuperWord::max_vector_size(BasicType bt) {
   return max_vector;
 }
 
-//------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   bool is_slp = true;
   ResourceMark rm;
@@ -421,7 +416,6 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   }
 }
 
-//------------------------------SLP_extract---------------------------
 // Extract the superword level parallelism
 //
 // 1) A reverse post-order of nodes in the block is constructed.  By scanning
@@ -583,7 +577,6 @@ bool SuperWord::SLP_extract() {
   return output();
 }
 
-//------------------------------find_adjacent_refs---------------------------
 // Find the adjacent memory references and create pack pairs for them.
 // This is the initial set of packs that will then be extended by
 // following use->def and def->use links.  The align positions are
@@ -794,7 +787,6 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 }
 #endif
 
-//------------------------------find_align_to_ref---------------------------
 // Find a memory reference to align the loop induction variable to.
 // Looks first at stores then at loads, looking for a memory reference
 // with the largest number of references similar to it.
@@ -899,7 +891,6 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   return nullptr;
 }
 
-//------------------span_works_for_memory_size-----------------------------
 static bool span_works_for_memory_size(MemNode* mem, int span, int mem_size, int offset) {
   bool span_matches_memory = false;
   if ((mem_size == type2aelembytes(T_BYTE) || mem_size == type2aelembytes(T_SHORT))
@@ -920,7 +911,6 @@ static bool span_works_for_memory_size(MemNode* mem, int span, int mem_size, int
   return span_matches_memory && (ABS(offset) % mem_size) == 0;
 }
 
-//------------------------------ref_is_alignable---------------------------
 // Can the preloop align the reference to position zero in the vector?
 bool SuperWord::ref_is_alignable(SWPointer& p) {
   if (!p.has_iv()) {
@@ -988,7 +978,6 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
   }
   return false;
 }
-//---------------------------get_vw_bytes_special------------------------
 int SuperWord::get_vw_bytes_special(MemNode* s) {
   // Get the vector width in bytes.
   int vw = vector_width_in_bytes(s);
@@ -1017,7 +1006,6 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
   return vw;
 }
 
-//---------------------------get_iv_adjustment---------------------------
 // Calculate loop's iv adjustment for this memory ops.
 int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   SWPointer align_to_ref_p(mem_ref, this, nullptr, false);
@@ -1053,7 +1041,6 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   return iv_adjustment;
 }
 
-//---------------------------dependence_graph---------------------------
 // Construct dependency graph.
 // Add dependence edges to load/store nodes for memory dependence
 //    A.out()->DependNode.in(1) and DependNode.out()->B.prec(x)
@@ -1149,7 +1136,6 @@ void SuperWord::dependence_graph() {
 
 }
 
-//---------------------------mem_slice_preds---------------------------
 // Return a memory slice (node list) in predecessor order starting at "start"
 void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds) {
   assert(preds.length() == 0, "start empty");
@@ -1193,7 +1179,6 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
   }
 }
 
-//------------------------------stmts_can_pack---------------------------
 // Can s1 and s2 be in a pack with s1 immediately preceding s2 and
 // s1 aligned at "align"
 bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
@@ -1227,7 +1212,6 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   return false;
 }
 
-//------------------------------exists_at---------------------------
 // Does s exist in a pack at position pos?
 bool SuperWord::exists_at(Node* s, uint pos) {
   for (int i = 0; i < _packset.length(); i++) {
@@ -1239,7 +1223,6 @@ bool SuperWord::exists_at(Node* s, uint pos) {
   return false;
 }
 
-//------------------------------are_adjacent_refs---------------------------
 // Is s1 immediately before s2 in memory?
 bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
   if (!s1->is_Mem() || !s2->is_Mem()) return false;
@@ -1263,7 +1246,6 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
   return diff == data_size(s1);
 }
 
-//------------------------------isomorphic---------------------------
 // Are s1 and s2 similar?
 bool SuperWord::isomorphic(Node* s1, Node* s2) {
   if (s1->Opcode() != s2->Opcode()) return false;
@@ -1311,7 +1293,6 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
   return false;
 }
 
-//------------------------------independent---------------------------
 // Is there no data path from s1 to s2 or s2 to s1?
 bool SuperWord::independent(Node* s1, Node* s2) {
   //  assert(s1->Opcode() == s2->Opcode(), "check isomorphic first");
@@ -1326,7 +1307,6 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   return independent_path(shallow, deep);
 }
 
-//--------------------------have_similar_inputs-----------------------
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
 bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
@@ -1349,7 +1329,6 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
   return true;
 }
 
-//------------------------------reduction---------------------------
 // Is there a data path between s1 and s2 and the nodes reductions?
 bool SuperWord::reduction(Node* s1, Node* s2) {
   bool retValue = false;
@@ -1371,7 +1350,6 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   return retValue;
 }
 
-//------------------------------independent_path------------------------------
 // Helper for independent
 bool SuperWord::independent_path(Node* shallow, Node* deep, uint dp) {
   if (dp >= 1000) return false; // stop deep recursion
@@ -1392,7 +1370,6 @@ bool SuperWord::independent_path(Node* shallow, Node* deep, uint dp) {
   return true;
 }
 
-//------------------------------set_alignment---------------------------
 void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
   set_alignment(s1, align);
   if (align == top_align || align == bottom_align) {
@@ -1402,7 +1379,6 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
   }
 }
 
-//------------------------------data_size---------------------------
 int SuperWord::data_size(Node* s) {
   Node* use = nullptr; //test if the node is a candidate for CMoveV optimization, then return the size of CMov
   if (UseVectorCmov) {
@@ -1421,7 +1397,6 @@ int SuperWord::data_size(Node* s) {
   return bsize;
 }
 
-//------------------------------extend_packlist---------------------------
 // Extend packset by following use->def and def->use links from pack members.
 void SuperWord::extend_packlist() {
   bool changed;
@@ -1448,7 +1423,6 @@ void SuperWord::extend_packlist() {
   }
 }
 
-//------------------------------adjust_alignment_for_type_conversion---------------------------------
 // Adjust the target alignment if conversion between different data size exists in def-use nodes.
 int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align) {
   // Do not use superword for non-primitives
@@ -1464,7 +1438,6 @@ int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align)
   return align;
 }
 
-//------------------------------follow_use_defs---------------------------
 // Extend the packset by visiting operand definitions of nodes in pack p
 bool SuperWord::follow_use_defs(Node_List* p) {
   assert(p->size() == 2, "just checking");
@@ -1501,7 +1474,6 @@ bool SuperWord::follow_use_defs(Node_List* p) {
   return changed;
 }
 
-//------------------------------follow_def_uses---------------------------
 // Extend the packset by visiting uses of nodes in pack p
 bool SuperWord::follow_def_uses(Node_List* p) {
   bool changed = false;
@@ -1557,7 +1529,6 @@ bool SuperWord::follow_def_uses(Node_List* p) {
   return changed;
 }
 
-//------------------------------order_def_uses---------------------------
 // For extended packsets, ordinally arrange uses packset by major component
 void SuperWord::order_def_uses(Node_List* p) {
   Node* s1 = p->at(0);
@@ -1596,7 +1567,6 @@ void SuperWord::order_def_uses(Node_List* p) {
   }
 }
 
-//---------------------------opnd_positions_match-------------------------
 // Is the use of d1 in u1 at the same operand position as d2 in u2?
 bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
   // check reductions to see if they are marshalled to represent the reduction
@@ -1648,7 +1618,6 @@ bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
   return true;
 }
 
-//------------------------------est_savings---------------------------
 // Estimate the savings from executing s1 and s2 as a pack
 int SuperWord::est_savings(Node* s1, Node* s2) {
   int save_in = 2 - 1; // 2 operations per instruction in packed form
@@ -1695,12 +1664,10 @@ int SuperWord::est_savings(Node* s1, Node* s2) {
   return MAX2(save_in, save_use);
 }
 
-//------------------------------costs---------------------------
 int SuperWord::adjacent_profit(Node* s1, Node* s2) { return 2; }
 int SuperWord::pack_cost(int ct)   { return ct; }
 int SuperWord::unpack_cost(int ct) { return ct; }
 
-//------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
 void SuperWord::combine_packs() {
   bool changed = true;
@@ -1769,7 +1736,6 @@ void SuperWord::combine_packs() {
   }
 }
 
-//-----------------------------construct_my_pack_map--------------------------
 // Construct the map from nodes to packs.  Only valid after the
 // point where a node is only in one pack (after combine_packs).
 void SuperWord::construct_my_pack_map() {
@@ -1791,7 +1757,6 @@ void SuperWord::construct_my_pack_map() {
   }
 }
 
-//------------------------------filter_packs---------------------------
 // Remove packs that are not implemented or not profitable.
 void SuperWord::filter_packs() {
   // Remove packs that are not implemented
@@ -1844,7 +1809,6 @@ void SuperWord::filter_packs() {
 #endif
 }
 
-//------------------------------merge_packs_to_cmove---------------------------
 // Merge qualified CMove into new vector-nodes
 // We want to catch this pattern and subsume Cmp and Bool into CMove
 //
@@ -2051,7 +2015,6 @@ bool CMoveKit::test_cmp_pack(Node_List* cmp_pk, Node_List* cmove_pk) {
   return true;
 }
 
-//------------------------------implemented---------------------------
 // Can code be generated for pack p?
 bool SuperWord::implemented(Node_List* p) {
   bool retValue = false;
@@ -2115,7 +2078,6 @@ bool SuperWord::requires_long_to_int_conversion(int opc) {
   }
 }
 
-//------------------------------same_inputs--------------------------
 // For pack p, are all idx operands the same?
 bool SuperWord::same_inputs(Node_List* p, int idx) {
   Node* p0 = p->at(0);
@@ -2131,7 +2093,6 @@ bool SuperWord::same_inputs(Node_List* p, int idx) {
   return true;
 }
 
-//------------------------------profitable---------------------------
 // For pack p, are all operands and all uses (with in the block) vector?
 bool SuperWord::profitable(Node_List* p) {
   Node* p0 = p->at(0);
@@ -2203,7 +2164,6 @@ bool SuperWord::profitable(Node_List* p) {
   return true;
 }
 
-//------------------------------schedule---------------------------
 // Adjust the memory graph for the packed operations
 void SuperWord::schedule() {
 
@@ -2213,7 +2173,6 @@ void SuperWord::schedule() {
   }
 }
 
-//-------------------------------remove_and_insert-------------------
 // Remove "current" from its current position in the memory graph and insert
 // it after the appropriate insertion point (lip or uip).
 void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
@@ -2266,7 +2225,6 @@ void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
   _igvn.replace_input_of(current, MemNode::Memory, insert_pt);
 }
 
-//------------------------------co_locate_pack----------------------------------
 // To schedule a store pack, we need to move any sandwiched memory ops either before
 // or after the pack, based upon dependence information:
 // (1) If any store in the pack depends on the sandwiched memory op, the
@@ -2486,7 +2444,6 @@ void SuperWord::print_loop(bool whole) {
 }
 #endif
 
-//------------------------------output---------------------------
 // Convert packs into vector node operations
 bool SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
@@ -2881,7 +2838,6 @@ bool SuperWord::output() {
   return true;
 }
 
-//-------------------------create_post_loop_vmask-------------------------
 // Check the post loop vectorizability and create a vector mask if yes.
 // Return null to bail out if post loop is not vectorizable.
 Node* SuperWord::create_post_loop_vmask() {
@@ -2982,7 +2938,6 @@ Node* SuperWord::create_post_loop_vmask() {
   return vmask;
 }
 
-//------------------------------vector_opd---------------------------
 // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
 Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   Node* p0 = p->at(0);
@@ -3133,7 +3088,6 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   return pk;
 }
 
-//------------------------------insert_extracts---------------------------
 // If a use of pack p is not a vector use, then replace the
 // use with an extract operation.
 void SuperWord::insert_extracts(Node_List* p) {
@@ -3183,7 +3137,6 @@ void SuperWord::insert_extracts(Node_List* p) {
   }
 }
 
-//------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?
 bool SuperWord::is_vector_use(Node* use, int u_idx) {
   Node_List* u_pk = my_pack(use);
@@ -3260,7 +3213,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
   return true;
 }
 
-//------------------------------construct_bb---------------------------
 // Construct reverse postorder list of block members
 bool SuperWord::construct_bb() {
   Node* entry = bb();
@@ -3423,14 +3375,12 @@ bool SuperWord::construct_bb() {
   return (_mem_slice_head.length() > 0) || (reduction_uses > 0) || (_data_entry.length() > 0);
 }
 
-//------------------------------initialize_bb---------------------------
 // Initialize per node info
 void SuperWord::initialize_bb() {
   Node* last = _block.at(_block.length() - 1);
   grow_node_info(bb_idx(last));
 }
 
-//------------------------------bb_insert_after---------------------------
 // Insert n into block after pos
 void SuperWord::bb_insert_after(Node* n, int pos) {
   int n_pos = pos + 1;
@@ -3450,7 +3400,6 @@ void SuperWord::bb_insert_after(Node* n, int pos) {
   }
 }
 
-//------------------------------compute_max_depth---------------------------
 // Compute max depth for expressions from beginning of block
 // Use to prune search paths during test for independence.
 void SuperWord::compute_max_depth() {
@@ -3532,7 +3481,6 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
   return max < 2 ? max_vector_size(bt) : max;
 }
 
-//-------------------------compute_vector_element_type-----------------------
 // Compute necessary vector element type for expressions
 // This propagates backwards a narrower integer type when the
 // upper bits of the value are not needed.
@@ -3612,7 +3560,6 @@ void SuperWord::compute_vector_element_type() {
 #endif
 }
 
-//------------------------------memory_alignment---------------------------
 // Alignment within a vector memory reference
 int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
 #ifndef PRODUCT
@@ -3643,7 +3590,6 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   return off_mod;
 }
 
-//---------------------------container_type---------------------------
 // Smallest type containing range of values
 const Type* SuperWord::container_type(Node* n) {
   if (n->is_Mem()) {
@@ -3685,7 +3631,6 @@ bool SuperWord::same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_r
   return _phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(best_align_to_mem_ref->adr_type());
 }
 
-//------------------------------in_packset---------------------------
 // Are s1 and s2 in a pack pair and ordered as s1,s2?
 bool SuperWord::in_packset(Node* s1, Node* s2) {
   for (int i = 0; i < _packset.length(); i++) {
@@ -3698,7 +3643,6 @@ bool SuperWord::in_packset(Node* s1, Node* s2) {
   return false;
 }
 
-//------------------------------in_pack---------------------------
 // Is s in pack p?
 Node_List* SuperWord::in_pack(Node* s, Node_List* p) {
   for (uint i = 0; i < p->size(); i++) {
@@ -3709,7 +3653,6 @@ Node_List* SuperWord::in_pack(Node* s, Node_List* p) {
   return nullptr;
 }
 
-//------------------------------remove_pack_at---------------------------
 // Remove the pack at position pos in the packset
 void SuperWord::remove_pack_at(int pos) {
   Node_List* p = _packset.at(pos);
@@ -3741,7 +3684,6 @@ void SuperWord::packset_sort(int n) {
   }
 }
 
-//------------------------------executed_first---------------------------
 // Return the node executed first in pack p.  Uses the RPO block list
 // to determine order.
 Node* SuperWord::executed_first(Node_List* p) {
@@ -3758,7 +3700,6 @@ Node* SuperWord::executed_first(Node_List* p) {
   return n;
 }
 
-//------------------------------executed_last---------------------------
 // Return the node executed last in pack p.
 Node* SuperWord::executed_last(Node_List* p) {
   Node* n = p->at(0);
@@ -3794,7 +3735,6 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 }
 
 
-//----------------------------align_initial_loop_index---------------------------
 // Adjust pre-loop limit so that in main loop, a load/store reference
 // to align_to_ref will be a position zero in the vector.
 //   (iv + k) mod vector_align == 0
@@ -3965,7 +3905,6 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   _igvn.replace_input_of(pre_opaq, 1, constrained);
 }
 
-//----------------------------get_pre_loop_end---------------------------
 // Find pre loop end from main loop.  Returns null if none.
 CountedLoopEndNode* SuperWord::find_pre_loop_end(CountedLoopNode* cl) const {
   // The loop cannot be optimized if the graph shape at
@@ -3983,7 +3922,6 @@ CountedLoopEndNode* SuperWord::find_pre_loop_end(CountedLoopNode* cl) const {
   return pre_end;
 }
 
-//------------------------------init---------------------------
 void SuperWord::init() {
   _dg.init();
   _packset.clear();
@@ -4007,7 +3945,6 @@ void SuperWord::init() {
   _num_reductions = 0;
 }
 
-//------------------------------restart---------------------------
 void SuperWord::restart() {
   _dg.init();
   _packset.clear();
@@ -4020,7 +3957,6 @@ void SuperWord::restart() {
   _node_info.clear();
 }
 
-//------------------------------print_packset---------------------------
 void SuperWord::print_packset() {
 #ifndef PRODUCT
   tty->print_cr("packset");
@@ -4032,14 +3968,12 @@ void SuperWord::print_packset() {
 #endif
 }
 
-//------------------------------print_pack---------------------------
 void SuperWord::print_pack(Node_List* p) {
   for (uint i = 0; i < p->size(); i++) {
     print_stmt(p->at(i));
   }
 }
 
-//------------------------------print_bb---------------------------
 void SuperWord::print_bb() {
 #ifndef PRODUCT
   tty->print_cr("\nBlock");
@@ -4053,7 +3987,6 @@ void SuperWord::print_bb() {
 #endif
 }
 
-//------------------------------print_stmt---------------------------
 void SuperWord::print_stmt(Node* s) {
 #ifndef PRODUCT
   tty->print(" align: %d \t", alignment(s));
@@ -4061,7 +3994,6 @@ void SuperWord::print_stmt(Node* s) {
 #endif
 }
 
-//------------------------------blank---------------------------
 char* SuperWord::blank(uint depth) {
   static char blanks[101];
   assert(depth < 101, "too deep");
@@ -4071,11 +4003,9 @@ char* SuperWord::blank(uint depth) {
 }
 
 
-//==============================SWPointer===========================
 #ifndef PRODUCT
 int SWPointer::Tracer::_depth = 0;
 #endif
-//----------------------------SWPointer------------------------
 SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool analyze_only) :
   _mem(mem), _slp(slp),  _base(nullptr),  _adr(nullptr),
   _scale(0), _offset(0), _invar(nullptr), _negate_invar(false),
@@ -4175,7 +4105,6 @@ bool SWPointer::invariant(Node* n) const {
   return is_not_member;
 }
 
-//------------------------scaled_iv_plus_offset--------------------
 // Match: k*iv + offset
 // where: k is a constant that maybe zero, and
 //        offset is (k2 [+/- invariant]) where k2 maybe zero and invariant is optional
@@ -4219,7 +4148,6 @@ bool SWPointer::scaled_iv_plus_offset(Node* n) {
   return false;
 }
 
-//----------------------------scaled_iv------------------------
 // Match: k*iv where k is a constant that's not zero
 bool SWPointer::scaled_iv(Node* n) {
   NOT_PRODUCT(Tracer::Depth ddd;)
@@ -4288,7 +4216,6 @@ bool SWPointer::scaled_iv(Node* n) {
   return false;
 }
 
-//----------------------------offset_plus_k------------------------
 // Match: offset is (k [+/- invariant])
 // where k maybe zero and invariant is optional, but not both.
 bool SWPointer::offset_plus_k(Node* n, bool negate) {
@@ -4375,7 +4302,6 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
   return false;
 }
 
-//-----------------has_potential_dependence-----------------
 // Check potential data dependence among all memory accesses.
 // We require every two accesses (with at least one store) of
 // the same element type has the same address expression.
@@ -4403,7 +4329,6 @@ bool SWPointer::has_potential_dependence(GrowableArray<SWPointer*> swptrs) {
   return false;
 }
 
-//----------------------------print------------------------
 void SWPointer::print() {
 #ifndef PRODUCT
   tty->print("base: [%d]  adr: [%d]  scale: %d  offset: %d",
@@ -4417,7 +4342,6 @@ void SWPointer::print() {
 #endif
 }
 
-//----------------------------tracing------------------------
 #ifndef PRODUCT
 void SWPointer::Tracer::print_depth() const {
   for (int ii = 0; ii < _depth; ++ii) {
@@ -4717,7 +4641,6 @@ const SWNodeInfo SWNodeInfo::initial;
 
 // ============================ DepGraph ===========================
 
-//------------------------------make_node---------------------------
 // Make a new dependence graph node for an ideal node.
 DepMem* DepGraph::make_node(Node* node) {
   DepMem* m = new (_arena) DepMem(node);
@@ -4728,7 +4651,6 @@ DepMem* DepGraph::make_node(Node* node) {
   return m;
 }
 
-//------------------------------make_edge---------------------------
 // Make a new dependence graph edge from dpred -> dsucc
 DepEdge* DepGraph::make_edge(DepMem* dpred, DepMem* dsucc) {
   DepEdge* e = new (_arena) DepEdge(dpred, dsucc, dsucc->in_head(), dpred->out_head());
@@ -4739,21 +4661,18 @@ DepEdge* DepGraph::make_edge(DepMem* dpred, DepMem* dsucc) {
 
 // ========================== DepMem ========================
 
-//------------------------------in_cnt---------------------------
 int DepMem::in_cnt() {
   int ct = 0;
   for (DepEdge* e = _in_head; e != nullptr; e = e->next_in()) ct++;
   return ct;
 }
 
-//------------------------------out_cnt---------------------------
 int DepMem::out_cnt() {
   int ct = 0;
   for (DepEdge* e = _out_head; e != nullptr; e = e->next_out()) ct++;
   return ct;
 }
 
-//------------------------------print-----------------------------
 void DepMem::print() {
 #ifndef PRODUCT
   tty->print("  DepNode %d (", _node->_idx);
@@ -4772,7 +4691,6 @@ void DepMem::print() {
 
 // =========================== DepEdge =========================
 
-//------------------------------DepPreds---------------------------
 void DepEdge::print() {
 #ifndef PRODUCT
   tty->print_cr("DepEdge: %d [ %d ]", _pred->node()->_idx, _succ->node()->_idx);
@@ -4782,7 +4700,6 @@ void DepEdge::print() {
 // =========================== DepPreds =========================
 // Iterator over predecessor edges in the dependence graph.
 
-//------------------------------DepPreds---------------------------
 DepPreds::DepPreds(Node* n, DepGraph& dg) {
   _n = n;
   _done = false;
@@ -4802,7 +4719,6 @@ DepPreds::DepPreds(Node* n, DepGraph& dg) {
   next();
 }
 
-//------------------------------next---------------------------
 void DepPreds::next() {
   if (_dep_next != nullptr) {
     _current  = _dep_next->pred()->node();
@@ -4817,7 +4733,6 @@ void DepPreds::next() {
 // =========================== DepSuccs =========================
 // Iterator over successor edges in the dependence graph.
 
-//------------------------------DepSuccs---------------------------
 DepSuccs::DepSuccs(Node* n, DepGraph& dg) {
   _n = n;
   _done = false;
@@ -4837,7 +4752,6 @@ DepSuccs::DepSuccs(Node* n, DepGraph& dg) {
   next();
 }
 
-//-------------------------------next---------------------------
 void DepSuccs::next() {
   if (_dep_next != nullptr) {
     _current  = _dep_next->succ()->node();

@@ -77,7 +77,6 @@ static bool needs_explicit_null_check_for_read(Node *val) {
   return true;
 }
 
-//------------------------------implicit_null_check----------------------------
 // Detect implicit-null-check opportunities.  Basically, find null checks
 // with suitable memory ops nearby.  Use the memory op to do the null check.
 // I can generate a memory op if there is not one nearby.
@@ -491,7 +490,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 }
 
 
-//------------------------------select-----------------------------------------
 // Select a nice fellow from the worklist to schedule next. If there is only one
 // choice, then use it. CreateEx nodes that are initially ready must start their
 // blocks and are given the highest priority, by being placed at the beginning
@@ -687,7 +685,6 @@ Node* PhaseCFG::select(
   return n;
 }
 
-//-------------------------adjust_register_pressure----------------------------
 void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_pressure_nodes, bool finalize_mode) {
   PhaseLive* liveinfo = _regalloc->get_live();
   IndexSet* liveout = liveinfo->live(block);
@@ -785,7 +782,6 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
   }
 }
 
-//------------------------------set_next_call----------------------------------
 void PhaseCFG::set_next_call(Block* block, Node* n, VectorSet& next_call) {
   if( next_call.test_set(n->_idx) ) return;
   for( uint i=0; i<n->len(); i++ ) {
@@ -797,7 +793,6 @@ void PhaseCFG::set_next_call(Block* block, Node* n, VectorSet& next_call) {
   }
 }
 
-//------------------------------needed_for_next_call---------------------------
 // Set the flag 'next_call' for each Node that is needed for the next call to
 // be scheduled.  This flag lets me bias scheduling so Nodes needed for the
 // next subroutine call get priority - basically it moves things NOT needed
@@ -820,7 +815,6 @@ void PhaseCFG::needed_for_next_call(Block* block, Node* this_call, VectorSet& ne
   set_next_call(block, call, next_call);
 }
 
-//------------------------------add_call_kills-------------------------------------
 // helper function that adds caller save registers to MachProjNode
 static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe) {
   // Fill in the kill mask for the call
@@ -837,7 +831,6 @@ static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_p
 }
 
 
-//------------------------------sched_call-------------------------------------
 uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call) {
   RegMask regs;
 
@@ -932,7 +925,6 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
 }
 
 
-//------------------------------schedule_local---------------------------------
 // Topological sort within a block.  Someday become a real scheduler.
 bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call, intptr_t *recalc_pressure_nodes) {
   // Already "sorted" are the block start Node (as the first entry), and
@@ -1229,7 +1221,6 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   return true;
 }
 
-//--------------------------catch_cleanup_fix_all_inputs-----------------------
 static void catch_cleanup_fix_all_inputs(Node *use, Node *old_def, Node *new_def) {
   for (uint l = 0; l < use->len(); l++) {
     if (use->in(l) == old_def) {
@@ -1244,7 +1235,6 @@ static void catch_cleanup_fix_all_inputs(Node *use, Node *old_def, Node *new_def
   }
 }
 
-//------------------------------catch_cleanup_find_cloned_def------------------
 Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *def_blk, int n_clone_idx) {
   assert( use_blk != def_blk, "Inter-block cleanup only");
 
@@ -1309,7 +1299,6 @@ Node* PhaseCFG::catch_cleanup_find_cloned_def(Block *use_blk, Node *def, Block *
   return fixup;
 }
 
-//--------------------------catch_cleanup_intra_block--------------------------
 // Fix all input edges in use that reference "def".  The use is in the same
 // block as the def and both have been cloned in each successor block.
 static void catch_cleanup_intra_block(Node *use, Node *def, Block *blk, int beg, int n_clone_idx) {
@@ -1331,7 +1320,6 @@ static void catch_cleanup_intra_block(Node *use, Node *def, Block *blk, int beg,
   }
 }
 
-//------------------------------catch_cleanup_inter_block---------------------
 // Fix all input edges in use that reference "def".  The use is in a different
 // block than the def.
 void PhaseCFG::catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx) {
@@ -1341,7 +1329,6 @@ void PhaseCFG::catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, B
   catch_cleanup_fix_all_inputs(use, def, new_def);
 }
 
-//------------------------------call_catch_cleanup-----------------------------
 // If we inserted any instructions between a Call and his CatchNode,
 // clone the instructions on all paths below the Catch.
 void PhaseCFG::call_catch_cleanup(Block* block) {

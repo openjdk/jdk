@@ -34,7 +34,6 @@
 #include "opto/runtime.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-//------------------------------make_dtrace_method_entry_exit ----------------
 // Dtrace -- record entry or exit of a method if compiled with dtrace support
 void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
   const TypeFunc *call_type    = OptoRuntime::dtrace_method_entry_exit_Type();
@@ -60,8 +59,6 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
 }
 
 
-//=============================================================================
-//------------------------------do_checkcast-----------------------------------
 void Parse::do_checkcast() {
   bool will_link;
   ciKlass* klass = iter().get_klass(will_link);
@@ -102,7 +99,6 @@ void Parse::do_checkcast() {
 }
 
 
-//------------------------------do_instanceof----------------------------------
 void Parse::do_instanceof() {
   if (stopped())  return;
   // We would like to return false if class is not loaded, emitting a
@@ -136,7 +132,6 @@ void Parse::do_instanceof() {
   push(res);
 }
 
-//------------------------------array_store_check------------------------------
 // pull array from stack and check that the store is valid
 void Parse::array_store_check() {
 
@@ -239,7 +234,6 @@ void Parse::array_store_check() {
 }
 
 
-//------------------------------do_new-----------------------------------------
 void Parse::do_new() {
   kill_dead_locals();
 
@@ -283,7 +277,6 @@ void Parse::do_new() {
 }
 
 #ifndef PRODUCT
-//------------------------------dump_map_adr_mem-------------------------------
 // Debug dump of the mapping from address types to MergeMemNode indices.
 void Parse::dump_map_adr_mem() const {
   tty->print_cr("--- Mapping from address types to memory Nodes ---");

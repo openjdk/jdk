@@ -66,7 +66,6 @@ uint Parse::BytecodeParseHistogram::_nodes_constructed[Bytecodes::number_of_code
 uint Parse::BytecodeParseHistogram::_nodes_transformed[Bytecodes::number_of_codes];
 uint Parse::BytecodeParseHistogram::_new_values       [Bytecodes::number_of_codes];
 
-//------------------------------print_statistics-------------------------------
 void Parse::print_statistics() {
   tty->print_cr("--- Compiler Statistics ---");
   tty->print("Methods seen: %d  Methods parsed: %d", methods_seen, methods_parsed);
@@ -98,7 +97,6 @@ void Parse::print_statistics() {
 }
 #endif
 
-//------------------------------ON STACK REPLACEMENT---------------------------
 
 // Construct a node which can be used to get incoming state for
 // on stack replacement.
@@ -384,7 +382,6 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   }
 }
 
-//------------------------------Parse------------------------------------------
 // Main parser constructor.
 Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   : _exits(caller)
@@ -630,7 +627,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
                       C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
-//---------------------------do_all_blocks-------------------------------------
 void Parse::do_all_blocks() {
   bool has_irreducible = flow()->has_irreducible_entry();
 
@@ -757,7 +753,6 @@ static Node* mask_int_value(Node* v, BasicType bt, PhaseGVN* gvn) {
   return v;
 }
 
-//-------------------------------build_exits----------------------------------
 // Build normal and exceptional exit merge points.
 void Parse::build_exits() {
   // make a clone of caller to prevent sharing of side-effects
@@ -810,7 +805,6 @@ void Parse::build_exits() {
 }
 
 
-//----------------------------build_start_state-------------------------------
 // Construct a state which contains only the incoming arguments from an
 // unknown caller.  The method & bci will be null & InvocationEntryBci.
 JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
@@ -845,7 +839,6 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   return jvms;
 }
 
-//-----------------------------make_node_notes---------------------------------
 Node_Notes* Parse::make_node_notes(Node_Notes* caller_nn) {
   if (caller_nn == nullptr)  return nullptr;
   Node_Notes* nn = caller_nn->clone(C);
@@ -858,7 +851,6 @@ Node_Notes* Parse::make_node_notes(Node_Notes* caller_nn) {
 }
 
 
-//--------------------------return_values--------------------------------------
 void Compile::return_values(JVMState* jvms) {
   GraphKit kit(jvms);
   Node* ret = new ReturnNode(TypeFunc::Parms,
@@ -881,7 +873,6 @@ void Compile::return_values(JVMState* jvms) {
   initial_gvn()->transform_no_reclaim(ret);
 }
 
-//------------------------rethrow_exceptions-----------------------------------
 // Bind all exception states in the list into a single RethrowNode.
 void Compile::rethrow_exceptions(JVMState* jvms) {
   GraphKit kit(jvms);
@@ -900,7 +891,6 @@ void Compile::rethrow_exceptions(JVMState* jvms) {
   initial_gvn()->transform_no_reclaim(exit);
 }
 
-//---------------------------do_exceptions-------------------------------------
 // Process exceptions arising from the current bytecode.
 // Send caught exceptions to the proper handler within this method.
 // Unhandled exceptions feed into _exit.
@@ -933,7 +923,6 @@ void Parse::do_exceptions() {
   // We now return to our regularly scheduled program:
 }
 
-//---------------------------throw_to_exit-------------------------------------
 // Merge the given map into an exception exit from this method.
 // The exception exit will handle any unlocking of receiver.
 // The ex_oop must be saved within the ex_map, unlike merge_exception.
@@ -958,7 +947,6 @@ void Parse::throw_to_exit(SafePointNode* ex_map) {
   _exits.add_exception_state(caller_ex_map);
 }
 
-//------------------------------do_exits---------------------------------------
 void Parse::do_exits() {
   set_parse_bci(InvocationEntryBci);
 
@@ -1111,7 +1099,6 @@ void Parse::do_exits() {
   _exits.map()->apply_replaced_nodes(_new_idx);
 }
 
-//-----------------------------create_entry_map-------------------------------
 // Initialize our parser map to contain the types at method entry.
 // For OSR, the map contains a single RawPtr parameter.
 // Initial monitor locking for sync. methods is performed by do_method_entry.
@@ -1182,7 +1169,6 @@ SafePointNode* Parse::create_entry_map() {
   return entry_map;
 }
 
-//-----------------------------do_method_entry--------------------------------
 // Emit any code needed in the pseudo-block before BCI zero.
 // The main thing to do is lock the receiver of a synchronized method.
 void Parse::do_method_entry() {
@@ -1253,7 +1239,6 @@ void Parse::do_method_entry() {
   record_profiled_parameters_for_speculation();
 }
 
-//------------------------------init_blocks------------------------------------
 // Initialize our parser map to contain the types/monitors at method entry.
 void Parse::init_blocks() {
   // Create the blocks.
@@ -1273,7 +1258,6 @@ void Parse::init_blocks() {
   }
 }
 
-//-------------------------------init_node-------------------------------------
 Parse::Block::Block(Parse* outer, int rpo) : _live_locals() {
   _flow = outer->flow()->rpo_at(rpo);
   _pred_count = 0;
@@ -1296,7 +1280,6 @@ Parse::Block::Block(Parse* outer, int rpo) : _live_locals() {
   assert(flow()->is_start() == (this == outer->start_block()), "");
 }
 
-//-------------------------------init_graph------------------------------------
 void Parse::Block::init_graph(Parse* outer) {
   // Create the successor list for this parser block.
   GrowableArray<ciTypeFlow::Block*>* tfs = flow()->successors();
@@ -1334,7 +1317,6 @@ void Parse::Block::init_graph(Parse* outer) {
   }
 }
 
-//---------------------------successor_for_bci---------------------------------
 Parse::Block* Parse::Block::successor_for_bci(int bci) {
   for (int i = 0; i < all_successors(); i++) {
     Block* block2 = successor_at(i);
@@ -1352,13 +1334,11 @@ Parse::Block* Parse::Block::successor_for_bci(int bci) {
 }
 
 
-//-----------------------------stack_type_at-----------------------------------
 const Type* Parse::Block::stack_type_at(int i) const {
   return get_type(flow()->stack_type_at(i));
 }
 
 
-//-----------------------------local_type_at-----------------------------------
 const Type* Parse::Block::local_type_at(int i) const {
   // Make dead locals fall to bottom.
   if (_live_locals.size() == 0) {
@@ -1376,20 +1356,17 @@ const Type* Parse::Block::local_type_at(int i) const {
 
 #ifndef PRODUCT
 
-//----------------------------name_for_bc--------------------------------------
 // helper method for BytecodeParseHistogram
 static const char* name_for_bc(int i) {
   return Bytecodes::is_defined(i) ? Bytecodes::name(Bytecodes::cast(i)) : "xxxunusedxxx";
 }
 
-//----------------------------BytecodeParseHistogram------------------------------------
 Parse::BytecodeParseHistogram::BytecodeParseHistogram(Parse *p, Compile *c) {
   _parser   = p;
   _compiler = c;
   if( ! _initialized ) { _initialized = true; reset(); }
 }
 
-//----------------------------current_count------------------------------------
 int Parse::BytecodeParseHistogram::current_count(BPHType bph_type) {
   switch( bph_type ) {
   case BPH_transforms: { return _parser->gvn().made_progress(); }
@@ -1398,16 +1375,13 @@ int Parse::BytecodeParseHistogram::current_count(BPHType bph_type) {
   }
 }
 
-//----------------------------initialized--------------------------------------
 bool Parse::BytecodeParseHistogram::initialized() { return _initialized; }
 
-//----------------------------reset--------------------------------------------
 void Parse::BytecodeParseHistogram::reset() {
   int i = Bytecodes::number_of_codes;
   while (i-- > 0) { _bytecodes_parsed[i] = 0; _nodes_constructed[i] = 0; _nodes_transformed[i] = 0; _new_values[i] = 0; }
 }
 
-//----------------------------set_initial_state--------------------------------
 // Record info when starting to parse one bytecode
 void Parse::BytecodeParseHistogram::set_initial_state( Bytecodes::Code bc ) {
   if( PrintParseStatistics && !_parser->is_osr_parse() ) {
@@ -1418,7 +1392,6 @@ void Parse::BytecodeParseHistogram::set_initial_state( Bytecodes::Code bc ) {
   }
 }
 
-//----------------------------record_change--------------------------------
 // Record results of parsing one bytecode
 void Parse::BytecodeParseHistogram::record_change() {
   if( PrintParseStatistics && !_parser->is_osr_parse() ) {
@@ -1430,7 +1403,6 @@ void Parse::BytecodeParseHistogram::record_change() {
 }
 
 
-//----------------------------print--------------------------------------------
 void Parse::BytecodeParseHistogram::print(float cutoff) {
   ResourceMark rm;
   // print profile
@@ -1472,7 +1444,6 @@ void Parse::BytecodeParseHistogram::print(float cutoff) {
 }
 #endif
 
-//----------------------------load_state_from----------------------------------
 // Load block/map/sp.  But not do not touch iter/bci.
 void Parse::load_state_from(Block* block) {
   set_block(block);
@@ -1482,7 +1453,6 @@ void Parse::load_state_from(Block* block) {
 }
 
 
-//-----------------------------record_state------------------------------------
 void Parse::Block::record_state(Parse* p) {
   assert(!is_merged(), "can only record state once, on 1st inflow");
   assert(start_sp() == p->sp(), "stack pointer must agree with ciTypeFlow");
@@ -1490,7 +1460,6 @@ void Parse::Block::record_state(Parse* p) {
 }
 
 
-//------------------------------do_one_block-----------------------------------
 void Parse::do_one_block() {
   if (TraceOptoParse) {
     Block *b = block();
@@ -1579,7 +1548,6 @@ void Parse::do_one_block() {
 }
 
 
-//------------------------------merge------------------------------------------
 void Parse::set_parse_bci(int bci) {
   set_bci(bci);
   Node_Notes* nn = C->default_node_notes();
@@ -1600,7 +1568,6 @@ void Parse::set_parse_bci(int bci) {
   }
 }
 
-//------------------------------merge------------------------------------------
 // Merge the current mapping into the basic block starting at bci
 void Parse::merge(int target_bci) {
   Block* target = successor_for_bci(target_bci);
@@ -1610,7 +1577,6 @@ void Parse::merge(int target_bci) {
   merge_common(target, pnum);
 }
 
-//-------------------------merge_new_path--------------------------------------
 // Merge the current mapping into the basic block, using a new path
 void Parse::merge_new_path(int target_bci) {
   Block* target = successor_for_bci(target_bci);
@@ -1620,7 +1586,6 @@ void Parse::merge_new_path(int target_bci) {
   merge_common(target, pnum);
 }
 
-//-------------------------merge_exception-------------------------------------
 // Merge the current mapping into the basic block starting at bci
 // The ex_oop must be pushed on the stack, unlike throw_to_exit.
 void Parse::merge_exception(int target_bci) {
@@ -1637,7 +1602,6 @@ void Parse::merge_exception(int target_bci) {
   merge_common(target, pnum);
 }
 
-//--------------------handle_missing_successor---------------------------------
 void Parse::handle_missing_successor(int target_bci) {
 #ifndef PRODUCT
   Block* b = block();
@@ -1647,7 +1611,6 @@ void Parse::handle_missing_successor(int target_bci) {
   ShouldNotReachHere();
 }
 
-//--------------------------merge_common---------------------------------------
 void Parse::merge_common(Parse::Block* target, int pnum) {
   if (TraceOptoParse) {
     tty->print("Merging state at block #%d bci:%d", target->rpo(), target->start());
@@ -1830,7 +1793,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 }
 
 
-//--------------------------merge_memory_edges---------------------------------
 void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
   // (nophi means we must not create phis, because we already parsed here)
   assert(n != nullptr, "");
@@ -1891,7 +1853,6 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
 }
 
 
-//------------------------ensure_phis_everywhere-------------------------------
 void Parse::ensure_phis_everywhere() {
   ensure_phi(TypeFunc::I_O);
 
@@ -1930,7 +1891,6 @@ void Parse::ensure_phis_everywhere() {
 }
 
 
-//-----------------------------add_new_path------------------------------------
 // Add a previously unaccounted predecessor to this block.
 int Parse::Block::add_new_path() {
   // If there is no map, return the lowest unused path number.
@@ -1967,7 +1927,6 @@ int Parse::Block::add_new_path() {
   return pnum;
 }
 
-//------------------------------ensure_phi-------------------------------------
 // Turn the idx'th entry of the current map into a Phi
 PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
   SafePointNode* map = this->map();
@@ -2022,7 +1981,6 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
   return phi;
 }
 
-//--------------------------ensure_memory_phi----------------------------------
 // Turn the idx'th slice of the current memory into a Phi
 PhiNode *Parse::ensure_memory_phi(int idx, bool nocreate) {
   MergeMemNode* mem = merged_memory();
@@ -2059,7 +2017,6 @@ PhiNode *Parse::ensure_memory_phi(int idx, bool nocreate) {
   return phi;
 }
 
-//------------------------------call_register_finalizer-----------------------
 // Check the klass of the receiver and call register_finalizer if the
 // class need finalization.
 void Parse::call_register_finalizer() {
@@ -2178,7 +2135,6 @@ void Parse::rtm_deopt() {
 #endif
 }
 
-//------------------------------return_current---------------------------------
 // Append current _map to _exit_return
 void Parse::return_current(Node* value) {
   if (RegisterFinalizersAtInit &&
@@ -2231,7 +2187,6 @@ void Parse::return_current(Node* value) {
 }
 
 
-//------------------------------add_safepoint----------------------------------
 void Parse::add_safepoint() {
   uint parms = TypeFunc::Parms+1;
 
@@ -2287,7 +2242,6 @@ void Parse::add_safepoint() {
 }
 
 #ifndef PRODUCT
-//------------------------show_parse_info--------------------------------------
 void Parse::show_parse_info() {
   InlineTree* ilt = nullptr;
   if (C->ilt() != nullptr) {
@@ -2352,7 +2306,6 @@ void Parse::show_parse_info() {
 }
 
 
-//------------------------------dump-------------------------------------------
 // Dump information associated with the bytecodes of current _method
 void Parse::dump() {
   if( method() != nullptr ) {

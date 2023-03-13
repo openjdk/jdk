@@ -31,8 +31,6 @@
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* Conv2BNode::Identity(PhaseGVN* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
@@ -42,7 +40,6 @@ Node* Conv2BNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Value------------------------------------------
 const Type* Conv2BNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -63,8 +60,6 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
 
 
 // The conversions operations are all Alpha sorted.  Please keep it that way!
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvD2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -73,7 +68,6 @@ const Type* ConvD2FNode::Value(PhaseGVN* phase) const {
   return TypeF::make( (float)td->getd() );
 }
 
-//------------------------------Ideal------------------------------------------
 // If we see pattern ConvF2D SomeDoubleOp ConvD2F, do operation as float.
 Node *ConvD2FNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if ( in(1)->Opcode() == Op_SqrtD ) {
@@ -88,15 +82,12 @@ Node *ConvD2FNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Identity---------------------------------------
 // Float's can be converted to doubles with no loss of bits.  Hence
 // converting a float to a double and back to a float is a NOP.
 Node* ConvD2FNode::Identity(PhaseGVN* phase) {
   return (in(1)->Opcode() == Op_ConvF2D) ? in(1)->in(1) : this;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvD2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -105,7 +96,6 @@ const Type* ConvD2INode::Value(PhaseGVN* phase) const {
   return TypeInt::make( SharedRuntime::d2i( td->getd() ) );
 }
 
-//------------------------------Ideal------------------------------------------
 // If converting to an int type, skip any rounding nodes
 Node *ConvD2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(1)->Opcode() == Op_RoundDouble) {
@@ -115,15 +105,12 @@ Node *ConvD2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Identity---------------------------------------
 // Int's can be converted to doubles with no loss of bits.  Hence
 // converting an integer to a double and back to an integer is a NOP.
 Node* ConvD2INode::Identity(PhaseGVN* phase) {
   return (in(1)->Opcode() == Op_ConvI2D) ? in(1)->in(1) : this;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvD2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -132,7 +119,6 @@ const Type* ConvD2LNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( SharedRuntime::d2l( td->getd() ) );
 }
 
-//------------------------------Identity---------------------------------------
 Node* ConvD2LNode::Identity(PhaseGVN* phase) {
   // Remove ConvD2L->ConvL2D->ConvD2L sequences.
   if( in(1)       ->Opcode() == Op_ConvL2D &&
@@ -141,7 +127,6 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 // If converting to an int type, skip any rounding nodes
 Node *ConvD2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(1)->Opcode() == Op_RoundDouble) {
@@ -151,8 +136,6 @@ Node *ConvD2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvF2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -161,8 +144,6 @@ const Type* ConvF2DNode::Value(PhaseGVN* phase) const {
   return TypeD::make( (double)tf->getf() );
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) return Type::TOP;
@@ -173,8 +154,6 @@ const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
   return TypeInt::make( StubRoutines::f2hf(tf->getf()) );
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP )       return Type::TOP;
@@ -183,7 +162,6 @@ const Type* ConvF2INode::Value(PhaseGVN* phase) const {
   return TypeInt::make( SharedRuntime::f2i( tf->getf() ) );
 }
 
-//------------------------------Identity---------------------------------------
 Node* ConvF2INode::Identity(PhaseGVN* phase) {
   // Remove ConvF2I->ConvI2F->ConvF2I sequences.
   if( in(1)       ->Opcode() == Op_ConvI2F &&
@@ -192,7 +170,6 @@ Node* ConvF2INode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 // If converting to an int type, skip any rounding nodes
 Node *ConvF2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(1)->Opcode() == Op_RoundFloat) {
@@ -202,8 +179,6 @@ Node *ConvF2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvF2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP )       return Type::TOP;
@@ -212,7 +187,6 @@ const Type* ConvF2LNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( SharedRuntime::f2l( tf->getf() ) );
 }
 
-//------------------------------Identity---------------------------------------
 Node* ConvF2LNode::Identity(PhaseGVN* phase) {
   // Remove ConvF2L->ConvL2F->ConvF2L sequences.
   if( in(1)       ->Opcode() == Op_ConvL2F &&
@@ -221,7 +195,6 @@ Node* ConvF2LNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 // If converting to an int type, skip any rounding nodes
 Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(1)->Opcode() == Op_RoundFloat) {
@@ -231,8 +204,6 @@ Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) return Type::TOP;
@@ -246,8 +217,6 @@ const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvI2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -256,8 +225,6 @@ const Type* ConvI2DNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvI2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -266,7 +233,6 @@ const Type* ConvI2FNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//------------------------------Identity---------------------------------------
 Node* ConvI2FNode::Identity(PhaseGVN* phase) {
   // Remove ConvI2F->ConvF2I->ConvI2F sequences.
   if( in(1)       ->Opcode() == Op_ConvF2I &&
@@ -275,8 +241,6 @@ Node* ConvI2FNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if (t == Type::TOP) {
@@ -605,7 +569,6 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
 }
 
 
-//------------------------------Ideal------------------------------------------
 Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const TypeLong* this_type = this->type()->is_long();
   if (can_reshape && !phase->C->post_loop_opts_phase()) {
@@ -662,8 +625,6 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvL2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -672,8 +633,6 @@ const Type* ConvL2DNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* ConvL2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -682,15 +641,12 @@ const Type* ConvL2FNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//=============================================================================
-//----------------------------Identity-----------------------------------------
 Node* ConvL2INode::Identity(PhaseGVN* phase) {
   // Convert L2I(I2L(x)) => x
   if (in(1)->Opcode() == Op_ConvI2L)  return in(1)->in(1);
   return this;
 }
 
-//------------------------------Value------------------------------------------
 const Type* ConvL2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -705,7 +661,6 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
   return ti->filter(_type);
 }
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Blow off prior masking to int
 Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -744,8 +699,6 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 // Remove redundant roundings
 Node* RoundFloatNode::Identity(PhaseGVN* phase) {
   assert(Matcher::strict_fp_requires_explicit_rounding, "should only generate for Intel");
@@ -760,13 +713,10 @@ Node* RoundFloatNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Value------------------------------------------
 const Type* RoundFloatNode::Value(PhaseGVN* phase) const {
   return phase->type( in(1) );
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 // Remove redundant roundings.  Incoming arguments are already rounded.
 Node* RoundDoubleNode::Identity(PhaseGVN* phase) {
   assert(Matcher::strict_fp_requires_explicit_rounding, "should only generate for Intel");
@@ -783,18 +733,15 @@ Node* RoundDoubleNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Value------------------------------------------
 const Type* RoundDoubleNode::Value(PhaseGVN* phase) const {
   return phase->type( in(1) );
 }
 
-//=============================================================================
 RoundDoubleModeNode* RoundDoubleModeNode::make(PhaseGVN& gvn, Node* arg, RoundDoubleModeNode::RoundingMode rmode) {
   ConINode* rm = gvn.intcon(rmode);
   return new RoundDoubleModeNode(arg, (Node *)rm);
 }
 
-//------------------------------Identity---------------------------------------
 // Remove redundant roundings.
 Node* RoundDoubleModeNode::Identity(PhaseGVN* phase) {
   int op = in(1)->Opcode();
@@ -805,4 +752,3 @@ Node* RoundDoubleModeNode::Identity(PhaseGVN* phase) {
 const Type* RoundDoubleModeNode::Value(PhaseGVN* phase) const {
   return Type::DOUBLE;
 }
-//=============================================================================

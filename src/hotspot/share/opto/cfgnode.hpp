@@ -58,7 +58,6 @@ class       JumpProjNode;
 class     SCMemProjNode;
 class PhaseIdealLoop;
 
-//------------------------------RegionNode-------------------------------------
 // The class of RegionNodes, which can be mapped to basic blocks in the
 // program.  Their inputs point to Control sources.  PhiNodes (described
 // below) have an input point to a RegionNode.  Merged data inputs to PhiNodes
@@ -133,7 +132,6 @@ public:
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
-//------------------------------JProjNode--------------------------------------
 // jump projection for node that produces multiple control-flow paths
 class JProjNode : public ProjNode {
  public:
@@ -146,7 +144,6 @@ class JProjNode : public ProjNode {
   virtual uint  ideal_reg() const { return 0; }
 };
 
-//------------------------------PhiNode----------------------------------------
 // PhiNodes merge values from different Control paths.  Slot 0 points to the
 // controlling RegionNode.  Other slots map 1-for-1 with incoming control flow
 // paths to the RegionNode.
@@ -264,7 +261,6 @@ public:
 #endif //ASSERT
 };
 
-//------------------------------GotoNode---------------------------------------
 // GotoNodes perform direct branches.
 class GotoNode : public Node {
 public:
@@ -281,7 +277,6 @@ public:
   virtual const RegMask &out_RegMask() const;
 };
 
-//------------------------------CProjNode--------------------------------------
 // control projection for node that produces multiple control-flow paths
 class CProjNode : public ProjNode {
 public:
@@ -294,7 +289,6 @@ public:
   virtual uint ideal_reg() const { return 0; }
 };
 
-//---------------------------MultiBranchNode-----------------------------------
 // This class defines a MultiBranchNode, a MultiNode which yields multiple
 // control values. These are distinguished from other types of MultiNodes
 // which yield multiple values, but control is always and only projection #0.
@@ -307,7 +301,6 @@ public:
   virtual int required_outcnt() const = 0;
 };
 
-//------------------------------IfNode-----------------------------------------
 // Output selected Control, based on a boolean test
 class IfNode : public MultiBranchNode {
   // Size is bigger to hold the probability field.  However, _prob does not
@@ -481,7 +474,6 @@ protected:
 };
 
 
-//------------------------------PCTableNode------------------------------------
 // Build an indirect branch table.  Given a control and a table index,
 // control is passed to the Projection matching the table index.  Used to
 // implement switch statements and exception-handling capabilities.
@@ -507,7 +499,6 @@ public:
   virtual int required_outcnt() const { return _size; }
 };
 
-//------------------------------JumpNode---------------------------------------
 // Indirect branch.  Uses PCTable above to implement a switch statement.
 // It emits as a table load and local branch.
 class JumpNode : public PCTableNode {
@@ -551,7 +542,6 @@ class JumpProjNode : public JProjNode {
 #endif
 };
 
-//------------------------------CatchNode--------------------------------------
 // Helper node to fork exceptions.  "Catch" catches any exceptions thrown by
 // a just-prior call.  Looks like a PCTableNode but emits no code - just the
 // table.  The table lookup and branch is implemented by RethrowNode.
@@ -599,7 +589,6 @@ public:
 };
 
 
-//---------------------------------CreateExNode--------------------------------
 // Helper node to create the exception coming back from a call
 class CreateExNode : public TypeNode {
 public:
@@ -614,7 +603,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegP; }
 };
 
-//------------------------------NeverBranchNode-------------------------------
 // The never-taken branch.  Used to give the appearance of exiting infinite
 // loops to those algorithms that like all paths to be reachable.  Encodes
 // empty.
@@ -637,7 +625,6 @@ public:
 #endif
 };
 
-//------------------------------BlackholeNode----------------------------
 // Blackhole all arguments. This node would survive through the compiler
 // the effects on its arguments, and would be finally matched to nothing.
 class BlackholeNode : public MultiNode {

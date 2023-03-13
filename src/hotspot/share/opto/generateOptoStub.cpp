@@ -40,7 +40,6 @@
 #include "opto/type.hpp"
 #include "runtime/stubRoutines.hpp"
 
-//--------------------gen_stub-------------------------------
 void GraphKit::gen_stub(address C_function,
                         const char *name,
                         int is_fancy_jump,

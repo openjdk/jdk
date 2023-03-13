@@ -43,7 +43,6 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/stubRoutines.hpp"
 
-//------------------------------is_loop_exit-----------------------------------
 // Given an IfNode, return the loop-exiting projection or null if both
 // arms remain in the loop.
 Node *IdealLoopTree::is_loop_exit(Node *iff) const {
@@ -59,10 +58,8 @@ Node *IdealLoopTree::is_loop_exit(Node *iff) const {
 }
 
 
-//=============================================================================
 
 
-//------------------------------record_for_igvn----------------------------
 // Put loop body on igvn work list
 void IdealLoopTree::record_for_igvn() {
   for (uint i = 0; i < _body.size(); i++) {
@@ -90,7 +87,6 @@ void IdealLoopTree::record_for_igvn() {
   }
 }
 
-//------------------------------compute_exact_trip_count-----------------------
 // Compute loop trip count if possible. Do not recalculate trip count for
 // split loops (pre-main-post) which have their limits and inits behind Opaque node.
 void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
@@ -139,7 +135,6 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
   }
 }
 
-//------------------------------compute_profile_trip_cnt----------------------------
 // Compute loop trip count from profile data as
 //    (backedge_count + loop_exit_count) / loop_exit_count
 
@@ -250,7 +245,6 @@ void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
   head->set_profile_trip_cnt(trip_cnt);
 }
 
-//---------------------find_invariant-----------------------------
 // Return nonzero index of invariant operand for an associative
 // binary operation of (nonconstant) invariant and variant values.
 // Helper for reassociate_invariants.
@@ -262,7 +256,6 @@ int IdealLoopTree::find_invariant(Node* n, PhaseIdealLoop *phase) {
   return 0;
 }
 
-//---------------------is_associative-----------------------------
 // Return TRUE if "n" is an associative binary node. If "base" is
 // not null, "n" must be re-associative with it.
 bool IdealLoopTree::is_associative(Node* n, Node* base) {
@@ -288,7 +281,6 @@ bool IdealLoopTree::is_associative(Node* n, Node* base) {
   }
 }
 
-//---------------------reassociate_add_sub------------------------
 // Reassociate invariant add and subtract expressions:
 //
 // inv1 + (x + inv2)  =>  ( inv1 + inv2) + x
@@ -365,7 +357,6 @@ Node* IdealLoopTree::reassociate_add_sub(Node* n1, int inv1_idx, int inv2_idx, P
   }
 }
 
-//---------------------reassociate-----------------------------
 // Reassociate invariant binary expressions with add/sub/mul/
 // and/or/xor operators.
 // For add/sub expressions: see "reassociate_add_sub"
@@ -425,7 +416,6 @@ Node* IdealLoopTree::reassociate(Node* n1, PhaseIdealLoop *phase) {
   return result;
 }
 
-//---------------------reassociate_invariants-----------------------------
 // Reassociate invariant expressions:
 void IdealLoopTree::reassociate_invariants(PhaseIdealLoop *phase) {
   for (int i = _body.size() - 1; i >= 0; i--) {
@@ -438,7 +428,6 @@ void IdealLoopTree::reassociate_invariants(PhaseIdealLoop *phase) {
   }
 }
 
-//------------------------------policy_peeling---------------------------------
 // Return TRUE if the loop should be peeled, otherwise return FALSE. Peeling
 // is applicable if we can make a loop-invariant test (usually a null-check)
 // execute before we enter the loop. When TRUE, the estimated node budget is
@@ -503,7 +492,6 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   return 0;
 }
 
-//------------------------------peeled_dom_test_elim---------------------------
 // If we got the effect of peeling, either by actually peeling or by making
 // a pre-loop which must execute at least once, we can remove all
 // loop-invariant dominated tests in the main body.
@@ -542,7 +530,6 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
   } // End of while (progress)
 }
 
-//------------------------------do_peeling-------------------------------------
 // Peel the first iteration of the given loop.
 // Step 1: Clone the loop body.  The clone becomes the peeled iteration.
 //         The pre-loop illegally has 2 control users (old & new loops).
@@ -795,7 +782,6 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   loop->record_for_igvn();
 }
 
-//------------------------------policy_maximally_unroll------------------------
 // Calculate the exact  loop trip-count and return TRUE if loop can be fully,
 // i.e. maximally, unrolled, otherwise return FALSE. When TRUE, the estimated
 // node budget is also requested.
@@ -873,7 +859,6 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
 }
 
 
-//------------------------------policy_unroll----------------------------------
 // Return TRUE or FALSE if the loop should be unrolled or not. Apply unroll if
 // the loop is  a counted loop and  the loop body is small  enough. When TRUE,
 // the estimated node budget is also requested.
@@ -1117,7 +1102,6 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
 }
 
 
-//------------------------------policy_range_check-----------------------------
 // Return TRUE or FALSE if the loop should be range-check-eliminated or not.
 // When TRUE, the estimated node budget is also requested.
 //
@@ -1213,7 +1197,6 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
   return false;
 }
 
-//------------------------------policy_peel_only-------------------------------
 // Return TRUE or FALSE if the loop should NEVER be RCE'd or aligned.  Useful
 // for unrolling loops with NO array accesses.
 bool IdealLoopTree::policy_peel_only(PhaseIdealLoop *phase) const {
@@ -1235,7 +1218,6 @@ bool IdealLoopTree::policy_peel_only(PhaseIdealLoop *phase) const {
   return true;
 }
 
-//------------------------------clone_up_backedge_goo--------------------------
 // If Node n lives in the back_ctrl block and cannot float, we clone a private
 // version of n in preheader_ctrl block and return that, otherwise return n.
 Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones) {
@@ -1611,7 +1593,6 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_main_loop(CountedLoopNode* pre_
   }
 }
 
-//------------------------------insert_pre_post_loops--------------------------
 // Insert pre and post loops.  If peel_only is set, the pre-loop can not have
 // more iterations added.  It acts as a 'peel' only, no lower-bound RCE, no
 // alignment.  Useful to unroll loops that do no array accesses.
@@ -1840,7 +1821,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   loop->record_for_igvn();
 }
 
-//------------------------------insert_vector_post_loop------------------------
 // Insert a copy of the atomic unrolled vectorized main loop as a post loop,
 // unroll_policy has  already informed  us that more  unrolling is  about to
 // happen  to the  main  loop.  The  resultant  post loop  will  serve as  a
@@ -1905,7 +1885,6 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
 }
 
 
-//-------------------------insert_scalar_rced_post_loop------------------------
 // Insert a copy of the rce'd main loop as a post loop,
 // We have not unrolled the main loop, so this is the right time to inject this.
 // Later we will examine the partner of this post loop pair which still has range checks
@@ -1953,7 +1932,6 @@ void PhaseIdealLoop::insert_scalar_rced_post_loop(IdealLoopTree *loop, Node_List
 }
 
 
-//------------------------------insert_post_loop-------------------------------
 // Insert post loops.  Add a post loop to the given loop passed.
 Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                                        CountedLoopNode* main_head, CountedLoopEndNode* main_end,
@@ -2047,7 +2025,6 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   return new_main_exit;
 }
 
-//------------------------------is_invariant-----------------------------
 // Return true if n is invariant
 bool IdealLoopTree::is_invariant(Node* n) const {
   Node *n_c = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
@@ -2177,7 +2154,6 @@ void PhaseIdealLoop::initialize_skeleton_predicates_for_peeled_loop(ProjNode* pr
   set_idom(outer_loop_head, input_proj, dd_outer_loop_head);
 }
 
-//------------------------------do_unroll--------------------------------------
 // Unroll the loop body one step - make each trip do 2 iterations.
 void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip) {
   assert(LoopUnrollLimit, "");
@@ -2472,7 +2448,6 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 #endif
 }
 
-//------------------------------do_maximally_unroll----------------------------
 
 void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new) {
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
@@ -2561,7 +2536,6 @@ void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
   }
 }
 
-//------------------------------adjust_limit-----------------------------------
 // Helper function that computes new loop limit as (rc_limit-offset)/scale
 Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* offset, Node* rc_limit, Node* old_limit, Node* pre_ctrl, bool round) {
   Node* sub = new SubLNode(rc_limit, offset);
@@ -2614,7 +2588,6 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
   return limit;
 }
 
-//------------------------------add_constraint---------------------------------
 // Constrain the main loop iterations so the conditions:
 //    low_limit <= scale_con*I + offset < upper_limit
 // always hold true. That is, either increase the number of iterations in the
@@ -2692,7 +2665,6 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
   }
 }
 
-//----------------------------------is_iv------------------------------------
 // Return true if exp is the value (of type bt) of the given induction var.
 // This grammar of cases is recognized, where X is I|L according to bt:
 //    VIV[iv] = iv | (CastXX VIV[iv]) | (ConvI2X VIV[iv])
@@ -2708,7 +2680,6 @@ bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
   return false;
 }
 
-//------------------------------is_scaled_iv---------------------------------
 // Return true if exp is a constant times the given induction var (of type bt).
 // The multiplication is either done in full precision (exactly of type bt),
 // or else bt is T_LONG but iv is scaled using 32-bit arithmetic followed by a ConvI2L.
@@ -2854,7 +2825,6 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
   return false;
 }
 
-//-------------------------is_scaled_iv_plus_offset--------------------------
 // Return true if exp is a simple linear transform of the given induction var.
 // The scale must be constant and the addition tree (if any) must be simple.
 // This grammar of cases is recognized, where X is I|L according to bt:
@@ -3001,7 +2971,6 @@ Node* PhaseIdealLoop::add_range_check_predicate(IdealLoopTree* loop, CountedLoop
   return iftrue;
 }
 
-//------------------------------do_range_check---------------------------------
 // Eliminate range-checks and other trip-counter vs loop-invariant tests.
 void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 #ifndef PRODUCT
@@ -3321,7 +3290,6 @@ bool IdealLoopTree::compute_has_range_checks() const {
   return false;
 }
 
-//-------------------------multi_version_post_loops----------------------------
 // Check the range checks that remain, if simple, use the bounds to guard
 // which version to a post loop we execute, one with range checks or one without
 bool PhaseIdealLoop::multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoopTree *legacy_loop) {
@@ -3433,7 +3401,6 @@ bool PhaseIdealLoop::multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoop
   return multi_version_succeeded;
 }
 
-//-------------------------poison_rce_post_loop--------------------------------
 // Causes the rce'd post loop to be optimized away if multiversioning fails
 void PhaseIdealLoop::poison_rce_post_loop(IdealLoopTree *rce_loop) {
   CountedLoopNode *rce_cl = rce_loop->_head->as_CountedLoop();
@@ -3458,7 +3425,6 @@ void PhaseIdealLoop::poison_rce_post_loop(IdealLoopTree *rce_loop) {
   }
 }
 
-//------------------------------DCE_loop_body----------------------------------
 // Remove simplistic dead code from loop body
 void IdealLoopTree::DCE_loop_body() {
   for (uint i = 0; i < _body.size(); i++) {
@@ -3470,7 +3436,6 @@ void IdealLoopTree::DCE_loop_body() {
 }
 
 
-//------------------------------adjust_loop_exit_prob--------------------------
 // Look for loop-exit tests with the 50/50 (or worse) guesses from the parsing stage.
 // Replace with a 1-in-10 exit guess.
 void IdealLoopTree::adjust_loop_exit_prob(PhaseIdealLoop *phase) {
@@ -3581,7 +3546,6 @@ void IdealLoopTree::remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *
   phase->_igvn.replace_input_of(main_cmp, 2, main_cmp->in(2)->in(1));
 }
 
-//------------------------------do_remove_empty_loop---------------------------
 // We always attempt remove empty loops.   The approach is to replace the trip
 // counter with the value it will have on the last iteration.  This will break
 // the loop.
@@ -3840,7 +3804,6 @@ void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_L
   assert(wq.size() - before == EMPTY_LOOP_SIZE, "expect the EMPTY_LOOP_SIZE nodes of this body if empty");
 }
 
-//------------------------------do_one_iteration_loop--------------------------
 // Convert one iteration loop into normal code.
 bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   if (!_head->as_Loop()->is_valid_counted_loop(T_INT)) {
@@ -3870,8 +3833,6 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   return true;
 }
 
-//=============================================================================
-//------------------------------iteration_split_impl---------------------------
 bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_new) {
   if (!_head->is_Loop()) {
     // Head could be a region with a NeverBranch that was added in beautify loops but the region was not
@@ -4020,8 +3981,6 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
 }
 
 
-//=============================================================================
-//------------------------------iteration_split--------------------------------
 bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
   // Recursively iteration split nested loops
   if (_child && !_child->iteration_split(phase, old_new)) {
@@ -4059,7 +4018,6 @@ bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
 }
 
 
-//=============================================================================
 // Process all the loops in the loop tree and replace any fill
 // patterns with an intrinsic version.
 bool PhaseIdealLoop::do_intrinsify_fill() {

@@ -205,7 +205,6 @@ typedef Node** DUIterator_Last;
 // Unknown count frequency
 #define COUNT_UNKNOWN (-1.0f)
 
-//------------------------------Node-------------------------------------------
 // Nodes define actions in the program.  They create values, which have types.
 // They are both vertices in a directed graph and program primitives.  Nodes
 // are labeled; the label is the "opcode", the primitive function in the lambda
@@ -285,7 +284,6 @@ private:
   // be initialized by assignment.
   inline int Init(int req);
 
-//----------------- input edge handling
 protected:
   friend class PhaseCFG;        // Access to address of _in array elements
   Node **_in;                   // Array of use-def references to Nodes
@@ -584,7 +582,6 @@ public:
   // for( i = 0; i < X.req(); i++ ) ... X[i] ...
   // NOTE: Required edges can contain embedded null pointers.
 
-//----------------- Other Node Properties
 
   // Generate class IDs for (some) ideal nodes so that it is possible to determine
   // the type of a node using a non-virtual method call (the method is_<Node>() below).
@@ -1015,7 +1012,6 @@ public:
 
   bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
 
-//----------------- Optimization
 
   // Get the worst-case Type output for this Node.
   virtual const class Type *bottom_type() const;
@@ -1098,7 +1094,6 @@ public:
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
 
-//----------------- Code Generation
 
   // Ideal register class for Matching.  Zero means unmatched instruction
   // (these are cloned instead of converted to machine nodes).
@@ -1192,7 +1187,6 @@ public:
   // Whether this is a memory-writing machine node.
   bool is_memory_writer() const { return is_Mach() && bottom_type()->has_memory(); }
 
-//----------------- Printing, etc
 #ifndef PRODUCT
  public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
@@ -1264,7 +1258,6 @@ inline bool not_a_node(const Node* n) {
   return false;
 }
 
-//-----------------------------------------------------------------------------
 // Iterators over DU info, and associated Node functions.
 
 #if OPTO_DU_ITERATOR_ASSERT
@@ -1516,7 +1509,6 @@ class SimpleDUIterator : public StackObj {
 };
 
 
-//-----------------------------------------------------------------------------
 // Map dense integer indices to Nodes.  Uses classic doubling-array trick.
 // Abstractly provides an infinite array of Node*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
@@ -1583,7 +1575,6 @@ public:
   void dump_simple() const;
 };
 
-//------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {
   friend class VMStructs;
   VectorSet _in_worklist;
@@ -1677,7 +1668,6 @@ inline void Compile::remove_for_igvn(Node* n) {
   _for_igvn->remove(n);
 }
 
-//------------------------------Node_Stack-------------------------------------
 class Node_Stack {
   friend class VMStructs;
 protected:
@@ -1748,7 +1738,6 @@ public:
 };
 
 
-//-----------------------------Node_Notes--------------------------------------
 // Debugging or profiling annotations loosely and sparsely associated
 // with some nodes.  See Compile::node_notes_at for the accessor.
 class Node_Notes {
@@ -1825,7 +1814,6 @@ Compile::set_node_notes_at(int idx, Node_Notes* value) {
 }
 
 
-//------------------------------TypeNode---------------------------------------
 // Node with a Type constant.
 class TypeNode : public Node {
 protected:

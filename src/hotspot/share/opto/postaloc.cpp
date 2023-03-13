@@ -39,7 +39,6 @@ static bool register_contains_value(Node* val, OptoReg::Name reg, int n_regs,
   return true;
 }
 
-//---------------------------may_be_copy_of_callee-----------------------------
 // Check to see if we can possibly be a copy of a callee-save value.
 bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
   // Short circuit if there are no callee save registers
@@ -75,7 +74,6 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
   return i == limit;
 }
 
-//------------------------------yank-----------------------------------
 // Helper function for yank_if_dead
 int PhaseChaitin::yank(Node *old, Block *current_block, Node_List *value, Node_List *regnd) {
   int blk_adjust=0;
@@ -124,7 +122,6 @@ static bool expected_yanked_node(Node *old, Node *orig_old) {
 }
 #endif
 
-//------------------------------yank_if_dead-----------------------------------
 // Removed edges from 'old'.  Yank if dead.  Return adjustment counts to
 // iterators in the current block.
 int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
@@ -158,7 +155,6 @@ int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current
   return blk_adjust;
 }
 
-//------------------------------use_prior_register-----------------------------
 // Use the prior value instead of the current value, in an effort to make
 // the current value go dead.  Return block iterator adjustment, in case
 // we yank some instructions from this block.
@@ -212,7 +208,6 @@ int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *curre
 }
 
 
-//------------------------------skip_copies------------------------------------
 // Skip through any number of copies (that don't mod oop-i-ness)
 Node *PhaseChaitin::skip_copies( Node *c ) {
   int idx = c->is_Copy();
@@ -228,7 +223,6 @@ Node *PhaseChaitin::skip_copies( Node *c ) {
   return c;
 }
 
-//------------------------------elide_copy-------------------------------------
 // Remove (bypass) copies along Node n, edge k.
 int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *value, Node_List *regnd, bool can_change_regs ) {
   int blk_adjust = 0;
@@ -481,7 +475,6 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
 }
 
 
-//------------------------------post_allocate_copy_removal---------------------
 // Post-Allocation peephole copy removal.  We do this in 1 pass over the
 // basic blocks.  We maintain a mapping of registers to Nodes (an  array of
 // Nodes indexed by machine register or stack slot number).  null means that a

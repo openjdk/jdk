@@ -30,7 +30,6 @@
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 
-//================= Loop Unswitching =====================
 //
 // orig:                       transformed:
 //                               if (invariant-test) then
@@ -51,7 +50,6 @@
 //
 // Note: the "else" clause may be empty
 
-//------------------------------policy_unswitching-----------------------------
 // Return TRUE or FALSE if the loop should be unswitched
 // (ie. clone loop with an invariant test that does not exit the loop)
 bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
@@ -82,7 +80,6 @@ bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
   return phase->may_require_nodes(est_loop_clone_sz(2));
 }
 
-//------------------------------find_unswitching_candidate-----------------------------
 // Find candidate "if" for unswitching
 IfNode* PhaseIdealLoop::find_unswitching_candidate(const IdealLoopTree *loop) const {
 
@@ -112,7 +109,6 @@ IfNode* PhaseIdealLoop::find_unswitching_candidate(const IdealLoopTree *loop) co
   return unswitch_iff;
 }
 
-//------------------------------do_unswitching-----------------------------
 // Clone loop with an invariant test (that does not exit) and
 // insert a clone of the test that selects which version to
 // execute.
@@ -238,7 +234,6 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
   C->set_major_progress();
 }
 
-//-------------------------create_slow_version_of_loop------------------------
 // Create a slow version of the loop by cloning the loop
 // and inserting an if to select fast-slow versions.
 // Return the inserted if.

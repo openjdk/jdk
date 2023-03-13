@@ -33,7 +33,6 @@
 #include "opto/type.hpp"
 #include "castnode.hpp"
 
-//=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
 Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
   Node* dom = dominating_cast(phase, phase);
@@ -46,7 +45,6 @@ Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
   return phase->type(in(1))->higher_equal_speculative(_type) ? in(1) : this;
 }
 
-//------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type
 const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
@@ -93,7 +91,6 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   return ft;
 }
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -403,7 +400,6 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return optimize_integer_cast(phase, T_LONG);
 }
 
-//------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type, unless working with an Interface
 const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   if( in(0) && phase->type(in(0)) == Type::TOP ) return Type::TOP;
@@ -430,8 +426,6 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   return result;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* CastX2PNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
@@ -443,7 +437,6 @@ const Type* CastX2PNode::Value(PhaseGVN* phase) const {
   return CastX2PNode::bottom_type();
 }
 
-//------------------------------Idealize---------------------------------------
 static inline bool fits_in_int(const Type* t, bool but_not_min_int = false) {
   if (t == Type::TOP)  return false;
   const TypeX* tl = t->is_intptr_t();
@@ -495,14 +488,11 @@ Node *CastX2PNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Identity---------------------------------------
 Node* CastX2PNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_CastP2X)  return in(1)->in(1);
   return this;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* CastP2XNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
@@ -517,7 +507,6 @@ Node *CastP2XNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return (in(0) && remove_dead_region(phase, can_reshape)) ? this : nullptr;
 }
 
-//------------------------------Identity---------------------------------------
 Node* CastP2XNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_CastX2P)  return in(1)->in(1);
   return this;

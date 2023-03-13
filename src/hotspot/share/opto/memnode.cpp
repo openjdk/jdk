@@ -60,7 +60,6 @@
 
 static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const TypePtr *tp, const TypePtr *adr_check, outputStream *st);
 
-//=============================================================================
 uint MemNode::size_of() const { return sizeof(*this); }
 
 const TypePtr *MemNode::adr_type() const {
@@ -299,7 +298,6 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
   return mem;
 }
 
-//--------------------------Ideal_common---------------------------------------
 // Look for degenerate control and memory inputs.  Bypass MergeMem inputs.
 // Unhook non-raw memories from complete (macro-expanded) initializations.
 Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
@@ -518,7 +516,6 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
   }
 }
 
-//---------------------detect_ptr_independence---------------------------------
 // Used by MemNode::find_previous_store to prove that two base
 // pointers are never equal.
 // The pointers are accompanied by their associated allocations,
@@ -799,7 +796,6 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
   return nullptr;              // bail out
 }
 
-//----------------------calculate_adr_type-------------------------------------
 // Helper function.  Notices when the given type of address hits top or bottom.
 // Also, asserts a cross-check of the type against the expected address type.
 const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_check) {
@@ -834,7 +830,6 @@ const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_c
   }
 }
 
-//=============================================================================
 // Should LoadNode::Ideal() attempt to remove control edges?
 bool LoadNode::can_remove_control() const {
   return !has_pinned_control_dependency();
@@ -871,7 +866,6 @@ void LoadNode::dump_spec(outputStream *st) const {
 #endif
 
 #ifdef ASSERT
-//----------------------------is_immutable_value-------------------------------
 // Helper function to allow a raw load without control edge for some cases
 bool LoadNode::is_immutable_value(Node* adr) {
   if (adr->is_AddP() && adr->in(AddPNode::Base)->is_top() &&
@@ -896,7 +890,6 @@ bool LoadNode::is_immutable_value(Node* adr) {
 }
 #endif
 
-//----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
                      ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
@@ -959,7 +952,6 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
   return load;
 }
 
-//------------------------------hash-------------------------------------------
 uint LoadNode::hash() const {
   // unroll addition of interesting fields
   return (uintptr_t)in(Control) + (uintptr_t)in(Memory) + (uintptr_t)in(Address);
@@ -1047,7 +1039,6 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
 }
 
 
-//---------------------------can_see_stored_value------------------------------
 // This routine exists to make sure this set of tests is done the same
 // everywhere.  We need to make a coordinated change: first LoadNode::Ideal
 // will change the graph shape in a way which makes memory alive twice at the
@@ -1206,7 +1197,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   return nullptr;
 }
 
-//----------------------is_instance_field_load_with_local_phi------------------
 bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
   if( in(Memory)->is_Phi() && in(Memory)->in(0) == ctrl &&
       in(Address)->is_AddP() ) {
@@ -1223,7 +1213,6 @@ bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
   return false;
 }
 
-//------------------------------Identity---------------------------------------
 // Loads are identity if previous store is to same address
 Node* LoadNode::Identity(PhaseGVN* phase) {
   // If the previous store-maker is the right kind of Store, and the store is
@@ -1517,7 +1506,6 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
   }
   return true;
 }
-//------------------------------split_through_phi------------------------------
 // Split instance or boxed field load through Phi.
 Node* LoadNode::split_through_phi(PhaseGVN* phase) {
   if (req() > 3) {
@@ -1729,7 +1717,6 @@ AllocateNode* LoadNode::is_new_object_mark_load(PhaseGVN *phase) const {
 }
 
 
-//------------------------------Ideal------------------------------------------
 // If the load is from Field memory and the pointer is non-null, it might be possible to
 // zero out the control input.
 // If the offset is constant and the base is an object allocation,
@@ -1891,7 +1878,6 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   return nullptr;
 }
 
-//------------------------------Value-----------------------------------------
 const Type* LoadNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   Node* mem = in(MemNode::Memory);
@@ -2138,13 +2124,11 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   return _type;
 }
 
-//------------------------------match_edge-------------------------------------
 // Do we Match on this edge index or not?  Match only the address.
 uint LoadNode::match_edge(uint idx) const {
   return idx == MemNode::Address;
 }
 
-//--------------------------LoadBNode::Ideal--------------------------------------
 //
 //  If the previous store is to the same address as this load,
 //  and the value stored was larger than a byte, replace this load
@@ -2178,7 +2162,6 @@ const Type* LoadBNode::Value(PhaseGVN* phase) const {
   return LoadNode::Value(phase);
 }
 
-//--------------------------LoadUBNode::Ideal-------------------------------------
 //
 //  If the previous store is to the same address as this load,
 //  and the value stored was larger than a byte, replace this load
@@ -2212,7 +2195,6 @@ const Type* LoadUBNode::Value(PhaseGVN* phase) const {
   return LoadNode::Value(phase);
 }
 
-//--------------------------LoadUSNode::Ideal-------------------------------------
 //
 //  If the previous store is to the same address as this load,
 //  and the value stored was larger than a char, replace this load
@@ -2246,7 +2228,6 @@ const Type* LoadUSNode::Value(PhaseGVN* phase) const {
   return LoadNode::Value(phase);
 }
 
-//--------------------------LoadSNode::Ideal--------------------------------------
 //
 //  If the previous store is to the same address as this load,
 //  and the value stored was larger than a short, replace this load
@@ -2280,8 +2261,6 @@ const Type* LoadSNode::Value(PhaseGVN* phase) const {
   return LoadNode::Value(phase);
 }
 
-//=============================================================================
-//----------------------------LoadKlassNode::make------------------------------
 // Polymorphic factory method:
 Node* LoadKlassNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at, const TypeKlassPtr* tk) {
   // sanity check the alias category against the created node type
@@ -2298,7 +2277,6 @@ Node* LoadKlassNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const 
   return new LoadKlassNode(ctl, mem, adr, at, tk, MemNode::unordered);
 }
 
-//------------------------------Value------------------------------------------
 const Type* LoadKlassNode::Value(PhaseGVN* phase) const {
   return klass_value_common(phase);
 }
@@ -2393,7 +2371,6 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
   return LoadNode::Value(phase);
 }
 
-//------------------------------Identity---------------------------------------
 // To clean up reflective code, simplify k.java_mirror.as_klass to plain k.
 // Also feed through the klass in Allocate(...klass...)._klass.
 Node* LoadKlassNode::Identity(PhaseGVN* phase) {
@@ -2461,7 +2438,6 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
 }
 
 
-//------------------------------Value------------------------------------------
 const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
   const Type *t = klass_value_common(phase);
   if (t == Type::TOP)
@@ -2470,7 +2446,6 @@ const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
   return t->make_narrowklass();
 }
 
-//------------------------------Identity---------------------------------------
 // To clean up reflective code, simplify k.java_mirror.as_klass to narrow k.
 // Also feed through the klass in Allocate(...klass...)._klass.
 Node* LoadNKlassNode::Identity(PhaseGVN* phase) {
@@ -2484,7 +2459,6 @@ Node* LoadNKlassNode::Identity(PhaseGVN* phase) {
   return phase->transform(new EncodePKlassNode(x, t->make_narrowklass()));
 }
 
-//------------------------------Value-----------------------------------------
 const Type* LoadRangeNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(MemNode::Memory) );
@@ -2499,7 +2473,6 @@ const Type* LoadRangeNode::Value(PhaseGVN* phase) const {
   return tap->size();
 }
 
-//-------------------------------Ideal---------------------------------------
 // Feed through the length in AllocateArray(...length...)._length.
 Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* p = MemNode::Ideal_common(phase, can_reshape);
@@ -2531,7 +2504,6 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Identity---------------------------------------
 // Feed through the length in AllocateArray(...length...)._length.
 Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   Node* x = LoadINode::Identity(phase);
@@ -2565,8 +2537,6 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
 
 }
 
-//=============================================================================
-//---------------------------StoreNode::make-----------------------------------
 // Polymorphic factory method:
 StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
   assert((mo == unordered || mo == release), "unexpected");
@@ -2606,12 +2576,10 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
   }
 }
 
-//--------------------------bottom_type----------------------------------------
 const Type *StoreNode::bottom_type() const {
   return Type::MEMORY;
 }
 
-//------------------------------hash-------------------------------------------
 uint StoreNode::hash() const {
   // unroll addition of interesting fields
   //return (uintptr_t)in(Control) + (uintptr_t)in(Memory) + (uintptr_t)in(Address) + (uintptr_t)in(ValueIn);
@@ -2620,7 +2588,6 @@ uint StoreNode::hash() const {
   return NO_HASH;
 }
 
-//------------------------------Ideal------------------------------------------
 // Change back-to-back Store(, p, x) -> Store(m, p, y) to Store(m, p, x).
 // When a store immediately follows a relevant allocation/initialization,
 // try to capture it into the initialization, or hoist it above.
@@ -2708,7 +2675,6 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;                  // No further progress
 }
 
-//------------------------------Value-----------------------------------------
 const Type* StoreNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(MemNode::Memory) );
@@ -2720,7 +2686,6 @@ const Type* StoreNode::Value(PhaseGVN* phase) const {
   return Type::MEMORY;
 }
 
-//------------------------------Identity---------------------------------------
 // Remove redundant stores:
 //   Store(m, p, Load(m, p)) changes to m.
 //   Store(, p, x) -> Store(m, p, x) changes to Store(m, p, x).
@@ -2788,20 +2753,17 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
   return result;
 }
 
-//------------------------------match_edge-------------------------------------
 // Do we Match on this edge index or not?  Match only memory & value
 uint StoreNode::match_edge(uint idx) const {
   return idx == MemNode::Address || idx == MemNode::ValueIn;
 }
 
-//------------------------------cmp--------------------------------------------
 // Do not common stores up together.  They generally have to be split
 // back up anyways, so do not bother.
 bool StoreNode::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
-//------------------------------Ideal_masked_input-----------------------------
 // Check for a useless mask before a partial-word store
 // (StoreB ... (AndI valIn conIa) )
 // If (conIa & mask == mask) this simplifies to
@@ -2819,7 +2781,6 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 }
 
 
-//------------------------------Ideal_sign_extended_input----------------------
 // Check for useless sign-extension before a partial-word store
 // (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
 // If (conIL == conIR && conIR <= num_bits)  this simplifies to
@@ -2842,7 +2803,6 @@ Node *StoreNode::Ideal_sign_extended_input(PhaseGVN *phase, int num_bits) {
   return nullptr;
 }
 
-//------------------------------value_never_loaded-----------------------------------
 // Determine whether there are any possible loads of the value stored.
 // For simplicity, we actually check if there are any loads from the
 // address stored to, not just for loads of the value stored by this node.
@@ -2890,8 +2850,6 @@ MemBarNode* StoreNode::trailing_membar() const {
 }
 
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // If the store is from an AND mask that leaves the low bits untouched, then
 // we can skip the AND operation.  If the store is from a sign-extension
 // (a left shift, then right shift) we can skip both.
@@ -2906,8 +2864,6 @@ Node *StoreBNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return StoreNode::Ideal(phase, can_reshape);
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // If the store is from an AND mask that leaves the low bits untouched, then
 // we can skip the AND operation
 Node *StoreCNode::Ideal(PhaseGVN *phase, bool can_reshape){
@@ -2921,8 +2877,6 @@ Node *StoreCNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return StoreNode::Ideal(phase, can_reshape);
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* StoreCMNode::Identity(PhaseGVN* phase) {
   // No need to card mark when storing a null ptr
   Node* my_store = in(MemNode::OopStore);
@@ -2935,8 +2889,6 @@ Node* StoreCMNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//=============================================================================
-//------------------------------Ideal---------------------------------------
 Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
   Node* progress = StoreNode::Ideal(phase, can_reshape);
   if (progress != nullptr) return progress;
@@ -2951,7 +2903,6 @@ Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return nullptr;
 }
 
-//------------------------------Value-----------------------------------------
 const Type* StoreCMNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP (checked in StoreNode::Value).
   // If extra input is TOP ==> the result is TOP
@@ -2963,8 +2914,6 @@ const Type* StoreCMNode::Value(PhaseGVN* phase) const {
 }
 
 
-//=============================================================================
-//----------------------------------SCMemProjNode------------------------------
 const Type* SCMemProjNode::Value(PhaseGVN* phase) const
 {
   if (in(0) == nullptr || phase->type(in(0)) == Type::TOP) {
@@ -2973,8 +2922,6 @@ const Type* SCMemProjNode::Value(PhaseGVN* phase) const
   return bottom_type();
 }
 
-//=============================================================================
-//----------------------------------LoadStoreNode------------------------------
 LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required )
   : Node(required),
     _type(rt),
@@ -2988,7 +2935,6 @@ LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Ty
   init_class_id(Class_LoadStore);
 }
 
-//------------------------------Value-----------------------------------------
 const Type* LoadStoreNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   if (!in(MemNode::Control) || phase->type(in(MemNode::Control)) == Type::TOP) {
@@ -3048,8 +2994,6 @@ MemBarNode* LoadStoreNode::trailing_membar() const {
 
 uint LoadStoreNode::size_of() const { return sizeof(*this); }
 
-//=============================================================================
-//----------------------------------LoadStoreConditionalNode--------------------
 LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, nullptr, TypeInt::BOOL, 5) {
   init_req(ExpectedIn, ex );
 }
@@ -3063,27 +3007,22 @@ const Type* LoadStoreConditionalNode::Value(PhaseGVN* phase) const {
   return LoadStoreNode::Value(phase);
 }
 
-//=============================================================================
-//-------------------------------adr_type--------------------------------------
 const TypePtr* ClearArrayNode::adr_type() const {
   Node *adr = in(3);
   if (adr == nullptr)  return nullptr; // node is dead
   return MemNode::calculate_adr_type(adr->bottom_type());
 }
 
-//------------------------------match_edge-------------------------------------
 // Do we Match on this edge index or not?  Do not match memory
 uint ClearArrayNode::match_edge(uint idx) const {
   return idx > 1;
 }
 
-//------------------------------Identity---------------------------------------
 // Clearing a zero length array does nothing
 Node* ClearArrayNode::Identity(PhaseGVN* phase) {
   return phase->type(in(2))->higher_equal(TypeX::ZERO)  ? in(1) : this;
 }
 
-//------------------------------Idealize---------------------------------------
 // Clearing a short array is faster with stores
 Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Already know this is a large node, do not try to ideal it
@@ -3134,7 +3073,6 @@ Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return mem;
 }
 
-//----------------------------step_through----------------------------------
 // Return allocation input memory edge if it is different instance
 // or itself if it is the one we are looking for.
 bool ClearArrayNode::step_through(Node** np, uint instance_id, PhaseTransform* phase) {
@@ -3160,7 +3098,6 @@ bool ClearArrayNode::step_through(Node** np, uint instance_id, PhaseTransform* p
   return true;
 }
 
-//----------------------------clear_memory-------------------------------------
 // Generate code to initialize object storage to zero.
 Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                                    intptr_t start_offset,
@@ -3240,7 +3177,6 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   return mem;
 }
 
-//=============================================================================
 MemBarNode::MemBarNode(Compile* C, int alias_idx, Node* precedent)
   : MultiNode(TypeFunc::Parms + (precedent == nullptr? 0: 1)),
     _adr_type(C->get_adr_type(alias_idx)), _kind(Standalone)
@@ -3257,13 +3193,11 @@ MemBarNode::MemBarNode(Compile* C, int alias_idx, Node* precedent)
     init_req(TypeFunc::Parms, precedent);
 }
 
-//------------------------------cmp--------------------------------------------
 uint MemBarNode::hash() const { return NO_HASH; }
 bool MemBarNode::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
-//------------------------------make-------------------------------------------
 MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   switch (opcode) {
   case Op_MemBarAcquire:     return new MemBarAcquireNode(C, atp, pn);
@@ -3302,7 +3236,6 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
   }
 }
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -3367,7 +3300,6 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return progress ? this : nullptr;
 }
 
-//------------------------------Value------------------------------------------
 const Type* MemBarNode::Value(PhaseGVN* phase) const {
   if( !in(0) ) return Type::TOP;
   if( phase->type(in(0)) == Type::TOP )
@@ -3375,7 +3307,6 @@ const Type* MemBarNode::Value(PhaseGVN* phase) const {
   return TypeTuple::MEMBAR;
 }
 
-//------------------------------match------------------------------------------
 // Construct projections for memory.
 Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
   switch (proj->_con) {
@@ -3518,7 +3449,6 @@ MemBarNode* MemBarNode::leading_membar() const {
 }
 
 
-//===========================InitializeNode====================================
 // SUMMARY:
 // This node acts as a memory barrier on raw memory, after some raw stores.
 // The 'cooked' oop value feeds from the Initialize, not the Allocation.
@@ -3609,7 +3539,6 @@ MemBarNode* MemBarNode::leading_membar() const {
 // will be considered for capture by an InitializeNode.  This puts a
 // reasonable limit on the complexity of optimized initializations.
 
-//---------------------------InitializeNode------------------------------------
 InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop)
   : MemBarNode(C, adr_type, rawoop),
     _is_complete(Incomplete), _does_not_escape(false)
@@ -4521,7 +4450,6 @@ bool InitializeNode::stores_are_sane(PhaseTransform* phase) {
 
 
 
-//============================MergeMemNode=====================================
 //
 // SEMANTICS OF MEMORY MERGES:  A MergeMem is a memory state assembled from several
 // contributing store or call operations.  Each contributor provides the memory
@@ -4619,7 +4547,6 @@ bool InitializeNode::stores_are_sane(PhaseTransform* phase) {
 // actually a disjoint union of memory states, rather than an overlay.
 //
 
-//------------------------------MergeMemNode-----------------------------------
 Node* MergeMemNode::make_empty_memory() {
   Node* empty_memory = (Node*) Compile::current()->top();
   assert(empty_memory->is_top(), "correct sentinel identity");
@@ -4656,13 +4583,11 @@ MergeMemNode* MergeMemNode::make(Node* mem) {
   return new MergeMemNode(mem);
 }
 
-//------------------------------cmp--------------------------------------------
 uint MergeMemNode::hash() const { return NO_HASH; }
 bool MergeMemNode::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
-//------------------------------Identity---------------------------------------
 Node* MergeMemNode::Identity(PhaseGVN* phase) {
   // Identity if this merge point does not record any interesting memory
   // disambiguations.
@@ -4679,7 +4604,6 @@ Node* MergeMemNode::Identity(PhaseGVN* phase) {
   return base_mem;              // No memory splits; ID on the one true input
 }
 
-//------------------------------Ideal------------------------------------------
 // This method is invoked recursively on chains of MergeMem nodes
 Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Remove chain'd MergeMems
@@ -4819,7 +4743,6 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return progress;
 }
 
-//-------------------------set_base_memory-------------------------------------
 void MergeMemNode::set_base_memory(Node *new_base) {
   Node* empty_mem = empty_memory();
   set_req(Compile::AliasIdxBot, new_base);
@@ -4832,12 +4755,10 @@ void MergeMemNode::set_base_memory(Node *new_base) {
   }
 }
 
-//------------------------------out_RegMask------------------------------------
 const RegMask &MergeMemNode::out_RegMask() const {
   return RegMask::Empty;
 }
 
-//------------------------------dump_spec--------------------------------------
 #ifndef PRODUCT
 void MergeMemNode::dump_spec(outputStream *st) const {
   st->print(" {");
@@ -4901,7 +4822,6 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
 #endif
 
 
-//-----------------------------memory_at---------------------------------------
 Node* MergeMemNode::memory_at(uint alias_idx) const {
   assert(alias_idx >= Compile::AliasIdxRaw ||
          alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
@@ -4936,7 +4856,6 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
   return n;
 }
 
-//---------------------------set_memory_at-------------------------------------
 void MergeMemNode::set_memory_at(uint alias_idx, Node *n) {
   verify_memory_slice(this, alias_idx, n);
   Node* empty_mem = empty_memory();
@@ -4954,7 +4873,6 @@ void MergeMemNode::set_memory_at(uint alias_idx, Node *n) {
 
 
 
-//--------------------------iteration_setup------------------------------------
 void MergeMemNode::iteration_setup(const MergeMemNode* other) {
   if (other != nullptr) {
     grow_to_match(other);
@@ -4975,7 +4893,6 @@ void MergeMemNode::iteration_setup(const MergeMemNode* other) {
   }
 }
 
-//---------------------------grow_to_match-------------------------------------
 void MergeMemNode::grow_to_match(const MergeMemNode* other) {
   Node* empty_mem = empty_memory();
   assert(other->is_empty_memory(empty_mem), "consistent sentinels");
@@ -4989,7 +4906,6 @@ void MergeMemNode::grow_to_match(const MergeMemNode* other) {
   }
 }
 
-//---------------------------verify_sparse-------------------------------------
 #ifndef PRODUCT
 bool MergeMemNode::verify_sparse() const {
   assert(is_empty_memory(make_empty_memory()), "sane sentinel");

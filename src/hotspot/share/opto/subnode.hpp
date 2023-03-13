@@ -31,7 +31,6 @@
 
 // Portions of code courtesy of Clifford Click
 
-//------------------------------SUBNode----------------------------------------
 // Class SUBTRACTION functionality.  This covers all the usual 'subtract'
 // behaviors.  Subtract-integer, -float, -double, binary xor, compare-integer,
 // -float, and -double are all inherited from this class.  The compare
@@ -66,7 +65,6 @@ public:
 
 
 // NOTE: SubINode should be taken away and replaced by add and negate
-//------------------------------SubINode---------------------------------------
 // Subtract 2 integers
 class SubINode : public SubNode {
 public:
@@ -79,7 +77,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------SubLNode---------------------------------------
 // Subtract 2 integers
 class SubLNode : public SubNode {
 public:
@@ -93,7 +90,6 @@ public:
 };
 
 // NOTE: SubFPNode should be taken away and replaced by add and negate
-//------------------------------SubFPNode--------------------------------------
 // Subtract 2 floats or doubles
 class SubFPNode : public SubNode {
 protected:
@@ -103,7 +99,6 @@ public:
 };
 
 // NOTE: SubFNode should be taken away and replaced by add and negate
-//------------------------------SubFNode---------------------------------------
 // Subtract 2 doubles
 class SubFNode : public SubFPNode {
 public:
@@ -117,7 +112,6 @@ public:
 };
 
 // NOTE: SubDNode should be taken away and replaced by add and negate
-//------------------------------SubDNode---------------------------------------
 // Subtract 2 doubles
 class SubDNode : public SubFPNode {
 public:
@@ -130,7 +124,6 @@ public:
   virtual uint  ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------CmpNode---------------------------------------
 // Compare 2 values, returning condition codes (-1, 0 or 1).
 class CmpNode : public SubNode {
 public:
@@ -145,7 +138,6 @@ public:
   static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
 };
 
-//------------------------------CmpINode---------------------------------------
 // Compare 2 signed values, returning condition codes (-1, 0 or 1).
 class CmpINode : public CmpNode {
 public:
@@ -156,7 +148,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------CmpUNode---------------------------------------
 // Compare 2 unsigned values (integer or pointer), returning condition codes (-1, 0 or 1).
 class CmpUNode : public CmpNode {
 public:
@@ -167,7 +158,6 @@ public:
   bool is_index_range_check() const;
 };
 
-//------------------------------CmpU3Node--------------------------------------
 // Compare 2 unsigned values, returning integer value (-1, 0 or 1).
 class CmpU3Node : public CmpUNode {
 public:
@@ -179,7 +169,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------CmpPNode---------------------------------------
 // Compare 2 pointer values, returning condition codes (-1, 0 or 1).
 class CmpPNode : public CmpNode {
 public:
@@ -189,7 +178,6 @@ public:
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
-//------------------------------CmpNNode--------------------------------------
 // Compare 2 narrow oop values, returning condition codes (-1, 0 or 1).
 class CmpNNode : public CmpNode {
 public:
@@ -199,7 +187,6 @@ public:
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
-//------------------------------CmpLNode---------------------------------------
 // Compare 2 long values, returning condition codes (-1, 0 or 1).
 class CmpLNode : public CmpNode {
 public:
@@ -209,7 +196,6 @@ public:
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
-//------------------------------CmpULNode---------------------------------------
 // Compare 2 unsigned long values, returning condition codes (-1, 0 or 1).
 class CmpULNode : public CmpNode {
 public:
@@ -218,7 +204,6 @@ public:
   virtual const Type* sub(const Type*, const Type*) const;
 };
 
-//------------------------------CmpL3Node--------------------------------------
 // Compare 2 long values, returning integer value (-1, 0 or 1).
 class CmpL3Node : public CmpLNode {
 public:
@@ -230,7 +215,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------CmpUL3Node-------------------------------------
 // Compare 2 unsigned long values, returning integer value (-1, 0 or 1).
 class CmpUL3Node : public CmpULNode {
 public:
@@ -242,7 +226,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------CmpFNode---------------------------------------
 // Compare 2 float values, returning condition codes (-1, 0 or 1).
 // This implements the Java bytecode fcmpl, so unordered returns -1.
 // Operands may not commute.
@@ -254,7 +237,6 @@ public:
   const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------CmpF3Node--------------------------------------
 // Compare 2 float values, returning integer value (-1, 0 or 1).
 // This implements the Java bytecode fcmpl, so unordered returns -1.
 // Operands may not commute.
@@ -270,7 +252,6 @@ public:
 };
 
 
-//------------------------------CmpDNode---------------------------------------
 // Compare 2 double values, returning condition codes (-1, 0 or 1).
 // This implements the Java bytecode dcmpl, so unordered returns -1.
 // Operands may not commute.
@@ -283,7 +264,6 @@ public:
   virtual Node  *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
-//------------------------------CmpD3Node--------------------------------------
 // Compare 2 double values, returning integer value (-1, 0 or 1).
 // This implements the Java bytecode dcmpl, so unordered returns -1.
 // Operands may not commute.
@@ -298,7 +278,6 @@ public:
 };
 
 
-//------------------------------BoolTest---------------------------------------
 // Convert condition codes to a boolean test value (0 or -1).
 // We pick the values as 3 bits; the low order 2 bits we compare against the
 // condition codes, the high bit flips the sense of the result.
@@ -324,7 +303,6 @@ struct BoolTest {
   mask merge(BoolTest other) const;
 };
 
-//------------------------------BoolNode---------------------------------------
 // A Node to convert a Condition Codes to a Logical result.
 class BoolNode : public Node {
   virtual uint hash() const;
@@ -358,7 +336,6 @@ public:
 #endif
 };
 
-//------------------------------AbsNode----------------------------------------
 // Abstract class for absolute value.  Mostly used to get a handy wrapper
 // for finding this pattern in the graph.
 class AbsNode : public Node {
@@ -369,7 +346,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------AbsINode---------------------------------------
 // Absolute value an integer.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsINode : public AbsNode {
@@ -380,7 +356,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------AbsLNode---------------------------------------
 // Absolute value a long.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsLNode : public AbsNode {
@@ -391,7 +366,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------AbsFNode---------------------------------------
 // Absolute value a float, a common float-point idiom with a cheap hardware
 // implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
@@ -403,7 +377,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------AbsDNode---------------------------------------
 // Absolute value a double, a common float-point idiom with a cheap hardware
 // implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
@@ -416,7 +389,6 @@ public:
 };
 
 
-//------------------------------CmpLTMaskNode----------------------------------
 // If p < q, return -1 else return 0.  Nice for flow-free idioms.
 class CmpLTMaskNode : public Node {
 public:
@@ -427,13 +399,11 @@ public:
 };
 
 
-//------------------------------NegNode----------------------------------------
 class NegNode : public Node {
 public:
   NegNode( Node *in1 ) : Node(0,in1) {}
 };
 
-//------------------------------NegINode---------------------------------------
 // Negate value an int.  For int values, negation is the same as subtraction
 // from zero
 class NegINode : public NegNode {
@@ -444,7 +414,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------NegLNode---------------------------------------
 // Negate value an int.  For int values, negation is the same as subtraction
 // from zero
 class NegLNode : public NegNode {
@@ -455,7 +424,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------NegFNode---------------------------------------
 // Negate value a float.  Negating 0.0 returns -0.0, but subtracting from
 // zero returns +0.0 (per JVM spec on 'fneg' bytecode).  As subtraction
 // cannot be used to replace negation we have to implement negation as ideal
@@ -468,7 +436,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------NegDNode---------------------------------------
 // Negate value a double.  Negating 0.0 returns -0.0, but subtracting from
 // zero returns +0.0 (per JVM spec on 'dneg' bytecode).  As subtraction
 // cannot be used to replace negation we have to implement negation as ideal
@@ -481,7 +448,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------AtanDNode--------------------------------------
 // arcus tangens of a double
 class AtanDNode : public Node {
 public:
@@ -492,7 +458,6 @@ public:
 };
 
 
-//------------------------------SqrtDNode--------------------------------------
 // square root a double
 class SqrtDNode : public Node {
 public:
@@ -506,7 +471,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------SqrtFNode--------------------------------------
 // square root a float
 class SqrtFNode : public Node {
 public:
@@ -525,7 +489,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//-------------------------------ReverseBytesINode--------------------------------
 // reverse bytes of an integer
 class ReverseBytesINode : public Node {
 public:
@@ -535,7 +498,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//-------------------------------ReverseBytesLNode--------------------------------
 // reverse bytes of a long
 class ReverseBytesLNode : public Node {
 public:
@@ -545,7 +507,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//-------------------------------ReverseBytesUSNode--------------------------------
 // reverse bytes of an unsigned short / char
 class ReverseBytesUSNode : public Node {
 public:
@@ -555,7 +516,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//-------------------------------ReverseBytesSNode--------------------------------
 // reverse bytes of a short
 class ReverseBytesSNode : public Node {
 public:
@@ -565,7 +525,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//-------------------------------ReverseINode--------------------------------
 // reverse bits of an int
 class ReverseINode : public Node {
 public:
@@ -577,7 +536,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//-------------------------------ReverseLNode--------------------------------
 // reverse bits of a long
 class ReverseLNode : public Node {
 public:

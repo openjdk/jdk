@@ -31,7 +31,6 @@
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 
-//---------------------------CallGenerator-------------------------------------
 // The subclasses of this class handle generation of ideal nodes for
 // call sites and method entry points.
 
@@ -190,7 +189,6 @@ class CallGenerator : public ArenaObj {
 };
 
 
-//------------------------InlineCallGenerator----------------------------------
 class InlineCallGenerator : public CallGenerator {
  protected:
   InlineCallGenerator(ciMethod* method) : CallGenerator(method) {}

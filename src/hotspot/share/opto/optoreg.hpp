@@ -31,7 +31,6 @@
 // in the .ad files.
 #include CPU_HEADER(adfiles/adGlobals)
 
-//------------------------------OptoReg----------------------------------------
 // We eventually need Registers for the Real World.  Registers are essentially
 // non-SSA names.  A Register is represented as a number.  Non-regular values
 // (e.g., Control, Memory, I/O) use the Special register.  The actual machine
@@ -161,7 +160,6 @@ class OptoReg {
 
 };
 
-//---------------------------OptoRegPair-------------------------------------------
 // Pairs of 32-bit registers for the allocator.
 // This is a very similar class to VMRegPair. C2 only interfaces with VMRegPair
 // via the calling convention code which is shared between the compilers.

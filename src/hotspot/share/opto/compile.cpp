@@ -458,7 +458,6 @@ void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_Lis
 }
 
 // ============================================================================
-//------------------------------CompileWrapper---------------------------------
 class CompileWrapper : public StackObj {
   Compile *const _compile;
  public:
@@ -496,7 +495,6 @@ CompileWrapper::~CompileWrapper() {
 }
 
 
-//----------------------------print_compile_messages---------------------------
 void Compile::print_compile_messages() {
 #ifndef PRODUCT
   // Check if recompiling
@@ -577,7 +575,6 @@ void Compile::print_ideal_ir(const char* phase_name) {
 #endif
 
 // ============================================================================
-//------------------------------Compile standard-------------------------------
 debug_only( int Compile::_debug_idx = 100000; )
 
 // Compile a method.  entry_bci is -1 for normal compilations and indicates
@@ -866,7 +863,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   Code_Gen();
 }
 
-//------------------------------Compile----------------------------------------
 // Compile a runtime stub
 Compile::Compile( ciEnv* ci_env,
                   TypeFunc_generator generator,
@@ -960,7 +956,6 @@ Compile::Compile( ciEnv* ci_env,
   Code_Gen();
 }
 
-//------------------------------Init-------------------------------------------
 // Prepare for a single compilation
 void Compile::Init(bool aliasing) {
   _do_aliasing = aliasing;
@@ -1081,7 +1076,6 @@ void Compile::Init(bool aliasing) {
   probe_alias_cache(nullptr)->_index = AliasIdxTop;
 }
 
-//---------------------------init_start----------------------------------------
 // Install the StartNode on this compile object.
 void Compile::init_start(StartNode* s) {
   if (failing())
@@ -1106,7 +1100,6 @@ StartNode* Compile::start() const {
   return nullptr;
 }
 
-//-------------------------------immutable_memory-------------------------------------
 // Access immutable memory
 Node* Compile::immutable_memory() {
   if (_immutable_memory != nullptr) {
@@ -1124,7 +1117,6 @@ Node* Compile::immutable_memory() {
   return nullptr;
 }
 
-//----------------------set_cached_top_node------------------------------------
 // Install the cached top node, and make sure Node::is_top works correctly.
 void Compile::set_cached_top_node(Node* tn) {
   if (tn != nullptr)  verify_top(tn);
@@ -1274,7 +1266,6 @@ bool Compile::copy_node_notes_to(Node* dest, Node* source) {
 }
 
 
-//--------------------------allow_range_check_smearing-------------------------
 // Gating condition for coalescing similar range checks.
 // Sometimes we try 'speculatively' replacing a series of a range checks by a
 // single covering check that is at least as strong as any of them.
@@ -1290,7 +1281,6 @@ bool Compile::allow_range_check_smearing() const {
 }
 
 
-//------------------------------flatten_alias_type-----------------------------
 const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
   assert(do_aliasing(), "Aliasing should be enabled");
   int offset = tj->offset();
@@ -1546,7 +1536,6 @@ BasicType Compile::AliasType::basic_type() const {
   }
 }
 
-//---------------------------------print_on------------------------------------
 #ifndef PRODUCT
 void Compile::AliasType::print_on(outputStream* st) {
   if (index() < 10)
@@ -1581,7 +1570,6 @@ void print_alias_types() {
 #endif
 
 
-//----------------------------probe_alias_cache--------------------------------
 Compile::AliasCacheEntry* Compile::probe_alias_cache(const TypePtr* adr_type) {
   intptr_t key = (intptr_t) adr_type;
   key ^= key >> logAliasCacheSize;
@@ -1589,7 +1577,6 @@ Compile::AliasCacheEntry* Compile::probe_alias_cache(const TypePtr* adr_type) {
 }
 
 
-//-----------------------------grow_alias_types--------------------------------
 void Compile::grow_alias_types() {
   const int old_ats  = _max_alias_types; // how many before?
   const int new_ats  = old_ats;          // how many more?
@@ -1602,7 +1589,6 @@ void Compile::grow_alias_types() {
 }
 
 
-//--------------------------------find_alias_type------------------------------
 Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_create, ciField* original_field) {
   if (!do_aliasing()) {
     return alias_type(AliasIdxBot);
@@ -1739,7 +1725,6 @@ Compile::AliasType* Compile::alias_type(ciField* field) {
 }
 
 
-//------------------------------have_alias_type--------------------------------
 bool Compile::have_alias_type(const TypePtr* adr_type) {
   AliasCacheEntry* ace = probe_alias_cache(adr_type);
   if (ace->_adr_type == adr_type) {
@@ -1753,7 +1738,6 @@ bool Compile::have_alias_type(const TypePtr* adr_type) {
   return find_alias_type(adr_type, true, nullptr) != nullptr;
 }
 
-//-----------------------------must_alias--------------------------------------
 // True if all values of the given address type are in the given alias category.
 bool Compile::must_alias(const TypePtr* adr_type, int alias_idx) {
   if (alias_idx == AliasIdxBot)         return true;  // the universal category
@@ -1771,7 +1755,6 @@ bool Compile::must_alias(const TypePtr* adr_type, int alias_idx) {
   return adr_idx == alias_idx;
 }
 
-//------------------------------can_alias--------------------------------------
 // True if any values of the given address type are in the given alias category.
 bool Compile::can_alias(const TypePtr* adr_type, int alias_idx) {
   if (alias_idx == AliasIdxTop)         return false; // the empty category
@@ -1786,7 +1769,6 @@ bool Compile::can_alias(const TypePtr* adr_type, int alias_idx) {
   return adr_idx == alias_idx;
 }
 
-//---------------------cleanup_loop_predicates-----------------------
 // Remove the opaque nodes that protect the predicates so that all unused
 // checks and uncommon_traps will be eliminated from the ideal graph
 void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
@@ -2180,7 +2162,6 @@ void Compile::remove_root_to_sfpts_edges(PhaseIterGVN& igvn) {
   }
 }
 
-//------------------------------Optimize---------------------------------------
 // Given a graph, optimize it.
 void Compile::Optimize() {
   TracePhase tp("optimizer", &timers[_t_optimizer]);
@@ -2496,7 +2477,6 @@ bool Compile::has_vbox_nodes() {
   return false;
 }
 
-//---------------------------- Bitwise operation packing optimization ---------------------------
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
@@ -2866,7 +2846,6 @@ void Compile::optimize_logic_cones(PhaseIterGVN &igvn) {
   }
 }
 
-//------------------------------Code_Gen---------------------------------------
 // Given a graph, generate code for it
 void Compile::Code_Gen() {
   if (failing()) {
@@ -2980,7 +2959,6 @@ void Compile::Code_Gen() {
   _regalloc = (PhaseChaitin*)((intptr_t)0xdeadbeef);
 }
 
-//------------------------------Final_Reshape_Counts---------------------------
 // This class defines counters to help identify when a method
 // may/must be executed using hardware with only 24-bit precision.
 struct Final_Reshape_Counts : public StackObj {
@@ -3055,7 +3033,6 @@ void Compile::eliminate_redundant_card_marks(Node* n) {
   }
 }
 
-//------------------------------final_graph_reshaping_impl----------------------
 // Implement items 1-5 from final_graph_reshaping below.
 void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
 
@@ -3811,7 +3788,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
 }
 
-//------------------------------final_graph_reshaping_walk---------------------
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
 void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
@@ -3891,7 +3867,6 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
   }
 }
 
-//------------------------------final_graph_reshaping--------------------------
 // Final Graph Reshaping.
 //
 // (1) Clone simple inputs to uncommon calls, so they can be scheduled late
@@ -4051,7 +4026,6 @@ bool Compile::final_graph_reshaping() {
   return false;
 }
 
-//-----------------------------too_many_traps----------------------------------
 // Report if there are too many traps at the current method and bci.
 // Return true if there was a trap, and/or PerMethodTrapLimit is exceeded.
 bool Compile::too_many_traps(ciMethod* method,
@@ -4098,7 +4072,6 @@ bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
   }
 }
 
-//--------------------------too_many_recompiles--------------------------------
 // Report if there are too many recompiles at the current method and bci.
 // Consults PerBytecodeRecompilationCutoff and PerMethodRecompilationCutoff.
 // Is not eager to return true, since this will cause the compiler to use
@@ -4201,7 +4174,6 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 }
 
 #ifndef PRODUCT
-//------------------------------verify_bidirectional_edges---------------------
 // For each input edge to a node (ie - for each Use-Def edge), verify that
 // there is a corresponding Def-Use edge.
 void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
@@ -4255,7 +4227,6 @@ void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
   }
 }
 
-//------------------------------verify_graph_edges---------------------------
 // Walk the Graph and verify that there is a one-to-one correspondence
 // between Use-Def edges and Def-Use edges in the graph.
 void Compile::verify_graph_edges(bool no_dead_code) {
@@ -4357,7 +4328,6 @@ Compile::TracePhase::~TracePhase() {
   }
 }
 
-//----------------------------static_subtype_check-----------------------------
 // Shortcut important common cases when superklass is exact:
 // (0) superklass is java.lang.Object (can occur in reflective code)
 // (1) subklass is already limited to a subtype of superklass => always ok

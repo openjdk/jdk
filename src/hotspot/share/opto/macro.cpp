@@ -121,7 +121,6 @@ Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* 
   }
 }
 
-//--------------------copy_predefined_input_for_runtime_call--------------------
 void PhaseMacroExpand::copy_predefined_input_for_runtime_call(Node * ctrl, CallNode* oldcall, CallNode* call) {
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl );
@@ -131,7 +130,6 @@ void PhaseMacroExpand::copy_predefined_input_for_runtime_call(Node * ctrl, CallN
   call->init_req( TypeFunc::FramePtr, oldcall->in( TypeFunc::FramePtr ) );
 }
 
-//------------------------------make_slow_call---------------------------------
 CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type,
                                            address slow_call, const char* leaf_name, Node* slow_path,
                                            Node* parm0, Node* parm1, Node* parm2) {
@@ -1131,7 +1129,6 @@ Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset,
   return mem;
 }
 
-//=============================================================================
 //
 //                              A L L O C A T I O N
 //
@@ -1170,13 +1167,11 @@ Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset,
 // 7) Merge with the slow-path; cast the raw memory pointer to the correct
 // oop flavor.
 //
-//=============================================================================
 // FastAllocateSizeLimit value is in DOUBLEWORDS.
 // Allocations bigger than this always go the slow route.
 // This value must be small enough that allocation attempts that need to
 // trigger exceptions go the slow route.  Also, it must be small enough so
 // that heap_top + size_in_bytes does not wrap around the 4Gig limit.
-//=============================================================================j//
 // %%% Here is an old comment from parseHelper.cpp; is it outdated?
 // The allocator will coalesce int->oop copies away.  See comment in
 // coalesce.cpp about how this works.  It depends critically on the exact
@@ -1890,7 +1885,6 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
                          slow_call_address, valid_length_test);
 }
 
-//-------------------mark_eliminated_box----------------------------------
 //
 // During EA obj may point to several objects but after few ideal graph
 // transformations (CCP) it may point to only one non escaping object
@@ -1994,7 +1988,6 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
   }
 }
 
-//-----------------------mark_eliminated_locking_nodes-----------------------
 void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
   if (EliminateNestedLocks) {
     if (alock->is_nested()) {
@@ -2142,7 +2135,6 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
 }
 
 
-//------------------------------expand_lock_node----------------------
 void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   Node* ctrl = lock->in(TypeFunc::Control);
@@ -2201,7 +2193,6 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
-//------------------------------expand_unlock_node----------------------
 void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
 
   Node* ctrl = unlock->in(TypeFunc::Control);
@@ -2293,7 +2284,6 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
-//---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
@@ -2388,7 +2378,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 #endif
 }
 
-//------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
   // Last attempt to eliminate macro nodes.

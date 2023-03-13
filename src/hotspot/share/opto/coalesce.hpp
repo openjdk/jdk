@@ -33,7 +33,6 @@ class Matcher;
 class PhaseIFG;
 class PhaseCFG;
 
-//------------------------------PhaseCoalesce----------------------------------
 class PhaseCoalesce : public Phase {
 protected:
   PhaseChaitin &_phc;
@@ -64,7 +63,6 @@ public:
 #endif
 };
 
-//------------------------------PhaseAggressiveCoalesce------------------------
 // Aggressively, pessimistic coalesce copies.  Aggressive means ignore graph
 // colorability; perhaps coalescing to the point of forcing a spill.
 // Pessimistic means we cannot coalesce if 2 live ranges interfere.  This
@@ -88,7 +86,6 @@ public:
 };
 
 
-//------------------------------PhaseConservativeCoalesce----------------------
 // Conservatively, pessimistic coalesce copies.  Conservative means do not
 // coalesce if the resultant live range will be uncolorable.  Pessimistic
 // means we cannot coalesce if 2 live ranges interfere.  This implies we do

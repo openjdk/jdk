@@ -50,7 +50,6 @@ extern int explicit_null_checks_inserted,
            explicit_null_checks_elided;
 #endif
 
-//---------------------------------array_load----------------------------------
 void Parse::array_load(BasicType bt) {
   const Type* elemtype = Type::TOP;
   bool big_val = bt == T_DOUBLE || bt == T_LONG;
@@ -75,7 +74,6 @@ void Parse::array_load(BasicType bt) {
 }
 
 
-//--------------------------------array_store----------------------------------
 void Parse::array_store(BasicType bt) {
   const Type* elemtype = Type::TOP;
   bool big_val = bt == T_DOUBLE || bt == T_LONG;
@@ -105,7 +103,6 @@ void Parse::array_store(BasicType bt) {
 }
 
 
-//------------------------------array_addressing-------------------------------
 // Pull array and index from the stack.  Compute pointer-to-element.
 Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
   Node *idx   = peek(0+vals);   // Get from stack without popping
@@ -224,7 +221,6 @@ IfNode* Parse::jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float pro
 // (according to profiling)
 static const int never_reached = INT_MAX;
 
-//------------------------------helper for tableswitch-------------------------
 void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
   // True branch, use existing map info
   { PreserveJVMState pjvms(this);
@@ -407,7 +403,6 @@ static void merge_ranges(SwitchRange* ranges, int& rp) {
   }
 }
 
-//-------------------------------do_tableswitch--------------------------------
 void Parse::do_tableswitch() {
   // Get information about tableswitch
   int default_dest = iter().get_dest_table(0);
@@ -484,7 +479,6 @@ void Parse::do_tableswitch() {
 }
 
 
-//------------------------------do_lookupswitch--------------------------------
 void Parse::do_lookupswitch() {
   // Get information about lookupswitch
   int default_dest = iter().get_dest_table(0);
@@ -745,7 +739,6 @@ void Parse::linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchR
   }
 }
 
-//----------------------------create_jump_tables-------------------------------
 bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) {
   // Are jumptables enabled
   if (!UseJumpTables)  return false;
@@ -905,7 +898,6 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   return true;
 }
 
-//----------------------------jump_switch_ranges-------------------------------
 void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, int switch_depth) {
   Block* switch_block = block();
   bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
@@ -1192,7 +1184,6 @@ static bool has_injected_profile(BoolTest::mask btest, Node* test, int& taken, i
   }
   return false;
 }
-//--------------------------dynamic_branch_prediction--------------------------
 // Try to gather dynamic branch prediction behavior.  Return a probability
 // of the branch being taken and set the "cnt" field.  Returns a -1.0
 // if we need to use static prediction for some reason.
@@ -1277,7 +1268,6 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   return prob;
 }
 
-//-----------------------------branch_prediction-------------------------------
 float Parse::branch_prediction(float& cnt,
                                BoolTest::mask btest,
                                int target_bci,
@@ -1345,7 +1335,6 @@ bool Parse::seems_stable_comparison() const {
   return true;
 }
 
-//-------------------------------repush_if_args--------------------------------
 // Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
 inline int Parse::repush_if_args() {
   if (PrintOpto && WizardMode) {
@@ -1362,7 +1351,6 @@ inline int Parse::repush_if_args() {
   return bc_depth;
 }
 
-//----------------------------------do_ifnull----------------------------------
 void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   int target_bci = iter().get_dest();
 
@@ -1432,7 +1420,6 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   }
 }
 
-//------------------------------------do_if------------------------------------
 void Parse::do_if(BoolTest::mask btest, Node* c) {
   int target_bci = iter().get_dest();
 
@@ -1563,7 +1550,6 @@ void Parse::maybe_add_predicate_after_if(Block* path) {
 }
 
 
-//----------------------------adjust_map_after_if------------------------------
 // Adjust the JVM state to reflect the result of taking this path.
 // Basically, it means inspecting the CmpNode controlling this
 // branch, seeing how it constrains a tested value, and then
@@ -1802,7 +1788,6 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
   return c;
 }
 
-//------------------------------do_one_bytecode--------------------------------
 // Parse this bytecode, and alter the Parsers JVM->Node mapping
 void Parse::do_one_bytecode() {
   Node *a, *b, *c, *d;          // Handy temps

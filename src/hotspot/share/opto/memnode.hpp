@@ -36,7 +36,6 @@ class MultiNode;
 class PhaseCCP;
 class PhaseTransform;
 
-//------------------------------MemNode----------------------------------------
 // Load or Store, possibly throwing a null pointer exception
 class MemNode : public Node {
 private:
@@ -165,7 +164,6 @@ public:
 #endif
 };
 
-//------------------------------LoadNode---------------------------------------
 // Load value; requires Memory and Address
 class LoadNode : public MemNode {
 public:
@@ -316,7 +314,6 @@ protected:
   }
 };
 
-//------------------------------LoadBNode--------------------------------------
 // Load a byte (8bits signed) from memory
 class LoadBNode : public LoadNode {
 public:
@@ -330,7 +327,6 @@ public:
   virtual BasicType memory_type() const { return T_BYTE; }
 };
 
-//------------------------------LoadUBNode-------------------------------------
 // Load a unsigned byte (8bits unsigned) from memory
 class LoadUBNode : public LoadNode {
 public:
@@ -344,7 +340,6 @@ public:
   virtual BasicType memory_type() const { return T_BYTE; }
 };
 
-//------------------------------LoadUSNode-------------------------------------
 // Load an unsigned short/char (16bits unsigned) from memory
 class LoadUSNode : public LoadNode {
 public:
@@ -358,7 +353,6 @@ public:
   virtual BasicType memory_type() const { return T_CHAR; }
 };
 
-//------------------------------LoadSNode--------------------------------------
 // Load a short (16bits signed) from memory
 class LoadSNode : public LoadNode {
 public:
@@ -372,7 +366,6 @@ public:
   virtual BasicType memory_type() const { return T_SHORT; }
 };
 
-//------------------------------LoadINode--------------------------------------
 // Load an integer from memory
 class LoadINode : public LoadNode {
 public:
@@ -384,7 +377,6 @@ public:
   virtual BasicType memory_type() const { return T_INT; }
 };
 
-//------------------------------LoadRangeNode----------------------------------
 // Load an array length from the array
 class LoadRangeNode : public LoadINode {
 public:
@@ -396,7 +388,6 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
-//------------------------------LoadLNode--------------------------------------
 // Load a long from memory
 class LoadLNode : public LoadNode {
   virtual uint hash() const { return LoadNode::hash() + _require_atomic_access; }
@@ -425,7 +416,6 @@ public:
 #endif
 };
 
-//------------------------------LoadL_unalignedNode----------------------------
 // Load a long from unaligned memory
 class LoadL_unalignedNode : public LoadLNode {
 public:
@@ -434,7 +424,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------LoadFNode--------------------------------------
 // Load a float (64 bits) from memory
 class LoadFNode : public LoadNode {
 public:
@@ -446,7 +435,6 @@ public:
   virtual BasicType memory_type() const { return T_FLOAT; }
 };
 
-//------------------------------LoadDNode--------------------------------------
 // Load a double (64 bits) from memory
 class LoadDNode : public LoadNode {
   virtual uint hash() const { return LoadNode::hash() + _require_atomic_access; }
@@ -475,7 +463,6 @@ public:
 #endif
 };
 
-//------------------------------LoadD_unalignedNode----------------------------
 // Load a double from unaligned memory
 class LoadD_unalignedNode : public LoadDNode {
 public:
@@ -484,7 +471,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------LoadPNode--------------------------------------
 // Load a pointer from memory (either object or array)
 class LoadPNode : public LoadNode {
 public:
@@ -497,7 +483,6 @@ public:
 };
 
 
-//------------------------------LoadNNode--------------------------------------
 // Load a narrow oop from memory (either object or array)
 class LoadNNode : public LoadNode {
 public:
@@ -509,7 +494,6 @@ public:
   virtual BasicType memory_type() const { return T_NARROWOOP; }
 };
 
-//------------------------------LoadKlassNode----------------------------------
 // Load a Klass from an object
 class LoadKlassNode : public LoadPNode {
 protected:
@@ -529,7 +513,6 @@ public:
                     const TypeKlassPtr* tk = TypeInstKlassPtr::OBJECT);
 };
 
-//------------------------------LoadNKlassNode---------------------------------
 // Load a narrow Klass from an object.
 class LoadNKlassNode : public LoadNNode {
 public:
@@ -546,7 +529,6 @@ public:
 };
 
 
-//------------------------------StoreNode--------------------------------------
 // Store value; requires Store, Address and Value
 class StoreNode : public MemNode {
 private:
@@ -641,7 +623,6 @@ public:
   MemBarNode* trailing_membar() const;
 };
 
-//------------------------------StoreBNode-------------------------------------
 // Store byte to memory
 class StoreBNode : public StoreNode {
 public:
@@ -652,7 +633,6 @@ public:
   virtual BasicType memory_type() const { return T_BYTE; }
 };
 
-//------------------------------StoreCNode-------------------------------------
 // Store char/short to memory
 class StoreCNode : public StoreNode {
 public:
@@ -663,7 +643,6 @@ public:
   virtual BasicType memory_type() const { return T_CHAR; }
 };
 
-//------------------------------StoreINode-------------------------------------
 // Store int to memory
 class StoreINode : public StoreNode {
 public:
@@ -673,7 +652,6 @@ public:
   virtual BasicType memory_type() const { return T_INT; }
 };
 
-//------------------------------StoreLNode-------------------------------------
 // Store long to memory
 class StoreLNode : public StoreNode {
   virtual uint hash() const { return StoreNode::hash() + _require_atomic_access; }
@@ -699,7 +677,6 @@ public:
 #endif
 };
 
-//------------------------------StoreFNode-------------------------------------
 // Store float to memory
 class StoreFNode : public StoreNode {
 public:
@@ -709,7 +686,6 @@ public:
   virtual BasicType memory_type() const { return T_FLOAT; }
 };
 
-//------------------------------StoreDNode-------------------------------------
 // Store double to memory
 class StoreDNode : public StoreNode {
   virtual uint hash() const { return StoreNode::hash() + _require_atomic_access; }
@@ -736,7 +712,6 @@ public:
 
 };
 
-//------------------------------StorePNode-------------------------------------
 // Store pointer to memory
 class StorePNode : public StoreNode {
 public:
@@ -746,7 +721,6 @@ public:
   virtual BasicType memory_type() const { return T_ADDRESS; }
 };
 
-//------------------------------StoreNNode-------------------------------------
 // Store narrow oop to memory
 class StoreNNode : public StoreNode {
 public:
@@ -756,7 +730,6 @@ public:
   virtual BasicType memory_type() const { return T_NARROWOOP; }
 };
 
-//------------------------------StoreNKlassNode--------------------------------------
 // Store narrow klass to memory
 class StoreNKlassNode : public StoreNNode {
 public:
@@ -766,7 +739,6 @@ public:
   virtual BasicType memory_type() const { return T_NARROWKLASS; }
 };
 
-//------------------------------StoreCMNode-----------------------------------
 // Store card-mark byte to memory for CM
 // The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
 // Preceding equivalent StoreCMs may be eliminated.
@@ -796,7 +768,6 @@ public:
   int oop_alias_idx() const { return _oop_alias_idx; }
 };
 
-//------------------------------SCMemProjNode---------------------------------------
 // This class defines a projection of the memory  state of a store conditional node.
 // These nodes return a value, but also update memory.
 class SCMemProjNode : public ProjNode {
@@ -818,7 +789,6 @@ public:
 #endif
 };
 
-//------------------------------LoadStoreNode---------------------------
 // Note: is_Mem() method returns 'true' for this class.
 class LoadStoreNode : public Node {
 private:
@@ -881,91 +851,78 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
-//------------------------------CompareAndSwapBNode---------------------------
 class CompareAndSwapBNode : public CompareAndSwapNode {
 public:
   CompareAndSwapBNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------CompareAndSwapSNode---------------------------
 class CompareAndSwapSNode : public CompareAndSwapNode {
 public:
   CompareAndSwapSNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------CompareAndSwapINode---------------------------
 class CompareAndSwapINode : public CompareAndSwapNode {
 public:
   CompareAndSwapINode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------CompareAndSwapLNode---------------------------
 class CompareAndSwapLNode : public CompareAndSwapNode {
 public:
   CompareAndSwapLNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------CompareAndSwapPNode---------------------------
 class CompareAndSwapPNode : public CompareAndSwapNode {
 public:
   CompareAndSwapPNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------CompareAndSwapNNode---------------------------
 class CompareAndSwapNNode : public CompareAndSwapNode {
 public:
   CompareAndSwapNNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------WeakCompareAndSwapBNode---------------------------
 class WeakCompareAndSwapBNode : public CompareAndSwapNode {
 public:
   WeakCompareAndSwapBNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------WeakCompareAndSwapSNode---------------------------
 class WeakCompareAndSwapSNode : public CompareAndSwapNode {
 public:
   WeakCompareAndSwapSNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------WeakCompareAndSwapINode---------------------------
 class WeakCompareAndSwapINode : public CompareAndSwapNode {
 public:
   WeakCompareAndSwapINode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------WeakCompareAndSwapLNode---------------------------
 class WeakCompareAndSwapLNode : public CompareAndSwapNode {
 public:
   WeakCompareAndSwapLNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------WeakCompareAndSwapPNode---------------------------
 class WeakCompareAndSwapPNode : public CompareAndSwapNode {
 public:
   WeakCompareAndSwapPNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------WeakCompareAndSwapNNode---------------------------
 class WeakCompareAndSwapNNode : public CompareAndSwapNode {
 public:
   WeakCompareAndSwapNNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, MemNode::MemOrd mem_ord) : CompareAndSwapNode(c, mem, adr, val, ex, mem_ord) { }
   virtual int Opcode() const;
 };
 
-//------------------------------CompareAndExchangeBNode---------------------------
 class CompareAndExchangeBNode : public CompareAndExchangeNode {
 public:
   CompareAndExchangeBNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeInt::BYTE) { }
@@ -973,14 +930,12 @@ public:
 };
 
 
-//------------------------------CompareAndExchangeSNode---------------------------
 class CompareAndExchangeSNode : public CompareAndExchangeNode {
 public:
   CompareAndExchangeSNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeInt::SHORT) { }
   virtual int Opcode() const;
 };
 
-//------------------------------CompareAndExchangeLNode---------------------------
 class CompareAndExchangeLNode : public CompareAndExchangeNode {
 public:
   CompareAndExchangeLNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeLong::LONG) { }
@@ -988,7 +943,6 @@ public:
 };
 
 
-//------------------------------CompareAndExchangeINode---------------------------
 class CompareAndExchangeINode : public CompareAndExchangeNode {
 public:
   CompareAndExchangeINode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeInt::INT) { }
@@ -996,91 +950,78 @@ public:
 };
 
 
-//------------------------------CompareAndExchangePNode---------------------------
 class CompareAndExchangePNode : public CompareAndExchangeNode {
 public:
   CompareAndExchangePNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, const Type* t, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, t) { }
   virtual int Opcode() const;
 };
 
-//------------------------------CompareAndExchangeNNode---------------------------
 class CompareAndExchangeNNode : public CompareAndExchangeNode {
 public:
   CompareAndExchangeNNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, const Type* t, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, t) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndAddBNode---------------------------
 class GetAndAddBNode : public LoadStoreNode {
 public:
   GetAndAddBNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::BYTE, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndAddSNode---------------------------
 class GetAndAddSNode : public LoadStoreNode {
 public:
   GetAndAddSNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::SHORT, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndAddINode---------------------------
 class GetAndAddINode : public LoadStoreNode {
 public:
   GetAndAddINode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::INT, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndAddLNode---------------------------
 class GetAndAddLNode : public LoadStoreNode {
 public:
   GetAndAddLNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeLong::LONG, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndSetBNode---------------------------
 class GetAndSetBNode : public LoadStoreNode {
 public:
   GetAndSetBNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::BYTE, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndSetSNode---------------------------
 class GetAndSetSNode : public LoadStoreNode {
 public:
   GetAndSetSNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::SHORT, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndSetINode---------------------------
 class GetAndSetINode : public LoadStoreNode {
 public:
   GetAndSetINode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeInt::INT, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndSetLNode---------------------------
 class GetAndSetLNode : public LoadStoreNode {
 public:
   GetAndSetLNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at ) : LoadStoreNode(c, mem, adr, val, at, TypeLong::LONG, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndSetPNode---------------------------
 class GetAndSetPNode : public LoadStoreNode {
 public:
   GetAndSetPNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* t ) : LoadStoreNode(c, mem, adr, val, at, t, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------GetAndSetNNode---------------------------
 class GetAndSetNNode : public LoadStoreNode {
 public:
   GetAndSetNNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* t ) : LoadStoreNode(c, mem, adr, val, at, t, 4) { }
   virtual int Opcode() const;
 };
 
-//------------------------------ClearArray-------------------------------------
 class ClearArrayNode: public Node {
 private:
   bool _is_large;
@@ -1120,7 +1061,6 @@ public:
   static bool step_through(Node** np, uint instance_id, PhaseTransform* phase);
 };
 
-//------------------------------MemBar-----------------------------------------
 // There are different flavors of Memory Barriers to match the Java Memory
 // Model.  Monitor-enter and volatile-load act as Acquires: no following ref
 // can be moved to before them.  We insert a MemBar-Acquire after a FastLock or
@@ -1394,7 +1334,6 @@ public:
   intptr_t find_next_fullword_store(uint i, PhaseGVN* phase);
 };
 
-//------------------------------MergeMem---------------------------------------
 // (See comment in memnode.cpp near MergeMemNode::MergeMemNode for semantics.)
 class MergeMemNode: public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
@@ -1666,7 +1605,6 @@ public:
   virtual const Type *bottom_type() const { return Type::MEMORY; }
 };
 
-//------------------------------Prefetch---------------------------------------
 
 // Allocation prefetch which may fault, TLAB size have to be adjusted.
 class PrefetchAllocationNode : public Node {

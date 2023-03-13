@@ -72,7 +72,6 @@ class       TypeAryKlassPtr;
 class     TypeMetadataPtr;
 class VerifyMeet;
 
-//------------------------------Type-------------------------------------------
 // Basic Type object, represents a set of primitive Values.
 // Types are hash-cons'd into a private class dictionary, so only one of each
 // different kind of Type exists.  Types are never modified after creation, so
@@ -485,7 +484,6 @@ private:
   static const Type* _const_basic_type[T_CONFLICT+1];
 };
 
-//------------------------------TypeF------------------------------------------
 // Class of Float-Constant Types.
 class TypeF : public Type {
   TypeF( float f ) : Type(FloatCon), _f(f) {};
@@ -516,7 +514,6 @@ public:
 #endif
 };
 
-//------------------------------TypeD------------------------------------------
 // Class of Double-Constant Types.
 class TypeD : public Type {
   TypeD( double d ) : Type(DoubleCon), _d(d) {};
@@ -570,7 +567,6 @@ public:
 
 
 
-//------------------------------TypeInt----------------------------------------
 // Class of integer ranges, the set of integers between a lower bound and an
 // upper bound, inclusive.
 class TypeInt : public TypeInteger {
@@ -636,7 +632,6 @@ public:
 };
 
 
-//------------------------------TypeLong---------------------------------------
 // Class of long integer ranges, the set of integers between a lower bound and
 // an upper bound, inclusive.
 class TypeLong : public TypeInteger {
@@ -694,7 +689,6 @@ public:
 #endif
 };
 
-//------------------------------TypeTuple--------------------------------------
 // Class of Tuple Types, essentially type collections for function signatures
 // and class layouts.  It happens to also be a fast cache for the HotSpot
 // signature types.
@@ -749,7 +743,6 @@ public:
 #endif
 };
 
-//------------------------------TypeAry----------------------------------------
 // Class of Array Types
 class TypeAry : public Type {
   TypeAry(const Type* elem, const TypeInt* size, bool stable) : Type(Array),
@@ -779,7 +772,6 @@ public:
 #endif
 };
 
-//------------------------------TypeVect---------------------------------------
 // Class of Vector Types
 class TypeVect : public Type {
   const Type*   _elem;  // Vector's element type
@@ -872,7 +864,6 @@ public:
   static const TypeVectMask* make(const Type* elem, uint length);
 };
 
-//------------------------------TypePtr----------------------------------------
 // Class of machine Pointer Types: raw data, instances or arrays.
 // If the _base enum is AnyPtr, then this refers to all of the above.
 // Otherwise the _base will indicate which subset of pointers is affected,
@@ -1064,7 +1055,6 @@ public:
 #endif
 };
 
-//------------------------------TypeRawPtr-------------------------------------
 // Class of raw pointers, pointers to things other than Oops.  Examples
 // include the stack pointer, top of heap, card-marking area, handles, etc.
 class TypeRawPtr : public TypePtr {
@@ -1097,7 +1087,6 @@ public:
 #endif
 };
 
-//------------------------------TypeOopPtr-------------------------------------
 // Some kind of oop (Java pointer), either instance or array.
 class TypeOopPtr : public TypePtr {
   friend class TypeAry;
@@ -1271,7 +1260,6 @@ private:
   }
 };
 
-//------------------------------TypeInstPtr------------------------------------
 // Class of Java object pointers, pointing either to non-array Java instances
 // or to a Klass* (including array klasses).
 class TypeInstPtr : public TypeOopPtr {
@@ -1383,7 +1371,6 @@ private:
 
 };
 
-//------------------------------TypeAryPtr-------------------------------------
 // Class of Java array pointers
 class TypeAryPtr : public TypeOopPtr {
   friend class Type;
@@ -1506,7 +1493,6 @@ private:
   virtual bool is_meet_subtype_of_helper(const TypeOopPtr* other, bool this_xk, bool other_xk) const;
 };
 
-//------------------------------TypeMetadataPtr-------------------------------------
 // Some kind of metadata, either Method*, MethodData* or CPCacheOop
 class TypeMetadataPtr : public TypePtr {
 protected:
@@ -1546,7 +1532,6 @@ public:
 #endif
 };
 
-//------------------------------TypeKlassPtr-----------------------------------
 // Class of Java Klass pointers
 class TypeKlassPtr : public TypePtr {
   friend class TypeInstKlassPtr;
@@ -1805,7 +1790,6 @@ public:
 #endif
 };
 
-//------------------------------TypeNarrowOop----------------------------------
 // A compressed reference to some kind of Oop.  This type wraps around
 // a preexisting TypeOopPtr and forwards most of it's operations to
 // the underlying type.  It's only real purpose is to track the
@@ -1851,7 +1835,6 @@ public:
 #endif
 };
 
-//------------------------------TypeNarrowKlass----------------------------------
 // A compressed reference to klass pointer.  This type wraps around a
 // preexisting TypeKlassPtr and forwards most of it's operations to
 // the underlying type.
@@ -1887,7 +1870,6 @@ public:
 #endif
 };
 
-//------------------------------TypeFunc---------------------------------------
 // Class of Array Types
 class TypeFunc : public Type {
   TypeFunc( const TypeTuple *domain, const TypeTuple *range ) : Type(Function),  _domain(domain), _range(range) {}
@@ -1929,7 +1911,6 @@ public:
   // Convenience common pre-built types.
 };
 
-//------------------------------accessors--------------------------------------
 inline bool Type::is_ptr_to_narrowoop() const {
 #ifdef _LP64
   return (isa_oopptr() != nullptr && is_oopptr()->is_ptr_to_narrowoop_nv());

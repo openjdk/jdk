@@ -32,13 +32,11 @@
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-//=============================================================================
 // Do not match memory edge.
 uint StrIntrinsicNode::match_edge(uint idx) const {
   return idx == 2 || idx == 3;
 }
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -59,7 +57,6 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
 const Type* StrIntrinsicNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
@@ -67,16 +64,12 @@ const Type* StrIntrinsicNode::Value(PhaseGVN* phase) const {
 
 uint StrIntrinsicNode::size_of() const { return sizeof(*this); }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -98,32 +91,26 @@ const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
 }
 
 
-//=============================================================================
-//------------------------------match_edge-------------------------------------
 // Do not match memory edge
 uint EncodeISOArrayNode::match_edge(uint idx) const {
   return idx == 2 || idx == 3; // EncodeISOArray src (Binary dst len)
 }
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
-//------------------------------Value------------------------------------------
 const Type* EncodeISOArrayNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
 }
 
-//------------------------------CopySign-----------------------------------------
 CopySignDNode* CopySignDNode::make(PhaseGVN& gvn, Node* in1, Node* in2) {
   return new CopySignDNode(in1, in2, gvn.makecon(TypeD::ZERO));
 }
 
-//------------------------------Signum-------------------------------------------
 SignumDNode* SignumDNode::make(PhaseGVN& gvn, Node* in) {
   return new SignumDNode(in, gvn.makecon(TypeD::ZERO), gvn.makecon(TypeD::ONE));
 }

@@ -58,7 +58,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-//---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsicID id = m->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
@@ -787,7 +786,6 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
   }
 }
 
-//------------------------------set_result-------------------------------
 // Helper function for finishing intrinsics.
 void LibraryCallKit::set_result(RegionNode* region, PhiNode* value) {
   record_for_igvn(region);
@@ -796,7 +794,6 @@ void LibraryCallKit::set_result(RegionNode* region, PhiNode* value) {
   assert(value->type()->basic_type() == result()->bottom_type()->basic_type(), "sanity");
 }
 
-//------------------------------generate_guard---------------------------
 // Helper function for generating guarded fast-slow graph structures.
 // The given 'test', if true, guards a slow path.  If the test fails
 // then a fast path can be taken.  (We generally hope it fails.)
@@ -943,19 +940,16 @@ Node* LibraryCallKit::current_thread_helper(Node*& tls_output, ByteSize handle_o
   return access_load(thread_obj_handle, thread_type, T_OBJECT, decorators);
 }
 
-//--------------------------generate_current_thread--------------------
 Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
   return current_thread_helper(tls_output, JavaThread::threadObj_offset(),
                                /*is_immutable*/false);
 }
 
-//--------------------------generate_virtual_thread--------------------
 Node* LibraryCallKit::generate_virtual_thread(Node* tls_output) {
   return current_thread_helper(tls_output, JavaThread::vthread_offset(),
                                !C->method()->changes_current_thread());
 }
 
-//------------------------------make_string_method_node------------------------
 // Helper method for String intrinsic functions. This version is called with
 // str1 and str2 pointing to byte[] nodes containing Latin1 or UTF16 encoded
 // characters (depending on 'is_byte'). cnt1 and cnt2 are pointing to Int nodes
@@ -989,7 +983,6 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node
   return _gvn.transform(result);
 }
 
-//------------------------------inline_string_compareTo------------------------
 bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
   Node* arg1 = argument(0);
   Node* arg2 = argument(1);
@@ -1010,7 +1003,6 @@ bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//------------------------------inline_string_equals------------------------
 bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg1 = argument(0);
   Node* arg2 = argument(1);
@@ -1058,7 +1050,6 @@ bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//------------------------------inline_array_equals----------------------------
 bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   assert(ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::LL, "unsupported array types");
   Node* arg1 = argument(0);
@@ -1072,7 +1063,6 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 }
 
 
-//------------------------------inline_countPositives------------------------------
 bool LibraryCallKit::inline_countPositives() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1156,7 +1146,6 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   return true;
 }
 
-//------------------------------inline_string_indexOf------------------------
 bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
@@ -1200,7 +1189,6 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//-----------------------------inline_string_indexOf-----------------------
 bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1289,7 +1277,6 @@ Node* LibraryCallKit::make_indexOf_node(Node* src_start, Node* src_count, Node* 
   return nullptr;
 }
 
-//-----------------------------inline_string_indexOfChar-----------------------
 bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1351,7 +1338,6 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 
   return true;
 }
-//---------------------------inline_string_copy---------------------
 // compressIt == true --> generate a compressed copy operation (compress char[]/byte[] to byte[])
 //   int StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
 //   int StringUTF16.compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
@@ -1449,7 +1435,6 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
 #define XTOP        /*no additional argument*/
 #endif //_LP64
 
-//------------------------inline_string_toBytesU--------------------------
 // public static byte[] StringUTF16.toBytes(char[] value, int off, int len)
 bool LibraryCallKit::inline_string_toBytesU() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
@@ -1539,7 +1524,6 @@ bool LibraryCallKit::inline_string_toBytesU() {
   return true;
 }
 
-//------------------------inline_string_getCharsU--------------------------
 // public void StringUTF16.getChars(byte[] src, int srcBegin, int srcEnd, char dst[], int dstBegin)
 bool LibraryCallKit::inline_string_getCharsU() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
@@ -1620,7 +1604,6 @@ bool LibraryCallKit::inline_string_getCharsU() {
   return true;
 }
 
-//----------------------inline_string_char_access----------------------------
 // Store/Load char to/from byte[] array.
 // static void StringUTF16.putChar(byte[] val, int index, int c)
 // static char StringUTF16.getChar(byte[] val, int index)
@@ -1665,7 +1648,6 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   return true;
 }
 
-//--------------------------round_double_node--------------------------------
 // Round a double node if necessary.
 Node* LibraryCallKit::round_double_node(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
@@ -1680,7 +1662,6 @@ Node* LibraryCallKit::round_double_node(Node* n) {
   return n;
 }
 
-//------------------------------inline_math-----------------------------------
 // public static double Math.abs(double)
 // public static double Math.sqrt(double)
 // public static double Math.log(double)
@@ -1706,7 +1687,6 @@ bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_math-----------------------------------
 // public static float Math.abs(float)
 // public static int Math.abs(int)
 // public static long Math.abs(long)
@@ -1726,7 +1706,6 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------runtime_math-----------------------------
 bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName) {
   assert(call_type == OptoRuntime::Math_DD_D_Type() || call_type == OptoRuntime::Math_D_D_Type(),
          "must be (DD)D or (D)D type");
@@ -1749,7 +1728,6 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
   return true;
 }
 
-//------------------------------inline_math_pow-----------------------------
 bool LibraryCallKit::inline_math_pow() {
   Node* exp = round_double_node(argument(2));
   const TypeD* d = _gvn.type(exp)->isa_double_constant();
@@ -1808,7 +1786,6 @@ bool LibraryCallKit::inline_math_pow() {
     runtime_math(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow),  "POW");
 }
 
-//------------------------------inline_math_native-----------------------------
 bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_dsin:
@@ -1866,7 +1843,6 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   }
 }
 
-//----------------------------inline_notify-----------------------------------*
 bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
   const TypeFunc* ftype = OptoRuntime::monitor_notify_Type();
   address func;
@@ -1881,7 +1857,6 @@ bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
 }
 
 
-//----------------------------inline_min_max-----------------------------------
 bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   set_result(generate_min_max(id, argument(0), argument(1)));
   return true;
@@ -2061,7 +2036,6 @@ Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType t
   }
 }
 
-//--------------------------inline_number_methods-----------------------------
 // inline int     Integer.numberOfLeadingZeros(int)
 // inline int        Long.numberOfLeadingZeros(long)
 //
@@ -2097,7 +2071,6 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   return true;
 }
 
-//--------------------------inline_bitshuffle_methods-----------------------------
 // inline int Integer.compress(int, int)
 // inline int Integer.expand(int, int)
 // inline long Long.compress(long, long)
@@ -2115,7 +2088,6 @@ bool LibraryCallKit::inline_bitshuffle_methods(vmIntrinsics::ID id) {
   return true;
 }
 
-//--------------------------inline_number_methods-----------------------------
 // inline int Integer.compareUnsigned(int, int)
 // inline int    Long.compareUnsigned(long, long)
 bool LibraryCallKit::inline_compare_unsigned(vmIntrinsics::ID id) {
@@ -2131,7 +2103,6 @@ bool LibraryCallKit::inline_compare_unsigned(vmIntrinsics::ID id) {
   return true;
 }
 
-//--------------------------inline_unsigned_divmod_methods-----------------------------
 // inline int Integer.divideUnsigned(int, int)
 // inline int Integer.remainderUnsigned(int, int)
 // inline long Long.divideUnsigned(long, long)
@@ -2181,7 +2152,6 @@ bool LibraryCallKit::inline_divmod_methods(vmIntrinsics::ID id) {
   return true;
 }
 
-//----------------------------inline_unsafe_access----------------------------
 
 const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type) {
   // Attempt to infer a sharper value type from the offset and base type.
@@ -2453,7 +2423,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   return true;
 }
 
-//----------------------------inline_unsafe_load_store----------------------------
 // This method serves a couple of different customers (depending on LoadStoreKind):
 //
 // LS_cmp_swap:
@@ -2744,7 +2713,6 @@ bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
   return !ik->is_initialized();
 }
 
-//----------------------------inline_unsafe_writeback0-------------------------
 // public native void Unsafe.writeback0(long address)
 bool LibraryCallKit::inline_unsafe_writeback0() {
   if (!Matcher::has_match_rule(Op_CacheWB)) {
@@ -2766,7 +2734,6 @@ bool LibraryCallKit::inline_unsafe_writeback0() {
   return true;
 }
 
-//----------------------------inline_unsafe_writeback0-------------------------
 // public native void Unsafe.writeback0(long address)
 bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
   if (is_pre && !Matcher::has_match_rule(Op_CacheWBPreSync)) {
@@ -2793,7 +2760,6 @@ bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
   return true;
 }
 
-//----------------------------inline_unsafe_allocate---------------------------
 // public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
   if (callee()->is_static())  return false;  // caller must have the capability!
@@ -2825,7 +2791,6 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   return true;
 }
 
-//------------------------inline_native_time_funcs--------------
 // inline code for System.currentTimeMillis() and System.nanoTime()
 // these have the same type and signature
 bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* funcName) {
@@ -3344,21 +3309,18 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
 
 #endif // JFR_HAVE_INTRINSICS
 
-//------------------------inline_native_currentCarrierThread------------------
 bool LibraryCallKit::inline_native_currentCarrierThread() {
   Node* junk = nullptr;
   set_result(generate_current_thread(junk));
   return true;
 }
 
-//------------------------inline_native_currentThread------------------
 bool LibraryCallKit::inline_native_currentThread() {
   Node* junk = nullptr;
   set_result(generate_virtual_thread(junk));
   return true;
 }
 
-//------------------------inline_native_setVthread------------------
 bool LibraryCallKit::inline_native_setCurrentThread() {
   assert(C->method()->changes_current_thread(),
          "method changes current Thread but is not annotated ChangesCurrentThread");
@@ -3390,7 +3352,6 @@ Node* LibraryCallKit::scopedValueCache_helper() {
   return make_load(nullptr, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
 }
 
-//------------------------inline_native_scopedValueCache------------------
 bool LibraryCallKit::inline_native_scopedValueCache() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
@@ -3406,7 +3367,6 @@ bool LibraryCallKit::inline_native_scopedValueCache() {
   return true;
 }
 
-//------------------------inline_native_setScopedValueCache------------------
 bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* arr = argument(0);
   Node* cache_obj_handle = scopedValueCache_helper();
@@ -3418,7 +3378,6 @@ bool LibraryCallKit::inline_native_setScopedValueCache() {
   return true;
 }
 
-//---------------------------load_mirror_from_klass----------------------------
 // Given a klass oop, load its java mirror (a java.lang.Class oop).
 Node* LibraryCallKit::load_mirror_from_klass(Node* klass) {
   Node* p = basic_plus_adr(klass, in_bytes(Klass::java_mirror_offset()));
@@ -3427,7 +3386,6 @@ Node* LibraryCallKit::load_mirror_from_klass(Node* klass) {
   return access_load(load, TypeInstPtr::MIRROR, T_OBJECT, IN_NATIVE);
 }
 
-//-----------------------load_klass_from_mirror_common-------------------------
 // Given a java mirror (a java.lang.Class oop), load its corresponding klass oop.
 // Test the klass oop for null (signifying a primitive Class like Integer.TYPE),
 // and branch to the given path on the region.
@@ -3454,7 +3412,6 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
   return kls;
 }
 
-//--------------------(inline_native_Class_query helpers)---------------------
 // Use this for JVM_ACC_INTERFACE, JVM_ACC_IS_CLONEABLE_FAST, JVM_ACC_HAS_FINALIZER.
 // Fall through if (mods & mask) == bits, take the guard otherwise.
 Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
@@ -3476,7 +3433,6 @@ Node* LibraryCallKit::generate_hidden_class_guard(Node* kls, RegionNode* region)
   return generate_access_flags_guard(kls, JVM_ACC_IS_HIDDEN_CLASS, 0, region);
 }
 
-//-------------------------inline_native_Class_query-------------------
 bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   const Type* return_type = TypeInt::BOOL;
   Node* prim_return_value = top();  // what happens if it's a primitive class?
@@ -3662,7 +3618,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   return true;
 }
 
-//-------------------------inline_Class_cast-------------------
 bool LibraryCallKit::inline_Class_cast() {
   Node* mirror = argument(0); // Class
   Node* obj    = argument(1);
@@ -3745,7 +3700,6 @@ bool LibraryCallKit::inline_Class_cast() {
 }
 
 
-//--------------------------inline_native_subtype_check------------------------
 // This intrinsic takes the JNI calls out of the heart of
 // UnsafeFieldAccessorImpl.set, which improves Field.set, readObject, etc.
 bool LibraryCallKit::inline_native_subtype_check() {
@@ -3847,7 +3801,6 @@ bool LibraryCallKit::inline_native_subtype_check() {
   return true;
 }
 
-//---------------------generate_array_guard_common------------------------
 Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
                                                   bool obj_array, bool not_array) {
 
@@ -3895,7 +3848,6 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
 }
 
 
-//-----------------------inline_native_newArray--------------------------
 // private static native Object java.lang.reflect.newArray(Class<?> componentType, int length);
 // private        native Object Unsafe.allocateUninitializedArray0(Class<?> cls, int size);
 bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
@@ -3975,7 +3927,6 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
   return true;
 }
 
-//----------------------inline_native_getLength--------------------------
 // public static native int java.lang.reflect.Array.getLength(Object array);
 bool LibraryCallKit::inline_native_getLength() {
   if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
@@ -4006,7 +3957,6 @@ bool LibraryCallKit::inline_native_getLength() {
   return true;
 }
 
-//------------------------inline_array_copyOf----------------------------
 // public static <T,U> T[] java.util.Arrays.copyOf(     U[] original, int newLength,         Class<? extends T[]> newType);
 // public static <T,U> T[] java.util.Arrays.copyOfRange(U[] original, int from,      int to, Class<? extends T[]> newType);
 bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
@@ -4150,7 +4100,6 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
 }
 
 
-//----------------------generate_virtual_guard---------------------------
 // Helper for hashCode and clone.  Peeks inside the vtable to avoid a call.
 Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
                                              RegionNode* slow_region) {
@@ -4175,7 +4124,6 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
   return generate_slow_guard(test_native, slow_region);
 }
 
-//-----------------------generate_method_call----------------------------
 // Use generate_method_call to make a slow-call to the real
 // method if the fast path fails.  An alternative would be to
 // use a stub like OptoRuntime::slow_arraycopy_Java.
@@ -4358,7 +4306,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   return true;
 }
 
-//---------------------------inline_native_getClass----------------------------
 // public final native Class<?> java.lang.Object.getClass();
 //
 // Build special case code for calls to getClass on an object.
@@ -4369,7 +4316,6 @@ bool LibraryCallKit::inline_native_getClass() {
   return true;
 }
 
-//-----------------inline_native_Reflection_getCallerClass---------------------
 // public static native Class<?> sun.reflect.Reflection.getCallerClass();
 //
 // In the presence of deep enough inlining, getCallerClass() becomes a no-op.
@@ -4582,7 +4528,6 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
   return true;
 }
 
-//----------------------inline_unsafe_copyMemory-------------------------
 // public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 
 static bool has_wide_mem(PhaseGVN& gvn, Node* addr, Node* base) {
@@ -4664,7 +4609,6 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
 
 #undef XTOP
 
-//------------------------clone_coping-----------------------------------
 // Helper function for inline_native_clone.
 void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array) {
   assert(obj_size != nullptr, "");
@@ -4702,7 +4646,6 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   }
 }
 
-//------------------------inline_native_clone----------------------------
 // protected native Object java.lang.Object.clone();
 //
 // Here are the simple edge cases:
@@ -5116,7 +5059,6 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
   uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
 }
 
-//------------------------------inline_arraycopy-----------------------
 // public static native void java.lang.System.arraycopy(Object src,  int  srcPos,
 //                                                      Object dest, int destPos,
 //                                                      int length);
@@ -5447,7 +5389,6 @@ CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* no
   return nullptr;
 }
 
-//-------------inline_encodeISOArray-----------------------------------
 // encode char[] to byte[] in ISO_8859_1 or ASCII
 bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   assert(callee()->signature()->size() == 5, "encodeISOArray has 5 parameters");
@@ -5492,7 +5433,6 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   return true;
 }
 
-//-------------inline_multiplyToLen-----------------------------------
 bool LibraryCallKit::inline_multiplyToLen() {
   assert(UseMultiplyToLenIntrinsic, "not implemented on this platform");
 
@@ -5600,7 +5540,6 @@ bool LibraryCallKit::inline_multiplyToLen() {
   return true;
 }
 
-//-------------inline_squareToLen------------------------------------
 bool LibraryCallKit::inline_squareToLen() {
   assert(UseSquareToLenIntrinsic, "not implemented on this platform");
 
@@ -5647,7 +5586,6 @@ bool LibraryCallKit::inline_squareToLen() {
   return true;
 }
 
-//-------------inline_mulAdd------------------------------------------
 bool LibraryCallKit::inline_mulAdd() {
   assert(UseMulAddIntrinsic, "not implemented on this platform");
 
@@ -5696,7 +5634,6 @@ bool LibraryCallKit::inline_mulAdd() {
   return true;
 }
 
-//-------------inline_montgomeryMultiply-----------------------------------
 bool LibraryCallKit::inline_montgomeryMultiply() {
   address stubAddr = StubRoutines::montgomeryMultiply();
   if (stubAddr == nullptr) {
@@ -5856,7 +5793,6 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
   return true;
 }
 
-//-------------inline_vectorizedMismatch------------------------------
 bool LibraryCallKit::inline_vectorizedMismatch() {
   assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
 
@@ -5988,7 +5924,6 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   return true;
 }
 
-//------------------------------inline_vectorizedHashcode----------------------------
 bool LibraryCallKit::inline_vectorizedHashCode() {
   assert(UseVectorizedHashCodeIntrinsic, "not implemented on this platform");
 
@@ -6133,7 +6068,6 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
   return true;
 }
 
-//------------------------------get_table_from_crc32c_class-----------------------
 Node * LibraryCallKit::get_table_from_crc32c_class(ciInstanceKlass *crc32c_class) {
   Node* table = load_field_from_object(nullptr, "byteTable", "[I", /*decorators*/ IN_HEAP, /*is_static*/ true, crc32c_class);
   assert (table != nullptr, "wrong version of java.util.zip.CRC32C");
@@ -6141,7 +6075,6 @@ Node * LibraryCallKit::get_table_from_crc32c_class(ciInstanceKlass *crc32c_class
   return table;
 }
 
-//------------------------------inline_updateBytesCRC32C-----------------------
 //
 // Calculate CRC32C for byte[] array.
 // int java.util.zip.CRC32C.updateBytes(int crc, byte[] buf, int off, int end)
@@ -6194,7 +6127,6 @@ bool LibraryCallKit::inline_updateBytesCRC32C() {
   return true;
 }
 
-//------------------------------inline_updateDirectByteBufferCRC32C-----------------------
 //
 // Calculate CRC32C for DirectByteBuffer.
 // int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long buf, int off, int end)
@@ -6235,7 +6167,6 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
   return true;
 }
 
-//------------------------------inline_updateBytesAdler32----------------------
 //
 // Calculate Adler32 checksum for byte[] array.
 // int java.util.zip.Adler32.updateBytes(int crc, byte[] buf, int off, int len)
@@ -6280,7 +6211,6 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
   return true;
 }
 
-//------------------------------inline_updateByteBufferAdler32---------------
 //
 // Calculate Adler32 checksum for DirectByteBuffer.
 // int java.util.zip.Adler32.updateByteBuffer(int crc, long buf, int off, int len)
@@ -6315,7 +6245,6 @@ bool LibraryCallKit::inline_updateByteBufferAdler32() {
   return true;
 }
 
-//----------------------------inline_reference_get----------------------------
 // public T java.lang.ref.Reference.get();
 bool LibraryCallKit::inline_reference_get() {
   const int referent_offset = java_lang_ref_Reference::referent_offset();
@@ -6337,7 +6266,6 @@ bool LibraryCallKit::inline_reference_get() {
   return true;
 }
 
-//----------------------------inline_reference_refersTo0----------------------------
 // bool java.lang.ref.Reference.refersTo0();
 // bool java.lang.ref.PhantomReference.refersTo0();
 bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
@@ -6461,7 +6389,6 @@ Node * LibraryCallKit::field_address_from_object(Node * fromObj, const char * fi
   return adr;
 }
 
-//------------------------------inline_aescrypt_Block-----------------------
 bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   address stubAddr = nullptr;
   const char *stubName;
@@ -6519,7 +6446,6 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_cipherBlockChaining_AESCrypt-----------------------
 bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   address stubAddr = nullptr;
   const char *stubName = nullptr;
@@ -6607,7 +6533,6 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_electronicCodeBook_AESCrypt-----------------------
 bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   address stubAddr = nullptr;
   const char *stubName = nullptr;
@@ -6688,7 +6613,6 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_counterMode_AESCrypt-----------------------
 bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   assert(UseAES, "need AES instruction support");
   if (!UseAESCTRIntrinsics) return false;
@@ -6765,7 +6689,6 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------get_key_start_from_aescrypt_object-----------------------
 Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object) {
 #if defined(PPC64) || defined(S390)
   // MixColumns for decryption can be reduced by preprocessing MixColumns with round keys.
@@ -6789,7 +6712,6 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   return k_start;
 }
 
-//----------------------------inline_cipherBlockChaining_AESCrypt_predicate----------------------------
 // Return node representing slow path of predicate check.
 // the pseudo code we want to emulate with this predicate is:
 // for encryption:
@@ -6855,7 +6777,6 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   return _gvn.transform(region);
 }
 
-//----------------------------inline_electronicCodeBook_AESCrypt_predicate----------------------------
 // Return node representing slow path of predicate check.
 // the pseudo code we want to emulate with this predicate is:
 // for encryption:
@@ -6914,7 +6835,6 @@ Node* LibraryCallKit::inline_electronicCodeBook_AESCrypt_predicate(bool decrypti
   return _gvn.transform(region);
 }
 
-//----------------------------inline_counterMode_AESCrypt_predicate----------------------------
 // Return node representing slow path of predicate check.
 // the pseudo code we want to emulate with this predicate is:
 // for encryption:
@@ -6956,7 +6876,6 @@ Node* LibraryCallKit::inline_counterMode_AESCrypt_predicate() {
   return instof_false; // even if it is null
 }
 
-//------------------------------inline_ghash_processBlocks
 bool LibraryCallKit::inline_ghash_processBlocks() {
   address stubAddr;
   const char *stubName;
@@ -6989,7 +6908,6 @@ bool LibraryCallKit::inline_ghash_processBlocks() {
   return true;
 }
 
-//------------------------------inline_chacha20Block
 bool LibraryCallKit::inline_chacha20Block() {
   address stubAddr;
   const char *stubName;
@@ -7122,7 +7040,6 @@ bool LibraryCallKit::inline_poly1305_processBlocks() {
   return true;
 }
 
-//------------------------------inline_digestBase_implCompress-----------------------
 //
 // Calculate MD5 for single-block byte[] array.
 // void com.sun.security.provider.MD5.implCompress(byte[] buf, int ofs)
@@ -7221,7 +7138,6 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_digestBase_implCompressMB-----------------------
 //
 // Calculate MD5/SHA/SHA2/SHA5/SHA3 for multi-block byte[] array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
@@ -7314,7 +7230,6 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
   return false;
 }
 
-//------------------------------inline_digestBase_implCompressMB-----------------------
 bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciInstanceKlass* instklass_digestBase,
                                                       BasicType elem_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
@@ -7353,7 +7268,6 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
   return true;
 }
 
-//------------------------------inline_galoisCounterMode_AESCrypt-----------------------
 bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   assert(UseAES, "need AES instruction support");
   address stubAddr = nullptr;
@@ -7437,7 +7351,6 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   return true;
 }
 
-//----------------------------inline_galoisCounterMode_AESCrypt_predicate----------------------------
 // Return node representing slow path of predicate check.
 // the pseudo code we want to emulate with this predicate is:
 // for encryption:
@@ -7479,7 +7392,6 @@ Node* LibraryCallKit::inline_galoisCounterMode_AESCrypt_predicate() {
   return instof_false; // even if it is null
 }
 
-//------------------------------get_state_from_digest_object-----------------------
 Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, BasicType elem_type) {
   const char* state_type;
   switch (elem_type) {
@@ -7497,14 +7409,12 @@ Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, BasicTy
   return state;
 }
 
-//------------------------------get_block_size_from_sha3_object----------------------------------
 Node * LibraryCallKit::get_block_size_from_digest_object(Node *digest_object) {
   Node* block_size = load_field_from_object(digest_object, "blockSize", "I");
   assert (block_size != nullptr, "sanity");
   return block_size;
 }
 
-//----------------------------inline_digestBase_implCompressMB_predicate----------------------------
 // Return node representing slow path of predicate check.
 // the pseudo code we want to emulate with this predicate is:
 //    if (digestBaseObj instanceof MD5/SHA/SHA2/SHA5/SHA3) do_intrinsic, else do_javapath
@@ -7578,7 +7488,6 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   return instof_false;  // even if it is null
 }
 
-//-------------inline_fma-----------------------------------
 bool LibraryCallKit::inline_fma(vmIntrinsics::ID id) {
   Node *a = nullptr;
   Node *b = nullptr;
@@ -7633,7 +7542,6 @@ bool LibraryCallKit::inline_character_compare(vmIntrinsics::ID id) {
   return true;
 }
 
-//------------------------------inline_fp_min_max------------------------------
 bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
 /* DISABLED BECAUSE METHOD DATA ISN'T COLLECTED PER CALL-SITE, SEE JDK-8015416.
 
@@ -7800,7 +7708,6 @@ bool LibraryCallKit::inline_isCompileConstant() {
   return true;
 }
 
-//------------------------------- inline_getObjectSize --------------------------------------
 //
 // Calculate the runtime size of the object/array.
 //   native long sun.instrument.InstrumentationImpl.getObjectSize0(long nativeAgent, Object objectToSize);
@@ -7916,7 +7823,6 @@ bool LibraryCallKit::inline_getObjectSize() {
   return true;
 }
 
-//------------------------------- inline_blackhole --------------------------------------
 //
 // Make sure all arguments to this node are alive.
 // This matches methods that were requested to be blackholed through compile commands.

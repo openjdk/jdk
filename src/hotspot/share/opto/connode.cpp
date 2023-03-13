@@ -36,13 +36,10 @@
 
 // Optimization - Graph Style
 
-//=============================================================================
-//------------------------------hash-------------------------------------------
 uint ConNode::hash() const {
   return (uintptr_t)in(TypeFunc::Control) + _type->hash();
 }
 
-//------------------------------make-------------------------------------------
 ConNode *ConNode::make(const Type *t) {
   switch( t->basic_type() ) {
   case T_INT:         return new ConINode( t->is_int() );

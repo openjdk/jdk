@@ -57,7 +57,6 @@
  *
 */
 
-//-------------------------------register_control-------------------------
 void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body) {
   assert(n->is_CFG(), "msust be control node");
   _igvn.register_new_node_with_optimizer(n);
@@ -71,7 +70,6 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, 
   }
 }
 
-//------------------------------create_new_if_for_predicate------------------------
 // create a new if above the uct_if_pattern for the predicate to be promoted.
 //
 //          before                                after
@@ -312,7 +310,6 @@ void PhaseIdealLoop::rewire_inputs_of_clones_to_clones(Node* new_ctrl, Node* clo
   }
 }
 
-//--------------------------clone_predicate-----------------------
 ProjNode* PhaseIdealLoop::clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry,
                                                              Deoptimization::DeoptReason reason, const bool slow_loop) {
 
@@ -424,7 +421,6 @@ ProjNode* PhaseIdealLoop::clone_skeleton_predicate_for_unswitched_loops(Node* if
   return proj;
 }
 
-//--------------------------clone_loop_predicates-----------------------
 // Clone loop predicates to cloned loops when unswitching a loop.
 void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred) {
   LoopNode* head = loop->_head->as_Loop();
@@ -489,7 +485,6 @@ void PhaseIdealLoop::check_created_predicate_for_unswitching(const Node* new_ent
 #endif
 
 
-//--------------------------skip_loop_predicates------------------------------
 // Skip related predicates.
 Node* PhaseIdealLoop::skip_loop_predicates(Node* entry) {
   IfNode* iff = entry->in(0)->as_If();
@@ -511,7 +506,6 @@ Node* PhaseIdealLoop::skip_all_loop_predicates(Node* entry) {
   return predicates.skip_all();
 }
 
-//--------------------------next_predicate---------------------------------
 // Find next related predicate, useful for iterating over all related predicates
 ProjNode* PhaseIdealLoop::next_predicate(ProjNode* predicate) {
   IfNode* iff = predicate->in(0)->as_If();
@@ -528,7 +522,6 @@ ProjNode* PhaseIdealLoop::next_predicate(ProjNode* predicate) {
   return nullptr;
 }
 
-//--------------------------find_predicate_insertion_point-------------------
 // Find a good location to insert a predicate
 ProjNode* PhaseIdealLoop::find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason) {
   if (start_c == nullptr || !start_c->is_Proj())
@@ -539,7 +532,6 @@ ProjNode* PhaseIdealLoop::find_predicate_insertion_point(Node* start_c, Deoptimi
   return nullptr;
 }
 
-//--------------------------Predicates::Predicates--------------------------
 // given loop entry, find all predicates above loop
 PhaseIdealLoop::Predicates::Predicates(Node* entry) {
   _loop_limit_check = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
@@ -561,7 +553,6 @@ PhaseIdealLoop::Predicates::Predicates(Node* entry) {
   _entry_to_all_predicates = entry;
 }
 
-//--------------------------find_predicate------------------------------------
 // Find a predicate
 Node* PhaseIdealLoop::find_predicate(Node* entry) {
   Node* predicate = nullptr;
@@ -584,7 +575,6 @@ Node* PhaseIdealLoop::find_predicate(Node* entry) {
   return nullptr;
 }
 
-//------------------------------Invariance-----------------------------------
 // Helper class for loop_predication_impl to compute invariance on the fly and
 // clone invariants.
 class Invariance : public StackObj {
@@ -760,7 +750,6 @@ class Invariance : public StackObj {
   }
 };
 
-//------------------------------is_range_check_if -----------------------------------
 // Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
 // Note: this function is particularly designed for loop predication. We require load_range
 //       and offset to be loop invariant computed on the fly by "invar"
@@ -849,7 +838,6 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
   return true;
 }
 
-//------------------------------rc_predicate-----------------------------------
 // Create a range check predicate
 //
 // for (i = init; i < limit; i += stride) {
@@ -1431,7 +1419,6 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   return new_proj;
 }
 
-//------------------------------ loop_predication_impl--------------------------
 // Insert loop predicates for null checks and range checks
 bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   if (!UseLoopPredicate) return false;
@@ -1607,7 +1594,6 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   return hoisted;
 }
 
-//------------------------------loop_predication--------------------------------
 // driver routine for loop predication optimization
 bool IdealLoopTree::loop_predication( PhaseIdealLoop *phase) {
   bool hoisted = false;

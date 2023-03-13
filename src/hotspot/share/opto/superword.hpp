@@ -66,7 +66,6 @@ class OrderedPair;
 
 class DepMem;
 
-//------------------------------DepEdge---------------------------
 // An edge in the dependence graph.  The edges incident to a dependence
 // node are threaded through _next_in for incoming edges and _next_out
 // for outgoing edges.
@@ -89,7 +88,6 @@ class DepEdge : public ArenaObj {
   void print();
 };
 
-//------------------------------DepMem---------------------------
 // A node in the dependence graph.  _in_head starts the threaded list of
 // incoming edges, and _out_head starts the list of outgoing edges.
 class DepMem : public ArenaObj {
@@ -113,7 +111,6 @@ class DepMem : public ArenaObj {
   void print();
 };
 
-//------------------------------DepGraph---------------------------
 class DepGraph {
  protected:
   Arena* _arena;
@@ -149,7 +146,6 @@ class DepGraph {
   void print(DepMem* d) { d->print(); }
 };
 
-//------------------------------DepPreds---------------------------
 // Iterator over predecessors in the dependence graph and
 // non-memory-graph inputs of ideal nodes.
 class DepPreds : public StackObj {
@@ -167,7 +163,6 @@ public:
   void  next();
 };
 
-//------------------------------DepSuccs---------------------------
 // Iterator over successors in the dependence graph and
 // non-memory-graph outputs of ideal nodes.
 class DepSuccs : public StackObj {
@@ -222,7 +217,6 @@ class CMoveKit {
 };//class CMoveKit
 
 // JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
-//------------------------------OrderedPair---------------------------
 // Ordered pair of Node*.
 class OrderedPair {
  protected:
@@ -623,7 +617,6 @@ class SuperWord : public ResourceObj {
 
 
 
-//------------------------------SWPointer---------------------------
 // Information about an address for dependence checking and vector alignment
 class SWPointer : public ArenaObj {
  protected:

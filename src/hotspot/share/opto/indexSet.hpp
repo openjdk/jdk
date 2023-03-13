@@ -35,7 +35,6 @@
 // This data structure is used by the compiler in its liveness analysis and
 // during register allocation.
 
-//-------------------------------- class IndexSet ----------------------------
 // An IndexSet is a piece-wise bitvector.  At the top level, we have an array
 // of pointers to bitvector chunks called BitBlocks.  Each BitBlock has a fixed
 // size and is allocated from a shared free list.  The bits which are set in
@@ -371,7 +370,6 @@ class IndexSet : public ResourceObj {
 };
 
 
-//-------------------------------- class IndexSetIterator --------------------
 // An iterator for IndexSets.
 
 class IndexSetIterator {

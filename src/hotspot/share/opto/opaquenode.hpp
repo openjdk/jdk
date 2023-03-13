@@ -29,7 +29,6 @@
 #include "opto/opcodes.hpp"
 #include "subnode.hpp"
 
-//------------------------------Opaque1Node------------------------------------
 // A node to prevent unwanted optimizations.  Allows constant folding.
 // Stops value-numbering, Ideal calls or Identity functions.
 class Opaque1Node : public Node {
@@ -85,7 +84,6 @@ public:
   }
 };
 
-//------------------------------Opaque3Node------------------------------------
 // A node to prevent unwanted optimizations. Will be optimized only during
 // macro nodes expansion.
 class Opaque3Node : public Node {
@@ -126,7 +124,6 @@ class Opaque4Node : public Node {
 };
 
 
-//------------------------------ProfileBooleanNode-------------------------------
 // A node represents value profile for a boolean during parsing.
 // Once parsing is over, the node goes away (during IGVN).
 // It is used to override branch frequencies from MDO (see has_injected_profile in parse2.cpp).

@@ -492,7 +492,6 @@ static bool check_call_consistency(JVMState* jvms, CallGenerator* cg) {
 }
 #endif // ASSERT
 
-//------------------------------do_call----------------------------------------
 // Handle your basic call.  Inline if we can & want to, else just setup call.
 void Parse::do_call() {
   // It's likely we are going to add debug info soon.
@@ -780,7 +779,6 @@ void Parse::do_call() {
 #endif
 }
 
-//---------------------------catch_call_exceptions-----------------------------
 // Put a Catch and CatchProj nodes behind a just-created call.
 // Send their caught exceptions to the proper handler.
 // This may be used after a call to the rethrow VM stub,
@@ -889,7 +887,6 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 }
 
 
-//----------------------------catch_inline_exceptions--------------------------
 // Handle all exceptions thrown by an inlined method or individual bytecode.
 // Common case 1: we have no handler, so all exceptions merge right into
 // the rethrow case.

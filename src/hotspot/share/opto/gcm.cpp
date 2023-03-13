@@ -45,7 +45,6 @@
 // To avoid float value underflow
 #define MIN_BLOCK_FREQUENCY 1.e-35f
 
-//----------------------------schedule_node_into_block-------------------------
 // Insert node n into block b. Look for projections of n and make sure they
 // are in b also.
 void PhaseCFG::schedule_node_into_block( Node *n, Block *b ) {
@@ -71,7 +70,6 @@ void PhaseCFG::schedule_node_into_block( Node *n, Block *b ) {
   }
 }
 
-//----------------------------replace_block_proj_ctrl-------------------------
 // Nodes that have is_block_proj() nodes as their control need to use
 // the appropriate Region for their actual block as their control since
 // the projection will be in a predecessor block.
@@ -187,7 +185,6 @@ bool PhaseCFG::is_dominating_control(Node* dom_ctrl, Node* n) {
 }
 
 
-//------------------------------schedule_pinned_nodes--------------------------
 // Set the basic block for Nodes pinned into blocks
 void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
   // Allocate node stack of size C->live_nodes()+8 to avoid frequent realloc
@@ -301,7 +298,6 @@ static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
 }
 
 
-//------------------------------schedule_early---------------------------------
 // Find the earliest Block any instruction can be placed in.  Some instructions
 // are pinned into Blocks.  Unpinned instructions can appear in last block in
 // which all their inputs occur.
@@ -398,7 +394,6 @@ bool PhaseCFG::schedule_early(VectorSet &visited, Node_Stack &roots) {
   return true;
 }
 
-//------------------------------dom_lca----------------------------------------
 // Find least common ancestor in dominator tree
 // LCA is a current notion of LCA, to be raised above 'this'.
 // As a convenient boundary condition, return 'this' if LCA is null.
@@ -421,7 +416,6 @@ Block* Block::dom_lca(Block* LCA) {
   return LCA;
 }
 
-//--------------------------raise_LCA_above_use--------------------------------
 // We are placing a definition, and have been given a def->use edge.
 // The definition must dominate the use, so move the LCA upward in the
 // dominator tree to dominate the use.  If the use is a phi, adjust
@@ -449,7 +443,6 @@ static Block* raise_LCA_above_use(Block* LCA, Node* use, Node* def, const PhaseC
   return LCA;
 }
 
-//----------------------------raise_LCA_above_marks----------------------------
 // Return a new LCA that dominates LCA and any of its marked predecessors.
 // Search all my parents up to 'early' (exclusive), looking for predecessors
 // which are marked with the given index.  Return the LCA (in the dom tree)
@@ -487,7 +480,6 @@ static Block* raise_LCA_above_marks(Block* LCA, node_idx_t mark, Block* early, c
   return LCA;
 }
 
-//--------------------------memory_early_block--------------------------------
 // This is a variation of find_deepest_input, the heart of schedule_early.
 // Find the "early" block for a load, if we considered only memory and
 // address inputs, that is, if other data inputs were ignored.
@@ -562,7 +554,6 @@ bool PhaseCFG::unrelated_load_in_store_null_block(Node* store, Node* load) {
   return false;
 }
 
-//--------------------------insert_anti_dependences---------------------------
 // A load may need to witness memory that nearby stores can overwrite.
 // For each nearby store, either insert an "anti-dependence" edge
 // from the load to the store, or else move LCA upward to force the
@@ -966,7 +957,6 @@ Node *Node_Backward_Iterator::next() {
   return self;
 }
 
-//------------------------------ComputeLatenciesBackwards----------------------
 // Compute the latency of all the instructions.
 void PhaseCFG::compute_latencies_backwards(VectorSet &visited, Node_Stack &stack) {
 #ifndef PRODUCT
@@ -984,7 +974,6 @@ void PhaseCFG::compute_latencies_backwards(VectorSet &visited, Node_Stack &stack
   }
 } // end ComputeLatenciesBackwards
 
-//------------------------------partial_latency_of_defs------------------------
 // Compute the latency impact of this node on all defs.  This computes
 // a number that increases as we approach the beginning of the routine.
 void PhaseCFG::partial_latency_of_defs(Node *n) {
@@ -1050,7 +1039,6 @@ void PhaseCFG::partial_latency_of_defs(Node *n) {
   }
 }
 
-//------------------------------latency_from_use-------------------------------
 // Compute the latency of a specific use
 int PhaseCFG::latency_from_use(Node *n, const Node *def, Node *use) {
   // If self-reference, return no latency
@@ -1106,7 +1094,6 @@ int PhaseCFG::latency_from_use(Node *n, const Node *def, Node *use) {
   return latency;
 }
 
-//------------------------------latency_from_uses------------------------------
 // Compute the latency of this instruction relative to all of it's uses.
 // This computes a number that increases as we approach the beginning of the
 // routine.
@@ -1130,7 +1117,6 @@ void PhaseCFG::latency_from_uses(Node *n) {
   set_latency_for_node(n, latency);
 }
 
-//------------------------------is_cheaper_block-------------------------
 // Check if a block between early and LCA block of uses is cheaper by
 // frequency-based policy, latency-based policy and random-based policy
 bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
@@ -1161,7 +1147,6 @@ bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
   return false;
 }
 
-//------------------------------hoist_to_cheaper_block-------------------------
 // Pick a block for node self, between early and LCA block of uses, that is a
 // cheaper alternative to LCA.
 Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
@@ -1268,7 +1253,6 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
 }
 
 
-//------------------------------schedule_late-----------------------------------
 // Now schedule all codes as LATE as possible.  This is the LCA in the
 // dominator tree of all USES of a value.  Pick the block with the least
 // loop nesting depth that is lowest in the dominator tree.
@@ -1474,7 +1458,6 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
 
 } // end ScheduleLate
 
-//------------------------------GlobalCodeMotion-------------------------------
 void PhaseCFG::global_code_motion() {
   ResourceMark rm;
 
@@ -1648,7 +1631,6 @@ bool PhaseCFG::do_global_code_motion() {
   return true;
 }
 
-//------------------------------Estimate_Block_Frequency-----------------------
 // Estimate block frequencies based on IfNode probabilities.
 void PhaseCFG::estimate_block_frequency() {
 
@@ -1738,7 +1720,6 @@ void PhaseCFG::estimate_block_frequency() {
 #endif
 }
 
-//----------------------------create_loop_tree--------------------------------
 // Create a loop tree from the CFG
 CFGLoop* PhaseCFG::create_loop_tree() {
 
@@ -1826,7 +1807,6 @@ CFGLoop* PhaseCFG::create_loop_tree() {
   return root_loop;
 }
 
-//------------------------------push_pred--------------------------------------
 void CFGLoop::push_pred(Block* blk, int i, Block_List& worklist, PhaseCFG* cfg) {
   Node* pred_n = blk->pred(i);
   Block* pred = cfg->get_block_for_node(pred_n);
@@ -1857,7 +1837,6 @@ void CFGLoop::push_pred(Block* blk, int i, Block_List& worklist, PhaseCFG* cfg) 
   }
 }
 
-//------------------------------add_nested_loop--------------------------------
 // Make cl a child of the current loop in the loop tree.
 void CFGLoop::add_nested_loop(CFGLoop* cl) {
   assert(_parent == nullptr, "no parent yet");
@@ -1872,7 +1851,6 @@ void CFGLoop::add_nested_loop(CFGLoop* cl) {
   }
 }
 
-//------------------------------compute_loop_depth-----------------------------
 // Store the loop depth in each CFGLoop object.
 // Recursively walk the children to do the same for them.
 void CFGLoop::compute_loop_depth(int depth) {
@@ -1884,7 +1862,6 @@ void CFGLoop::compute_loop_depth(int depth) {
   }
 }
 
-//------------------------------compute_freq-----------------------------------
 // Compute the frequency of each block and loop, relative to a single entry
 // into the dominating loop head.
 void CFGLoop::compute_freq() {
@@ -1959,7 +1936,6 @@ void CFGLoop::compute_freq() {
   }
 }
 
-//------------------------------succ_prob-------------------------------------
 // Determine the probability of reaching successor 'i' from the receiver block.
 float Block::succ_prob(uint i) {
   int eidx = end_idx();
@@ -2042,7 +2018,6 @@ float Block::succ_prob(uint i) {
   return 0.0f;
 }
 
-//------------------------------num_fall_throughs-----------------------------
 // Return the number of fall-through candidates for a block
 int Block::num_fall_throughs() {
   int eidx = end_idx();
@@ -2094,7 +2069,6 @@ int Block::num_fall_throughs() {
   return 0;
 }
 
-//------------------------------succ_fall_through-----------------------------
 // Return true if a specific successor could be fall-through target.
 bool Block::succ_fall_through(uint i) {
   int eidx = end_idx();
@@ -2139,7 +2113,6 @@ bool Block::succ_fall_through(uint i) {
   return false;
 }
 
-//------------------------------update_uncommon_branch------------------------
 // Update the probability of a two-branch to be uncommon
 void Block::update_uncommon_branch(Block* ub) {
   int eidx = end_idx();
@@ -2173,7 +2146,6 @@ void Block::update_uncommon_branch(Block* ub) {
   n->as_MachIf()->_prob = p;
 }
 
-//------------------------------update_succ_freq-------------------------------
 // Update the appropriate frequency associated with block 'b', a successor of
 // a block in this loop.
 void CFGLoop::update_succ_freq(Block* b, double freq) {
@@ -2197,7 +2169,6 @@ void CFGLoop::update_succ_freq(Block* b, double freq) {
   }
 }
 
-//------------------------------in_loop_nest-----------------------------------
 // Determine if block b is in the receiver's loop nest.
 bool CFGLoop::in_loop_nest(Block* b) {
   int depth = _depth;
@@ -2213,7 +2184,6 @@ bool CFGLoop::in_loop_nest(Block* b) {
   return b_loop == this;
 }
 
-//------------------------------scale_freq-------------------------------------
 // Scale frequency of loops and blocks by trip counts from outer loops
 // Do a top down traversal of loop tree (visit outer loops first.)
 void CFGLoop::scale_freq() {
@@ -2242,14 +2212,12 @@ double CFGLoop::outer_loop_freq() const {
 }
 
 #ifndef PRODUCT
-//------------------------------dump_tree--------------------------------------
 void CFGLoop::dump_tree() const {
   dump();
   if (_child != nullptr)   _child->dump_tree();
   if (_sibling != nullptr) _sibling->dump_tree();
 }
 
-//------------------------------dump-------------------------------------------
 void CFGLoop::dump() const {
   for (int i = 0; i < _depth; i++) tty->print("   ");
   tty->print("%s: %d  trip_count: %6.0f freq: %6.0f\n",

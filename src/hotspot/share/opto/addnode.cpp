@@ -42,8 +42,6 @@
 // by virtual functions.
 
 
-//=============================================================================
-//------------------------------hash-------------------------------------------
 // Hash function over AddNodes.  Needs to be commutative; i.e., I swap
 // (commute) inputs to AddNodes willy-nilly so the hash function must return
 // the same value in the presence of edge swapping.
@@ -51,7 +49,6 @@ uint AddNode::hash() const {
   return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
 }
 
-//------------------------------Identity---------------------------------------
 // If either input is a constant 0, return the other input.
 Node* AddNode::Identity(PhaseGVN* phase) {
   const Type *zero = add_id();  // The additive identity
@@ -60,7 +57,6 @@ Node* AddNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------commute----------------------------------------
 // Commute operands to move loads and constants to the right.
 static bool commute(PhaseGVN* phase, Node* add) {
   Node *in1 = add->in(1);
@@ -126,7 +122,6 @@ static bool commute(PhaseGVN* phase, Node* add) {
   return false;
 }
 
-//------------------------------Idealize---------------------------------------
 // If we get here, we assume we are associative!
 Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t1 = phase->type(in(1));
@@ -211,7 +206,6 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return progress;
 }
 
-//------------------------------Value-----------------------------------------
 // An add node sums it's two _in.  If one input is an RSD, we must mixin
 // the other input's symbols.
 const Type* AddNode::Value(PhaseGVN* phase) const {
@@ -234,7 +228,6 @@ const Type* AddNode::Value(PhaseGVN* phase) const {
   return add_ring(t1,t2);               // Local flavor of type addition
 }
 
-//------------------------------add_identity-----------------------------------
 // Check for addition of the identity
 const Type *AddNode::add_of_identity( const Type *t1, const Type *t2 ) const {
   const Type *zero = add_id();  // The additive identity
@@ -256,8 +249,6 @@ AddNode* AddNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------Idealize---------------------------------------
 Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   Node* in1 = in(1);
   Node* in2 = in(2);
@@ -403,7 +394,6 @@ Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 
-//------------------------------Identity---------------------------------------
 // Fold (x-y)+y  OR  y+(x-y)  into  x
 Node* AddINode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_SubI && in(1)->in(2) == in(2)) {
@@ -415,7 +405,6 @@ Node* AddINode::Identity(PhaseGVN* phase) {
 }
 
 
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
 // pre-check.
@@ -444,14 +433,11 @@ const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 
-//=============================================================================
-//------------------------------Idealize---------------------------------------
 Node* AddLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return AddNode::IdealIL(phase, can_reshape, T_LONG);
 }
 
 
-//------------------------------Identity---------------------------------------
 // Fold (x-y)+y  OR  y+(x-y)  into  x
 Node* AddLNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_SubL && in(1)->in(2) == in(2)) {
@@ -463,7 +449,6 @@ Node* AddLNode::Identity(PhaseGVN* phase) {
 }
 
 
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
 // pre-check.
@@ -492,8 +477,6 @@ const Type *AddLNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 
-//=============================================================================
-//------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
 const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
   // x ADD 0  should return x unless 'x' is a -zero
@@ -508,7 +491,6 @@ const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
   return nullptr;
 }
 
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
@@ -517,15 +499,12 @@ const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeF::make( t0->getf() + t1->getf() );
 }
 
-//------------------------------Ideal------------------------------------------
 Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Floating point additions are not associative because of boundary conditions (infinity)
   return commute(phase, this) ? this : nullptr;
 }
 
 
-//=============================================================================
-//------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
 const Type *AddDNode::add_of_identity( const Type *t1, const Type *t2 ) const {
   // x ADD 0  should return x unless 'x' is a -zero
@@ -539,7 +518,6 @@ const Type *AddDNode::add_of_identity( const Type *t1, const Type *t2 ) const {
 
   return nullptr;
 }
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
@@ -548,21 +526,17 @@ const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeD::make( t0->getd() + t1->getd() );
 }
 
-//------------------------------Ideal------------------------------------------
 Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Floating point additions are not associative because of boundary conditions (infinity)
   return commute(phase, this) ? this : nullptr;
 }
 
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 // If one input is a constant 0, return the other input.
 Node* AddPNode::Identity(PhaseGVN* phase) {
   return ( phase->type( in(Offset) )->higher_equal( TypeX_ZERO ) ) ? in(Address) : this;
 }
 
-//------------------------------Idealize---------------------------------------
 Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Bail out if dead inputs
   if( phase->type( in(Address) ) == Type::TOP ) return nullptr;
@@ -626,7 +600,6 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;                  // No progress
 }
 
-//------------------------------bottom_type------------------------------------
 // Bottom-type is the pointer-type with unknown offset.
 const Type *AddPNode::bottom_type() const {
   if (in(Address) == nullptr)  return TypePtr::BOTTOM;
@@ -644,7 +617,6 @@ const Type *AddPNode::bottom_type() const {
   return tp->add_offset(txoffset);
 }
 
-//------------------------------Value------------------------------------------
 const Type* AddPNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(Address) );
@@ -664,7 +636,6 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
   return p1->add_offset(p2offset);
 }
 
-//------------------------Ideal_base_and_offset--------------------------------
 // Split an oop pointer into a base and offset.
 // (The offset might be Type::OffsetBot in the case of an array.)
 // Return the base, or null if failure.
@@ -686,7 +657,6 @@ Node* AddPNode::Ideal_base_and_offset(Node* ptr, PhaseTransform* phase,
   return nullptr;
 }
 
-//------------------------------unpack_offsets----------------------------------
 // Collect the AddP offset values into the elements array, giving up
 // if there are more than length.
 int AddPNode::unpack_offsets(Node* elements[], int length) {
@@ -711,14 +681,11 @@ int AddPNode::unpack_offsets(Node* elements[], int length) {
   return count;
 }
 
-//------------------------------match_edge-------------------------------------
 // Do we Match on this edge index or not?  Do not match base pointer edge
 uint AddPNode::match_edge(uint idx) const {
   return idx > Base;
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* OrINode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
@@ -774,7 +741,6 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
 // the logical operations the ring's ADD is really a logical OR function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
@@ -804,8 +770,6 @@ const Type *OrINode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::make( r0->get_con() | r1->get_con() );
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* OrLNode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
@@ -840,7 +804,6 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------add_ring---------------------------------------
 const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
@@ -853,7 +816,6 @@ const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeLong::make( r0->get_con() | r1->get_con() );
 }
 
-//---------------------------Helper -------------------------------------------
 /* Decide if the given node is used only in arithmetic expressions(add or sub).
  */
 static bool is_used_in_only_arithmetic(Node* n, BasicType bt) {
@@ -866,8 +828,6 @@ static bool is_used_in_only_arithmetic(Node* n, BasicType bt) {
   return true;
 }
 
-//=============================================================================
-//------------------------------Idealize---------------------------------------
 Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
@@ -918,7 +878,6 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
 }
 
 
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
 // the logical operations the ring's ADD is really a logical OR function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
@@ -939,8 +898,6 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::make( r0->get_con() ^ r1->get_con() );
 }
 
-//=============================================================================
-//------------------------------add_ring---------------------------------------
 const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
@@ -1067,8 +1024,6 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   return res;
 }
 
-//=============================================================================
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
 const Type *MaxINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
@@ -1165,8 +1120,6 @@ Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
  return nullptr;
 }
 
-//=============================================================================
-//------------------------------Idealize---------------------------------------
 // MINs show up in range-check loop limit calculations.  Look for
 // "MIN2(x+c0,MIN2(y,x+c1))".  Pick the smaller constant: "MIN2(x+c0,y)"
 Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -1248,7 +1201,6 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
 const Type *MinINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
@@ -1258,7 +1210,6 @@ const Type *MinINode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::make( MIN2(r0->_lo,r1->_lo), MIN2(r0->_hi,r1->_hi), MAX2(r0->_widen,r1->_widen) );
 }
 
-//------------------------------add_ring---------------------------------------
 const Type *MinFNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeF *r0 = t0->is_float_constant();
   const TypeF *r1 = t1->is_float_constant();
@@ -1280,7 +1231,6 @@ const Type *MinFNode::add_ring( const Type *t0, const Type *t1 ) const {
   return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
 }
 
-//------------------------------add_ring---------------------------------------
 const Type *MinDNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeD *r0 = t0->is_double_constant();
   const TypeD *r1 = t1->is_double_constant();
@@ -1302,7 +1252,6 @@ const Type *MinDNode::add_ring( const Type *t0, const Type *t1 ) const {
   return (jlong_cast(d0) < jlong_cast(d1)) ? r0 : r1;
 }
 
-//------------------------------add_ring---------------------------------------
 const Type *MaxFNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeF *r0 = t0->is_float_constant();
   const TypeF *r1 = t1->is_float_constant();
@@ -1324,7 +1273,6 @@ const Type *MaxFNode::add_ring( const Type *t0, const Type *t1 ) const {
   return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
 }
 
-//------------------------------add_ring---------------------------------------
 const Type *MaxDNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeD *r0 = t0->is_double_constant();
   const TypeD *r1 = t1->is_double_constant();

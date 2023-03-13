@@ -63,7 +63,6 @@
 #define DEBUG_ARG(x)
 #endif
 
-//------------------------------Scheduling----------------------------------
 // This class contains all the information necessary to implement instruction
 // scheduling and bundling.
 class Scheduling {
@@ -692,7 +691,6 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
   _buf_sizes._stub  = stub_size;
 }
 
-//------------------------------FillLocArray-----------------------------------
 // Create a bit of debug info and append it to the array.  The mapping is from
 // Java local or expression stack to constant, register or stack-slot.  For
 // doubles, insert 2 mappings and return 1 (to tell the caller that the next
@@ -931,7 +929,6 @@ bool PhaseOutput::starts_bundle(const Node *n) const {
           _node_bundling_base[n->_idx].starts_bundle());
 }
 
-//--------------------------Process_OopMap_Node--------------------------------
 void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Handle special safepoint nodes for synchronization
   MachSafePointNode *sfn   = mach->as_MachSafePoint();
@@ -1182,7 +1179,6 @@ void NonSafepointEmitter::emit_non_safepoint() {
   debug_info->end_non_safepoint(pc_offset);
 }
 
-//------------------------------init_buffer------------------------------------
 void PhaseOutput::estimate_buffer_size(int& const_req) {
 
   // Set the initially allocated size
@@ -1286,7 +1282,6 @@ CodeBuffer* PhaseOutput::init_buffer() {
   return cb;
 }
 
-//------------------------------fill_buffer------------------------------------
 void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   // blk_starts[] contains offsets calculated during short branches processing,
   // offsets should not be increased during following steps.
@@ -3153,7 +3148,6 @@ void Scheduling::print_statistics() {
 }
 #endif
 
-//-----------------------init_scratch_buffer_blob------------------------------
 // Construct a temporary BufferBlob and cache it for this compile.
 void PhaseOutput::init_scratch_buffer_blob(int const_size) {
   // If there is already a scratch buffer blob allocated and the
@@ -3187,7 +3181,6 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
 }
 
 
-//-----------------------scratch_emit_size-------------------------------------
 // Helper function that computes size by emitting code
 uint PhaseOutput::scratch_emit_size(const Node* n) {
   // Start scratch_emit_size section.
@@ -3346,7 +3339,6 @@ bool PhaseOutput::valid_bundle_info(const Node *n) {
   return (_node_bundling_limit > n->_idx);
 }
 
-//------------------------------frame_size_in_words-----------------------------
 // frame_slots in units of words
 int PhaseOutput::frame_size_in_words() const {
   // shift is 0 in LP32 and 1 in LP64
@@ -3364,7 +3356,6 @@ int PhaseOutput::bang_size_in_bytes() const {
   return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes(), C->interpreter_frame_size());
 }
 
-//------------------------------dump_asm---------------------------------------
 // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)
 void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {

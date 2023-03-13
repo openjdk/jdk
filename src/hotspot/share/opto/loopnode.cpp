@@ -48,8 +48,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-//=============================================================================
-//--------------------------is_cloop_ind_var-----------------------------------
 // Determine if a node is a counted loop induction variable.
 // NOTE: The method is declared in "node.hpp".
 bool Node::is_cloop_ind_var() const {
@@ -58,8 +56,6 @@ bool Node::is_cloop_ind_var() const {
           as_Phi()->region()->as_CountedLoop()->phi() == this);
 }
 
-//=============================================================================
-//------------------------------dump_spec--------------------------------------
 // Dump special per-node info
 #ifndef PRODUCT
 void LoopNode::dump_spec(outputStream *st) const {
@@ -70,7 +66,6 @@ void LoopNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-//------------------------------is_valid_counted_loop-------------------------
 bool LoopNode::is_valid_counted_loop(BasicType bt) const {
   if (is_BaseCountedLoop() && as_BaseCountedLoop()->bt() == bt) {
     BaseCountedLoopNode*    l  = as_BaseCountedLoop();
@@ -90,7 +85,6 @@ bool LoopNode::is_valid_counted_loop(BasicType bt) const {
   return false;
 }
 
-//------------------------------get_early_ctrl---------------------------------
 // Compute earliest legal control
 Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   assert( !n->is_Phi() && !n->is_CFG(), "this code only handles data nodes" );
@@ -148,7 +142,6 @@ Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   return early;
 }
 
-//------------------------------get_early_ctrl_for_expensive---------------------------------
 // Move node up the dominator tree as high as legal while still beneficial
 Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
   assert(n->in(0) && n->is_expensive(), "expensive node with control input here");
@@ -242,7 +235,6 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
 }
 
 
-//------------------------------set_early_ctrl---------------------------------
 // Set earliest legal control
 void PhaseIdealLoop::set_early_ctrl(Node* n, bool update_body) {
   Node *early = get_early_ctrl(n);
@@ -255,7 +247,6 @@ void PhaseIdealLoop::set_early_ctrl(Node* n, bool update_body) {
   }
 }
 
-//------------------------------set_subtree_ctrl-------------------------------
 // set missing _ctrl entries on new nodes
 void PhaseIdealLoop::set_subtree_ctrl(Node* n, bool update_body) {
   // Already set?  Get out.
@@ -1581,7 +1572,6 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
 }
 #endif
 
-//------------------------------is_counted_loop--------------------------------
 bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
   PhaseGVN *gvn = &_igvn;
 
@@ -2104,7 +2094,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   return true;
 }
 
-//----------------------exact_limit-------------------------------------------
 Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
@@ -2143,7 +2132,6 @@ Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
   return limit;
 }
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Attempt to convert into a counted-loop.
 Node *LoopNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -2230,15 +2218,12 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
 }
 #endif
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Attempt to convert into a counted-loop.
 Node *CountedLoopNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return RegionNode::Ideal(phase, can_reshape);
 }
 
-//------------------------------dump_spec--------------------------------------
 // Dump special per-node info
 #ifndef PRODUCT
 void CountedLoopNode::dump_spec(outputStream *st) const {
@@ -2254,7 +2239,6 @@ void CountedLoopNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-//=============================================================================
 jlong BaseCountedLoopEndNode::stride_con() const {
   return stride()->bottom_type()->is_integer(bt())->get_con_as_long(bt());
 }
@@ -2268,8 +2252,6 @@ BaseCountedLoopEndNode* BaseCountedLoopEndNode::make(Node* control, Node* test, 
   return new LongCountedLoopEndNode(control, test, prob, cnt);
 }
 
-//=============================================================================
-//------------------------------Value-----------------------------------------
 const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
   const Type* init_t   = phase->type(in(Init));
   const Type* limit_t  = phase->type(in(Limit));
@@ -2300,7 +2282,6 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
   return bottom_type(); // TypeInt::INT
 }
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (phase->type(in(Init))   == Type::TOP ||
@@ -2383,7 +2364,6 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;    // No progress
 }
 
-//------------------------------Identity---------------------------------------
 // If stride == 1 return limit node.
 Node* LoopLimitNode::Identity(PhaseGVN* phase) {
   int stride_con = phase->type(in(Stride))->is_int()->get_con();
@@ -2392,8 +2372,6 @@ Node* LoopLimitNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//=============================================================================
-//----------------------match_incr_with_optional_truncation--------------------
 // Match increment with optional truncation:
 // CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
 // Return null for failure. Success returns the increment node.
@@ -3004,7 +2982,6 @@ Node *OuterStripMinedLoopEndNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------filtered_type--------------------------------
 // Return a type based on condition control flow
 // A successful return will be a type that is restricted due
 // to a series of dominating if-tests, such as:
@@ -3054,7 +3031,6 @@ const TypeInt* PhaseIdealLoop::filtered_type( Node *n, Node* n_ctrl) {
 }
 
 
-//------------------------------filtered_type_from_dominators--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow of dominators
 const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *use_ctrl) {
   if (val->is_Con()) {
@@ -3094,7 +3070,6 @@ const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *u
 }
 
 
-//------------------------------dump_spec--------------------------------------
 // Dump special per-node info
 #ifndef PRODUCT
 void CountedLoopEndNode::dump_spec(outputStream *st) const {
@@ -3110,15 +3085,12 @@ void CountedLoopEndNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-//=============================================================================
-//------------------------------is_member--------------------------------------
 // Is 'l' a member of 'this'?
 bool IdealLoopTree::is_member(const IdealLoopTree *l) const {
   while( l->_nest > _nest ) l = l->_parent;
   return l == this;
 }
 
-//------------------------------set_nest---------------------------------------
 // Set loop tree nesting depth.  Accumulate _has_call bits.
 int IdealLoopTree::set_nest( uint depth ) {
   assert(depth <= SHRT_MAX, "sanity");
@@ -3130,7 +3102,6 @@ int IdealLoopTree::set_nest( uint depth ) {
   return bits;
 }
 
-//------------------------------split_fall_in----------------------------------
 // Split out multiple fall-in edges from the loop header.  Move them to a
 // private RegionNode before the loop.  This becomes the loop landing pad.
 void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
@@ -3216,7 +3187,6 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
   _head->add_req(landing_pad);
 }
 
-//------------------------------split_outer_loop-------------------------------
 // Split out the outermost loop from this shared header.
 void IdealLoopTree::split_outer_loop( PhaseIdealLoop *phase ) {
   PhaseIterGVN &igvn = phase->_igvn;
@@ -3255,14 +3225,12 @@ void IdealLoopTree::split_outer_loop( PhaseIdealLoop *phase ) {
   phase->set_loop(_head, this);
 }
 
-//------------------------------fix_parent-------------------------------------
 static void fix_parent( IdealLoopTree *loop, IdealLoopTree *parent ) {
   loop->_parent = parent;
   if( loop->_child ) fix_parent( loop->_child, loop   );
   if( loop->_next  ) fix_parent( loop->_next , parent );
 }
 
-//------------------------------estimate_path_freq-----------------------------
 static float estimate_path_freq( Node *n ) {
   // Try to extract some path frequency info
   IfNode *iff;
@@ -3308,7 +3276,6 @@ static float estimate_path_freq( Node *n ) {
   return 0.0f;                  // No estimate available
 }
 
-//------------------------------merge_many_backedges---------------------------
 // Merge all the backedges from the shared header into a private Region.
 // Feed that region as the one backedge to this loop.
 void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
@@ -3420,7 +3387,6 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
   if( _child ) fix_parent( _child, this );
 }
 
-//------------------------------beautify_loops---------------------------------
 // Split shared headers and insert loop landing pads.
 // Insert a LoopNode to replace the RegionNode.
 // Return TRUE if loop tree is structurally changed.
@@ -3506,7 +3472,6 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
   return result;
 }
 
-//------------------------------allpaths_check_safepts----------------------------
 // Allpaths backwards scan from loop tail, terminating each path at first safepoint
 // encountered.  Helper for check_safepts.
 void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack) {
@@ -3538,7 +3503,6 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
   }
 }
 
-//------------------------------check_safepts----------------------------
 // Given dominators, try to find loops with calls that must always be
 // executed (call dominates loop tail).  These loops do not need non-call
 // safepoints (ncsfpt).
@@ -3665,7 +3629,6 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
   }
 }
 
-//---------------------------is_deleteable_safept----------------------------
 // Is safept not required by an outer loop?
 bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
   assert(sfpt->Opcode() == Op_SafePoint, "");
@@ -3683,7 +3646,6 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
   return true;
 }
 
-//---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
@@ -3814,7 +3776,6 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
   }
 }
 
-//------------------------------counted_loop-----------------------------------
 // Convert to counted loops where possible
 void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
 
@@ -3943,7 +3904,6 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
 }
 
 #ifndef PRODUCT
-//------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
 void IdealLoopTree::dump_head() {
   tty->sp(2 * _nest);
@@ -4014,7 +3974,6 @@ void IdealLoopTree::dump_head() {
   tty->cr();
 }
 
-//------------------------------dump-------------------------------------------
 // Dump loops by loop tree
 void IdealLoopTree::dump() {
   dump_head();
@@ -4060,7 +4019,6 @@ void PhaseIdealLoop::log_loop_tree() {
   }
 }
 
-//---------------------collect_potentially_useful_predicates-----------------------
 // Helper function to collect potentially useful predicates to prevent them from
 // being eliminated by PhaseIdealLoop::eliminate_useless_predicates
 void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, Unique_Node_List &useful_predicates) {
@@ -4104,7 +4062,6 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, 
   }
 }
 
-//------------------------eliminate_useless_predicates-----------------------------
 // Eliminate all inserted predicates if they could not be used by loop predication.
 // Note: it will also eliminates loop limits check predicate since it also uses
 // Opaque1 node (see Parse::add_predicate()).
@@ -4135,7 +4092,6 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
   }
 }
 
-//------------------------process_expensive_nodes-----------------------------
 // Expensive nodes have their control input set to prevent the GVN
 // from commoning them and as a result forcing the resulting node to
 // be in a more frequent path. Use CFG information here, to change the
@@ -4237,8 +4193,6 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
 #endif
 
 
-//=============================================================================
-//----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
 void PhaseIdealLoop::build_and_optimize() {
@@ -4632,7 +4586,6 @@ void PhaseIdealLoop::build_and_optimize() {
 }
 
 #ifndef PRODUCT
-//------------------------------print_statistics-------------------------------
 int PhaseIdealLoop::_loop_invokes=0;// Count of PhaseIdealLoop invokes
 int PhaseIdealLoop::_loop_work=0; // Sum of PhaseIdealLoop x unique
 volatile int PhaseIdealLoop::_long_loop_candidates=0; // Number of long loops seen
@@ -4642,7 +4595,6 @@ void PhaseIdealLoop::print_statistics() {
   tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d, long loops=%d/%d/%d", _loop_invokes, _loop_work, _long_loop_counted_loops, _long_loop_nests, _long_loop_candidates);
 }
 
-//------------------------------verify-----------------------------------------
 // Build a verify-only PhaseIdealLoop, and see that it agrees with me.
 static int fail;                // debug only, so its multi-thread dont care
 void PhaseIdealLoop::verify() const {
@@ -4661,7 +4613,6 @@ void PhaseIdealLoop::verify() const {
   C->restore_major_progress(old_progress);
 }
 
-//------------------------------verify_compare---------------------------------
 // Make sure me and the given PhaseIdealLoop agree on key data structures
 void PhaseIdealLoop::verify_compare( Node *n, const PhaseIdealLoop *loop_verify, VectorSet &visited ) const {
   if( !n ) return;
@@ -4747,7 +4698,6 @@ void PhaseIdealLoop::verify_compare( Node *n, const PhaseIdealLoop *loop_verify,
 
 }
 
-//------------------------------verify_tree------------------------------------
 // Verify that tree structures match.  Because the CFG can change, siblings
 // within the loop tree can be reordered.  We attempt to deal with that by
 // reordering the verify's loop tree if possible.
@@ -4862,7 +4812,6 @@ void IdealLoopTree::verify_tree(IdealLoopTree *loop, const IdealLoopTree *parent
 
 #endif
 
-//------------------------------set_idom---------------------------------------
 void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
   uint idx = d->_idx;
   if (idx >= _idom_size) {
@@ -4876,7 +4825,6 @@ void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
   _dom_depth[idx] = dom_depth;
 }
 
-//------------------------------recompute_dom_depth---------------------------------------
 // The dominator tree is constructed with only parent pointers.
 // This recomputes the depth in the tree by first tagging all
 // nodes as "no depth yet" marker.  The next pass then runs up
@@ -4920,7 +4868,6 @@ void PhaseIdealLoop::recompute_dom_depth() {
   }
 }
 
-//------------------------------sort-------------------------------------------
 // Insert 'loop' into the existing loop tree.  'innermost' is a leaf of the
 // loop tree, not the root.
 IdealLoopTree *PhaseIdealLoop::sort( IdealLoopTree *loop, IdealLoopTree *innermost ) {
@@ -4960,7 +4907,6 @@ IdealLoopTree *PhaseIdealLoop::sort( IdealLoopTree *loop, IdealLoopTree *innermo
   return innermost;
 }
 
-//------------------------------build_loop_tree--------------------------------
 // I use a modified Vick/Tarjan algorithm.  I need pre- and a post- visit
 // bits.  The _nodes[] array is mapped by Node index and holds a null for
 // not-yet-pre-walked, pre-order # for pre-but-not-post-walked and holds the
@@ -5057,7 +5003,6 @@ void PhaseIdealLoop::build_loop_tree() {
   DEBUG_ONLY(verify_regions_in_irreducible_loops();)
 }
 
-//------------------------------build_loop_tree_impl---------------------------
 int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
   // ---- Post-pass Work ----
   // Pre-walked but not post-walked nodes need a pre_order number.
@@ -5245,7 +5190,6 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
 }
 
 #ifdef ASSERT
-//--------------------------verify_regions_in_irreducible_loops----------------
 // Iterate down from Root through CFG, verify for every region:
 // if it is in an irreducible loop it must be marked as such
 void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
@@ -5281,7 +5225,6 @@ void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
   assert(!failure, "region in irreducible loop was marked as reducible");
 }
 
-//---------------------------is_in_irreducible_loop-------------------------
 // Analogous to ciTypeFlow::Block::is_in_irreducible_loop
 bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
   if (!_has_irreducible_loops) {
@@ -5313,7 +5256,6 @@ bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
 }
 #endif
 
-//------------------------------build_loop_early-------------------------------
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
 // First pass computes the earliest controlling node possible.  This is the
 // controlling input with the deepest dominating depth.
@@ -5419,7 +5361,6 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
   }
 }
 
-//------------------------------dom_lca_internal--------------------------------
 // Pair-wise LCA
 Node *PhaseIdealLoop::dom_lca_internal( Node *n1, Node *n2 ) const {
   if( !n1 ) return n2;          // Handle null original LCA
@@ -5462,7 +5403,6 @@ Node *PhaseIdealLoop::dom_lca_internal( Node *n1, Node *n2 ) const {
   return n1;
 }
 
-//------------------------------compute_idom-----------------------------------
 // Locally compute IDOM using dom_lca call.  Correct only if the incoming
 // IDOMs are correct.
 Node *PhaseIdealLoop::compute_idom( Node *region ) const {
@@ -5575,7 +5515,6 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   return res ? cmpzm->in(input) : nullptr;
 }
 
-//------------------------------get_late_ctrl----------------------------------
 // Compute latest legal control.
 Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
   assert(early != nullptr, "early control should not be null");
@@ -5688,7 +5627,6 @@ bool PhaseIdealLoop::is_dominator(Node *d, Node *n) {
   return false;
 }
 
-//------------------------------dom_lca_for_get_late_ctrl_internal-------------
 // Pair-wise LCA with tags.
 // Tag each index with the node 'tag' currently being processed
 // before advancing up the dominator chain using idom().
@@ -5749,7 +5687,6 @@ Node *PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal(Node *n1, Node *n2, Nod
   return n1;
 }
 
-//------------------------------init_dom_lca_tags------------------------------
 // Tag could be a node's integer index, 32bits instead of 64bits in some cases
 // Intended use does not involve any growth for the array, so it could
 // be of fixed size.
@@ -5764,7 +5701,6 @@ void PhaseIdealLoop::init_dom_lca_tags() {
 #endif // ASSERT
 }
 
-//------------------------------build_loop_late--------------------------------
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
 void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, Node_Stack &nstack ) {
@@ -5853,7 +5789,6 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
 }
 
 
-//------------------------------build_loop_late_post---------------------------
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
 void PhaseIdealLoop::build_loop_late_post(Node *n) {
@@ -6194,7 +6129,6 @@ void PhaseIdealLoop::dump_idoms(Node* early, Node* wrong_lca) {
 #endif // ASSERT
 
 #ifndef PRODUCT
-//------------------------------dump-------------------------------------------
 void PhaseIdealLoop::dump() const {
   ResourceMark rm;
   Node_Stack stack(C->live_nodes() >> 2);
@@ -6320,8 +6254,6 @@ void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_
 }
 
 
-//=============================================================================
-//------------------------------LoopTreeIterator-------------------------------
 
 // Advance to next loop tree using a preorder, left-to-right traversal.
 void LoopTreeIterator::next() {

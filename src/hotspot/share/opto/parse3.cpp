@@ -37,9 +37,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 
-//=============================================================================
 // Helper methods for _get* and _put* bytecodes
-//=============================================================================
 void Parse::do_field_access(bool is_get, bool is_field) {
   bool will_link;
   ciField* field = iter().get_field(will_link);
@@ -255,7 +253,6 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   }
 }
 
-//=============================================================================
 void Parse::do_anewarray() {
   bool will_link;
   ciKlass* klass = iter().get_klass(will_link);

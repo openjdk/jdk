@@ -41,9 +41,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-//=============================================================================
 #define NODE_HASH_MINIMUM_SIZE    255
-//------------------------------NodeHash---------------------------------------
 NodeHash::NodeHash(uint est_max_size) :
   _a(Thread::current()->resource_area()),
   _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
@@ -60,7 +58,6 @@ NodeHash::NodeHash(uint est_max_size) :
   memset(_table,0,sizeof(Node*)*_max);
 }
 
-//------------------------------NodeHash---------------------------------------
 NodeHash::NodeHash(Arena *arena, uint est_max_size) :
   _a(arena),
   _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
@@ -77,7 +74,6 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
   memset(_table,0,sizeof(Node*)*_max);
 }
 
-//------------------------------NodeHash---------------------------------------
 NodeHash::NodeHash(NodeHash *nh) {
   debug_only(_table = (Node**)badAddress);   // interact correctly w/ operator=
   // just copy in all the fields
@@ -92,7 +88,6 @@ void NodeHash::replace_with(NodeHash *nh) {
   // nh->_sentinel must be in the current node space
 }
 
-//------------------------------hash_find--------------------------------------
 // Find in hash table
 Node *NodeHash::hash_find( const Node *n ) {
   // ((Node*)n)->set_hash( n->hash() );
@@ -136,7 +131,6 @@ Node *NodeHash::hash_find( const Node *n ) {
   return nullptr;
 }
 
-//------------------------------hash_find_insert-------------------------------
 // Find in hash table, insert if not already present
 // Used to preserve unique entries in hash table
 Node *NodeHash::hash_find_insert( Node *n ) {
@@ -196,7 +190,6 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   return nullptr;
 }
 
-//------------------------------hash_insert------------------------------------
 // Insert into hash table
 void NodeHash::hash_insert( Node *n ) {
   // // "conflict" comments -- print nodes that conflict
@@ -223,7 +216,6 @@ void NodeHash::hash_insert( Node *n ) {
   // if( conflict ) { n->dump(); }
 }
 
-//------------------------------hash_delete------------------------------------
 // Replace in hash table with sentinel
 bool NodeHash::hash_delete( const Node *n ) {
   Node *k;
@@ -259,14 +251,12 @@ bool NodeHash::hash_delete( const Node *n ) {
   return false;
 }
 
-//------------------------------round_up---------------------------------------
 // Round up to nearest power of 2
 uint NodeHash::round_up(uint x) {
   x += (x >> 2);                  // Add 25% slop
   return MAX2(16U, round_up_power_of_2(x));
 }
 
-//------------------------------grow-------------------------------------------
 // Grow _table to next power of 2 and insert old entries
 void  NodeHash::grow() {
   // Record old state
@@ -293,7 +283,6 @@ void  NodeHash::grow() {
   }
 }
 
-//------------------------------clear------------------------------------------
 // Clear all entries in _table to null but keep storage
 void  NodeHash::clear() {
 #ifdef ASSERT
@@ -308,7 +297,6 @@ void  NodeHash::clear() {
   memset( _table, 0, _max * sizeof(Node*) );
 }
 
-//-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from value table,
 // implementation does not depend on hash function
 void NodeHash::remove_useless_nodes(VectorSet &useful) {
@@ -349,7 +337,6 @@ void NodeHash::check_no_speculative_types() {
 }
 
 #ifndef PRODUCT
-//------------------------------dump-------------------------------------------
 // Dump statistics for the hash table
 void NodeHash::dump() {
   _total_inserts       += _inserts;
@@ -403,8 +390,6 @@ void NodeHash::operator=(const NodeHash& nh) {
 #endif
 
 
-//=============================================================================
-//------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
 PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist, PhaseNumber phase_num) : Phase(phase_num) {
   // Implementation requires an edge from root to each SafePointNode
@@ -426,8 +411,6 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist
   C->disconnect_useless_nodes(_useful, worklist);
 }
 
-//=============================================================================
-//------------------------------PhaseRenumberLive------------------------------
 // First, remove useless nodes (equivalent to identifying live nodes).
 // Then, renumber live nodes.
 //
@@ -581,8 +564,6 @@ int PhaseRenumberLive::update_embedded_ids(Node* n) {
   return no_of_updates;
 }
 
-//=============================================================================
-//------------------------------PhaseTransform---------------------------------
 PhaseTransform::PhaseTransform( PhaseNumber pnum ) : Phase(pnum),
   _arena(Thread::current()->resource_area()),
   _nodes(_arena),
@@ -598,7 +579,6 @@ PhaseTransform::PhaseTransform( PhaseNumber pnum ) : Phase(pnum),
   _types.map(C->unique(), nullptr);
 }
 
-//------------------------------PhaseTransform---------------------------------
 PhaseTransform::PhaseTransform( Arena *arena, PhaseNumber pnum ) : Phase(pnum),
   _arena(arena),
   _nodes(arena),
@@ -614,7 +594,6 @@ PhaseTransform::PhaseTransform( Arena *arena, PhaseNumber pnum ) : Phase(pnum),
   _types.map(C->unique(), nullptr);
 }
 
-//------------------------------PhaseTransform---------------------------------
 // Initialize with previously generated type information
 PhaseTransform::PhaseTransform( PhaseTransform *pt, PhaseNumber pnum ) : Phase(pnum),
   _arena(pt->_arena),
@@ -636,7 +615,6 @@ void PhaseTransform::init_con_caches() {
 }
 
 
-//--------------------------------find_int_type--------------------------------
 const TypeInt* PhaseTransform::find_int_type(Node* n) {
   if (n == nullptr)  return nullptr;
   // Call type_or_null(n) to determine node's type since we might be in
@@ -648,7 +626,6 @@ const TypeInt* PhaseTransform::find_int_type(Node* n) {
 }
 
 
-//-------------------------------find_long_type--------------------------------
 const TypeLong* PhaseTransform::find_long_type(Node* n) {
   if (n == nullptr)  return nullptr;
   // (See comment above on type_or_null.)
@@ -674,18 +651,15 @@ void PhaseTransform::dump_new( uint nidx ) const {
   tty->print_cr("Node %d not found in the new indices", nidx);
 }
 
-//------------------------------dump_types-------------------------------------
 void PhaseTransform::dump_types( ) const {
   _types.dump();
 }
 
-//------------------------------dump_nodes_and_types---------------------------
 void PhaseTransform::dump_nodes_and_types(const Node* root, uint depth, bool only_ctrl) {
   VectorSet visited;
   dump_nodes_and_types_recur(root, depth, only_ctrl, visited);
 }
 
-//------------------------------dump_nodes_and_types_recur---------------------
 void PhaseTransform::dump_nodes_and_types_recur( const Node *n, uint depth, bool only_ctrl, VectorSet &visited) {
   if( !n ) return;
   if( depth == 0 ) return;
@@ -703,22 +677,18 @@ void PhaseTransform::dump_nodes_and_types_recur( const Node *n, uint depth, bool
 #endif
 
 
-//=============================================================================
-//------------------------------PhaseValues------------------------------------
 // Set minimum table size to "255"
 PhaseValues::PhaseValues( Arena *arena, uint est_max_size )
   : PhaseTransform(arena, GVN), _table(arena, est_max_size), _iterGVN(false) {
   NOT_PRODUCT( clear_new_values(); )
 }
 
-//------------------------------PhaseValues------------------------------------
 // Set minimum table size to "255"
 PhaseValues::PhaseValues(PhaseValues* ptv)
   : PhaseTransform(ptv, GVN), _table(&ptv->_table), _iterGVN(false) {
   NOT_PRODUCT( clear_new_values(); )
 }
 
-//------------------------------~PhaseValues-----------------------------------
 #ifndef PRODUCT
 PhaseValues::~PhaseValues() {
   _table.dump();
@@ -736,7 +706,6 @@ PhaseValues::~PhaseValues() {
 }
 #endif
 
-//------------------------------makecon----------------------------------------
 ConNode* PhaseTransform::makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
   assert(!t->empty() || t == Type::TOP, "must not be vacuous range");
@@ -752,7 +721,6 @@ ConNode* PhaseTransform::makecon(const Type *t) {
   return uncached_makecon(t);
 }
 
-//--------------------------uncached_makecon-----------------------------------
 // Make an idealized constant - one of ConINode, ConPNode, etc.
 ConNode* PhaseValues::uncached_makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
@@ -772,7 +740,6 @@ ConNode* PhaseValues::uncached_makecon(const Type *t) {
   return x;
 }
 
-//------------------------------intcon-----------------------------------------
 // Fast integer constant.  Same as "transform(new ConINode(TypeInt::make(i)))"
 ConINode* PhaseTransform::intcon(jint i) {
   // Small integer?  Check cache! Check that cached node is not dead
@@ -788,7 +755,6 @@ ConINode* PhaseTransform::intcon(jint i) {
   return icon;
 }
 
-//------------------------------longcon----------------------------------------
 // Fast long constant.
 ConLNode* PhaseTransform::longcon(jlong l) {
   // Small integer?  Check cache! Check that cached node is not dead
@@ -812,7 +778,6 @@ ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
 }
 
 
-//------------------------------zerocon-----------------------------------------
 // Fast zero or null constant. Same as "transform(ConNode::make(Type::get_zero_type(bt)))"
 ConNode* PhaseTransform::zerocon(BasicType bt) {
   assert((uint)bt <= _zcon_max, "domain check");
@@ -826,7 +791,6 @@ ConNode* PhaseTransform::zerocon(BasicType bt) {
 
 
 
-//=============================================================================
 Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   Node* i = BarrierSet::barrier_set()->barrier_set_c2()->ideal_node(this, k, can_reshape);
   if (i == nullptr) {
@@ -835,14 +799,12 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   return i;
 }
 
-//------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but in a
 // faster or cheaper fashion.
 Node *PhaseGVN::transform( Node *n ) {
   return transform_no_reclaim(n);
 }
 
-//------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
 Node *PhaseGVN::transform_no_reclaim(Node *n) {
@@ -931,7 +893,6 @@ bool PhaseGVN::is_dominator_helper(Node *d, Node *n, bool linear_only) {
 }
 
 #ifdef ASSERT
-//------------------------------dead_loop_check--------------------------------
 // Check for a simple dead loop when a data node references itself directly
 // or through an other data node excluding cons and phis.
 void PhaseGVN::dead_loop_check( Node *n ) {
@@ -968,8 +929,6 @@ void PhaseGVN::dump_infinite_loop_info(Node* n, const char* where) {
 }
 #endif
 
-//=============================================================================
-//------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
 PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : PhaseGVN(igvn),
                                                  _delay_transform(igvn->_delay_transform),
@@ -979,7 +938,6 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : PhaseGVN(igvn),
   _iterGVN = true;
 }
 
-//------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseGVN info from Parser
 PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
                                             _delay_transform(false),
@@ -1328,7 +1286,6 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   return n;
 }
 
-//------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
   if (_delay_transform) {
@@ -1454,13 +1411,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   return k;
 }
 
-//---------------------------------saturate------------------------------------
 const Type* PhaseIterGVN::saturate(const Type* new_type, const Type* old_type,
                                    const Type* limit_type) const {
   return new_type->narrow(old_type);
 }
 
-//------------------------------remove_globally_dead_node----------------------
 // Kill a globally dead Node.  All uses are also globally dead and are
 // aggressively trimmed.
 void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
@@ -1552,7 +1507,6 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
   } // while (_stack.is_nonempty())
 }
 
-//------------------------------subsume_node-----------------------------------
 // Remove users from node 'old' and add them to node 'nn'.
 void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   if (old->Opcode() == Op_SafePoint) {
@@ -1612,7 +1566,6 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   temp->destruct(this);     // reuse the _idx of this little guy
 }
 
-//------------------------------add_users_to_worklist--------------------------
 void PhaseIterGVN::add_users_to_worklist0( Node *n ) {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     _worklist.push(n->fast_out(i));  // Push on worklist
@@ -1917,12 +1870,10 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
   return true;
 }
 
-//=============================================================================
 #ifndef PRODUCT
 uint PhaseCCP::_total_invokes   = 0;
 uint PhaseCCP::_total_constants = 0;
 #endif
-//------------------------------PhaseCCP---------------------------------------
 // Conditional Constant Propagation, ala Wegman & Zadeck
 PhaseCCP::PhaseCCP( PhaseIterGVN *igvn ) : PhaseIterGVN(igvn) {
   NOT_PRODUCT( clear_constants(); )
@@ -1933,7 +1884,6 @@ PhaseCCP::PhaseCCP( PhaseIterGVN *igvn ) : PhaseIterGVN(igvn) {
 }
 
 #ifndef PRODUCT
-//------------------------------~PhaseCCP--------------------------------------
 PhaseCCP::~PhaseCCP() {
   inc_invokes();
   _total_constants += count_constants();
@@ -2186,7 +2136,6 @@ void PhaseCCP::push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Nod
   }
 }
 
-//------------------------------do_transform-----------------------------------
 // Top level driver for the recursive transformer
 void PhaseCCP::do_transform() {
   // Correct leaves of new-space Nodes; they point to old-space.
@@ -2195,7 +2144,6 @@ void PhaseCCP::do_transform() {
   assert( C->root(), "missing root" );
 }
 
-//------------------------------transform--------------------------------------
 // Given a Node in old-space, clone him into new-space.
 // Convert any of his old-space children into new-space children.
 Node *PhaseCCP::transform( Node *n ) {
@@ -2268,7 +2216,6 @@ Node *PhaseCCP::transform( Node *n ) {
 }
 
 
-//------------------------------transform_once---------------------------------
 // For PhaseCCP, transformation is IDENTITY unless Node computed a constant.
 Node *PhaseCCP::transform_once( Node *n ) {
   const Type *t = type(n);
@@ -2343,7 +2290,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
   return  n;
 }
 
-//---------------------------------saturate------------------------------------
 const Type* PhaseCCP::saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const {
   const Type* wide_type = new_type->widen(old_type, limit_type);
@@ -2354,7 +2300,6 @@ const Type* PhaseCCP::saturate(const Type* new_type, const Type* old_type,
   return new_type;
 }
 
-//------------------------------print_statistics-------------------------------
 #ifndef PRODUCT
 void PhaseCCP::print_statistics() {
   tty->print_cr("CCP: %d  constants found: %d", _total_invokes, _total_constants);
@@ -2362,11 +2307,9 @@ void PhaseCCP::print_statistics() {
 #endif
 
 
-//=============================================================================
 #ifndef PRODUCT
 uint PhasePeephole::_total_peepholes = 0;
 #endif
-//------------------------------PhasePeephole----------------------------------
 // Conditional Constant Propagation, ala Wegman & Zadeck
 PhasePeephole::PhasePeephole( PhaseRegAlloc *regalloc, PhaseCFG &cfg )
   : PhaseTransform(Peephole), _regalloc(regalloc), _cfg(cfg) {
@@ -2374,19 +2317,16 @@ PhasePeephole::PhasePeephole( PhaseRegAlloc *regalloc, PhaseCFG &cfg )
 }
 
 #ifndef PRODUCT
-//------------------------------~PhasePeephole---------------------------------
 PhasePeephole::~PhasePeephole() {
   _total_peepholes += count_peepholes();
 }
 #endif
 
-//------------------------------transform--------------------------------------
 Node *PhasePeephole::transform( Node *n ) {
   ShouldNotCallThis();
   return nullptr;
 }
 
-//------------------------------do_transform-----------------------------------
 void PhasePeephole::do_transform() {
   bool method_name_not_printed = true;
 
@@ -2434,7 +2374,6 @@ void PhasePeephole::do_transform() {
   }
 }
 
-//------------------------------print_statistics-------------------------------
 #ifndef PRODUCT
 void PhasePeephole::print_statistics() {
   tty->print_cr("Peephole: peephole rules applied: %d",  _total_peepholes);
@@ -2442,8 +2381,6 @@ void PhasePeephole::print_statistics() {
 #endif
 
 
-//=============================================================================
-//------------------------------set_req_X--------------------------------------
 void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
   assert( is_not_dead(n), "can not use dead node");
   assert( igvn->hash_find(this) != this, "Need to remove from hash before changing edges" );
@@ -2492,7 +2429,6 @@ void Node::set_req_X(uint i, Node *n, PhaseGVN *gvn) {
   set_req_X(i, n, igvn);
 }
 
-//-------------------------------replace_by-----------------------------------
 // Using def-use info, replace one node for another.  Follow the def-use info
 // to all users of the OLD node.  Then make all uses point to the NEW node.
 void Node::replace_by(Node *new_node) {
@@ -2512,8 +2448,6 @@ void Node::replace_by(Node *new_node) {
   }
 }
 
-//=============================================================================
-//-----------------------------------------------------------------------------
 void Type_Array::grow( uint i ) {
   if( !_max ) {
     _max = 1;
@@ -2526,7 +2460,6 @@ void Type_Array::grow( uint i ) {
   memset( &_types[old], 0, (_max-old)*sizeof(Type*) );
 }
 
-//------------------------------dump-------------------------------------------
 #ifndef PRODUCT
 void Type_Array::dump() const {
   uint max = Size();

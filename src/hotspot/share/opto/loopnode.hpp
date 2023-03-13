@@ -51,7 +51,6 @@ struct small_cache;
 // Idealized loops are the set of loops I perform more interesting
 // transformations on, beyond simple hoisting.
 
-//------------------------------LoopNode---------------------------------------
 // Simple loop header.  Fall in path on left, loop-back path on right.
 class LoopNode : public RegionNode {
   // Size is bigger to hold the flags.  However, the flags do not change
@@ -161,7 +160,6 @@ public:
   virtual SafePointNode* outer_safepoint() const { ShouldNotReachHere(); return nullptr; }
 };
 
-//------------------------------Counted Loops----------------------------------
 // Counted loops are all trip-counted loops, with exactly 1 trip-counter exit
 // path (and maybe some other exit paths).  The trip-counter exit is always
 // last in the loop.  The trip-counter have to stride by a constant;
@@ -182,7 +180,6 @@ public:
 // loop-back control.  From CountedLoopEndNodes I can reach CountedLoopNodes
 // via the old-trip-counter from the Op node.
 
-//------------------------------CountedLoopNode--------------------------------
 // CountedLoopNodes head simple counted loops.  CountedLoopNodes have as
 // inputs the incoming loop-start control and the loop-back control, so they
 // act like RegionNodes.  They also take in the initial trip counter, the
@@ -371,7 +368,6 @@ public:
 };
 
 
-//------------------------------CountedLoopEndNode-----------------------------
 // CountedLoopEndNodes end simple trip counted loops.  They act much like
 // IfNodes.
 
@@ -521,7 +517,6 @@ inline jlong BaseCountedLoopNode::stride_con() const {
 }
 
 
-//------------------------------LoopLimitNode-----------------------------
 // Counted Loop limit node which represents exact final iterator value:
 // trip_count = (limit - init_trip + stride - 1)/stride
 // final_value= trip_count * stride + init_trip.

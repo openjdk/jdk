@@ -30,7 +30,6 @@
 #include "opto/machnode.hpp"
 #include "opto/output.hpp"
 
-//=============================================================================
 // Two Constant's are equal when the type and the value are equal.
 bool ConstantTable::Constant::operator==(const Constant& other) {
   if (type()          != other.type()         )  return false;

@@ -33,7 +33,6 @@
 // This data structure is used by the compiler in its liveness analysis and
 // during register allocation.  It also defines an iterator for this class.
 
-//-------------------------------- Initializations ------------------------------
 
 IndexSet::BitBlock  IndexSet::_empty_block     = IndexSet::BitBlock();
 
@@ -50,7 +49,6 @@ julong IndexSet::_total_unused_blocks = 0;
 int IndexSet::_serial_count = 1;
 #endif
 
-//---------------------------- IndexSet::populate_free_list() -----------------------------
 // Populate the free BitBlock list with a batch of BitBlocks.  The BitBlocks
 // are 32 bit aligned.
 
@@ -81,7 +79,6 @@ void IndexSet::populate_free_list() {
 }
 
 
-//---------------------------- IndexSet::alloc_block() ------------------------
 // Allocate a BitBlock from the free list.  If the free list is empty,
 // prime it.
 
@@ -104,7 +101,6 @@ IndexSet::BitBlock *IndexSet::alloc_block() {
   return block;
 }
 
-//---------------------------- IndexSet::alloc_block_containing() -------------
 // Allocate a new BitBlock and put it into the position in the _blocks array
 // corresponding to element.
 
@@ -118,7 +114,6 @@ IndexSet::BitBlock *IndexSet::alloc_block_containing(uint element) {
   return block;
 }
 
-//---------------------------- IndexSet::free_block() -------------------------
 // Add a BitBlock to the free list.
 
 void IndexSet::free_block(uint i) {
@@ -131,7 +126,6 @@ void IndexSet::free_block(uint i) {
   set_block(i, &_empty_block);
 }
 
-//------------------------------lrg_union--------------------------------------
 // Compute the union of all elements of one and two which interfere with
 // the RegMask mask.  If the degree of the union becomes exceeds
 // fail_degree, the union bails out.  The underlying set is cleared before
@@ -216,7 +210,6 @@ uint IndexSet::lrg_union(uint lr1, uint lr2,
   return reg_degree;
 }
 
-//---------------------------- IndexSet() -----------------------------
 // A deep copy constructor.  This is used when you need a scratch copy of this set.
 
 IndexSet::IndexSet (IndexSet *set) {
@@ -247,7 +240,6 @@ IndexSet::IndexSet (IndexSet *set) {
   }
 }
 
-//---------------------------- IndexSet::initialize() -----------------------------
 // Prepare an IndexSet for use.
 
 void IndexSet::initialize(uint max_elements) {
@@ -270,7 +262,6 @@ void IndexSet::initialize(uint max_elements) {
   }
 }
 
-//---------------------------- IndexSet::initialize()------------------------------
 // Prepare an IndexSet for use.  If it needs to allocate its _blocks array, it does
 // so from the Arena passed as a parameter.  BitBlock allocation is still done from
 // the static Arena which was set with reset_memory().
@@ -295,7 +286,6 @@ void IndexSet::initialize(uint max_elements, Arena *arena) {
   }
 }
 
-//---------------------------- IndexSet::swap() -----------------------------
 // Exchange two IndexSets.
 
 void IndexSet::swap(IndexSet *set) {
@@ -321,7 +311,6 @@ void IndexSet::swap(IndexSet *set) {
 
 }
 
-//---------------------------- IndexSet::dump() -----------------------------
 // Print this set.  Used for debugging.
 
 #ifndef PRODUCT
@@ -338,7 +327,6 @@ void IndexSet::dump() const {
 #endif
 
 #ifdef ASSERT
-//---------------------------- IndexSet::tally_iteration_statistics() -----------------------------
 // Update block/bit counts to reflect that this set has been iterated over.
 
 void IndexSet::tally_iteration_statistics() const {
@@ -353,7 +341,6 @@ void IndexSet::tally_iteration_statistics() const {
   }
 }
 
-//---------------------------- IndexSet::print_statistics() -----------------------------
 // Print statistics about IndexSet usage.
 
 void IndexSet::print_statistics() {
@@ -370,7 +357,6 @@ void IndexSet::print_statistics() {
   tty->print_cr ("    blocks used/reused: " UINT64_FORMAT, _alloc_total);
 }
 
-//---------------------------- IndexSet::verify() -----------------------------
 // Expensive test of IndexSet sanity.  Ensure that the count agrees with the
 // number of bits in the blocks.  Make sure the iterator is seeing all elements
 // of the set.  Meant for use during development.
@@ -396,11 +382,9 @@ void IndexSet::verify() const {
 }
 #endif
 
-//---------------------------- IndexSetIterator() -----------------------------
 // Create an iterator for a set.  If empty blocks are detected when iterating
 // over the set, these blocks are replaced.
 
-//---------------------------- List16Iterator::advance_and_next() -----------------------------
 // Advance to the next non-empty word in the set being iterated over.  Return the next element
 // if there is one.  If we are done, return 0.  This method is called from the next() method
 // when it gets done with a word.

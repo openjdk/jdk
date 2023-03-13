@@ -32,7 +32,6 @@
 #include "opto/opaquenode.hpp"
 
 
-//------------------------------split_thru_region------------------------------
 // Split Node 'n' through merge point.
 RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   assert(n->is_CFG(), "");
@@ -64,7 +63,6 @@ RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   return r;
 }
 
-//------------------------------split_up---------------------------------------
 // Split block-local op up through the phis to empty the current block
 bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   if( n->is_CFG() ) {
@@ -426,7 +424,6 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
   return false;
 }
 
-//------------------------------register_new_node------------------------------
 void PhaseIdealLoop::register_new_node( Node *n, Node *blk ) {
   assert(!n->is_CFG(), "must be data node");
   _igvn.register_new_node_with_optimizer(n);
@@ -436,7 +433,6 @@ void PhaseIdealLoop::register_new_node( Node *n, Node *blk ) {
     loop->_body.push(n);
 }
 
-//------------------------------small_cache------------------------------------
 struct small_cache : public Dict {
 
   small_cache() : Dict( cmpkey, hashptr ) {}
@@ -444,7 +440,6 @@ struct small_cache : public Dict {
   void lru_insert( Node *use_blk, Node *new_def ) { Insert(use_blk,new_def); }
 };
 
-//------------------------------spinup-----------------------------------------
 // "Spin up" the dominator tree, starting at the use site and stopping when we
 // find the post-dominating point.
 
@@ -517,7 +512,6 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
   return phi_post;
 }
 
-//------------------------------find_use_block---------------------------------
 // Find the block a USE is in.  Normally USE's are in the same block as the
 // using instruction.  For Phi-USE's, the USE is in the predecessor block
 // along the corresponding path.
@@ -557,7 +551,6 @@ Node *PhaseIdealLoop::find_use_block( Node *use, Node *def, Node *old_false, Nod
   return use_blk;
 }
 
-//------------------------------handle_use-------------------------------------
 // Handle uses of the merge point.  Basically, split-if makes the merge point
 // go away so all uses of the merge point must go away as well.  Most block
 // local uses have already been split-up, through the merge point.  Uses from
@@ -587,7 +580,6 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
   _igvn.replace_input_of(use, i, new_def);
 }
 
-//------------------------------do_split_if------------------------------------
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {

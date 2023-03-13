@@ -56,7 +56,6 @@ class       LockNode;
 class       UnlockNode;
 class FastLockNode;
 
-//------------------------------StartNode--------------------------------------
 // The method start node
 class StartNode : public MultiNode {
   virtual bool cmp( const Node &n ) const;
@@ -84,7 +83,6 @@ public:
 #endif
 };
 
-//------------------------------StartOSRNode-----------------------------------
 // The method start node for on stack replacement code
 class StartOSRNode : public StartNode {
 public:
@@ -94,7 +92,6 @@ public:
 };
 
 
-//------------------------------ParmNode---------------------------------------
 // Incoming parameters
 class ParmNode : public ProjNode {
   static const char * const names[TypeFunc::Parms+1];
@@ -112,7 +109,6 @@ public:
 };
 
 
-//------------------------------ReturnNode-------------------------------------
 // Return from subroutine node
 class ReturnNode : public Node {
 public:
@@ -131,7 +127,6 @@ public:
 };
 
 
-//------------------------------RethrowNode------------------------------------
 // Rethrow of exception at call site.  Ends a procedure before rethrowing;
 // ends the current basic block like a ReturnNode.  Restores registers and
 // unwinds stack.  Rethrow happens in the caller's method.
@@ -152,7 +147,6 @@ class RethrowNode : public Node {
 };
 
 
-//------------------------------TailCallNode-----------------------------------
 // Pop stack frame and jump indirect
 class TailCallNode : public ReturnNode {
 public:
@@ -166,7 +160,6 @@ public:
   virtual uint match_edge(uint idx) const;
 };
 
-//------------------------------TailJumpNode-----------------------------------
 // Pop stack frame and jump indirect
 class TailJumpNode : public ReturnNode {
 public:
@@ -180,7 +173,6 @@ public:
   virtual uint match_edge(uint idx) const;
 };
 
-//-------------------------------JVMState-------------------------------------
 // A linked list of JVMState nodes captures the whole interpreter state,
 // plus GC roots, for all active calls at some call site in this compilation
 // unit.  (If there is no inlining, then the list has exactly one link.)
@@ -313,7 +305,6 @@ public:
 #endif
 };
 
-//------------------------------SafePointNode----------------------------------
 // A SafePointNode is a subclass of a MultiNode for convenience (and
 // potential code sharing) only - conceptually it is independent of
 // the Node semantics.
@@ -502,7 +493,6 @@ public:
 #endif
 };
 
-//------------------------------SafePointScalarObjectNode----------------------
 // A SafePointScalarObjectNode represents the state of a scalarized object
 // at a safepoint.
 
@@ -574,7 +564,6 @@ public:
 
 class CallGenerator;
 
-//------------------------------CallNode---------------------------------------
 // Call nodes now subsume the function of debug nodes at callsites, so they
 // contain the functionality of a full scope chain of debug nodes.
 class CallNode : public SafePointNode {
@@ -661,7 +650,6 @@ public:
 };
 
 
-//------------------------------CallJavaNode-----------------------------------
 // Make a static or dynamic subroutine call node using Java calling
 // convention.  (The "Java" calling convention is the compiler's calling
 // convention, as opposed to the interpreter's or that of native C.)
@@ -709,7 +697,6 @@ public:
 #endif
 };
 
-//------------------------------CallStaticJavaNode-----------------------------
 // Make a direct subroutine call using Java calling convention (for static
 // calls and optimized virtual calls, plus calls to wrappers for run-time
 // routines); generates static stub.
@@ -755,7 +742,6 @@ public:
 #endif
 };
 
-//------------------------------CallDynamicJavaNode----------------------------
 // Make a dispatched call using Java calling convention.
 class CallDynamicJavaNode : public CallJavaNode {
   virtual bool cmp( const Node &n ) const;
@@ -780,7 +766,6 @@ public:
 #endif
 };
 
-//------------------------------CallRuntimeNode--------------------------------
 // Make a direct subroutine call node into compiled C++ code.
 class CallRuntimeNode : public CallNode {
 protected:
@@ -803,7 +788,6 @@ public:
 #endif
 };
 
-//------------------------------CallLeafNode-----------------------------------
 // Make a direct subroutine call node into compiled C++ code, without
 // safepoints
 class CallLeafNode : public CallRuntimeNode {
@@ -821,7 +805,6 @@ public:
 #endif
 };
 
-//------------------------------CallLeafNoFPNode-------------------------------
 // CallLeafNode, not using floating point or using it in the same manner as
 // the generated code
 class CallLeafNoFPNode : public CallLeafNode {
@@ -835,7 +818,6 @@ public:
   virtual int   Opcode() const;
 };
 
-//------------------------------CallLeafVectorNode-------------------------------
 // CallLeafNode but calling with vector calling convention instead.
 class CallLeafVectorNode : public CallLeafNode {
 private:
@@ -854,7 +836,6 @@ public:
 };
 
 
-//------------------------------Allocate---------------------------------------
 // High-level memory allocation
 //
 //  AllocateNode and AllocateArrayNode are subclasses of CallNode because they will
@@ -973,7 +954,6 @@ public:
   Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
 };
 
-//------------------------------AllocateArray---------------------------------
 //
 // High-level array allocation
 //
@@ -1008,7 +988,6 @@ public:
   }
 };
 
-//------------------------------AbstractLockNode-----------------------------------
 class AbstractLockNode: public CallNode {
 private:
   enum {
@@ -1081,7 +1060,6 @@ public:
 #endif
 };
 
-//------------------------------Lock---------------------------------------
 // High-level lock operation
 //
 // This is a subclass of CallNode because it is a macro node which gets expanded
@@ -1126,7 +1104,6 @@ public:
   bool is_nested_lock_region(Compile * c); // Why isn't this Lock nested?
 };
 
-//------------------------------Unlock---------------------------------------
 // High-level unlock operation
 class UnlockNode : public AbstractLockNode {
 private:

@@ -28,7 +28,6 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 
-//------------------------------EncodeNarrowPtr--------------------------------
 class EncodeNarrowPtrNode : public TypeNode {
   protected:
   EncodeNarrowPtrNode(Node* value, const Type* type):
@@ -41,7 +40,6 @@ class EncodeNarrowPtrNode : public TypeNode {
   virtual uint  ideal_reg() const { return Op_RegN; }
 };
 
-//------------------------------EncodeP--------------------------------
 // Encodes an oop pointers into its compressed form
 // Takes an extra argument which is the real heap base as a long which
 // may be useful for code generation in the backend.
@@ -56,7 +54,6 @@ class EncodePNode : public EncodeNarrowPtrNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------EncodePKlass--------------------------------
 // Encodes a klass pointer into its compressed form
 // Takes an extra argument which is the real heap base as a long which
 // may be useful for code generation in the backend.
@@ -71,7 +68,6 @@ class EncodePKlassNode : public EncodeNarrowPtrNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------DecodeNarrowPtr--------------------------------
 class DecodeNarrowPtrNode : public TypeNode {
   protected:
   DecodeNarrowPtrNode(Node* value, const Type* type):
@@ -84,7 +80,6 @@ class DecodeNarrowPtrNode : public TypeNode {
   virtual uint  ideal_reg() const { return Op_RegP; }
 };
 
-//------------------------------DecodeN--------------------------------
 // Converts a narrow oop into a real oop ptr.
 // Takes an extra argument which is the real heap base as a long which
 // may be useful for code generation in the backend.
@@ -99,7 +94,6 @@ class DecodeNNode : public DecodeNarrowPtrNode {
   virtual Node* Identity(PhaseGVN* phase);
 };
 
-//------------------------------DecodeNKlass--------------------------------
 // Converts a narrow klass pointer into a real klass ptr.
 // Takes an extra argument which is the real heap base as a long which
 // may be useful for code generation in the backend.

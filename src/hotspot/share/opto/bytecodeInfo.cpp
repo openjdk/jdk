@@ -37,8 +37,6 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/events.hpp"
 
-//=============================================================================
-//------------------------------InlineTree-------------------------------------
 InlineTree::InlineTree(Compile* c,
                        const InlineTree *caller_tree, ciMethod* callee,
                        JVMState* caller_jvms, int caller_bci,
@@ -356,7 +354,6 @@ bool InlineTree::is_not_reached(ciMethod* callee_method, ciMethod* caller_method
   return true; // give up and treat the call site as not reached
 }
 
-//-----------------------------try_to_inline-----------------------------------
 // return true if ok
 // Relocated from "InliningClosure::try_to_inline"
 bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
@@ -484,7 +481,6 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
   return true;
 }
 
-//------------------------------pass_initial_checks----------------------------
 bool InlineTree::pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* callee_method) {
   // Check if a callee_method was suggested
   if (callee_method == nullptr) {
@@ -521,7 +517,6 @@ bool InlineTree::pass_initial_checks(ciMethod* caller_method, int caller_bci, ci
   return true;
 }
 
-//------------------------------check_can_parse--------------------------------
 const char* InlineTree::check_can_parse(ciMethod* callee) {
   // Certain methods cannot be parsed at all:
   if ( callee->is_native())                     return "native method";
@@ -532,7 +527,6 @@ const char* InlineTree::check_can_parse(ciMethod* callee) {
   return nullptr;
 }
 
-//------------------------------print_inlining---------------------------------
 void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
                                 ciMethod* caller_method, bool success) const {
   const char* inline_msg = msg();
@@ -561,7 +555,6 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
   }
 }
 
-//------------------------------ok_to_inline-----------------------------------
 bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallProfile& profile,
                               bool& should_delay) {
 #ifdef ASSERT
@@ -617,7 +610,6 @@ bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallPro
   }
 }
 
-//------------------------------build_inline_tree_for_callee-------------------
 InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, JVMState* caller_jvms, int caller_bci) {
   // Attempt inlining.
   InlineTree* old_ilt = callee_at(caller_bci, callee_method);
@@ -652,7 +644,6 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
 }
 
 
-//---------------------------------------callee_at-----------------------------
 InlineTree *InlineTree::callee_at(int bci, ciMethod* callee) const {
   for (int i = 0; i < _subtrees.length(); i++) {
     InlineTree* sub = _subtrees.at(i);
@@ -664,7 +655,6 @@ InlineTree *InlineTree::callee_at(int bci, ciMethod* callee) const {
 }
 
 
-//------------------------------build_inline_tree_root-------------------------
 InlineTree *InlineTree::build_inline_tree_root() {
   Compile* C = Compile::current();
 
@@ -675,7 +665,6 @@ InlineTree *InlineTree::build_inline_tree_root() {
 }
 
 
-//-------------------------find_subtree_from_root-----------------------------
 // Given a jvms, which determines a call chain from the root method,
 // find the corresponding inline tree.
 // Note: This method will be removed or replaced as InlineTree goes away.

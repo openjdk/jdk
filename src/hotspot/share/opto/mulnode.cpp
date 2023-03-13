@@ -36,8 +36,6 @@
 // Portions of code courtesy of Clifford Click
 
 
-//=============================================================================
-//------------------------------hash-------------------------------------------
 // Hash function over MulNodes.  Needs to be commutative; i.e., I swap
 // (commute) inputs to MulNodes willy-nilly so the hash function must return
 // the same value in the presence of edge swapping.
@@ -45,7 +43,6 @@ uint MulNode::hash() const {
   return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
 }
 
-//------------------------------Identity---------------------------------------
 // Multiplying a one preserves the other argument
 Node* MulNode::Identity(PhaseGVN* phase) {
   const Type *one = mul_id();  // The multiplicative identity
@@ -55,7 +52,6 @@ Node* MulNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 // We also canonicalize the Node, moving constants to the right input,
 // and flatten expressions (so that 1+x+2 becomes x+3).
 Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -180,7 +176,6 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return progress;
 }
 
-//------------------------------Value-----------------------------------------
 const Type* MulNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -225,8 +220,6 @@ MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
 }
 
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const jint con = in(2)->find_int_con(0);
@@ -281,7 +274,6 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-//------------------------------mul_ring---------------------------------------
 // Compute the product type of two integer ranges into this node.
 const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
@@ -320,8 +312,6 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
 }
 
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const jlong con = in(2)->find_long_con(0);
@@ -377,7 +367,6 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-//------------------------------mul_ring---------------------------------------
 // Compute the product type of two integer ranges into this node.
 const Type *MulLNode::mul_ring(const Type *t0, const Type *t1) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
@@ -415,15 +404,12 @@ const Type *MulLNode::mul_ring(const Type *t0, const Type *t1) const {
   return TypeLong::make(lo0, hi0, MAX2(r0->_widen,r1->_widen));
 }
 
-//=============================================================================
-//------------------------------mul_ring---------------------------------------
 // Compute the product type of two double ranges into this node.
 const Type *MulFNode::mul_ring(const Type *t0, const Type *t1) const {
   if( t0 == Type::FLOAT || t1 == Type::FLOAT ) return Type::FLOAT;
   return TypeF::make( t0->getf() * t1->getf() );
 }
 
-//------------------------------Ideal---------------------------------------
 // Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
 Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeF *t2 = phase->type(in(2))->isa_float_constant();
@@ -437,8 +423,6 @@ Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return MulNode::Ideal(phase, can_reshape);
 }
 
-//=============================================================================
-//------------------------------mul_ring---------------------------------------
 // Compute the product type of two double ranges into this node.
 const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
   if( t0 == Type::DOUBLE || t1 == Type::DOUBLE ) return Type::DOUBLE;
@@ -446,7 +430,6 @@ const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
   return TypeD::make( t0->getd() * t1->getd() );
 }
 
-//------------------------------Ideal---------------------------------------
 // Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
 Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeD *t2 = phase->type(in(2))->isa_double_constant();
@@ -460,8 +443,6 @@ Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return MulNode::Ideal(phase, can_reshape);
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* MulHiLNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -491,8 +472,6 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
   return TypeLong::LONG;
 }
 
-//=============================================================================
-//------------------------------mul_ring---------------------------------------
 // Supplied function returns the product of the inputs IN THE CURRENT RING.
 // For the logical operations the ring's MUL is really a logical AND function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
@@ -532,7 +511,6 @@ const Type* AndINode::Value(PhaseGVN* phase) const {
   return MulNode::Value(phase);
 }
 
-//------------------------------Identity---------------------------------------
 // Masking off the high bits of an unsigned load is not required
 Node* AndINode::Identity(PhaseGVN* phase) {
 
@@ -569,7 +547,6 @@ Node* AndINode::Identity(PhaseGVN* phase) {
   return MulNode::Identity(phase);
 }
 
-//------------------------------Ideal------------------------------------------
 Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
   Node* progress = AndIL_add_shift_and_mask(phase, T_INT);
@@ -634,8 +611,6 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return MulNode::Ideal(phase, can_reshape);
 }
 
-//=============================================================================
-//------------------------------mul_ring---------------------------------------
 // Supplied function returns the product of the inputs IN THE CURRENT RING.
 // For the logical operations the ring's MUL is really a logical AND function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
@@ -671,7 +646,6 @@ const Type* AndLNode::Value(PhaseGVN* phase) const {
   return MulNode::Value(phase);
 }
 
-//------------------------------Identity---------------------------------------
 // Masking off the high bits of an unsigned load is not required
 Node* AndLNode::Identity(PhaseGVN* phase) {
 
@@ -709,7 +683,6 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
   return MulNode::Identity(phase);
 }
 
-//------------------------------Ideal------------------------------------------
 Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
   Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
@@ -768,7 +741,6 @@ LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
-//=============================================================================
 
 static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
   const TypeInt* tcount = phase->type(shiftNode->in(2))->isa_int();
@@ -800,7 +772,6 @@ static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, int nBits) {
   return 0;
 }
 
-//------------------------------Identity---------------------------------------
 Node* LShiftINode::Identity(PhaseGVN* phase) {
   int count = 0;
   if (const_shift_count(phase, this, &count) && (count & (BitsPerJavaInteger - 1)) == 0) {
@@ -810,7 +781,6 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 // If the right input is a constant, and the left input is an add of a
 // constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
 Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -875,7 +845,6 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
 // A LShiftINode shifts its input2 left by input1 amount.
 const Type* LShiftINode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
@@ -922,8 +891,6 @@ const Type* LShiftINode::Value(PhaseGVN* phase) const {
   return TypeInt::make( (jint)r1->get_con() << (jint)shift );
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* LShiftLNode::Identity(PhaseGVN* phase) {
   int count = 0;
   if (const_shift_count(phase, this, &count) && (count & (BitsPerJavaLong - 1)) == 0) {
@@ -933,7 +900,6 @@ Node* LShiftLNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 // If the right input is a constant, and the left input is an add of a
 // constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
 Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -998,7 +964,6 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
 // A LShiftLNode shifts its input2 left by input1 amount.
 const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
@@ -1045,8 +1010,6 @@ const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( (jlong)r1->get_con() << (jint)shift );
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* RShiftINode::Identity(PhaseGVN* phase) {
   int count = 0;
   if (const_shift_count(phase, this, &count)) {
@@ -1075,7 +1038,6 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Inputs may be TOP if they are dead.
   const TypeInt *t1 = phase->type(in(1))->isa_int();
@@ -1140,7 +1102,6 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
 // A RShiftINode shifts its input2 right by input1 amount.
 const Type* RShiftINode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
@@ -1195,14 +1156,11 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
   return TypeInt::make( r1->get_con() >> (r2->get_con()&31) );
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* RShiftLNode::Identity(PhaseGVN* phase) {
   const TypeInt *ti = phase->type(in(2))->isa_int(); // Shift count is an int.
   return (ti && ti->is_con() && (ti->get_con() & (BitsPerJavaLong - 1)) == 0) ? in(1) : this;
 }
 
-//------------------------------Value------------------------------------------
 // A RShiftLNode shifts its input2 right by input1 amount.
 const Type* RShiftLNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
@@ -1253,8 +1211,6 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
   return TypeLong::LONG;                // Give up
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* URShiftINode::Identity(PhaseGVN* phase) {
   int count = 0;
   if (const_shift_count(phase, this, &count) && (count & (BitsPerJavaInteger - 1)) == 0) {
@@ -1287,7 +1243,6 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
   return (phase->type(in(2))->higher_equal(TypeInt::ZERO)) ? in(1) : this;
 }
 
-//------------------------------Ideal------------------------------------------
 Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
@@ -1366,7 +1321,6 @@ Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
 // A URShiftINode shifts its input2 right by input1 amount.
 const Type* URShiftINode::Value(PhaseGVN* phase) const {
   // (This is a near clone of RShiftINode::Value.)
@@ -1440,8 +1394,6 @@ const Type* URShiftINode::Value(PhaseGVN* phase) const {
   return TypeInt::INT;
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 Node* URShiftLNode::Identity(PhaseGVN* phase) {
   int count = 0;
   if (const_shift_count(phase, this, &count) && (count & (BitsPerJavaLong - 1)) == 0) {
@@ -1451,7 +1403,6 @@ Node* URShiftLNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaLong);
   if (con == 0) {
@@ -1511,7 +1462,6 @@ Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
 // A URShiftINode shifts its input2 right by input1 amount.
 const Type* URShiftLNode::Value(PhaseGVN* phase) const {
   // (This is a near clone of RShiftLNode::Value.)
@@ -1572,8 +1522,6 @@ const Type* URShiftLNode::Value(PhaseGVN* phase) const {
   return TypeLong::LONG;                // Give up
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* FmaDNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type(in(1));
   if (t1 == Type::TOP) return Type::TOP;
@@ -1594,8 +1542,6 @@ const Type* FmaDNode::Value(PhaseGVN* phase) const {
 #endif
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* FmaFNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type(in(1));
   if (t1 == Type::TOP) return Type::TOP;
@@ -1616,15 +1562,12 @@ const Type* FmaFNode::Value(PhaseGVN* phase) const {
 #endif
 }
 
-//=============================================================================
-//------------------------------hash-------------------------------------------
 // Hash function for MulAddS2INode.  Operation is commutative with commutative pairs.
 // The hash function must return the same value when edge swapping is performed.
 uint MulAddS2INode::hash() const {
   return (uintptr_t)in(1) + (uintptr_t)in(2) + (uintptr_t)in(3) + (uintptr_t)in(4) + Opcode();
 }
 
-//------------------------------Rotate Operations ------------------------------
 
 Node* RotateLeftNode::Identity(PhaseGVN* phase) {
   const Type* t1 = phase->type(in(1));

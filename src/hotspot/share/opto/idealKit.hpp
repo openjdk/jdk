@@ -36,8 +36,6 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 
-//-----------------------------------------------------------------------------
-//----------------------------IdealKit-----------------------------------------
 // Set of utilities for creating control flow and scalar SSA data flow.
 // Control:
 //    if_then(left, relop, right)

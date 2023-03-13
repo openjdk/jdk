@@ -61,7 +61,6 @@ bool CallGenerator::is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, 
   return symbolic_info->is_method_handle_intrinsic() && !m->is_method_handle_intrinsic();
 }
 
-//-----------------------------ParseGenerator---------------------------------
 // Internal class which handles all direct bytecode traversal.
 class ParseGenerator : public InlineCallGenerator {
 private:
@@ -112,7 +111,6 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
   return exits.transfer_exceptions_into_jvms();
 }
 
-//---------------------------DirectCallGenerator------------------------------
 // Internal class which handles all out-of-line calls w/o receiver type checks.
 class DirectCallGenerator : public CallGenerator {
  private:
@@ -182,7 +180,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   return kit.transfer_exceptions_into_jvms();
 }
 
-//--------------------------VirtualCallGenerator------------------------------
 // Internal class which handles all out-of-line calls checking receiver type.
 class VirtualCallGenerator : public CallGenerator {
 private:
@@ -803,7 +800,6 @@ CallGenerator* CallGenerator::for_vector_reboxing_late_inline(ciMethod* method, 
   return new LateInlineVectorReboxingCallGenerator(method, inline_cg);
 }
 
-//------------------------PredictedCallGenerator------------------------------
 // Internal class which handles all out-of-line calls checking receiver type.
 class PredictedCallGenerator : public CallGenerator {
   ciKlass*       _predicted_receiver;
@@ -1147,7 +1143,6 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
   return nullptr;
 }
 
-//------------------------PredicatedIntrinsicGenerator------------------------------
 // Internal class which handles all predicated Intrinsic calls.
 class PredicatedIntrinsicGenerator : public CallGenerator {
   CallGenerator* _intrinsic;
@@ -1349,7 +1344,6 @@ JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
   return kit.transfer_exceptions_into_jvms();
 }
 
-//-------------------------UncommonTrapCallGenerator-----------------------------
 // Internal class which handles all out-of-line calls checking receiver type.
 class UncommonTrapCallGenerator : public CallGenerator {
   Deoptimization::DeoptReason _reason;

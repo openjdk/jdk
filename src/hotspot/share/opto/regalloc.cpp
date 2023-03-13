@@ -55,7 +55,6 @@ PhaseRegAlloc::PhaseRegAlloc( uint unique, PhaseCFG &cfg,
 }
 
 
-//------------------------------reg2offset-------------------------------------
 int PhaseRegAlloc::reg2offset_unchecked( OptoReg::Name reg ) const {
   // Slots below _max_in_arg_stack_reg are offset by the entire frame.
   // Slots above _max_in_arg_stack_reg are frame_slots and are not offset.
@@ -85,7 +84,6 @@ int PhaseRegAlloc::reg2offset( OptoReg::Name reg ) const {
   return reg2offset_unchecked( reg );
 }
 
-//------------------------------offset2reg-------------------------------------
 OptoReg::Name PhaseRegAlloc::offset2reg(int stk_offset) const {
   int slot = stk_offset / jintSize;
   int reg = (slot < (int) _framesize)
@@ -96,14 +94,12 @@ OptoReg::Name PhaseRegAlloc::offset2reg(int stk_offset) const {
   return (OptoReg::Name) reg;
 }
 
-//------------------------------set_oop----------------------------------------
 void PhaseRegAlloc::set_oop( const Node *n, bool is_an_oop ) {
   if( is_an_oop ) {
     _node_oops.set(n->_idx);
   }
 }
 
-//------------------------------is_oop-----------------------------------------
 bool PhaseRegAlloc::is_oop( const Node *n ) const {
   return _node_oops.test(n->_idx) != 0;
 }

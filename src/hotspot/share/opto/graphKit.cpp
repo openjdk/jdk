@@ -51,7 +51,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/growableArray.hpp"
 
-//----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
 GraphKit::GraphKit(JVMState* jvms)
   : Phase(Phase::Parser),
@@ -79,7 +78,6 @@ GraphKit::GraphKit()
 
 
 
-//---------------------------clean_stack---------------------------------------
 // Clear away rubbish from the stack area of the JVM state.
 // This destroys any arguments that may be waiting on the stack.
 void GraphKit::clean_stack(int from_sp) {
@@ -96,7 +94,6 @@ void GraphKit::clean_stack(int from_sp) {
 }
 
 
-//--------------------------------sync_jvms-----------------------------------
 // Make sure our current jvms agrees with our parse state.
 JVMState* GraphKit::sync_jvms() const {
   JVMState* jvms = this->jvms();
@@ -106,7 +103,6 @@ JVMState* GraphKit::sync_jvms() const {
   return jvms;
 }
 
-//--------------------------------sync_jvms_for_reexecute---------------------
 // Make sure our current jvms agrees with our parse state.  This version
 // uses the reexecute_sp for reexecuting bytecodes.
 JVMState* GraphKit::sync_jvms_for_reexecute() {
@@ -160,7 +156,6 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 }
 #endif
 
-//---------------------------stop_and_kill_map---------------------------------
 // Set _map to null, signalling a stop to further bytecode execution.
 // First smash the current map's control to a constant, to mark it dead.
 void GraphKit::stop_and_kill_map() {
@@ -172,7 +167,6 @@ void GraphKit::stop_and_kill_map() {
 }
 
 
-//--------------------------------stopped--------------------------------------
 // Tell if _map is null, or control is top.
 bool GraphKit::stopped() {
   if (map() == nullptr)        return true;
@@ -181,7 +175,6 @@ bool GraphKit::stopped() {
 }
 
 
-//-----------------------------has_ex_handler----------------------------------
 // Tell if this method or any caller method has exception handlers.
 bool GraphKit::has_ex_handler() {
   for (JVMState* jvmsp = jvms(); jvmsp != nullptr; jvmsp = jvmsp->caller()) {
@@ -192,7 +185,6 @@ bool GraphKit::has_ex_handler() {
   return false;
 }
 
-//------------------------------save_ex_oop------------------------------------
 // Save an exception without blowing stack contents or other JVM state.
 void GraphKit::set_saved_ex_oop(SafePointNode* ex_map, Node* ex_oop) {
   assert(!has_saved_ex_oop(ex_map), "clear ex-oop before setting again");
@@ -207,27 +199,23 @@ inline static Node* common_saved_ex_oop(SafePointNode* ex_map, bool clear_it) {
   return ex_oop;
 }
 
-//-----------------------------saved_ex_oop------------------------------------
 // Recover a saved exception from its map.
 Node* GraphKit::saved_ex_oop(SafePointNode* ex_map) {
   return common_saved_ex_oop(ex_map, false);
 }
 
-//--------------------------clear_saved_ex_oop---------------------------------
 // Erase a previously saved exception from its map.
 Node* GraphKit::clear_saved_ex_oop(SafePointNode* ex_map) {
   return common_saved_ex_oop(ex_map, true);
 }
 
 #ifdef ASSERT
-//---------------------------has_saved_ex_oop----------------------------------
 // Erase a previously saved exception from its map.
 bool GraphKit::has_saved_ex_oop(SafePointNode* ex_map) {
   return ex_map->req() == ex_map->jvms()->endoff()+1;
 }
 #endif
 
-//-------------------------make_exception_state--------------------------------
 // Turn the current JVM state into an exception state, appending the ex_oop.
 SafePointNode* GraphKit::make_exception_state(Node* ex_oop) {
   sync_jvms();
@@ -237,7 +225,6 @@ SafePointNode* GraphKit::make_exception_state(Node* ex_oop) {
 }
 
 
-//--------------------------add_exception_state--------------------------------
 // Add an exception to my list of exceptions.
 void GraphKit::add_exception_state(SafePointNode* ex_map) {
   if (ex_map == nullptr || ex_map->control() == top()) {
@@ -274,7 +261,6 @@ void GraphKit::add_exception_state(SafePointNode* ex_map) {
   push_exception_state(ex_map);
 }
 
-//-----------------------add_exception_states_from-----------------------------
 void GraphKit::add_exception_states_from(JVMState* jvms) {
   SafePointNode* ex_map = jvms->map()->next_exception();
   if (ex_map != nullptr) {
@@ -287,7 +273,6 @@ void GraphKit::add_exception_states_from(JVMState* jvms) {
   }
 }
 
-//-----------------------transfer_exceptions_into_jvms-------------------------
 JVMState* GraphKit::transfer_exceptions_into_jvms() {
   if (map() == nullptr) {
     // We need a JVMS to carry the exceptions, but the map has gone away.
@@ -333,7 +318,6 @@ static inline void add_one_req(Node* dstphi, Node* src) {
   dstphi->add_req(src);
 }
 
-//-----------------------combine_exception_states------------------------------
 // This helper function combines exception states by building phis on a
 // specially marked state-merging region.  These regions and phis are
 // untransformed, and can build up gradually.  The region is marked by
@@ -444,7 +428,6 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
   phi_map->merge_replaced_nodes_with(ex_map);
 }
 
-//--------------------------use_exception_state--------------------------------
 Node* GraphKit::use_exception_state(SafePointNode* phi_map) {
   if (failing()) { stop(); return top(); }
   Node* region = phi_map->control();
@@ -485,7 +468,6 @@ Node* GraphKit::use_exception_state(SafePointNode* phi_map) {
   return ex_oop;
 }
 
-//---------------------------------java_bc-------------------------------------
 Bytecodes::Code GraphKit::java_bc() const {
   ciMethod* method = this->method();
   int       bci    = this->bci();
@@ -524,7 +506,6 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 
 }
 
-//------------------------------builtin_throw----------------------------------
 void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
   bool must_throw = true;
 
@@ -654,7 +635,6 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
 }
 
 
-//----------------------------PreserveJVMState---------------------------------
 PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
   debug_only(kit->verify_map());
   _kit    = kit;
@@ -681,7 +661,6 @@ PreserveJVMState::~PreserveJVMState() {
 }
 
 
-//-----------------------------BuildCutout-------------------------------------
 BuildCutout::BuildCutout(GraphKit* kit, Node* p, float prob, float cnt)
   : PreserveJVMState(kit)
 {
@@ -697,7 +676,6 @@ BuildCutout::~BuildCutout() {
   assert(kit->stopped(), "cutout code must stop, throw, return, etc.");
 }
 
-//---------------------------PreserveReexecuteState----------------------------
 PreserveReexecuteState::PreserveReexecuteState(GraphKit* kit) {
   assert(!kit->stopped(), "must call stopped() before");
   _kit    =    kit;
@@ -710,7 +688,6 @@ PreserveReexecuteState::~PreserveReexecuteState() {
   _kit->set_sp(_sp);
 }
 
-//------------------------------clone_map--------------------------------------
 // Implementation of PreserveJVMState
 //
 // Only clone_map(...) here. If this function is only used in the
@@ -735,7 +712,6 @@ SafePointNode* GraphKit::clone_map() {
   return clonemap;
 }
 
-//-----------------------------destruct_map_clone------------------------------
 //
 // Order of destruct is important to increase the likelyhood that memory can be re-used. We need
 // to destruct/free/delete in the exact opposite order as clone_map().
@@ -759,7 +735,6 @@ void GraphKit::destruct_map_clone(SafePointNode* sfp) {
   }
 }
 
-//-----------------------------set_map_clone-----------------------------------
 void GraphKit::set_map_clone(SafePointNode* m) {
   _map = m;
   _map = clone_map();
@@ -768,7 +743,6 @@ void GraphKit::set_map_clone(SafePointNode* m) {
 }
 
 
-//----------------------------kill_dead_locals---------------------------------
 // Detect any locals which are known to be dead, and force them to top.
 void GraphKit::kill_dead_locals() {
   // Consult the liveness information for the locals.  If any
@@ -810,7 +784,6 @@ void GraphKit::kill_dead_locals() {
 }
 
 #ifdef ASSERT
-//-------------------------dead_locals_are_killed------------------------------
 // Return true if all dead locals are set to top in the map.
 // Used to assert "clean" debug info at various points.
 bool GraphKit::dead_locals_are_killed() {
@@ -1158,7 +1131,6 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 
 
 
-//------------------------------basic_plus_adr---------------------------------
 Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
   // short-circuit a common case
   if (offset == intcon(0))  return ptr;
@@ -1193,7 +1165,6 @@ Node* GraphKit::ConvL2I(Node* offset) {
   return _gvn.transform( new ConvL2INode(offset));
 }
 
-//-------------------------load_object_klass-----------------------------------
 Node* GraphKit::load_object_klass(Node* obj) {
   // Special-case a fresh allocation to avoid building nodes:
   Node* akls = AllocateNode::Ideal_klass(obj, &_gvn);
@@ -1202,7 +1173,6 @@ Node* GraphKit::load_object_klass(Node* obj) {
   return _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), k_adr, TypeInstPtr::KLASS));
 }
 
-//-------------------------load_array_length-----------------------------------
 Node* GraphKit::load_array_length(Node* array) {
   // Special-case a fresh allocation to avoid building nodes:
   AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(array, &_gvn);
@@ -1236,7 +1206,6 @@ Node* GraphKit::array_ideal_length(AllocateArrayNode* alloc,
   return length;
 }
 
-//------------------------------do_null_check----------------------------------
 // Helper function to do a null pointer check.  Returned value is
 // the incoming address with null casted away.  You are allowed to use the
 // not-null value only if you are control dependent on the test.
@@ -1431,7 +1400,6 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
 }
 
 
-//------------------------------cast_not_null----------------------------------
 // Cast obj to not-null on this path
 Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
   const Type *t = _gvn.type(obj);
@@ -1479,7 +1447,6 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
 }
 
 
-//--------------------------replace_in_map-------------------------------------
 void GraphKit::replace_in_map(Node* old, Node* neww) {
   if (old == neww) {
     return;
@@ -1505,8 +1472,6 @@ void GraphKit::replace_in_map(Node* old, Node* neww) {
 }
 
 
-//=============================================================================
-//--------------------------------memory---------------------------------------
 Node* GraphKit::memory(uint alias_idx) {
   MergeMemNode* mem = merged_memory();
   Node* p = mem->memory_at(alias_idx);
@@ -1515,7 +1480,6 @@ Node* GraphKit::memory(uint alias_idx) {
   return p;
 }
 
-//-----------------------------reset_memory------------------------------------
 Node* GraphKit::reset_memory() {
   Node* mem = map()->memory();
   // do not use this node for any more parsing!
@@ -1523,20 +1487,17 @@ Node* GraphKit::reset_memory() {
   return _gvn.transform( mem );
 }
 
-//------------------------------set_all_memory---------------------------------
 void GraphKit::set_all_memory(Node* newmem) {
   Node* mergemem = MergeMemNode::make(newmem);
   gvn().set_type_bottom(mergemem);
   map()->set_memory(mergemem);
 }
 
-//------------------------------set_all_memory_call----------------------------
 void GraphKit::set_all_memory_call(Node* call, bool separate_io_proj) {
   Node* newmem = _gvn.transform( new ProjNode(call, TypeFunc::Memory, separate_io_proj) );
   set_all_memory(newmem);
 }
 
-//=============================================================================
 //
 // parser factory methods for MemNodes
 //
@@ -1743,7 +1704,6 @@ void GraphKit::access_clone(Node* src, Node* dst, Node* size, bool is_array) {
   return _barrier_set->clone(this, src, dst, size, is_array);
 }
 
-//-------------------------array_element_address-------------------------
 Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
                                       const TypeInt* sizetype, Node* ctrl) {
   uint shift  = exact_log2(type2aelembytes(elembt));
@@ -1763,7 +1723,6 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
   return basic_plus_adr(ary, base, scale);
 }
 
-//-------------------------load_array_element-------------------------
 Node* GraphKit::load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl) {
   const Type* elemtype = arytype->elem();
   BasicType elembt = elemtype->array_element_basic_type();
@@ -1776,7 +1735,6 @@ Node* GraphKit::load_array_element(Node* ary, Node* idx, const TypeAryPtr* aryty
   return ld;
 }
 
-//-------------------------set_arguments_for_java_call-------------------------
 // Arguments (pre-popped from the stack) are taken from the JVMS.
 void GraphKit::set_arguments_for_java_call(CallJavaNode* call) {
   // Add the call arguments:
@@ -1787,7 +1745,6 @@ void GraphKit::set_arguments_for_java_call(CallJavaNode* call) {
   }
 }
 
-//---------------------------set_edges_for_java_call---------------------------
 // Connect a newly created call into the current JVMS.
 // A return value node (if any) is returned from set_edges_for_java_call.
 void GraphKit::set_edges_for_java_call(CallJavaNode* call, bool must_throw, bool separate_io_proj) {
@@ -1843,7 +1800,6 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_p
   return ret;
 }
 
-//--------------------set_predefined_input_for_runtime_call--------------------
 // Reading and setting the memory state is way conservative here.
 // The real problem is that I am not doing real Type analysis on memory,
 // so I cannot distinguish card mark stores from other stores.  Across a GC
@@ -1865,7 +1821,6 @@ Node* GraphKit::set_predefined_input_for_runtime_call(SafePointNode* call, Node*
   return memory;
 }
 
-//-------------------set_predefined_output_for_runtime_call--------------------
 // Set control and memory (not i_o) from the call.
 // If keep_mem is not null, use it for the output state,
 // except for the RawPtr output of the call, if hook_mem is TypeRawPtr::BOTTOM.
@@ -2022,7 +1977,6 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
 }
 
 
-//------------------------------increment_counter------------------------------
 // for statistics: increment a VM counter by 1
 
 void GraphKit::increment_counter(address counter_addr) {
@@ -2039,7 +1993,6 @@ void GraphKit::increment_counter(Node* counter_addr) {
 }
 
 
-//------------------------------uncommon_trap----------------------------------
 // Bail out to the interpreter in mid-method.  Implemented by calling the
 // uncommon_trap blob.  This helper function inserts a runtime call with the
 // right debug info.
@@ -2168,7 +2121,6 @@ Node* GraphKit::uncommon_trap(int trap_request,
 }
 
 
-//--------------------------just_allocated_object------------------------------
 // Report the object that was just allocated.
 // It must be the case that there are no intervening safepoints.
 // We use this to determine if an object is so "fresh" that
@@ -2399,7 +2351,6 @@ Node* GraphKit::dprecision_rounding(Node *n) {
   return n;
 }
 
-//=============================================================================
 // Generate a fast path/slow path idiom.  Graph looks like:
 // [foo] indicates that 'foo' is a parameter
 //
@@ -2430,11 +2381,9 @@ Node* GraphKit::dprecision_rounding(Node *n) {
 //             \           | /    \ | /
 //              --------Region     Phi
 //
-//=============================================================================
 // Code is structured as a series of driver functions all called 'do_XXX' that
 // call a set of helper functions.  Helper functions first, then drivers.
 
-//------------------------------null_check_oop---------------------------------
 // Null check oop.  Set null-path control into Region in slot 3.
 // Make a cast-not-nullness use the other not-null control.  Return cast.
 Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
@@ -2467,7 +2416,6 @@ Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
   return cast;
 }
 
-//------------------------------opt_iff----------------------------------------
 // Optimize the fast-check IfNode.  Set the fast-path region slot 2.
 // Return slow-path control.
 Node* GraphKit::opt_iff(Node* region, Node* iff) {
@@ -2482,7 +2430,6 @@ Node* GraphKit::opt_iff(Node* region, Node* iff) {
   return slow_taken;
 }
 
-//-----------------------------make_runtime_call-------------------------------
 Node* GraphKit::make_runtime_call(int flags,
                                   const TypeFunc* call_type, address call_addr,
                                   const char* call_name,
@@ -2588,7 +2535,6 @@ Node* GraphKit::sign_extend_short(Node* in) {
   return _gvn.transform(new RShiftINode(tmp, _gvn.intcon(16)));
 }
 
-//------------------------------merge_memory-----------------------------------
 // Merge memory from one path into the current memory state.
 void GraphKit::merge_memory(Node* new_mem, Node* region, int new_path) {
   for (MergeMemStream mms(merged_memory(), new_mem->as_MergeMem()); mms.next_non_empty2(); ) {
@@ -2618,7 +2564,6 @@ void GraphKit::merge_memory(Node* new_mem, Node* region, int new_path) {
   }
 }
 
-//------------------------------make_slow_call_ex------------------------------
 // Make the exception handler hookups for the slow call
 void GraphKit::make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool separate_io_proj, bool deoptimize) {
   if (stopped())  return;
@@ -2669,7 +2614,6 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
   return iff;
 }
 
-//-------------------------------gen_subtype_check-----------------------------
 // Generate a subtyping check.  Takes as input the subtype and supertype.
 // Returns 2 values: sets the default control() to the true path and returns
 // the false path.  Only reads invariant memory; sets no (visible) memory.
@@ -2895,7 +2839,6 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
   return fail;
 }
 
-//------------------------------subtype_check_receiver-------------------------
 Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
                                        Node** casted_receiver) {
   const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces)->try_improve();
@@ -2916,7 +2859,6 @@ Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
   return slow_ctl;
 }
 
-//------------------------------seems_never_null-------------------------------
 // Use null_seen information if it is available from the profile.
 // If we see an unexpected null at a type check we record it and force a
 // recompile; the offending check will be recompiled to handle nulls.
@@ -2999,7 +2941,6 @@ void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
   }
 }
 
-//------------------------maybe_cast_profiled_receiver-------------------------
 // If the profile has seen exactly one type, narrow to exactly that type.
 // Subsequent type checks will always fold up.
 Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
@@ -3101,7 +3042,6 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
   return obj;
 }
 
-//-------------------------------gen_instanceof--------------------------------
 // Generate an instance-of idiom.  Used by both the instance-of bytecode
 // and the reflective instance-of call.
 Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replace) {
@@ -3197,7 +3137,6 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   return _gvn.transform(phi);
 }
 
-//-------------------------------gen_checkcast---------------------------------
 // Generate a checkcast idiom.  Used by both the checkcast bytecode and the
 // array store bytecode.  Stack must be as-if BEFORE doing the bytecode so the
 // uncommon-trap paths work.  Adjust stack after this call.
@@ -3349,7 +3288,6 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   return record_profiled_receiver_for_speculation(res);
 }
 
-//------------------------------next_monitor-----------------------------------
 // What number should be given to the next monitor?
 int GraphKit::next_monitor() {
   int current = jvms()->monitor_depth()* C->sync_stack_slots();
@@ -3359,7 +3297,6 @@ int GraphKit::next_monitor() {
   return current;
 }
 
-//------------------------------insert_mem_bar---------------------------------
 // Memory barrier to avoid floating things around
 // The membar serves as a pinch point between both control and all memory slices.
 Node* GraphKit::insert_mem_bar(int opcode, Node* precedent) {
@@ -3372,7 +3309,6 @@ Node* GraphKit::insert_mem_bar(int opcode, Node* precedent) {
   return membar;
 }
 
-//-------------------------insert_mem_bar_volatile----------------------------
 // Memory barrier to avoid floating things around
 // The membar serves as a pinch point between both control and memory(alias_idx).
 // If you want to make a pinch point on all memory slices, do not use this
@@ -3405,7 +3341,6 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
   return membar;
 }
 
-//------------------------------shared_lock------------------------------------
 // Emit locking code.
 FastLockNode* GraphKit::shared_lock(Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
@@ -3469,7 +3404,6 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
 }
 
 
-//------------------------------shared_unlock----------------------------------
 // Emit unlocking code.
 void GraphKit::shared_unlock(Node* box, Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
@@ -3511,7 +3445,6 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
   map()->pop_monitor( );
 }
 
-//-------------------------------get_layout_helper-----------------------------
 // If the given klass is a constant or known to be an array,
 // fetch the constant layout helper value into constant_value
 // and return null.  Otherwise, load the non-constant
@@ -3557,7 +3490,6 @@ static void hook_memory_on_init(GraphKit& kit, int alias_idx,
   kit.set_memory(init_out_raw, alias_idx);
 }
 
-//---------------------------set_output_for_allocation-------------------------
 Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
                                           const TypeOopPtr* oop_type,
                                           bool deoptimize_on_exception) {
@@ -3642,7 +3574,6 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
   return javaoop;
 }
 
-//---------------------------new_instance--------------------------------------
 // This routine takes a klass_node which may be constant (for a static type)
 // or may be non-constant (for reflective code).  It will work equally well
 // for either, and the graph will fold nicely if the optimizer later reduces
@@ -3724,7 +3655,6 @@ Node* GraphKit::new_instance(Node* klass_node,
   return set_output_for_allocation(alloc, oop_type, deoptimize_on_exception);
 }
 
-//-------------------------------new_array-------------------------------------
 // helper for both newarray and anewarray
 // The 'length' parameter is (obviously) the length of the array.
 // See comments on new_instance for the meaning of the other arguments.
@@ -3915,7 +3845,6 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 // The following "Ideal_foo" functions are placed here because they recognize
 // the graph shapes created by the functions immediately above.
 
-//---------------------------Ideal_allocation----------------------------------
 // Given an oop pointer or raw pointer, see if it feeds from an AllocateNode.
 AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase) {
   if (ptr == nullptr) {     // reduce dumb test in callers
@@ -3977,9 +3906,7 @@ InitializeNode* AllocateNode::initialization() {
   return nullptr;
 }
 
-//----------------------------- loop predicates ---------------------------
 
-//------------------------------add_predicate_impl----------------------------
 void GraphKit::add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs) {
   // Too many traps seen?
   if (too_many_traps(reason)) {
@@ -4013,7 +3940,6 @@ void GraphKit::add_empty_predicate_impl(Deoptimization::DeoptReason reason, int 
   set_control(iftrue);
 }
 
-//------------------------------add_predicate---------------------------------
 void GraphKit::add_empty_predicates(int nargs) {
   // These loop predicates remain empty. All concrete loop predicates are inserted above the corresponding
   // empty loop predicate later by 'PhaseIdealLoop::create_new_if_for_predicate'. All concrete loop predicates of

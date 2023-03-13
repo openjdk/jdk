@@ -36,7 +36,6 @@ class PhaseCFG;
 
 #define  MAX_REG_ALLOCATORS   10
 
-//------------------------------PhaseRegAlloc------------------------------------
 // Abstract register allocator
 class PhaseRegAlloc : public Phase {
   friend class VMStructs;

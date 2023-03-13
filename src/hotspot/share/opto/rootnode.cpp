@@ -32,7 +32,6 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 
-//------------------------------Ideal------------------------------------------
 // Remove dead inputs
 Node *RootNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   bool modified = false;
@@ -61,7 +60,6 @@ Node *RootNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return modified ? this : nullptr;
 }
 
-//=============================================================================
 HaltNode::HaltNode(Node* ctrl, Node* frameptr, const char* halt_reason, bool reachable)
                         : Node(TypeFunc::Parms), _halt_reason(halt_reason), _reachable(reachable) {
   init_class_id(Class_Halt);
@@ -76,12 +74,10 @@ HaltNode::HaltNode(Node* ctrl, Node* frameptr, const char* halt_reason, bool rea
 const Type *HaltNode::bottom_type() const { return Type::BOTTOM; }
 uint HaltNode::size_of() const { return sizeof(*this); }
 
-//------------------------------Ideal------------------------------------------
 Node *HaltNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
-//------------------------------Value------------------------------------------
 const Type* HaltNode::Value(PhaseGVN* phase) const {
   return ( phase->type(in(TypeFunc::Control)) == Type::TOP)
     ? Type::TOP

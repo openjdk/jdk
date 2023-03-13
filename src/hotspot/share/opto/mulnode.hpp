@@ -33,7 +33,6 @@
 
 class PhaseTransform;
 
-//------------------------------MulNode----------------------------------------
 // Classic MULTIPLY functionality.  This covers all the usual 'multiply'
 // behaviors for an algebraic ring.  Multiply-integer, multiply-float,
 // multiply-double, and binary-and are all inherited from this class.  The
@@ -87,7 +86,6 @@ public:
   Node* AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt);
 };
 
-//------------------------------MulINode---------------------------------------
 // Multiply 2 integers
 class MulINode : public MulNode {
 public:
@@ -105,7 +103,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------MulLNode---------------------------------------
 // Multiply 2 longs
 class MulLNode : public MulNode {
 public:
@@ -124,7 +121,6 @@ public:
 };
 
 
-//------------------------------MulFNode---------------------------------------
 // Multiply 2 floats
 class MulFNode : public MulNode {
 public:
@@ -142,7 +138,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------MulDNode---------------------------------------
 // Multiply 2 doubles
 class MulDNode : public MulNode {
 public:
@@ -160,7 +155,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//-------------------------------MulHiLNode------------------------------------
 const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
 
 // Upper 64 bits of a 64 bit by 64 bit multiply
@@ -185,7 +179,6 @@ public:
   friend const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
 };
 
-//------------------------------AndINode---------------------------------------
 // Logically AND 2 integers.  Included with the MUL nodes because it inherits
 // all the behavior of multiplication on a ring.
 class AndINode : public MulINode {
@@ -205,7 +198,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------AndINode---------------------------------------
 // Logically AND 2 longs.  Included with the MUL nodes because it inherits
 // all the behavior of multiplication on a ring.
 class AndLNode : public MulLNode {
@@ -234,7 +226,6 @@ public:
   static LShiftNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
-//------------------------------LShiftINode------------------------------------
 // Logical shift left
 class LShiftINode : public LShiftNode {
 public:
@@ -247,7 +238,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------LShiftLNode------------------------------------
 // Logical shift left
 class LShiftLNode : public LShiftNode {
 public:
@@ -261,7 +251,6 @@ public:
 };
 
 
-//------------------------ RotateLeftNode ----------------------------------
 class RotateLeftNode : public TypeNode {
   public:
   RotateLeftNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
@@ -274,7 +263,6 @@ class RotateLeftNode : public TypeNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
-//----------------------- RotateRightNode ----------------------------------
 class RotateRightNode : public TypeNode {
   public:
   RotateRightNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
@@ -286,7 +274,6 @@ class RotateRightNode : public TypeNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------RShiftINode------------------------------------
 // Signed shift right
 class RShiftINode : public Node {
 public:
@@ -299,7 +286,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------RShiftLNode------------------------------------
 // Signed shift right
 class RShiftLNode : public Node {
 public:
@@ -311,7 +297,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------URShiftBNode-----------------------------------
 // Logical shift right
 class URShiftBNode : public Node {
 public:
@@ -321,7 +306,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftSNode-----------------------------------
 // Logical shift right
 class URShiftSNode : public Node {
 public:
@@ -331,7 +315,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftINode-----------------------------------
 // Logical shift right
 class URShiftINode : public Node {
 public:
@@ -344,7 +327,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------URShiftLNode-----------------------------------
 // Logical shift right
 class URShiftLNode : public Node {
 public:
@@ -357,7 +339,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------FmaDNode--------------------------------------
 // fused-multiply-add double
 class FmaDNode : public Node {
 public:
@@ -368,7 +349,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------FmaFNode--------------------------------------
 // fused-multiply-add float
 class FmaFNode : public Node {
 public:
@@ -379,7 +359,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//------------------------------MulAddS2INode----------------------------------
 // Multiply shorts into integers and add them.
 // Semantics: I_OUT = S1 * S2 + S3 * S4
 class MulAddS2INode : public Node {

@@ -47,8 +47,6 @@
 
 #include "math.h"
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
 // If right input is a constant 0, return the left input.
 Node* SubNode::Identity(PhaseGVN* phase) {
   assert(in(1) != this, "Must already have called Value");
@@ -75,7 +73,6 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   return ( phase->type( in(2) )->higher_equal( zero ) ) ? in(1) : this;
 }
 
-//------------------------------Value------------------------------------------
 // A subtract node differences it's two inputs.
 const Type* SubNode::Value_common(PhaseTransform *phase) const {
   const Node* in1 = in(1);
@@ -120,8 +117,6 @@ SubNode* SubNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------Helper function--------------------------------
 
 static bool is_cloop_increment(Node* inc) {
   precond(inc->Opcode() == Op_AddI || inc->Opcode() == Op_AddL);
@@ -152,7 +147,6 @@ static bool ok_to_convert(Node* inc, Node* var) {
   return !(is_cloop_increment(inc) || var->is_cloop_ind_var());
 }
 
-//------------------------------Ideal------------------------------------------
 Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   Node *in1 = in(1);
   Node *in2 = in(2);
@@ -318,7 +312,6 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   return nullptr;
 }
 
-//------------------------------sub--------------------------------------------
 // A subtract node differences it's two inputs.
 const Type *SubINode::sub( const Type *t1, const Type *t2 ) const {
   const TypeInt *r0 = t1->is_int(); // Handy access
@@ -337,8 +330,6 @@ const Type *SubINode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::INT;
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *in1 = in(1);
   Node *in2 = in(2);
@@ -495,7 +486,6 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------sub--------------------------------------------
 // A subtract node differences it's two inputs.
 const Type *SubLNode::sub( const Type *t1, const Type *t2 ) const {
   const TypeLong *r0 = t1->is_long(); // Handy access
@@ -514,8 +504,6 @@ const Type *SubLNode::sub( const Type *t1, const Type *t2 ) const {
     return TypeLong::LONG;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 // A subtract node differences its two inputs.
 const Type* SubFPNode::Value(PhaseGVN* phase) const {
   const Node* in1 = in(1);
@@ -542,8 +530,6 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 }
 
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t2 = phase->type( in(2) );
   // Convert "x-c0" into "x+ -c0".
@@ -559,7 +545,6 @@ Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------sub--------------------------------------------
 // A subtract node differences its two inputs.
 const Type *SubFNode::sub( const Type *t1, const Type *t2 ) const {
   // no folding if one of operands is infinity or NaN, do not do constant folding
@@ -577,8 +562,6 @@ const Type *SubFNode::sub( const Type *t1, const Type *t2 ) const {
   }
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 Node *SubDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   const Type *t2 = phase->type( in(2) );
   // Convert "x-c0" into "x+ -c0".
@@ -594,7 +577,6 @@ Node *SubDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return nullptr;
 }
 
-//------------------------------sub--------------------------------------------
 // A subtract node differences its two inputs.
 const Type *SubDNode::sub( const Type *t1, const Type *t2 ) const {
   // no folding if one of operands is infinity or NaN, do not do constant folding
@@ -612,8 +594,6 @@ const Type *SubDNode::sub( const Type *t1, const Type *t2 ) const {
   }
 }
 
-//=============================================================================
-//------------------------------Idealize---------------------------------------
 // Unlike SubNodes, compare must still flatten return value to the
 // range -1, 0, 1.
 // And optimizations like those for (X + Y) - X fail if overflow happens.
@@ -639,8 +619,6 @@ CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------cmp--------------------------------------------
 // Simplify a CmpI (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpINode::sub( const Type *t1, const Type *t2 ) const {
@@ -851,7 +829,6 @@ bool CmpUNode::is_index_range_check() const {
           in(1)->in(2)->eqv_uncast(in(2)));
 }
 
-//------------------------------Idealize---------------------------------------
 Node *CmpINode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   if (phase->type(in(2))->higher_equal(TypeInt::ZERO)) {
     switch (in(1)->Opcode()) {
@@ -885,7 +862,6 @@ Node *CmpLNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   return nullptr;
 }
 
-//=============================================================================
 // Simplify a CmpL (compare 2 longs ) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
@@ -961,8 +937,6 @@ const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
   return TypeInt::CC;                   // else use worst case results
 }
 
-//=============================================================================
-//------------------------------sub--------------------------------------------
 // Simplify an CmpP (compare 2 pointers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
@@ -1088,7 +1062,6 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
   return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass(), Type::trust_interfaces));
 }
 
-//------------------------------Ideal------------------------------------------
 // Normalize comparisons between Java mirror loads to compare the klass instead.
 //
 // Also check for the case of comparing an unknown klass loaded from the primary
@@ -1196,8 +1169,6 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   return this;
 }
 
-//=============================================================================
-//------------------------------sub--------------------------------------------
 // Simplify an CmpN (compare 2 pointers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
@@ -1205,13 +1176,10 @@ const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
   return bottom_type();
 }
 
-//------------------------------Ideal------------------------------------------
 Node *CmpNNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 // Simplify an CmpF (compare 2 floats ) node, based on local information.
 // If both inputs are constants, compare them.
 const Type* CmpFNode::Value(PhaseGVN* phase) const {
@@ -1240,8 +1208,6 @@ const Type* CmpFNode::Value(PhaseGVN* phase) const {
 }
 
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 // Simplify an CmpD (compare 2 doubles ) node, based on local information.
 // If both inputs are constants, compare them.
 const Type* CmpDNode::Value(PhaseGVN* phase) const {
@@ -1269,7 +1235,6 @@ const Type* CmpDNode::Value(PhaseGVN* phase) const {
   return TypeInt::CC_EQ;
 }
 
-//------------------------------Ideal------------------------------------------
 Node *CmpDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   // Check if we can change this to a CmpF and remove a ConvD2F operation.
   // Change  (CMPD (F2D (float)) (ConD value))
@@ -1311,8 +1276,6 @@ Node *CmpDNode::Ideal(PhaseGVN *phase, bool can_reshape){
 }
 
 
-//=============================================================================
-//------------------------------cc2logical-------------------------------------
 // Convert a condition code type to a logical type
 const Type *BoolTest::cc2logical( const Type *CC ) const {
   if( CC == Type::TOP ) return Type::TOP;
@@ -1337,7 +1300,6 @@ const Type *BoolTest::cc2logical( const Type *CC ) const {
   return TypeInt::BOOL;
 }
 
-//------------------------------dump_spec-------------------------------------
 // Print special per-node info
 void BoolTest::dump_on(outputStream *st) const {
   const char *msg[] = {"eq","gt","of","lt","ne","le","nof","ge"};
@@ -1362,17 +1324,14 @@ BoolTest::mask BoolTest::merge(BoolTest other) const {
   return res[_test][other._test];
 }
 
-//=============================================================================
 uint BoolNode::hash() const { return (Node::hash() << 3)|(_test._test+1); }
 uint BoolNode::size_of() const { return sizeof(BoolNode); }
 
-//------------------------------operator==-------------------------------------
 bool BoolNode::cmp( const Node &n ) const {
   const BoolNode *b = (const BoolNode *)&n; // Cast up
   return (_test._test == b->_test._test);
 }
 
-//-------------------------------make_predicate--------------------------------
 Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
   if (test_value->is_Con())   return test_value;
   if (test_value->is_Bool())  return test_value;
@@ -1395,7 +1354,6 @@ Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
   return phase->transform(bol);
 }
 
-//--------------------------------as_int_value---------------------------------
 Node* BoolNode::as_int_value(PhaseGVN* phase) {
   // Inverse to make_predicate.  The CMove probably boils down to a Conv2B.
   Node* cmov = CMoveNode::make(nullptr, this,
@@ -1404,7 +1362,6 @@ Node* BoolNode::as_int_value(PhaseGVN* phase) {
   return phase->transform(cmov);
 }
 
-//----------------------------------negate-------------------------------------
 BoolNode* BoolNode::negate(PhaseGVN* phase) {
   return new BoolNode(in(1), _test.negate());
 }
@@ -1467,7 +1424,6 @@ static bool is_counted_loop_cmp(Node *cmp) {
          n->in(0)->as_CountedLoop()->phi() == n;
 }
 
-//------------------------------Ideal------------------------------------------
 Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Change "bool tst (cmp con x)" into "bool ~tst (cmp x con)".
   // This moves the constant to the right.  Helps value-numbering.
@@ -1804,7 +1760,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //    }
 }
 
-//------------------------------Value------------------------------------------
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
@@ -1812,7 +1767,6 @@ const Type* BoolNode::Value(PhaseGVN* phase) const {
 }
 
 #ifndef PRODUCT
-//------------------------------dump_spec--------------------------------------
 // Dump special per-node info
 void BoolNode::dump_spec(outputStream *st) const {
   st->print("[");
@@ -1821,7 +1775,6 @@ void BoolNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-//----------------------is_counted_loop_exit_test------------------------------
 // Returns true if node is used by a counted loop node.
 bool BoolNode::is_counted_loop_exit_test() {
   for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
@@ -1833,8 +1786,6 @@ bool BoolNode::is_counted_loop_exit_test() {
   return false;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 const Type* AbsNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   if (t1 == Type::TOP) return Type::TOP;
@@ -1865,7 +1816,6 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//------------------------------Identity----------------------------------------
 Node* AbsNode::Identity(PhaseGVN* phase) {
   Node* in1 = in(1);
   // No need to do abs for non-negative values
@@ -1880,7 +1830,6 @@ Node* AbsNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
 Node* AbsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   // Convert "abs(0-x)" into "abs(x)"
@@ -1891,8 +1840,6 @@ Node* AbsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
 // Compute sqrt
 const Type* SqrtDNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );

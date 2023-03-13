@@ -39,7 +39,6 @@ elapsedTimer Phase::_t_stubCompilation;
 // The counters to use for LogCompilation
 elapsedTimer Phase::timers[max_phase_timers];
 
-//------------------------------Phase------------------------------------------
 Phase::Phase( PhaseNumber pnum ) : _pnum(pnum), C( pnum == Compiler ? nullptr : Compile::current()) {
   // Poll for requests from shutdown mechanism to quiesce compiler (4448539, 4448544).
   // This is an effective place to poll, since the compiler is full of phases.

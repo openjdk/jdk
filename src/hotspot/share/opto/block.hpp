@@ -41,7 +41,6 @@ class VectorSet;
 class PhaseChaitin;
 struct Tarjan;
 
-//------------------------------Block_Array------------------------------------
 // Map dense integer indices to Blocks.  Uses classic doubling-array trick.
 // Abstractly provides an infinite array of Block*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
@@ -101,7 +100,6 @@ class CFGElement : public AnyObj {
   CFGLoop* as_CFGLoop()  { assert(is_loop(),  "must be loop");  return (CFGLoop*)this;  }
 };
 
-//------------------------------Block------------------------------------------
 // This class defines a Basic Block.
 // Basic blocks are used during the output routines, and are not used during
 // any optimization pass.  They are created late in the game.
@@ -366,7 +364,6 @@ public:
 };
 
 
-//------------------------------PhaseCFG---------------------------------------
 // Build an array of Basic Block pointers, one per Node.
 class PhaseCFG : public Phase {
   friend class VMStructs;
@@ -649,7 +646,6 @@ class PhaseCFG : public Phase {
 };
 
 
-//------------------------------UnionFind--------------------------------------
 // Map Block indices to a block-index for a cfg-cover.
 // Array lookup in the optimized case.
 class UnionFind : public ResourceObj {
@@ -684,7 +680,6 @@ public:
 
 };
 
-//----------------------------BlockProbPair---------------------------
 // Ordered pair of Node*.
 class BlockProbPair {
 protected:
@@ -698,7 +693,6 @@ public:
   double get_prob() const { return _prob; }
 };
 
-//------------------------------CFGLoop-------------------------------------------
 class CFGLoop : public CFGElement {
   friend class VMStructs;
   int _id;
@@ -749,7 +743,6 @@ class CFGLoop : public CFGElement {
 };
 
 
-//----------------------------------CFGEdge------------------------------------
 // A edge between two basic blocks that will be embodied by a branch or a
 // fall-through.
 class CFGEdge : public ResourceObj {
@@ -796,7 +789,6 @@ class CFGEdge : public ResourceObj {
 };
 
 
-//-----------------------------------Trace-------------------------------------
 // An ordered list of basic blocks.
 class Trace : public ResourceObj {
  private:
@@ -886,7 +878,6 @@ class Trace : public ResourceObj {
 #endif
 };
 
-//------------------------------PhaseBlockLayout-------------------------------
 // Rearrange blocks into some canonical order, based on edges and their frequencies
 class PhaseBlockLayout : public Phase {
   friend class VMStructs;

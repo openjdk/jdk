@@ -26,14 +26,12 @@
 #include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
 
-//=============================================================================
 // Do not allow value-numbering
 uint Opaque1Node::hash() const { return NO_HASH; }
 bool Opaque1Node::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
-//------------------------------Identity---------------------------------------
 // Do NOT remove the opaque node until no more loop opts can happen.
 Node* Opaque1Node::Identity(PhaseGVN* phase) {
   if (phase->C->post_loop_opts_phase()) {
@@ -64,7 +62,6 @@ const Type* Opaque4Node::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 
-//=============================================================================
 
 uint ProfileBooleanNode::hash() const { return NO_HASH; }
 bool ProfileBooleanNode::cmp( const Node &n ) const {

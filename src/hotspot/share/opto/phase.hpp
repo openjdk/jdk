@@ -32,7 +32,6 @@ class MergeMemNode;
 class Node;
 class PhaseGVN;
 
-//------------------------------Phase------------------------------------------
 // Most optimizations are done in Phases.  Creating a phase does any long
 // running analysis required, and caches the analysis in internal data
 // structures.  Later the analysis is queried using transform() calls to

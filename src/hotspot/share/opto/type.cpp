@@ -123,7 +123,6 @@ const TypeAryPtr* TypeAryPtr::_array_body_type[T_CONFLICT+1];
 const TypePtr::InterfaceSet* TypeAryPtr::_array_interfaces = nullptr;
 const TypePtr::InterfaceSet* TypeAryKlassPtr::_array_interfaces = nullptr;
 
-//=============================================================================
 // Convenience common pre-built types.
 const Type *Type::ABIO;         // State-of-machine only
 const Type *Type::BOTTOM;       // All values
@@ -135,7 +134,6 @@ const Type *Type::MEMORY;       // Abstract store only
 const Type *Type::RETURN_ADDRESS;
 const Type *Type::TOP;          // No values in set
 
-//------------------------------get_const_type---------------------------
 const Type* Type::get_const_type(ciType* type, InterfaceHandling interface_handling) {
   if (type == nullptr) {
     return nullptr;
@@ -146,7 +144,6 @@ const Type* Type::get_const_type(ciType* type, InterfaceHandling interface_handl
   }
 }
 
-//---------------------------array_element_basic_type---------------------------------
 // Mapping to the array element's basic type.
 BasicType Type::array_element_basic_type() const {
   BasicType bt = basic_type();
@@ -188,7 +185,6 @@ void Type::get_arrays_base_elements(const Type *a1, const Type *a2,
   }
 }
 
-//---------------------------get_typeflow_type---------------------------------
 // Import a type produced by ciTypeFlow.
 const Type* Type::get_typeflow_type(ciType* type) {
   switch (type->basic_type()) {
@@ -235,7 +231,6 @@ const Type* Type::get_typeflow_type(ciType* type) {
 }
 
 
-//-----------------------make_from_constant------------------------------------
 const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
                                      int stable_dimension, bool is_narrow_oop,
                                      bool is_autobox_cache) {
@@ -389,14 +384,12 @@ const Type* Type::make_constant_from_field(ciField* field, ciInstance* holder,
   return con_type;
 }
 
-//------------------------------make-------------------------------------------
 // Create a simple Type, with default empty symbol sets.  Then hashcons it
 // and look for an existing copy in the type dictionary.
 const Type *Type::make( enum TYPES t ) {
   return (new Type(t))->hashcons();
 }
 
-//------------------------------cmp--------------------------------------------
 int Type::cmp( const Type *const t1, const Type *const t2 ) {
   if( t1->_base != t2->_base )
     return 1;                   // Missed badly
@@ -411,7 +404,6 @@ const Type* Type::maybe_remove_speculative(bool include_speculative) const {
   return this;
 }
 
-//------------------------------hash-------------------------------------------
 int Type::uhash( const Type *const t ) {
   return t->hash();
 }
@@ -420,7 +412,6 @@ int Type::uhash( const Type *const t ) {
 #define POSITIVE_INFINITE_F 0x7f800000 // hex representation for IEEE 754 single precision positive infinite
 #define POSITIVE_INFINITE_D 0x7ff0000000000000 // hex representation for IEEE 754 double precision positive infinite
 
-//--------------------------Initialize_shared----------------------------------
 void Type::Initialize_shared(Compile* current) {
   // This method does not need to be locked because the first system
   // compilations (stub compilations) occur serially.  If they are
@@ -707,7 +698,6 @@ void Type::Initialize_shared(Compile* current) {
   current->set_type_dict(nullptr);
 }
 
-//------------------------------Initialize-------------------------------------
 void Type::Initialize(Compile* current) {
   assert(current->type_arena() != nullptr, "must have created type arena");
 
@@ -722,7 +712,6 @@ void Type::Initialize(Compile* current) {
   current->set_type_dict(tdic);
 }
 
-//------------------------------hashcons---------------------------------------
 // Do the hash-cons trick.  If the Type already exists in the type table,
 // delete the current Type and return the existing Type.  Otherwise stick the
 // current Type in the Type table.
@@ -762,25 +751,21 @@ const Type *Type::hashcons(void) {
   return this;                  // Return new Type
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool Type::eq( const Type * ) const {
   return true;                  // Nothing else can go wrong
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int Type::hash(void) const {
   return _base;
 }
 
-//------------------------------is_finite--------------------------------------
 // Has a finite value
 bool Type::is_finite() const {
   return false;
 }
 
-//------------------------------is_nan-----------------------------------------
 // Is not a number (NaN)
 bool Type::is_nan()    const {
   return false;
@@ -969,7 +954,6 @@ void Type::check_symmetrical(const Type* t, const Type* mt, const VerifyMeet& ve
 }
 #endif
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  NOT virtual.  It enforces that meet is
 // commutative and the lattice is symmetric.
 const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
@@ -1006,7 +990,6 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
   return mt;
 }
 
-//------------------------------xmeet------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *Type::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -1091,7 +1074,6 @@ const Type *Type::xmeet( const Type *t ) const {
   return this;
 }
 
-//-----------------------------filter------------------------------------------
 const Type *Type::filter_helper(const Type *kills, bool include_speculative) const {
   const Type* ft = join_helper(kills, include_speculative);
   if (ft->empty())
@@ -1099,14 +1081,12 @@ const Type *Type::filter_helper(const Type *kills, bool include_speculative) con
   return ft;
 }
 
-//------------------------------xdual------------------------------------------
 const Type *Type::xdual() const {
   // Note: the base() accessor asserts the sanity of _base.
   assert(_type_info[base()].dual_type != Bad, "implement with v-call");
   return new Type(_type_info[_base].dual_type);
 }
 
-//------------------------------has_memory-------------------------------------
 bool Type::has_memory() const {
   Type::TYPES tx = base();
   if (tx == Memory) return true;
@@ -1121,12 +1101,10 @@ bool Type::has_memory() const {
 }
 
 #ifndef PRODUCT
-//------------------------------dump2------------------------------------------
 void Type::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("%s", _type_info[_base].msg);
 }
 
-//------------------------------dump-------------------------------------------
 void Type::dump_on(outputStream *st) const {
   ResourceMark rm;
   Dict d(cmpkey,hashkey);       // Stop recursive type dumping
@@ -1138,7 +1116,6 @@ void Type::dump_on(outputStream *st) const {
   }
 }
 
-//-----------------------------------------------------------------------------
 const char* Type::str(const Type* t) {
   stringStream ss;
   t->dump_on(&ss);
@@ -1146,14 +1123,12 @@ const char* Type::str(const Type* t) {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants (Ldi nodes).  Singletons are integer, float or double constants.
 bool Type::singleton(void) const {
   return _base == Top || _base == Half;
 }
 
-//------------------------------empty------------------------------------------
 // TRUE if Type is a type with no values, FALSE otherwise.
 bool Type::empty(void) const {
   switch (_base) {
@@ -1177,7 +1152,6 @@ bool Type::empty(void) const {
   }
 }
 
-//------------------------------dump_stats-------------------------------------
 // Dump collected statistics to stderr
 #ifndef PRODUCT
 void Type::dump_stats() {
@@ -1185,7 +1159,6 @@ void Type::dump_stats() {
 }
 #endif
 
-//------------------------------category---------------------------------------
 #ifndef PRODUCT
 Type::Category Type::category() const {
   const TypeTuple* tuple;
@@ -1270,7 +1243,6 @@ bool Type::has_category(Type::Category cat) const {
 }
 #endif
 
-//------------------------------typerr-----------------------------------------
 void Type::typerr( const Type *t ) const {
 #ifndef PRODUCT
   tty->print("\nError mixing types: ");
@@ -1283,7 +1255,6 @@ void Type::typerr( const Type *t ) const {
 }
 
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypeF *TypeF::MAX;        // Floating point max
 const TypeF *TypeF::MIN;        // Floating point min
@@ -1292,13 +1263,11 @@ const TypeF *TypeF::ONE;        // Floating point one
 const TypeF *TypeF::POS_INF;    // Floating point positive infinity
 const TypeF *TypeF::NEG_INF;    // Floating point negative infinity
 
-//------------------------------make-------------------------------------------
 // Create a float constant
 const TypeF *TypeF::make(float f) {
   return (TypeF*)(new TypeF(f))->hashcons();
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeF::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -1344,13 +1313,11 @@ const Type *TypeF::xmeet( const Type *t ) const {
   return this;                  // Return the float constant
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: symmetric
 const Type *TypeF::xdual() const {
   return this;
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeF::eq(const Type *t) const {
   // Bitwise comparison to distinguish between +/-0. These values must be treated
@@ -1358,25 +1325,21 @@ bool TypeF::eq(const Type *t) const {
   return (jint_cast(_f) == jint_cast(t->getf()));
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeF::hash(void) const {
   return *(int*)(&_f);
 }
 
-//------------------------------is_finite--------------------------------------
 // Has a finite value
 bool TypeF::is_finite() const {
   return g_isfinite(getf()) != 0;
 }
 
-//------------------------------is_nan-----------------------------------------
 // Is not a number (NaN)
 bool TypeF::is_nan()    const {
   return g_isnan(getf()) != 0;
 }
 
-//------------------------------dump2------------------------------------------
 // Dump float constant Type
 #ifndef PRODUCT
 void TypeF::dump2( Dict &d, uint depth, outputStream *st ) const {
@@ -1385,7 +1348,6 @@ void TypeF::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants (Ldi nodes).  Singletons are integer, float or double constants
 // or a single symbol.
@@ -1397,7 +1359,6 @@ bool TypeF::empty(void) const {
   return false;                 // always exactly a singleton
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypeD *TypeD::MAX;        // Floating point max
 const TypeD *TypeD::MIN;        // Floating point min
@@ -1406,12 +1367,10 @@ const TypeD *TypeD::ONE;        // Floating point one
 const TypeD *TypeD::POS_INF;    // Floating point positive infinity
 const TypeD *TypeD::NEG_INF;    // Floating point negative infinity
 
-//------------------------------make-------------------------------------------
 const TypeD *TypeD::make(double d) {
   return (TypeD*)(new TypeD(d))->hashcons();
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeD::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -1454,13 +1413,11 @@ const Type *TypeD::xmeet( const Type *t ) const {
   return this;                  // Return the double constant
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: symmetric
 const Type *TypeD::xdual() const {
   return this;
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeD::eq(const Type *t) const {
   // Bitwise comparison to distinguish between +/-0. These values must be treated
@@ -1468,25 +1425,21 @@ bool TypeD::eq(const Type *t) const {
   return (jlong_cast(_d) == jlong_cast(t->getd()));
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeD::hash(void) const {
   return *(int*)(&_d);
 }
 
-//------------------------------is_finite--------------------------------------
 // Has a finite value
 bool TypeD::is_finite() const {
   return g_isfinite(getd()) != 0;
 }
 
-//------------------------------is_nan-----------------------------------------
 // Is not a number (NaN)
 bool TypeD::is_nan()    const {
   return g_isnan(getd()) != 0;
 }
 
-//------------------------------dump2------------------------------------------
 // Dump double constant Type
 #ifndef PRODUCT
 void TypeD::dump2( Dict &d, uint depth, outputStream *st ) const {
@@ -1495,7 +1448,6 @@ void TypeD::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants (Ldi nodes).  Singletons are integer, float or double constants
 // or a single symbol.
@@ -1555,7 +1507,6 @@ const TypeInteger* TypeInteger::minus_1(BasicType bt) {
   return TypeLong::MINUS_1;
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypeInt *TypeInt::MAX;    // INT_MAX
 const TypeInt *TypeInt::MIN;    // INT_MIN
@@ -1579,11 +1530,9 @@ const TypeInt *TypeInt::INT;    // 32-bit integers
 const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
 const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
-//------------------------------TypeInt----------------------------------------
 TypeInt::TypeInt( jint lo, jint hi, int w ) : TypeInteger(Int, w), _lo(lo), _hi(hi) {
 }
 
-//------------------------------make-------------------------------------------
 const TypeInt *TypeInt::make( jint lo ) {
   return (TypeInt*)(new TypeInt(lo,lo,WidenMin))->hashcons();
 }
@@ -1606,7 +1555,6 @@ const TypeInt *TypeInt::make( jint lo, jint hi, int w ) {
   return (TypeInt*)(new TypeInt(lo,hi,w))->hashcons();
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type representation object
 // with reference count equal to the number of Types pointing at it.
 // Caller should wrap a Types around it.
@@ -1649,14 +1597,12 @@ const Type *TypeInt::xmeet( const Type *t ) const {
   return make( MIN2(_lo,r->_lo), MAX2(_hi,r->_hi), MAX2(_widen,r->_widen) );
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: reverse hi & lo; flip widen
 const Type *TypeInt::xdual() const {
   int w = normalize_int_widen(_hi,_lo, WidenMax-_widen);
   return new TypeInt(_hi,_lo,w);
 }
 
-//------------------------------widen------------------------------------------
 // Only happens for optimistic top-down optimizations.
 const Type *TypeInt::widen( const Type *old, const Type* limit ) const {
   // Coming from TOP or such; no widening
@@ -1710,7 +1656,6 @@ const Type *TypeInt::widen( const Type *old, const Type* limit ) const {
   return TypeInt::INT;
 }
 
-//------------------------------narrow---------------------------------------
 // Only happens for pessimistic optimizations.
 const Type *TypeInt::narrow( const Type *old ) const {
   if (_lo >= _hi)  return this;   // already narrow enough
@@ -1742,7 +1687,6 @@ const Type *TypeInt::narrow( const Type *old ) const {
   return this;
 }
 
-//-----------------------------filter------------------------------------------
 const Type *TypeInt::filter_helper(const Type *kills, bool include_speculative) const {
   const TypeInt* ft = join_helper(kills, include_speculative)->isa_int();
   if (ft == nullptr || ft->empty())
@@ -1755,26 +1699,22 @@ const Type *TypeInt::filter_helper(const Type *kills, bool include_speculative) 
   return ft;
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeInt::eq( const Type *t ) const {
   const TypeInt *r = t->is_int(); // Handy access
   return r->_lo == _lo && r->_hi == _hi && r->_widen == _widen;
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeInt::hash(void) const {
   return java_add(java_add(_lo, _hi), java_add((jint)_widen, (jint)Type::Int));
 }
 
-//------------------------------is_finite--------------------------------------
 // Has a finite value
 bool TypeInt::is_finite() const {
   return true;
 }
 
-//------------------------------dump2------------------------------------------
 // Dump TypeInt
 #ifndef PRODUCT
 static const char* intname(char* buf, size_t buf_size, jint n) {
@@ -1817,7 +1757,6 @@ void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants.
 bool TypeInt::singleton(void) const {
@@ -1828,7 +1767,6 @@ bool TypeInt::empty(void) const {
   return _lo > _hi;
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypeLong *TypeLong::MAX;
 const TypeLong *TypeLong::MIN;
@@ -1841,11 +1779,9 @@ const TypeLong *TypeLong::INT;  // 32-bit subrange
 const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
-//------------------------------TypeLong---------------------------------------
 TypeLong::TypeLong(jlong lo, jlong hi, int w) : TypeInteger(Long, w), _lo(lo), _hi(hi) {
 }
 
-//------------------------------make-------------------------------------------
 const TypeLong *TypeLong::make( jlong lo ) {
   return (TypeLong*)(new TypeLong(lo,lo,WidenMin))->hashcons();
 }
@@ -1869,7 +1805,6 @@ const TypeLong *TypeLong::make( jlong lo, jlong hi, int w ) {
 }
 
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type representation object
 // with reference count equal to the number of Types pointing at it.
 // Caller should wrap a Types around it.
@@ -1912,14 +1847,12 @@ const Type *TypeLong::xmeet( const Type *t ) const {
   return make( MIN2(_lo,r->_lo), MAX2(_hi,r->_hi), MAX2(_widen,r->_widen) );
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: reverse hi & lo; flip widen
 const Type *TypeLong::xdual() const {
   int w = normalize_long_widen(_hi,_lo, WidenMax-_widen);
   return new TypeLong(_hi,_lo,w);
 }
 
-//------------------------------widen------------------------------------------
 // Only happens for optimistic top-down optimizations.
 const Type *TypeLong::widen( const Type *old, const Type* limit ) const {
   // Coming from TOP or such; no widening
@@ -1976,7 +1909,6 @@ const Type *TypeLong::widen( const Type *old, const Type* limit ) const {
   return TypeLong::LONG;
 }
 
-//------------------------------narrow----------------------------------------
 // Only happens for pessimistic optimizations.
 const Type *TypeLong::narrow( const Type *old ) const {
   if (_lo >= _hi)  return this;   // already narrow enough
@@ -2008,7 +1940,6 @@ const Type *TypeLong::narrow( const Type *old ) const {
   return this;
 }
 
-//-----------------------------filter------------------------------------------
 const Type *TypeLong::filter_helper(const Type *kills, bool include_speculative) const {
   const TypeLong* ft = join_helper(kills, include_speculative)->isa_long();
   if (ft == nullptr || ft->empty())
@@ -2021,26 +1952,22 @@ const Type *TypeLong::filter_helper(const Type *kills, bool include_speculative)
   return ft;
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeLong::eq( const Type *t ) const {
   const TypeLong *r = t->is_long(); // Handy access
   return r->_lo == _lo &&  r->_hi == _hi  && r->_widen == _widen;
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeLong::hash(void) const {
   return (int)(_lo+_hi+_widen+(int)Type::Long);
 }
 
-//------------------------------is_finite--------------------------------------
 // Has a finite value
 bool TypeLong::is_finite() const {
   return true;
 }
 
-//------------------------------dump2------------------------------------------
 // Dump TypeLong
 #ifndef PRODUCT
 static const char* longnamenear(jlong x, const char* xname, char* buf, size_t buf_size, jlong n) {
@@ -2095,7 +2022,6 @@ void TypeLong::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants
 bool TypeLong::singleton(void) const {
@@ -2106,7 +2032,6 @@ bool TypeLong::empty(void) const {
   return _lo > _hi;
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypeTuple *TypeTuple::IFBOTH;     // Return both arms of IF as reachable
 const TypeTuple *TypeTuple::IFFALSE;
@@ -2121,7 +2046,6 @@ const TypeTuple *TypeTuple::LONG_PAIR;
 const TypeTuple *TypeTuple::INT_CC_PAIR;
 const TypeTuple *TypeTuple::LONG_CC_PAIR;
 
-//------------------------------make-------------------------------------------
 // Make a TypeTuple from the range of a method signature
 const TypeTuple *TypeTuple::make_range(ciSignature* sig, InterfaceHandling interface_handling) {
   ciType* return_type = sig->return_type();
@@ -2207,7 +2131,6 @@ const TypeTuple *TypeTuple::make( uint cnt, const Type **fields ) {
   return (TypeTuple*)(new TypeTuple(cnt,fields))->hashcons();
 }
 
-//------------------------------fields-----------------------------------------
 // Subroutine call type with space allocated for argument types
 // Memory for Control, I_O, Memory, FramePtr, and ReturnAdr is allocated implicitly
 const Type **TypeTuple::fields( uint arg_cnt ) {
@@ -2221,7 +2144,6 @@ const Type **TypeTuple::fields( uint arg_cnt ) {
   return flds;
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeTuple::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -2250,7 +2172,6 @@ const Type *TypeTuple::xmeet( const Type *t ) const {
   return this;                  // Return the double constant
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeTuple::xdual() const {
   const Type **fields = (const Type **)(Compile::current()->type_arena()->AmallocWords( _cnt*sizeof(Type*) ));
@@ -2259,7 +2180,6 @@ const Type *TypeTuple::xdual() const {
   return new TypeTuple(_cnt,fields);
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeTuple::eq( const Type *t ) const {
   const TypeTuple *s = (const TypeTuple *)t;
@@ -2270,7 +2190,6 @@ bool TypeTuple::eq( const Type *t ) const {
   return true;
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeTuple::hash(void) const {
   intptr_t sum = _cnt;
@@ -2279,7 +2198,6 @@ int TypeTuple::hash(void) const {
   return sum;
 }
 
-//------------------------------dump2------------------------------------------
 // Dump signature Type
 #ifndef PRODUCT
 void TypeTuple::dump2( Dict &d, uint depth, outputStream *st ) const {
@@ -2303,7 +2221,6 @@ void TypeTuple::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants (Ldi nodes).  Singletons are integer, float or double constants
 // or a single symbol.
@@ -2318,7 +2235,6 @@ bool TypeTuple::empty(void) const {
   return false;
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 
 inline const TypeInt* normalize_array_size(const TypeInt* size) {
@@ -2332,7 +2248,6 @@ inline const TypeInt* normalize_array_size(const TypeInt* size) {
     return size;
 }
 
-//------------------------------make-------------------------------------------
 const TypeAry* TypeAry::make(const Type* elem, const TypeInt* size, bool stable) {
   if (UseCompressedOops && elem->isa_oopptr()) {
     elem = elem->make_narrowoop();
@@ -2341,7 +2256,6 @@ const TypeAry* TypeAry::make(const Type* elem, const TypeInt* size, bool stable)
   return (TypeAry*)(new TypeAry(elem,size,stable))->hashcons();
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeAry::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -2368,7 +2282,6 @@ const Type *TypeAry::xmeet( const Type *t ) const {
   return this;                  // Return the double constant
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeAry::xdual() const {
   const TypeInt* size_dual = _size->dual()->is_int();
@@ -2376,7 +2289,6 @@ const Type *TypeAry::xdual() const {
   return new TypeAry(_elem->dual(), size_dual, !_stable);
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeAry::eq( const Type *t ) const {
   const TypeAry *a = (const TypeAry*)t;
@@ -2385,7 +2297,6 @@ bool TypeAry::eq( const Type *t ) const {
     _size == a->_size;
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeAry::hash(void) const {
   return (intptr_t)_elem + (intptr_t)_size + (_stable ? 43 : 0);
@@ -2417,7 +2328,6 @@ const TypePtr* TypePtr::with_inline_depth(int depth) const {
   return make(AnyPtr, _ptr, _offset, _speculative, depth);
 }
 
-//------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeAry::dump2( Dict &d, uint depth, outputStream *st ) const {
   if (_stable)  st->print("stable:");
@@ -2428,7 +2338,6 @@ void TypeAry::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants (Ldi nodes).  Singletons are integer, float or double constants
 // or a single symbol.
@@ -2440,7 +2349,6 @@ bool TypeAry::empty(void) const {
   return _elem->empty() || _size->empty();
 }
 
-//--------------------------ary_must_be_exact----------------------------------
 bool TypeAry::ary_must_be_exact() const {
   // This logic looks at the element type of an array, and returns true
   // if the element type is either a primitive or a final instance class.
@@ -2472,7 +2380,6 @@ bool TypeAry::ary_must_be_exact() const {
   return false;
 }
 
-//==============================TypeVect=======================================
 // Convenience common pre-built types.
 const TypeVect *TypeVect::VECTA = nullptr; // vector length agnostic
 const TypeVect *TypeVect::VECTS = nullptr; //  32-bit vectors
@@ -2482,7 +2389,6 @@ const TypeVect *TypeVect::VECTY = nullptr; // 256-bit vectors
 const TypeVect *TypeVect::VECTZ = nullptr; // 512-bit vectors
 const TypeVect *TypeVect::VECTMASK = nullptr; // predicate/mask vector
 
-//------------------------------make-------------------------------------------
 const TypeVect* TypeVect::make(const Type *elem, uint length, bool is_mask) {
   if (is_mask) {
     return makemask(elem, length);
@@ -2521,7 +2427,6 @@ const TypeVect *TypeVect::makemask(const Type* elem, uint length) {
   }
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeVect::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -2560,26 +2465,22 @@ const Type *TypeVect::xmeet( const Type *t ) const {
   return this;
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeVect::xdual() const {
   return new TypeVect(base(), _elem->dual(), _length);
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeVect::eq(const Type *t) const {
   const TypeVect *v = t->is_vect();
   return (_elem == v->_elem) && (_length == v->_length);
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeVect::hash(void) const {
   return (intptr_t)_elem + (intptr_t)_length;
 }
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants (Ldi nodes).  Vector is singleton if all elements are the same
 // constant value (when vector is created with Replicate code).
@@ -2593,7 +2494,6 @@ bool TypeVect::empty(void) const {
   return _elem->empty();
 }
 
-//------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
   switch (base()) {
@@ -2638,13 +2538,11 @@ const TypeVectMask *TypeVectMask::make(const Type* elem, uint length) {
   return (TypeVectMask*) const_cast<TypeVectMask*>(mtype)->hashcons();
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypePtr *TypePtr::NULL_PTR;
 const TypePtr *TypePtr::NOTNULL;
 const TypePtr *TypePtr::BOTTOM;
 
-//------------------------------meet-------------------------------------------
 // Meet over the PTR enum
 const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
   //              TopPTR,    AnyNull,   Constant, Null,   NotNull, BotPTR,
@@ -2656,25 +2554,21 @@ const TypePtr::PTR TypePtr::ptr_meet[TypePtr::lastPTR][TypePtr::lastPTR] = {
   { /* BotPTR  */ BotPTR,    BotPTR,    BotPTR,   BotPTR, BotPTR,  BotPTR,}
 };
 
-//------------------------------make-------------------------------------------
 const TypePtr *TypePtr::make(TYPES t, enum PTR ptr, int offset, const TypePtr* speculative, int inline_depth) {
   return (TypePtr*)(new TypePtr(t,ptr,offset, speculative, inline_depth))->hashcons();
 }
 
-//------------------------------cast_to_ptr_type-------------------------------
 const TypePtr* TypePtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == AnyPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
   return make(_base, ptr, _offset, _speculative, _inline_depth);
 }
 
-//------------------------------get_con----------------------------------------
 intptr_t TypePtr::get_con() const {
   assert( _ptr == Null, "" );
   return _offset;
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypePtr::xmeet(const Type *t) const {
   const Type* res = xmeet_helper(t);
@@ -2741,7 +2635,6 @@ const Type *TypePtr::xmeet_helper(const Type *t) const {
   return this;
 }
 
-//------------------------------meet_offset------------------------------------
 int TypePtr::meet_offset( int offset ) const {
   // Either is 'TOP' offset?  Return the other offset!
   if( _offset == OffsetTop ) return offset;
@@ -2751,14 +2644,12 @@ int TypePtr::meet_offset( int offset ) const {
   return _offset;
 }
 
-//------------------------------dual_offset------------------------------------
 int TypePtr::dual_offset( ) const {
   if( _offset == OffsetTop ) return OffsetBot;// Map 'TOP' into 'BOTTOM'
   if( _offset == OffsetBot ) return OffsetTop;// Map 'BOTTOM' into 'TOP'
   return _offset;               // Map everything else into self
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const TypePtr::PTR TypePtr::ptr_dual[TypePtr::lastPTR] = {
   BotPTR, NotNull, Constant, Null, AnyNull, TopPTR
@@ -2767,7 +2658,6 @@ const Type *TypePtr::xdual() const {
   return new TypePtr(AnyPtr, dual_ptr(), dual_offset(), dual_speculative(), dual_inline_depth());
 }
 
-//------------------------------xadd_offset------------------------------------
 int TypePtr::xadd_offset( intptr_t offset ) const {
   // Adding to 'TOP' offset?  Return 'TOP'!
   if( _offset == OffsetTop || offset == OffsetTop ) return OffsetTop;
@@ -2783,7 +2673,6 @@ int TypePtr::xadd_offset( intptr_t offset ) const {
   return (int)offset;        // Sum valid offsets
 }
 
-//------------------------------add_offset-------------------------------------
 const TypePtr *TypePtr::add_offset( intptr_t offset ) const {
   return make(AnyPtr, _ptr, xadd_offset(offset), _speculative, _inline_depth);
 }
@@ -2792,14 +2681,12 @@ const TypePtr *TypePtr::with_offset(intptr_t offset) const {
   return make(AnyPtr, _ptr, offset, _speculative, _inline_depth);
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypePtr::eq( const Type *t ) const {
   const TypePtr *a = (const TypePtr*)t;
   return _ptr == a->ptr() && _offset == a->offset() && eq_speculative(a) && _inline_depth == a->_inline_depth;
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypePtr::hash(void) const {
   return java_add(java_add((jint)_ptr, (jint)_offset), java_add((jint)hash_speculative(), (jint)_inline_depth));
@@ -3060,7 +2947,6 @@ bool TypePtr::would_improve_ptr(ProfilePtrKind ptr_kind) const {
   return true;
 }
 
-//------------------------------dump2------------------------------------------
 const char *const TypePtr::ptr_msg[TypePtr::lastPTR] = {
   "TopPTR","AnyNull","Constant","null","NotNull","BotPTR"
 };
@@ -3101,7 +2987,6 @@ void TypePtr::dump_inline_depth(outputStream *st) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants
 bool TypePtr::singleton(void) const {
@@ -3113,12 +2998,10 @@ bool TypePtr::empty(void) const {
   return (_offset == OffsetTop) || above_centerline(_ptr);
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypeRawPtr *TypeRawPtr::BOTTOM;
 const TypeRawPtr *TypeRawPtr::NOTNULL;
 
-//------------------------------make-------------------------------------------
 const TypeRawPtr *TypeRawPtr::make( enum PTR ptr ) {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for null" );
@@ -3130,7 +3013,6 @@ const TypeRawPtr *TypeRawPtr::make( address bits ) {
   return (TypeRawPtr*)(new TypeRawPtr(Constant,bits))->hashcons();
 }
 
-//------------------------------cast_to_ptr_type-------------------------------
 const TypeRawPtr* TypeRawPtr::cast_to_ptr_type(PTR ptr) const {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for null" );
@@ -3139,13 +3021,11 @@ const TypeRawPtr* TypeRawPtr::cast_to_ptr_type(PTR ptr) const {
   return make(ptr);
 }
 
-//------------------------------get_con----------------------------------------
 intptr_t TypeRawPtr::get_con() const {
   assert( _ptr == Null || _ptr == Constant, "" );
   return (intptr_t)_bits;
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeRawPtr::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -3199,13 +3079,11 @@ const Type *TypeRawPtr::xmeet( const Type *t ) const {
   return this;
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeRawPtr::xdual() const {
   return new TypeRawPtr( dual_ptr(), _bits );
 }
 
-//------------------------------add_offset-------------------------------------
 const TypePtr* TypeRawPtr::add_offset(intptr_t offset) const {
   if( offset == OffsetTop ) return BOTTOM; // Undefined offset-> undefined pointer
   if( offset == OffsetBot ) return BOTTOM; // Unknown offset-> unknown pointer
@@ -3226,20 +3104,17 @@ const TypePtr* TypeRawPtr::add_offset(intptr_t offset) const {
   return nullptr;                  // Lint noise
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeRawPtr::eq( const Type *t ) const {
   const TypeRawPtr *a = (const TypeRawPtr*)t;
   return _bits == a->_bits && TypePtr::eq(t);
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeRawPtr::hash(void) const {
   return (intptr_t)_bits + TypePtr::hash();
 }
 
-//------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   if( _ptr == Constant )
@@ -3249,7 +3124,6 @@ void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//=============================================================================
 // Convenience common pre-built type.
 const TypeOopPtr *TypeOopPtr::BOTTOM;
 
@@ -3482,7 +3356,6 @@ void TypePtr::InterfaceSet::compute_is_loaded() {
   _is_loaded = true;
 }
 
-//------------------------------TypeOopPtr-------------------------------------
 TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfaces, bool xk, ciObject* o, int offset,
                        int instance_id, const TypePtr* speculative, int inline_depth)
   : TypePtr(t, ptr, offset, speculative, inline_depth),
@@ -3560,7 +3433,6 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfa
 #endif
 }
 
-//------------------------------make-------------------------------------------
 const TypeOopPtr *TypeOopPtr::make(PTR ptr, int offset, int instance_id,
                                      const TypePtr* speculative, int inline_depth) {
   assert(ptr != Constant, "no constant generic pointers");
@@ -3571,21 +3443,18 @@ const TypeOopPtr *TypeOopPtr::make(PTR ptr, int offset, int instance_id,
 }
 
 
-//------------------------------cast_to_ptr_type-------------------------------
 const TypeOopPtr* TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
   return make(ptr, _offset, _instance_id, _speculative, _inline_depth);
 }
 
-//-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeOopPtr::cast_to_instance_id(int instance_id) const {
   // There are no instances of a general oop.
   // Return self unchanged.
   return this;
 }
 
-//-----------------------------cast_to_exactness-------------------------------
 const TypeOopPtr* TypeOopPtr::cast_to_exactness(bool klass_is_exact) const {
   // There is no such thing as an exact general oop.
   // Return self unchanged.
@@ -3593,7 +3462,6 @@ const TypeOopPtr* TypeOopPtr::cast_to_exactness(bool klass_is_exact) const {
 }
 
 
-//------------------------------as_klass_type----------------------------------
 // Return the klass type corresponding to this instance or array type.
 // It is the type that is loaded from an object of this type.
 const TypeKlassPtr* TypeOopPtr::as_klass_type(bool try_for_exact) const {
@@ -3601,7 +3469,6 @@ const TypeKlassPtr* TypeOopPtr::as_klass_type(bool try_for_exact) const {
   return nullptr;
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -3675,7 +3542,6 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
 }
 
 
-//------------------------------xdual------------------------------------------
 // Dual of a pure heap pointer.  No relevant klass or oop information.
 const Type *TypeOopPtr::xdual() const {
   assert(klass() == Compile::current()->env()->Object_klass(), "no klasses here");
@@ -3683,7 +3549,6 @@ const Type *TypeOopPtr::xdual() const {
   return new TypeOopPtr(_base, dual_ptr(), klass(), _interfaces, klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative(), dual_inline_depth());
 }
 
-//--------------------------make_from_klass_common-----------------------------
 // Computes the element-type given a klass.
 const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass* klass, bool klass_change, bool try_for_exact, InterfaceHandling interface_handling) {
   if (klass->is_instance_klass()) {
@@ -3739,7 +3604,6 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass* klass, bool klass_
   }
 }
 
-//------------------------------make_from_constant-----------------------------
 // Make a java pointer from an oop constant
 const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_constant) {
   assert(!o->is_null_object(), "null object not yet handled here.");
@@ -3785,7 +3649,6 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_const
   return nullptr;
 }
 
-//------------------------------get_con----------------------------------------
 intptr_t TypeOopPtr::get_con() const {
   assert( _ptr == Null || _ptr == Constant, "" );
   assert( _offset >= 0, "" );
@@ -3806,7 +3669,6 @@ intptr_t TypeOopPtr::get_con() const {
 }
 
 
-//-----------------------------filter------------------------------------------
 // Do not allow interface-vs.-noninterface joins to collapse to top.
 const Type *TypeOopPtr::filter_helper(const Type *kills, bool include_speculative) const {
 
@@ -3821,7 +3683,6 @@ const Type *TypeOopPtr::filter_helper(const Type *kills, bool include_speculativ
   return ft;
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeOopPtr::eq( const Type *t ) const {
   const TypeOopPtr *a = (const TypeOopPtr*)t;
@@ -3836,7 +3697,6 @@ bool TypeOopPtr::eq( const Type *t ) const {
   }
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeOopPtr::hash(void) const {
   return
@@ -3844,7 +3704,6 @@ int TypeOopPtr::hash(void) const {
              java_add((jint)_instance_id, (jint)TypePtr::hash()));
 }
 
-//------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeOopPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("oopptr:%s", ptr_msg[_ptr]);
@@ -3866,7 +3725,6 @@ void TypeOopPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants
 bool TypeOopPtr::singleton(void) const {
@@ -3875,7 +3733,6 @@ bool TypeOopPtr::singleton(void) const {
   return (_offset == 0) && !below_centerline(_ptr);
 }
 
-//------------------------------add_offset-------------------------------------
 const TypePtr* TypeOopPtr::add_offset(intptr_t offset) const {
   return make(_ptr, xadd_offset(offset), _instance_id, add_offset_speculative(offset), _inline_depth);
 }
@@ -3920,13 +3777,11 @@ const TypePtr* TypeOopPtr::with_inline_depth(int depth) const {
   return make(_ptr, _offset, _instance_id, _speculative, depth);
 }
 
-//------------------------------with_instance_id--------------------------------
 const TypePtr* TypeOopPtr::with_instance_id(int instance_id) const {
   assert(_instance_id != -1, "should be known");
   return make(_ptr, _offset, instance_id, _speculative, _inline_depth);
 }
 
-//------------------------------meet_instance_id--------------------------------
 int TypeOopPtr::meet_instance_id( int instance_id ) const {
   // Either is 'TOP' instance?  Return the other instance!
   if( _instance_id == InstanceTop ) return  instance_id;
@@ -3936,7 +3791,6 @@ int TypeOopPtr::meet_instance_id( int instance_id ) const {
   return _instance_id;
 }
 
-//------------------------------dual_instance_id--------------------------------
 int TypeOopPtr::dual_instance_id( ) const {
   if( _instance_id == InstanceTop ) return InstanceBot; // Map TOP into BOTTOM
   if( _instance_id == InstanceBot ) return InstanceTop; // Map BOTTOM into TOP
@@ -3971,7 +3825,6 @@ bool TypeOopPtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const 
   return TypePtr::would_improve_type(exact_kls, inline_depth);
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypeInstPtr *TypeInstPtr::NOTNULL;
 const TypeInstPtr *TypeInstPtr::BOTTOM;
@@ -3995,7 +3848,6 @@ ciKlass* TypeInstPtr::exact_klass_helper() const {
   return _interfaces.exact_klass();
 }
 
-//------------------------------TypeInstPtr-------------------------------------
 TypeInstPtr::TypeInstPtr(PTR ptr, ciKlass* k, const InterfaceSet& interfaces, bool xk, ciObject* o, int off,
                          int instance_id, const TypePtr* speculative, int inline_depth)
   : TypeOopPtr(InstPtr, ptr, k, interfaces, xk, o, off, instance_id, speculative, inline_depth) {
@@ -4005,7 +3857,6 @@ TypeInstPtr::TypeInstPtr(PTR ptr, ciKlass* k, const InterfaceSet& interfaces, bo
          "cannot have constants with non-loaded klass");
 };
 
-//------------------------------make-------------------------------------------
 const TypeInstPtr *TypeInstPtr::make(PTR ptr,
                                      ciKlass* k,
                                      const InterfaceSet& interfaces,
@@ -4096,7 +3947,6 @@ const Type* TypeInstPtr::get_const_boxed_value() const {
   return nullptr;
 }
 
-//------------------------------cast_to_ptr_type-------------------------------
 const TypeInstPtr* TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   // Reconstruct _sig info here since not a problem with later lazy
@@ -4105,7 +3955,6 @@ const TypeInstPtr* TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
 }
 
 
-//-----------------------------cast_to_exactness-------------------------------
 const TypeInstPtr* TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
   if( klass_is_exact == _klass_is_exact ) return this;
   if (!_klass->is_loaded())  return this;
@@ -4115,13 +3964,11 @@ const TypeInstPtr* TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
   return make(ptr(), klass(), _interfaces, klass_is_exact, const_oop(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
-//-----------------------------cast_to_instance_id----------------------------
 const TypeInstPtr* TypeInstPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
   return make(_ptr, klass(),  _interfaces, _klass_is_exact, const_oop(), _offset, instance_id, _speculative, _inline_depth);
 }
 
-//------------------------------xmeet_unloaded---------------------------------
 // Compute the MEET of two InstPtrs when at least one is unloaded.
 // Assume classes are different since called after check for same name/class-loader
 const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst, const InterfaceSet& interfaces) const {
@@ -4170,7 +4017,6 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst, const I
 }
 
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -4448,7 +4294,6 @@ template<class T> TypePtr::MeetResult TypePtr::meet_instptr(PTR& ptr, InterfaceS
   return LCA;
 }
 
-//------------------------java_mirror_type--------------------------------------
 ciType* TypeInstPtr::java_mirror_type() const {
   // must be a singleton type
   if( const_oop() == nullptr )  return nullptr;
@@ -4460,14 +4305,12 @@ ciType* TypeInstPtr::java_mirror_type() const {
 }
 
 
-//------------------------------xdual------------------------------------------
 // Dual: do NOT dual on klasses.  This means I do NOT understand the Java
 // inheritance mechanism.
 const Type *TypeInstPtr::xdual() const {
   return new TypeInstPtr(dual_ptr(), klass(), _interfaces, klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative(), dual_inline_depth());
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeInstPtr::eq( const Type *t ) const {
   const TypeInstPtr *p = t->is_instptr();
@@ -4477,7 +4320,6 @@ bool TypeInstPtr::eq( const Type *t ) const {
     TypeOopPtr::eq(p);          // Check sub-type stuff
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeInstPtr::hash(void) const {
   int hash = java_add(java_add((jint)klass()->hash(), (jint)TypeOopPtr::hash()), _interfaces.hash());
@@ -4498,7 +4340,6 @@ bool TypeInstPtr::maybe_java_subtype_of_helper(const TypeOopPtr* other, bool thi
 }
 
 
-//------------------------------dump2------------------------------------------
 // Dump oop Type
 #ifndef PRODUCT
 void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
@@ -4552,7 +4393,6 @@ void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
 }
 #endif
 
-//------------------------------add_offset-------------------------------------
 const TypePtr* TypeInstPtr::add_offset(intptr_t offset) const {
   return make(_ptr, klass(), _interfaces, klass_is_exact(), const_oop(), xadd_offset(offset),
               _instance_id, add_offset_speculative(offset), _inline_depth);
@@ -4663,7 +4503,6 @@ bool TypeAryKlassPtr::is_meet_subtype_of_helper(const TypeKlassPtr *other, bool 
   return TypePtr::is_meet_subtype_of_helper_for_array(this, other, this_xk, other_xk);
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 const TypeAryPtr *TypeAryPtr::RANGE;
 const TypeAryPtr *TypeAryPtr::OOPS;
@@ -4676,7 +4515,6 @@ const TypeAryPtr *TypeAryPtr::LONGS;
 const TypeAryPtr *TypeAryPtr::FLOATS;
 const TypeAryPtr *TypeAryPtr::DOUBLES;
 
-//------------------------------make-------------------------------------------
 const TypeAryPtr *TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset,
                                    int instance_id, const TypePtr* speculative, int inline_depth) {
   assert(!(k == nullptr && ary->_elem->isa_int()),
@@ -4690,7 +4528,6 @@ const TypeAryPtr *TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool
   return (TypeAryPtr*)(new TypeAryPtr(ptr, nullptr, ary, k, xk, offset, instance_id, false, speculative, inline_depth))->hashcons();
 }
 
-//------------------------------make-------------------------------------------
 const TypeAryPtr *TypeAryPtr::make(PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset,
                                    int instance_id, const TypePtr* speculative, int inline_depth,
                                    bool is_autobox_cache) {
@@ -4706,28 +4543,24 @@ const TypeAryPtr *TypeAryPtr::make(PTR ptr, ciObject* o, const TypeAry *ary, ciK
   return (TypeAryPtr*)(new TypeAryPtr(ptr, o, ary, k, xk, offset, instance_id, is_autobox_cache, speculative, inline_depth))->hashcons();
 }
 
-//------------------------------cast_to_ptr_type-------------------------------
 const TypeAryPtr* TypeAryPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   return make(ptr, ptr == Constant ? const_oop() : nullptr, _ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
 
-//-----------------------------cast_to_exactness-------------------------------
 const TypeAryPtr* TypeAryPtr::cast_to_exactness(bool klass_is_exact) const {
   if( klass_is_exact == _klass_is_exact ) return this;
   if (_ary->ary_must_be_exact())  return this;  // cannot clear xk
   return make(ptr(), const_oop(), _ary, klass(), klass_is_exact, _offset, _instance_id, _speculative, _inline_depth);
 }
 
-//-----------------------------cast_to_instance_id----------------------------
 const TypeAryPtr* TypeAryPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
   return make(_ptr, const_oop(), _ary, klass(), _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
 
 
-//-----------------------------max_array_length-------------------------------
 // A wrapper around arrayOopDesc::max_array_length(etype) with some input normalization.
 jint TypeAryPtr::max_array_length(BasicType etype) {
   if (!is_java_primitive(etype) && !::is_reference_type(etype)) {
@@ -4742,7 +4575,6 @@ jint TypeAryPtr::max_array_length(BasicType etype) {
   return arrayOopDesc::max_array_length(etype);
 }
 
-//-----------------------------narrow_size_type-------------------------------
 // Narrow the given size type to the index range for the given array base type.
 // Return null if the resulting int type becomes empty.
 const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {
@@ -4774,7 +4606,6 @@ const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {
   return TypeInt::make(lo, hi, Type::WidenMin);
 }
 
-//-------------------------------cast_to_size----------------------------------
 const TypeAryPtr* TypeAryPtr::cast_to_size(const TypeInt* new_size) const {
   assert(new_size != nullptr, "");
   new_size = narrow_size_type(new_size);
@@ -4783,7 +4614,6 @@ const TypeAryPtr* TypeAryPtr::cast_to_size(const TypeInt* new_size) const {
   return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
-//------------------------------cast_to_stable---------------------------------
 const TypeAryPtr* TypeAryPtr::cast_to_stable(bool stable, int stable_dimension) const {
   if (stable_dimension <= 0 || (stable_dimension == 1 && stable == this->is_stable()))
     return this;
@@ -4801,7 +4631,6 @@ const TypeAryPtr* TypeAryPtr::cast_to_stable(bool stable, int stable_dimension) 
   return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
-//-----------------------------stable_dimension--------------------------------
 int TypeAryPtr::stable_dimension() const {
   if (!is_stable())  return 0;
   int dim = 1;
@@ -4811,7 +4640,6 @@ int TypeAryPtr::stable_dimension() const {
   return dim;
 }
 
-//----------------------cast_to_autobox_cache-----------------------------------
 const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache() const {
   if (is_autobox_cache())  return this;
   const TypeOopPtr* etype = elem()->make_oopptr();
@@ -4822,7 +4650,6 @@ const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache() const {
   return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth, /*is_autobox_cache=*/true);
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeAryPtr::eq( const Type *t ) const {
   const TypeAryPtr *p = t->is_aryptr();
@@ -4831,7 +4658,6 @@ bool TypeAryPtr::eq( const Type *t ) const {
     TypeOopPtr::eq(p);  // Check sub-parts
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeAryPtr::hash(void) const {
   return (intptr_t)_ary + TypeOopPtr::hash();
@@ -4848,7 +4674,6 @@ bool TypeAryPtr::is_same_java_type_as_helper(const TypeOopPtr* other) const {
 bool TypeAryPtr::maybe_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const {
   return TypePtr::maybe_java_subtype_of_helper_for_array(this, other, this_exact, other_exact);
 }
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -5118,13 +4943,11 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
 }
 
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeAryPtr::xdual() const {
   return new TypeAryPtr(dual_ptr(), _const_oop, _ary->dual()->is_ary(),_klass, _klass_is_exact, dual_offset(), dual_instance_id(), is_autobox_cache(), dual_speculative(), dual_inline_depth());
 }
 
-//------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   _ary->dump2(d,depth,st);
@@ -5181,7 +5004,6 @@ bool TypeAryPtr::empty(void) const {
   return TypeOopPtr::empty();
 }
 
-//------------------------------add_offset-------------------------------------
 const TypePtr* TypeAryPtr::add_offset(intptr_t offset) const {
   return make(_ptr, _const_oop, _ary, _klass, _klass_is_exact, xadd_offset(offset), _instance_id, add_offset_speculative(offset), _inline_depth);
 }
@@ -5214,9 +5036,7 @@ const TypePtr* TypeAryPtr::with_instance_id(int instance_id) const {
   return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
 
-//=============================================================================
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeNarrowPtr::hash(void) const {
   return _ptrtype->hash() + 7;
@@ -5270,7 +5090,6 @@ const Type *TypeNarrowPtr::filter_helper(const Type *kills, bool include_specula
   }
 }
 
-//------------------------------xmeet------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeNarrowPtr::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -5363,7 +5182,6 @@ void TypeNarrowKlass::dump2( Dict & d, uint depth, outputStream *st ) const {
 #endif
 
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeMetadataPtr::eq( const Type *t ) const {
   const TypeMetadataPtr *a = (const TypeMetadataPtr*)t;
@@ -5376,7 +5194,6 @@ bool TypeMetadataPtr::eq( const Type *t ) const {
   }
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeMetadataPtr::hash(void) const {
   return
@@ -5384,7 +5201,6 @@ int TypeMetadataPtr::hash(void) const {
     TypePtr::hash();
 }
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants
 bool TypeMetadataPtr::singleton(void) const {
@@ -5393,12 +5209,10 @@ bool TypeMetadataPtr::singleton(void) const {
   return (_offset == 0) && !below_centerline(_ptr);
 }
 
-//------------------------------add_offset-------------------------------------
 const TypePtr* TypeMetadataPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, _metadata, xadd_offset(offset));
 }
 
-//-----------------------------filter------------------------------------------
 // Do not allow interface-vs.-noninterface joins to collapse to top.
 const Type *TypeMetadataPtr::filter_helper(const Type *kills, bool include_speculative) const {
   const TypeMetadataPtr* ft = join_helper(kills, include_speculative)->isa_metadataptr();
@@ -5427,13 +5241,11 @@ intptr_t TypeMetadataPtr::get_con() const {
   return (intptr_t)metadata()->constant_encoding();
 }
 
-//------------------------------cast_to_ptr_type-------------------------------
 const TypeMetadataPtr* TypeMetadataPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   return make(ptr, metadata(), _offset);
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -5513,13 +5325,11 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
 }
 
 
-//------------------------------xdual------------------------------------------
 // Dual of a pure metadata pointer.
 const Type *TypeMetadataPtr::xdual() const {
   return new TypeMetadataPtr(dual_ptr(), metadata(), dual_offset());
 }
 
-//------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("metadataptr:%s", ptr_msg[_ptr]);
@@ -5534,7 +5344,6 @@ void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 #endif
 
 
-//=============================================================================
 // Convenience common pre-built type.
 const TypeMetadataPtr *TypeMetadataPtr::BOTTOM;
 
@@ -5549,7 +5358,6 @@ const TypeMetadataPtr* TypeMetadataPtr::make(ciMethodData* m) {
   return make(Constant, m, 0);
 }
 
-//------------------------------make-------------------------------------------
 // Create a meta data constant
 const TypeMetadataPtr *TypeMetadataPtr::make(PTR ptr, ciMetadata* m, int offset) {
   assert(m == nullptr || !m->is_klass(), "wrong type");
@@ -5585,7 +5393,6 @@ const TypeKlassPtr* TypeKlassPtr::make(PTR ptr, ciKlass* klass, int offset, Inte
 }
 
 
-//------------------------------TypeKlassPtr-----------------------------------
 TypeKlassPtr::TypeKlassPtr(TYPES t, PTR ptr, ciKlass* klass, const InterfaceSet& interfaces, int offset)
   : TypePtr(t, ptr, offset), _klass(klass), _interfaces(interfaces) {
   assert(klass == nullptr || !klass->is_loaded() || (klass->is_instance_klass() && !klass->is_interface()) ||
@@ -5608,7 +5415,6 @@ ciKlass* TypeKlassPtr::exact_klass_helper() const {
   return _interfaces.exact_klass();
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeKlassPtr::eq(const Type *t) const {
   const TypeKlassPtr *p = t->is_klassptr();
@@ -5617,13 +5423,11 @@ bool TypeKlassPtr::eq(const Type *t) const {
     TypePtr::eq(p);
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeKlassPtr::hash(void) const {
   return java_add((jint)TypePtr::hash(), _interfaces.hash());
 }
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants
 bool TypeKlassPtr::singleton(void) const {
@@ -5658,7 +5462,6 @@ TypePtr::InterfaceSet TypeKlassPtr::meet_interfaces(const TypeKlassPtr* other) c
   return _interfaces.intersection_with(other->_interfaces);
 }
 
-//------------------------------get_con----------------------------------------
 intptr_t TypeKlassPtr::get_con() const {
   assert( _ptr == Null || _ptr == Constant, "" );
   assert( _offset >= 0, "" );
@@ -5680,7 +5483,6 @@ intptr_t TypeKlassPtr::get_con() const {
   return (intptr_t)k->constant_encoding();
 }
 
-//------------------------------dump2------------------------------------------
 // Dump Klass Type
 #ifndef PRODUCT
 void TypeKlassPtr::dump2(Dict & d, uint depth, outputStream *st) const {
@@ -5718,7 +5520,6 @@ void TypeKlassPtr::dump2(Dict & d, uint depth, outputStream *st) const {
 }
 #endif
 
-//=============================================================================
 // Convenience common pre-built types.
 
 // Not-null object klass or below
@@ -5743,7 +5544,6 @@ const TypeInstKlassPtr *TypeInstKlassPtr::make(PTR ptr, ciKlass* k, const Interf
   return r;
 }
 
-//------------------------------add_offset-------------------------------------
 // Access internals of klass object
 const TypePtr* TypeInstKlassPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, klass(), _interfaces, xadd_offset(offset) );
@@ -5753,7 +5553,6 @@ const TypeInstKlassPtr* TypeInstKlassPtr::with_offset(intptr_t offset) const {
   return make(_ptr, klass(), _interfaces, offset);
 }
 
-//------------------------------cast_to_ptr_type-------------------------------
 const TypeInstKlassPtr* TypeInstKlassPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == InstKlassPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
@@ -5768,7 +5567,6 @@ bool TypeInstKlassPtr::must_be_exact() const {
   return false;
 }
 
-//-----------------------------cast_to_exactness-------------------------------
 const TypeKlassPtr* TypeInstKlassPtr::cast_to_exactness(bool klass_is_exact) const {
   if (klass_is_exact == (_ptr == Constant)) return this;
   if (must_be_exact()) return this;
@@ -5777,7 +5575,6 @@ const TypeKlassPtr* TypeInstKlassPtr::cast_to_exactness(bool klass_is_exact) con
 }
 
 
-//-----------------------------as_instance_type--------------------------------
 // Corresponding type for an instance of the given class.
 // It will be NotNull, and exact if and only if the klass type is exact.
 const TypeOopPtr* TypeInstKlassPtr::as_instance_type(bool klass_change) const {
@@ -5811,7 +5608,6 @@ const TypeOopPtr* TypeInstKlassPtr::as_instance_type(bool klass_change) const {
   return TypeInstPtr::make(TypePtr::BotPTR, k, interfaces, xk, nullptr, 0);
 }
 
-//------------------------------xmeet------------------------------------------
 // Compute the MEET of two types, return a new Type object.
 const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -5955,7 +5751,6 @@ const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
   return this;                  // Return the double constant
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type    *TypeInstKlassPtr::xdual() const {
   return new TypeInstKlassPtr(dual_ptr(), klass(), _interfaces, dual_offset());
@@ -6087,7 +5882,6 @@ const TypeAryKlassPtr* TypeAryKlassPtr::make(ciKlass* klass, InterfaceHandling i
   return TypeAryKlassPtr::make(Constant, klass, 0, interface_handling);
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeAryKlassPtr::eq(const Type *t) const {
   const TypeAryKlassPtr *p = t->is_aryklassptr();
@@ -6096,13 +5890,11 @@ bool TypeAryKlassPtr::eq(const Type *t) const {
     TypeKlassPtr::eq(p);  // Check sub-parts
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeAryKlassPtr::hash(void) const {
   return (intptr_t)_elem + TypeKlassPtr::hash();
 }
 
-//----------------------compute_klass------------------------------------------
 // Compute the defining klass for this class
 ciKlass* TypeAryPtr::compute_klass(DEBUG_ONLY(bool verify)) const {
   // Compute _klass based on element type.
@@ -6153,7 +5945,6 @@ ciKlass* TypeAryPtr::compute_klass(DEBUG_ONLY(bool verify)) const {
   return k_ary;
 }
 
-//------------------------------klass------------------------------------------
 // Return the defining klass for this class
 ciKlass* TypeAryPtr::klass() const {
   if( _klass ) return _klass;   // Return cached value, if possible
@@ -6204,7 +5995,6 @@ const Type* TypeAryPtr::base_element_type(int& dims) const {
   return elem;
 }
 
-//------------------------------add_offset-------------------------------------
 // Access internals of klass object
 const TypePtr* TypeAryKlassPtr::add_offset(intptr_t offset) const {
   return make(_ptr, elem(), klass(), xadd_offset(offset));
@@ -6214,7 +6004,6 @@ const TypeAryKlassPtr* TypeAryKlassPtr::with_offset(intptr_t offset) const {
   return make(_ptr, elem(), klass(), offset);
 }
 
-//------------------------------cast_to_ptr_type-------------------------------
 const TypeAryKlassPtr* TypeAryKlassPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == AryKlassPtr, "subclass must override cast_to_ptr_type");
   if (ptr == _ptr) return this;
@@ -6230,7 +6019,6 @@ bool TypeAryKlassPtr::must_be_exact() const {
 }
 
 
-//-----------------------------cast_to_exactness-------------------------------
 const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) const {
   if (must_be_exact()) return this;  // cannot clear xk
   ciKlass* k = _klass;
@@ -6242,7 +6030,6 @@ const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) cons
 }
 
 
-//-----------------------------as_instance_type--------------------------------
 // Corresponding type for an instance of the given class.
 // It will be NotNull, and exact if and only if the klass type is exact.
 const TypeOopPtr* TypeAryKlassPtr::as_instance_type(bool klass_change) const {
@@ -6259,7 +6046,6 @@ const TypeOopPtr* TypeAryKlassPtr::as_instance_type(bool klass_change) const {
 }
 
 
-//------------------------------xmeet------------------------------------------
 // Compute the MEET of two types, return a new Type object.
 const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -6503,7 +6289,6 @@ bool TypeAryKlassPtr::maybe_java_subtype_of_helper(const TypeKlassPtr* other, bo
   return TypePtr::maybe_java_subtype_of_helper_for_array(this, other, this_exact, other_exact);
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type    *TypeAryKlassPtr::xdual() const {
   return new TypeAryKlassPtr(dual_ptr(), elem()->dual(), klass(), dual_offset());
@@ -6539,7 +6324,6 @@ ciKlass* TypeAryKlassPtr::klass() const {
   return k;
 }
 
-//------------------------------dump2------------------------------------------
 // Dump Klass Type
 #ifndef PRODUCT
 void TypeAryKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
@@ -6584,15 +6368,12 @@ const Type* TypeAryKlassPtr::base_element_type(int& dims) const {
   return elem;
 }
 
-//=============================================================================
 // Convenience common pre-built types.
 
-//------------------------------make-------------------------------------------
 const TypeFunc *TypeFunc::make( const TypeTuple *domain, const TypeTuple *range ) {
   return (TypeFunc*)(new TypeFunc(domain,range))->hashcons();
 }
 
-//------------------------------make-------------------------------------------
 const TypeFunc *TypeFunc::make(ciMethod* method) {
   Compile* C = Compile::current();
   const TypeFunc* tf = C->last_tf(method); // check cache
@@ -6609,7 +6390,6 @@ const TypeFunc *TypeFunc::make(ciMethod* method) {
   return tf;
 }
 
-//------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeFunc::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
@@ -6630,13 +6410,11 @@ const Type *TypeFunc::xmeet( const Type *t ) const {
   return this;                  // Return the double constant
 }
 
-//------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const Type *TypeFunc::xdual() const {
   return this;
 }
 
-//------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeFunc::eq( const Type *t ) const {
   const TypeFunc *a = (const TypeFunc*)t;
@@ -6644,13 +6422,11 @@ bool TypeFunc::eq( const Type *t ) const {
     _range == a->_range;
 }
 
-//------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeFunc::hash(void) const {
   return (intptr_t)_domain + (intptr_t)_range;
 }
 
-//------------------------------dump2------------------------------------------
 // Dump Function Type
 #ifndef PRODUCT
 void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
@@ -6681,7 +6457,6 @@ void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
 }
 #endif
 
-//------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants (Ldi nodes).  Singletons are integer, float or double constants
 // or a single symbol.

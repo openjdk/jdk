@@ -58,7 +58,6 @@ RegMask Matcher::c_frame_ptr_mask;
 const uint Matcher::_begin_rematerialize = _BEGIN_REMATERIALIZE;
 const uint Matcher::_end_rematerialize   = _END_REMATERIALIZE;
 
-//---------------------------Matcher-------------------------------------------
 Matcher::Matcher()
 : PhaseTransform( Phase::Ins_Select ),
   _states_arena(Chunk::medium_size, mtCompiler),
@@ -131,7 +130,6 @@ Matcher::Matcher()
   debug_only(_mem_node = nullptr;)   // Ideal memory node consumed by mach node
 }
 
-//------------------------------warp_incoming_stk_arg------------------------
 // This warps a VMReg into an OptoReg::Name
 OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
   OptoReg::Name warped;
@@ -150,7 +148,6 @@ OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
   return OptoReg::as_OptoReg(reg);
 }
 
-//---------------------------compute_old_SP------------------------------------
 OptoReg::Name Compile::compute_old_SP() {
   int fixed    = fixed_slots();
   int preserve = in_preserve_stack_slots();
@@ -184,7 +181,6 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 #endif
 
 
-//---------------------------match---------------------------------------------
 void Matcher::match( ) {
   if( MaxLabelRootDepth < 100 ) { // Too small?
     assert(false, "invalid MaxLabelRootDepth, increase it to 100 minimum");
@@ -415,7 +411,6 @@ void Matcher::match( ) {
   }
 }
 
-//------------------------------Fixup_Save_On_Entry----------------------------
 // The stated purpose of this routine is to take care of save-on-entry
 // registers.  However, the overall goal of the Match phase is to convert into
 // machine-specific instructions which have RegMasks to guide allocation.
@@ -759,14 +754,12 @@ void Matcher::init_first_stack_mask() {
   idealreg2mhdebugmask[Op_VecZ]->SUBTRACT(*mh_caller_save_mask);
 }
 
-//---------------------------is_save_on_entry----------------------------------
 bool Matcher::is_save_on_entry(int reg) {
   return
     _register_save_policy[reg] == 'E' ||
     _register_save_policy[reg] == 'A'; // Save-on-entry register?
 }
 
-//---------------------------Fixup_Save_On_Entry-------------------------------
 void Matcher::Fixup_Save_On_Entry( ) {
   init_first_stack_mask();
 
@@ -942,7 +935,6 @@ void Matcher::Fixup_Save_On_Entry( ) {
   } // End of for all machine registers
 }
 
-//------------------------------init_spill_mask--------------------------------
 void Matcher::init_spill_mask( Node *ret ) {
   if( idealreg2regmask[Op_RegI] ) return; // One time only init
 
@@ -1092,7 +1084,6 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
 }
 #endif
 
-//------------------------------xform------------------------------------------
 // Given a Node in old-space, Match him (Label/Reduce) to produce a machine
 // Node in new-space.  Given a new-space Node, recursively walk his children.
 Node *Matcher::transform( Node *n ) { ShouldNotCallThis(); return n; }
@@ -1228,7 +1219,6 @@ Node *Matcher::xform( Node *n, int max_stack ) {
   return n; // Return new-space Node
 }
 
-//------------------------------warp_outgoing_stk_arg------------------------
 OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out_arg_area, OptoReg::Name &out_arg_limit_per_call ) {
   // Convert outgoing argument location to a pre-biased stack offset
   if (reg->is_stack()) {
@@ -1251,7 +1241,6 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
 }
 
 
-//------------------------------match_sfpt-------------------------------------
 // Helper function to match call instructions.  Calls match special.
 // They match alone with no children.  Their children, the incoming
 // arguments, match normally.
@@ -1471,7 +1460,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   return msfpt;
 }
 
-//---------------------------match_tree----------------------------------------
 // Match a Ideal Node DAG - turn it into a tree; Label & Reduce.  Used as part
 // of the whole-sale conversion from Ideal to Mach Nodes.  Also used for
 // making GotoNodes while building the CFG and in init_spill_mask() to identify
@@ -1550,7 +1538,6 @@ MachNode *Matcher::match_tree( const Node *n ) {
 }
 
 
-//------------------------------match_into_reg---------------------------------
 // Choose to either match this Node in a register or part of the current
 // match tree.  Return true for requiring a register and false for matching
 // as part of the current match tree.
@@ -1603,7 +1590,6 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
 }
 
 
-//------------------------------Instruction Selection--------------------------
 // Label method walks a "tree" of nodes, using the ADLC generated DFA to match
 // ideal nodes to machine instructions.  Trees are delimited by shared Nodes,
 // things the Matcher does not match (e.g., Memory), and things with different
@@ -1751,7 +1737,6 @@ MachNode* Matcher::find_shared_node(Node* leaf, uint rule) {
 }
 
 
-//------------------------------ReduceInst-------------------------------------
 // Reduce a State tree (with given Control) into a tree of MachNodes.
 // This routine (and it's cohort ReduceOper) convert Ideal Nodes into
 // complicated machine Nodes.  Each MachNode covers some tree of Ideal Nodes.
@@ -2045,7 +2030,6 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
 // Java-Java calling convention
 // (what you use when Java calls Java)
 
-//------------------------------find_receiver----------------------------------
 // For a given signature, return the OptoReg for parameter 0.
 OptoReg::Name Matcher::find_receiver() {
   VMRegPair regs;
@@ -2095,7 +2079,6 @@ bool Matcher::clone_base_plus_offset_address(AddPNode* m, Matcher::MStack& mstac
 // and then expanded into the inline_cache_reg and a method_ptr register
 //   defined in ad_<arch>.cpp
 
-//------------------------------find_shared------------------------------------
 // Set bits if Node is shared or otherwise a root
 void Matcher::find_shared(Node* n) {
   // Allocate stack of size C->live_nodes() * 2 to avoid frequent realloc
@@ -2518,7 +2501,6 @@ void Matcher::dump_old2new_map() {
 }
 #endif // !PRODUCT
 
-//---------------------------collect_null_checks-------------------------------
 // Find null checks in the ideal graph; write a machine-specific node for
 // it.  Used by later implicit-null-check handling.  Actually collects
 // either an IfTrue or IfFalse for the common NOT-null path, AND the ideal
@@ -2586,7 +2568,6 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
   }
 }
 
-//---------------------------validate_null_checks------------------------------
 // Its possible that the value being null checked is not the root of a match
 // tree.  If so, I cannot use the value in an implicit null check.
 void Matcher::validate_null_checks( ) {
@@ -2681,9 +2662,7 @@ void Matcher::do_postselect_cleanup() {
   }
 }
 
-//----------------------------------------------------------------------
 // Generic machine operands elision.
-//----------------------------------------------------------------------
 
 // Compute concrete vector operand for a generic TEMP vector mach node based on its user info.
 void Matcher::specialize_temp_node(MachTempNode* tmp, MachNode* use, uint idx) {
@@ -2956,8 +2935,6 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
   return false;
 }
 
-//=============================================================================
-//---------------------------State---------------------------------------------
 State::State(void) : _rule() {
 #ifdef ASSERT
   _id = 0;
@@ -2977,7 +2954,6 @@ State::~State() {
 #endif
 
 #ifndef PRODUCT
-//---------------------------dump----------------------------------------------
 void State::dump() {
   tty->print("\n");
   dump(0);

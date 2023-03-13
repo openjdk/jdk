@@ -47,7 +47,6 @@ class   PhasePeephole;
 class   PhaseRegAlloc;
 
 
-//-----------------------------------------------------------------------------
 // Expandable closed hash-table of nodes, initialized to null.
 // Note that the constructor just zeros things
 // Storage is reclaimed when the Arena's lifetime is over.
@@ -115,7 +114,6 @@ public:
 };
 
 
-//-----------------------------------------------------------------------------
 // Map dense integer indices to Types.  Uses classic doubling-array trick.
 // Abstractly provides an infinite array of Type*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
@@ -142,7 +140,6 @@ public:
 };
 
 
-//------------------------------PhaseRemoveUseless-----------------------------
 // Remove useless nodes from GVN hash-table, worklist, and graph
 class PhaseRemoveUseless : public Phase {
 protected:
@@ -154,7 +151,6 @@ public:
   Unique_Node_List *get_useful() { return &_useful; }
 };
 
-//------------------------------PhaseRenumber----------------------------------
 // Phase that first performs a PhaseRemoveUseless, then it renumbers compiler
 // structures accordingly.
 class PhaseRenumberLive : public PhaseRemoveUseless {
@@ -175,7 +171,6 @@ public:
 };
 
 
-//------------------------------PhaseTransform---------------------------------
 // Phases that analyze, then transform.  Constructing the Phase object does any
 // global or slow analysis.  The results are cached later for a fast
 // transformation pass.  When the Phase object is deleted the cached analysis
@@ -370,7 +365,6 @@ public:
 #endif
 };
 
-//------------------------------PhaseValues------------------------------------
 // Phase infrastructure to support values
 class PhaseValues : public PhaseTransform {
 protected:
@@ -410,7 +404,6 @@ public:
 };
 
 
-//------------------------------PhaseGVN---------------------------------------
 // Phase for performing local, pessimistic GVN-style optimizations.
 class PhaseGVN : public PhaseValues {
 protected:
@@ -445,7 +438,6 @@ public:
 #endif
 };
 
-//------------------------------PhaseIterGVN-----------------------------------
 // Phase for iteratively performing local, pessimistic GVN-style optimizations.
 // and ideal transformations on the graph.
 class PhaseIterGVN : public PhaseGVN {
@@ -594,7 +586,6 @@ protected:
 #endif
 };
 
-//------------------------------PhaseCCP---------------------------------------
 // Phase for performing global Conditional Constant Propagation.
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
@@ -663,7 +654,6 @@ class PhaseCCP : public PhaseIterGVN {
 };
 
 
-//------------------------------PhasePeephole----------------------------------
 // Phase for performing peephole optimizations on register allocated basic blocks.
 class PhasePeephole : public PhaseTransform {
   PhaseRegAlloc *_regalloc;

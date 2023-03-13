@@ -30,7 +30,6 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 
-//=============================================================================
 /*
  The major change is for CMoveP and StrComp.  They have related but slightly
  different problems.  They both take in TWO oops which are both null-checked
@@ -71,7 +70,6 @@
  */
 
 
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Move constants to the right.
 Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -98,7 +96,6 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------is_cmove_id------------------------------------
 // Helper function to check for CMOVE identity.  Shared with PhiNode::Identity
 Node *CMoveNode::is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f, BoolNode *b ) {
   // Check for Cmp'ing and CMove'ing same values
@@ -120,7 +117,6 @@ Node *CMoveNode::is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f
   return nullptr;
 }
 
-//------------------------------Identity---------------------------------------
 // Conditional-move is an identity if both inputs are the same, or the test
 // true or false.
 Node* CMoveNode::Identity(PhaseGVN* phase) {
@@ -153,7 +149,6 @@ Node* CMoveNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Value------------------------------------------
 // Result is the meet of inputs
 const Type* CMoveNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(Condition)) == Type::TOP) {
@@ -166,7 +161,6 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
   return t->filter(_type);
 }
 
-//------------------------------make-------------------------------------------
 // Make a correctly-flavored CMove.  Since _type is directly determined
 // from the inputs we do not need to specify it here.
 CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Type *t) {
@@ -184,8 +178,6 @@ CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Ty
   }
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Check for conversions to boolean
 Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -245,8 +237,6 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return n;
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Check for absolute value
 Node *CMoveFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -301,8 +291,6 @@ Node *CMoveFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return abs;
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Check for absolute value
 Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -357,7 +345,6 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return abs;
 }
 
-//------------------------------MoveNode------------------------------------------
 
 Node* MoveNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (can_reshape) {
@@ -387,7 +374,6 @@ Node* MoveNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Value------------------------------------------
 const Type* MoveL2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -398,7 +384,6 @@ const Type* MoveL2DNode::Value(PhaseGVN* phase) const {
   return TypeD::make( v.get_jdouble() );
 }
 
-//------------------------------Identity----------------------------------------
 Node* MoveL2DNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_MoveD2L) {
     return in(1)->in(1);
@@ -406,7 +391,6 @@ Node* MoveL2DNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Value------------------------------------------
 const Type* MoveI2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -417,7 +401,6 @@ const Type* MoveI2FNode::Value(PhaseGVN* phase) const {
   return TypeF::make( v.get_jfloat() );
 }
 
-//------------------------------Identity----------------------------------------
 Node* MoveI2FNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_MoveF2I) {
     return in(1)->in(1);
@@ -425,7 +408,6 @@ Node* MoveI2FNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Value------------------------------------------
 const Type* MoveF2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP )       return Type::TOP;
@@ -436,7 +418,6 @@ const Type* MoveF2INode::Value(PhaseGVN* phase) const {
   return TypeInt::make( v.get_jint() );
 }
 
-//------------------------------Identity----------------------------------------
 Node* MoveF2INode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_MoveI2F) {
     return in(1)->in(1);
@@ -444,7 +425,6 @@ Node* MoveF2INode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Value------------------------------------------
 const Type* MoveD2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
@@ -455,7 +435,6 @@ const Type* MoveD2LNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( v.get_jlong() );
 }
 
-//------------------------------Identity----------------------------------------
 Node* MoveD2LNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_MoveL2D) {
     return in(1)->in(1);

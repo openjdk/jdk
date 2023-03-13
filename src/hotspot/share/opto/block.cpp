@@ -1251,7 +1251,6 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
 }
 
 
-//------------------------------dump-------------------------------------------
 #ifndef PRODUCT
 void PhaseCFG::_dump_cfg( const Node *end, VectorSet &visited  ) const {
   const Node *x = end->is_block_proj();

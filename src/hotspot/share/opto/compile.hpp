@@ -202,7 +202,6 @@ class Options {
   }
 };
 
-//------------------------------Compile----------------------------------------
 // This class defines a top-level Compiler invocation.
 
 class Compile : public Phase {

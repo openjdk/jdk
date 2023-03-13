@@ -28,7 +28,6 @@
 #include "opto/phaseX.hpp"
 #include "opto/type.hpp"
 
-//------------------------------Value------------------------------------------
 const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
@@ -50,7 +49,6 @@ const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
   return TypeInt::INT;
 }
 
-//------------------------------Value------------------------------------------
 const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
@@ -73,7 +71,6 @@ const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
   return TypeInt::INT;
 }
 
-//------------------------------Value------------------------------------------
 const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
@@ -95,7 +92,6 @@ const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
   return TypeInt::INT;
 }
 
-//------------------------------Value------------------------------------------
 const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;

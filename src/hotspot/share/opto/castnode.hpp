@@ -29,7 +29,6 @@
 #include "opto/opcodes.hpp"
 
 
-//------------------------------ConstraintCastNode-----------------------------
 // cast to a different range
 class ConstraintCastNode: public TypeNode {
 public:
@@ -71,7 +70,6 @@ public:
   Node* optimize_integer_cast(PhaseGVN* phase, BasicType bt);
 };
 
-//------------------------------CastIINode-------------------------------------
 // cast integer to integer (different range)
 class CastIINode: public ConstraintCastNode {
   protected:
@@ -158,7 +156,6 @@ public:
 };
 
 
-//------------------------------CastPPNode-------------------------------------
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
   public:
@@ -169,7 +166,6 @@ class CastPPNode: public ConstraintCastNode {
   virtual uint ideal_reg() const { return Op_RegP; }
 };
 
-//------------------------------CheckCastPPNode--------------------------------
 // for _checkcast, cast pointer to pointer (different type), without JOIN,
 class CheckCastPPNode: public ConstraintCastNode {
   public:
@@ -186,7 +182,6 @@ class CheckCastPPNode: public ConstraintCastNode {
  };
 
 
-//------------------------------CastX2PNode-------------------------------------
 // convert a machine-pointer-sized integer to a raw pointer
 class CastX2PNode : public Node {
   public:
@@ -199,7 +194,6 @@ class CastX2PNode : public Node {
   virtual const Type *bottom_type() const { return TypeRawPtr::BOTTOM; }
 };
 
-//------------------------------CastP2XNode-------------------------------------
 // Used in both 32-bit and 64-bit land.
 // Used for card-marks and unsafe pointer math.
 class CastP2XNode : public Node {

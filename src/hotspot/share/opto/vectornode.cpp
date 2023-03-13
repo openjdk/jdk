@@ -31,7 +31,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-//------------------------------VectorNode--------------------------------------
 
 // Return the vector operator for the specified scalar operation
 // and vector length.

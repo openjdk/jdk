@@ -27,7 +27,6 @@
 
 #include "opto/node.hpp"
 
-//------------------------------CMoveNode--------------------------------------
 // Conditional move
 class CMoveNode : public TypeNode {
   public:
@@ -52,7 +51,6 @@ class CMoveNode : public TypeNode {
   static Node *is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f, BoolNode *b );
 };
 
-//------------------------------CMoveDNode-------------------------------------
 class CMoveDNode : public CMoveNode {
   public:
   CMoveDNode( Node *bol, Node *left, Node *right, const Type* t) : CMoveNode(bol,left,right,t){}
@@ -60,7 +58,6 @@ class CMoveDNode : public CMoveNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
-//------------------------------CMoveFNode-------------------------------------
 class CMoveFNode : public CMoveNode {
   public:
   CMoveFNode( Node *bol, Node *left, Node *right, const Type* t ) : CMoveNode(bol,left,right,t) {}
@@ -68,7 +65,6 @@ class CMoveFNode : public CMoveNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
-//------------------------------CMoveINode-------------------------------------
 class CMoveINode : public CMoveNode {
   public:
   CMoveINode( Node *bol, Node *left, Node *right, const TypeInt *ti ) : CMoveNode(bol,left,right,ti){}
@@ -76,21 +72,18 @@ class CMoveINode : public CMoveNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
-//------------------------------CMoveLNode-------------------------------------
 class CMoveLNode : public CMoveNode {
   public:
   CMoveLNode(Node *bol, Node *left, Node *right, const TypeLong *tl ) : CMoveNode(bol,left,right,tl){}
   virtual int Opcode() const;
 };
 
-//------------------------------CMovePNode-------------------------------------
 class CMovePNode : public CMoveNode {
   public:
   CMovePNode( Node *c, Node *bol, Node *left, Node *right, const TypePtr* t ) : CMoveNode(bol,left,right,t) { init_req(Control,c); }
   virtual int Opcode() const;
 };
 
-//------------------------------CMoveNNode-------------------------------------
 class CMoveNNode : public CMoveNode {
   public:
   CMoveNNode( Node *c, Node *bol, Node *left, Node *right, const Type* t ) : CMoveNode(bol,left,right,t) { init_req(Control,c); }
@@ -149,7 +142,6 @@ class MoveD2LNode : public MoveNode {
   virtual Node* Identity(PhaseGVN* phase);
 };
 
-//------------------------------BinaryNode-------------------------------------
 // Place holder for the 2 conditional inputs to a CMove.  CMove needs 4
 // inputs: the Bool (for the lt/gt/eq/ne bits), the flags (result of some
 // compare), and the 2 values to select between.  The Matcher requires a

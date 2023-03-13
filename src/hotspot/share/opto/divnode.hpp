@@ -35,7 +35,6 @@
 // Optimization - Graph Style
 
 
-//------------------------------DivINode---------------------------------------
 // Integer division
 // Note: this is division as defined by JVMS, i.e., MinInt/-1 == MinInt.
 // On processors which don't naturally support this special case (e.g., x86),
@@ -51,7 +50,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------DivLNode---------------------------------------
 // Long division
 class DivLNode : public Node {
 public:
@@ -64,7 +62,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------DivFNode---------------------------------------
 // Float division
 class DivFNode : public Node {
 public:
@@ -77,7 +74,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------DivDNode---------------------------------------
 // Double division
 class DivDNode : public Node {
 public:
@@ -90,7 +86,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------UDivINode---------------------------------------
 // Unsigned integer division
 class UDivINode : public Node {
 public:
@@ -103,7 +98,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------UDivLNode---------------------------------------
 // Unsigned long division
 class UDivLNode : public Node {
 public:
@@ -116,7 +110,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------ModINode---------------------------------------
 // Integer modulus
 class ModINode : public Node {
 public:
@@ -128,7 +121,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ModLNode---------------------------------------
 // Long modulus
 class ModLNode : public Node {
 public:
@@ -140,7 +132,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------ModFNode---------------------------------------
 // Float Modulus
 class ModFNode : public Node {
 public:
@@ -151,7 +142,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------ModDNode---------------------------------------
 // Double Modulus
 class ModDNode : public Node {
 public:
@@ -162,7 +152,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------UModINode---------------------------------------
 // Unsigned integer modulus
 class UModINode : public Node {
 public:
@@ -173,7 +162,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------UModLNode---------------------------------------
 // Unsigned long modulus
 class UModLNode : public Node {
 public:
@@ -184,7 +172,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------DivModNode---------------------------------------
 // Division with remainder result.
 class DivModNode : public MultiNode {
 protected:
@@ -206,7 +193,6 @@ public:
   ProjNode* mod_proj() { return proj_out_or_null(mod_proj_num); }
 };
 
-//------------------------------DivModINode---------------------------------------
 // Integer division with remainder result.
 class DivModINode : public DivModNode {
 public:
@@ -219,7 +205,6 @@ public:
   static DivModINode* make(Node* div_or_mod);
 };
 
-//------------------------------DivModLNode---------------------------------------
 // Long division with remainder result.
 class DivModLNode : public DivModNode {
 public:
@@ -233,7 +218,6 @@ public:
 };
 
 
-//------------------------------UDivModINode---------------------------------------
 // Unsigend integer division with remainder result.
 class UDivModINode : public DivModNode {
 public:
@@ -246,7 +230,6 @@ public:
   static UDivModINode* make(Node* div_or_mod);
 };
 
-//------------------------------UDivModLNode---------------------------------------
 // Unsigned long division with remainder result.
 class UDivModLNode : public DivModNode {
 public:

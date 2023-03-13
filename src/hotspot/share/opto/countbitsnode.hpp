@@ -30,7 +30,6 @@
 
 class PhaseTransform;
 
-//---------- CountBitsNode -----------------------------------------------------
 class CountBitsNode : public Node {
   public:
   CountBitsNode(Node* in1) : Node(0, in1) {}
@@ -38,7 +37,6 @@ class CountBitsNode : public Node {
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//---------- CountLeadingZerosINode --------------------------------------------
 // Count leading zeros (0-bit count starting from MSB) of an integer.
 class CountLeadingZerosINode : public CountBitsNode {
   public:
@@ -47,7 +45,6 @@ class CountLeadingZerosINode : public CountBitsNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//---------- CountLeadingZerosLNode --------------------------------------------
 // Count leading zeros (0-bit count starting from MSB) of a long.
 class CountLeadingZerosLNode : public CountBitsNode {
   public:
@@ -56,7 +53,6 @@ class CountLeadingZerosLNode : public CountBitsNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//---------- CountTrailingZerosINode -------------------------------------------
 // Count trailing zeros (0-bit count starting from LSB) of an integer.
 class CountTrailingZerosINode : public CountBitsNode {
   public:
@@ -65,7 +61,6 @@ class CountTrailingZerosINode : public CountBitsNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//---------- CountTrailingZerosLNode -------------------------------------------
 // Count trailing zeros (0-bit count starting from LSB) of a long.
 class CountTrailingZerosLNode : public CountBitsNode {
   public:
@@ -74,7 +69,6 @@ class CountTrailingZerosLNode : public CountBitsNode {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//---------- PopCountINode -----------------------------------------------------
 // Population count (bit count) of an integer.
 class PopCountINode : public CountBitsNode {
   public:
@@ -82,7 +76,6 @@ class PopCountINode : public CountBitsNode {
   virtual int Opcode() const;
 };
 
-//---------- PopCountLNode -----------------------------------------------------
 // Population count (bit count) of a long.
 class PopCountLNode : public CountBitsNode {
   public:

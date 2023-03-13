@@ -44,7 +44,6 @@ class PhaseChaitin;
 #define OPTO_DEBUG_SPLIT_FREQ  BLOCK_FREQUENCY(0.001)
 #define OPTO_LRG_HIGH_FREQ     BLOCK_FREQUENCY(0.25)
 
-//------------------------------LRG--------------------------------------------
 // Live-RanGe structure.
 class LRG : public ResourceObj {
   friend class VMStructs;
@@ -226,7 +225,6 @@ public:
 #endif
 };
 
-//------------------------------IFG--------------------------------------------
 //                         InterFerence Graph
 // An undirected graph implementation.  Created with a fixed number of
 // vertices.  Edges can be added & tested.  Vertices can be removed, then
@@ -414,7 +412,6 @@ public:
   }
 };
 
-//------------------------------Chaitin----------------------------------------
 // Briggs-Chaitin style allocation, mostly.
 class PhaseChaitin : public PhaseRegAlloc {
   friend class VMStructs;

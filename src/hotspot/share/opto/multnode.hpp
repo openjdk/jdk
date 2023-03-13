@@ -30,7 +30,6 @@
 class Matcher;
 class ProjNode;
 
-//------------------------------MultiNode--------------------------------------
 // This class defines a MultiNode, a Node which produces many values.  The
 // values are wrapped up in a tuple Type, i.e. a TypeTuple.
 class MultiNode : public Node {
@@ -51,7 +50,6 @@ public:
   ProjNode* proj_out_or_null(uint which_proj, bool is_io_use) const;
 };
 
-//------------------------------ProjNode---------------------------------------
 // This class defines a Projection node.  Projections project a single element
 // out of a tuple (or Signature) type.  Only MultiNodes produce TypeTuple
 // results.

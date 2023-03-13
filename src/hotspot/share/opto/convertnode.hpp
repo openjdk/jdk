@@ -29,7 +29,6 @@
 #include "opto/opcodes.hpp"
 
 
-//------------------------------Conv2BNode-------------------------------------
 // Convert int/pointer to a Boolean.  Map zero to zero, all else to 1.
 class Conv2BNode : public Node {
   public:
@@ -42,7 +41,6 @@ class Conv2BNode : public Node {
 };
 
 // The conversions operations are all Alpha sorted.  Please keep it that way!
-//------------------------------ConvD2FNode------------------------------------
 // Convert double to float
 class ConvD2FNode : public Node {
   public:
@@ -55,7 +53,6 @@ class ConvD2FNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------ConvD2INode------------------------------------
 // Convert Double to Integer
 class ConvD2INode : public Node {
   public:
@@ -68,7 +65,6 @@ class ConvD2INode : public Node {
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ConvD2LNode------------------------------------
 // Convert Double to Long
 class ConvD2LNode : public Node {
   public:
@@ -89,7 +85,6 @@ class RoundDNode : public Node {
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------ConvF2DNode------------------------------------
 // Convert Float to a Double.
 class ConvF2DNode : public Node {
   public:
@@ -100,7 +95,6 @@ class ConvF2DNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------ConvF2HFNode------------------------------------
 // Convert Float to Halffloat
 class ConvF2HFNode : public Node {
   public:
@@ -111,7 +105,6 @@ class ConvF2HFNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ConvF2INode------------------------------------
 // Convert float to integer
 class ConvF2INode : public Node {
   public:
@@ -125,7 +118,6 @@ class ConvF2INode : public Node {
 };
 
 
-//------------------------------ConvF2LNode------------------------------------
 // Convert float to long
 class ConvF2LNode : public Node {
   public:
@@ -138,7 +130,6 @@ class ConvF2LNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------ConvHF2FNode------------------------------------
 // Convert Halffloat to float
 class ConvHF2FNode : public Node {
   public:
@@ -149,7 +140,6 @@ class ConvHF2FNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------ConvI2DNode------------------------------------
 // Convert Integer to Double
 class ConvI2DNode : public Node {
   public:
@@ -160,7 +150,6 @@ class ConvI2DNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------ConvI2FNode------------------------------------
 // Convert Integer to Float
 class ConvI2FNode : public Node {
   public:
@@ -180,7 +169,6 @@ class RoundFNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ConvI2LNode------------------------------------
 // Convert integer to long
 class ConvI2LNode : public TypeNode {
   public:
@@ -193,7 +181,6 @@ class ConvI2LNode : public TypeNode {
   virtual uint  ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------ConvL2DNode------------------------------------
 // Convert Long to Double
 class ConvL2DNode : public Node {
   public:
@@ -204,7 +191,6 @@ class ConvL2DNode : public Node {
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------ConvL2FNode------------------------------------
 // Convert Long to Float
 class ConvL2FNode : public Node {
   public:
@@ -215,7 +201,6 @@ class ConvL2FNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------ConvL2INode------------------------------------
 // Convert long to integer
 class ConvL2INode : public TypeNode {
   public:
@@ -230,7 +215,6 @@ class ConvL2INode : public TypeNode {
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
-//-----------------------------RoundFloatNode----------------------------------
 class RoundFloatNode: public Node {
   public:
   RoundFloatNode(Node* c, Node *in1): Node(c, in1) {}
@@ -242,7 +226,6 @@ class RoundFloatNode: public Node {
 };
 
 
-//-----------------------------RoundDoubleNode---------------------------------
 class RoundDoubleNode: public Node {
   public:
   RoundDoubleNode(Node* c, Node *in1): Node(c, in1) {}
@@ -253,7 +236,6 @@ class RoundDoubleNode: public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-//-----------------------------RoundDoubleModeNode-----------------------------
 class RoundDoubleModeNode: public Node {
   public:
   enum RoundingMode {

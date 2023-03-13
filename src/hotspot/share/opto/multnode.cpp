@@ -34,15 +34,12 @@
 #include "opto/type.hpp"
 #include "utilities/vmError.hpp"
 
-//=============================================================================
-//------------------------------MultiNode--------------------------------------
 const RegMask &MultiNode::out_RegMask() const {
   return RegMask::Empty;
 }
 
 Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->clone(); }
 
-//------------------------------proj_out---------------------------------------
 // Get a named projection or null if not found
 ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
   assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
@@ -80,8 +77,6 @@ ProjNode* MultiNode::proj_out(uint which_proj) const {
   return p;
 }
 
-//=============================================================================
-//------------------------------ProjNode---------------------------------------
 uint ProjNode::hash() const {
   // only one input
   return (uintptr_t)in(TypeFunc::Control) + (_con << 1) + (_is_io_use ? 1 : 0);
@@ -152,7 +147,6 @@ void ProjNode::dump_compact_spec(outputStream *st) const {
 }
 #endif
 
-//----------------------------check_con----------------------------------------
 void ProjNode::check_con() const {
   Node* n = in(0);
   if (n == nullptr)    return;  // should be assert, but NodeHash makes bogons
@@ -164,24 +158,20 @@ void ProjNode::check_con() const {
   assert(_con < t->is_tuple()->cnt(), "ProjNode::_con must be in range");
 }
 
-//------------------------------Value------------------------------------------
 const Type* ProjNode::Value(PhaseGVN* phase) const {
   if (in(0) == nullptr) return Type::TOP;
   return proj_type(phase->type(in(0)));
 }
 
-//------------------------------out_RegMask------------------------------------
 // Pass the buck uphill
 const RegMask &ProjNode::out_RegMask() const {
   return RegMask::Empty;
 }
 
-//------------------------------ideal_reg--------------------------------------
 uint ProjNode::ideal_reg() const {
   return bottom_type()->ideal_reg();
 }
 
-//-------------------------------is_uncommon_trap_proj----------------------------
 // Return uncommon trap call node if proj is for "proj->[region->..]call_uct"
 // null otherwise
 CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason reason) {
@@ -208,7 +198,6 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason 
   return nullptr;
 }
 
-//-------------------------------is_uncommon_trap_if_pattern-------------------------
 // Return uncommon trap call node for    "if(test)-> proj -> ...
 //                                                 |
 //                                                 V

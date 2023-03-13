@@ -28,7 +28,6 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 
-//=============================================================================
 const RegMask &BoxLockNode::in_RegMask(uint i) const {
   return _inmask;
 }
@@ -47,14 +46,12 @@ BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
   _inmask.Insert(reg);
 }
 
-//-----------------------------hash--------------------------------------------
 uint BoxLockNode::hash() const {
   if (EliminateNestedLocks)
     return NO_HASH; // Each locked region has own BoxLock node
   return Node::hash() + _slot + (_is_eliminated ? Compile::current()->fixed_slots() : 0);
 }
 
-//------------------------------cmp--------------------------------------------
 bool BoxLockNode::cmp( const Node &n ) const {
   if (EliminateNestedLocks)
     return (&n == this); // Always fail except on self
@@ -138,22 +135,16 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node*
   return true;
 }
 
-//=============================================================================
-//-----------------------------hash--------------------------------------------
 uint FastLockNode::hash() const { return NO_HASH; }
 
 uint FastLockNode::size_of() const { return sizeof(*this); }
 
-//------------------------------cmp--------------------------------------------
 bool FastLockNode::cmp( const Node &n ) const {
   return (&n == this);                // Always fail except on self
 }
 
-//=============================================================================
-//-----------------------------hash--------------------------------------------
 uint FastUnlockNode::hash() const { return NO_HASH; }
 
-//------------------------------cmp--------------------------------------------
 bool FastUnlockNode::cmp( const Node &n ) const {
   return (&n == this);                // Always fail except on self
 }
@@ -174,8 +165,6 @@ void FastLockNode::create_rtm_lock_counter(JVMState* state) {
 #endif
 }
 
-//=============================================================================
-//------------------------------do_monitor_enter-------------------------------
 void Parse::do_monitor_enter() {
   kill_dead_locals();
 
@@ -194,7 +183,6 @@ void Parse::do_monitor_enter() {
   shared_lock(obj);
 }
 
-//------------------------------do_monitor_exit--------------------------------
 void Parse::do_monitor_exit() {
   kill_dead_locals();
 

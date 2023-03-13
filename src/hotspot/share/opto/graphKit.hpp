@@ -47,8 +47,6 @@ class LibraryCallKit;
 class Parse;
 class RootNode;
 
-//-----------------------------------------------------------------------------
-//----------------------------GraphKit-----------------------------------------
 // Toolkit for building the common sorts of subgraphs.
 // Does not know about bytecode parsing or type-flow results.
 // It is able to create graphs implementing the semantics of most

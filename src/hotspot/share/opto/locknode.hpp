@@ -31,7 +31,6 @@
 
 class RTMLockingCounters;
 
-//------------------------------BoxLockNode------------------------------------
 class BoxLockNode : public Node {
   const int     _slot; // stack slot
   RegMask     _inmask; // OptoReg corresponding to stack slot
@@ -70,7 +69,6 @@ public:
 #endif
 };
 
-//------------------------------FastLockNode-----------------------------------
 class FastLockNode: public CmpNode {
 private:
   RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
@@ -102,7 +100,6 @@ public:
 };
 
 
-//------------------------------FastUnlockNode---------------------------------
 class FastUnlockNode: public CmpNode {
 public:
   FastUnlockNode(Node *ctrl, Node *oop, Node *box) : CmpNode(oop,box) {

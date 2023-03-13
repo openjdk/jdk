@@ -34,7 +34,6 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 
-//------------------------------Split--------------------------------------
 // Walk the graph in RPO and for each lrg which spills, propagate reaching
 // definitions.  During propagation, split the live range around regions of
 // High Register Pressure (HRP).  If a Def is in a region of Low Register
@@ -52,7 +51,6 @@
 
 static const char out_of_nodes[] = "out of nodes during split";
 
-//------------------------------get_spillcopy_wide-----------------------------
 // Get a SpillCopy node with wide-enough masks.  Use the 'wide-mask', the
 // wide ideal-register spill-mask if possible.  If the 'wide-mask' does
 // not cover the input (or output), use the input (or output) mask instead.
@@ -99,7 +97,6 @@ Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, 
   return new MachSpillCopyNode(spill_type, def, *w_i_mask, *w_o_mask );
 }
 
-//------------------------------insert_proj------------------------------------
 // Insert the spill at chosen location.  Skip over any intervening Proj's or
 // Phis.  Skip over a CatchNode and projs, inserting in the fall-through block
 // instead.  Update high-pressure indices.  Create a new live range.
@@ -138,7 +135,6 @@ void PhaseChaitin::insert_proj( Block *b, uint i, Node *spill, uint maxlrg ) {
   new_lrg(spill,maxlrg);
 }
 
-//------------------------------split_DEF--------------------------------------
 // There are four categories of Split; UP/DOWN x DEF/USE
 // Only three of these really occur as DOWN/USE will always color
 // Any Split with a DEF cannot CISC-Spill now.  Thus we need
@@ -182,7 +178,6 @@ uint PhaseChaitin::split_DEF( Node *def, Block *b, int loc, uint maxlrg, Node **
   return maxlrg;
 }
 
-//------------------------------split_USE--------------------------------------
 // Splits at uses can involve redeffing the LRG, so no CISC Spilling there.
 // Debug uses want to know if def is already stack enabled.
 // Return value
@@ -287,7 +282,6 @@ int PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, 
   return 1;
 }
 
-//------------------------------clone_node----------------------------
 // Clone node with anti dependence check.
 Node* clone_node(Node* def, Block *b, Compile* C) {
   if (def->needs_anti_dependence_check()) {
@@ -313,7 +307,6 @@ Node* clone_node(Node* def, Block *b, Compile* C) {
   return def->clone();
 }
 
-//------------------------------split_Rematerialize----------------------------
 // Clone a local copy of the def.
 Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &maxlrg,
                                         GrowableArray<uint> splits, int slidx, uint *lrg2reach,
@@ -427,7 +420,6 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
   return spill;
 }
 
-//------------------------------is_high_pressure-------------------------------
 // Function to compute whether or not this live range is "high pressure"
 // in this block - whether it spills eagerly or not.
 bool PhaseChaitin::is_high_pressure( Block *b, LRG *lrg, uint insidx ) {
@@ -457,7 +449,6 @@ bool PhaseChaitin::is_high_pressure( Block *b, LRG *lrg, uint insidx ) {
 }
 
 
-//------------------------------prompt_use---------------------------------
 // True if lidx is used before any real register is def'd in the block
 bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
   if (lrgs(lidx)._was_spilled2) {
@@ -483,8 +474,6 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
   return false;
 }
 
-//------------------------------Split--------------------------------------
-//----------Split Routine----------
 // ***** NEW SPLITTING HEURISTIC *****
 // DEFS: If the DEF is in a High Register Pressure(HRP) Block, split there.
 //        Else, no split unless there is a HRP block between a DEF and

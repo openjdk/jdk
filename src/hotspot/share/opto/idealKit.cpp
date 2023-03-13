@@ -37,7 +37,6 @@
 // and Memory slots. (So far.)
 const uint IdealKit::first_var = TypeFunc::Parms + 1;
 
-//----------------------------IdealKit-----------------------------------------
 IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarations) :
   C(gkit->C), _gvn(gkit->gvn()) {
   _initial_ctrl = gkit->control();
@@ -57,14 +56,12 @@ IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarati
   }
 }
 
-//----------------------------sync_kit-----------------------------------------
 void IdealKit::sync_kit(GraphKit* gkit) {
   set_all_memory(gkit->merged_memory());
   set_i_o(gkit->i_o());
   set_ctrl(gkit->control());
 }
 
-//-------------------------------if_then-------------------------------------
 // Create:  if(left relop right)
 //          /  \
 //   iffalse    iftrue
@@ -96,7 +93,6 @@ void IdealKit::if_then(Node* left, BoolTest::mask relop,
   set_ctrl(then);
 }
 
-//-------------------------------else_-------------------------------------
 // Pop the else cvstate off the stack, and push the (current) then cvstate.
 // The else cvstate becomes the current cvstate.
 void IdealKit::else_() {
@@ -109,7 +105,6 @@ void IdealKit::else_() {
   _cvstate = else_cvstate;
 }
 
-//-------------------------------end_if-------------------------------------
 // Merge the "then" and "else" cvstates.
 //
 // The if_then() pushed a copy of the current state for later use
@@ -150,7 +145,6 @@ void IdealKit::end_if() {
   DEBUG_ONLY(_state->pop());
 }
 
-//-------------------------------loop-------------------------------------
 // Create the loop head portion (*) of:
 //  *     iv = init
 //  *  top: (region node)
@@ -183,7 +177,6 @@ void IdealKit::loop(GraphKit* gkit, int nargs, IdealVariable& iv, Node* init, Bo
   assert(_pending_cvstates->top()->in(TypeFunc::Control)->is_IfFalse(), "false branch exits loop");
 }
 
-//-------------------------------end_loop-------------------------------------
 // Creates the goto top label.
 // Expects the else (loop exit) cvstate to be on top of the
 // stack, and the loop top cvstate to be 2nd.
@@ -197,7 +190,6 @@ void IdealKit::end_loop() {
   _cvstate = exit;
 }
 
-//-------------------------------make_label-------------------------------------
 // Creates a label.  The number of goto's
 // must be specified (which should be 1 less than
 // the number of precedessors.)
@@ -210,7 +202,6 @@ Node* IdealKit::make_label(int goto_ct) {
   return lab;
 }
 
-//-------------------------------bind-------------------------------------
 // Bind a label at the current cvstate by simulating
 // a goto to the label.
 void IdealKit::bind(Node* lab) {
@@ -218,7 +209,6 @@ void IdealKit::bind(Node* lab) {
   _cvstate = lab;
 }
 
-//-------------------------------goto_-------------------------------------
 // Make the current cvstate a predecessor of the label,
 // creating phi's to merge values.  If bind is true and
 // this is not the last control edge, then ensure that
@@ -272,7 +262,6 @@ void IdealKit::goto_(Node* lab, bool bind) {
   stop();
 }
 
-//-----------------------------promote_to_phi-----------------------------------
 Node* IdealKit::promote_to_phi(Node* n, Node* reg) {
   assert(!was_promoted_to_phi(n, reg), "n already promoted to phi on this region");
   // Get a conservative type for the phi
@@ -281,7 +270,6 @@ Node* IdealKit::promote_to_phi(Node* n, Node* reg) {
   return delay_transform(PhiNode::make(reg, n, ct));
 }
 
-//-----------------------------declarations_done-------------------------------
 void IdealKit::declarations_done() {
   _cvstate = new_cvstate();   // initialize current cvstate
   set_ctrl(_initial_ctrl);    // initialize control in current cvstate
@@ -290,7 +278,6 @@ void IdealKit::declarations_done() {
   DEBUG_ONLY(_state->push(BlockS));
 }
 
-//-----------------------------transform-----------------------------------
 Node* IdealKit::transform(Node* n) {
   if (_delay_all_transforms) {
     return delay_transform(n);
@@ -301,7 +288,6 @@ Node* IdealKit::transform(Node* n) {
   }
 }
 
-//-----------------------------delay_transform-----------------------------------
 Node* IdealKit::delay_transform(Node* n) {
   // Delay transform until IterativeGVN
   gvn().set_type(n, n->bottom_type());
@@ -309,13 +295,11 @@ Node* IdealKit::delay_transform(Node* n) {
   return n;
 }
 
-//-----------------------------new_cvstate-----------------------------------
 Node* IdealKit::new_cvstate() {
   uint sz = _var_ct + first_var;
   return new Node(sz);
 }
 
-//-----------------------------copy_cvstate-----------------------------------
 Node* IdealKit::copy_cvstate() {
   Node* ns = new_cvstate();
   for (uint i = 0; i < ns->req(); i++) ns->init_req(i, _cvstate->in(i));
@@ -324,12 +308,10 @@ Node* IdealKit::copy_cvstate() {
   return ns;
 }
 
-//-----------------------------clear-----------------------------------
 void IdealKit::clear(Node* m) {
   for (uint i = 0; i < m->req(); i++) m->set_req(i, nullptr);
 }
 
-//-----------------------------IdealVariable----------------------------
 IdealVariable::IdealVariable(IdealKit &k) {
   k.declare(this);
 }
@@ -345,7 +327,6 @@ void IdealKit::set_memory(Node* mem, uint alias_idx) {
   merged_memory()->set_memory_at(alias_idx, mem);
 }
 
-//----------------------------- make_load ----------------------------
 Node* IdealKit::load(Node* ctl,
                      Node* adr,
                      const Type* t,
@@ -401,7 +382,6 @@ Node* IdealKit::storeCM(Node* ctl, Node* adr, Node *val, Node* oop_store, int oo
   return st;
 }
 
-//---------------------------- do_memory_merge --------------------------------
 // The memory from one merging cvstate needs to be merged with the memory for another
 // join cvstate. If the join cvstate doesn't have a merged memory yet then we
 // can just copy the state from the merging cvstate
@@ -478,7 +458,6 @@ void IdealKit::do_memory_merge(Node* merging, Node* join) {
 }
 
 
-//----------------------------- make_call  ----------------------------
 // Trivial runtime call
 Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
                                address slow_call,

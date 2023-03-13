@@ -33,7 +33,6 @@
 
 class PhaseTransform;
 
-//------------------------------AddNode----------------------------------------
 // Classic Add functionality.  This covers all the usual 'add' behaviors for
 // an algebraic ring.  Add-integer, add-float, add-double, and binary-or are
 // all inherited from this class.  The various identity values are supplied
@@ -78,7 +77,6 @@ public:
   static AddNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
-//------------------------------AddINode---------------------------------------
 // Add 2 integers
 class AddINode : public AddNode {
 public:
@@ -95,7 +93,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------AddLNode---------------------------------------
 // Add 2 longs
 class AddLNode : public AddNode {
 public:
@@ -112,7 +109,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------AddFNode---------------------------------------
 // Add 2 floats
 class AddFNode : public AddNode {
 public:
@@ -129,7 +125,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------AddDNode---------------------------------------
 // Add 2 doubles
 class AddDNode : public AddNode {
 public:
@@ -146,7 +141,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------AddPNode---------------------------------------
 // Add pointer plus integer to get pointer.  NOT commutative, really.
 // So not really an AddNode.  Lives here, because people associate it with
 // an add.
@@ -178,7 +172,6 @@ public:
   virtual uint match_edge(uint idx) const;
 };
 
-//------------------------------OrINode----------------------------------------
 // Logically OR 2 integers.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
 class OrINode : public AddNode {
@@ -195,7 +188,6 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
-//------------------------------OrLNode----------------------------------------
 // Logically OR 2 longs.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
 class OrLNode : public AddNode {
@@ -212,7 +204,6 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
-//------------------------------XorINode---------------------------------------
 // XOR'ing 2 integers
 class XorINode : public AddNode {
 public:
@@ -228,7 +219,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------XorINode---------------------------------------
 // XOR'ing 2 longs
 class XorLNode : public AddNode {
 public:
@@ -244,7 +234,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------MaxNode----------------------------------------
 // Max (or min) of 2 values.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.  Only new thing is that we allow
 // 2 equal inputs to be equal.
@@ -286,7 +275,6 @@ public:
   }
 };
 
-//------------------------------MaxINode---------------------------------------
 // Maximum of 2 integers.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
 class MaxINode : public MaxNode {
@@ -302,7 +290,6 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
-//------------------------------MinINode---------------------------------------
 // MINimum of 2 integers.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
 class MinINode : public MaxNode {
@@ -318,7 +305,6 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
-//------------------------------MaxLNode---------------------------------------
 // MAXimum of 2 longs.
 class MaxLNode : public MaxNode {
 public:
@@ -332,7 +318,6 @@ public:
   int min_opcode() const { return Op_MinL; }
 };
 
-//------------------------------MinLNode---------------------------------------
 // MINimum of 2 longs.
 class MinLNode : public MaxNode {
 public:
@@ -346,7 +331,6 @@ public:
   int min_opcode() const { return Op_MinL; }
 };
 
-//------------------------------MaxFNode---------------------------------------
 // Maximum of 2 floats.
 class MaxFNode : public MaxNode {
 public:
@@ -360,7 +344,6 @@ public:
   int min_opcode() const { return Op_MinF; }
 };
 
-//------------------------------MinFNode---------------------------------------
 // Minimum of 2 floats.
 class MinFNode : public MaxNode {
 public:
@@ -374,7 +357,6 @@ public:
   int min_opcode() const { return Op_MinF; }
 };
 
-//------------------------------MaxDNode---------------------------------------
 // Maximum of 2 doubles.
 class MaxDNode : public MaxNode {
 public:
@@ -388,7 +370,6 @@ public:
   int min_opcode() const { return Op_MinD; }
 };
 
-//------------------------------MinDNode---------------------------------------
 // Minimum of 2 doubles.
 class MinDNode : public MaxNode {
 public:

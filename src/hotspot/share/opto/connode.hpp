@@ -32,7 +32,6 @@
 class PhaseTransform;
 class MachNode;
 
-//------------------------------ConNode----------------------------------------
 // Simple constants
 class ConNode : public TypeNode {
 public:
@@ -50,7 +49,6 @@ public:
   static ConNode* make(const Type *t);
 };
 
-//------------------------------ConINode---------------------------------------
 // Simple integer constants
 class ConINode : public ConNode {
 public:
@@ -66,7 +64,6 @@ public:
 
 };
 
-//------------------------------ConPNode---------------------------------------
 // Simple pointer constants
 class ConPNode : public ConNode {
 public:
@@ -84,7 +81,6 @@ public:
 };
 
 
-//------------------------------ConNNode--------------------------------------
 // Simple narrow oop constants
 class ConNNode : public ConNode {
 public:
@@ -92,7 +88,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------ConNKlassNode---------------------------------
 // Simple narrow klass constants
 class ConNKlassNode : public ConNode {
 public:
@@ -101,7 +96,6 @@ public:
 };
 
 
-//------------------------------ConLNode---------------------------------------
 // Simple long constants
 class ConLNode : public ConNode {
 public:
@@ -115,7 +109,6 @@ public:
 
 };
 
-//------------------------------ConFNode---------------------------------------
 // Simple float constants
 class ConFNode : public ConNode {
 public:
@@ -129,7 +122,6 @@ public:
 
 };
 
-//------------------------------ConDNode---------------------------------------
 // Simple double constants
 class ConDNode : public ConNode {
 public:
@@ -143,7 +135,6 @@ public:
 
 };
 
-//------------------------------ThreadLocalNode--------------------------------
 // Ideal Node which returns the base of ThreadLocalStorage.
 class ThreadLocalNode : public Node {
 public:

@@ -32,7 +32,6 @@
 #include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-//------------------------------dump-------------------------------------------
 
 #ifndef PRODUCT
 void OptoReg::dump(int r, outputStream *st) {
@@ -48,7 +47,6 @@ void OptoReg::dump(int r, outputStream *st) {
 #endif
 
 
-//=============================================================================
 const RegMask RegMask::Empty;
 
 const RegMask RegMask::All(
@@ -58,7 +56,6 @@ const RegMask RegMask::All(
   0
 );
 
-//=============================================================================
 bool RegMask::is_vector(uint ireg) {
   return (ireg == Op_VecA || ireg == Op_VecS || ireg == Op_VecD ||
           ireg == Op_VecX || ireg == Op_VecY || ireg == Op_VecZ );
