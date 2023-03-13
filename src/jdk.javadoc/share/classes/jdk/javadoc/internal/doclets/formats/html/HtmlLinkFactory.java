@@ -87,7 +87,7 @@ public class HtmlLinkFactory {
      * @return the link.
      */
     public Content getLink(HtmlLinkInfo linkInfo) {
-        if (linkInfo.type != null) {
+        if (linkInfo.getType() != null) {
             SimpleTypeVisitor14<Content, HtmlLinkInfo> linkVisitor = new SimpleTypeVisitor14<>() {
 
                 final Content link = newContent();
@@ -113,7 +113,7 @@ public class HtmlLinkFactory {
                         link.add(getTypeAnnotationLinks(linkInfo.forType(type)));
                     }
                     // use vararg if required
-                    if (linkInfo.isVarArg && currentDepth == 0) {
+                    if (linkInfo.isVarArg() && currentDepth == 0) {
                         link.add("...");
                     } else {
                         link.add("[]");
@@ -145,8 +145,8 @@ public class HtmlLinkFactory {
                             ? (TypeVariable) utils.getComponentType(type)
                             : type;
                     Element owner = typevariable.asElement().getEnclosingElement();
-                    if (linkInfo.linkTypeParameters && utils.isTypeElement(owner)) {
-                        linkInfo.typeElement = (TypeElement) owner;
+                    if (linkInfo.linkTypeParameters() && utils.isTypeElement(owner)) {
+                        linkInfo.setTypeElement((TypeElement) owner);
                         Content label = newContent();
                         label.add(utils.getTypeName(type, false));
                         linkInfo.label(label).skipPreview(true);
@@ -156,8 +156,8 @@ public class HtmlLinkFactory {
                         link.add(utils.getTypeName(typevariable, false));
                     }
 
-                    if (linkInfo.showTypeBounds) {
-                        linkInfo.showTypeBounds = false;
+                    if (linkInfo.showTypeBounds()) {
+                        linkInfo.showTypeBounds(false);
                         TypeParameterElement tpe = ((TypeParameterElement) typevariable.asElement());
                         boolean more = false;
                         List<? extends TypeMirror> bounds = utils.getBounds(tpe);
@@ -188,7 +188,7 @@ public class HtmlLinkFactory {
                         link.add(".");
                     }
                     link.add(getTypeAnnotationLinks(linkInfo));
-                    linkInfo.typeElement = utils.asTypeElement(type);
+                    linkInfo.setTypeElement(utils.asTypeElement(type));
                     link.add(getClassLink(linkInfo));
                     if (linkInfo.showTypeParameters()) {
                         link.add(getTypeParameterLinks(linkInfo));
@@ -196,8 +196,8 @@ public class HtmlLinkFactory {
                     return link;
                 }
             };
-            return linkVisitor.visit(linkInfo.type, linkInfo);
-        } else if (linkInfo.typeElement != null) {
+            return linkVisitor.visit(linkInfo.getType(), linkInfo);
+        } else if (linkInfo.getTypeElement() != null) {
             Content link = newContent();
             link.add(getClassLink(linkInfo));
             if (linkInfo.showTypeParameters()) {
@@ -217,32 +217,33 @@ public class HtmlLinkFactory {
      */
     protected Content getClassLink(HtmlLinkInfo linkInfo) {
         BaseConfiguration configuration = m_writer.configuration;
-        TypeElement typeElement = linkInfo.typeElement;
+        TypeElement typeElement = linkInfo.getTypeElement();
         // Create a tool tip if we are linking to a class or interface.  Don't
         // create one if we are linking to a member.
         String title = "";
-        boolean hasWhere = linkInfo.fragment != null && linkInfo.fragment.length() != 0;
+        String fragment = linkInfo.getFragment();
+        boolean hasWhere = fragment != null && !fragment.isEmpty();
         if (!hasWhere) {
-            boolean isTypeLink = linkInfo.type != null &&
-                     utils.isTypeVariable(utils.getComponentType(linkInfo.type));
+            boolean isTypeLink = linkInfo.getType() != null &&
+                     utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
             title = getClassToolTip(typeElement, isTypeLink);
         }
         Content label = linkInfo.getClassLinkLabel(configuration);
-        if (linkInfo.context == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
+        if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
             // For this kind of link, type parameters are included in the link label
             // (and obviously not added after the link).
             label.add(getTypeParameterLinks(linkInfo));
         }
         Set<ElementFlag> flags;
         Element previewTarget;
-        boolean showPreview = !linkInfo.skipPreview;
+        boolean showPreview = !linkInfo.isSkipPreview();
         if (!hasWhere && showPreview) {
             flags = utils.elementFlags(typeElement);
             previewTarget = typeElement;
-        } else if (linkInfo.context == HtmlLinkInfo.Kind.SHOW_PREVIEW
-                && linkInfo.targetMember != null && showPreview) {
-            flags = utils.elementFlags(linkInfo.targetMember);
-            TypeElement enclosing = utils.getEnclosingTypeElement(linkInfo.targetMember);
+        } else if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_PREVIEW
+                && linkInfo.getTargetMember() != null && showPreview) {
+            flags = utils.elementFlags(linkInfo.getTargetMember());
+            TypeElement enclosing = utils.getEnclosingTypeElement(linkInfo.getTargetMember());
             Set<ElementFlag> enclosingFlags = utils.elementFlags(enclosing);
             if (flags.contains(ElementFlag.PREVIEW) && enclosingFlags.contains(ElementFlag.PREVIEW)) {
                 if (enclosing.equals(m_writer.getCurrentPageElement())) {
@@ -252,7 +253,7 @@ public class HtmlLinkFactory {
                 }
                 previewTarget = enclosing;
             } else {
-                previewTarget = linkInfo.targetMember;
+                previewTarget = linkInfo.getTargetMember();
             }
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
@@ -263,11 +264,11 @@ public class HtmlLinkFactory {
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
                 DocPath filename = getPath(linkInfo);
-                if (linkInfo.linkToSelf || typeElement != m_writer.getCurrentPageElement()) {
+                if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentPageElement()) {
                         link.add(m_writer.links.createLink(
-                                filename.fragment(linkInfo.fragment),
+                                filename.fragment(linkInfo.getFragment()),
                                 label,
-                                linkInfo.style,
+                                linkInfo.getStyle(),
                                 title));
                         if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(HtmlTree.SUP(m_writer.links.createLink(
@@ -279,8 +280,8 @@ public class HtmlLinkFactory {
             }
         } else {
             Content crossLink = m_writer.getCrossClassLink(
-                typeElement, linkInfo.fragment,
-                label, linkInfo.style, true);
+                typeElement, linkInfo.getFragment(),
+                label, linkInfo.getStyle(), true);
             if (crossLink != null) {
                 link.add(crossLink);
                 if (flags.contains(ElementFlag.PREVIEW)) {
@@ -310,17 +311,17 @@ public class HtmlLinkFactory {
     protected Content getTypeParameterLinks(HtmlLinkInfo linkInfo) {
         Content links = newContent();
         List<TypeMirror> vars = new ArrayList<>();
-        TypeMirror ctype = linkInfo.type != null
-                ? utils.getComponentType(linkInfo.type)
+        TypeMirror ctype = linkInfo.getType() != null
+                ? utils.getComponentType(linkInfo.getType())
                 : null;
-        if (linkInfo.executableElement != null) {
-            linkInfo.executableElement.getTypeParameters().forEach(t -> vars.add(t.asType()));
-        } else if (linkInfo.type != null && utils.isDeclaredType(linkInfo.type)) {
-            vars.addAll(((DeclaredType) linkInfo.type).getTypeArguments());
+        if (linkInfo.getExecutableElement() != null) {
+            linkInfo.getExecutableElement().getTypeParameters().forEach(t -> vars.add(t.asType()));
+        } else if (linkInfo.getType() != null && utils.isDeclaredType(linkInfo.getType())) {
+            vars.addAll(((DeclaredType) linkInfo.getType()).getTypeArguments());
         } else if (ctype != null && utils.isDeclaredType(ctype)) {
             vars.addAll(((DeclaredType) ctype).getTypeArguments());
-        } else if (ctype == null && linkInfo.typeElement != null) {
-            linkInfo.typeElement.getTypeParameters().forEach(t -> vars.add(t.asType()));
+        } else if (ctype == null && linkInfo.getTypeElement() != null) {
+            linkInfo.getTypeElement().getTypeParameters().forEach(t -> vars.add(t.asType()));
         } else {
             // Nothing to document.
             return links;
@@ -332,7 +333,7 @@ public class HtmlLinkFactory {
                 if (many) {
                     links.add(",");
                     links.add(new HtmlTree(TagName.WBR));
-                    if (linkInfo.addLineBreaksInTypeParameters) {
+                    if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);
                     }
                 }
@@ -353,10 +354,10 @@ public class HtmlLinkFactory {
     public Content getTypeAnnotationLinks(HtmlLinkInfo linkInfo) {
         ContentBuilder links = new ContentBuilder();
         List<? extends AnnotationMirror> annotations;
-        if (utils.isAnnotated(linkInfo.type)) {
-            annotations = linkInfo.type.getAnnotationMirrors();
-        } else if (utils.isTypeVariable(linkInfo.type) && linkInfo.showTypeParameterAnnotations) {
-            Element element = utils.typeUtils.asElement(linkInfo.type);
+        if (utils.isAnnotated(linkInfo.getType())) {
+            annotations = linkInfo.getType().getAnnotationMirrors();
+        } else if (utils.isTypeVariable(linkInfo.getType()) && linkInfo.showTypeParameterAnnotations()) {
+            Element element = utils.typeUtils.asElement(linkInfo.getType());
             annotations = element.getAnnotationMirrors();
         } else {
             return links;
@@ -409,6 +410,6 @@ public class HtmlLinkFactory {
      * @param linkInfo the information about the link.
      */
     private DocPath getPath(HtmlLinkInfo linkInfo) {
-        return m_writer.pathToRoot.resolve(docPaths.forClass(linkInfo.typeElement));
+        return m_writer.pathToRoot.resolve(docPaths.forClass(linkInfo.getTypeElement()));
     }
 }

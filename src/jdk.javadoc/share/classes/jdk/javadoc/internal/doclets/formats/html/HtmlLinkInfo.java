@@ -85,44 +85,44 @@ public class HtmlLinkInfo {
     /**
      * The context of the link.
      */
-    public Kind context = Kind.PLAIN;
+    private Kind context = Kind.PLAIN;
 
     /**
      * The fragment of the link.
      */
-    public String fragment = "";
+    private String fragment = "";
 
     /**
      * The member this link points to (if any).
      */
-    public Element targetMember;
+    private Element targetMember;
 
     /**
      * Optional style for the link.
      */
-    public HtmlStyle style = null;
+    private HtmlStyle style = null;
 
     /**
      * The class we want to link to.  Null if we are not linking
      * to a class.
      */
-    public TypeElement typeElement;
+    private TypeElement typeElement;
 
     /**
      * The executable element we want to link to.  Null if we are not linking
      * to an executable element.
      */
-    public ExecutableElement executableElement;
+    private ExecutableElement executableElement;
 
     /**
      * The Type we want to link to.  Null if we are not linking to a type.
      */
-    public TypeMirror type;
+    private TypeMirror type;
 
     /**
      * True if this is a link to a VarArg.
      */
-    public boolean isVarArg = false;
+    private boolean isVarArg = false;
 
     /**
      * The label for the link.
@@ -132,33 +132,33 @@ public class HtmlLinkInfo {
     /**
      * True if we should print the type bounds for the type parameter.
      */
-    public boolean showTypeBounds = true;
+    private boolean showTypeBounds = true;
 
     /**
      * True if type parameters should be rendered as links.
      */
-    public boolean linkTypeParameters = true;
+    private boolean linkTypeParameters = true;
 
     /**
      * By default, the link can be to the page it's already on.  However,
      * there are cases where we don't want this (e.g. heading of class page).
      */
-    public boolean linkToSelf = true;
+    private boolean linkToSelf = true;
 
     /**
      * True iff the preview flags should be skipped for this link.
      */
-    public boolean skipPreview;
+    private boolean skipPreview;
 
     /**
      * True if type parameters should be separated by line breaks.
      */
-    public boolean addLineBreaksInTypeParameters = false;
+    private boolean addLineBreaksInTypeParameters = false;
 
     /**
      * True if annotations on type parameters should be shown.
      */
-    public boolean showTypeParameterAnnotations = false;
+    private boolean showTypeParameterAnnotations = false;
 
     /**
      * Construct a LinkInfo object.
@@ -217,8 +217,40 @@ public class HtmlLinkInfo {
     }
 
     /**
+     * Sets the typeElement
+     * @param typeElement the new typeElement object
+     */
+    public void setTypeElement(TypeElement typeElement) {
+        this.typeElement = typeElement;
+    }
+
+    /**
+     * The class we want to link to.  Null if we are not linking
+     * to a class.
+     */
+    public TypeElement getTypeElement() {
+        return typeElement;
+    }
+
+    /**
+     * The executable element we want to link to.  Null if we are not linking
+     * to an executable element.
+     */
+    public ExecutableElement getExecutableElement() {
+        return executableElement;
+    }
+
+    /**
+     * The Type we want to link to.  Null if we are not linking to a type.
+     */
+    public TypeMirror getType() {
+        return type;
+    }
+
+    /**
      * Set the label for the link.
      * @param label plain-text label for the link
+     * @return this object
      */
     public HtmlLinkInfo label(CharSequence label) {
         this.label = Text.of(label);
@@ -227,6 +259,8 @@ public class HtmlLinkInfo {
 
     /**
      * Set the label for the link.
+     * @param label the new value
+     * @return this object
      */
     public HtmlLinkInfo label(Content label) {
         this.label = label;
@@ -234,7 +268,16 @@ public class HtmlLinkInfo {
     }
 
     /**
+     * {@return the label for the link}
+     */
+    public Content getLabel() {
+        return label;
+    }
+
+    /**
      * Sets the style to be used for the link.
+     * @param style the new style value
+     * @return this object
      */
     public HtmlLinkInfo style(HtmlStyle style) {
         this.style = style;
@@ -242,7 +285,16 @@ public class HtmlLinkInfo {
     }
 
     /**
+     * {@return the optional style for the link}
+     */
+    public HtmlStyle getStyle() {
+        return style;
+    }
+
+    /**
      * Set whether or not this is a link to a varargs parameter.
+     * @param varargs the new value
+     * @return this object
      */
     public HtmlLinkInfo varargs(boolean varargs) {
         this.isVarArg = varargs;
@@ -250,7 +302,16 @@ public class HtmlLinkInfo {
     }
 
     /**
+     * {@return true if this is a link to a vararg member}
+     */
+    public boolean isVarArg() {
+        return isVarArg;
+    }
+
+    /**
      * Set the fragment specifier for the link.
+     * @param fragment the new fragment value
+     * @return this object
      */
     public HtmlLinkInfo fragment(String fragment) {
         this.fragment = fragment;
@@ -258,7 +319,89 @@ public class HtmlLinkInfo {
     }
 
     /**
+     * {@return the fragment of the link}
+     */
+    public String getFragment() {
+        return fragment;
+    }
+
+    /**
+     * Sets the addLineBreaksInTypeParameters flag for this link.
+     * @param addLineBreaksInTypeParameters the new value
+     * @return this object
+     */
+    public HtmlLinkInfo addLineBreaksInTypeParameters(boolean addLineBreaksInTypeParameters) {
+        this.addLineBreaksInTypeParameters = addLineBreaksInTypeParameters;
+        return this;
+    }
+
+    /**
+     * {@return true if type parameters should be separated by line breaks}
+     */
+    public boolean addLineBreaksInTypeParameters() {
+        return addLineBreaksInTypeParameters;
+    }
+
+    /**
+     * Set the linkToSelf flag for this link.
+     * @param linkToSelf the new value
+     * @return this object
+     */
+    public HtmlLinkInfo linkToSelf(boolean linkToSelf) {
+        this.linkToSelf = linkToSelf;
+        return this;
+    }
+
+    /**
+     * {@return true if we should generate links to the current page}
+     */
+    public boolean linkToSelf() {
+        return linkToSelf;
+    }
+
+    /**
+     * {@return true if type parameters should be rendered as links}
+     */
+    public boolean linkTypeParameters() {
+        return linkTypeParameters;
+    }
+
+    /**
+     * Set the showTypeBounds flag for this link
+     * @param showTypeBounds the new value
+     */
+    public void showTypeBounds(boolean showTypeBounds) {
+        this.showTypeBounds = showTypeBounds;
+    }
+
+    /**
+     * {@return true if we should print the type bounds for the type parameter}
+     */
+    public boolean showTypeBounds() {
+        return showTypeBounds;
+    }
+
+    /**
+     * Set the showTypeParameterAnnotations flag for this link.
+     * @param showTypeParameterAnnotations the new value
+     * @return this object
+     */
+    public HtmlLinkInfo showTypeParameterAnnotations(boolean showTypeParameterAnnotations) {
+        this.showTypeParameterAnnotations = showTypeParameterAnnotations;
+        return this;
+    }
+
+    /**
+     * {@return true if annotations on type parameters should be shown}
+     */
+    public boolean showTypeParameterAnnotations() {
+        return showTypeParameterAnnotations;
+    }
+
+    /**
      * Set the member this link points to (if any).
+     * @param el the new member value
+     * @return this object
      */
     public HtmlLinkInfo targetMember(Element el) {
         this.targetMember = el;
@@ -266,13 +409,32 @@ public class HtmlLinkInfo {
     }
 
     /**
+     * {@return the member this link points to (if any)}
+     */
+    public Element getTargetMember() {
+        return targetMember;
+    }
+
+    /**
      * Set whether or not the preview flags should be skipped for this link.
+     * @param skipPreview the new value
+     * @return this object
      */
     public HtmlLinkInfo skipPreview(boolean skipPreview) {
         this.skipPreview = skipPreview;
         return this;
     }
 
+    /**
+     * {@return true iff the preview flags should be skipped for this link}
+     */
+    public boolean isSkipPreview() {
+        return skipPreview;
+    }
+
+    /**
+     * {@return the link context}
+     */
     public Kind getContext() {
         return context;
     }
@@ -283,7 +445,7 @@ public class HtmlLinkInfo {
      *
      * @param c the context id to set.
      */
-    public final void setContext(Kind c) {
+    private void setContext(Kind c) {
         linkTypeParameters = c == Kind.LINK_TYPE_PARAMS || c == Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
         showTypeBounds = c == Kind.SHOW_TYPE_PARAMS_AND_BOUNDS || c == Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
         context = c;
