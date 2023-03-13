@@ -110,6 +110,30 @@ public class IteratorsTest {
         assertAndResetMaxCalls(c, 0);
         assertAndResetMaxCalls(test1, 1, 1);
         assertAndResetMaxCalls(test2, 0, 0);
+
+        Assertions.assertTrue(compound.hasNext());
+
+        assertAndResetMaxCalls(c, 1);
+        assertAndResetMaxCalls(test1, 1, 0);
+        assertAndResetMaxCalls(test2, 1, 0);
+
+        Assertions.assertTrue(compound.hasNext());
+
+        assertAndResetMaxCalls(c, 0);
+        assertAndResetMaxCalls(test1, 0, 0);
+        assertAndResetMaxCalls(test2, 1, 0);
+
+        Assertions.assertEquals("2", compound.next());
+
+        assertAndResetMaxCalls(c, 0);
+        assertAndResetMaxCalls(test1, 0, 0);
+        assertAndResetMaxCalls(test2, 1, 1);
+
+        Assertions.assertFalse(compound.hasNext());
+
+        assertAndResetMaxCalls(c, 0);
+        assertAndResetMaxCalls(test1, 0, 0);
+        assertAndResetMaxCalls(test2, 1, 0);
     }
 
     private void assertAndResetMaxCalls(TestIterator<?> test, int maxExpectedHasNextCalls, int maxExpectedNextCalls) {
