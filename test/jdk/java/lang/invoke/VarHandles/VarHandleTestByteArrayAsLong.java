@@ -1265,6 +1265,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
                     }
                     assertEquals(success, true, "success weakCompareAndSetPlain long");
                     long x = (long) vh.get(array, i);
@@ -1282,6 +1283,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
                     }
                     assertEquals(success, true, "success weakCompareAndSetAcquire long");
                     long x = (long) vh.get(array, i);
@@ -1299,6 +1301,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
                     }
                     assertEquals(success, true, "success weakCompareAndSetRelease long");
                     long x = (long) vh.get(array, i);
@@ -1316,6 +1319,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
                     }
                     assertEquals(success, true, "success weakCompareAndSet long");
                     long x = (long) vh.get(array, i);
@@ -1576,6 +1580,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
                     }
                     assertEquals(success, true, "success weakCompareAndSetPlain long");
                     long x = (long) vh.get(array, i);
@@ -1593,6 +1598,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
                     }
                     assertEquals(success, true, "success weakCompareAndSetAcquire long");
                     long x = (long) vh.get(array, i);
@@ -1610,6 +1616,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay();
                     }
                     assertEquals(success, true, "success weakCompareAndSetRelease long");
                     long x = (long) vh.get(array, i);
@@ -1627,6 +1634,7 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay();
                     }
                     assertEquals(success, true, "success weakCompareAndSet long");
                     long x = (long) vh.get(array, i);
