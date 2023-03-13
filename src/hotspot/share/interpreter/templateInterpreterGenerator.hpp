@@ -102,6 +102,8 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_Float_floatToRawIntBits_entry();
   address generate_Double_longBitsToDouble_entry();
   address generate_Double_doubleToRawLongBits_entry();
+  address generate_Float_float16ToFloat_entry();
+  address generate_Float_floatToFloat16_entry();
 
   // Some platforms don't need registers, other need two. Unused function is
   // left unimplemented.

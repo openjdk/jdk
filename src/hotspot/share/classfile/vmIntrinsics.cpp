@@ -310,6 +310,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaF:
     if (!InlineMathNatives || !UseFMA) return true;
     break;
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!InlineIntrinsics) return true;
+    break;
   case vmIntrinsics::_arraycopy:
     if (!InlineArrayCopy) return true;
     break;

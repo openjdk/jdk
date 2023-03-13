@@ -31,6 +31,7 @@
 typedef enum {
   NoDetectedVirtualization,
   XenHVM,
+  XenPVHVM, // mix-mode on Linux aarch64
   KVM,
   VMWare,
   HyperV,
@@ -178,6 +179,9 @@ class Abstract_VM_Version: AllStatic {
 
   // Does platform support stack watermark barriers for concurrent stack processing?
   constexpr static bool supports_stack_watermark_barrier() { return false; }
+
+  // Does platform support float16 instructions?
+  static bool supports_float16() { return false; }
 
   // Does this CPU support this intrinsic?
   static bool is_intrinsic_supported(vmIntrinsicID id) { return true; }

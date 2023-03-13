@@ -1191,6 +1191,10 @@ public:
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
+
+  // Convert BootTest condition to Assembler condition.
+  // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+  Assembler::Condition to_assembler_cond(BoolTest::mask cond);
 %}
 
 source %{
@@ -2525,6 +2529,50 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
     }
   }
   return true;
+}
+
+// Convert BootTest condition to Assembler condition.
+// Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
+  Assembler::Condition result;
+  switch(cond) {
+    case BoolTest::eq:
+      result = Assembler::EQ; break;
+    case BoolTest::ne:
+      result = Assembler::NE; break;
+    case BoolTest::le:
+      result = Assembler::LE; break;
+    case BoolTest::ge:
+      result = Assembler::GE; break;
+    case BoolTest::lt:
+      result = Assembler::LT; break;
+    case BoolTest::gt:
+      result = Assembler::GT; break;
+    case BoolTest::ule:
+      result = Assembler::LS; break;
+    case BoolTest::uge:
+      result = Assembler::HS; break;
+    case BoolTest::ult:
+      result = Assembler::LO; break;
+    case BoolTest::ugt:
+      result = Assembler::HI; break;
+    case BoolTest::overflow:
+      result = Assembler::VS; break;
+    case BoolTest::no_overflow:
+      result = Assembler::VC; break;
+    default:
+      ShouldNotReachHere();
+      return Assembler::Condition(-1);
+  }
+
+  // Check conversion
+  if (cond & BoolTest::unsigned_compare) {
+    assert(cmpOpUOper((BoolTest::mask)((int)cond & ~(BoolTest::unsigned_compare))).ccode() == result, "Invalid conversion");
+  } else {
+    assert(cmpOpOper(cond).ccode() == result, "Invalid conversion");
+  }
+
+  return result;
 }
 
 // Binary src (Replicate con)
@@ -4256,6 +4304,17 @@ operand immI_65535()
 operand immI_positive()
 %{
   predicate(n->get_int() > 0);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// BoolTest condition for signed compare
+operand immI_cmp_cond()
+%{
+  predicate(n->get_int() < (int)(BoolTest::unsigned_compare));
   match(ConI);
 
   op_cost(0);
@@ -14984,8 +15043,7 @@ instruct convF2HF_reg_reg(iRegINoSp dst, vRegF src, vRegF tmp) %{
   %}
   effect(TEMP tmp);
   ins_encode %{
-      __ fcvtsh($tmp$$FloatRegister, $src$$FloatRegister);
-      __ smov($dst$$Register, $tmp$$FloatRegister, __ H, 0);
+      __ flt_to_flt16($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14997,8 +15055,7 @@ instruct convHF2F_reg_reg(vRegF dst, iRegINoSp src, vRegF tmp) %{
   %}
   effect(TEMP tmp);
   ins_encode %{
-      __ mov($tmp$$FloatRegister, __ H, 0, $src$$Register);
-      __ fcvths($dst$$FloatRegister, $tmp$$FloatRegister);
+      __ flt16_to_flt($dst$$FloatRegister, $src$$Register, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}

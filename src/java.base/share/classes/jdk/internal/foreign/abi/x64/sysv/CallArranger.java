@@ -263,7 +263,7 @@ public class CallArranger {
                         }
                         boolean useFloat = storage.type() == StorageType.VECTOR;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
-                        bindings.bufferLoad(offset, type)
+                        bindings.bufferLoad(offset, type, (int) copy)
                                 .vmStore(storage, type);
                         offset += copy;
                     }
@@ -311,7 +311,7 @@ public class CallArranger {
                         boolean useFloat = storage.type() == StorageType.VECTOR;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         bindings.vmLoad(storage, type)
-                                .bufferStore(offset, type);
+                                .bufferStore(offset, type, (int) copy);
                         offset += copy;
                     }
                 }

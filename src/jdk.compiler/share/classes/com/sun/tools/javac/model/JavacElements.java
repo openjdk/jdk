@@ -537,9 +537,6 @@ public class JavacElements implements Elements {
         return valmap;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @DefinedBy(Api.LANGUAGE_MODEL)
     public FilteredMemberList getAllMembers(TypeElement element) {
         Symbol sym = cast(Symbol.class, element);

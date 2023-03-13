@@ -1939,6 +1939,8 @@ address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { re
 address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 // =============================================================================
 // Exceptions

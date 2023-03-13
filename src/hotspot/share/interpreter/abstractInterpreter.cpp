@@ -131,6 +131,8 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
       case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
       case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
+      case vmIntrinsics::_float16ToFloat:    return java_lang_Float_float16ToFloat;
+      case vmIntrinsics::_floatToFloat16:    return java_lang_Float_floatToFloat16;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
 #endif // ZERO
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
@@ -225,6 +227,11 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
                                   : return vmIntrinsics::_longBitsToDouble;
   case java_lang_Double_doubleToRawLongBits
                                   : return vmIntrinsics::_doubleToRawLongBits;
+  case java_lang_Float_float16ToFloat
+                                  : return vmIntrinsics::_float16ToFloat;
+  case java_lang_Float_floatToFloat16
+                                  : return vmIntrinsics::_floatToFloat16;
+
   default:
     fatal("unexpected method intrinsic kind: %d", kind);
     break;

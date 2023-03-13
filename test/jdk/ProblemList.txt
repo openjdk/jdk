@@ -664,6 +664,9 @@ java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows
 java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
 java/awt/Mixing/AWT_Mixing/ViewportOverlapping.java 8253184,8295813 windows-x64
 
+javax/swing/JColorChooser/Test6827032.java 8224968 windows-x64
+java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
+
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
@@ -733,6 +736,8 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 javax/script/Test7.java                                         8239361 generic-all
+
+jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
 
 ############################################################################
 

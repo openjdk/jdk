@@ -207,6 +207,9 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_util_zip_CRC32C_updateBytes)
   method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
 
+  method_entry(java_lang_Float_float16ToFloat);
+  method_entry(java_lang_Float_floatToFloat16);
+
 #undef method_entry
 
   // all native method kinds
@@ -437,6 +440,8 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::java_util_zip_CRC32C_updateBytes:
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer:
   case Interpreter::java_lang_Thread_currentThread:
+  case Interpreter::java_lang_Float_float16ToFloat:
+  case Interpreter::java_lang_Float_floatToFloat16:
   case Interpreter::java_lang_Float_intBitsToFloat:
   case Interpreter::java_lang_Float_floatToRawIntBits:
   case Interpreter::java_lang_Double_longBitsToDouble:
@@ -504,6 +509,10 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
   case Interpreter::java_lang_Thread_currentThread
                                            : entry_point = generate_currentThread(); break;
+  case Interpreter::java_lang_Float_float16ToFloat
+                                           : entry_point = generate_Float_float16ToFloat_entry(); break;
+  case Interpreter::java_lang_Float_floatToFloat16
+                                           : entry_point = generate_Float_floatToFloat16_entry(); break;
 
   // On x86_32 platforms, a special entry is generated for the following four methods.
   // On other platforms the native entry is used to enter these methods.

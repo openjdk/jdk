@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -757,6 +757,11 @@ public:
 
   constexpr static bool supports_stack_watermark_barrier() {
     return true;
+  }
+
+  // For AVX CPUs only. f16c support is disabled if UseAVX == 0.
+  static bool supports_float16() {
+    return supports_f16c() || supports_avx512vl();
   }
 
   // Check intrinsic support
