@@ -82,82 +82,50 @@ public class HtmlLinkInfo {
 
     public final HtmlConfiguration configuration;
 
-    /**
-     * The context of the link.
-     */
+    // The context of the link.
     private Kind context = Kind.PLAIN;
 
-    /**
-     * The fragment of the link.
-     */
+    // The fragment of the link.
     private String fragment = "";
 
-    /**
-     * The member this link points to (if any).
-     */
+    // The member this link points to (if any).
     private Element targetMember;
 
-    /**
-     * Optional style for the link.
-     */
+    // Optional style for the link.
     private HtmlStyle style = null;
 
-    /**
-     * The class we want to link to.  Null if we are not linking
-     * to a class.
-     */
+    // The class we want to link to. Null if we are not linking to a class.
     private TypeElement typeElement;
 
-    /**
-     * The executable element we want to link to.  Null if we are not linking
-     * to an executable element.
-     */
+    // The executable element we want to link to. Null if we are not linking to an executable element.
     private ExecutableElement executableElement;
 
-    /**
-     * The Type we want to link to.  Null if we are not linking to a type.
-     */
+    // The Type we want to link to. Null if we are not linking to a type.
     private TypeMirror type;
 
-    /**
-     * True if this is a link to a VarArg.
-     */
+    // True if this is a link to a VarArg.
     private boolean isVarArg = false;
 
-    /**
-     * The label for the link.
-     */
+    // The label for the link.
     private Content label;
 
-    /**
-     * True if we should print the type bounds for the type parameter.
-     */
+    // True if we should print the type bounds for the type parameter.
     private boolean showTypeBounds = true;
 
-    /**
-     * True if type parameters should be rendered as links.
-     */
+    // True if type parameters should be rendered as links.
     private boolean linkTypeParameters = true;
 
-    /**
-     * By default, the link can be to the page it's already on.  However,
-     * there are cases where we don't want this (e.g. heading of class page).
-     */
+    // By default, the link can be to the page it's already on.  However,
+    // there are cases where we don't want this (e.g. heading of class page).
     private boolean linkToSelf = true;
 
-    /**
-     * True iff the preview flags should be skipped for this link.
-     */
+    // True iff the preview flags should be skipped for this link.
     private boolean skipPreview;
 
-    /**
-     * True if type parameters should be separated by line breaks.
-     */
+    // True if type parameters should be separated by line breaks.
     private boolean addLineBreaksInTypeParameters = false;
 
-    /**
-     * True if annotations on type parameters should be shown.
-     */
+    // True if annotations on type parameters should be shown.
     private boolean showTypeParameterAnnotations = false;
 
     /**
@@ -201,6 +169,7 @@ public class HtmlLinkInfo {
 
     /**
      * Creates a copy of this HtmlLinkInfo instance with a different TypeMirror.
+     * This is used for contained types such as type parameters or array components.
      *
      * @param type the type mirror
      * @return the new link info

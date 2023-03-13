@@ -110,7 +110,7 @@ public class HtmlLinkFactory {
                     currentDepth--;
                     if (utils.isAnnotated(type)) {
                         link.add(" ");
-                        link.add(getTypeAnnotationLinks(linkInfo.forType(type)));
+                        link.add(getTypeAnnotationLinks(linkInfo));
                     }
                     // use vararg if required
                     if (linkInfo.isVarArg() && currentDepth == 0) {
@@ -222,8 +222,8 @@ public class HtmlLinkFactory {
         // create one if we are linking to a member.
         String title = "";
         String fragment = linkInfo.getFragment();
-        boolean hasWhere = fragment != null && !fragment.isEmpty();
-        if (!hasWhere) {
+        boolean hasFragment = fragment != null && !fragment.isEmpty();
+        if (!hasFragment) {
             boolean isTypeLink = linkInfo.getType() != null &&
                      utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
             title = getClassToolTip(typeElement, isTypeLink);
@@ -237,7 +237,7 @@ public class HtmlLinkFactory {
         Set<ElementFlag> flags;
         Element previewTarget;
         boolean showPreview = !linkInfo.isSkipPreview();
-        if (!hasWhere && showPreview) {
+        if (!hasFragment && showPreview) {
             flags = utils.elementFlags(typeElement);
             previewTarget = typeElement;
         } else if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_PREVIEW
