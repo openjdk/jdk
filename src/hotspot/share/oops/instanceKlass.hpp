@@ -29,7 +29,7 @@
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/fieldInfo.inline.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
 #include "runtime/handles.hpp"
@@ -389,8 +389,8 @@ class InstanceKlass: public Klass {
   int     field_access_flags(int index) const { return field(index).access_flags().as_int(); }
   FieldInfo::FieldFlags field_flags(int index) const { return field(index).field_flags(); }
   FieldStatus field_status(int index)   const { return fields_status()->at(index); }
-  Symbol* field_name        (int index) const { return field(index).name(constants()); }
-  Symbol* field_signature   (int index) const { return field(index).signature(constants()); }
+  inline Symbol* field_name        (int index) const;
+  inline Symbol* field_signature   (int index) const;
 
   // Number of Java declared fields
   int java_fields_count() const;

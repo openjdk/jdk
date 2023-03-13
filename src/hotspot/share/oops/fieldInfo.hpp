@@ -202,7 +202,7 @@ class FieldInfo {
   inline Symbol* lookup_symbol(int symbol_index) const;
 
   void print(outputStream* os, ConstantPool* cp);
-  void static print_from_growable_array(GrowableArray<FieldInfo>* array, outputStream* os, ConstantPool* cp);
+  void static print_from_growable_array(outputStream* os, GrowableArray<FieldInfo>* array, ConstantPool* cp);
 };
 
 class FieldInfoStream;

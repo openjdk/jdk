@@ -42,7 +42,7 @@ void FieldInfo::print(outputStream* os, ConstantPool* cp) {
                 contended_group());
 }
 
-void FieldInfo::print_from_growable_array(GrowableArray<FieldInfo>* array, outputStream* os, ConstantPool* cp) {
+void FieldInfo::print_from_growable_array(outputStream* os, GrowableArray<FieldInfo>* array, ConstantPool* cp) {
   for (int i = 0; i < array->length(); i++) {
     array->adr_at(i)->print(os, cp);
   }

@@ -46,6 +46,9 @@ inline int InstanceKlass::itable_offset_in_words() const { return start_of_itabl
 
 inline oop InstanceKlass::static_field_base_raw() { return java_mirror(); }
 
+inline Symbol* InstanceKlass::field_name        (int index) const { return field(index).name(constants()); }
+inline Symbol* InstanceKlass::field_signature   (int index) const { return field(index).signature(constants()); }
+
 inline int InstanceKlass::java_fields_count() const { return FieldInfoStream::num_java_fields(fieldinfo_stream()); }
 inline int InstanceKlass::total_fields_count() const { return FieldInfoStream::num_total_fields(fieldinfo_stream()); }
 
