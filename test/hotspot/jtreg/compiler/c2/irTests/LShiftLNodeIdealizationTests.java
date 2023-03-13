@@ -27,25 +27,25 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8297384 8303238
- * @summary Test that Ideal transformations of LShiftINode* are being performed as expected.
+ * @bug 8303238
+ * @summary Test that Ideal transformations of LShiftLNode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.LShiftINodeIdealizationTests
+ * @run driver compiler.c2.irTests.LShiftLNodeIdealizationTests
  */
-public class LShiftINodeIdealizationTests {
+public class LShiftLNodeIdealizationTests {
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8" })
+    @Run(test = { "test3", "test4", "test5", "test6", "test7", "test8" })
     public void runMethod() {
-        int a = RunInfo.getRandom().nextInt();
-        int b = RunInfo.getRandom().nextInt();
-        int c = RunInfo.getRandom().nextInt();
-        int d = RunInfo.getRandom().nextInt();
+        long a = RunInfo.getRandom().nextLong();
+        long b = RunInfo.getRandom().nextLong();
+        long c = RunInfo.getRandom().nextLong();
+        long d = RunInfo.getRandom().nextLong();
 
-        int min = Integer.MIN_VALUE;
-        int max = Integer.MAX_VALUE;
+        long min = Long.MIN_VALUE;
+        long max = Long.MAX_VALUE;
 
         assertResult(0);
         assertResult(a);
@@ -57,78 +57,60 @@ public class LShiftINodeIdealizationTests {
     }
 
     @DontCompile
-    public void assertResult(int a) {
-        Asserts.assertEQ((a >> 2022) << 2022, test1(a));
-        Asserts.assertEQ((a >>> 2022) << 2022, test2(a));
-        Asserts.assertEQ((a >> 4) << 8, test3(a));
-        Asserts.assertEQ((a >>> 4) << 8, test4(a));
-        Asserts.assertEQ((a >> 8) << 4, test5(a));
-        Asserts.assertEQ((a >>> 8) << 4, test6(a));
-        Asserts.assertEQ(((a >> 4) & 0xFF) << 8, test7(a));
-        Asserts.assertEQ(((a >>> 4) & 0xFF) << 8, test8(a));
-    }
-
-    @Test
-    @IR(failOn = { IRNode.LSHIFT, IRNode.RSHIFT })
-    @IR(counts = { IRNode.AND, "1" })
-    // Checks (x >> 2022) << 2022 => x & C where C = -(1 << 6)
-    public int test1(int x) {
-        return (x >> 2022) << 2022;
-    }
-
-    @Test
-    @IR(failOn = { IRNode.LSHIFT, IRNode.URSHIFT })
-    @IR(counts = { IRNode.AND, "1" })
-    // Checks (x >>> 2022) << 2022 => x & C where C = -(1 << 6)
-    public int test2(int x) {
-        return (x >>> 2022) << 2022;
+    public void assertResult(long a) {
+        Asserts.assertEQ((a >> 4L) << 8L, test3(a));
+        Asserts.assertEQ((a >>> 4L) << 8L, test4(a));
+        Asserts.assertEQ((a >> 8L) << 4L, test5(a));
+        Asserts.assertEQ((a >>> 8L) << 4L, test6(a));
+        Asserts.assertEQ(((a >> 4L) & 0xFFL) << 8L, test7(a));
+        Asserts.assertEQ(((a >>> 4L) & 0xFFL) << 8L, test8(a));
     }
 
     @Test
     @IR(failOn = { IRNode.RSHIFT })
     @IR(counts = { IRNode.AND, "1", IRNode.LSHIFT, "1" })
     // Checks (x >> 4) << 8 => (x << 4) & -16
-    public int test3(int x) {
-        return (x >> 4) << 8;
+    public long test3(long x) {
+        return (x >> 4L) << 8L;
     }
 
     @Test
     @IR(failOn = { IRNode.URSHIFT })
     @IR(counts = { IRNode.AND, "1", IRNode.LSHIFT, "1" })
     // Checks (x >>> 4) << 8 => (x << 4) & -16
-    public int test4(int x) {
-        return (x >>> 4) << 8;
+    public long test4(long x) {
+        return (x >>> 4L) << 8L;
     }
 
     @Test
     @IR(failOn = { IRNode.LSHIFT })
     @IR(counts = { IRNode.AND, "1", IRNode.RSHIFT, "1" })
     // Checks (x >> 8) << 4 => (x >> 4) & -16
-    public int test5(int x) {
-        return (x >> 8) << 4;
+    public long test5(long x) {
+        return (x >> 8L) << 4L;
     }
 
     @Test
     @IR(failOn = { IRNode.LSHIFT })
     @IR(counts = { IRNode.AND, "1", IRNode.URSHIFT, "1" })
     // Checks (x >>> 8) << 4 => (x >>> 4) & -16
-    public int test6(int x) {
-        return (x >>> 8) << 4;
+    public long test6(long x) {
+        return (x >>> 8L) << 4L;
     }
 
     @Test
     @IR(failOn = { IRNode.RSHIFT })
     @IR(counts = { IRNode.AND, "1", IRNode.LSHIFT, "1" })
     // Checks ((x >> 4) & 0xFF) << 8 => (x << 4) & 0xFF00
-    public int test7(int x) {
-        return ((x >> 4) & 0xFF) << 8;
+    public long test7(long x) {
+        return ((x >> 4L) & 0xFFL) << 8L;
     }
 
     @Test
     @IR(failOn = { IRNode.URSHIFT })
     @IR(counts = { IRNode.AND, "1", IRNode.LSHIFT, "1" })
     // Checks ((x >>> 4) & 0xFF) << 8 => (x << 4) & 0xFF00
-    public int test8(int x) {
-        return ((x >>> 4) & 0xFF) << 8;
+    public long test8(long x) {
+        return ((x >>> 4L) & 0xFFL) << 8L;
     }
 }
