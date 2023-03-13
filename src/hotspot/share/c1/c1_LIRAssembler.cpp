@@ -773,7 +773,7 @@ void LIR_Assembler::emit_op4(LIR_Op4* op) {
 }
 
 void LIR_Assembler::build_frame() {
-  _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes(), compilation()->max_monitors());
+  _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 }
 
 

@@ -423,7 +423,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   if (parse_method->is_synchronized()) {
     C->set_has_monitors(true);
-    C->push_monitor();
   }
 
   _tf = TypeFunc::make(method());

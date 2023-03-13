@@ -490,24 +490,25 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
     if (UseFastLocking) {
       // fast-locking does not use the 'lock' parameter.
       LockStack& lock_stack = current->lock_stack();
-
-      markWord header = obj()->mark_acquire();
-      while (true) {
-        if (header.is_neutral()) {
-          assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
-          // Try to swing into 'fast-locked' state without inflating.
-          markWord locked_header = header.set_fast_locked();
-          markWord witness = obj()->cas_set_mark(locked_header, header);
-          if (witness == header) {
-            // Successfully fast-locked, push object to lock-stack and return.
-            lock_stack.push(obj());
-            return;
+      if (lock_stack.can_push()) {
+        markWord header = obj()->mark_acquire();
+        while (true) {
+          if (header.is_neutral()) {
+            assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
+            // Try to swing into 'fast-locked' state without inflating.
+            markWord locked_header = header.set_fast_locked();
+            markWord witness = obj()->cas_set_mark(locked_header, header);
+            if (witness == header) {
+              // Successfully fast-locked, push object to lock-stack and return.
+              lock_stack.push(obj());
+              return;
+            }
+            // Otherwise retry.
+            header = witness;
+          } else {
+            // Fall-through to inflate-enter.
+            break;
           }
-          // Otherwise retry.
-          header = witness;
-        } else {
-          // Fall-through to inflate-enter.
-          break;
         }
       }
     } else {

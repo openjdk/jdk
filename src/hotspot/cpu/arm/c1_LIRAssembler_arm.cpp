@@ -145,7 +145,7 @@ void LIR_Assembler::osr_entry() {
   ValueStack* entry_state = osr_entry->end()->state();
   int number_of_locks = entry_state->locks_size();
 
-  __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes(), compilation()->max_monitors());
+  __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
   Register OSR_buf = osrBufferPointer()->as_pointer_register();
 
   assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");

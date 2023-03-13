@@ -53,7 +53,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   bind(verified);
 }
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes, int max_monitors) {
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   assert((frame_size_in_bytes % StackAlignmentInBytes) == 0, "frame size should be aligned");
 

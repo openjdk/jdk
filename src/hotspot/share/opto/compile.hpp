@@ -337,7 +337,6 @@ class Compile : public Phase {
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
-  uint                  _max_monitors;          // Keep track of maximum number of active monitors in this compilation
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
@@ -631,10 +630,6 @@ class Compile : public Phase {
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
   bool              has_monitors() const         { return _has_monitors; }
   void          set_has_monitors(bool v)         { _has_monitors = v; }
-
-  void          push_monitor() { _max_monitors++; }
-  void          reset_max_monitors() { _max_monitors = 0; }
-  uint          max_monitors() { return _max_monitors; }
 
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(enum CompileCommand option) {

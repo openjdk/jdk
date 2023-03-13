@@ -69,7 +69,7 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
   ShouldNotCallThis(); // unused
 }
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes, int max_monitors) {
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
   save_return_pc();

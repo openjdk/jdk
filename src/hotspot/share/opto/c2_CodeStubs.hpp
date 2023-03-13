@@ -86,14 +86,6 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 
-class C2CheckLockStackStub : public C2CodeStub {
-public:
-  C2CheckLockStackStub() : C2CodeStub() {}
-
-  int max_size() const;
-  void emit(C2_MacroAssembler& masm);
-};
-
 #ifdef _LP64
 class C2HandleAnonOMOwnerStub : public C2CodeStub {
 private:

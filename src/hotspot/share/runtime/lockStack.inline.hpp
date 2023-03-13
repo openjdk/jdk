@@ -26,26 +26,32 @@
 #define SHARE_RUNTIME_LOCKSTACK_INLINE_HPP
 
 #include "memory/iterator.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/lockStack.hpp"
+
+inline int LockStack::to_index(int offset) {
+  return (offset - in_bytes(JavaThread::lock_stack_base_offset())) / oopSize;
+}
+
+inline bool LockStack::can_push() const {
+  return to_index(_offset) < CAPACITY;
+}
 
 inline void LockStack::push(oop o) {
   validate("pre-push");
   assert(oopDesc::is_oop(o), "must be");
   assert(!contains(o), "entries must be unique");
-  if (_current >= _limit) {
-    grow((_limit - _base) + 1);
-  }
-  *_current = o;
-  _current++;
+  assert(can_push(), "must have room");
+  _base[to_index(_offset)] = o;
+  _offset += oopSize;
   validate("post-push");
 }
 
 inline oop LockStack::pop() {
   validate("pre-pop");
-  oop* new_loc = _current - 1;
-  assert(new_loc < _current, "underflow, probably unbalanced push/pop");
-  _current = new_loc;
-  oop o = *_current;
+  assert(to_index(_offset) > 0, "underflow, probably unbalanced push/pop");
+  _offset -= oopSize;
+  oop o = _base[to_index(_offset)];
   assert(!contains(o), "entries must be unique");
   validate("post-pop");
   return o;
@@ -54,13 +60,14 @@ inline oop LockStack::pop() {
 inline void LockStack::remove(oop o) {
   validate("pre-remove");
   assert(contains(o), "entry must be present");
-  for (oop* loc = _base; loc < _current; loc++) {
-    if (*loc == o) {
-      oop* last = _current - 1;
-      for (; loc < last; loc++) {
-        *loc = *(loc + 1);
+  int end = to_index(_offset);
+  for (int i = 0; i < end; i++) {
+    if (_base[i] == o) {
+      int last = end - 1;
+      for (; i < last; i++) {
+        _base[i] = _base[i + 1];
       }
-      _current--;
+      _offset -= oopSize;
       break;
     }
   }
@@ -70,11 +77,10 @@ inline void LockStack::remove(oop o) {
 
 inline bool LockStack::contains(oop o) const {
   validate("pre-contains");
-  bool found = false;
-  size_t i = 0;
-  size_t found_i = 0;
-  for (oop* loc = _current - 1; loc >= _base; loc--) {
-    if (*loc == o) {
+  int end = to_index(_offset);
+  for (int i = end - 1; i >= 0; i--) {
+    if (_base[i] == o) {
+      validate("post-contains");
       validate("post-contains");
       return true;
     }
@@ -85,8 +91,9 @@ inline bool LockStack::contains(oop o) const {
 
 inline void LockStack::oops_do(OopClosure* cl) {
   validate("pre-oops-do");
-  for (oop* loc = _base; loc < _current; loc++) {
-    cl->do_oop(loc);
+  int end = to_index(_offset);
+  for (int i = 0; i < end; i++) {
+    cl->do_oop(&_base[i]);
   }
   validate("post-oops-do");
 }

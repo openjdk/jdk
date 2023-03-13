@@ -35,25 +35,25 @@ class OopClosure;
 class LockStack {
   friend class VMStructs;
 private:
-  static const size_t INITIAL_CAPACITY = 4;
-  oop* _base;
-  oop* _limit;
-  oop* _current;
-  oop _initial[INITIAL_CAPACITY];
-
-  void grow(size_t min_capacity);
+  static const int CAPACITY = 8;
+  // The offset of the next element, in bytes, relative to the JavaThread structure.
+  // We do this instead of a simple index into the array because this allows for
+  // efficient addressing in generated code.
+  int _offset;
+  oop _base[CAPACITY];
 
   void validate(const char* msg) const PRODUCT_RETURN;
-public:
-  static ByteSize current_offset()    { return byte_offset_of(LockStack, _current); }
-  static ByteSize base_offset()       { return byte_offset_of(LockStack, _base); }
-  static ByteSize limit_offset()      { return byte_offset_of(LockStack, _limit); }
 
-  static void ensure_lock_stack_size(oop* _required_limit);
+  static inline int to_index(int offset);
+
+public:
+  static ByteSize offset_offset()    { return byte_offset_of(LockStack, _offset); }
+  static ByteSize base_offset()    { return byte_offset_of(LockStack, _base); }
 
   LockStack();
-  ~LockStack();
 
+  static int end_offset();
+  inline bool can_push() const;
   inline void push(oop o);
   inline oop pop();
   inline void remove(oop o);

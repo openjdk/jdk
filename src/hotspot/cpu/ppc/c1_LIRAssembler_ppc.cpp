@@ -113,7 +113,7 @@ void LIR_Assembler::osr_entry() {
   int number_of_locks = entry_state->locks_size();
 
   // Create a frame for the compiled activation.
-  __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes(), compilation()->max_monitors());
+  __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 
   // OSR buffer is
   //

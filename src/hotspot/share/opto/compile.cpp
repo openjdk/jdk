@@ -1021,7 +1021,6 @@ void Compile::Init(bool aliasing) {
 
   set_do_vector_loop(false);
   set_has_monitors(false);
-  reset_max_monitors();
 
   if (AllowVectorizeOnDemand) {
     if (has_method() && (_directive->VectorizeOption || _directive->VectorizeDebugOption)) {

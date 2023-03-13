@@ -1788,18 +1788,6 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
-  int max_monitors = C->method() != nullptr ? C->max_monitors() : 0;
-  if (UseFastLocking && max_monitors > 0) {
-    C2CheckLockStackStub* stub = new (C->comp_arena()) C2CheckLockStackStub();
-    C->output()->add_stub(stub);
-    __ ldr(r9, Address(rthread, JavaThread::lock_stack_current_offset()));
-    __ ldr(r10, Address(rthread, JavaThread::lock_stack_limit_offset()));
-    __ add(r9, r9, max_monitors * oopSize);
-    __ cmp(r9, r10);
-    __ br(Assembler::GE, stub->entry());
-    __ bind(stub->continuation());
-  }
-
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
@@ -3849,11 +3837,14 @@ encode %{
 
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
-        __ fast_lock(oop, disp_hdr, tmp, rscratch1, no_count, false);
+        Label slow;
+        __ fast_lock(oop, disp_hdr, tmp, rscratch1, slow);
 
         // Indicate success on completion.
         __ cmp(oop, oop);
         __ b(count);
+        __ bind(slow);
+        __ b(no_count);
       } else {
         // Set tmp to be (markWord of object | UNLOCK_VALUE).
         __ orr(tmp, disp_hdr, markWord::unlocked_value);

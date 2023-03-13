@@ -83,7 +83,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // Load object header
   ldr(hdr, Address(obj, hdr_offset));
   if (UseFastLocking) {
-    fast_lock(obj, hdr, rscratch1, rscratch2, slow_case, false);
+    fast_lock(obj, hdr, rscratch1, rscratch2, slow_case);
   } else {
     Label done;
     // and mark it as unlocked
@@ -315,24 +315,12 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
 }
 
 
-void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes, int max_monitors) {
+void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= framesize, "stack bang size incorrect");
   // Make sure there is enough stack space for this method's activation.
   // Note that we do this before creating a frame.
   generate_stack_overflow_check(bang_size_in_bytes);
   MacroAssembler::build_frame(framesize);
-
-  if (UseFastLocking && max_monitors > 0) {
-    Label ok;
-    ldr(r9, Address(rthread, JavaThread::lock_stack_current_offset()));
-    ldr(r10, Address(rthread, JavaThread::lock_stack_limit_offset()));
-    add(r9, r9, max_monitors * oopSize);
-    cmp(r9, r10);
-    br(Assembler::LT, ok);
-    assert(StubRoutines::aarch64::check_lock_stack() != nullptr, "need runtime call stub");
-    far_call(StubRoutines::aarch64::check_lock_stack());
-    bind(ok);
-  }
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();

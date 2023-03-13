@@ -69,7 +69,7 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
 }
 
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes, int max_monitors) {
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
   // Avoid stack bang as first instruction. It may get overwritten by patch_verified_entry.
   const Register return_pc = R20;
   mflr(return_pc);

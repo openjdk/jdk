@@ -384,7 +384,6 @@ int Compilation::compile_java_method() {
 
   if (method()->is_synchronized()) {
     set_has_monitors(true);
-    push_monitor();
   }
 
   {
@@ -572,7 +571,6 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
 , _has_monitors(false)
-, _max_monitors(0)
 , _install_code(install_code)
 , _bailout_msg(NULL)
 , _exception_info_list(NULL)

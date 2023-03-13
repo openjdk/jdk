@@ -6218,17 +6218,14 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - t1, t2, t3: temporary registers, will be destroyed
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow, bool rt_check_stack) {
+void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(UseFastLocking, "only used with fast-locking");
   assert_different_registers(obj, hdr, t1, t2);
 
-  if (rt_check_stack) {
-    // Check if we would have space on lock-stack for the object.
-    ldr(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
-    ldr(t2, Address(rthread, JavaThread::lock_stack_limit_offset()));
-    cmp(t1, t2);
-    br(Assembler::GE, slow);
-  }
+  // Check if we would have space on lock-stack for the object.
+  ldrw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
+  cmpw(t1, (unsigned)LockStack::end_offset());
+  br(Assembler::GE, slow);
 
   // Load (object->mark() | 1) into hdr
   orr(hdr, hdr, markWord::unlocked_value);
@@ -6240,10 +6237,10 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
   br(Assembler::NE, slow);
 
   // After successful lock, push object on lock-stack
-  ldr(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
-  str(obj, Address(t1, 0));
-  add(t1, t1, oopSize);
-  str(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
+  ldrw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
+  str(obj, Address(rthread, t1));
+  addw(t1, t1, oopSize);
+  strw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
 }
 
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
@@ -6262,7 +6259,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
   br(Assembler::NE, slow);
 
   // After successful unlock, pop object from lock-stack
-  ldr(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
+  ldr(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
   sub(t1, t1, oopSize);
-  str(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
+  str(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
 }

@@ -5474,28 +5474,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_check_lock_stack() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "check_lock_stack");
-
-    address start = __ pc();
-
-    __ set_last_Java_frame(sp, rfp, lr, rscratch1);
-    __ enter();
-    __ push_call_clobbered_registers();
-
-    __ mov(c_rarg0, r9);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, LockStack::ensure_lock_stack_size), 1);
-
-    __ pop_call_clobbered_registers();
-    __ leave();
-    __ reset_last_Java_frame(true);
-
-    __ ret(lr);
-
-    return start;
-  }
-
   // r0  = result
   // r1  = str1
   // r2  = cnt1
@@ -8127,9 +8105,6 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != NULL) {
       StubRoutines::aarch64::_method_entry_barrier = generate_method_entry_barrier();
-    }
-    if (UseFastLocking) {
-      StubRoutines::aarch64::_check_lock_stack = generate_check_lock_stack();
     }
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {

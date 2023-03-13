@@ -70,8 +70,6 @@ class aarch64 {
 
   static address _method_entry_barrier;
 
-  static address _check_lock_stack;
-
   static address _spin_wait;
 
   static bool _completed;
@@ -180,10 +178,6 @@ class aarch64 {
 
   static address method_entry_barrier() {
     return _method_entry_barrier;
-  }
-
-  static address check_lock_stack() {
-    return _check_lock_stack;
   }
 
   static address spin_wait() {

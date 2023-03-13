@@ -57,7 +57,6 @@ address StubRoutines::aarch64::_string_indexof_linear_uu = NULL;
 address StubRoutines::aarch64::_string_indexof_linear_ul = NULL;
 address StubRoutines::aarch64::_large_byte_array_inflate = NULL;
 address StubRoutines::aarch64::_method_entry_barrier = NULL;
-address StubRoutines::aarch64::_check_lock_stack = nullptr;
 
 static void empty_spin_wait() { }
 address StubRoutines::aarch64::_spin_wait = CAST_FROM_FN_PTR(address, empty_spin_wait);
