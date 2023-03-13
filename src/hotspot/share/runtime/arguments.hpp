@@ -470,6 +470,7 @@ class Arguments : AllStatic {
   // Return nullptr if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg);
 
+  static char*  _default_shared_archive_path;
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
