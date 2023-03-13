@@ -130,11 +130,11 @@ JNU_ThrowByNameWithMessageAndLastError
     jstring s = getLastErrorString(env);
     if (s != NULL) {
         jobject x = NULL;
-        if (messagelen) {
+        if (messagelen > 0) {
             jstring s2 = NULL;
             size_t messageextlen = messagelen + 4;
             char *str1 = (char *)malloc((messageextlen) * sizeof(char));
-            if (str1 == 0) {
+            if (str1 == NULL) {
                 JNU_ThrowOutOfMemoryError(env, 0);
                 return;
             }
@@ -162,7 +162,7 @@ JNU_ThrowByNameWithMessageAndLastError
     }
 
     if (!(*env)->ExceptionOccurred(env)) {
-        if (messagelen) {
+        if (messagelen > 0) {
             JNU_ThrowByName(env, name, message);
         } else {
             JNU_ThrowByName(env, name, "no further information");
