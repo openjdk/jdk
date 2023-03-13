@@ -96,6 +96,7 @@ size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
+char*  Arguments::_default_shared_archive_path  = nullptr;
 char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
@@ -3410,19 +3411,20 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
 // Sharing support
 // Construct the path to the archive
 char* Arguments::get_default_shared_archive_path() {
-  char *default_archive_path;
-  char jvm_path[JVM_MAXPATHLEN];
-  os::jvm_path(jvm_path, sizeof(jvm_path));
-  char *end = strrchr(jvm_path, *os::file_separator());
-  if (end != nullptr) *end = '\0';
-  size_t jvm_path_len = strlen(jvm_path);
-  size_t file_sep_len = strlen(os::file_separator());
-  const size_t len = jvm_path_len + file_sep_len + 20;
-  default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-  jio_snprintf(default_archive_path, len,
-               LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
-               jvm_path, os::file_separator());
-  return default_archive_path;
+  if (_default_shared_archive_path == nullptr) {
+    char jvm_path[JVM_MAXPATHLEN];
+    os::jvm_path(jvm_path, sizeof(jvm_path));
+    char *end = strrchr(jvm_path, *os::file_separator());
+    if (end != nullptr) *end = '\0';
+    size_t jvm_path_len = strlen(jvm_path);
+    size_t file_sep_len = strlen(os::file_separator());
+    const size_t len = jvm_path_len + file_sep_len + 20;
+    _default_shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
+    jio_snprintf(_default_shared_archive_path, len,
+                LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
+                jvm_path, os::file_separator());
+  }
+  return _default_shared_archive_path;
 }
 
 int Arguments::num_archives(const char* archive_path) {
@@ -3474,12 +3476,10 @@ void Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
 
-    char* shared_archive_path = get_default_shared_archive_path();
-    if (os::same_files(shared_archive_path, ArchiveClassesAtExit)) {
+    if (os::same_files(get_default_shared_archive_path(), ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
-        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", shared_archive_path);
+        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_shared_archive_path());
     }
-    FREE_C_HEAP_ARRAY(char, shared_archive_path);
   }
 
   if (SharedArchiveFile == nullptr) {
