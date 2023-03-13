@@ -193,15 +193,17 @@ module java.base {
         java.logging;
     exports jdk.internal.classfile to
         jdk.jartool,
-        jdk.jlink;
+        jdk.jlink,
+        jdk.jshell;
     exports jdk.internal.classfile.attribute to
         jdk.jartool;
     exports jdk.internal.classfile.constantpool to
         jdk.jartool;
+    exports jdk.internal.classfile.instruction to
+        jdk.jshell;
     exports jdk.internal.org.objectweb.asm to
         jdk.jfr,
-        jdk.jlink,
-        jdk.jshell;
+        jdk.jlink;
     exports jdk.internal.org.objectweb.asm.tree to
         jdk.jfr,
         jdk.jlink;
