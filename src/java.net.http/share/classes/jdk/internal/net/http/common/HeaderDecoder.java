@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,38 +21,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.internal.net.http.common;
 
-#ifndef SHARE_GC_SHARED_GCID_HPP
-#define SHARE_GC_SHARED_GCID_HPP
+import java.net.http.HttpHeaders;
 
-#include "memory/allocation.hpp"
+public class HeaderDecoder extends ValidatingHeadersConsumer {
 
-class GCId : public AllStatic {
-private:
-  friend class GCIdMark;
+    private final HttpHeadersBuilder headersBuilder;
 
-  static uint _next_id;
-  static const uint UNDEFINED = UINT_MAX;
-  static uint create();
+    public HeaderDecoder() {
+        this.headersBuilder = new HttpHeadersBuilder();
+    }
 
-public:
-  // Returns the currently active GC id. Asserts that there is an active GC id.
-  static uint current();
-  // Same as current() but can return undefined() if no GC id is currently active
-  static uint current_or_undefined();
-  // Returns the next expected GCId.
-  static uint peek();
-  static uint undefined() { return UNDEFINED; }
-  static size_t print_prefix(char* buf, size_t len);
-};
+    @Override
+    public void onDecoded(CharSequence name, CharSequence value) {
+        String n = name.toString();
+        String v = value.toString();
+        super.onDecoded(n, v);
+        headersBuilder.addHeader(n, v);
+    }
 
-class GCIdMark : public StackObj {
-public:
-  GCIdMark();
-  GCIdMark(uint gc_id);
-  ~GCIdMark();
-};
-
-#endif // SHARE_GC_SHARED_GCID_HPP
+    public HttpHeaders headers() {
+        return headersBuilder.build();
+    }
+}

@@ -847,21 +847,74 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Check for "(x>>c0)<<c0" which just masks off low bits
-  if( (add1_op == Op_RShiftI || add1_op == Op_URShiftI ) &&
-      add1->in(2) == in(2) )
-    // Convert to "(x & -(1<<c0))"
-    return new AndINode(add1->in(1),phase->intcon( -(1<<con)));
+  // Check for "(x >> C1) << C2"
+  if (add1_op == Op_RShiftI || add1_op == Op_URShiftI) {
+    // Special case C1 == C2, which just masks off low bits
+    if (add1->in(2) == in(2)) {
+      // Convert to "(x & -(1 << C2))"
+      return new AndINode(add1->in(1), phase->intcon(-(1 << con)));
+    } else {
+      int add1Con = 0;
+      const_shift_count(phase, add1, &add1Con);
 
-  // Check for "((x>>c0) & Y)<<c0" which just masks off more low bits
-  if( add1_op == Op_AndI ) {
+      // Wait until the right shift has been sharpened to the correct count
+      if (add1Con > 0 && add1Con < BitsPerJavaInteger) {
+        // As loop parsing can produce LShiftI nodes, we should wait until the graph is fully formed
+        // to apply optimizations, otherwise we can inadvertently stop vectorization opportunities.
+        if (phase->is_IterGVN()) {
+          if (con > add1Con) {
+            // Creates "(x << (C2 - C1)) & -(1 << C2)"
+            Node* lshift = phase->transform(new LShiftINode(add1->in(1), phase->intcon(con - add1Con)));
+            return new AndINode(lshift, phase->intcon(-(1 << con)));
+          } else {
+            assert(con < add1Con, "must be (%d < %d)", con, add1Con);
+            // Creates "(x >> (C1 - C2)) & -(1 << C2)"
+
+            // Handle logical and arithmetic shifts
+            Node* rshift;
+            if (add1_op == Op_RShiftI) {
+              rshift = phase->transform(new RShiftINode(add1->in(1), phase->intcon(add1Con - con)));
+            } else {
+              rshift = phase->transform(new URShiftINode(add1->in(1), phase->intcon(add1Con - con)));
+            }
+
+            return new AndINode(rshift, phase->intcon(-(1 << con)));
+          }
+        } else {
+          phase->record_for_igvn(this);
+        }
+      }
+    }
+  }
+
+  // Check for "((x >> C1) & Y) << C2"
+  if (add1_op == Op_AndI) {
     Node *add2 = add1->in(1);
     int add2_op = add2->Opcode();
-    if( (add2_op == Op_RShiftI || add2_op == Op_URShiftI ) &&
-        add2->in(2) == in(2) ) {
-      // Convert to "(x & (Y<<c0))"
-      Node *y_sh = phase->transform( new LShiftINode( add1->in(2), in(2) ) );
-      return new AndINode( add2->in(1), y_sh );
+    if (add2_op == Op_RShiftI || add2_op == Op_URShiftI) {
+      // Special case C1 == C2, which just masks off low bits
+      if (add2->in(2) == in(2)) {
+        // Convert to "(x & (Y << C2))"
+        Node* y_sh = phase->transform(new LShiftINode(add1->in(2), phase->intcon(con)));
+        return new AndINode(add2->in(1), y_sh);
+      }
+
+      int add2Con = 0;
+      const_shift_count(phase, add2, &add2Con);
+      if (add2Con > 0 && add2Con < BitsPerJavaInteger) {
+        if (phase->is_IterGVN()) {
+          // Convert to "((x >> C1) << C2) & (Y << C2)"
+
+          // Make "(x >> C1) << C2", which will get folded away by the rule above
+          Node* x_sh = phase->transform(new LShiftINode(add2, phase->intcon(con)));
+          // Make "Y << C2", which will simplify when Y is a constant
+          Node* y_sh = phase->transform(new LShiftINode(add1->in(2), phase->intcon(con)));
+
+          return new AndINode(x_sh, y_sh);
+        } else {
+          phase->record_for_igvn(this);
+        }
+      }
     }
   }
 
@@ -970,21 +1023,74 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Check for "(x>>c0)<<c0" which just masks off low bits
-  if( (add1_op == Op_RShiftL || add1_op == Op_URShiftL ) &&
-      add1->in(2) == in(2) )
-    // Convert to "(x & -(1<<c0))"
-    return new AndLNode(add1->in(1),phase->longcon( -(CONST64(1)<<con)));
+  // Check for "(x >> C1) << C2"
+  if (add1_op == Op_RShiftL || add1_op == Op_URShiftL) {
+    // Special case C1 == C2, which just masks off low bits
+    if (add1->in(2) == in(2)) {
+      // Convert to "(x & -(1 << C2))"
+      return new AndLNode(add1->in(1), phase->longcon(-(CONST64(1) << con)));
+    } else {
+      int add1Con = 0;
+      const_shift_count(phase, add1, &add1Con);
 
-  // Check for "((x>>c0) & Y)<<c0" which just masks off more low bits
-  if( add1_op == Op_AndL ) {
-    Node *add2 = add1->in(1);
+      // Wait until the right shift has been sharpened to the correct count
+      if (add1Con > 0 && add1Con < BitsPerJavaLong) {
+        // As loop parsing can produce LShiftI nodes, we should wait until the graph is fully formed
+        // to apply optimizations, otherwise we can inadvertently stop vectorization opportunities.
+        if (phase->is_IterGVN()) {
+          if (con > add1Con) {
+            // Creates "(x << (C2 - C1)) & -(1 << C2)"
+            Node* lshift = phase->transform(new LShiftLNode(add1->in(1), phase->intcon(con - add1Con)));
+            return new AndLNode(lshift, phase->longcon(-(CONST64(1) << con)));
+          } else {
+            assert(con < add1Con, "must be (%d < %d)", con, add1Con);
+            // Creates "(x >> (C1 - C2)) & -(1 << C2)"
+
+            // Handle logical and arithmetic shifts
+            Node* rshift;
+            if (add1_op == Op_RShiftL) {
+              rshift = phase->transform(new RShiftLNode(add1->in(1), phase->intcon(add1Con - con)));
+            } else {
+              rshift = phase->transform(new URShiftLNode(add1->in(1), phase->intcon(add1Con - con)));
+            }
+
+            return new AndLNode(rshift, phase->longcon(-(CONST64(1) << con)));
+          }
+        } else {
+          phase->record_for_igvn(this);
+        }
+      }
+    }
+  }
+
+  // Check for "((x >> C1) & Y) << C2"
+  if (add1_op == Op_AndL) {
+    Node* add2 = add1->in(1);
     int add2_op = add2->Opcode();
-    if( (add2_op == Op_RShiftL || add2_op == Op_URShiftL ) &&
-        add2->in(2) == in(2) ) {
-      // Convert to "(x & (Y<<c0))"
-      Node *y_sh = phase->transform( new LShiftLNode( add1->in(2), in(2) ) );
-      return new AndLNode( add2->in(1), y_sh );
+    if (add2_op == Op_RShiftL || add2_op == Op_URShiftL) {
+      // Special case C1 == C2, which just masks off low bits
+      if (add2->in(2) == in(2)) {
+        // Convert to "(x & (Y << C2))"
+        Node* y_sh = phase->transform(new LShiftLNode(add1->in(2), phase->intcon(con)));
+        return new AndLNode(add2->in(1), y_sh);
+      }
+
+      int add2Con = 0;
+      const_shift_count(phase, add2, &add2Con);
+      if (add2Con > 0 && add2Con < BitsPerJavaLong) {
+        if (phase->is_IterGVN()) {
+          // Convert to "((x >> C1) << C2) & (Y << C2)"
+
+          // Make "(x >> C1) << C2", which will get folded away by the rule above
+          Node* x_sh = phase->transform(new LShiftLNode(add2, phase->intcon(con)));
+          // Make "Y << C2", which will simplify when Y is a constant
+          Node* y_sh = phase->transform(new LShiftLNode(add1->in(2), phase->intcon(con)));
+
+          return new AndLNode(x_sh, y_sh);
+        } else {
+          phase->record_for_igvn(this);
+        }
+      }
     }
   }
 
