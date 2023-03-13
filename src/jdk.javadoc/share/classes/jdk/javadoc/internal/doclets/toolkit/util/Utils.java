@@ -609,15 +609,15 @@ public class Utils {
                !((DeclaredType)e.getEnclosingElement().asType()).getTypeArguments().isEmpty();
     }
 
+    /*
+     * The record is used to pass the method along with the type where that method is visible.
+     * Passing the type explicitly allows to preserve a complete type information, including
+     * parameterization.
+     */
     public record OverrideInfo(ExecutableElement overriddenMethod,
                                DeclaredType overriddenMethodOwner) { }
 
     /*
-     * The record is used to pass the method along with the type where that method is visible.
-     * Passing the type explicitly allows to preserve a complete type information, including
-     * parameterization, which is otherwise unavailable without computation similar to what
-     * this method does.
-     *
      * Returns the closest superclass (not the superinterface) that contains
      * a method that is both:
      *
