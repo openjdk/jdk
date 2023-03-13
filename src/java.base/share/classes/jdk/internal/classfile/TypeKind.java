@@ -50,8 +50,6 @@ public enum TypeKind {
     /** void */
     VoidType("void", "V", -1);
 
-    private static TypeKind[] newarraycodeToTypeTag;
-
     private final String name;
     private final String descriptor;
     private final int newarraycode;
@@ -102,13 +100,17 @@ public enum TypeKind {
      * @param newarraycode the operand of the {@code newarray} instruction
      */
     public static TypeKind fromNewArrayCode(int newarraycode) {
-        if (newarraycodeToTypeTag == null) {
-            newarraycodeToTypeTag = new TypeKind[12];
-            for (TypeKind tag : TypeKind.values()) {
-                if (tag.newarraycode > 0) newarraycodeToTypeTag[tag.newarraycode] = tag;
-            }
-        }
-        return newarraycodeToTypeTag[newarraycode];
+        return switch (newarraycode) {
+            case 4 -> TypeKind.BooleanType;
+            case 5 -> TypeKind.CharType;
+            case 6 -> TypeKind.FloatType;
+            case 7 -> TypeKind.DoubleType;
+            case 8 -> TypeKind.ByteType;
+            case 9 -> TypeKind.ShortType;
+            case 10 -> TypeKind.IntType;
+            case 11 -> TypeKind.LongType;
+            default -> throw new IllegalStateException("Bad new array code: " + newarraycode);
+        };
     }
 
     /**
