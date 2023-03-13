@@ -58,6 +58,10 @@ class       JumpProjNode;
 class     SCMemProjNode;
 class PhaseIdealLoop;
 
+// The success projection of a Parse Predicate is always an IfTrueNode and the uncommon projection an IfFalseNode
+typedef IfTrueNode ParsePredicateSuccessProj;
+typedef IfFalseNode ParsePredicateUncommonProj;
+
 //------------------------------RegionNode-------------------------------------
 // The class of RegionNodes, which can be mapped to basic blocks in the
 // program.  Their inputs point to Control sources.  PhiNodes (described

@@ -3287,7 +3287,7 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                   stmt1
 //                     |
 //                     v
-//               loop predicate
+//                 predicates
 //                     |
 //                     v
 //                   loop<----+
@@ -3322,7 +3322,7 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                   stmt1
 //                     |
 //                     v
-//               loop predicate
+//                predicates
 //                 /       \
 //        clone   /         \   orig
 //               /           \
@@ -3363,7 +3363,7 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                  stmt1
 //                     |
 //                     v
-//               loop predicate
+//                predicates
 //                 /
 //        clone   /             orig
 //               /          TOP
@@ -3407,7 +3407,7 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                  stmt1
 //                    |
 //                    v
-//               loop predicate
+//                predicates
 //                    |
 //                    v
 //                  stmt2 clone
