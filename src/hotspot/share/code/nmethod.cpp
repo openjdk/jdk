@@ -698,8 +698,7 @@ nmethod::nmethod(
     _deopt_handler_begin = (address) this + deoptimize_offset;
     _deopt_mh_handler_begin = (address) this + deoptimize_mh_offset;
 
-    // ICache flushing not needed as done later in CodeCache::commit
-    code_buffer->copy_code_and_locs_to(this, false);
+    code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
 
     clear_unloading_state();
@@ -879,8 +878,7 @@ nmethod::nmethod(
 
     _pc_desc_container.reset_to(scopes_pcs_begin());
 
-    // ICache flushing not needed as done later in CodeCache::commit
-    code_buffer->copy_code_and_locs_to(this, false);
+    code_buffer->copy_code_and_locs_to(this);
     // Copy contents of ScopeDescRecorder to nmethod
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);

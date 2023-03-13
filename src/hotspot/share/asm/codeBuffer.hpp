@@ -501,7 +501,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   csize_t copy_relocations_to(CodeBlob* blob) const;
 
   // copies combined code to the blob (assumes relocs are already in there)
-  void copy_code_to(CodeBlob* blob, bool flush_icache);
+  void copy_code_to(CodeBlob* blob);
 
   // moves code sections to new buffer (assumes relocs are already in there)
   void relocate_code_to(CodeBuffer* cb) const;
@@ -697,10 +697,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   GrowableArray<int>* create_patch_overflow();
 
   // NMethod generation
-  void copy_code_and_locs_to(CodeBlob* blob, bool flush_icache) {
+  void copy_code_and_locs_to(CodeBlob* blob) {
     assert(blob != NULL, "sane");
     copy_relocations_to(blob);
-    copy_code_to(blob, flush_icache);
+    copy_code_to(blob);
   }
   void copy_values_to(nmethod* nm) {
     if (!oop_recorder()->is_unused()) {
