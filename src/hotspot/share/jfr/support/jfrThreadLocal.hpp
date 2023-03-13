@@ -39,6 +39,7 @@ class JfrThreadLocal {
   friend class JfrIntrinsicSupport;
   friend class JfrJavaSupport;
   friend class JfrRecorder;
+  friend class JVMCIVMStructs;
  private:
   jobject _java_event_writer;
   mutable JfrBuffer* _java_buffer;

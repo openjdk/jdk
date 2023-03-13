@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
@@ -724,7 +724,7 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 
   // Generational Shenandoah needs this alignment for card tables.
   if (strcmp(ShenandoahGCMode, "generational") == 0) {
-    max_heap_size = align_up(max_heap_size , CardTableRS::ct_max_alignment_constraint());
+    max_heap_size = align_up(max_heap_size , CardTable::ct_max_alignment_constraint());
   }
 
   size_t region_size;

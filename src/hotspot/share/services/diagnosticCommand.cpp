@@ -56,6 +56,7 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
+#include "services/nmtDCmd.hpp"
 #include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -80,7 +81,7 @@ static void loadAgentModule(TRAPS) {
                          THREAD);
 }
 
-void DCmdRegistrant::register_dcmds(){
+void DCmd::register_dcmds(){
   // Registration of the diagnostic commands
   // First argument specifies which interfaces will export the command
   // Second argument specifies if the command is enabled
@@ -153,14 +154,9 @@ void DCmdRegistrant::register_dcmds(){
 #if INCLUDE_CDS
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
 #endif // INCLUDE_CDS
-}
 
-#ifndef HAVE_EXTRA_DCMD
-void DCmdRegistrant::register_dcmds_ext(){
-   // Do nothing here
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
 }
-#endif
-
 
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
   _all("-all", "Show help for all commands", "BOOLEAN", false, "false"),
@@ -807,7 +803,8 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
   if (str != nullptr) {
       char* out = java_lang_String::as_utf8_string(str);
       if (out) {
-          output()->print_cr("%s", out);
+          // Avoid using print_cr() because length maybe longer than O_BUFLEN
+          output()->print_raw_cr(out);
           return;
       }
   }
