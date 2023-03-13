@@ -836,6 +836,26 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return lookupTypeInternal(name, accessingType, resolve);
     }
 
+    /**
+     * Converts a HotSpot heap JNI {@code hotspot_jclass_value} to a {@link ResolvedJavaType},
+     * provided that the {@code hotspot_jclass_value} is a valid JNI reference to a Java Class. If
+     * this requirement is not met, {@link IllegalArgumentException} is thrown.
+     *
+     * @param hotspot_jclass_value a JNI reference to a {@link Class} value in the HotSpot heap
+     * @return a {@link ResolvedJavaType} for the referenced type
+     * @throws IllegalArgumentException if {@code hotspot_jclass_value} is not a valid JNI reference
+     *             to a {@link Class} object in the HotSpot heap. It is the responsibility of the
+     *             caller to make sure the argument is valid. The checks performed by this method
+     *             are best effort. Hence, the caller must not rely on the checks and corresponding
+     *             exceptions!
+     */
+    public HotSpotResolvedJavaType asResolvedJavaType(long hotspot_jclass_value) {
+        if (hotspot_jclass_value == 0L) {
+            return null;
+        }
+        return compilerToVm.lookupJClass(hotspot_jclass_value);
+    }
+
     JavaType lookupTypeInternal(String name, HotSpotResolvedObjectType accessingType, boolean resolve) {
         // If the name represents a primitive type we can short-circuit the lookup.
         if (name.length() == 1) {
