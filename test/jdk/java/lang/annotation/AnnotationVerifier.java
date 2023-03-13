@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,9 @@ import java.util.stream.Stream;
  * @test
  * @bug 8158510
  * @summary Verify valid annotation
- * @modules java.base/jdk.internal.org.objectweb.asm
- * @modules java.base/sun.reflect.annotation
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/sun.reflect.annotation
  * @clean AnnotationWithVoidReturn AnnotationWithParameter
  *        AnnotationWithExtraInterface AnnotationWithException
  *        AnnotationWithHashCode AnnotationWithDefaultMember

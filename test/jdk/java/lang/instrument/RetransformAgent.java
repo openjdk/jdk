@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,21 @@
  * @summary test retransformClasses
  * @author Robert Field, Sun Microsystems
  *
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.constantpool
  *          java.instrument
  * @run shell/timeout=240 MakeJAR2.sh RetransformAgent RetransformApp 'Can-Retransform-Classes: true'
  * @run main/othervm -javaagent:RetransformAgent.jar RetransformApp
  */
 
+import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 import java.io.*;
 import asmlib.*;
+
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.CD_void;
 
 class RetransformAgent {
 
@@ -83,9 +88,10 @@ class RetransformAgent {
                     byte[] newcf = Instrumentor.instrFor(classfileBuffer)
                                    .addMethodEntryInjection(
                                         nname,
-                                        (h)->{
-                                           h.push(fixedIndex);
-                                           h.invokeStatic("RetransformAgent", "callTracker", "(I)V", false);
+                                        cb -> {
+                                           cb.constantInstruction(fixedIndex);
+                                           cb.invokestatic(RetransformAgent.class.describeConstable().orElseThrow(),
+                                                   "callTracker", MethodTypeDesc.of(CD_void, CD_int));
                                         })
                                    .apply();
                     /*** debugging ...

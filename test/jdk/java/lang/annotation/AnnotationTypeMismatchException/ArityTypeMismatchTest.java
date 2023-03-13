@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,23 @@
  * @summary Annotation property which is compiled as an array property but
  *          changed observed as a singular element should throw an
  *          AnnotationTypeMismatchException
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
  * @run main ArityTypeMismatchTest
  */
 
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
+import jdk.internal.classfile.Annotation;
+import jdk.internal.classfile.AnnotationElement;
+import jdk.internal.classfile.AnnotationValue;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 import java.lang.annotation.AnnotationTypeMismatchException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.constant.ClassDesc;
+
+import static java.lang.constant.ConstantDescs.CD_Object;
 
 public class ArityTypeMismatchTest {
 
@@ -54,15 +59,15 @@ public class ArityTypeMismatchTest {
          *
          * where @AnAnnotation expects a singular value.
          */
-        ClassWriter writer = new ClassWriter(0);
-        writer.visit(Opcodes.V1_8, 0, "sample/Carrier", null, Type.getInternalName(Object.class), null);
-        AnnotationVisitor v = writer.visitAnnotation(Type.getDescriptor(AnAnnotation.class), true);
-        AnnotationVisitor v2 = v.visitArray("value");
-        v2.visit(null, "v");
-        v2.visitEnd();
-        v.visitEnd();
-        writer.visitEnd();
-        byte[] b = writer.toByteArray();
+        byte[] b = Classfile.build(ClassDesc.of("sample", "Carrier"), clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                    Annotation.of(
+                            AnAnnotation.class.describeConstable().orElseThrow(),
+                            AnnotationElement.of("value", AnnotationValue.of(new String[] {"v"}))
+                    )
+            ));
+        });
         ByteArrayClassLoader cl = new ByteArrayClassLoader(ArityTypeMismatchTest.class.getClassLoader());
         cl.init(b);
         AnAnnotation sample = cl.loadClass("sample.Carrier").getAnnotation(AnAnnotation.class);

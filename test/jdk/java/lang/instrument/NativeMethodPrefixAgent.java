@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,21 @@
  * @summary test setNativeMethodPrefix
  * @author Robert Field, Sun Microsystems
  *
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.constantpool
  *          java.management
  *          java.instrument
  * @run shell/timeout=240 MakeJAR2.sh NativeMethodPrefixAgent NativeMethodPrefixApp 'Can-Retransform-Classes: true' 'Can-Set-Native-Method-Prefix: true'
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-CheckIntrinsics -javaagent:NativeMethodPrefixAgent.jar NativeMethodPrefixApp
  */
 
+import asmlib.Instrumentor;
+
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 import java.io.*;
-
-import asmlib.*;
 
 class NativeMethodPrefixAgent {
 
@@ -76,11 +79,10 @@ class NativeMethodPrefixAgent {
                 try {
                     byte[] newcf = Instrumentor.instrFor(classfileBuffer)
                                    .addNativeMethodTrackingInjection(
-                                        "wrapped_" + trname + "_",
-                                        (h)->{
-                                            h.push(h.getName());
-                                            h.push(transformId);
-                                            h.invokeStatic("bootreporter/StringIdCallbackReporter", "tracker", "(Ljava/lang/String;I)V", false);
+                                        "wrapped_" + trname + "_", (name, h) -> {
+                                            h.constantInstruction(name);
+                                            h.constantInstruction(transformId);
+                                            h.invokestatic(ClassDesc.ofInternalName("bootreporter/StringIdCallbackReporter"), "tracker", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;I)V"));
                                         })
                                    .apply();
                     /*** debugging ...

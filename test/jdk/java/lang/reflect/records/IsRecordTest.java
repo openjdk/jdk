@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,24 @@
  * @test
  * @bug 8255560
  * @summary Class::isRecord should check that the current class is final and not abstract
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile java.base/jdk.internal.classfile.attribute
  * @library /test/lib
  * @run testng/othervm IsRecordTest
  * @run testng/othervm/java.security.policy=allPermissions.policy IsRecordTest
  */
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Map;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
+
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.attribute.RecordAttribute;
+import jdk.internal.classfile.attribute.RecordComponentInfo;
 import jdk.test.lib.ByteCodeLoader;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -162,26 +163,19 @@ public class IsRecordTest {
                               boolean isAbstract,
                               String superName,
                               List<RecordComponentEntry> components) {
-        ClassWriter cw = new ClassWriter(COMPUTE_MAXS | COMPUTE_FRAMES);
-
-        int access = 0;
-        if (isFinal)
-            access = access | Opcodes.ACC_FINAL;
-        if (isAbstract)
-            access = access | Opcodes.ACC_ABSTRACT;
-
-        cw.visit(Opcodes.V16,
-                 access,
-                 className,
-                 null,
-                 superName,
-                 null);
-
-        if (components != null)
-            components.forEach(rc -> cw.visitRecordComponent(rc.name(), rc.descriptor(), null));
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return Classfile.build(ClassDesc.ofInternalName(className), clb -> {
+            int access = 0;
+            if (isFinal)
+                access = access | AccessFlag.FINAL.mask();
+            if (isAbstract)
+                access = access | AccessFlag.ABSTRACT.mask();
+            clb.withFlags(access);
+            clb.withSuperclass(ClassDesc.ofInternalName(superName));
+            if (components != null)
+                clb.accept(RecordAttribute.of(components.stream()
+                        .map(e -> RecordComponentInfo.of(e.name, ClassDesc.ofDescriptor(e.descriptor)))
+                        .toList()));
+        });
     }
 
     record RecordComponentEntry (String name, String descriptor) { }

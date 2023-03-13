@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,40 @@
 
 /* @test
  * @modules java.base/java.lang:open
- *          java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.classfile
  * @run testng/othervm test.DefineClassTest
  * @summary Basic test for java.lang.invoke.MethodHandles.Lookup.defineClass
  */
 
 package test;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
+
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
+
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-
+import jdk.internal.classfile.Classfile;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class DefineClassTest {
     private static final String THIS_PACKAGE = DefineClassTest.class.getPackageName();
+    private static final String CTOR_NAME = "<init>";
+    private static final MethodTypeDesc MD_void = MethodTypeDesc.of(CD_void);
+    private static final ClassDesc CD_Runnable = Runnable.class.describeConstable().orElseThrow();
+    private static final ClassDesc CD_MissingSuperClass = ClassDesc.of("MissingSuperClass");
 
     /**
      * Test that a class has the same class loader, and is in the same package and
@@ -251,25 +260,15 @@ public class DefineClassTest {
      * Generates a class file with the given class name
      */
     byte[] generateClass(String className) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                         + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V9,
-                ACC_PUBLIC + ACC_SUPER,
-                className.replace(".", "/"),
-                null,
-                "java/lang/Object",
-                null);
-
-        // <init>
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return Classfile.build(ClassDesc.of(className), clb -> {
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withSuperclass(CD_Object);
+            clb.withMethodBody(CTOR_NAME, MD_void, PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
+                cob.return_();
+            });
+        });
     }
 
     /**
@@ -280,33 +279,19 @@ public class DefineClassTest {
                           String targetClass,
                           String targetMethod) throws Exception {
 
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                         + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V9,
-                ACC_PUBLIC + ACC_SUPER,
-                className.replace(".", "/"),
-                null,
-                "java/lang/Object",
-                new String[] { "java/lang/Runnable" });
-
-        // <init>
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        // run()
-        String tc = targetClass.replace(".", "/");
-        mv = cw.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
-        mv.visitMethodInsn(INVOKESTATIC, tc, targetMethod, "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return Classfile.build(ClassDesc.of(className), clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withInterfaceSymbols(CD_Runnable);
+            clb.withMethodBody(CTOR_NAME, MD_void, PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
+                cob.return_();
+            });
+            clb.withMethodBody("run", MD_void, PUBLIC, cob -> {
+                cob.invokestatic(ClassDesc.of(targetClass), targetMethod, MD_void);
+                cob.return_();
+            });
+        });
     }
 
     /**
@@ -317,75 +302,41 @@ public class DefineClassTest {
                                         String targetClass,
                                         String targetMethod) throws Exception {
 
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                         + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V9,
-                ACC_PUBLIC + ACC_SUPER,
-                className.replace(".", "/"),
-                null,
-                "java/lang/Object",
-                null);
-
-        // <init>
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        // <clinit>
-        String tc = targetClass.replace(".", "/");
-        mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
-        mv.visitMethodInsn(INVOKESTATIC, tc, targetMethod, "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return Classfile.build(ClassDesc.of(className), clb -> {
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withSuperclass(CD_Object);
+            clb.withMethodBody(CTOR_NAME, MD_void, PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
+                cob.return_();
+            });
+            clb.withMethodBody("<clinit>", MD_void, AccessFlag.STATIC.mask(), cob -> {
+                cob.invokestatic(ClassDesc.of(targetClass), targetMethod, MD_void);
+                cob.return_();
+            });
+        });
     }
 
     /**
      * Generates a non-linkable class file with the given class name
      */
     byte[] generateNonLinkableClass(String className) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V14,
-                ACC_PUBLIC + ACC_SUPER,
-                className.replace(".", "/"),
-                null,
-                "MissingSuperClass",
-                null);
-
-        // <init>
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "MissingSuperClass", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return Classfile.build(ClassDesc.of(className), clb -> {
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withSuperclass(CD_MissingSuperClass);
+            clb.withMethodBody(CTOR_NAME, MD_void, PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_MissingSuperClass, CTOR_NAME, MD_void);
+                cob.return_();
+            });
+        });
     }
 
     /**
      * Generates a class file with the given class name
      */
     byte[] generateModuleInfo() {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V14,
-                ACC_MODULE,
-                "module-info",
-                null,
-                null,
-                null);
-
-        cw.visitEnd();
-        return cw.toByteArray();
+        return Classfile.build(ClassDesc.of("module-info"), cb -> cb.withFlags(AccessFlag.MODULE));
     }
 
     private int nextNumber() {

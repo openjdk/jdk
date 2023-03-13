@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,60 +25,53 @@
  * @test
  * @bug 8022718
  * @summary Runtime accessibility checking: protected class, if extended, should be accessible from another package
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
+ * @modules java.base/jdk.internal.classfile.attribute
+ * @modules java.base/jdk.internal.classfile.constantpool
  * @compile -XDignore.symbol.file BogoLoader.java MethodInvoker.java Test.java anotherpkg/MethodSupplierOuter.java
  * @run main/othervm Test
  */
 
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.attribute.InnerClassInfo;
+import jdk.internal.classfile.attribute.InnerClassesAttribute;
+import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.constantpool.Utf8Entry;
 
 interface MyFunctionalInterface {
 
     void invokeMethodReference();
 }
 
-class MakeProtected implements BogoLoader.VisitorMaker, Opcodes {
-
-    final boolean whenVisitInner;
-
-    MakeProtected(boolean when_visit_inner) {
-        super();
-        whenVisitInner = when_visit_inner;
-    }
-
-    public ClassVisitor make(ClassVisitor cv) {
-        return new ClassVisitor(Opcodes.ASM7, cv) {
-
-            @Override
-            public void visitInnerClass(String name, String outerName,
-                    String innerName, int access) {
-                if (whenVisitInner) {
-                    int access_ = (ACC_PROTECTED | access) & ~(ACC_PRIVATE | ACC_PUBLIC);
-                    System.out.println("visitInnerClass: name = " + name
-                            + ", outerName = " + outerName
-                            + ", innerName = " + innerName
-                            + ", access original = 0x" + Integer.toHexString(access)
-                            + ", access modified to 0x" + Integer.toHexString(access_));
-                    access = access_;
-                }
-                super.visitInnerClass(name, outerName, innerName, access);
-            }
-        };
-    }
-};
-
 public class Test {
 
-    public static void main(String argv[]) throws Exception, Throwable {
-        BogoLoader.VisitorMaker makeProtectedNop = new MakeProtected(false);
-        BogoLoader.VisitorMaker makeProtectedMod = new MakeProtected(true);
+    public static void main(String[] argv) throws Throwable {
+        ClassTransform makeProtectedNop = ClassTransform.ACCEPT_ALL;
+        ClassTransform makeProtectedMod = (cb, ce) -> {
+            if (ce instanceof InnerClassesAttribute ica) {
+                cb.accept(InnerClassesAttribute.of(ica.classes().stream().map(ici -> {
+                    var flags = EnumSet.copyOf(ici.flags());
+                    flags.remove(AccessFlag.PRIVATE);
+                    flags.remove(AccessFlag.PUBLIC);
+                    flags.add(AccessFlag.PROTECTED);
+                    // AccessFlags doesn't support inner class flags yet
+                    var updatedFlags = flags.stream().mapToInt(AccessFlag::mask).reduce(0, (a, b) -> a | b);
+                    System.out.println("visitInnerClass: name = " + ici.innerClass().asInternalName()
+                            + ", outerName = " + ici.outerClass().map(ClassEntry::asInternalName).orElse("null")
+                            + ", innerName = " + ici.innerName().map(Utf8Entry::stringValue).orElse("null")
+                            + ", access original = 0x" + Integer.toHexString(ici.flagsMask())
+                            + ", access modified to 0x" + Integer.toHexString(updatedFlags));
+                    return InnerClassInfo.of(ici.innerClass(), ici.outerClass(), ici.innerName(), updatedFlags);
+                }).toList()));
+            } else {
+                cb.accept(ce);
+            }
+        };
 
         int errors = 0;
         errors += tryModifiedInvocation(makeProtectedNop);
@@ -89,12 +82,11 @@ public class Test {
         }
     }
 
-    private static int tryModifiedInvocation(BogoLoader.VisitorMaker makeProtected)
-            throws Throwable, ClassNotFoundException {
-        HashMap<String, BogoLoader.VisitorMaker> replace
-                = new HashMap<String, BogoLoader.VisitorMaker>();
+    private static int tryModifiedInvocation(ClassTransform makeProtected)
+            throws Throwable {
+        var replace = new HashMap<String, ClassTransform>();
         replace.put("anotherpkg.MethodSupplierOuter$MethodSupplier", makeProtected);
-        HashSet<String> in_bogus = new HashSet<String>();
+        var in_bogus = new HashSet<String>();
         in_bogus.add("MethodInvoker");
         in_bogus.add("MyFunctionalInterface");
         in_bogus.add("anotherpkg.MethodSupplierOuter"); // seems to be never loaded

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8245432
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
  *          jdk.compiler
  * @library /test/lib
  * @build jdk.test.lib.Utils
@@ -39,7 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.classfile.Classfile;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
@@ -62,9 +62,7 @@ public class PreviewHiddenClass {
         }
 
         byte[] bytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenInterface.class"));
-        ClassReader reader = new ClassReader(bytes);
-        int minor = reader.readUnsignedShort(4);
-        assertTrue(minor == 65535);
+        assertEquals(Classfile.parse(bytes).minorVersion(), 65535);
         MethodHandles.lookup().defineHiddenClass(bytes, false);
     }
 }

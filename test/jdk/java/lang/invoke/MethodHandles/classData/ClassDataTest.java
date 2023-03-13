@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,23 @@
  * @test
  * @bug 8230501
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
  * @run testng/othervm ClassDataTest
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,18 +49,31 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import jdk.internal.org.objectweb.asm.*;
+import jdk.internal.classfile.ClassBuilder;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.TypeKind;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.lang.constant.ConstantDescs.CD_Class;
+import static java.lang.constant.ConstantDescs.CD_MethodHandle;
+import static java.lang.constant.ConstantDescs.CD_MethodHandles;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 import static java.lang.invoke.MethodHandles.Lookup.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static jdk.internal.classfile.Classfile.*;
 import static org.testng.Assert.*;
 
 public class ClassDataTest {
     private static final Lookup LOOKUP = MethodHandles.lookup();
+    private static final ClassDesc CD_ClassDataTest = ClassDataTest.class.describeConstable().orElseThrow();
+    private static final DirectMethodHandleDesc BSM_CLASS_DATA = ConstantDescs.ofConstantBootstrap(CD_MethodHandles, "classData", CD_Object);
+    private static final DirectMethodHandleDesc BSM_CLASS_DATA_AT = ConstantDescs.ofConstantBootstrap(CD_MethodHandles, "classDataAt", CD_Object, CD_int);
 
     @Test
     public void testOriginalAccess() throws IllegalAccessException {
@@ -294,15 +313,13 @@ public class ClassDataTest {
     public void classDataMap() throws ReflectiveOperationException {
         ClassByteBuilder builder = new ClassByteBuilder("map");
         // generate classData static method
-        Handle bsm = new Handle(H_INVOKESTATIC, "ClassDataTest", "getClassDataEntry",
-                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;",
-                false);
+        DirectMethodHandleDesc bsm = ConstantDescs.ofConstantBootstrap(CD_ClassDataTest, "getClassDataEntry", CD_Object);
         // generate two accessor methods to get the entries from class data
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, Map.class)
                               .classData(ACC_PUBLIC|ACC_STATIC, "getClass",
-                                         Class.class, new ConstantDynamic("class", Type.getDescriptor(Class.class), bsm))
+                                         Class.class, DynamicConstantDesc.ofNamed(bsm, "class", CD_Class))
                               .classData(ACC_PUBLIC|ACC_STATIC, "getMethod",
-                                         MethodHandle.class, new ConstantDynamic("method", Type.getDescriptor(MethodHandle.class), bsm))
+                                         MethodHandle.class, DynamicConstantDesc.ofNamed(bsm, "method", CD_MethodHandle))
                               .build();
 
         // generate a hidden class
@@ -342,29 +359,28 @@ public class ClassDataTest {
         private static final String MHS_CLS = "java/lang/invoke/MethodHandles";
         private static final String CLASS_DATA_BSM_DESCR =
                 "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;";
-        private final ClassWriter cw;
-        private final String classname;
+        private Consumer<ClassBuilder> cw;
+        private final ClassDesc classname;
 
         /**
          * A builder to generate a class file to access class data
          * @param classname
          */
         ClassByteBuilder(String classname) {
-            this.classname = classname;
-            this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            cw.visit(V14, ACC_FINAL, classname, null, OBJECT_CLS, null);
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, OBJECT_CLS, "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+            this.classname = ClassDesc.ofInternalName(classname);
+            this.cw = clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withFlags(AccessFlag.FINAL);
+                clb.withMethodBody("<init>", MethodTypeDesc.of(CD_void), ACC_PUBLIC, cob -> {
+                    cob.aload(0);
+                    cob.invokespecial(CD_Object, "<init>", MethodTypeDesc.of(CD_void));
+                    cob.return_();
+                });
+            };
         }
 
         byte[] build() {
-            cw.visitEnd();
-            byte[] bytes = cw.toByteArray();
+            byte[] bytes = Classfile.build(classname, cw);
             Path p = Paths.get(classname + ".class");
                 try (OutputStream os = Files.newOutputStream(p)) {
                 os.write(bytes);
@@ -378,20 +394,14 @@ public class ClassDataTest {
          * Generate classData method to load class data via condy
          */
         ClassByteBuilder classData(int accessFlags, Class<?> returnType) {
-            MethodType mtype = MethodType.methodType(returnType);
-            MethodVisitor mv = cw.visitMethod(accessFlags,
-                                             "classData",
-                                              mtype.descriptorString(), null, null);
-            mv.visitCode();
-            Handle bsm = new Handle(H_INVOKESTATIC, MHS_CLS, "classData",
-                                    CLASS_DATA_BSM_DESCR,
-                                    false);
-            ConstantDynamic dynamic = new ConstantDynamic("_", Type.getDescriptor(returnType), bsm);
-            mv.visitLdcInsn(dynamic);
-            mv.visitInsn(returnType == int.class ? IRETURN :
-                            (returnType == float.class ? FRETURN : ARETURN));
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+            ClassDesc returnDesc = returnType.describeConstable().orElseThrow();
+            MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
+            cw = cw.andThen(clb -> {
+                clb.withMethodBody("classData", mt, accessFlags, cob -> {
+                    cob.constantInstruction(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, returnDesc));
+                    cob.returnInstruction(TypeKind.fromDescriptor(returnType.descriptorString()));
+                });
+            });
             return this;
         }
 
@@ -399,32 +409,26 @@ public class ClassDataTest {
          * Generate classDataAt method to load an element from class data via condy
          */
         ClassByteBuilder classDataAt(int accessFlags, Class<?> returnType, int index) {
-            MethodType mtype = MethodType.methodType(returnType);
-            MethodVisitor mv = cw.visitMethod(accessFlags,
-                                              "classData",
-                                               mtype.descriptorString(), null, null);
-            mv.visitCode();
-            Handle bsm = new Handle(H_INVOKESTATIC, "java/lang/invoke/MethodHandles", "classDataAt",
-                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;I)Ljava/lang/Object;",
-                        false);
-            ConstantDynamic dynamic = new ConstantDynamic("_", Type.getDescriptor(returnType), bsm, index);
-            mv.visitLdcInsn(dynamic);
-            mv.visitInsn(returnType == int.class? IRETURN : ARETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+            ClassDesc returnDesc = returnType.describeConstable().orElseThrow();
+            MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
+            cw = cw.andThen(clb -> {
+                clb.withMethodBody("classData", mt, accessFlags, cob -> {
+                    cob.constantInstruction(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA_AT, DEFAULT_NAME, returnDesc, index));
+                    cob.returnInstruction(TypeKind.fromDescriptor(returnType.descriptorString()));
+                });
+            });
             return this;
         }
 
-        ClassByteBuilder classData(int accessFlags, String name, Class<?> returnType, ConstantDynamic dynamic) {
-            MethodType mtype = MethodType.methodType(returnType);
-            MethodVisitor mv = cw.visitMethod(accessFlags,
-                                              name,
-                                              mtype.descriptorString(), null, null);
-            mv.visitCode();
-            mv.visitLdcInsn(dynamic);
-            mv.visitInsn(returnType == int.class? IRETURN : ARETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+        ClassByteBuilder classData(int accessFlags, String name, Class<?> returnType, DynamicConstantDesc<?> dynamic) {
+            ClassDesc returnDesc = returnType.describeConstable().orElseThrow();
+            MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
+            cw = cw.andThen(clb -> {
+                clb.withMethodBody(name, mt, accessFlags, cob -> {
+                    cob.constantInstruction(dynamic);
+                    cob.returnInstruction(TypeKind.fromDescriptor(returnType.descriptorString()));
+                });
+            });
             return this;
         }
     }

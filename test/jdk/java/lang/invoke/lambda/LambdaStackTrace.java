@@ -25,28 +25,31 @@
  * @test
  * @bug 8025636
  * @summary Synthetic frames should be hidden in exceptions
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
  *          jdk.compiler
  * @compile -XDignore.symbol.file LUtils.java LambdaStackTrace.java
  * @run main LambdaStackTrace
  */
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import jdk.internal.classfile.Classfile;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_ABSTRACT;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_INTERFACE;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.V1_7;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_String;
+import static java.lang.reflect.AccessFlag.ABSTRACT;
+import static java.lang.reflect.AccessFlag.PUBLIC;
 
 public class LambdaStackTrace {
 
+    private static final ClassDesc CD_Maker = ClassDesc.of("Maker");
     static File classes = new File(System.getProperty("test.classes"));
 
     public static void main(String[] args) throws Exception {
@@ -133,24 +136,23 @@ public class LambdaStackTrace {
         // interface Maker {
         //   Object make();
         // }
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(V1_7, ACC_INTERFACE | ACC_ABSTRACT, "Maker", null, "java/lang/Object", null);
-        cw.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, "make",
-                "()Ljava/lang/Object;", null, null);
-        cw.visitEnd();
-        return cw.toByteArray();
+        return Classfile.build(CD_Maker, clb -> {
+            clb.withFlags(ABSTRACT, AccessFlag.INTERFACE);
+            clb.withSuperclass(CD_Object);
+            clb.withMethod("make", MethodTypeDesc.of(CD_Object), PUBLIC.mask() | ABSTRACT.mask(), mb -> {});
+        });
     }
 
     private static byte[] generateStringMaker() {
         // interface StringMaker extends Maker {
         //   String make();
         // }
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(V1_7, ACC_INTERFACE | ACC_ABSTRACT, "StringMaker", null, "java/lang/Object", new String[]{"Maker"});
-        cw.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, "make",
-                "()Ljava/lang/String;", null, null);
-        cw.visitEnd();
-        return cw.toByteArray();
+        return Classfile.build(ClassDesc.of("StringMaker"), clb -> {
+            clb.withFlags(ABSTRACT, AccessFlag.INTERFACE);
+            clb.withSuperclass(CD_Object);
+            clb.withInterfaceSymbols(CD_Maker);
+            clb.withMethod("make", MethodTypeDesc.of(CD_String), PUBLIC.mask() | ABSTRACT.mask(), mb -> {});
+        });
     }
 
 

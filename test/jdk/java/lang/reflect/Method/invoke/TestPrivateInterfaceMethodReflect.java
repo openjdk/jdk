@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,26 +26,31 @@
  * @bug 8026213
  * @summary Reflection support for private methods in interfaces
  * @author  Robert Field
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
  * @run main TestPrivateInterfaceMethodReflect
  */
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.*;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.classfile.Classfile;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.CD_void;
 
 public class TestPrivateInterfaceMethodReflect {
 
     static final String INTERFACE_NAME = "PrivateInterfaceMethodReflectTest_Interface";
     static final String CLASS_NAME = "PrivateInterfaceMethodReflectTest_Class";
     static final int EXPECTED = 1234;
+    private static final String CTOR_NAME = "<init>";
+    private static final MethodTypeDesc CTOR_DESC = MethodTypeDesc.of(CD_void);
 
-    static class TestClassLoader extends ClassLoader implements Opcodes {
+    static class TestClassLoader extends ClassLoader {
 
         @Override
-        public Class findClass(String name) throws ClassNotFoundException {
+        public Class<?> findClass(String name) throws ClassNotFoundException {
             byte[] b;
             try {
                 b = loadClassData(name);
@@ -56,39 +61,28 @@ public class TestPrivateInterfaceMethodReflect {
             return defineClass(name, b, 0, b.length);
         }
 
-        private byte[] loadClassData(String name) throws Exception {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
-            switch (name) {
-                case INTERFACE_NAME:
-                    cw.visit(V1_8, ACC_ABSTRACT | ACC_INTERFACE | ACC_PUBLIC, INTERFACE_NAME, null, "java/lang/Object", null);
-                    {
-                        mv = cw.visitMethod(ACC_PRIVATE, "privInstance", "()I", null, null);
-                        mv.visitCode();
-                        mv.visitLdcInsn(EXPECTED);
-                        mv.visitInsn(IRETURN);
-                        mv.visitMaxs(1, 1);
-                        mv.visitEnd();
-                    }
-                    break;
-                case CLASS_NAME:
-                    cw.visit(52, ACC_SUPER | ACC_PUBLIC, CLASS_NAME, null, "java/lang/Object", new String[]{INTERFACE_NAME});
-                    {
-                        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-                        mv.visitCode();
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
-                        mv.visitInsn(RETURN);
-                        mv.visitMaxs(1, 1);
-                        mv.visitEnd();
-                    }
-                    break;
-                default:
-                    break;
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
+        private byte[] loadClassData(String name) {
+            return switch (name) {
+                case INTERFACE_NAME -> Classfile.build(ClassDesc.ofInternalName(INTERFACE_NAME), clb -> {
+                    clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE, AccessFlag.PUBLIC);
+                    clb.withSuperclass(CD_Object);
+                    clb.withMethodBody("privInstance", MethodTypeDesc.of(CD_int), AccessFlag.PRIVATE.mask(), cob -> {
+                        cob.constantInstruction(EXPECTED);
+                        cob.ireturn();
+                    });
+                });
+                case CLASS_NAME -> Classfile.build(ClassDesc.of(CLASS_NAME), clb -> {
+                    clb.withFlags(AccessFlag.PUBLIC);
+                    clb.withSuperclass(CD_Object);
+                    clb.withInterfaceSymbols(ClassDesc.ofInternalName(INTERFACE_NAME));
+                    clb.withMethodBody(CTOR_NAME, CTOR_DESC, AccessFlag.PUBLIC.mask(), cob -> {
+                        cob.aload(0);
+                        cob.invokespecial(CD_Object, CTOR_NAME, CTOR_DESC);
+                        cob.return_();
+                    });
+                });
+                default -> throw new IllegalArgumentException();
+            };
         }
     }
 
@@ -96,7 +90,7 @@ public class TestPrivateInterfaceMethodReflect {
         TestClassLoader tcl = new TestClassLoader();
         Class<?> itf = tcl.loadClass(INTERFACE_NAME);
         Class<?> k = tcl.loadClass(CLASS_NAME);
-        Object inst = k.newInstance();
+        Object inst = k.getDeclaredConstructor().newInstance();
         Method[] meths = itf.getDeclaredMethods();
         if (meths.length != 1) {
             throw new Exception("Expected one method in " + INTERFACE_NAME + " instead " + meths.length);
