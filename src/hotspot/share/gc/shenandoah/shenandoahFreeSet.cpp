@@ -267,7 +267,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
     assert(ctx->is_bitmap_clear_range(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
   } else if (r->affiliation() != req.affiliation()) {
-    assert(!_heap->mode()->is_generational(), "Should not have conflicting affiliation in non-generational mode.");
+    assert(_heap->mode()->is_generational(), "Request for %s from %s region should only happen in generational mode.",
+           affiliation_name(req.affiliation()), affiliation_name(r->affiliation()));
     return nullptr;
   }
 
