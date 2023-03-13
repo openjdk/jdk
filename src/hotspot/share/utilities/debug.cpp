@@ -182,6 +182,45 @@ void print_foo(u64 x0, u64 x1) {
   printf("\n");
 }
 
+bool vreg_is_equal(uint64_t v4,
+                   uint64_t v3,
+                   uint64_t v2,
+                   uint64_t v1,
+                   uint64_t v0,
+                   uint64_t x2,
+                   uint64_t x1,
+                   uint64_t x0) {
+  v1 += v0 >> 26; v0 %= 1 <<26;
+  v4 += v3 >> 26; v3 %= 1 <<26;
+  v2 += v1 >> 26; v1 %= 1 <<26;
+  v0 += 5 * (v4 >> 26); v4 %= 1 <<26;
+  v3 += v2 >> 26; v2 %= 1 <<26;
+  v1 += v0 >> 26; v0 %= 1 <<26;
+  v4 += v3 >> 26; v3 %= 1 <<26;
+
+  u128 v_sum = 0;
+  v_sum = v_sum
+    + v0
+    + ((u128)v1 << 26)
+    + ((u128)v2 << 52)
+    + ((u128)v3 << 78)
+    + ((u128)v4 << 104);
+
+  x1 += x0 >> 52; x0 %= 1ul <<52;
+  x2 += x1 >> 52; x1 %= 1ul <<52;
+  x0 += 5 * (x2 >> 26); x2 %= 1 <<26;
+  x1 += x0 >> 52; x0 %= 1ul <<52;
+
+  u128 x_sum = 0;
+  x_sum = x_sum
+    + x0
+    + ((u128)x1 << 52)
+    + ((u128)x2 << 104);
+
+  return x_sum == v_sum && (x2 >> 24) == (v4 >> 24);
+}
+
+
 #define is_token_break(ch) (isspace(ch) || (ch) == ',')
 
 static const char* last_file_name = NULL;

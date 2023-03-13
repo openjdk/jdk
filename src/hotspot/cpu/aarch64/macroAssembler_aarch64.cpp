@@ -6035,33 +6035,33 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
 }
 
 void MacroAssembler::poly1305_step_foo(const FloatRegister s[], const FloatRegister u[],
-                                       const FloatRegister upper_bits, Register input_start) {
-  FloatRegister tmp = s[4];
-  ld1(tmp, T1D, post(input_start, wordSize)); // 26 bits
-  bic(s[0], T16B, tmp, upper_bits);
-  addv(u[0], T2D, u[0], s[0]);
+                                       const FloatRegister upper_bits, Register input_start,
+                                       AbstractRegSet<FloatRegister> scratch) {
+  auto vregs = scratch.begin();
+  FloatRegister scratch1 = *vregs++, scratch2 = *vregs++;
+  ldpd(scratch1, scratch2, post(input_start, 2 * wordSize));
 
-  ushr(s[0], T2D, tmp, 26);
+  orr(s[0], T16B, scratch1, scratch1);
   bic(s[0], T16B, s[0], upper_bits);
-  addv(u[1], T2D, u[1], s[0]);
 
-  ushr(s[0], T2D, tmp, 52);
-  addv(u[2], T2D, u[2], s[0]);
+  ushr(s[1], T2D, scratch1, 26);
+  bic(s[1], T16B, s[1], upper_bits);
 
-  ld1(tmp, T1D, post(input_start, wordSize));
-  shl(s[0], T2D, tmp, 64-14);
-  ushr(s[0], T2D, s[0], 64-26);
-  addv(u[2], T2D, u[2], s[0]);
+  ushr(s[2], T2D, scratch1, 52);
+  shl(scratch1, T2D, scratch2, 64-14);
+  ushr(scratch1, T2D, scratch1, 64-26);
+  addv(s[2], T2D, s[2], scratch1);
 
-  ushr(s[0], T2D, tmp, 14);
-  bic(s[0], T16B, s[0], upper_bits);
-  addv(u[3], T2D, u[3], s[0]);
+  ushr(s[3], T2D, scratch2, 14);
+  bic(s[3], T16B, s[3], upper_bits);
 
-  ushr(s[0], T2D, tmp, 14+26);
-  addv(u[4], T2D, u[4], s[0]);
+  ushr(s[4], T2D, scratch2, 14+26);
 
-  mov(s[0], T2D, 1 << 24);
-  addv(u[4], T2D, u[4], s[0]);
+  for (int i = 0; i < 5; i++)
+    addv(s[i], T2D, u[i], s[i]);
+
+  mov(scratch1, T2D, 1 << 24);
+  addv(s[4], T2D, s[4], scratch1);
 }
 
 // void MacroAssembler::poly1305_multiply_foo(const FloatRegister u_v[],
@@ -6116,12 +6116,13 @@ void MacroAssembler::poly1305_reduce_step(FloatRegister d, FloatRegister s,
   bic(s, T16B, s, upper_bits);
 }
 void MacroAssembler::poly1305_reduce_foo(const FloatRegister u[],
+                                         const FloatRegister upper_bits,
                                          AbstractRegSet<FloatRegister> scratch) {
 
   auto r = scratch.begin();
-  FloatRegister upper_bits = *r++, vtmp2 = *r++, vtmp3 = *r++;
   // Partial reduction mod 2**130 - 5
 
+  FloatRegister vtmp2 = *r++, vtmp3 = *r++;
   // Goll-Guerin reduction
   poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
   poly1305_reduce_step(u[4], u[3], upper_bits, vtmp2);

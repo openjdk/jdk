@@ -1584,13 +1584,15 @@ public:
                              const FloatRegister r[], const FloatRegister rr[]);
 
   void poly1305_step_foo(const FloatRegister s[], const FloatRegister u[],
-                         const FloatRegister upper_bits, Register input_start);
-void poly1305_multiply_foo(const FloatRegister u_v[],
+                         const FloatRegister upper_bits, Register input_start,
+                           AbstractRegSet<FloatRegister> scratch);
+  void poly1305_multiply_foo(const FloatRegister u_v[],
                            AbstractRegSet<FloatRegister> remaining,
                            const FloatRegister s_v[],
                            const FloatRegister r_v[],
                            const FloatRegister rr_v[]);
-  void poly1305_reduce_foo(const FloatRegister u[], AbstractRegSet<FloatRegister> scratch);
+  void poly1305_reduce_foo(const FloatRegister u[], const FloatRegister upper_bits,
+                           AbstractRegSet<FloatRegister> scratch);
 
   void mov26(FloatRegister d, Register s, int lsb);
   void expand26(Register d, Register r);
