@@ -29,7 +29,7 @@ import java.io.UncheckedIOException;
 import java.util.Set;
 
 /*
- * Checks RFC 7540 rules (relaxed) compliance regarding pseudo-headers.
+ * Checks RFC 9113 rules (relaxed) compliance regarding pseudo-headers.
  */
 public class ValidatingHeadersConsumer {
 
