@@ -392,7 +392,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
-                                buffer);
+                                buffer, false);
   }
  public:
   HotSpotToSharedLibraryExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, const Handle& throwable) :
@@ -414,11 +414,12 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
   void decode(JavaThread* THREAD, Klass* vmSupport, jlong buffer) {
     JavaCallArguments jargs;
     jargs.push_long(buffer);
+    jargs.push_int(true);
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                             vmSupport,
                             vmSymbols::decodeAndThrowThrowable_name(),
-                            vmSymbols::long_void_signature(), &jargs, THREAD);
+                            vmSymbols::decodeAndThrowThrowable_signature(), &jargs, THREAD);
   }
  public:
   SharedLibraryToHotSpotExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, jthrowable throwable) :
@@ -1590,7 +1591,11 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // the address field to still be pointing at the nmethod.
    } else {
     // Deoptimize the nmethod immediately.
-    Deoptimization::deoptimize_all_marked(nm);
+    DeoptimizationScope deopt_scope;
+    deopt_scope.mark(nm);
+    nm->make_not_entrant();
+    nm->make_deoptimized();
+    deopt_scope.deoptimize_marked();
 
     // A HotSpotNmethod instance can only reference a single nmethod
     // during its lifetime so simply clear it here.
