@@ -53,10 +53,14 @@ import sun.java2d.xr.XRSurfaceData;
  * @see GraphicsDevice
  * @see java.awt.GraphicsConfiguration
  */
-@SuppressWarnings("removal")
 public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         java.security.AccessController.doPrivileged(
                           new java.security.PrivilegedAction<Object>() {
             public Object run() {
@@ -295,6 +299,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
             return true;
         }
 
+        @SuppressWarnings("removal")
         String isRemote = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.java2d.remote"));
         if (isRemote != null) {
@@ -317,6 +322,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
             return true;
         }
 
+        @SuppressWarnings("removal")
         Boolean result = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
             public Boolean run() {

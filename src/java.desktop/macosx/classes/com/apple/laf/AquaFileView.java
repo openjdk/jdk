@@ -34,7 +34,7 @@ import javax.swing.filechooser.FileView;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-@SuppressWarnings({"removal","serial"}) // JDK implementation class
+@SuppressWarnings("serial") // JDK implementation class
 class AquaFileView extends FileView {
     private static final boolean DEBUG = false;
 
@@ -57,6 +57,11 @@ class AquaFileView extends FileView {
     static final int kLSItemInfoExtensionIsHidden  = 0x00100000; /* Item has a hidden extension*/
 
     static {
+        loadOSXUILibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadOSXUILibrary() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {

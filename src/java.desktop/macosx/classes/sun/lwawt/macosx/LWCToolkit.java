@@ -131,7 +131,6 @@ final class NamedCursor extends Cursor {
 /**
  * Mac OS X Cocoa-based AWT Toolkit.
  */
-@SuppressWarnings("removal")
 public final class LWCToolkit extends LWToolkit {
     // While it is possible to enumerate all mouse devices
     // and query them for the number of buttons, the code
@@ -147,6 +146,7 @@ public final class LWCToolkit extends LWToolkit {
     static {
         System.err.flush();
 
+        @SuppressWarnings("removal")
         ResourceBundle platformResources = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<ResourceBundle>() {
             @Override
@@ -176,20 +176,23 @@ public final class LWCToolkit extends LWToolkit {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
-        inAWT = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            @Override
-            public Boolean run() {
-                return !Boolean.parseBoolean(System.getProperty("javafx.embed.singleThread", "false"));
-            }
-        });
     }
 
     /*
      * If true  we operate in normal mode and nested runloop is executed in JavaRunLoopMode
      * If false we operate in singleThreaded FX/AWT interop mode and nested loop uses NSDefaultRunLoopMode
      */
-    private static final boolean inAWT;
+    @SuppressWarnings("removal")
+    private static final boolean inAWT
+            = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        @Override
+        public Boolean run() {
+            return !Boolean.parseBoolean(
+                    System.getProperty("javafx.embed.singleThread", "false"));
+        }
+    });
 
+    @SuppressWarnings("removal")
     public LWCToolkit() {
         final String extraButtons = "sun.awt.enableExtraMouseButtons";
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -248,6 +251,7 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     // This is only called from native code.
+    @SuppressWarnings("removal")
     static void systemColorsChanged() {
         EventQueue.invokeLater(() -> {
             AccessController.doPrivileged( (PrivilegedAction<Object>) () -> {
@@ -586,6 +590,7 @@ public final class LWCToolkit extends LWToolkit {
     private static final String APPKIT_THREAD_NAME = "AppKit Thread";
 
     // Intended to be called from the LWCToolkit.m only.
+    @SuppressWarnings("removal")
     private static void installToolkitThreadInJava() {
         Thread.currentThread().setName(APPKIT_THREAD_NAME);
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {

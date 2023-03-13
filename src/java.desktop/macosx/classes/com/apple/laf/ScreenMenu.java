@@ -36,12 +36,17 @@ import sun.awt.SunToolkit;
 import sun.lwawt.LWToolkit;
 import sun.lwawt.macosx.*;
 
-@SuppressWarnings({"removal","serial"}) // JDK implementation class
+@SuppressWarnings("serial") // JDK implementation class
 final class ScreenMenu extends Menu
         implements ContainerListener, ComponentListener,
                    ScreenMenuPropertyHandler {
 
     static {
+        loadAWTLibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadAWTLibrary() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {

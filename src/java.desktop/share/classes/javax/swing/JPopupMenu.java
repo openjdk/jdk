@@ -101,7 +101,7 @@ import sun.awt.SunToolkit;
  */
 @JavaBean(defaultProperty = "UI", description = "A small window that pops up and displays a series of choices.")
 @SwingContainer(false)
-@SuppressWarnings({"removal","serial"})
+@SuppressWarnings("serial")
 public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
     /**
@@ -117,14 +117,11 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         new StringBuffer("JPopupMenu.defaultLWPopupEnabledKey");
 
     /** Bug#4425878-Property javax.swing.adjustPopupLocationToFit introduced */
-    static boolean popupPostionFixDisabled = false;
-
-    static {
-        popupPostionFixDisabled = java.security.AccessController.doPrivileged(
+    @SuppressWarnings("removal")
+    static boolean popupPostionFixDisabled =
+            java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
-                "javax.swing.adjustPopupLocationToFit","")).equals("false");
-
-    }
+                    "javax.swing.adjustPopupLocationToFit","")).equals("false");
 
     transient  Component invoker;
     transient  Popup popup;
