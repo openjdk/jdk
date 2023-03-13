@@ -171,7 +171,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         //generate links backward only to public classes.
         Content classLink = (utils.isPublic(typeElement) || utils.isProtected(typeElement)) ?
             getLink(new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, typeElement)) :
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, typeElement)) :
             Text.of(utils.getFullyQualifiedName(typeElement));
 
         PackageElement enclosingPackage  = utils.containingPackage(typeElement);
