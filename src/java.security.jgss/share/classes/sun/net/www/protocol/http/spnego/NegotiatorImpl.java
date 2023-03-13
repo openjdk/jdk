@@ -129,7 +129,7 @@ public class NegotiatorImpl extends Negotiator {
             }
             try {
                 disposeContext();
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 //dispose context silently
             }
             throw new IOException("Negotiate support not initiated", e);
