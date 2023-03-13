@@ -1600,7 +1600,7 @@ class Stream<T> extends ExchangeImpl<T> {
                             streamid, n, v);
                 }
             } catch (UncheckedIOException uio) {
-                // reset stream: From RFC 7540, section-8.1.2.6
+                // reset stream: From RFC 9113, section 8.1
                 // Malformed requests or responses that are detected MUST be
                 // treated as a stream error (Section 5.4.2) of type
                 // PROTOCOL_ERROR.
