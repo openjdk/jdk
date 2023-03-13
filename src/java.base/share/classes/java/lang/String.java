@@ -2616,7 +2616,7 @@ public final class String
      * {@code str} in the string.
      * If stricter behavior is needed, {@link #indexOf(String, int, int)}
      * should be considered instead.
-     * On {@link String}s {@code s} and a non-empty {@code str}, for example,
+     * On {@link String} {@code s} and a non-empty {@code str}, for example,
      * {@code s.indexOf(str, fromIndex, s.length())} would throw if
      * {@code fromIndex} were larger than the string length, or were negative.
      *
