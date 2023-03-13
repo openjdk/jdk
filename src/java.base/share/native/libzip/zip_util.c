@@ -529,7 +529,7 @@ addMetaName(jzfile *zip, const char *name, int length)
 static void
 freeMetaNames(jzfile *zip)
 {
-    if (zip->metanames) {
+    if (zip->metanames != NULL) {
         jint i;
         for (i = 0; i < zip->metacount; i++)
             free(zip->metanames[i]);
@@ -804,12 +804,12 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
     }
 
     /* Clear zip error message */
-    if (pmsg != 0) {
+    if (pmsg != NULL) {
         *pmsg = NULL;
     }
 
     if (strlen(name) >= PATH_MAX) {
-        if (pmsg) {
+        if (pmsg != NULL) {
             *pmsg = "zip file name too long";
         }
         return NULL;
@@ -864,7 +864,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     zip->lastModified = lastModified;
 
     if (zfd == -1) {
-        if (pmsg)
+        if (pmsg != NULL)
             *pmsg = "ZFILE_Open failed";
         freeZip(zip);
         return NULL;
@@ -878,11 +878,11 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     len = zip->len = IO_Lseek(zfd, 0, SEEK_END);
     if (len <= 0) {
         if (len == 0) { /* zip file is empty */
-            if (pmsg) {
+            if (pmsg != NULL) {
                 *pmsg = "zip file is empty";
             }
         } else { /* error */
-            if (pmsg)
+            if (pmsg != NULL)
                 *pmsg = "IO_Lseek failed";
         }
         ZFILE_Close(zfd);
@@ -893,7 +893,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     zip->zfd = zfd;
     if (readCEN(zip, -1) < 0) {
         /* An error occurred while trying to read the zip file */
-        if (pmsg != 0) {
+        if (pmsg != NULL) {
             /* Set the zip error message */
             *pmsg = zip->msg;
         }
@@ -1134,8 +1134,8 @@ ZIP_FreeEntry(jzfile *jz, jzentry *ze)
     if (last != NULL) {
         /* Free the previously cached jzentry */
         free(last->name);
-        if (last->extra)   free(last->extra);
-        if (last->comment) free(last->comment);
+        free(last->extra);
+        free(last->comment);
         free(last);
     }
 }
@@ -1513,7 +1513,7 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             msg = zip->msg;
             ZIP_Unlock(zip);
             if (n == -1) {
-                if (msg == 0) {
+                if (msg == NULL) {
                     getErrorString(errno, tmpbuf, sizeof(tmpbuf));
                     msg = tmpbuf;
                 }
@@ -1530,7 +1530,7 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
             if ((msg == NULL) || (*msg == 0)) {
                 msg = zip->msg;
             }
-            if (msg == 0) {
+            if (msg == NULL) {
                 getErrorString(errno, tmpbuf, sizeof(tmpbuf));
                 msg = tmpbuf;
             }
@@ -1550,7 +1550,7 @@ ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pm
     z_stream strm;
     memset(&strm, 0, sizeof(z_stream));
 
-    *pmsg = 0; /* Reset error message */
+    *pmsg = NULL; /* Reset error message */
 
     if (inflateInit2(&strm, MAX_WBITS) != Z_OK) {
         *pmsg = strm.msg;
