@@ -965,15 +965,11 @@ public class JlinkTask {
             String archName = targetPlatform.substring(index + 1);
             return switch (archName) {
                 case "x86", "x86_64",
-                        "alpha", "amd64",
-                        "arm", "aarch64",
-                        "ia64", "mipsel",
-                        "mips64el", "loongarch64",
-                        "ppc64le", "riscv32", "riscv64" -> ByteOrder.LITTLE_ENDIAN;
-                case "m68k", "mips",
-                        "mips64", "ppc",
-                        "ppc64", "s390",
-                        "s390x", "sh",
+                        "amd64", "arm", "aarch64",
+                        "loongarch64", "ppc64le",
+                        "riscv32", "riscv64" -> ByteOrder.LITTLE_ENDIAN;
+                case "ppc", "ppc64",
+                        "s390", "s390x",
                         "sparc", "sparcv9" -> ByteOrder.BIG_ENDIAN;
                 default -> null;
             };
