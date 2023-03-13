@@ -42,7 +42,7 @@ SoftSurfer makes no warranty for this code, and cannot be held
 liable for any real or imagined damage resulting from its use.
 Users of this code must verify correctness for their application.
 
-<pre>
+</pre>
 
 ### AUTHORS File Information
 ```
