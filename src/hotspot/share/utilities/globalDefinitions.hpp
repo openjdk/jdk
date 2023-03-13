@@ -1299,18 +1299,18 @@ inline uint64_t multiply_high_unsigned(const uint64_t x, const uint64_t y) {
 // Taken from java.lang.Math::multiplyHigh which uses the technique from section 8-2 of Henry S. Warren, Jr.,
 // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174 but adapted for signed longs.
 inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
-  const jlong x1 = java_shift_right(x, 32);
+  const jlong x1 = java_shift_right((jlong)x, 32);
   const jlong x2 = x & 0xFFFFFFFF;
-  const jlong y1 = java_shift_right(y, 32);
+  const jlong y1 = java_shift_right((jlong)y, 32);
   const jlong y2 = y & 0xFFFFFFFF;
 
   const uint64_t z2 = x2 * y2;
   const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
   int64_t z1 = t & 0xFFFFFFFF;
-  const int64_t z0 = java_shift_right(t, 32);
+  const int64_t z0 = java_shift_right((jlong)t, 32);
   z1 += x2 * y1;
 
-  return x1 * y1 + z0 + java_shift_right(z1, 32);
+  return x1 * y1 + z0 + java_shift_right((jlong)z1, 32);
 }
 
 // Dereference vptr
