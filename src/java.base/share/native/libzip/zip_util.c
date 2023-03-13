@@ -765,6 +765,7 @@ readCEN(jzfile *zip, jint knownTotal)
  * or NULL if an error occurred. If a zip error occurred then *pmsg will
  * be set to the error message text if pmsg != 0. Otherwise, *pmsg will be
  * set to NULL. Caller doesn't need to free the error message.
+ * The error message, if set, points to a static thread-safe buffer.
  */
 jzfile *
 ZIP_Open_Generic(const char *name, char **pmsg, int mode, jlong lastModified)
