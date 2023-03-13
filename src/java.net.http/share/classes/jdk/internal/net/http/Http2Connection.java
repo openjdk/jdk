@@ -1209,7 +1209,7 @@ class Http2Connection  {
     }
 
     /**
-     * Called do get the initial stream after a connection upgrade.
+     * Called to get the initial stream after a connection upgrade.
      * If the stream was cancelled, it might no longer be in the
      * stream map. Therefore - we use the initialStream field
      * instead, and reset it to null after returning it.
