@@ -104,6 +104,8 @@ public class InstanceKlass extends Klass {
     CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("InstanceKlass::being_initialized").intValue();
     CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
     CLASS_STATE_INITIALIZATION_ERROR = db.lookupIntConstant("InstanceKlass::initialization_error").intValue();
+    // We need a new fieldsCache each time we attach.
+    fieldsCache = new HashMap<Address, Field[]>();
   }
 
   public InstanceKlass(Address addr) {
@@ -256,13 +258,22 @@ public class InstanceKlass extends Klass {
 
   public static long getHeaderSize() { return headerSize; }
 
-  private Field[] fieldCache;
+  // Each InstanceKlass mirror instance will cache the Field[] array after it is decoded,
+  // but since there can be multiple InstanceKlass mirror instances per hotspot InstanceKlass,
+  // we also have a global cache that uses the Address of the hotspot InstanceKlass as the key.
+  private Field[] fields;
+  private static Map<Address, Field[]> fieldsCache;
 
   Field getField(int index) {
-    if (fieldCache == null) {
-      fieldCache = Field.getFields(this);
+    synchronized(this) {
+      fields = fieldsCache.get(this.getAddress());
+      if (fields == null) {
+        fields = Field.getFields(this);
+        fieldsCache.put(this.getAddress(), fields);
+      } else {
+      }
     }
-    return fieldCache[index];
+    return fields[index];
   }
 
   public short getFieldAccessFlags(int index) {
@@ -331,13 +342,31 @@ public class InstanceKlass extends Klass {
     }
   }
 
+  private int javaFieldsCount = -1;
+  private int allFieldsCount = -1;
+
+  private void initFieldCounts() {
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    javaFieldsCount = crs.readInt(); // read num_java_fields
+    allFieldsCount = javaFieldsCount + crs.readInt(); // read num_injected_fields;
+  }
+
+  public int getJavaFieldsCount() {
+    if (javaFieldsCount == -1) {
+      initFieldCounts();
+    }
+    return javaFieldsCount;
+  }
+
+  public int getAllFieldsCount() {
+    if (allFieldsCount == -1) {
+      initFieldCounts();
+    }
+    return allFieldsCount;
+  }
+
   public KlassArray   getLocalInterfaces()      { return new KlassArray(localInterfaces.getValue(getAddress())); }
   public KlassArray   getTransitiveInterfaces() { return new KlassArray(transitiveInterfaces.getValue(getAddress())); }
-  public int          getJavaFieldsCount()      { return new CompressedReadStream(getFieldInfoStream().getDataStart()).readInt(); }
-  public int          getAllFieldsCount() {
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    return crs.readInt() + crs.readInt();
-  }
   public ConstantPool getConstants()        { return (ConstantPool) constants.getValue(this); }
   public Symbol    getSourceFileName()      { return                getConstants().getSourceFileName(); }
   public String    getSourceDebugExtension(){ return                CStringUtilities.getString(sourceDebugExtension.getValue(getAddress())); }
@@ -828,11 +857,6 @@ public class InstanceKlass extends Klass {
     Address addr = getAddress().getAddressAt(fieldinfoStream.getOffset());
     return VMObjectFactory.newObject(U1Array.class, addr);
   }
-
-  // public U2Array getFields() {
-  //   Address addr = getAddress().getAddressAt(fields.getOffset());
-  //   return VMObjectFactory.newObject(U2Array.class, addr);
-  // }
 
   public U2Array getInnerClasses() {
     Address addr = getAddress().getAddressAt(innerClasses.getOffset());

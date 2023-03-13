@@ -41,24 +41,6 @@ public class Field {
 
   /** Constructor for fields that are named in an InstanceKlass's
       fields array (i.e., named, non-VM fields) */
-  Field(InstanceKlass holder, int fieldIndex) {
-    Field field = holder.getField(fieldIndex);
-    this.holder = holder;
-    this.fieldIndex = fieldIndex;
-    this.values = field.values;
-    offset = values.offset;
-
-    name = holder.getSymbolFromIndex(values.nameIndex, isInjected());
-    signature = holder.getSymbolFromIndex(values.signatureIndex, isInjected());
-    id          = new NamedFieldIdentifier(name.asString());
-    fieldType   = new FieldType(signature);
-    accessFlags = new AccessFlags(values.accessFlags);
-
-    if (isGeneric()) {
-      genericSignature = holder.getSymbolFromIndex(values.genericSignatureIndex, isInjected());
-    }
-  }
-
   private Field(InstanceKlass holder, int fieldIndex, FieldInfoValues values) {
     this.holder = holder;
     this.fieldIndex = fieldIndex;
@@ -75,6 +57,12 @@ public class Field {
       genericSignature = holder.getSymbolFromIndex(values.genericSignatureIndex, isInjected());
     }
   }
+
+  /** Constructor for cloning an existing Field object */
+  Field(InstanceKlass holder, int fieldIndex) {
+      this(holder, fieldIndex, holder.getField(fieldIndex).values);
+  }
+
 
   static class FieldInfoValues {
     int nameIndex;
@@ -109,17 +97,6 @@ public class Field {
     if (fieldIsInitialized(fieldInfoValues.fieldFlags)) fieldInfoValues.initialValueIndex = crs.readInt(); // read initial value index
     if (fieldIsGeneric(fieldInfoValues.fieldFlags))     fieldInfoValues.genericSignatureIndex = crs.readInt(); // read generic signature index
     if (fieldIsContended(fieldInfoValues.fieldFlags))   fieldInfoValues.contendedGroup = crs.readInt(); // read contended group
-    return fieldInfoValues;
-  }
-
-  private static FieldInfoValues getFieldInfoValues(CompressedReadStream crs, int fieldIndex) {
-    int javafieldsCount = crs.readInt(); // read num_java_fields
-    int VMFieldsCount = crs.readInt(); // read num_injected_fields;
-    if (fieldIndex < 0 || fieldIndex >= javafieldsCount + VMFieldsCount) throw new IndexOutOfBoundsException();
-    FieldInfoValues fieldInfoValues = null;
-    for (int i = 0; i <= fieldIndex; i++) {
-      fieldInfoValues = readFieldInfoValues(crs);
-    }
     return fieldInfoValues;
   }
 
