@@ -363,7 +363,7 @@ bool G1FullCollector::phase2b_forward_oops() {
 }
 
 uint G1FullCollector::truncate_parallel_cps() {
-  uint lowest_current = (uint)-1;
+  uint lowest_current = UINT_MAX;
   for (uint i = 0; i < workers(); i++) {
     G1FullGCCompactionPoint* cp = compaction_point(i);
     if (cp->has_regions()) {
