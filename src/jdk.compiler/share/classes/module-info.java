@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,7 @@ import javax.tools.StandardLocation;
  */
 module jdk.compiler {
     requires transitive java.compiler;
+    requires jdk.internal.opt;
     requires jdk.zipfs;
 
     exports com.sun.source.doctree;
