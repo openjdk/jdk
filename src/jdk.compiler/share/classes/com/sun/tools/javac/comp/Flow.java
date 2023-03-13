@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1216,7 +1216,7 @@ public class Flow {
                     }
                 }
 
-                // add intersection of all thrown clauses of initial constructors
+                // add intersection of all throws clauses of initial constructors
                 // to set of caught exceptions, unless class is anonymous.
                 if (!anonymousClass) {
                     boolean firstConstructor = true;
