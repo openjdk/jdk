@@ -277,11 +277,9 @@ public class Bug4175998Test extends IntlTest {
                 if (iso639_2B.isEmpty()){
                     iso639_2B = iso639_2T; // Default 639/B to 639/T if empty
                 }
-                System.out.print("{");
-                System.out.print("\""+iso639_1+"\",");
-                System.out.print("\""+iso639_2B+"\",");
-                System.out.print("\""+iso639_2T+"\"");
-                System.out.println("},");
+                System.out.printf("""
+                        {"%s","%s","%s"},
+                        """, iso639_1, iso639_2B, iso639_2T);
             }
         } catch (Exception e) {
             System.out.println(e);
