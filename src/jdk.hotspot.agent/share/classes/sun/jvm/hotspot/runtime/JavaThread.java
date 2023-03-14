@@ -44,7 +44,7 @@ public class JavaThread extends Thread {
   private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.runtime.JavaThread.DEBUG") != null;
 
   private static long          threadObjFieldOffset;
-  private static long          lockStackCurrentOffset;
+  private static long          lockStackOffsetOffset;
   private static long          lockStackBaseOffset;
   private static AddressField  anchorField;
   private static AddressField  lastJavaSPField;
@@ -102,8 +102,8 @@ public class JavaThread extends Thread {
     terminatedField   = type.getCIntegerField("_terminated");
     activeHandlesField = type.getAddressField("_active_handles");
 
-    lockStackCurrentOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_current").getOffset();
-    lockStackBaseOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_base").getOffset();
+    lockStackOffsetOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_offset").getOffset();
+    lockStackBaseOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_base[0]").getOffset();
     oopPtrSize = VM.getVM().getAddressSize();
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
@@ -403,14 +403,18 @@ public class JavaThread extends Thread {
   }
 
   public boolean isLockOwned(OopHandle obj) {
-    Address current = addr.getAddressAt(lockStackCurrentOffset);
-    Address base = addr.getAddressAt(lockStackBaseOffset);
-    while (base.lessThan(current)) {
-        Address oop = base.getAddressAt(0);
-        if (oop.equals(obj)) {
-            return true;
-        }
-        base = base.addOffsetTo(oopPtrSize);
+    long current = lockStackBaseOffset;
+    long end = addr.getJIntAt(lockStackOffsetOffset);
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(current <= end, "current stack offset must be above base offset");
+    }
+
+    while (current < end) {
+      Address oop = addr.getAddressAt(current);
+      if (oop.equals(obj)) {
+        return true;
+      }
+      current += oopPtrSize;
     }
     return false;
   }
