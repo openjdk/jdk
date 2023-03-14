@@ -621,6 +621,23 @@ Node* CmpNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+// Get reverse comparison(b == a) of a == b
+Node* CmpNode::get_reverse_cmp() {
+  Node* cmp1 = in(1);
+  Node* cmp2 = in(2);
+  if (cmp1 == nullptr) {
+    return nullptr;
+  }
+
+  for (DUIterator_Fast imax, i = cmp1->fast_outs(imax); i < imax; i++) {
+    Node* u = cmp1->fast_out(i);
+    if (u->Opcode() == Opcode() && u->in(1) == cmp2 && u->in(2) == cmp1) {
+      return u;
+    }
+  }
+  return nullptr;
+}
+
 CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
   switch (bt) {
     case T_INT:
@@ -1467,16 +1484,6 @@ static bool is_counted_loop_cmp(Node *cmp) {
          n->in(0)->as_CountedLoop()->phi() == n;
 }
 
-static Node* get_reverse_cmp(int cmp_op, Node* cmp1, Node* cmp2) {
-  for (DUIterator_Fast imax, i = cmp1->fast_outs(imax); i < imax; i++) {
-    Node* u = cmp1->fast_out(i);
-    if (u->Opcode() == cmp_op && u->in(1) == cmp2 && u->in(2) == cmp1) {
-      return u;
-    }
-  }
-  return nullptr;
-}
-
 static bool is_arithmetic_cmp(Node* cmp) {
   if (!cmp->is_Cmp()) {
     return false;
@@ -1491,23 +1498,25 @@ static bool is_arithmetic_cmp(Node* cmp) {
 }
 
 Node* BoolNode::Identity(PhaseGVN* phase) {
-  // "Bool (CmpX a b)" is equivalent to "Bool (CmpX b a)"
-  Node *cmp = in(1);
+  Node* cmp = in(1);
   if (!is_arithmetic_cmp(cmp)) {
     return this;
   }
   if (phase->is_IterGVN() && outcnt() == 0) {
-    // During parsing, empty uses of bool is tolerable. During iterative GVN,
-    // we don't aggressively replace bool whose use is empty with existing node.
+    // It is likely that bool is created but not immediately used during
+    // parsing(PhaseGVN), it can be optimized out. Otherwise(PhaseIterGVN),
+    // it's really a dead bool.
     return this;
   }
-  Node* cmp1 = cmp->in(1);
-  Node* cmp2 = cmp->in(2);
+  // "Bool (CmpX a b)" is equivalent to "Bool (CmpX b a)"
   Node* reverse_cmp = NULL;
   if ((_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
-      (reverse_cmp = get_reverse_cmp(cmp->Opcode(), cmp1, cmp2)) != nullptr) {
+      (reverse_cmp = cmp->as_Cmp()->get_reverse_cmp()) != nullptr) {
     for (DUIterator_Fast imax, i = reverse_cmp->fast_outs(imax); i < imax; i++) {
       Node* out = reverse_cmp->fast_out(i);
+      // There is a cyclic case
+      // Apply PhaseGVN for Bool A -> Generate Bool B in BoolNode::Ideal-> Apply Identity for B -> Find A.
+      // In such case, type of A is not set, we can break such cyclic by checking the type of A.
       if (out->is_Bool() && out->as_Bool()->_test._test == _test._test &&
           phase->type_or_null(out) != nullptr) {
         return out;

@@ -30,7 +30,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8278228
+ * @bug 8278228 8303970
  * @summary C2: Improve identical back-to-back if elimination
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestBackToBackIfs
@@ -73,11 +73,28 @@ public class TestBackToBackIfs {
         }
     }
 
-    @Run(test = {"test", "test1"})
+    @Test
+    @IR(counts = { IRNode.IF, "1" })
+    public static void test2(int a, int b) {
+        if (a != b) {
+            int_field = 0x42;
+        } else {
+            int_field = 42;
+        }
+        if (b != a) {
+            int_field = 0x42;
+        } else {
+            int_field = 42;
+        }
+    }
+
+    @Run(test = {"test", "test1", "test2"})
     public static void test_runner() {
         test(42, 0x42);
         test(0x42, 0x42);
         test1(42, 0x42);
         test1(0x42, 0x42);
+        test2(42, 0x42);
+        test2(0x42, 0x42);
     }
 }
