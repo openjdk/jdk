@@ -1168,7 +1168,7 @@ Klass* AbstractClassHierarchyWalker::find_witness(InstanceKlass* context_type, K
       return nullptr; // no implementors
     } else if (nof_impls == 1) { // unique implementor
       assert(context_type != context_type->implementor(), "not unique");
-      context_type = InstanceKlass::cast(context_type->implementor());
+      context_type = context_type->implementor();
     } else { // nof_impls >= 2
       // Avoid this case: *I.m > { A.m, C }; B.m > C
       // Here, I.m has 2 concrete implementations, but m appears unique
@@ -1599,10 +1599,9 @@ bool Dependencies::verify_method_context(InstanceKlass* ctxk, Method* m) {
     return true;  // Must punt the assertion to true.
   }
   Method* lm = ctxk->lookup_method(m->name(), m->signature());
-  if (lm == nullptr && ctxk->is_instance_klass()) {
+  if (lm == nullptr) {
     // It might be an interface method
-    lm = InstanceKlass::cast(ctxk)->lookup_method_in_ordered_interfaces(m->name(),
-                                                                        m->signature());
+    lm = ctxk->lookup_method_in_ordered_interfaces(m->name(), m->signature());
   }
   if (lm == m) {
     // Method m is inherited into ctxk.
@@ -2181,7 +2180,7 @@ void DepChange::print() { print_on(tty); }
 void DepChange::print_on(outputStream* st) {
   int nsup = 0, nint = 0;
   for (ContextStream str(*this); str.next(); ) {
-    Klass* k = str.klass();
+    InstanceKlass* k = str.klass();
     switch (str.change_type()) {
     case Change_new_type:
       st->print_cr("  dependee = %s", k->external_name());
@@ -2210,7 +2209,7 @@ void DepChange::print_on(outputStream* st) {
 }
 
 void DepChange::ContextStream::start() {
-  Klass* type = (_changes.is_klass_change() ? _changes.as_klass_change()->type() : (Klass*) nullptr);
+  InstanceKlass* type = (_changes.is_klass_change() ? _changes.as_klass_change()->type() : (InstanceKlass*) nullptr);
   _change_type = (type == nullptr ? NO_CHANGE : Start_Klass);
   _klass = type;
   _ti_base = nullptr;
@@ -2221,7 +2220,7 @@ void DepChange::ContextStream::start() {
 bool DepChange::ContextStream::next() {
   switch (_change_type) {
   case Start_Klass:             // initial state; _klass is the new type
-    _ti_base = InstanceKlass::cast(_klass)->transitive_interfaces();
+    _ti_base = _klass->transitive_interfaces();
     _ti_index = 0;
     _change_type = Change_new_type;
     return true;
@@ -2231,7 +2230,7 @@ bool DepChange::ContextStream::next() {
   case Change_new_sub:
     // 6598190: brackets workaround Sun Studio C++ compiler bug 6629277
     {
-      _klass = _klass->super();
+      _klass = _klass->java_super();
       if (_klass != nullptr) {
         return true;
       }
@@ -2261,9 +2260,9 @@ void KlassDepChange::initialize() {
   // Mark all dependee and all its superclasses
   // Mark transitive interfaces
   for (ContextStream str(*this); str.next(); ) {
-    Klass* d = str.klass();
-    assert(!InstanceKlass::cast(d)->is_marked_dependent(), "checking");
-    InstanceKlass::cast(d)->set_is_marked_dependent(true);
+    InstanceKlass* d = str.klass();
+    assert(!d->is_marked_dependent(), "checking");
+    d->set_is_marked_dependent(true);
   }
 }
 
@@ -2271,8 +2270,8 @@ KlassDepChange::~KlassDepChange() {
   // Unmark all dependee and all its superclasses
   // Unmark transitive interfaces
   for (ContextStream str(*this); str.next(); ) {
-    Klass* d = str.klass();
-    InstanceKlass::cast(d)->set_is_marked_dependent(false);
+    InstanceKlass* d = str.klass();
+    d->set_is_marked_dependent(false);
   }
 }
 

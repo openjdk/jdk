@@ -717,7 +717,7 @@ class DepChange : public StackObj {
 
   // Usage:
   // for (DepChange::ContextStream str(changes); str.next(); ) {
-  //   Klass* k = str.klass();
+  //   InstanceKlass* k = str.klass();
   //   switch (str.change_type()) {
   //     ...
   //   }
@@ -728,8 +728,8 @@ class DepChange : public StackObj {
     friend class DepChange;
 
     // iteration variables:
-    ChangeType  _change_type;
-    Klass*      _klass;
+    ChangeType     _change_type;
+    InstanceKlass* _klass;
     Array<InstanceKlass*>* _ti_base;    // i.e., transitive_interfaces
     int         _ti_index;
     int         _ti_limit;
@@ -750,7 +750,7 @@ class DepChange : public StackObj {
     bool next();
 
     ChangeType change_type()     { return _change_type; }
-    Klass*     klass()           { return _klass; }
+    InstanceKlass* klass()       { return _klass; }
   };
   friend class DepChange::ContextStream;
 };
