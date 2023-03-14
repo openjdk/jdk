@@ -3003,6 +3003,14 @@ public class GregorianCalendar extends Calendar {
     }
 
     /**
+     * Determines if the specified amount of days can make up
+     * a valid minimum week.
+     */
+    private boolean isMinWeek (int days) {
+        return days >= getMinimalDaysInFirstWeek();
+    }
+
+    /**
      * Determines if the specified day exists in the minimum week.
      * For example, dayNotInMinWeek(4, 6, 3) returns false since Wednesday
      * is not between the minimum week given by [Friday, Saturday,
@@ -3018,14 +3026,6 @@ public class GregorianCalendar extends Calendar {
             // not between 6 7 1 2 3
             return !(day >= startDay || day <= endDay);
         }
-    }
-
-    /**
-     * Determines if the specified amount of days can make up
-     * a valid minimum week.
-     */
-    private boolean isMinWeek (int days) {
-        return days >= getMinimalDaysInFirstWeek();
     }
 
     /**
