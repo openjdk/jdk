@@ -37,7 +37,7 @@ public interface Annotated {
      * initialized. Class initialization is not triggered for enum types referenced by other
      * annotations of this element.
      *
-     * If this element is a class, then {@link Inherited} annotations are included in set of
+     * If this element is a class, then {@link Inherited} annotations are included in the set of
      * annotations considered.
      *
      * @param type1 an annotation type

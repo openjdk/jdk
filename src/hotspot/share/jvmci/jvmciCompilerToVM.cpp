@@ -2696,15 +2696,6 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationA
 
   typeArrayOop ba = typeArrayOop(res);
   int ba_len = ba->length();
-  if (ba_len <= 256) {
-    // Avoid resource allocation for the common case.
-    jbyte ba_buf[256];
-    memcpy(ba_buf, ba->byte_at_addr(0), ba_len);
-    JVMCIPrimitiveArray ba_dest = JVMCIENV->new_byteArray(ba_len, JVMCI_CHECK_NULL);
-    JVMCIENV->copy_bytes_from(ba_buf, ba_dest, 0, ba_len);
-    return JVMCIENV->get_jbyteArray(ba_dest);
-  }
-
   jbyte* ba_buf = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jbyte, ba_len);
   if (ba_buf == nullptr) {
     JVMCI_THROW_MSG_NULL(InternalError,
