@@ -78,8 +78,7 @@
         }
 
 // We want the C version instead, char16_t is unsigned short in C so this works
-WINCRYPT32API WINAPI
-DWORD CertGetNameStringW(PCCERT_CONTEXT, DWORD, DWORD, void*, unsigned short*, DWORD);
+WINCRYPT32API DWORD WINAPI CertGetNameStringW(PCCERT_CONTEXT, DWORD, DWORD, void*, unsigned short*, DWORD);
 
 extern "C" {
 

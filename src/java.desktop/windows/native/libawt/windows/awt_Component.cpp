@@ -75,8 +75,7 @@
 #include <awt_DnDDT.h>
 
 // C version to avoid wchar_t issues
-WINUSERAPI WINAPI
-int ToUnicodeEx(UINT, UINT, const BYTE*, unsigned short*, int, UINT, HKL);
+WINUSERAPI int WINAPI ToUnicodeEx(UINT, UINT, const BYTE*, unsigned short*, int, UINT, HKL);
 
 LPCTSTR szAwtComponentClassName = TEXT("SunAwtComponent");
 // register a message that no other window in the process (even in a plugin
