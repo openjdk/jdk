@@ -64,3 +64,37 @@ EXPORT struct S_FFFFFFF add_float_to_large_struct_after_structs(
   s.p0 += f;
   return s;
 }
+
+// Upcall versions.
+EXPORT struct S_FFFFFFF pass_two_large_structs(struct S_FFFFFFF (*fun)(struct S_FFFFFFF, struct S_FFFFFFF),
+                                               struct S_FFFFFFF s1, struct S_FFFFFFF s2) {
+  return fun(s1, s2);
+}
+
+EXPORT struct S_FF pass_struct_after_floats(struct S_FF (*fun)(
+                                              float, float, float, float, float,
+                                              float, float, float, float, float,
+                                              float, float, struct S_FF, float),
+                                            struct S_FF s1, float f) {
+  return fun(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f, 12.0f, s1, f);
+}
+
+EXPORT struct S_FF pass_struct_after_structs(struct S_FF (*fun)(
+                                               struct S_FF, struct S_FF, struct S_FF,
+                                               struct S_FF, struct S_FF, struct S_FF,
+                                               struct S_FF, float),
+                                             struct S_FF s1, float f) {
+  struct S_FF dummy;
+  dummy.p0 = 1; dummy.p1 = 2;
+  return fun(dummy, dummy, dummy, dummy, dummy, dummy, s1, f);
+}
+
+EXPORT struct S_FFFFFFF pass_large_struct_after_structs(struct S_FFFFFFF (*fun)(
+                                                          struct S_FF, struct S_FF, struct S_FF,
+                                                          struct S_FF, struct S_FF, struct S_FF,
+                                                          struct S_FFFFFFF, float),
+                                                        struct S_FFFFFFF s1, float f) {
+  struct S_FF dummy;
+  dummy.p0 = 1; dummy.p1 = 2;
+  return fun(dummy, dummy, dummy, dummy, dummy, dummy, s1, f);
+}

@@ -29,13 +29,14 @@
  * @summary Test passing of Homogeneous Float Aggregates.
  * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64le" | os.arch == "riscv64"
- * @requires !vm.musl
  *
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHFA
  */
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -66,7 +67,7 @@ public class TestHFA {
         FLOAT.withName("p6")
     ).withName("S_FFFF");
 
-    static final FunctionDescriptor fdadd_floats_structs = FunctionDescriptor.of(S_FFFFFFFLayout, S_FFFFFFFLayout, S_FFFFFFFLayout);
+    static final FunctionDescriptor fdadd_float_structs = FunctionDescriptor.of(S_FFFFFFFLayout, S_FFFFFFFLayout, S_FFFFFFFLayout);
     static final FunctionDescriptor fdadd_float_to_struct_after_floats = FunctionDescriptor.of(S_FFLayout,
         JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT,
         JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT,
@@ -78,14 +79,28 @@ public class TestHFA {
         S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout, S_FFLayout,
         S_FFFFFFFLayout, JAVA_FLOAT);
 
+    static final FunctionDescriptor fdpass_two_large_structs = FunctionDescriptor.of(S_FFFFFFFLayout, ADDRESS, S_FFFFFFFLayout, S_FFFFFFFLayout);
+    static final FunctionDescriptor fdpass_struct_after_floats = FunctionDescriptor.of(S_FFLayout, ADDRESS, S_FFLayout, JAVA_FLOAT);
+    static final FunctionDescriptor fdpass_struct_after_structs = FunctionDescriptor.of(S_FFLayout, ADDRESS, S_FFLayout, JAVA_FLOAT);
+    static final FunctionDescriptor fdpass_large_struct_after_structs = FunctionDescriptor.of(S_FFFFFFFLayout, ADDRESS, S_FFFFFFFLayout, JAVA_FLOAT);
+
     final static MethodHandle mhadd_float_structs = abi.downcallHandle(lookup.find("add_float_structs").orElseThrow(),
-        fdadd_floats_structs);
+        fdadd_float_structs);
     final static MethodHandle mhadd_float_to_struct_after_floats = abi.downcallHandle(lookup.find("add_float_to_struct_after_floats").orElseThrow(),
         fdadd_float_to_struct_after_floats);
     final static MethodHandle mhadd_float_to_struct_after_structs = abi.downcallHandle(lookup.find("add_float_to_struct_after_structs").orElseThrow(),
         fdadd_float_to_struct_after_structs);
     final static MethodHandle mhadd_float_to_large_struct_after_structs = abi.downcallHandle(lookup.find("add_float_to_large_struct_after_structs").orElseThrow(),
         fdadd_float_to_large_struct_after_structs);
+
+    final static MethodHandle mhpass_two_large_structs = abi.downcallHandle(lookup.find("pass_two_large_structs").orElseThrow(),
+        fdpass_two_large_structs);
+    final static MethodHandle mhpass_struct_after_floats = abi.downcallHandle(lookup.find("pass_struct_after_floats").orElseThrow(),
+        fdpass_struct_after_floats);
+    final static MethodHandle mhpass_struct_after_structs = abi.downcallHandle(lookup.find("pass_struct_after_structs").orElseThrow(),
+        fdpass_struct_after_structs);
+    final static MethodHandle mhpass_large_struct_after_structs = abi.downcallHandle(lookup.find("pass_large_struct_after_structs").orElseThrow(),
+        fdpass_large_struct_after_structs);
 
     @Test
     public static void testAddFloatStructs() {
@@ -113,7 +128,7 @@ public class TestHFA {
             t.printStackTrace();
         }
         if (p0 != 2.0f || p1 != 4.0f || p2 != 6.0f || p3 != 8.0f || p4 != 10.0f || p5 != 12.0f || p6 != 14.0f)
-            throw new RuntimeException("add_float_structs");
+            throw new RuntimeException("add_float_structs error");
     }
 
     @Test
@@ -186,5 +201,159 @@ public class TestHFA {
         }
         if (p0 != 2.0f || p1 != 2.0f || p2 != 3.0f || p3 != 4.0f || p4 != 5.0f || p5 != 6.0f || p6 != 7.0f)
             throw new RuntimeException("add_float_to_large_struct_after_structs error");
+    }
+
+    // Java versions for Upcall tests.
+    public static MemorySegment addFloatStructs(MemorySegment p0, MemorySegment p1) {
+        float val0 = p0.get(FLOAT,  0) + p1.get(FLOAT,  0);
+        float val1 = p0.get(FLOAT,  4) + p1.get(FLOAT,  4);
+        float val2 = p0.get(FLOAT,  8) + p1.get(FLOAT,  8);
+        float val3 = p0.get(FLOAT, 12) + p1.get(FLOAT, 12);
+        float val4 = p0.get(FLOAT, 16) + p1.get(FLOAT, 16);
+        float val5 = p0.get(FLOAT, 20) + p1.get(FLOAT, 20);
+        float val6 = p0.get(FLOAT, 24) + p1.get(FLOAT, 24);
+        p0.set(FLOAT,  0, val0);
+        p0.set(FLOAT,  4, val1);
+        p0.set(FLOAT,  8, val2);
+        p0.set(FLOAT, 12, val3);
+        p0.set(FLOAT, 16, val4);
+        p0.set(FLOAT, 20, val5);
+        p0.set(FLOAT, 24, val6);
+        return p0;
+    }
+
+    public static MemorySegment addFloatToStructAfterFloats(
+            float f1, float f2, float f3, float f4, float f5,
+            float f6, float f7, float f8, float f9, float f10,
+            float f11, float f12, MemorySegment s, float f) {
+        float val = s.get(FLOAT, 0);
+        s.set(FLOAT, 0, val + f);
+        return s;
+    }
+
+    public static MemorySegment addFloatToStructAfterStructs(
+            MemorySegment s1, MemorySegment s2, MemorySegment s3,
+            MemorySegment s4, MemorySegment s5, MemorySegment s6,
+            MemorySegment s, float f) {
+        float val = s.get(FLOAT, 0);
+        s.set(FLOAT, 0, val + f);
+        return s;
+    }
+
+    @Test
+    public static void testAddFloatStructsUpcall() {
+        float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
+        try {
+            Arena arena = Arena.openConfined();
+            MemorySegment s = MemorySegment.allocateNative(S_FFFFFFFLayout, arena.scope());
+            s.set(FLOAT,  0, 1.0f);
+            s.set(FLOAT,  4, 2.0f);
+            s.set(FLOAT,  8, 3.0f);
+            s.set(FLOAT, 12, 4.0f);
+            s.set(FLOAT, 16, 5.0f);
+            s.set(FLOAT, 20, 6.0f);
+            s.set(FLOAT, 24, 7.0f);
+            MethodType mt = MethodType.methodType(MemorySegment.class,
+                                                  MemorySegment.class, MemorySegment.class);
+            MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addFloatStructs", mt),
+                                                fdadd_float_structs, SegmentScope.global());
+            s = (MemorySegment)mhpass_two_large_structs.invokeExact((SegmentAllocator)arena, stub, s, s);
+            p0 = s.get(FLOAT,  0);
+            p1 = s.get(FLOAT,  4);
+            p2 = s.get(FLOAT,  8);
+            p3 = s.get(FLOAT, 12);
+            p4 = s.get(FLOAT, 16);
+            p5 = s.get(FLOAT, 20);
+            p6 = s.get(FLOAT, 24);
+            System.out.println("S_FFFFFFF(" + p0 + ";" + p1 + ";" + p2 + ";" + p3 + ";" + p4 + ";" + p5 + ";" + p6 + ")");
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        if (p0 != 2.0f || p1 != 4.0f || p2 != 6.0f || p3 != 8.0f || p4 != 10.0f || p5 != 12.0f || p6 != 14.0f)
+            throw new RuntimeException("add_float_structs (Upcall)");
+    }
+
+    @Test
+    public static void testAddFloatToStructAfterFloatsUpcall() {
+        float p0 = 0.0f, p1 = 0.0f;
+        try {
+            Arena arena = Arena.openConfined();
+            MemorySegment s = MemorySegment.allocateNative(S_FFLayout, arena.scope());
+            s.set(FLOAT, 0, 1.0f);
+            s.set(FLOAT, 4, 1.0f);
+            MethodType mt = MethodType.methodType(MemorySegment.class,
+                                                  float.class, float.class, float.class, float.class,
+                                                  float.class, float.class, float.class, float.class,
+                                                  float.class, float.class, float.class, float.class,
+                                                  MemorySegment.class, float.class);
+            MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addFloatToStructAfterFloats", mt),
+                                                fdadd_float_to_struct_after_floats, SegmentScope.global());
+            s = (MemorySegment)mhpass_struct_after_floats.invokeExact((SegmentAllocator)arena, stub, s, 1.0f);
+            p0 = s.get(FLOAT, 0);
+            p1 = s.get(FLOAT, 4);
+            System.out.println("S_FF(" + p0 + ";" + p1 + ")");
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        if (p0 != 2.0f || p1 != 1.0f) throw new RuntimeException("add_float_to_struct_after_floats (Upcall)");
+    }
+
+    @Test
+    public static void testAddFloatToStructAfterStructsUpcall() {
+        float p0 = 0.0f, p1 = 0.0f;
+        try {
+            Arena arena = Arena.openConfined();
+            MemorySegment s = MemorySegment.allocateNative(S_FFLayout, arena.scope());
+            s.set(FLOAT, 0, 1.0f);
+            s.set(FLOAT, 4, 1.0f);
+            MethodType mt = MethodType.methodType(MemorySegment.class,
+                                                  MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                                                  MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                                                  MemorySegment.class, float.class);
+            MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addFloatToStructAfterStructs", mt),
+                                                fdadd_float_to_struct_after_structs, SegmentScope.global());
+            s = (MemorySegment)mhpass_struct_after_structs.invokeExact((SegmentAllocator)arena, stub, s, 1.0f);
+            p0 = s.get(FLOAT, 0);
+            p1 = s.get(FLOAT, 4);
+            System.out.println("S_FF(" + p0 + ";" + p1 + ")");
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        if (p0 != 2.0f || p1 != 1.0f) throw new RuntimeException("add_float_to_struct_after_structs (Upcall)");
+    }
+
+    @Test
+    public static void testAddFloatToLargeStructAfterStructsUpcall() {
+        float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
+        try {
+            Arena arena = Arena.openConfined();
+            MemorySegment s = MemorySegment.allocateNative(S_FFFFFFFLayout, arena.scope());
+            s.set(FLOAT,  0, 1.0f);
+            s.set(FLOAT,  4, 2.0f);
+            s.set(FLOAT,  8, 3.0f);
+            s.set(FLOAT, 12, 4.0f);
+            s.set(FLOAT, 16, 5.0f);
+            s.set(FLOAT, 20, 6.0f);
+            s.set(FLOAT, 24, 7.0f);
+            MethodType mt = MethodType.methodType(MemorySegment.class,
+                                                  MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                                                  MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                                                  MemorySegment.class, float.class);
+            MemorySegment stub = abi.upcallStub(MethodHandles.lookup().findStatic(TestHFA.class, "addFloatToStructAfterStructs", mt),
+                                                fdadd_float_to_large_struct_after_structs, SegmentScope.global());
+            s = (MemorySegment)mhpass_large_struct_after_structs.invokeExact((SegmentAllocator)arena, stub, s, 1.0f);
+            p0 = s.get(FLOAT,  0);
+            p1 = s.get(FLOAT,  4);
+            p2 = s.get(FLOAT,  8);
+            p3 = s.get(FLOAT, 12);
+            p4 = s.get(FLOAT, 16);
+            p5 = s.get(FLOAT, 20);
+            p6 = s.get(FLOAT, 24);
+            System.out.println("S_FFFFFFF(" + p0 + ";" + p1 + ";" + p2 + ";" + p3 + ";" + p4 + ";" + p5 + ";" + p6 + ")");
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        if (p0 != 2.0f || p1 != 2.0f || p2 != 3.0f || p3 != 4.0f || p4 != 5.0f || p5 != 6.0f || p6 != 7.0f)
+            throw new RuntimeException("add_float_to_large_struct_after_structs (Upcall)");
     }
 }
