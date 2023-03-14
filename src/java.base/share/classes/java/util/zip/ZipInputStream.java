@@ -662,8 +662,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                     return false; // Invalid size
                 }
                 if (id == ZIP64_EXTID) {
-                    // Zip64 extra fields have 1-8 longs optionally followed by an int
-                    if (! (size == 8 || size == 16 || size == 24 || size == 28)) {
+                    // Zip64 extra field of a LOC header has 1-3 longs
+                    if (!(size == 8 || size == 16 || size == 24)) {
                         return false; // Invalid size
                     }
                     return true;
