@@ -195,6 +195,12 @@ final class AquaComboBoxPopup extends BasicComboPopup {
         final Rectangle popupBounds = computePopupBounds(0, popupBoundsY, popupSize.width, popupSize.height);
         if (popupBounds == null) return null; // returning null means don't show anything
 
+        if (!comboBox.isEditable() && comboBox.getBorder() != null) {
+            Insets inset = comboBox.getBorder().getBorderInsets(comboBox);
+            popupBounds.x = inset.left + inset.right;
+            popupBounds.y += inset.top + inset.bottom;
+        }
+
         final Dimension realPopupSize = popupBounds.getSize();
         scroller.setMaximumSize(realPopupSize);
         scroller.setPreferredSize(realPopupSize);
