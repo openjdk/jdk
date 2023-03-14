@@ -401,7 +401,8 @@ final class ProcessImpl extends Process {
                 });
                 break;
 
-            case Windows: throw new AssertionError("Unsupported platform: " +
+            default:
+                throw new AssertionError("Unsupported platform: " +
                     OperatingSystem.current());
         }
     }
