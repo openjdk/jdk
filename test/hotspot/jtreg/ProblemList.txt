@@ -67,6 +67,8 @@ compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
+compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
+
 #############################################################################
 
 # :hotspot_gc
@@ -120,7 +122,7 @@ serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
-serviceability/sa/UniqueVtableTest.java 8303921 linux-all
+serviceability/sa/UniqueVtableTest.java 8303921 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
