@@ -1362,7 +1362,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
         OM_PERFDATA_OP(Inflations, inc());
         if (log_is_enabled(Trace, monitorinflation)) {
           ResourceMark rm(current);
-          lsh.print_cr("inflate(fast-locked): object=" INTPTR_FORMAT ", mark="
+          lsh.print_cr("inflate(has_locker): object=" INTPTR_FORMAT ", mark="
                        INTPTR_FORMAT ", type='%s'", p2i(object),
                        object->mark().value(), object->klass()->external_name());
         }
