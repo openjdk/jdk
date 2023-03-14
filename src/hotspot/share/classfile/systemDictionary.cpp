@@ -514,6 +514,7 @@ static bool needs_load_placeholder(Handle class_loader) {
   return class_loader.is_null() || !is_parallelCapable(class_loader);
 }
 
+// Check for other threads loading this class either to throw CCE or wait in the case of the boot loader.
 static InstanceKlass* handle_parallel_loading(JavaThread* current,
                                               Symbol* name,
                                               ClassLoaderData* loader_data,
@@ -643,7 +644,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     bool load_placeholder_added = false;
 
     // Add placeholder entry to record loading instance class
-    // Four cases:
     // case 1. Bootstrap classloader
     //    This classloader supports parallelism at the classloader level
     //    but only allows a single thread to load a class/classloader pair.
