@@ -1370,9 +1370,10 @@ public class ModuleDescriptorTest {
      */
     public void testReadsWithBadPackageFinder() throws Exception {
         ByteBuffer bb = ByteBuffer.wrap(Classfile.buildModule(
-                ModuleAttribute.of(ModuleDesc.of("foo"), mb -> mb
-                        .requires(ModuleDesc.of("java.base"), 0, null)
-                        .exports(PackageDesc.of("p"), 0))));
+                ModuleAttribute.of(
+                        ModuleDesc.of("foo"),
+                        mb -> mb.requires(ModuleDesc.of("java.base"), 0, null)
+                                .exports(PackageDesc.of("p"), 0))));
 
         // package finder returns a set that doesn't include p
         assertThrows(InvalidModuleDescriptorException.class,
