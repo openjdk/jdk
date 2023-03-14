@@ -445,19 +445,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register index = x12;
 
   if (index_size == sizeof(u4)) {
-    // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
-    __ get_cache_index_at_bcp(index, 1, sizeof(u4));
-    // Get address of invokedynamic array
-    __ ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-    // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-    __ mv(temp, sizeof(ResolvedIndyEntry)); // use appendix as temp
-    __ mul(index, index, temp);
-    __ add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
-
-    // __ la(cache, Address(cache, index));
-    __ add(cache, cache, index);
-    __ la(cache, Address(cache, 0));
-
+    __ load_resolved_indy_entry(cache, index, temp);
     __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
     __ shadd(esp, cache, esp, t0, 3);
   } else {
@@ -472,8 +460,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // Restore machine SP
   __ restore_sp_after_call();
 
- __ check_and_handle_popframe(xthread);
- __ check_and_handle_earlyret(xthread);
+  __ check_and_handle_popframe(xthread);
+  __ check_and_handle_earlyret(xthread);
 
   __ get_dispatch();
   __ dispatch_next(state, step);
