@@ -178,14 +178,6 @@
           "Control whether concurrent refinement is performed. "            \
           "Disabling effectively ignores G1RSetUpdatingPauseTimePercent")   \
                                                                             \
-  product(size_t, G1ConcRSLogCacheSize, 10,                                 \
-          "Log base 2 of the length of conc RS hot-card cache.")            \
-          range(0, 27)                                                      \
-                                                                            \
-  product(uintx, G1ConcRSHotCardLimit, 4,                                   \
-          "The threshold that defines (>=) a hot card.")                    \
-          range(0, max_jubyte)                                              \
-                                                                            \
   develop(uint, G1RemSetArrayOfCardsEntriesBase, 8,                         \
           "Maximum number of entries per region in the Array of Cards "     \
           "card set container per MB of a heap region.")                    \
@@ -221,10 +213,10 @@
           "set container.")                                                 \
           range(1, 100)                                                     \
                                                                             \
-  develop(intx, G1MaxVerifyFailures, -1,                                    \
-          "The maximum number of verification failures to print.  "         \
-          "-1 means print all.")                                            \
-          range(-1, max_jint)                                               \
+  develop(size_t, G1MaxVerifyFailures, SIZE_MAX,                            \
+          "The maximum number of liveness and remembered set verification " \
+          "failures to print per thread.")                                  \
+          range(1, SIZE_MAX)                                                \
                                                                             \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
@@ -243,11 +235,6 @@
                                                                             \
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \
-                                                                            \
-  develop(uintx, G1DummyRegionsPerGC, 0,                                    \
-          "The number of dummy regions G1 will allocate at the end of "     \
-          "each evacuation pause in order to artificially fill up the "     \
-          "heap and stress the marking implementation.")                    \
                                                                             \
   develop(bool, G1ExitOnExpansionFailure, false,                            \
           "Raise a fatal VM exit out of memory failure in the event "       \
@@ -293,10 +280,6 @@
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
-                                                                            \
-  product(bool, G1VerifyRSetsDuringFullGC, false, DIAGNOSTIC,               \
-          "If true, perform verification of each heap region's "            \
-          "remembered set when verifying the heap during a full GC.")       \
                                                                             \
   product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
           "Verify the code root lists attached to each heap region.")       \

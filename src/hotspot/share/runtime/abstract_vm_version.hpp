@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 typedef enum {
   NoDetectedVirtualization,
   XenHVM,
+  XenPVHVM, // mix-mode on Linux aarch64
   KVM,
   VMWare,
   HyperV,
@@ -41,6 +42,7 @@ typedef enum {
 } VirtualizationType;
 
 class outputStream;
+enum class vmIntrinsicID;
 
 // Abstract_VM_Version provides information about the VM.
 
@@ -71,9 +73,10 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_build_number;
   static unsigned int _data_cache_line_flush_size;
 
+ public:
+
   static VirtualizationType _detected_virtualization;
 
- public:
   // Called as part of the runtime services initialization which is
   // called from the management module initialization (via init_globals())
   // after argument parsing and attaching of the main thread has
@@ -176,6 +179,12 @@ class Abstract_VM_Version: AllStatic {
 
   // Does platform support stack watermark barriers for concurrent stack processing?
   constexpr static bool supports_stack_watermark_barrier() { return false; }
+
+  // Does platform support float16 instructions?
+  static bool supports_float16() { return false; }
+
+  // Does this CPU support this intrinsic?
+  static bool is_intrinsic_supported(vmIntrinsicID id) { return true; }
 
   static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
 

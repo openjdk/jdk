@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,16 +42,16 @@ class LIRAddressOpr: public StackObj {
   LIR_Opr  _opr;
 public:
   LIRAddressOpr(LIRItem& item) : _item(&item), _opr() {}
-  LIRAddressOpr(LIR_Opr opr) : _item(NULL), _opr(opr) {}
+  LIRAddressOpr(LIR_Opr opr) : _item(nullptr), _opr(opr) {}
   LIRAddressOpr(const LIRAddressOpr& other) : _item(other._item), _opr(other._opr) {}
 
   LIRItem& item() const {
-    assert(_item != NULL, "sanity");
+    assert(_item != nullptr, "sanity");
     return *_item;
   }
 
   LIR_Opr opr() const {
-    if (_item == NULL) {
+    if (_item == nullptr) {
       return _opr;
     } else {
       return _item->result();
@@ -74,7 +74,7 @@ class LIRAccess: public StackObj {
 public:
   LIRAccess(LIRGenerator* gen, DecoratorSet decorators,
             LIRAddressOpr base, LIRAddressOpr offset, BasicType type,
-            CodeEmitInfo* patch_emit_info = NULL, CodeEmitInfo* access_emit_info = NULL) :
+            CodeEmitInfo* patch_emit_info = nullptr, CodeEmitInfo* access_emit_info = nullptr) :
     _gen(gen),
     _decorators(AccessInternal::decorator_fixup(decorators, type)),
     _base(base),

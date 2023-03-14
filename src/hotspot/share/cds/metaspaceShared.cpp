@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/classListWriter.hpp"
@@ -75,15 +76,13 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/resourceHash.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#endif
 
 ReservedSpace MetaspaceShared::_symbol_rs;
 VirtualSpace MetaspaceShared::_symbol_vs;
@@ -330,22 +329,16 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
                                reader.last_line_no(), utf8_length);
         CLEAR_PENDING_EXCEPTION;
       } else {
-#if INCLUDE_G1GC
-        if (UseG1GC) {
-          typeArrayOop body = java_lang_String::value(str);
-          const HeapRegion* hr = G1CollectedHeap::heap()->heap_region_containing(body);
-          if (hr->is_humongous()) {
-            // Don't keep it alive, so it will be GC'ed before we dump the strings, in order
-            // to maximize free heap space and minimize fragmentation.
-            log_warning(cds, heap)("[line %d] extra interned string ignored; size too large: %d",
-                                reader.last_line_no(), utf8_length);
-            continue;
-          }
+#if INCLUDE_CDS_JAVA_HEAP
+        if (ArchiveHeapWriter::is_string_too_large_to_archive(str)) {
+          log_warning(cds, heap)("[line %d] extra interned string ignored; size too large: %d",
+                                 reader.last_line_no(), utf8_length);
+          continue;
         }
-#endif
         // Make sure this string is included in the dumped interned string table.
         assert(str != nullptr, "must succeed");
         _extra_interned_strings->append(OopHandle(Universe::vm_global(), str));
+#endif
       }
     }
   }
@@ -435,7 +428,7 @@ void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread
   }
 }
 
-class VM_PopulateDumpSharedSpace : public VM_GC_Operation {
+class VM_PopulateDumpSharedSpace : public VM_Operation {
 private:
   GrowableArray<MemRegion> *_closed_heap_regions;
   GrowableArray<MemRegion> *_open_heap_regions;
@@ -444,11 +437,6 @@ private:
   GrowableArray<ArchiveHeapBitmapInfo> *_open_heap_bitmaps;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_heap_bitmaps() NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_heap_bitmaps(GrowableArray<MemRegion>* regions,
-                         GrowableArray<ArchiveHeapBitmapInfo>* bitmaps);
-  void dump_one_heap_bitmap(MemRegion region, GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
-                            ResourceBitMap bitmap, bool is_oopmap);
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
     SymbolTable::write_to_archive(symbols);
@@ -457,8 +445,7 @@ private:
 
 public:
 
-  VM_PopulateDumpSharedSpace() :
-    VM_GC_Operation(0 /* total collections, ignored */, GCCause::_archive_time_gc),
+  VM_PopulateDumpSharedSpace() : VM_Operation(),
     _closed_heap_regions(nullptr),
     _open_heap_regions(nullptr),
     _closed_heap_bitmaps(nullptr),
@@ -507,15 +494,10 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   WriteClosure wc(ro_region);
   MetaspaceShared::serialize(&wc);
 
-  // Write the bitmaps for patching the archive heap regions
-  dump_heap_bitmaps();
-
   return start;
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
-  HeapShared::run_full_gc_in_vm_thread();
-
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
@@ -578,7 +560,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   }
 
   if (AllowArchivingWithJavaAgent) {
-    warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
 
@@ -819,9 +801,10 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-    if (use_full_module_graph()) {
-      HeapShared::reset_archived_object_states(CHECK);
-    }
+  ArchiveHeapWriter::init();
+  if (use_full_module_graph()) {
+    HeapShared::reset_archived_object_states(CHECK);
+  }
 #endif
 
   VM_PopulateDumpSharedSpace op;
@@ -894,59 +877,12 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
   // See FileMapInfo::write_heap_regions() for details.
   _closed_heap_regions = new GrowableArray<MemRegion>(2);
   _open_heap_regions = new GrowableArray<MemRegion>(2);
-  HeapShared::archive_objects(_closed_heap_regions, _open_heap_regions);
+  _closed_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
+  _open_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
+  HeapShared::archive_objects(_closed_heap_regions, _open_heap_regions,
+                              _closed_heap_bitmaps, _open_heap_bitmaps);
   ArchiveBuilder::OtherROAllocMark mark;
   HeapShared::write_subgraph_info_table();
-}
-
-void VM_PopulateDumpSharedSpace::dump_heap_bitmaps() {
-  if (HeapShared::can_write()) {
-    _closed_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
-    dump_heap_bitmaps(_closed_heap_regions, _closed_heap_bitmaps);
-
-    _open_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
-    dump_heap_bitmaps(_open_heap_regions, _open_heap_bitmaps);
-  }
-}
-
-void VM_PopulateDumpSharedSpace::dump_heap_bitmaps(GrowableArray<MemRegion>* regions,
-                                                   GrowableArray<ArchiveHeapBitmapInfo>* bitmaps) {
-  for (int i = 0; i < regions->length(); i++) {
-    MemRegion region = regions->at(i);
-    ResourceBitMap oopmap = HeapShared::calculate_oopmap(region);
-    ResourceBitMap ptrmap = HeapShared::calculate_ptrmap(region);
-    dump_one_heap_bitmap(region, bitmaps, oopmap, true);
-    dump_one_heap_bitmap(region, bitmaps, ptrmap, false);
-  }
-}
-
-void VM_PopulateDumpSharedSpace::dump_one_heap_bitmap(MemRegion region,
-                                                      GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
-                                                      ResourceBitMap bitmap, bool is_oopmap) {
-  size_t size_in_bits = bitmap.size();
-  size_t size_in_bytes;
-  uintptr_t* buffer;
-
-  if (size_in_bits > 0) {
-    size_in_bytes = bitmap.size_in_bytes();
-    buffer = (uintptr_t*)NEW_C_HEAP_ARRAY(char, size_in_bytes, mtInternal);
-    bitmap.write_to(buffer, size_in_bytes);
-  } else {
-    size_in_bytes = 0;
-    buffer = nullptr;
-  }
-
-  log_info(cds, heap)("%s = " INTPTR_FORMAT " (" SIZE_FORMAT_W(6) " bytes) for heap region "
-                      INTPTR_FORMAT " (" SIZE_FORMAT_W(8) " bytes)",
-                      is_oopmap ? "Oopmap" : "Ptrmap",
-                      p2i(buffer), size_in_bytes,
-                      p2i(region.start()), region.byte_size());
-
-  ArchiveHeapBitmapInfo info;
-  info._map = (address)buffer;
-  info._size_in_bits = size_in_bits;
-  info._size_in_bytes = size_in_bytes;
-  bitmaps->append(info);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -990,6 +926,8 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     bool dynamic_mapped = (dynamic_mapinfo != nullptr && dynamic_mapinfo->is_mapped());
     char* cds_base = static_mapinfo->mapped_base();
     char* cds_end =  dynamic_mapped ? dynamic_mapinfo->mapped_end() : static_mapinfo->mapped_end();
+    // Register CDS memory region with LSan.
+    LSAN_REGISTER_ROOT_REGION(cds_base, cds_end - cds_base);
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
     _requested_base_address = static_mapinfo->requested_base_address();
@@ -1003,23 +941,32 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   } else {
     set_shared_metaspace_range(nullptr, nullptr, nullptr);
     if (DynamicDumpSharedSpaces) {
-      warning("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+      log_warning(cds)("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
     }
     UseSharedSpaces = false;
     // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
     AutoCreateSharedArchive = false;
     DynamicDumpSharedSpaces = false;
-    FileMapInfo::fail_continue("Unable to map shared spaces");
+    log_info(cds)("Unable to map shared spaces");
     if (PrintSharedArchiveAndExit) {
       vm_exit_during_initialization("Unable to use shared archive.");
+    } else if (RequireSharedSpaces) {
+      FileMapInfo::fail_stop("Unable to map shared spaces");
     }
   }
 
+  // If mapping failed and -XShare:on, the vm should exit
+  bool has_failed = false;
   if (static_mapinfo != nullptr && !static_mapinfo->is_mapped()) {
+    has_failed = true;
     delete static_mapinfo;
   }
   if (dynamic_mapinfo != nullptr && !dynamic_mapinfo->is_mapped()) {
+    has_failed = true;
     delete dynamic_mapinfo;
+  }
+  if (RequireSharedSpaces && has_failed) {
+      FileMapInfo::fail_stop("Unable to map shared spaces");
   }
 }
 
@@ -1046,6 +993,9 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
+    if (RequireSharedSpaces) {
+      FileMapInfo::fail_stop("Failed to initialize dynamic archive");
+    }
     return nullptr;
   }
   return mapinfo;

@@ -70,7 +70,9 @@
 
 #include <limits>
 
-#define DEFAULT_JAVA_LAUNCHER  "generic"
+static const char _default_java_launcher[] = "generic";
+
+#define DEFAULT_JAVA_LAUNCHER _default_java_launcher
 
 char*  Arguments::_jvm_flags_file               = nullptr;
 char** Arguments::_jvm_flags_array              = nullptr;
@@ -96,6 +98,7 @@ size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
+char*  Arguments::_default_shared_archive_path  = nullptr;
 char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
@@ -322,15 +325,15 @@ bool needs_module_property_warning = false;
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
 
-void Arguments::add_init_library(const char* name, char* options) {
+void Arguments::add_init_library(const char* name, const char* options) {
   _libraryList.add(new AgentLibrary(name, options, false, nullptr));
 }
 
-void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
+void Arguments::add_init_agent(const char* name, const char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
 }
 
-void Arguments::add_instrument_agent(const char* name, char* options, bool absolute_path) {
+void Arguments::add_instrument_agent(const char* name, const char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
 }
 
@@ -554,6 +557,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+
+  { "G1ConcRSLogCacheSize",    JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1ConcRSHotCardLimit",   JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1479,7 +1485,7 @@ size_t Arguments::max_heap_for_compressed_oops() {
   // keeping alignment constraints of the heap. To guarantee the latter, as the
   // null page is located before the heap, we pad the null page to the conservative
   // maximum alignment that the GC may ever impose upon the heap.
-  size_t displacement_due_to_null_page = align_up((size_t)os::vm_page_size(),
+  size_t displacement_due_to_null_page = align_up(os::vm_page_size(),
                                                   _conservative_max_heap_alignment);
 
   LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
@@ -1548,7 +1554,7 @@ void Arguments::set_conservative_max_heap_alignment() {
   // itself and the maximum page size we may run the VM with.
   size_t heap_alignment = GCConfig::arguments()->conservative_max_heap_alignment();
   _conservative_max_heap_alignment = MAX4(heap_alignment,
-                                          (size_t)os::vm_allocation_granularity(),
+                                          os::vm_allocation_granularity(),
                                           os::max_page_size(),
                                           GCArguments::compute_heap_alignment());
 }
@@ -1904,6 +1910,9 @@ void Arguments::process_java_compiler_argument(const char* arg) {
 }
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
+  if (_sun_java_launcher != _default_java_launcher) {
+    os::free(const_cast<char*>(_sun_java_launcher));
+  }
   _sun_java_launcher = os::strdup_check_oom(launcher);
 }
 
@@ -2364,6 +2373,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         add_init_library(name, options);
+        FREE_C_HEAP_ARRAY(char, name);
+        FREE_C_HEAP_ARRAY(char, options);
       }
     } else if (match_option(option, "--add-reads=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addreads", tail, addreads_count++)) {
@@ -2434,6 +2445,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         add_init_agent(name, options, is_absolute_path);
+        os::free(name);
+        os::free(options);
       }
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
@@ -2447,6 +2460,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
         add_instrument_agent("instrument", options, false);
+        FREE_C_HEAP_ARRAY(char, options);
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
@@ -3407,19 +3421,20 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
 // Sharing support
 // Construct the path to the archive
 char* Arguments::get_default_shared_archive_path() {
-  char *default_archive_path;
-  char jvm_path[JVM_MAXPATHLEN];
-  os::jvm_path(jvm_path, sizeof(jvm_path));
-  char *end = strrchr(jvm_path, *os::file_separator());
-  if (end != nullptr) *end = '\0';
-  size_t jvm_path_len = strlen(jvm_path);
-  size_t file_sep_len = strlen(os::file_separator());
-  const size_t len = jvm_path_len + file_sep_len + 20;
-  default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-  jio_snprintf(default_archive_path, len,
-               LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
-               jvm_path, os::file_separator());
-  return default_archive_path;
+  if (_default_shared_archive_path == nullptr) {
+    char jvm_path[JVM_MAXPATHLEN];
+    os::jvm_path(jvm_path, sizeof(jvm_path));
+    char *end = strrchr(jvm_path, *os::file_separator());
+    if (end != nullptr) *end = '\0';
+    size_t jvm_path_len = strlen(jvm_path);
+    size_t file_sep_len = strlen(os::file_separator());
+    const size_t len = jvm_path_len + file_sep_len + 20;
+    _default_shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
+    jio_snprintf(_default_shared_archive_path, len,
+                LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
+                jvm_path, os::file_separator());
+  }
+  return _default_shared_archive_path;
 }
 
 int Arguments::num_archives(const char* archive_path) {
@@ -3471,7 +3486,7 @@ void Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
 
-    if (os::same_files((const char*)get_default_shared_archive_path(), ArchiveClassesAtExit)) {
+    if (os::same_files(get_default_shared_archive_path(), ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
         "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_shared_archive_path());
     }
@@ -4259,79 +4274,4 @@ bool Arguments::copy_expand_pid(const char* src, size_t srclen,
   }
   *b = '\0';
   return (p == src_end); // return false if not all of the source was copied
-}
-
-bool Arguments::parse_malloc_limit_size(const char* s, size_t* out) {
-  julong limit = 0;
-  Arguments::ArgsRange range = parse_memory_size(s, &limit, 1, SIZE_MAX);
-  switch (range) {
-  case ArgsRange::arg_in_range:
-    *out = (size_t)limit;
-    return true;
-  case ArgsRange::arg_too_big: // only possible on 32-bit
-    vm_exit_during_initialization("MallocLimit: too large", s);
-    break;
-  case ArgsRange::arg_too_small:
-    vm_exit_during_initialization("MallocLimit: limit must be > 0");
-    break;
-  default:
-    break;
-  }
-  return false;
-}
-
-// Helper for parse_malloc_limits
-void Arguments::parse_single_category_limit(char* expression, size_t limits[mt_number_of_types]) {
-  // <category>:<limit>
-  char* colon = ::strchr(expression, ':');
-  if (colon == nullptr) {
-    vm_exit_during_initialization("MallocLimit: colon missing", expression);
-  }
-  *colon = '\0';
-  MEMFLAGS f = NMTUtil::string_to_flag(expression);
-  if (f == mtNone) {
-    vm_exit_during_initialization("MallocLimit: invalid nmt category", expression);
-  }
-  if (parse_malloc_limit_size(colon + 1, limits + (int)f) == false) {
-    vm_exit_during_initialization("Invalid MallocLimit size", colon + 1);
-  }
-}
-
-void Arguments::parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]) {
-
-  // Reset output to 0
-  *total_limit = 0;
-  for (int i = 0; i < mt_number_of_types; i ++) {
-    limits[i] = 0;
-  }
-
-  // We are done if the option is not given.
-  if (MallocLimit == nullptr) {
-    return;
-  }
-
-  // Global form?
-  if (parse_malloc_limit_size(MallocLimit, total_limit)) {
-    return;
-  }
-
-  // No. So it must be in category-specific form: MallocLimit=<nmt category>:<size>[,<nmt category>:<size> ..]
-  char* copy = os::strdup(MallocLimit);
-  if (copy == nullptr) {
-    vm_exit_out_of_memory(strlen(MallocLimit), OOM_MALLOC_ERROR, "MallocLimit");
-  }
-
-  char* p = copy, *q;
-  do {
-    q = p;
-    p = ::strchr(q, ',');
-    if (p != nullptr) {
-      *p = '\0';
-      p ++;
-    }
-    parse_single_category_limit(q, limits);
-  } while (p != nullptr);
-
-  os::free(copy);
-
 }

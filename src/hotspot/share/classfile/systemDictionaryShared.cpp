@@ -850,13 +850,11 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
   assert(nest_host == shared_nest_host, "mismatched nest host");
 
   EventClassLoad class_load_start_event;
-  {
-    MutexLocker mu_r(THREAD, Compile_lock);
 
-    // Add to class hierarchy, and do possible deoptimizations.
-    SystemDictionary::add_to_hierarchy(loaded_lambda);
-    // But, do not add to dictionary.
-  }
+  // Add to class hierarchy, and do possible deoptimizations.
+  SystemDictionary::add_to_hierarchy(THREAD, loaded_lambda);
+  // But, do not add to dictionary.
+
   loaded_lambda->link_class(CHECK_NULL);
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
@@ -1449,11 +1447,9 @@ class CloneDumpTimeClassTable: public StackObj {
     assert(_cloned_table != nullptr, "_cloned_table is nullptr");
   }
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!info.is_excluded()) {
-      bool created;
-      _cloned_table->put_if_absent(k, info, &created);
-      assert(created, "must be");
-    }
+    bool created;
+    _cloned_table->put_if_absent(k, info, &created);
+    assert(created, "must be");
   }
 };
 

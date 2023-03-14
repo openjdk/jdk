@@ -120,11 +120,18 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
 // As part of event commit, a Method* is tagged as a function of an epoch.
 // Epochs evolve during safepoints. To ensure the event is tagged in the correct epoch,
 // that is, to avoid a race, the thread will participate in the safepoint protocol
-// by transitioning from _thread_in_native to _thread_in_vm.
+// by doing the commit while the thread is _thread_in_vm.
 template <typename EventType>
 static inline void commit(EventType& event) {
-  ThreadInVMfromNative transition(JavaThread::current());
-  event.commit();
+  JavaThread* thread = JavaThread::current();
+  JavaThreadState state = thread->thread_state();
+  if (state == _thread_in_native) {
+    ThreadInVMfromNative transition(thread);
+    event.commit();
+  } else {
+    assert(state == _thread_in_vm, "coming from wrong thread state %d", state);
+    event.commit();
+  }
  }
 
 void CompilerEvent::CompilationEvent::post(EventCompilation& event, int compile_id, CompilerType compiler_type, Method* method, int compile_level, bool success, bool is_osr, int code_size, int inlined_bytecodes) {

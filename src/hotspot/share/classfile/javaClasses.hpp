@@ -334,10 +334,13 @@ class java_lang_Class : AllStatic {
 
 #define THREAD_INJECTED_FIELDS(macro)                                  \
   macro(java_lang_Thread, jvmti_thread_state, intptr_signature, false) \
+  macro(java_lang_Thread, jvmti_VTMS_transition_disable_count, int_signature, false) \
+  macro(java_lang_Thread, jvmti_is_in_VTMS_transition, bool_signature, false) \
   JFR_ONLY(macro(java_lang_Thread, jfr_epoch, short_signature, false))
 
 class java_lang_Thread : AllStatic {
   friend class java_lang_VirtualThread;
+  friend class JVMCIVMStructs;
  private:
   // Note that for this class the layout changed between JDK1.2 and JDK1.3,
   // so we compute the offsets at startup rather than hard-wiring them.
@@ -347,6 +350,8 @@ class java_lang_Thread : AllStatic {
   static int _inheritedAccessControlContext_offset;
   static int _eetop_offset;
   static int _jvmti_thread_state_offset;
+  static int _jvmti_VTMS_transition_disable_count_offset;
+  static int _jvmti_is_in_VTMS_transition_offset;
   static int _interrupted_offset;
   static int _tid_offset;
   static int _continuation_offset;
@@ -396,6 +401,11 @@ class java_lang_Thread : AllStatic {
 
   static JvmtiThreadState* jvmti_thread_state(oop java_thread);
   static void set_jvmti_thread_state(oop java_thread, JvmtiThreadState* state);
+  static int  VTMS_transition_disable_count(oop java_thread);
+  static void inc_VTMS_transition_disable_count(oop java_thread);
+  static void dec_VTMS_transition_disable_count(oop java_thread);
+  static bool is_in_VTMS_transition(oop java_thread);
+  static void set_is_in_VTMS_transition(oop java_thread, bool val);
 
   // Clear all scoped value bindings on error
   static void clear_scopedValueBindings(oop java_thread);
@@ -444,9 +454,9 @@ class java_lang_Thread_FieldHolder : AllStatic {
   static jlong stackSize(oop holder);
 
   static bool is_daemon(oop holder);
-  static void set_daemon(oop holder);
+  static void set_daemon(oop holder, bool val);
 
-  static void set_thread_status(oop holder, JavaThreadStatus);
+  static void set_thread_status(oop holder, JavaThreadStatus status);
   static JavaThreadStatus get_thread_status(oop holder);
 
   friend class JavaClasses;
@@ -606,7 +616,7 @@ class java_lang_Throwable: AllStatic {
   static void get_stack_trace_elements(int depth, Handle backtrace, objArrayHandle stack_trace, TRAPS);
 
   // For recreating class initialization error exceptions.
-  static Handle get_cause_with_stack_trace(Handle throwable, TRAPS);
+  static Handle create_initialization_error(JavaThread* current, Handle throwable);
 
   // Printing
   static void print(oop throwable, outputStream* st);

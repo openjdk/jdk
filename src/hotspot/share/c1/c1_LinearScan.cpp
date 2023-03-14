@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1329,10 +1329,9 @@ void LinearScan::build_intervals() {
     assert(block_to   == instructions->at(instructions->length() - 1)->id(), "must be");
 
     // Update intervals for registers live at the end of this block;
-    ResourceBitMap live = block->live_out();
-    int size = (int)live.size();
-    for (int number = (int)live.get_next_one_offset(0, size); number < size; number = (int)live.get_next_one_offset(number + 1, size)) {
-      assert(live.at(number), "should not stop here otherwise");
+    ResourceBitMap& live = block->live_out();
+    auto updater = [&](BitMap::idx_t index) {
+      int number = static_cast<int>(index);
       assert(number >= LIR_Opr::vreg_base, "fixed intervals must not be live on block bounds");
       TRACE_LINEAR_SCAN(2, tty->print_cr("live in %d to %d", number, block_to + 2));
 
@@ -1347,7 +1346,8 @@ void LinearScan::build_intervals() {
           is_interval_in_loop(number, block->loop_index())) {
         interval_at(number)->add_use_pos(block_to + 1, loopEndMarker);
       }
-    }
+    };
+    live.iterate(updater);
 
     // iterate all instructions of the block in reverse order.
     // skip the first instruction because it is always a label
@@ -1738,11 +1738,10 @@ Interval* LinearScan::interval_at_op_id(int reg_num, int op_id) {
 void LinearScan::resolve_collect_mappings(BlockBegin* from_block, BlockBegin* to_block, MoveResolver &move_resolver) {
   DEBUG_ONLY(move_resolver.check_empty());
 
-  const int size = live_set_size();
-  const ResourceBitMap live_at_edge = to_block->live_in();
-
   // visit all registers where the live_at_edge bit is set
-  for (int r = (int)live_at_edge.get_next_one_offset(0, size); r < size; r = (int)live_at_edge.get_next_one_offset(r + 1, size)) {
+  const ResourceBitMap& live_at_edge = to_block->live_in();
+  auto visitor = [&](BitMap::idx_t index) {
+    int r = static_cast<int>(index);
     assert(r < num_virtual_regs(), "live information set for not existing interval");
     assert(from_block->live_out().at(r) && to_block->live_in().at(r), "interval not live at this edge");
 
@@ -1753,7 +1752,8 @@ void LinearScan::resolve_collect_mappings(BlockBegin* from_block, BlockBegin* to
       // need to insert move instruction
       move_resolver.add_mapping(from_interval, to_interval);
     }
-  }
+  };
+  live_at_edge.iterate(visitor, 0, live_set_size());
 }
 
 
@@ -1913,10 +1913,11 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, MoveResolver &move_r
   DEBUG_ONLY(move_resolver.check_empty());
 
   // visit all registers where the live_in bit is set
-  int size = live_set_size();
-  for (int r = (int)block->live_in().get_next_one_offset(0, size); r < size; r = (int)block->live_in().get_next_one_offset(r + 1, size)) {
+  auto resolver = [&](BitMap::idx_t index) {
+    int r = static_cast<int>(index);
     resolve_exception_entry(block, r, move_resolver);
-  }
+  };
+  block->live_in().iterate(resolver, 0, live_set_size());
 
   // the live_in bits are not set for phi functions of the xhandler entry, so iterate them separately
   for_each_phi_fun(block, phi,
@@ -1986,10 +1987,11 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, M
 
   // visit all registers where the live_in bit is set
   BlockBegin* block = handler->entry_block();
-  int size = live_set_size();
-  for (int r = (int)block->live_in().get_next_one_offset(0, size); r < size; r = (int)block->live_in().get_next_one_offset(r + 1, size)) {
+  auto resolver = [&](BitMap::idx_t index) {
+    int r = static_cast<int>(index);
     resolve_exception_edge(handler, throwing_op_id, r, NULL, move_resolver);
-  }
+  };
+  block->live_in().iterate(resolver, 0, live_set_size());
 
   // the live_in bits are not set for phi functions of the xhandler entry, so iterate them separately
   for_each_phi_fun(block, phi,
@@ -3466,10 +3468,11 @@ void LinearScan::verify_constants() {
 
   for (int i = 0; i < num_blocks; i++) {
     BlockBegin* block = block_at(i);
-    ResourceBitMap live_at_edge = block->live_in();
+    ResourceBitMap& live_at_edge = block->live_in();
 
     // visit all registers where the live_at_edge bit is set
-    for (int r = (int)live_at_edge.get_next_one_offset(0, size); r < size; r = (int)live_at_edge.get_next_one_offset(r + 1, size)) {
+    auto visitor = [&](BitMap::idx_t index) {
+      int r = static_cast<int>(index);
       TRACE_LINEAR_SCAN(4, tty->print("checking interval %d of block B%d", r, block->block_id()));
 
       Value value = gen()->instruction_for_vreg(r);
@@ -3478,7 +3481,8 @@ void LinearScan::verify_constants() {
       assert(value->operand()->is_register() && value->operand()->is_virtual(), "value must have virtual operand");
       assert(value->operand()->vreg_number() == r, "register number must match");
       // TKR assert(value->as_Constant() == NULL || value->is_pinned(), "only pinned constants can be alive across block boundaries");
-    }
+    };
+    live_at_edge.iterate(visitor, 0, size);
   }
 }
 
@@ -6727,6 +6731,8 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_rem:
         case lir_sqrt:
         case lir_abs:
+        case lir_f2hf:
+        case lir_hf2f:
         case lir_log10:
         case lir_logic_and:
         case lir_logic_or:

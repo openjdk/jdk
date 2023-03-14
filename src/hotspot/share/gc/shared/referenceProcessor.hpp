@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public:
 // List of discovered references.
 class DiscoveredList {
 public:
-  DiscoveredList() : _oop_head(NULL), _compressed_head(narrowOop::null), _len(0) { }
+  DiscoveredList() : _oop_head(nullptr), _compressed_head(narrowOop::null), _len(0) { }
   inline oop head() const;
   HeapWord* adr_head() {
     return UseCompressedOops ? (HeapWord*)&_compressed_head :
@@ -114,7 +114,7 @@ public:
                                 EnqueueDiscoveredFieldClosure* enqueue);
 
   // End Of List.
-  inline bool has_next() const { return _current_discovered != NULL; }
+  inline bool has_next() const { return _current_discovered != nullptr; }
 
   // Get oop to the Reference object.
   inline oop obj() const { return _current_discovered; }
@@ -129,7 +129,7 @@ public:
 
   // Loads data for the current reference.
   // The "allow_null_referent" argument tells us to allow for the possibility
-  // of a NULL referent in the discovered Reference object. This typically
+  // of a null referent in the discovered Reference object. This typically
   // happens in the case of concurrent collectors that may have done the
   // discovery concurrently, or interleaved, with mutator execution.
   void load_ptrs(DEBUG_ONLY(bool allow_null_referent));
@@ -153,7 +153,7 @@ public:
   // Move enqueued references to the reference pending list.
   void complete_enqueue();
 
-  // NULL out referent pointer.
+  // null out referent pointer.
   void clear_referent();
 
   // Statistics
@@ -163,7 +163,7 @@ public:
   inline void move_to_next() {
     if (_current_discovered == _next_discovered) {
       // End of the list.
-      _current_discovered = NULL;
+      _current_discovered = nullptr;
     } else {
       _current_discovered = _next_discovered;
     }
@@ -255,7 +255,7 @@ private:
 
   void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
 
-  // Drop Soft/Weak/Final references with a NULL or live referent, and clear
+  // Drop Soft/Weak/Final references with a null or live referent, and clear
   // and enqueue non-Final references.
   void process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
                                     ReferenceProcessorPhaseTimes& phase_times);
@@ -272,7 +272,7 @@ private:
   // removed elements.
 
   // Traverse the list and remove any Refs whose referents are alive,
-  // or NULL if discovery is concurrent. Enqueue and clear the reference for
+  // or null if discovery is concurrent. Enqueue and clear the reference for
   // others if do_enqueue_and_clear is set.
   size_t process_discovered_list_work(DiscoveredList&    refs_list,
                                       BoolObjectClosure* is_alive,
@@ -305,7 +305,7 @@ public:
   }
 
   // "Preclean" all the discovered reference lists by removing references whose
-  // referents are NULL or strongly reachable (`is_alive` returns true).
+  // referents are null or strongly reachable (`is_alive` returns true).
   // Note: when a referent is strongly reachable, we assume it's already marked
   // through, so this method doesn't perform (and doesn't need to) any marking
   // work at all. Currently, this assumption holds because G1 uses SATB and the
@@ -376,7 +376,7 @@ public:
                      uint mt_processing_degree = 1,
                      uint mt_discovery_degree  = 1,
                      bool concurrent_discovery = false,
-                     BoolObjectClosure* is_alive_non_header = NULL);
+                     BoolObjectClosure* is_alive_non_header = nullptr);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {
@@ -400,7 +400,7 @@ public:
   void set_is_subject_to_discovery_closure(BoolObjectClosure* cl) { _is_subject_to_discovery = cl; }
 
   // start and stop weak ref discovery
-  void enable_discovery(bool check_no_refs = true);
+  void enable_discovery();
   void disable_discovery()  { _discovering_refs = false; }
   bool discovery_enabled()  { return _discovering_refs;  }
 
@@ -428,7 +428,7 @@ public:
 
   // If a discovery is in process that is being superseded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will
-  // have NULL discovered fields.  Must be called only at a safepoint.
+  // have null discovered fields.  Must be called only at a safepoint.
   void abandon_partial_discovery();
 
   size_t total_reference_count(ReferenceType rt) const;
@@ -445,9 +445,6 @@ class SpanSubjectToDiscoveryClosure : public BoolObjectClosure {
 
 public:
   SpanSubjectToDiscoveryClosure() : BoolObjectClosure(), _span() { }
-  SpanSubjectToDiscoveryClosure(MemRegion span) : BoolObjectClosure(), _span(span) { }
-
-  MemRegion span() const { return _span; }
 
   void set_span(MemRegion mr) {
     _span = mr;
@@ -473,28 +470,6 @@ public:
 
   ~ReferenceProcessorSubjectToDiscoveryMutator() {
     _rp->set_is_subject_to_discovery_closure(_saved_cl);
-  }
-};
-
-// A utility class to temporarily mutate the span of the
-// given ReferenceProcessor in the scope that contains it.
-class ReferenceProcessorSpanMutator : StackObj {
-  ReferenceProcessor* _rp;
-  SpanSubjectToDiscoveryClosure _discoverer;
-  BoolObjectClosure* _old_discoverer;
-
-public:
-  ReferenceProcessorSpanMutator(ReferenceProcessor* rp,
-                                MemRegion span):
-    _rp(rp),
-    _discoverer(span),
-    _old_discoverer(rp->is_subject_to_discovery_closure()) {
-
-    rp->set_is_subject_to_discovery_closure(&_discoverer);
-  }
-
-  ~ReferenceProcessorSpanMutator() {
-    _rp->set_is_subject_to_discovery_closure(_old_discoverer);
   }
 };
 

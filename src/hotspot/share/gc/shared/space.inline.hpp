@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ inline HeapWord* Space::block_start(const void* p) {
 #if INCLUDE_SERIALGC
 inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
-  if (res != NULL) {
+  if (res != nullptr) {
     _offsets.alloc_block(res, size);
   }
   return res;
@@ -66,7 +66,7 @@ inline HeapWord* TenuredSpace::par_allocate(size_t size) {
   // above.  Perhaps in the future some lock-free manner of keeping the
   // coordination.
   HeapWord* res = ContiguousSpace::par_allocate(size);
-  if (res != NULL) {
+  if (res != nullptr) {
     _offsets.alloc_block(res, size);
   }
   return res;
@@ -80,10 +80,10 @@ TenuredSpace::block_start_const(const void* p) const {
 class DeadSpacer : StackObj {
   size_t _allowed_deadspace_words;
   bool _active;
-  CompactibleSpace* _space;
+  ContiguousSpace* _space;
 
 public:
-  DeadSpacer(CompactibleSpace* space) : _allowed_deadspace_words(0), _space(space) {
+  DeadSpacer(ContiguousSpace* space) : _allowed_deadspace_words(0), _space(space) {
     size_t ratio = _space->allowed_dead_ratio();
     _active = ratio > 0;
 
@@ -101,7 +101,6 @@ public:
       }
     }
   }
-
 
   bool insert_deadspace(HeapWord* dead_start, HeapWord* dead_end) {
     if (!_active) {
@@ -125,19 +124,17 @@ public:
       return false;
     }
   }
-
 };
 
 #ifdef ASSERT
-template <class SpaceType>
-inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
+inline void ContiguousSpace::verify_up_to_first_dead(ContiguousSpace* space) {
   HeapWord* cur_obj = space->bottom();
 
   if (cur_obj < space->_end_of_live && space->_first_dead > cur_obj && !cast_to_oop(cur_obj)->is_gc_marked()) {
      // we have a chunk of the space which hasn't moved and we've reinitialized
      // the mark word during the previous pass, so we can't use is_gc_marked for
      // the traversal.
-     HeapWord* prev_obj = NULL;
+     HeapWord* prev_obj = nullptr;
 
      while (cur_obj < space->_first_dead) {
        size_t size = cast_to_oop(cur_obj)->size();
@@ -149,8 +146,7 @@ inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
 }
 #endif
 
-template <class SpaceType>
-inline void CompactibleSpace::clear_empty_region(SpaceType* space) {
+inline void ContiguousSpace::clear_empty_region(ContiguousSpace* space) {
   // Let's remember if we were empty before we did the compaction.
   bool was_empty = space->used_region().is_empty();
   // Reset space after compaction is complete
@@ -172,7 +168,7 @@ template <typename OopClosureType>
 void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
   HeapWord* t;
   HeapWord* p = saved_mark_word();
-  assert(p != NULL, "expected saved mark");
+  assert(p != nullptr, "expected saved mark");
 
   const intx interval = PrefetchScanIntervalInBytes;
   do {

@@ -56,7 +56,7 @@ NodeHash::NodeHash(uint est_max_size) :
 #endif
 {
   // _sentinel must be in the current node space
-  _sentinel = new ProjNode(NULL, TypeFunc::Control);
+  _sentinel = new ProjNode(nullptr, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
 }
 
@@ -73,7 +73,7 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
 #endif
 {
   // _sentinel must be in the current node space
-  _sentinel = new ProjNode(NULL, TypeFunc::Control);
+  _sentinel = new ProjNode(nullptr, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
 }
 
@@ -99,7 +99,7 @@ Node *NodeHash::hash_find( const Node *n ) {
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
     NOT_PRODUCT( _lookup_misses++ );
-    return NULL;
+    return nullptr;
   }
   uint key = hash & (_max-1);
   uint stride = key | 0x01;
@@ -107,7 +107,7 @@ Node *NodeHash::hash_find( const Node *n ) {
   Node *k = _table[key];        // Get hashed value
   if( !k ) {                    // ?Miss?
     NOT_PRODUCT( _lookup_misses++ );
-    return NULL;                // Miss!
+    return nullptr;             // Miss!
   }
 
   int op = n->Opcode();
@@ -129,11 +129,11 @@ Node *NodeHash::hash_find( const Node *n ) {
     k = _table[key];            // Get hashed value
     if( !k ) {                  // ?Miss?
       NOT_PRODUCT( _lookup_misses++ );
-      return NULL;              // Miss!
+      return nullptr;           // Miss!
     }
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------hash_find_insert-------------------------------
@@ -144,7 +144,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
     NOT_PRODUCT( _lookup_misses++ );
-    return NULL;
+    return nullptr;
   }
   uint key = hash & (_max-1);
   uint stride = key | 0x01;     // stride must be relatively prime to table siz
@@ -156,7 +156,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
     _table[key] = n;            // Insert into table!
     debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
     check_grow();               // Grow table if insert hit limit
-    return NULL;                // Miss!
+    return nullptr;             // Miss!
   }
   else if( k == _sentinel ) {
     first_sentinel = key;      // Can insert here
@@ -185,7 +185,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
       _table[key] = n;          // Insert into table!
       debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
       check_grow();             // Grow table if insert hit limit
-      return NULL;              // Miss!
+      return nullptr;           // Miss!
     }
     else if( first_sentinel == 0 && k == _sentinel ) {
       first_sentinel = key;    // Can insert here
@@ -193,7 +193,7 @@ Node *NodeHash::hash_find_insert( Node *n ) {
 
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------hash_insert------------------------------------
@@ -235,7 +235,7 @@ bool NodeHash::hash_delete( const Node *n ) {
   uint key = hash & (_max-1);
   uint stride = key | 0x01;
   debug_only( uint counter = 0; );
-  for( ; /* (k != NULL) && (k != _sentinel) */; ) {
+  for( ; /* (k != nullptr) && (k != _sentinel) */; ) {
     debug_only( counter++ );
     NOT_PRODUCT( _delete_probes++ );
     k = _table[key];            // Get hashed value
@@ -294,7 +294,7 @@ void  NodeHash::grow() {
 }
 
 //------------------------------clear------------------------------------------
-// Clear all entries in _table to NULL but keep storage
+// Clear all entries in _table to null but keep storage
 void  NodeHash::clear() {
 #ifdef ASSERT
   // Unlock all nodes upon removal from table.
@@ -319,7 +319,7 @@ void NodeHash::remove_useless_nodes(VectorSet &useful) {
   Node *sentinel_node = sentinel();
   for( uint i = 0; i < max; ++i ) {
     Node *n = at(i);
-    if(n != NULL && n != sentinel_node && !useful.test(n->_idx)) {
+    if(n != nullptr && n != sentinel_node && !useful.test(n->_idx)) {
       debug_only(n->exit_hash_lock()); // Unlock the node when removed
       _table[i] = sentinel_node;       // Replace with placeholder
     }
@@ -335,7 +335,7 @@ void NodeHash::check_no_speculative_types() {
   Node *sentinel_node = sentinel();
   for (uint i = 0; i < max; ++i) {
     Node *n = at(i);
-    if (n != NULL &&
+    if (n != nullptr &&
         n != sentinel_node &&
         n->is_Type() &&
         live_nodes.member(n)) {
@@ -379,7 +379,7 @@ Node *NodeHash::find_index(uint idx) { // For debugging
     if( !m || m == _sentinel ) continue;
     if( m->_idx == (uint)idx ) return m;
   }
-  return NULL;
+  return nullptr;
 }
 #endif
 
@@ -469,6 +469,14 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
   uint worklist_size = worklist->size();
 
+  GrowableArray<Node_Notes*>* old_node_note_array = C->node_note_array();
+  if (old_node_note_array != nullptr) {
+    int new_size = (_useful.size() >> 8) + 1; // The node note array uses blocks, see C->_log2_node_notes_block_size
+    new_size = MAX2(8, new_size);
+    C->set_node_note_array(new (C->comp_arena()) GrowableArray<Node_Notes*> (C->comp_arena(), new_size, 0, nullptr));
+    C->grow_node_notes(C->node_note_array(), new_size);
+  }
+
   // Iterate over the set of live nodes.
   for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {
     Node* n = _useful.at(current_idx);
@@ -483,6 +491,11 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
     assert(_old2new_map.at(n->_idx) == -1, "already seen");
     _old2new_map.at_put(n->_idx, current_idx);
+
+    if (old_node_note_array != nullptr) {
+      Node_Notes* nn = C->locate_node_notes(old_node_note_array, n->_idx);
+      C->set_node_notes_at(current_idx, nn);
+    }
 
     n->set_idx(current_idx); // Update node ID.
 
@@ -554,7 +567,7 @@ int PhaseRenumberLive::update_embedded_ids(Node* n) {
   }
 
   const Type* type = _new_type_array.fast_lookup(n->_idx);
-  if (type != NULL && type->isa_oopptr() && type->is_oopptr()->is_known_instance()) {
+  if (type != nullptr && type->isa_oopptr() && type->is_oopptr()->is_known_instance()) {
     if (!_is_pass_finished) {
         return -1; // delay
     }
@@ -582,7 +595,7 @@ PhaseTransform::PhaseTransform( PhaseNumber pnum ) : Phase(pnum),
   set_allow_progress(true);
 #endif
   // Force allocation for currently existing nodes
-  _types.map(C->unique(), NULL);
+  _types.map(C->unique(), nullptr);
 }
 
 //------------------------------PhaseTransform---------------------------------
@@ -598,7 +611,7 @@ PhaseTransform::PhaseTransform( Arena *arena, PhaseNumber pnum ) : Phase(pnum),
   set_allow_progress(true);
 #endif
   // Force allocation for currently existing nodes
-  _types.map(C->unique(), NULL);
+  _types.map(C->unique(), nullptr);
 }
 
 //------------------------------PhaseTransform---------------------------------
@@ -625,22 +638,22 @@ void PhaseTransform::init_con_caches() {
 
 //--------------------------------find_int_type--------------------------------
 const TypeInt* PhaseTransform::find_int_type(Node* n) {
-  if (n == NULL)  return NULL;
+  if (n == nullptr)  return nullptr;
   // Call type_or_null(n) to determine node's type since we might be in
   // parse phase and call n->Value() may return wrong type.
   // (For example, a phi node at the beginning of loop parsing is not ready.)
   const Type* t = type_or_null(n);
-  if (t == NULL)  return NULL;
+  if (t == nullptr)  return nullptr;
   return t->isa_int();
 }
 
 
 //-------------------------------find_long_type--------------------------------
 const TypeLong* PhaseTransform::find_long_type(Node* n) {
-  if (n == NULL)  return NULL;
+  if (n == nullptr)  return nullptr;
   // (See comment above on type_or_null.)
   const Type* t = type_or_null(n);
-  if (t == NULL)  return NULL;
+  if (t == nullptr)  return nullptr;
   return t->isa_long();
 }
 
@@ -682,7 +695,7 @@ void PhaseTransform::dump_nodes_and_types_recur( const Node *n, uint depth, bool
     dump_nodes_and_types_recur( n->in(i), depth-1, only_ctrl, visited );
   }
   n->dump();
-  if (type_or_null(n) != NULL) {
+  if (type_or_null(n) != nullptr) {
     tty->print("      "); type(n)->dump(); tty->cr();
   }
 }
@@ -745,10 +758,10 @@ ConNode* PhaseValues::uncached_makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
   ConNode* x = ConNode::make(t);
   ConNode* k = (ConNode*)hash_find_insert(x); // Value numbering
-  if (k == NULL) {
+  if (k == nullptr) {
     set_type(x, t);             // Missed, provide type mapping
     GrowableArray<Node_Notes*>* nna = C->node_note_array();
-    if (nna != NULL) {
+    if (nna != nullptr) {
       Node_Notes* loc = C->locate_node_notes(nna, x->_idx, true);
       loc->clear(); // do not put debug info on constants
     }
@@ -765,7 +778,7 @@ ConINode* PhaseTransform::intcon(jint i) {
   // Small integer?  Check cache! Check that cached node is not dead
   if (i >= _icon_min && i <= _icon_max) {
     ConINode* icon = _icons[i-_icon_min];
-    if (icon != NULL && icon->in(TypeFunc::Control) != NULL)
+    if (icon != nullptr && icon->in(TypeFunc::Control) != nullptr)
       return icon;
   }
   ConINode* icon = (ConINode*) uncached_makecon(TypeInt::make(i));
@@ -781,7 +794,7 @@ ConLNode* PhaseTransform::longcon(jlong l) {
   // Small integer?  Check cache! Check that cached node is not dead
   if (l >= _lcon_min && l <= _lcon_max) {
     ConLNode* lcon = _lcons[l-_lcon_min];
-    if (lcon != NULL && lcon->in(TypeFunc::Control) != NULL)
+    if (lcon != nullptr && lcon->in(TypeFunc::Control) != nullptr)
       return lcon;
   }
   ConLNode* lcon = (ConLNode*) uncached_makecon(TypeLong::make(l));
@@ -804,7 +817,7 @@ ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
 ConNode* PhaseTransform::zerocon(BasicType bt) {
   assert((uint)bt <= _zcon_max, "domain check");
   ConNode* zcon = _zcons[bt];
-  if (zcon != NULL && zcon->in(TypeFunc::Control) != NULL)
+  if (zcon != nullptr && zcon->in(TypeFunc::Control) != nullptr)
     return zcon;
   zcon = (ConNode*) uncached_makecon(Type::get_zero_type(bt));
   _zcons[bt] = zcon;
@@ -816,7 +829,7 @@ ConNode* PhaseTransform::zerocon(BasicType bt) {
 //=============================================================================
 Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   Node* i = BarrierSet::barrier_set()->barrier_set_c2()->ideal_node(this, k, can_reshape);
-  if (i == NULL) {
+  if (i == nullptr) {
     i = k->Ideal(this, can_reshape);
   }
   return i;
@@ -839,7 +852,7 @@ Node *PhaseGVN::transform_no_reclaim(Node *n) {
   Node* k = n;
   Node* i = apply_ideal(k, /*can_reshape=*/false);
   NOT_PRODUCT(uint loop_count = 1;)
-  while (i != NULL) {
+  while (i != nullptr) {
     assert(i->_idx >= k->_idx, "Idealize should return new nodes, use Identity to return old nodes" );
     k = i;
 #ifdef ASSERT
@@ -860,11 +873,11 @@ Node *PhaseGVN::transform_no_reclaim(Node *n) {
   // cache Value.  Later requests for the local phase->type of this Node can
   // use the cached Value instead of suffering with 'bottom_type'.
   const Type* t = k->Value(this); // Get runtime Value set
-  assert(t != NULL, "value sanity");
+  assert(t != nullptr, "value sanity");
   if (type_or_null(k) != t) {
 #ifndef PRODUCT
     // Do not count initial visit to node as a transformation
-    if (type_or_null(k) == NULL) {
+    if (type_or_null(k) == nullptr) {
       inc_new_values();
       set_progress();
     }
@@ -910,7 +923,7 @@ bool PhaseGVN::is_dominator_helper(Node *d, Node *n, bool linear_only) {
   while (d != n) {
     n = IfNode::up_one_dom(n, linear_only);
     i++;
-    if (n == NULL || i >= 100) {
+    if (n == nullptr || i >= 100) {
       return false;
     }
   }
@@ -923,7 +936,7 @@ bool PhaseGVN::is_dominator_helper(Node *d, Node *n, bool linear_only) {
 // or through an other data node excluding cons and phis.
 void PhaseGVN::dead_loop_check( Node *n ) {
   // Phi may reference itself in a loop
-  if (n != NULL && !n->is_dead_loop_safe() && !n->is_CFG()) {
+  if (n != nullptr && !n->is_dead_loop_safe() && !n->is_CFG()) {
     // Do 2 levels check and only data inputs.
     bool no_dead_loop = true;
     uint cnt = n->req();
@@ -931,7 +944,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
       Node *in = n->in(i);
       if (in == n) {
         no_dead_loop = false;
-      } else if (in != NULL && !in->is_dead_loop_safe()) {
+      } else if (in != nullptr && !in->is_dead_loop_safe()) {
         uint icnt = in->req();
         for (uint j = 1; j < icnt && no_dead_loop; j++) {
           if (in->in(j) == n || in->in(j) == in)
@@ -939,7 +952,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
         }
       }
     }
-    if (!no_dead_loop) n->dump(3);
+    if (!no_dead_loop) n->dump_bfs(100,0,"#");
     assert(no_dead_loop, "dead loop detected");
   }
 }
@@ -986,7 +999,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
   max = _table.size();
   for( uint i = 0; i < max; ++i ) {
     Node *n = _table.at(i);
-    if(n != NULL && n != _table.sentinel() && n->outcnt() == 0) {
+    if(n != nullptr && n != _table.sentinel() && n->outcnt() == 0) {
       if( n->is_top() ) continue;
       // If remove_useless_nodes() has run, we expect no such nodes left.
       assert(false, "remove_useless_nodes missed this node");
@@ -1018,7 +1031,7 @@ void PhaseIterGVN::shuffle_worklist() {
 
 #ifndef PRODUCT
 void PhaseIterGVN::verify_step(Node* n) {
-  if (VerifyIterativeGVN) {
+  if (is_verify_def_use()) {
     ResourceMark rm;
     VectorSet visited;
     Node_List worklist;
@@ -1033,7 +1046,7 @@ void PhaseIterGVN::verify_step(Node* n) {
     }
     for (int i = 0; i < _verify_window_size; i++) {
       Node* n = _verify_window[i];
-      if (n == NULL) {
+      if (n == nullptr) {
         continue;
       }
       if (n->in(0) == NodeSentinel) { // xform_idom
@@ -1057,7 +1070,7 @@ void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype) {
     if (nn != n) {
       // print old node
       tty->print("< ");
-      if (oldtype != newtype && oldtype != NULL) {
+      if (oldtype != newtype && oldtype != nullptr) {
         oldtype->dump();
       }
       do { tty->print("\t"); } while (tty->position() < 16);
@@ -1066,14 +1079,14 @@ void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype) {
     }
     if (oldtype != newtype || nn != n) {
       // print new node and/or new type
-      if (oldtype == NULL) {
+      if (oldtype == nullptr) {
         tty->print("* ");
       } else if (nn != n) {
         tty->print("> ");
       } else {
         tty->print("= ");
       }
-      if (newtype == NULL) {
+      if (newtype == nullptr) {
         tty->print("null");
       } else {
         newtype->dump();
@@ -1091,7 +1104,7 @@ void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype) {
     }
     if (nn != n) {
       // ignore n, it might be subsumed
-      verify_step((Node*) NULL);
+      verify_step((Node*) nullptr);
     }
   }
 }
@@ -1100,12 +1113,12 @@ void PhaseIterGVN::init_verifyPhaseIterGVN() {
   _verify_counter = 0;
   _verify_full_passes = 0;
   for (int i = 0; i < _verify_window_size; i++) {
-    _verify_window[i] = NULL;
+    _verify_window[i] = nullptr;
   }
 #ifdef ASSERT
   // Verify that all modified nodes are on _worklist
   Unique_Node_List* modified_list = C->modified_nodes();
-  while (modified_list != NULL && modified_list->size()) {
+  while (modified_list != nullptr && modified_list->size()) {
     Node* n = modified_list->pop();
     if (!n->is_Con() && !_worklist.member(n)) {
       n->dump();
@@ -1119,7 +1132,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
 #ifdef ASSERT
   // Verify nodes with changed inputs.
   Unique_Node_List* modified_list = C->modified_nodes();
-  while (modified_list != NULL && modified_list->size()) {
+  while (modified_list != nullptr && modified_list->size()) {
     Node* n = modified_list->pop();
     if (!n->is_Con()) { // skip Con nodes
       n->dump();
@@ -1129,7 +1142,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
 #endif
 
   C->verify_graph_edges();
-  if (VerifyIterativeGVN && PrintOpto) {
+  if (is_verify_def_use() && PrintOpto) {
     if (_verify_counter == _verify_full_passes) {
       tty->print_cr("VerifyIterativeGVN: %d transforms and verify passes",
                     (int) _verify_full_passes);
@@ -1140,13 +1153,15 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
   }
 
 #ifdef ASSERT
-  if (modified_list != NULL) {
+  if (modified_list != nullptr) {
     while (modified_list->size() > 0) {
       Node* n = modified_list->pop();
       n->dump();
       assert(false, "VerifyIterativeGVN: new modified node was added");
     }
   }
+
+  verify_optimize();
 #endif
 }
 #endif /* PRODUCT */
@@ -1210,6 +1225,97 @@ void PhaseIterGVN::optimize() {
   NOT_PRODUCT(verify_PhaseIterGVN();)
 }
 
+#ifdef ASSERT
+void PhaseIterGVN::verify_optimize() {
+  if (is_verify_Value()) {
+    ResourceMark rm;
+    Unique_Node_List worklist;
+    bool failure = false;
+    // BFS all nodes, starting at root
+    worklist.push(C->root());
+    for (uint j = 0; j < worklist.size(); ++j) {
+      Node* n = worklist.at(j);
+      failure |= verify_node_value(n);
+      // traverse all inputs and outputs
+      for (uint i = 0; i < n->req(); i++) {
+        if (n->in(i) != nullptr) {
+          worklist.push(n->in(i));
+        }
+      }
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        worklist.push(n->fast_out(i));
+      }
+    }
+    // If we get this assert, check why the reported nodes were not processed again in IGVN.
+    // We should either make sure that these nodes are properly added back to the IGVN worklist
+    // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
+    // in the verification code above if that is not possible for some reason (like Load nodes).
+    assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
+  }
+}
+
+// Check that type(n) == n->Value(), return true if we have a failure.
+// We have a list of exceptions, see detailed comments in code.
+// (1) Integer "widen" changes, but the range is the same.
+// (2) LoadNode performs deep traversals. Load is not notified for changes far away.
+// (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
+bool PhaseIterGVN::verify_node_value(Node* n) {
+  // If we assert inside type(n), because the type is still a null, then maybe
+  // the node never went through gvn.transform, which would be a bug.
+  const Type* told = type(n);
+  const Type* tnew = n->Value(this);
+  if (told == tnew) {
+    return false;
+  }
+  // Exception (1)
+  // Integer "widen" changes, but range is the same.
+  if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
+    const TypeInteger* t0 = told->is_integer(tnew->basic_type());
+    const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
+    if (t0->lo_as_long() == t1->lo_as_long() &&
+        t0->hi_as_long() == t1->hi_as_long()) {
+      return false; // ignore integer widen
+    }
+  }
+  // Exception (2)
+  // LoadNode performs deep traversals. Load is not notified for changes far away.
+  if (n->is_Load() && !told->singleton()) {
+    // MemNode::can_see_stored_value looks up through many memory nodes,
+    // which means we would need to notify modifications from far up in
+    // the inputs all the way down to the LoadNode. We don't do that.
+    return false;
+  }
+  // Exception (3)
+  // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
+  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+    // SubNode::Value
+    // CmpPNode::sub
+    // MemNode::detect_ptr_independence
+    // MemNode::all_controls_dominate
+    // We find all controls of a pointer load, and see if they dominate the control of
+    // an allocation. If they all dominate, we know the allocation is after (independent)
+    // of the pointer load, and we can say the pointers are different. For this we call
+    // n->dominates(sub, nlist) to check if controls n of the pointer load dominate the
+    // control sub of the allocation. The problems is that sometimes dominates answers
+    // false conservatively, and later it can determine that it is indeed true. Loops with
+    // Region heads can lead to giving up, whereas LoopNodes can be skipped easier, and
+    // so the traversal becomes more powerful. This is difficult to remidy, we would have
+    // to notify the CmpP of CFG updates. Luckily, we recompute CmpP::Value during CCP
+    // after loop-opts, so that should take care of many of these cases.
+    return false;
+  }
+  tty->cr();
+  tty->print_cr("Missed Value optimization:");
+  n->dump_bfs(1, 0, "");
+  tty->print_cr("Current type:");
+  told->dump_on(tty);
+  tty->cr();
+  tty->print_cr("Optimized type:");
+  tnew->dump_on(tty);
+  tty->cr();
+  return true;
+}
+#endif
 
 /**
  * Register a new node with the optimizer.  Update the types array, the def-use
@@ -1218,7 +1324,7 @@ void PhaseIterGVN::optimize() {
 Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   set_type_bottom(n);
   _worklist.push(n);
-  if (orig != NULL)  C->copy_node_notes_to(n, orig);
+  if (orig != nullptr)  C->copy_node_notes_to(n, orig);
   return n;
 }
 
@@ -1233,7 +1339,7 @@ Node *PhaseIterGVN::transform( Node *n ) {
 
   // If brand new node, make space in type array, and give it a type.
   ensure_type_or_null(n);
-  if (type_or_null(n) == NULL) {
+  if (type_or_null(n) == nullptr) {
     set_type_bottom(n);
   }
 
@@ -1244,9 +1350,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
-  if (VerifyIterativeGVN) {
+#ifdef ASSERT
+  if (is_verify_def_use()) {
     assert(!_table.find_index(n->_idx), "found duplicate entry in table");
   }
+#endif
 
   // Allow Bool -> Cmp idealisation in late inlining intrinsics that return a bool
   if (n->is_Cmp()) {
@@ -1265,7 +1373,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 #endif
 
   DEBUG_ONLY(uint loop_count = 1;)
-  while (i != NULL) {
+  while (i != nullptr) {
 #ifdef ASSERT
     if (loop_count >= K + C->live_nodes()) {
       dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
@@ -1297,7 +1405,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 
   // See what kind of values 'k' takes on at runtime
   const Type* t = k->Value(this);
-  assert(t != NULL, "value sanity");
+  assert(t != nullptr, "value sanity");
 
   // Since I just called 'Value' to compute the set of run-time values
   // for this Node, and 'Value' is non-local (and therefore expensive) I'll
@@ -1382,8 +1490,8 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
         // Smash all inputs to 'dead', isolating him completely
         for (uint i = 0; i < dead->req(); i++) {
           Node *in = dead->in(i);
-          if (in != NULL && in != C->top()) {  // Points to something?
-            int nrep = dead->replace_edge(in, NULL, this);  // Kill edges
+          if (in != nullptr && in != C->top()) {  // Points to something?
+            int nrep = dead->replace_edge(in, nullptr, this);  // Kill edges
             assert((nrep > 0), "sanity");
             if (in->outcnt() == 0) { // Made input go dead?
               _stack.push(in, PROCESS_INPUTS); // Recursively remove
@@ -1408,7 +1516,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
               BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(this, in);
             }
             if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
-                in->is_Proj() && in->in(0) != NULL && in->in(0)->is_Initialize()) {
+                in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
               // A Load that directly follows an InitializeNode is
               // going away. The Stores that follow are candidates
               // again to be captured by the InitializeNode.
@@ -1419,7 +1527,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
                 }
               }
             }
-          } // if (in != NULL && in != C->top())
+          } // if (in != nullptr && in != C->top())
         } // for (uint i = 0; i < dead->req(); i++)
         if (recurse) {
           continue;
@@ -1475,11 +1583,11 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
 
   // Search for instance field data PhiNodes in the same region pointing to the old
   // memory PhiNode and update their instance memory ids to point to the new node.
-  if (old->is_Phi() && old->as_Phi()->type()->has_memory() && old->in(0) != NULL) {
+  if (old->is_Phi() && old->as_Phi()->type()->has_memory() && old->in(0) != nullptr) {
     Node* region = old->in(0);
     for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
       PhiNode* phi = region->fast_out(i)->isa_Phi();
-      if (phi != NULL && phi->inst_mem_id() == (int)old->_idx) {
+      if (phi != nullptr && phi->inst_mem_id() == (int)old->_idx) {
         phi->set_inst_mem_id((int)nn->_idx);
       }
     }
@@ -1490,11 +1598,11 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   temp->init_req(0,nn);     // Add a use to nn to prevent him from dying
   remove_dead_node( old );
   temp->del_req(0);         // Yank bogus edge
-  if (nn != NULL && nn->outcnt() == 0) {
+  if (nn != nullptr && nn->outcnt() == 0) {
     _worklist.push(nn);
   }
 #ifndef PRODUCT
-  if( VerifyIterativeGVN ) {
+  if (is_verify_def_use()) {
     for ( int i = 0; i < _verify_window_size; i++ ) {
       if ( _verify_window[i] == old )
         _verify_window[i] = nn;
@@ -1522,14 +1630,14 @@ static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
         BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
         if (cle->limit() == n) {
           PhiNode* phi = cle->phi();
-          if (phi != NULL) {
+          if (phi != nullptr) {
             return phi;
           }
         }
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void PhaseIterGVN::add_users_to_worklist( Node *n ) {
@@ -1544,12 +1652,12 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       add_users_to_worklist0(use);
 
     // If we changed the receiver type to a call, we need to revisit
-    // the Catch following the call.  It's looking for a non-NULL
+    // the Catch following the call.  It's looking for a non-null
     // receiver to know when to enable the regular fall-through path
     // in addition to the NullPtrException path.
     if (use->is_CallDynamicJava() && n == use->in(TypeFunc::Parms)) {
       Node* p = use->as_CallDynamicJava()->proj_out_or_null(TypeFunc::Control);
-      if (p != NULL) {
+      if (p != nullptr) {
         add_users_to_worklist0(p);
       }
     }
@@ -1575,28 +1683,75 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
           }
         }
       }
-      if (use_op == Op_CmpI) {
-        Node* phi = countedloop_phi_from_cmp((CmpINode*)use, n);
-        if (phi != NULL) {
-          // If an opaque node feeds into the limit condition of a
-          // CountedLoop, we need to process the Phi node for the
-          // induction variable when the opaque node is removed:
-          // the range of values taken by the Phi is now known and
-          // so its type is also known.
+      if (use_op == Op_CmpI || use_op == Op_CmpL) {
+        Node* phi = countedloop_phi_from_cmp(use->as_Cmp(), n);
+        if (phi != nullptr) {
+          // Input to the cmp of a loop exit check has changed, thus
+          // the loop limit may have changed, which can then change the
+          // range values of the trip-count Phi.
           _worklist.push(phi);
         }
-        Node* in1 = use->in(1);
-        for (uint i = 0; i < in1->outcnt(); i++) {
-          if (in1->raw_out(i)->Opcode() == Op_CastII) {
-            Node* castii = in1->raw_out(i);
-            if (castii->in(0) != NULL && castii->in(0)->in(0) != NULL && castii->in(0)->in(0)->is_If()) {
-              Node* ifnode = castii->in(0)->in(0);
-              if (ifnode->in(1) != NULL && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == use) {
-                // Reprocess a CastII node that may depend on an
-                // opaque node value when the opaque node is
-                // removed. In case it carries a dependency we can do
-                // a better job of computing its type.
-                _worklist.push(castii);
+      }
+      if (use_op == Op_CmpI) {
+        Node* cmp = use;
+        Node* in1 = cmp->in(1);
+        Node* in2 = cmp->in(2);
+        // Notify CmpI / If pattern from CastIINode::Value (left pattern).
+        // Must also notify if in1 is modified and possibly turns into X (right pattern).
+        //
+        // in1  in2                   in1  in2
+        //  |    |                     |    |
+        //  +--- | --+                 |    |
+        //  |    |   |                 |    |
+        // CmpINode  |                CmpINode
+        //    |      |                   |
+        // BoolNode  |                BoolNode
+        //    |      |        OR         |
+        //  IfNode   |                 IfNode
+        //    |      |                   |
+        //  IfProj   |                 IfProj   X
+        //    |      |                   |      |
+        //   CastIINode                 CastIINode
+        //
+        if (in1 != in2) { // if they are equal, the CmpI can fold them away
+          if (in1 == n) {
+            // in1 modified -> could turn into X -> do traversal based on right pattern.
+            for (DUIterator_Fast i2max, i2 = cmp->fast_outs(i2max); i2 < i2max; i2++) {
+              Node* bol = cmp->fast_out(i2); // For each Bool
+              if (bol->is_Bool()) {
+                for (DUIterator_Fast i3max, i3 = bol->fast_outs(i3max); i3 < i3max; i3++) {
+                  Node* iff = bol->fast_out(i3); // For each If
+                  if (iff->is_If()) {
+                    for (DUIterator_Fast i4max, i4 = iff->fast_outs(i4max); i4 < i4max; i4++) {
+                      Node* if_proj = iff->fast_out(i4); // For each IfProj
+                      assert(if_proj->is_IfProj(), "If only has IfTrue and IfFalse as outputs");
+                      for (DUIterator_Fast i5max, i5 = if_proj->fast_outs(i5max); i5 < i5max; i5++) {
+                        Node* castii = if_proj->fast_out(i5); // For each CastII
+                        if (castii->is_CastII() &&
+                            castii->as_CastII()->carry_dependency()) {
+                          _worklist.push(castii);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            // Only in2 modified -> can assume X == in2 (left pattern).
+            assert(n == in2, "only in2 modified");
+            // Find all CastII with input in1.
+            for (DUIterator_Fast jmax, j = in1->fast_outs(jmax); j < jmax; j++) {
+              Node* castii = in1->fast_out(j);
+              if (castii->is_CastII() && castii->as_CastII()->carry_dependency()) {
+                // Find If.
+                if (castii->in(0) != nullptr && castii->in(0)->in(0) != nullptr && castii->in(0)->in(0)->is_If()) {
+                  Node* ifnode = castii->in(0)->in(0);
+                  // Check that if connects to the cmp
+                  if (ifnode->in(1) != nullptr && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == cmp) {
+                    _worklist.push(castii);
+                  }
+                }
               }
             }
           }
@@ -1604,12 +1759,31 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       }
     }
 
-    // If changed Cast input, check Phi users for simple cycles
+    // If changed Cast input, notify down for Phi and Sub - both do "uncast"
     if (use->is_ConstraintCast()) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
-        if (u->is_Phi())
+        if (u->is_Phi() || u->is_Sub()) {
+          // Phi (.., CastII, ..) or Sub(Cast(x), x)
           _worklist.push(u);
+        } else if (u->is_ConstraintCast()) {
+          // Follow cast-chains down to Sub: Sub( CastII(CastII(x)), x)
+          // This case is quite rare. Let's BFS-traverse casts, to find Subs:
+          ResourceMark rm;
+          Unique_Node_List casts;
+          casts.push(u); // start traversal
+          for (uint j = 0; j < casts.size(); ++j) {
+            Node* cast = casts.at(j); // for every cast
+            for (DUIterator_Fast kmax, k = cast->fast_outs(kmax); k < kmax; k++) {
+              Node* cast_use = cast->fast_out(k);
+              if (cast_use->is_ConstraintCast()) {
+                casts.push(cast_use); // traverse this cast also
+              } else if (cast_use->is_Sub()) {
+                _worklist.push(cast_use); // found Sub
+              }
+            }
+          }
+        }
       }
     }
     // If changed LShift inputs, check RShift users for useless sign-ext
@@ -1618,6 +1792,15 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         Node* u = use->fast_out(i2);
         if (u->Opcode() == Op_RShiftI)
           _worklist.push(u);
+      }
+    }
+    // If changed LShift inputs, check And users for shift and mask (And) operation
+    if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
+      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+        Node* u = use->fast_out(i2);
+        if (u->Opcode() == Op_AndI || u->Opcode() == Op_AndL) {
+          _worklist.push(u);
+        }
       }
     }
     // If changed AddI/SubI inputs, check CmpU for range check optimization.
@@ -1640,9 +1823,9 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
     // If changed initialization activity, check dependent Stores
     if (use_op == Op_Allocate || use_op == Op_AllocateArray) {
       InitializeNode* init = use->as_Allocate()->initialization();
-      if (init != NULL) {
+      if (init != nullptr) {
         Node* imem = init->proj_out_or_null(TypeFunc::Memory);
-        if (imem != NULL)  add_users_to_worklist0(imem);
+        if (imem != nullptr)  add_users_to_worklist0(imem);
       }
     }
     // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
@@ -1650,14 +1833,14 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
     // to guarantee the change is not missed.
     if (use_op == Op_AllocateArray && n == use->in(AllocateNode::ValidLengthTest)) {
       Node* p = use->as_AllocateArray()->proj_out_or_null(TypeFunc::Control);
-      if (p != NULL) {
+      if (p != nullptr) {
         add_users_to_worklist0(p);
       }
     }
 
     if (use_op == Op_Initialize) {
       Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
-      if (imem != NULL)  add_users_to_worklist0(imem);
+      if (imem != nullptr)  add_users_to_worklist0(imem);
     }
     // Loading the java mirror from a Klass requires two loads and the type
     // of the mirror load depends on the type of 'n'. See LoadNode::Value().
@@ -1700,7 +1883,7 @@ void PhaseIterGVN::remove_speculative_types()  {
   assert(UseTypeSpeculation, "speculation is off");
   for (uint i = 0; i < _types.Size(); i++)  {
     const Type* t = _types.fast_lookup(i);
-    if (t != NULL) {
+    if (t != nullptr) {
       _types.map(i, t->remove_speculative());
     }
   }
@@ -1813,41 +1996,12 @@ void PhaseCCP::analyze() {
 
 #ifdef ASSERT
 // For every node n on verify list, check if type(n) == n->Value()
-// We have a list of exceptions, see comments in code.
+// We have a list of exceptions, see comments in verify_node_value.
 void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
   bool failure = false;
   while (worklist_verify.size()) {
     Node* n = worklist_verify.pop();
-    const Type* told = type(n);
-    const Type* tnew = n->Value(this);
-    if (told != tnew) {
-      // Check special cases that are ok
-      if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
-        const TypeInteger* t0 = told->is_integer(tnew->basic_type());
-        const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
-        if (t0->lo_as_long() == t1->lo_as_long() &&
-            t0->hi_as_long() == t1->hi_as_long()) {
-          continue; // ignore integer widen
-        }
-      }
-      if (n->is_Load() && !told->singleton()) {
-        // MemNode::can_see_stored_value looks up through many memory nodes,
-        // which means we would need to notify modifications from far up in
-        // the inputs all the way down to the LoadNode. We don't do that.
-        continue;
-      }
-      verify_type(n, tnew, told);
-      tty->cr();
-      tty->print_cr("Missed optimization (PhaseCCP):");
-      n->dump_bfs(1, 0, "");
-      tty->print_cr("Current type:");
-      told->dump_on(tty);
-      tty->cr();
-      tty->print_cr("Optimized type:");
-      tnew->dump_on(tty);
-      tty->cr();
-      failure = true;
-    }
+    failure |= verify_node_value(n);
   }
   // If we get this assert, check why the reported nodes were not processed again in CCP.
   // We should either make sure that these nodes are properly added back to the CCP worklist
@@ -1919,7 +2073,7 @@ void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
 }
 
 // If we changed the receiver type to a call, we need to revisit the Catch node following the call. It's looking for a
-// non-NULL receiver to know when to enable the regular fall-through path in addition to the NullPtrException path.
+// non-null receiver to know when to enable the regular fall-through path in addition to the NullPtrException path.
 // Same is true if the type of a ValidLengthTest input to an AllocateArrayNode changes.
 void PhaseCCP::push_catch(Unique_Node_List& worklist, const Node* use) {
   if (use->is_Call()) {
@@ -1927,7 +2081,7 @@ void PhaseCCP::push_catch(Unique_Node_List& worklist, const Node* use) {
       Node* proj = use->fast_out(i);
       if (proj->is_Proj() && proj->as_Proj()->_con == TypeFunc::Control) {
         Node* catch_node = proj->find_out_with(Op_Catch);
-        if (catch_node != NULL) {
+        if (catch_node != nullptr) {
           worklist.push(catch_node);
         }
       }
@@ -1957,7 +2111,7 @@ void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, c
   uint use_op = use->Opcode();
   if (use_op == Op_CmpI || use_op == Op_CmpL) {
     PhiNode* phi = countedloop_phi_from_cmp(use->as_Cmp(), parent);
-    if (phi != NULL) {
+    if (phi != nullptr) {
       worklist.push(phi);
     }
   }
@@ -2046,7 +2200,7 @@ void PhaseCCP::do_transform() {
 // Convert any of his old-space children into new-space children.
 Node *PhaseCCP::transform( Node *n ) {
   Node *new_node = _nodes[n->_idx]; // Check for transformed node
-  if( new_node != NULL )
+  if( new_node != nullptr )
     return new_node;                // Been there, done that, return old answer
 
   assert(n->is_Root(), "traversal must start at root");
@@ -2067,7 +2221,7 @@ Node *PhaseCCP::transform( Node *n ) {
   for (uint i = 0; i < _root_and_safepoints.size(); ++i) {
     Node* nn = _root_and_safepoints.at(i);
     Node* new_node = _nodes[nn->_idx];
-    assert(new_node == NULL, "");
+    assert(new_node == nullptr, "");
     new_node = transform_once(nn);  // Check for constant
     _nodes.map(nn->_idx, new_node); // Flag as having been cloned
     transform_stack.push(new_node); // Process children of cloned node
@@ -2079,9 +2233,9 @@ Node *PhaseCCP::transform( Node *n ) {
     uint cnt = clone->req();
     for( uint i = 0; i < cnt; i++ ) {          // For all inputs do
       Node *input = clone->in(i);
-      if( input != NULL ) {                    // Ignore NULLs
+      if( input != nullptr ) {                 // Ignore nulls
         Node *new_input = _nodes[input->_idx]; // Check for cloned input node
-        if( new_input == NULL ) {
+        if( new_input == nullptr ) {
           new_input = transform_once(input);   // Check for constant
           _nodes.map( input->_idx, new_input );// Flag as having been cloned
           transform_stack.push(new_input);     // Process children of cloned node
@@ -2123,7 +2277,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
     Node *nn = n;               // Default is to return the original constant
     if( t == Type::TOP ) {
       // cache my top node on the Compile instance
-      if( C->cached_top_node() == NULL || C->cached_top_node()->in(0) == NULL ) {
+      if( C->cached_top_node() == nullptr || C->cached_top_node()->in(0) == nullptr ) {
         C->set_cached_top_node(ConNode::make(Type::TOP));
         set_type(C->top(), Type::TOP);
       }
@@ -2135,7 +2289,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
         NOT_PRODUCT( inc_constants(); )
       } else if( n->is_Region() ) { // Unreachable region
         // Note: nn == C->top()
-        n->set_req(0, NULL);        // Cut selfreference
+        n->set_req(0, nullptr);     // Cut selfreference
         bool progress = true;
         uint max = n->outcnt();
         DUIterator i;
@@ -2168,7 +2322,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
     _worklist.push(n);          // n re-enters the hash table via the worklist
   }
 
-  // TEMPORARY fix to ensure that 2nd GVN pass eliminates NULL checks
+  // TEMPORARY fix to ensure that 2nd GVN pass eliminates null checks
   switch( n->Opcode() ) {
   case Op_CallStaticJava:  // Give post-parse call devirtualization a chance
   case Op_CallDynamicJava:
@@ -2229,7 +2383,7 @@ PhasePeephole::~PhasePeephole() {
 //------------------------------transform--------------------------------------
 Node *PhasePeephole::transform( Node *n ) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------do_transform-----------------------------------
@@ -2331,7 +2485,7 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
 
 void Node::set_req_X(uint i, Node *n, PhaseGVN *gvn) {
   PhaseIterGVN* igvn = gvn->is_IterGVN();
-  if (igvn == NULL) {
+  if (igvn == nullptr) {
     set_req(i, n);
     return;
   }
@@ -2364,7 +2518,7 @@ void Type_Array::grow( uint i ) {
   if( !_max ) {
     _max = 1;
     _types = (const Type**)_a->Amalloc( _max * sizeof(Type*) );
-    _types[0] = NULL;
+    _types[0] = nullptr;
   }
   uint old = _max;
   _max = next_power_of_2(i);
@@ -2377,7 +2531,7 @@ void Type_Array::grow( uint i ) {
 void Type_Array::dump() const {
   uint max = Size();
   for( uint i = 0; i < max; i++ ) {
-    if( _types[i] != NULL ) {
+    if( _types[i] != nullptr ) {
       tty->print("  %d\t== ", i); _types[i]->dump(); tty->cr();
     }
   }

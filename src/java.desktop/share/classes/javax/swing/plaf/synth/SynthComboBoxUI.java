@@ -645,7 +645,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         //------------------------------------------------------------------
 
         /**
-         * @inheritDoc
+         * {@inheritDoc}
          *
          * Ensures that isPressed() will return true if the combo is pressed,
          * or the arrowButton is pressed, <em>or</em> if the combo popup is
@@ -659,7 +659,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         /**
-         * @inheritDoc
+         * {@inheritDoc}
          *
          * Ensures that the armed state is in sync with the pressed state
          * if shouldActLikeButton is true. Without this method, the arrow
@@ -674,7 +674,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         /**
-         * @inheritDoc
+         * {@inheritDoc}
          *
          * Ensures that isRollover() will return true if the combo is
          * rolled over, or the arrowButton is rolled over.
@@ -685,7 +685,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         /**
-         * @inheritDoc
+         * {@inheritDoc}
          *
          * Forwards pressed states to the internal "pressed" field
          */
@@ -696,7 +696,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         /**
-         * @inheritDoc
+         * {@inheritDoc}
          *
          * Forwards rollover states to the internal "over" field
          */
@@ -738,7 +738,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         //------------------------------------------------------------------
 
         /**
-         * @inheritDoc
+         * {@inheritDoc}
          *
          * Ensures that the combo box is repainted when the popup is closed.
          * This avoids a bug where clicking off the combo wasn't causing a repaint,

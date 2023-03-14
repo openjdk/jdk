@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,6 @@
  *       method.
  *     This test is almost the same as nsk.stress.strace.strace005 except for
  *     checking is performed for java.lang.Thread.getAllStackTraces() method.
- * COMMENTS
- *     Similar assertion is thrown (see strace005.README).
  *
  * @library /vmTestbase
  *          /test/lib
@@ -50,11 +48,6 @@
 
 package nsk.stress.strace;
 
-import nsk.share.ArgumentParser;
-import nsk.share.Failure;
-import nsk.share.Log;
-
-import java.io.PrintStream;
 import java.util.Map;
 
 /**
@@ -62,58 +55,25 @@ import java.util.Map;
  * java recursion.
  * <p>The test creates <code>THRD_COUNT</code> instances of <code>strace006Thread</code>
  * class, tries to get their stack traces and checks up that returned array contains
- * correct stack frames. Each stack frame must be corresponded to one of the following
- * methods defined by the <code>expectedMethod</code> array.</p>
+ * correct stack frames.</p>
  * <p>These checking are performed <code>REPEAT_COUNT</code> times.</p>
  */
-public class strace006 {
+public class strace006 extends StraceBase {
 
     static final int DEPTH = 500;
     static final int THRD_COUNT = 100;
     static final int REPEAT_COUNT = 10;
-    static final String[] EXPECTED_METHODS = {
-            "java.lang.System.arraycopy",
-            "java.lang.Object.wait",
-            "java.lang.Object.wait0",
-            "java.lang.System$2.headStackableScope",
-            "java.lang.Thread.headStackableScopes",
-            "java.lang.Thread.exit",
-            "java.lang.Thread.yield",
-            "java.lang.Thread.yield0",
-            "java.lang.Thread.clearReferences",
-            "java.lang.Thread.currentCarrierThread",
-            "java.lang.Thread.currentThread",
-            "java.lang.Thread.threadContainer",
-            "jdk.internal.vm.StackableScope.head",
-            "jdk.internal.vm.StackableScope.popAll",
-            "nsk.stress.strace.strace006Thread.run",
-            "nsk.stress.strace.strace006Thread.recursiveMethod1",
-            "nsk.stress.strace.strace006Thread.recursiveMethod2"
-    };
-
 
     static volatile boolean isLocked = false;
-    static PrintStream out;
-    static long waitTime = 2;
 
     static Object waitStart = new Object();
 
     static strace006Thread[] threads;
     static StackTraceElement[][] snapshots = new StackTraceElement[THRD_COUNT][];
-    static Log log;
 
     volatile int achivedCount = 0;
 
     public static void main(String[] args) {
-        out = System.out;
-        int exitCode = run(args);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String[] args) {
-        ArgumentParser argHandler = new ArgumentParser(args);
-        log = new Log(out, argHandler);
-        waitTime = argHandler.getWaitTime() * 60000;
 
         strace006 test = new strace006();
         boolean res = true;
@@ -128,11 +88,9 @@ public class strace006 {
         }
 
         if (!res) {
-            complain("***>>>Test failed<<<***");
-            return 2;
+            new RuntimeException("***>>>Test failed<<<***");
         }
 
-        return 0;
     }
 
     void startThreads() {
@@ -193,9 +151,9 @@ public class strace006 {
             }
         }
 
-        Map traces = Thread.getAllStackTraces();
+        Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
         for (int i = 0; i < threads.length; i++) {
-            snapshots[i] = (StackTraceElement[]) traces.get(threads[i]);
+            snapshots[i] = traces.get(threads[i]);
         }
 
         return checkTraces(repeat_number);
@@ -244,17 +202,6 @@ public class strace006 {
         return res;
     }
 
-    boolean checkElement(StackTraceElement element) {
-        if (element.getClassName().equals("java.lang.ClassLoader"))
-            return true;
-        String name = element.getClassName() + "." + element.getMethodName();
-        for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (name.startsWith(EXPECTED_METHODS[i]))
-                return true;
-        }
-        return false;
-    }
-
     void finishThreads() {
         try {
             for (int i = 0; i < threads.length; i++) {
@@ -265,14 +212,6 @@ public class strace006 {
             complain("" + e);
         }
         isLocked = false;
-    }
-
-    static void display(String message) {
-        log.display(message);
-    }
-
-    static void complain(String message) {
-        log.complain(message);
     }
 
 }
@@ -329,7 +268,7 @@ class strace006Thread extends Thread {
                         strace006.complain("" + e);
                     }
                     if (alltime > strace006.waitTime) {
-                        throw new Failure("out of wait time");
+                        throw new RuntimeException("out of wait time");
                     }
                 }
             }
