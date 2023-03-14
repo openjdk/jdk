@@ -26,13 +26,11 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
+import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
 import jdk.internal.classfile.Instruction;
 import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.CodeTransform;
 
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -101,63 +99,61 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
 
     @SuppressWarnings("deprecation")
     private byte[] redefine(String path, byte[] classFile) {
-        return newClassReader(path, classFile).transform((clb, cle) -> {
-                if (cle instanceof MethodModel mm && mm.methodName().equalsString("<clinit>")) {
-                        clb.transformMethod(mm, (mb, me) -> {
-                            if (me instanceof CodeModel cm) {
-                                mb.transformCode(cm, new CodeTransform() {
-                                    private CodeElement pendingLDC = null;
+        return newClassReader(path, classFile).transform(ClassTransform.transformingMethodBodies(
+                mm -> mm.methodName().equalsString("<clinit>"),
+                new CodeTransform() {
+                    private CodeElement pendingLDC = null;
 
-                                    private void flushPendingLDC(CodeBuilder cob) {
-                                        if (pendingLDC != null) {
-                                            cob.accept(pendingLDC);
-                                            pendingLDC = null;
-                                        }
-                                    }
+                    private void flushPendingLDC(CodeBuilder cob) {
+                        if (pendingLDC != null) {
+                            cob.accept(pendingLDC);
+                            pendingLDC = null;
+                        }
+                    }
 
-                                    @Override
-                                    public void accept(CodeBuilder cob, CodeElement coe) {
-                                        if (coe instanceof Instruction ins) switch (ins.opcode()) {
-                                            case LDC, LDC_W, LDC2_W -> {
-                                                flushPendingLDC(cob);
-                                                pendingLDC = coe;
-                                            }
-                                            case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE -> {
-                                                flushPendingLDC(cob);
-                                                cob.accept(coe);
-                                            }
-                                            case GETSTATIC, GETFIELD, PUTFIELD -> {
-                                                flushPendingLDC(cob);
-                                                cob.accept(coe);
-                                            }
-                                            case PUTSTATIC -> {
-                                                if (((FieldInstruction)coe).name().equalsString(field)) {
-                                                    // assert that there is a pending ldc
-                                                    // for the old value
-                                                    if (pendingLDC == null) {
-                                                        throw new AssertionError("No load " +
-                                                            "instruction found for field " + field +
-                                                            " in static initializer of " +
-                                                            VERSION_PROPS_CLASS);
-                                                    }
-                                                    // forget about it
-                                                    pendingLDC = null;
-                                                    // and add an ldc for the new value
-                                                    cob.constantInstruction(value);
-                                                    redefined = true;
-                                                } else {
-                                                    flushPendingLDC(cob);
-                                                }
-                                                cob.accept(coe);
-                                            }
-                                            default -> cob.accept(coe);
+                    @Override
+                    public void accept(CodeBuilder cob, CodeElement coe) {
+                        if (coe instanceof Instruction ins) {
+                            switch (ins.opcode()) {
+                                case LDC, LDC_W, LDC2_W -> {
+                                    flushPendingLDC(cob);
+                                    pendingLDC = coe;
+                                }
+                                case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE -> {
+                                    flushPendingLDC(cob);
+                                    cob.accept(coe);
+                                }
+                                case GETSTATIC, GETFIELD, PUTFIELD -> {
+                                    flushPendingLDC(cob);
+                                    cob.accept(coe);
+                                }
+                                case PUTSTATIC -> {
+                                    if (((FieldInstruction)coe).name().equalsString(field)) {
+                                        // assert that there is a pending ldc
+                                        // for the old value
+                                        if (pendingLDC == null) {
+                                            throw new AssertionError("No load " +
+                                                "instruction found for field " + field +
+                                                " in static initializer of " +
+                                                VERSION_PROPS_CLASS);
                                         }
+                                        // forget about it
+                                        pendingLDC = null;
+                                        // and add an ldc for the new value
+                                        cob.constantInstruction(value);
+                                        redefined = true;
+                                    } else {
+                                        flushPendingLDC(cob);
                                     }
-                                });
+                                    cob.accept(coe);
+                                }
+                                default -> cob.accept(coe);
                             }
-                        });
-                }
-        });
+                        } else {
+                            cob.accept(coe);
+                        }
+                    }
+                }));
     }
 
     @Override
@@ -174,5 +170,4 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
             throw new AssertionError(field);
         return out.build();
     }
-
 }
