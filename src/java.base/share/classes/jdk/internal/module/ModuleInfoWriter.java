@@ -27,17 +27,21 @@ package jdk.internal.module;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.constant.ClassDesc;
-import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
+import java.lang.reflect.AccessFlag;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.java.lang.constant.PackageDesc;
 import jdk.internal.classfile.attribute.ModuleAttribute;
+import jdk.internal.classfile.attribute.ModuleExportInfo;
 import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
+import jdk.internal.classfile.attribute.ModuleOpenInfo;
+import jdk.internal.classfile.attribute.ModulePackagesAttribute;
 import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
+import jdk.internal.classfile.attribute.ModuleRequireInfo;
 import jdk.internal.classfile.attribute.ModuleTargetAttribute;
+import jdk.internal.classfile.constantpool.ModuleEntry;
 
 /**
  * Utility class to write a ModuleDescriptor as a module-info.class.
@@ -81,23 +85,26 @@ public final class ModuleInfoWriter {
     private static byte[] toModuleInfo(ModuleDescriptor md,
                                        ModuleResolution mres,
                                        ModuleTarget target) {
-        try {
-            return Classfile.buildModule(
-                ModuleAttribute.of(ModuleDesc.of(md.name()), mb -> {
+        //using low-level module building to avoid validation in ModuleDesc and allow invalid names
+        return Classfile.build(ClassDesc.of("module-info"), clb -> {
+            clb.withFlags(AccessFlag.MODULE);
+            var cp = clb.constantPool();
+            clb.with(ModuleAttribute.of(cp.moduleEntry(cp.utf8Entry(md.name())), mb -> {
                     mb.moduleFlags(md.modifiers().stream()
                             .mapToInt(mm -> MODULE_MODS_TO_FLAGS.getOrDefault(mm, 0))
                             .reduce(0, (x, y) -> (x | y)));
 
-                    String vs = md.rawVersion().orElse(null);
-                    if (vs != null) mb.moduleVersion(vs);
+                    md.rawVersion().ifPresent(vs -> mb.moduleVersion(vs));
 
                     // requires
                     for (ModuleDescriptor.Requires r : md.requires()) {
                         int flags = r.modifiers().stream()
                                 .mapToInt(REQUIRES_MODS_TO_FLAGS::get)
                                 .reduce(0, (x, y) -> (x | y));
-                        vs = r.rawCompiledVersion().orElse(null);
-                        mb.requires(ModuleDesc.of(r.name()), flags, vs);
+                        mb.requires(ModuleRequireInfo.of(
+                                cp.moduleEntry(cp.utf8Entry(r.name())),
+                                flags,
+                                r.rawCompiledVersion().map(cp::utf8Entry).orElse(null)));
                     }
 
                     // exports
@@ -105,9 +112,12 @@ public final class ModuleInfoWriter {
                         int flags = e.modifiers().stream()
                                 .mapToInt(EXPORTS_MODS_TO_FLAGS::get)
                                 .reduce(0, (x, y) -> (x | y));
-                        var targets = e.targets().stream().map(ModuleDesc::of)
-                                .toArray(ModuleDesc[]::new);
-                        mb.exports(PackageDesc.of(e.source()), flags, targets);
+                        var targets = e.targets().stream().map(mn -> cp.moduleEntry(cp.utf8Entry(mn)))
+                                .toArray(ModuleEntry[]::new);
+                        mb.exports(ModuleExportInfo.of(
+                                cp.packageEntry(cp.utf8Entry(e.source())),
+                                flags,
+                                targets));
                     }
 
                     // opens
@@ -115,9 +125,12 @@ public final class ModuleInfoWriter {
                         int flags = opens.modifiers().stream()
                                 .mapToInt(OPENS_MODS_TO_FLAGS::get)
                                 .reduce(0, (x, y) -> (x | y));
-                        var targets = opens.targets().stream().map(ModuleDesc::of)
-                                .toArray(ModuleDesc[]::new);
-                        mb.opens(PackageDesc.of(opens.source()), flags, targets);
+                        var targets = opens.targets().stream().map(mn -> cp.moduleEntry(cp.utf8Entry(mn)))
+                                .toArray(ModuleEntry[]::new);
+                        mb.opens(ModuleOpenInfo.of(
+                                cp.packageEntry(cp.utf8Entry(opens.source())),
+                                flags,
+                                targets));
                     }
 
                     // uses
@@ -130,32 +143,28 @@ public final class ModuleInfoWriter {
                                                          .map(ClassDesc::of)
                                                          .toArray(ClassDesc[]::new));
                     }
-                }),
+                }));
 
                 // packages
-                md.packages().stream().map(PackageDesc::of).toList(),
+                var packages = md.packages().stream().sorted().map(PackageDesc::of).toList();
+                if (!packages.isEmpty()) {
+                    clb.with(ModulePackagesAttribute.ofNames(packages));
+                }
 
-                // extra attributes
-                clb -> {
-                    // ModuleMainClass attribute
-                    md.mainClass().ifPresent(mc ->
-                            clb.with(ModuleMainClassAttribute.of(ClassDesc.of(mc))));
+                // ModuleMainClass attribute
+                md.mainClass().ifPresent(mc ->
+                        clb.with(ModuleMainClassAttribute.of(ClassDesc.of(mc))));
 
-                    // write ModuleResolution attribute if specified
-                    if (mres != null) {
-                        clb.with(ModuleResolutionAttribute.of(mres.value()));
-                    }
+                // write ModuleResolution attribute if specified
+                if (mres != null) {
+                    clb.with(ModuleResolutionAttribute.of(mres.value()));
+                }
 
-                    // write ModuleTarget attribute if there is a target platform
-                    if (target != null && !target.targetPlatform().isEmpty()) {
-                        clb.with(ModuleTargetAttribute.of(target.targetPlatform()));
-                    }
-                });
-        } catch (IllegalArgumentException iae) {
-            var t = new InvalidModuleDescriptorException(iae.getMessage());
-            t.initCause(iae);
-            throw t;
-        }
+                // write ModuleTarget attribute if there is a target platform
+                if (target != null && !target.targetPlatform().isEmpty()) {
+                    clb.with(ModuleTargetAttribute.of(target.targetPlatform()));
+                }
+            });
     }
 
     /**
