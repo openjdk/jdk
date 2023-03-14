@@ -827,7 +827,10 @@ public class TreeMaker implements JCTree.Factory {
         JCExpression tp;
         switch (t.getTag()) {
         case BYTE: case CHAR: case SHORT: case INT: case LONG: case FLOAT:
-        case DOUBLE: case BOOLEAN: case VOID:
+        case DOUBLE: case BOOLEAN:
+            tp = TypeIdent(t.getTag());
+            break;
+            case VOID:
             tp = TypeIdent(t.getTag());
             break;
         case TYPEVAR:

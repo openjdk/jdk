@@ -321,7 +321,7 @@ public class TransPatterns extends TreeTranslator {
                 names.fromString(target.syntheticNameChar() + "m" + target.syntheticNameChar() + variableIndex++), syms.objectType,
                                  currentMethodSym);
             JCVariableDecl unmatchedVar = make.VarDef(unmatched, null);
-            JCExpression nullCheck = make.TypeTest(make.App(make.Select(make.Ident(recordPattern.matcher.owner), recordPattern.matcher), List.of(make.Ident(tempBind))),
+            JCExpression nullCheck = make.TypeTest(make.App(make.Select(make.Ident(recordPattern.matcher.owner), recordPattern.matcher), List.of(make.Ident(tempBind))).setType(syms.objectType),
                           (JCBindingPattern) make.BindingPattern(unmatchedVar).setType(unmatched.type)).setType(syms.booleanType);
             
 
@@ -332,8 +332,11 @@ public class TransPatterns extends TreeTranslator {
             List<? extends JCPattern> nestedPatterns = recordPattern.nested;
             JCExpression firstLevelChecks = nullCheck;
             JCExpression secondLevelChecks = null;
+            int index = -1;
 
             while (components.nonEmpty()) {
+                index++;
+
                 RecordComponent component = components.head;
                 Type componentType = types.erasure(nestedFullComponentTypes.head);
                 JCPattern nestedPattern = TreeInfo.skipParens(nestedPatterns.head);
@@ -362,10 +365,11 @@ public class TransPatterns extends TreeTranslator {
 //                    os = (String) Carriers.component(returnType, 0).invoke(unmatched);
 
                 
-                MethodSymbol msym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.switchBootstrapsType, names.fromString("readComponent"), List.of(syms.objectType, types.makeArrayType(types.erasure(syms.classType))), List.nil());
+                MethodSymbol msym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.switchBootstrapsType, names.fromString("readComponent"), List.of(syms.objectType, syms.intType, types.makeArrayType(types.erasure(syms.classType))), List.nil());
                 JCMethodInvocation componentAccessor =
-                        make.App(make.QualIdent(msym), recordPattern.matcher.params.map(v -> classOfType(types.erasure(v.type), recordPattern.pos())).prepend(make.Ident(unmatched)))
-                        .setType(types.erasure(component.accessor.getReturnType()));
+                        make.App(make.QualIdent(msym), recordPattern.matcher.params.map(v -> classOfType(types.erasure(v.type), recordPattern.pos())).prepend(makeLit(syms.intType, index)).prepend(make.Ident(unmatched)))
+                        .setType(syms.objectType);
+                componentAccessor.varargsElement = types.erasure(types.elemtype(msym.type.getParameterTypes().last()));
 //                        make.App(make.Select(convert(make.Ident(recordBinding), recordBinding.type), //TODO - cast needed????
 //                                 component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
 

@@ -55,6 +55,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 
 import static com.sun.tools.javac.code.Kinds.Kind.TYP;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Class;
@@ -200,7 +201,7 @@ public class PoolWriter {
      * Puts a name and type pair into the pool and returns its index.
      */
     int putNameAndType(Symbol s) {
-        return pool.writeIfNeeded(new NameAndType(s.name, descriptorType(s)));
+        return pool.writeIfNeeded(new NameAndType(s instanceof MethodSymbol ms ? ms.externalName(types) : s.name, descriptorType(s)));
     }
 
     /**
