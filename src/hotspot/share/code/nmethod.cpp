@@ -2487,7 +2487,7 @@ void nmethod::print_dependencies_on(outputStream* out) {
   st.print_cr("Dependencies:");
   for (Dependencies::DepStream deps(this); deps.next(); ) {
     deps.print_dependency(&st);
-    Klass* ctxk = deps.context_type();
+    InstanceKlass* ctxk = deps.context_type();
     if (ctxk != nullptr) {
       if (ctxk->is_dependent_nmethod(this)) {
         st.print_cr("   [nmethod<=klass]%s", ctxk->external_name());
