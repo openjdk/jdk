@@ -77,7 +77,7 @@ hb_set_set_user_data (hb_set_t           *set,
                       hb_bool_t           replace);
 
 HB_EXTERN void *
-hb_set_get_user_data (hb_set_t           *set,
+hb_set_get_user_data (const hb_set_t     *set,
                       hb_user_data_key_t *key);
 
 
@@ -96,6 +96,9 @@ hb_set_is_empty (const hb_set_t *set);
 
 HB_EXTERN void
 hb_set_invert (hb_set_t *set);
+
+HB_EXTERN hb_bool_t
+hb_set_is_inverted (const hb_set_t *set);
 
 HB_EXTERN hb_bool_t
 hb_set_has (const hb_set_t *set,
