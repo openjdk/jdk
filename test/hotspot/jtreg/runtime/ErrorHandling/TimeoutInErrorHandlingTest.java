@@ -48,7 +48,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 /*
- * @test id=@with-on-error
+ * @test id=with-on-error
  * @bug 8303861
  * @summary Error handling step timeouts should never be blocked by OnError etc.
  * @modules java.base/jdk.internal.misc
