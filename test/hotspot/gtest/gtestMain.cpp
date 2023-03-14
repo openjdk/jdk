@@ -92,6 +92,7 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
   JNIEnv* env;
 
   int ret = JNI_CreateJavaVM(jvm_ptr, (void**)&env, &args);
+  delete[] options;
   if (ret == JNI_OK) {
     // CreateJavaVM leaves WXExec context, while gtests
     // calls internal functions assuming running in WXWwrite.
@@ -244,7 +245,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   char* java_home = get_java_home_arg(argc, argv);
   if (java_home == NULL) {
-    fprintf(stderr, "ERROR: You must specify a JDK to use for running the unit tests.\n");
+    fprintf(stderr, "ERROR: You must specify a JDK (-jdk <image>, --jdk=<image> or -jdk:<image>) to use for running the unit tests.\n");
     os::exit(1);
   }
 #ifndef _WIN32

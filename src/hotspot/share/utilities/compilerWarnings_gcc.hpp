@@ -34,9 +34,7 @@
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
 
-#define PRAGMA_DISABLE_GCC_WARNING_AUX(x) _Pragma(#x)
-#define PRAGMA_DISABLE_GCC_WARNING(option_string) \
-  PRAGMA_DISABLE_GCC_WARNING_AUX(GCC diagnostic ignored option_string)
+#define PRAGMA_DISABLE_GCC_WARNING(optstring) _Pragma(STR(GCC diagnostic ignored optstring))
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
@@ -56,8 +54,7 @@
 #define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
 #endif
 
-#define PRAGMA_NONNULL_IGNORED \
-  PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
+#define PRAGMA_NONNULL_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
 #if defined(__clang_major__) && \
       (__clang_major__ >= 4 || \

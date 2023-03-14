@@ -57,12 +57,14 @@ import java.net.http.HttpHeaders;
 import jdk.internal.net.http.HttpConnection.HttpPublisher;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.FlowTube.TubeSubscriber;
+import jdk.internal.net.http.common.HeaderDecoder;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.common.ValidatingHeadersConsumer;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -116,11 +118,11 @@ import static jdk.internal.net.http.frame.SettingsFrame.*;
  */
 class Http2Connection  {
 
-    final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
+    final Logger debug = Utils.getDebugLogger(this::dbgString);
     static final Logger DEBUG_LOGGER =
-            Utils.getDebugLogger("Http2Connection"::toString, Utils.DEBUG);
+            Utils.getDebugLogger("Http2Connection"::toString);
     private final Logger debugHpack =
-            Utils.getHpackLogger(this::dbgString, Utils.DEBUG_HPACK);
+            Utils.getHpackLogger(this::dbgString);
     static final ByteBuffer EMPTY_TRIGGER = ByteBuffer.allocate(0);
 
     private static final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
@@ -317,6 +319,7 @@ class Http2Connection  {
     final ConnectionWindowUpdateSender windowUpdater;
     private volatile Throwable cause;
     private volatile Supplier<ByteBuffer> initial;
+    private volatile Stream<?> initialStream;
 
     static final int DEFAULT_FRAME_SIZE = 16 * 1024;
 
@@ -370,6 +373,7 @@ class Http2Connection  {
 
         Stream<?> initialStream = createStream(exchange);
         boolean opened = initialStream.registerStream(1, true);
+        this.initialStream = initialStream;
         if (debug.on() && !opened) {
             debug.log("Initial stream was cancelled - but connection is maintained: " +
                     "reset frame will need to be sent later");
@@ -808,7 +812,7 @@ class Http2Connection  {
                 if (frame instanceof HeaderFrame) {
                     // always decode the headers as they may affect
                     // connection-level HPACK decoding state
-                    DecodingCallback decoder = new ValidatingHeadersConsumer();
+                    DecodingCallback decoder = new ValidatingHeadersConsumer()::onDecoded;
                     try {
                         decodeHeaders((HeaderFrame) frame, decoder);
                     } catch (UncheckedIOException e) {
@@ -910,7 +914,7 @@ class Http2Connection  {
         // decoding state
         assert pushContinuationState == null;
         HeaderDecoder decoder = new HeaderDecoder();
-        decodeHeaders(pp, decoder);
+        decodeHeaders(pp, decoder::onDecoded);
         int promisedStreamid = pp.getPromisedStream();
         if (pp.endHeaders()) {
             completePushPromise(promisedStreamid, parent, decoder.headers());
@@ -922,7 +926,7 @@ class Http2Connection  {
     private <T> void handlePushContinuation(Stream<T> parent, ContinuationFrame cf)
             throws IOException {
         var pcs = pushContinuationState;
-        decodeHeaders(cf, pcs.pushContDecoder);
+        decodeHeaders(cf, pcs.pushContDecoder::onDecoded);
         // if all continuations are sent, set pushWithContinuation to null
         if (cf.endHeaders()) {
             completePushPromise(pcs.pushContFrame.getPromisedStream(), parent,
@@ -1202,6 +1206,21 @@ class Http2Connection  {
             debug.log("Triggering processing of buffered data"
                       + " after sending connection preface");
         subscriber.onNext(List.of(EMPTY_TRIGGER));
+    }
+
+    /**
+     * Called to get the initial stream after a connection upgrade.
+     * If the stream was cancelled, it might no longer be in the
+     * stream map. Therefore - we use the initialStream field
+     * instead, and reset it to null after returning it.
+     * @param <T> the response type
+     * @return the initial stream created during the upgrade.
+     */
+    @SuppressWarnings("unchecked")
+    <T> Stream<T> getInitialStream() {
+         var s = (Stream<T>) initialStream;
+         initialStream = null;
+         return s;
     }
 
     /**
@@ -1534,76 +1553,6 @@ class Http2Connection  {
     final String dbgString() {
         return "Http2Connection("
                     + connection.getConnectionFlow() + ")";
-    }
-
-    static class HeaderDecoder extends ValidatingHeadersConsumer {
-
-        HttpHeadersBuilder headersBuilder;
-
-        HeaderDecoder() {
-            this.headersBuilder = new HttpHeadersBuilder();
-        }
-
-        @Override
-        public void onDecoded(CharSequence name, CharSequence value) {
-            String n = name.toString();
-            String v = value.toString();
-            super.onDecoded(n, v);
-            headersBuilder.addHeader(n, v);
-        }
-
-        HttpHeaders headers() {
-            return headersBuilder.build();
-        }
-    }
-
-    /*
-     * Checks RFC 7540 rules (relaxed) compliance regarding pseudo-headers.
-     */
-    static class ValidatingHeadersConsumer implements DecodingCallback {
-
-        private static final Set<String> PSEUDO_HEADERS =
-                Set.of(":authority", ":method", ":path", ":scheme", ":status");
-
-        /** Used to check that if there are pseudo-headers, they go first */
-        private boolean pseudoHeadersEnded;
-
-        /**
-         * Called when END_HEADERS was received. This consumer may be invoked
-         * again after reset() is called, but for a whole new set of headers.
-         */
-        void reset() {
-            pseudoHeadersEnded = false;
-        }
-
-        @Override
-        public void onDecoded(CharSequence name, CharSequence value)
-                throws UncheckedIOException
-        {
-            String n = name.toString();
-            if (n.startsWith(":")) {
-                if (pseudoHeadersEnded) {
-                    throw newException("Unexpected pseudo-header '%s'", n);
-                } else if (!PSEUDO_HEADERS.contains(n)) {
-                    throw newException("Unknown pseudo-header '%s'", n);
-                }
-            } else {
-                pseudoHeadersEnded = true;
-                if (!Utils.isValidName(n)) {
-                    throw newException("Bad header name '%s'", n);
-                }
-            }
-            String v = value.toString();
-            if (!Utils.isValidValue(v)) {
-                throw newException("Bad header value '%s'", v);
-            }
-        }
-
-        private UncheckedIOException newException(String message, String header)
-        {
-            return new UncheckedIOException(
-                    new IOException(String.format(message, header)));
-        }
     }
 
     static final class ConnectionWindowUpdateSender extends WindowUpdateSender {

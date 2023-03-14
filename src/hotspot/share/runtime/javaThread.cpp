@@ -235,7 +235,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_string_void_signature(),
                             thread_group,
                             name,
-                            THREAD);
+                            CHECK);
   } else {
     // Thread gets assigned name "Thread-nnn" and null target
     // (java.lang.Thread doesn't have a constructor taking only a ThreadGroup argument)
@@ -246,7 +246,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_runnable_void_signature(),
                             thread_group,
                             Handle(),
-                            THREAD);
+                            CHECK);
   }
   os::set_priority(this, NormPriority);
 
@@ -376,9 +376,6 @@ void JavaThread::check_possible_safepoint() {
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
-  // Don't complain if running a debugging command.
-  if (DebuggingContext::is_enabled()) return;
-
   // Check NoSafepointVerifier, which is implied by locks taken that can be
   // shared with the VM thread.  This makes sure that no locks with allow_vm_block
   // are held.

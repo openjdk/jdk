@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Collection;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -293,26 +294,28 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * Adds "implements" information for a method (if appropriate)
      * into a definition list.
      *
-     * @param writer the writer for the method
-     * @param method the method
-     * @param dl     the definition list
+     * @param writer  the writer for the method
+     * @param method  the method
+     * @param methods implemented methods
+     * @param dl      the definition list
      */
     protected static void addImplementsInfo(HtmlDocletWriter writer,
                                             ExecutableElement method,
+                                            Collection<ExecutableElement> methods,
                                             Content dl) {
         Utils utils = writer.utils;
-        if (utils.isStatic(method) || writer.options.noComment()) {
+        if (writer.options.noComment()) {
             return;
         }
         Contents contents = writer.contents;
-        VisibleMemberTable vmt = writer.configuration
-                .getVisibleMemberTable(utils.getEnclosingTypeElement(method));
+        var enclosing = (TypeElement) method.getEnclosingElement();
+        VisibleMemberTable vmt = writer.configuration.getVisibleMemberTable(enclosing);
         SortedSet<ExecutableElement> implementedMethods =
                 new TreeSet<>(utils.comparators.makeOverrideUseComparator());
-        implementedMethods.addAll(vmt.getImplementedMethods(method));
+        implementedMethods.addAll(methods);
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
-            intfac = utils.getDeclaredType(utils.getEnclosingTypeElement(method), intfac);
+            intfac = utils.getDeclaredType(enclosing, intfac);
             Content intfaclink = writer.getLink(new HtmlLinkInfo(
                     writer.configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, intfac));
             var codeIntfacLink = HtmlTree.CODE(intfaclink);
