@@ -433,8 +433,14 @@ public:
                 Node* cmp1 = cmp->in(1);
                 Node* cmp2 = cmp->in(2);
                 sync_from_tree(iff);
-                types_at_c = analyze_if(rpo, c, types_at_c, cmp, cmp1);
-                types_at_c = analyze_if(rpo, c, types_at_c, cmp, cmp2);
+                // narrowing the type of a LoadRange could cause a range check to optimize out and a Load to be hoisted above
+                // checks that guarantee its within bounds
+                if (cmp1->Opcode() != Op_LoadRange) {
+                  types_at_c = analyze_if(rpo, c, types_at_c, cmp, cmp1);
+                }
+                if (cmp2->Opcode() != Op_LoadRange) {
+                  types_at_c = analyze_if(rpo, c, types_at_c, cmp, cmp2);
+                }
               }
             }
           }
