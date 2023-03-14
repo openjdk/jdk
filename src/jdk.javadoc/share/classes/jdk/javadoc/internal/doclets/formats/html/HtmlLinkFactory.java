@@ -128,12 +128,12 @@ public class HtmlLinkFactory {
                     TypeMirror extendsBound = type.getExtendsBound();
                     if (extendsBound != null) {
                         link.add(" extends ");
-                        link.add(getLink(linkInfo.forType(extendsBound)));
+                        link.add(getLink(getBoundsLinkInfo(linkInfo, extendsBound)));
                     }
                     TypeMirror superBound = type.getSuperBound();
                     if (superBound != null) {
                         link.add(" super ");
-                        link.add(getLink(linkInfo.forType(superBound)));
+                        link.add(getLink(getBoundsLinkInfo(linkInfo, superBound)));
                     }
                     return link;
                 }
@@ -170,7 +170,7 @@ public class HtmlLinkFactory {
                                 continue;
                             }
                             link.add(more ? " & " : " extends ");
-                            link.add(getLink(linkInfo.forType(bound)));
+                            link.add(getLink(getBoundsLinkInfo(linkInfo, bound)));
                             more = true;
                         }
                     }
@@ -373,6 +373,13 @@ public class HtmlLinkFactory {
                 });
 
         return links;
+    }
+
+    /*
+     * Returns a link info for a type bounds link.
+     */
+    private HtmlLinkInfo getBoundsLinkInfo(HtmlLinkInfo linkInfo, TypeMirror bound) {
+        return linkInfo.forType(bound).skipPreview(false);
     }
 
     /**
