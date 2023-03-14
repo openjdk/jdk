@@ -195,7 +195,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     }
 
     public int getSize() {
-        return fileCache.size();
+        synchronized(fileCache) {
+            return fileCache.size();
+        }
     }
 
     /**
@@ -206,7 +208,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @return {@code true} if an element {@code o} is in file cache
      */
     public boolean contains(Object o) {
-        return fileCache.contains(o);
+        synchronized(fileCache) {
+            return fileCache.contains(o);
+        }
     }
 
     /**
@@ -216,11 +220,15 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @return an index of element {@code o} in file cache
      */
     public int indexOf(Object o) {
-        return fileCache.indexOf(o);
+        synchronized(fileCache) {
+            return fileCache.indexOf(o);
+        }
     }
 
     public Object getElementAt(int index) {
-        return fileCache.get(index);
+        synchronized(fileCache) {
+            return fileCache.get(index);
+        }
     }
 
     /**
