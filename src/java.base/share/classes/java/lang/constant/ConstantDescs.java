@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,62 @@ public final class ConstantDescs {
     public static final DynamicConstantDesc<Boolean> FALSE
             = DynamicConstantDesc.ofNamed(BSM_GET_STATIC_FINAL,
                                           "FALSE", CD_Boolean, CD_Boolean);
+
+    /**
+     * The special name of instance initialization methods, {@value}. They
+     * typically correspond to constructors.
+     *
+     * @jvms 2.9.1 Instance Initialization Methods
+     * @since 21
+     */
+    public static final String INIT_NAME = "<init>";
+
+    /**
+     * The special name of class initialization methods, {@value}. They
+     * typically correspond to static initializers.
+     *
+     * @jvms 2.9.2 Class Initialization Methods
+     * @since 21
+     */
+    public static final String CLASS_INIT_NAME = "<clinit>";
+
+    /**
+     * Nominal descriptor representing the method type with descriptor {@code ()V},
+     * taking no argument and returning nothing. This is the method type of class
+     * initialization methods, the constructor of {@linkplain Object}, and the
+     * default constructors for classes without an enclosing instance.
+     *
+     * @jvms 2.9.2 Class Initialization Methods
+     * @see Object#Object()
+     * @jls 8.8.9 Default Constructor
+     * @since 21
+     */
+    public static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);
+
+    /**
+     * The name of the {@value} method. The Java Virtual Machine starts execution
+     * by invoking the {@code public static} method {@link #MTD_void_StringArray
+     * void main(String[])} in an initial class or interface.
+     *
+     * @jls 12.1 Java Virtual Machine Startup
+     * @jvms 5.2 Java Virtual Machine Startup
+     * @since 21
+     */
+    public static final String MAIN_NAME = "main";
+
+    /**
+     * Nominal descriptor representing the method type with descriptor {@code
+     * ([Ljava/lang/String)V}, taking a String array and returning nothing.
+     * This is the method type of the {@value #MAIN_NAME} method. The Java
+     * Virtual Machine starts execution by invoking the {@code public static}
+     * method {@code void main(String[])} in an initial class or interface.
+     *
+     * @jls 12.1 Java Virtual Machine Startup
+     * @jvms 5.2 Java Virtual Machine Startup
+     * @since 21
+     */
+    public static final MethodTypeDesc MTD_void_StringArray = MethodTypeDesc.of(CD_void,
+            CD_String.arrayType());
 
     static final DirectMethodHandleDesc MHD_METHODHANDLE_ASTYPE
             = MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_MethodHandle, "asType",
