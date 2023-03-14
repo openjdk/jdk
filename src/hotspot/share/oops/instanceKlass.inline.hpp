@@ -25,8 +25,15 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCEKLASS_INLINE_HPP
 
+#include "oops/instanceKlass.hpp"
+
 #include "classfile/vmSymbols.hpp"
+#include "memory/memRegion.hpp"
+#include "oops/klass.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/devirtualizer.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline intptr_t* InstanceKlass::start_of_itable()   const { return (intptr_t*)start_of_vtable() + vtable_length(); }
 inline intptr_t* InstanceKlass::end_of_itable()     const { return start_of_itable() + itable_length(); }
