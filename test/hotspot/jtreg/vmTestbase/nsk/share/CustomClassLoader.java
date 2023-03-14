@@ -43,7 +43,6 @@ import java.io.*;
  */
 public class CustomClassLoader extends ClassLoader {
 
-    private ClassUnloader classUnloader;
     protected String classPath;
 
     /**
@@ -53,27 +52,6 @@ public class CustomClassLoader extends ClassLoader {
      */
     public CustomClassLoader() {
         super(CustomClassLoader.class.getClassLoader());
-        this.classUnloader = null;
-    }
-
-    /**
-     * Initializes a newly created <code>CustomClassloader</code> object
-     * linked with specified <code>ClassUnloader</code> object.
-     *
-     * @param classUnloader an instance of <code>ClassUnloader</code>
-     */
-    public CustomClassLoader(ClassUnloader classUnloader) {
-        super(CustomClassLoader.class.getClassLoader());
-        this.classUnloader = classUnloader;
-    }
-
-    /**
-     * Links this class loader with specified <code>ClassUnloader</code> object.
-     *
-     * @param classUnloader an instance of <code>ClassUnloader</code>
-     */
-    public void setClassUnloader(ClassUnloader classUnloader) {
-        this.classUnloader = classUnloader;
     }
 
     /**

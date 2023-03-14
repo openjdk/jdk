@@ -44,11 +44,14 @@ import nsk.share.test.Stresser;
  *
  * <p>ClassUnloader mainly intends to unload a class which was loaded
  * with especial <code>ClassUnloader.loadClass()</code> method.
- * A class is considered unloaded if its class loader is finalized.
- * If there no finalization of class loader detected for some timeout,
- * class is considered still loaded and method returns <i>false</i>.
+ * A class is considered unloaded if its class loader is reclaimed.
+ * A runnable lambda is registered to JVM to be called whenever the
+ * class loader becomes unreachable.
+ * After setting the class loader to null, if within a timeout no notification
+ * of its reclaim is received, class is considered still loaded and
+ * <code>unloadClass()</code> method returns <i>false</i>.
  *
- * <p>Such finalization control applies only to a class loaded by
+ * <p>Such reclaiming control applies only to a class loaded by
  * ClassUnloader's <code>loadClass()</code> method. Otherwise, if there
  * was no such class loaded, <code>unloadClass()</code> doesn't wait
  * for a timeout and always returns <i>false</i>.
@@ -74,75 +77,24 @@ public class ClassUnloader {
     public static final String INTERNAL_CLASS_LOADER_NAME = "nsk.share.CustomClassLoader";
 
     /**
-     * Whole amount of time in milliseconds to wait for class loader finalization.
+     * Whole amount of time in milliseconds to wait for class loader reclaim.
      */
     private static final int WAIT_TIMEOUT = 15000;
 
     /**
-     * Piece of time in milliseconds to wait in a loop for class loader finalization.
+     * Piece of time in milliseconds to wait in a loop for class loader reclaim.
      */
     private static final int WAIT_DELTA = 1000;
 
     /**
-     * Has class loader been finalized or not.
+     * Has class loader been is_reclaimed or not.
      */
-    volatile boolean finalized = false;
+    volatile boolean is_reclaimed = false;
 
     /**
      * Current class loader used for loading classes.
      */
     private CustomClassLoader customClassLoader = null;
-
-    /*
-     * This class is used as an alternative to deprecated finalize() method.
-     * It is used as a 'cleaner' whose run() method will be called when JVM
-     * makes an 'registered' object unreachable.
-     * Here it will be used for tracking the local instance of 'CustomClassLoader'.
-     */
-    private static class CustomClassLoaderCleaner implements Runnable{
-
-        private ClassUnloader class_unloader;
-
-        /**
-         * Keep which ClassUnloader has to be notified.
-         */
-        public CustomClassLoaderCleaner(ClassUnloader class_unloader){
-            this.class_unloader = class_unloader;
-        }
-        @Override
-        public void run(){
-            if(class_unloader != null){
-                class_unloader.finalized = true;
-            }
-        }
-    }
-
-    /**
-     * The cleaner instance whose run() will be called by JVM.
-     */
-    private CustomClassLoaderCleaner customCleaner;
-
-    /**
-     * The java.lanf.ref.Cleaner object for registering the cleaner and the object to be traced.
-     */
-    private Cleaner cleaner;
-
-    /**
-     * The cleanable.clean() can be explicitly called to make the object unreachable.
-     */
-    private static Cleaner.Cleanable cleanable;
-
-    private void registerCleaning(){
-
-        if (cleaner != null)
-            return;
-
-        cleaner = Cleaner.create();
-        customCleaner = new CustomClassLoaderCleaner(this);
-
-        // When customClassLoader becomes unreachable, the customCleaner.run() method is called by JVM/GC.
-        cleanable = cleaner.register(customClassLoader, customCleaner);
-    }
 
     /**
      * List of classes loaded with current class loader.
@@ -183,10 +135,11 @@ public class ClassUnloader {
      * @see #setClassLoader(CustomClassLoader)
      */
     public CustomClassLoader createClassLoader() {
-        customClassLoader = new CustomClassLoader(this);
+        customClassLoader = new CustomClassLoader();
         classObjects.removeAllElements();
 
-        registerCleaning();
+        // When customClassLoader becomes unreachable, the lambda is called by JVM/GC.
+        Cleaner.create().register(customClassLoader, () -> { is_reclaimed = true; } );
 
         return customClassLoader;
     }
@@ -200,8 +153,9 @@ public class ClassUnloader {
     public void setClassLoader(CustomClassLoader customClassLoader) {
         this.customClassLoader = customClassLoader;
         classObjects.removeAllElements();
-        customClassLoader.setClassUnloader(this);
-        registerCleaning();
+
+        // When customClassLoader becomes unreachable, the lambda is called by JVM/GC.
+        Cleaner.create().register(customClassLoader, () -> { is_reclaimed = true; } );
     }
 
     /**
@@ -290,7 +244,7 @@ public class ClassUnloader {
      */
     public boolean unloadClass(ExecutionController stresser) {
 
-        finalized = false;
+        is_reclaimed = false;
 
         // free references to class and class loader to be able for collecting by GC
         long waitTimeout = (customClassLoader == null) ? 0 : WAIT_TIMEOUT;
@@ -300,9 +254,9 @@ public class ClassUnloader {
         // force class unloading by eating memory pool
         eatMemory(stresser);
 
-        // give GC chance to run and wait for finalization
+        // give GC chance to run and wait for receiving reclaim notification
         long timeToFinish = System.currentTimeMillis() + waitTimeout;
-        while (!finalized && System.currentTimeMillis() < timeToFinish) {
+        while (!is_reclaimed && System.currentTimeMillis() < timeToFinish) {
             if (!stresser.continueExecution()) {
                 return false;
             }
@@ -314,19 +268,13 @@ public class ClassUnloader {
             }
         }
 
-        // Since customClassLoader object is set to null, we should also null the cleaning
-        // objbects to let them be created when new customClassLoader is created.
-        cleaner = null;
-        cleanable = null;
-        customCleaner = null;
-
         // force GC to unload marked class loader and its classes
-        if (finalized) {
+        if (is_reclaimed) {
             Runtime.getRuntime().gc();
             return true;
         }
 
-        // class loader has not been finalized
+        // class loader has not been is_reclaimed
         return false;
     }
 
@@ -342,31 +290,12 @@ public class ClassUnloader {
         return unloadClass(stresser);
     }
 
-    /**
-     * Stresses memory by allocating arrays of bytes.
-     *
-     * Note that this method can throw Failure if any exception
-     * is thrown while eating memory. To avoid OOM while allocating
-     * exception we preallocate it before the lunch starts. It means
-     * that exception stack trace does not correspond to the place
-     * where exception is thrown, but points at start of the method.
-     */
-    public static void eatMemory(ExecutionController stresser) {
-        GarbageUtils.eatMemory(stresser, 50, 1024, 2);
-        if (cleanable != null) {
-          cleanable.clean();
-        }
+     // Stresses memory by allocating arrays of bytes.
+   public static void eatMemory(ExecutionController stresser) {
+       GarbageUtils.eatMemory(stresser, 50, 1024, 2);
     }
 
-    /**
-     * Stresses memory by allocating arrays of bytes.
-     *
-     * Note that this method can throw Failure if any exception
-     * is thrown while eating memory. To avoid OOM while allocating
-     * exception we preallocate it before the lunch starts. It means
-     * that exception stack trace does not correspond to the place
-     * where exception is thrown, but points at start of the method.
-     */
+     // Stresses memory by allocating arrays of bytes.
     public static void eatMemory() {
         Stresser stresser = new Stresser() {
 
@@ -376,9 +305,6 @@ public class ClassUnloader {
             }
 
         };
-        GarbageUtils.eatMemory(stresser, 50, 1024, 2);
-        if (cleanable != null) {
-          cleanable.clean();
-        }
+        eatMemory(stresser);
     }
 }
