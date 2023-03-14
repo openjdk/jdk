@@ -25,8 +25,12 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.function.Predicate;
-import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.MethodTransform;
+import jdk.internal.classfile.attribute.MethodParametersAttribute;
+import jdk.internal.classfile.attribute.SourceFileAttribute;
+import jdk.internal.classfile.attribute.SourceDebugExtensionAttribute;
 
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -59,8 +63,13 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                     if (path.endsWith("module-info.class")) {
                         // XXX. Do we have debug info? Is Asm ready for module-info?
                     } else {
-                        byte[] content = newClassReader(path, resource, Classfile.Option.processDebug(false))
-                                                .transform(ClassTransform.ACCEPT_ALL);
+                        byte[] content = newClassReader(path, resource,
+                                Classfile.Option.processDebug(false),
+                                Classfile.Option.processLineNumbers(false)).transform(ClassTransform
+                                        .dropping(cle -> cle instanceof SourceFileAttribute
+                                                      || cle instanceof SourceDebugExtensionAttribute)
+                                        .andThen(ClassTransform.transformingMethods(MethodTransform
+                                                .dropping(me -> me instanceof MethodParametersAttribute))));
                         res = resource.copyWithContent(content);
                     }
                 }
