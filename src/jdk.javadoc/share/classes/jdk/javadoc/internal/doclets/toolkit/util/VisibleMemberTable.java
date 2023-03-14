@@ -30,6 +30,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
@@ -39,7 +40,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor14;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
@@ -524,7 +524,7 @@ public class VisibleMemberTable {
         Elements elementUtils = config.docEnv.getElementUtils();
         switch(kind) {
             default:
-                List<Element> list = lmt.getMembers(inheritedMember, kind);
+                List<Element> list = lmt.getMembers(inheritedMember.getSimpleName(), kind);
                 if (list.isEmpty())
                     return false;
                 return elementUtils.hides(list.get(0), inheritedMember);
@@ -700,7 +700,7 @@ public class VisibleMemberTable {
 
         // Check the local methods in this type.
         // List contains overloads and probably something else, but one match is enough, hence short-circuiting
-        List<Element> lMethods = lmt.getMembers(inheritedMethod, Kind.METHODS);
+        List<Element> lMethods = lmt.getMembers(inheritedMethod.getSimpleName(), Kind.METHODS);
         for (Element le : lMethods) {
             ExecutableElement lMethod = (ExecutableElement) le;
             // Ignore private methods or those methods marked with
@@ -835,25 +835,18 @@ public class VisibleMemberTable {
     }
 
     /*
-     * This class encapsulates the details of local members. orderedMembers
-     * contains the members in the declaration order, additionally a
-     * HashMap is maintained for performance optimization to look up
-     * members. As a future enhancement is perhaps to consolidate the ordering
-     * into a Map, capturing the insertion order, thereby eliminating an
-     * ordered list.
+     * A container of members declared in this class or interface. Members of
+     * the same kind stored in declaration order. The container supports
+     * efficient lookup by a member's simple name.
      */
-    class LocalMemberTable {
+    private class LocalMemberTable {
 
-        // Maintains declaration order
-        private final Map<Kind, List<Element>> orderedMembers;
-
-        // Performance optimization
-        private final Map<Kind, Map<String, List<Element>>> memberMap;
+        final Map<Kind, List<Element>> orderedMembers = new EnumMap<>(Kind.class);
+        final Map<Kind, Map<Name, List<Element>>> namedMembers = new EnumMap<>(Kind.class);
 
         LocalMemberTable() {
-            orderedMembers = new EnumMap<>(Kind.class);
-            memberMap = new EnumMap<>(Kind.class);
-            // elements directly declared by te
+            // elements directly declared by this class or interface,
+            // listed in declaration order
             List<? extends Element> elements = te.getEnclosedElements();
             for (Element e : elements) {
                 if (options.noDeprecated() && utils.isDeprecated(e)) {
@@ -870,11 +863,13 @@ public class VisibleMemberTable {
                     case FIELD:
                         addMember(e, Kind.FIELDS);
                         break;
+                    case ENUM_CONSTANT:
+                        addMember(e, Kind.ENUM_CONSTANTS);
+                        break;
                     case METHOD:
                         if (utils.isAnnotationInterface(te)) {
-                            ExecutableElement ee = (ExecutableElement) e;
                             addMember(e, Kind.ANNOTATION_TYPE_MEMBER);
-                            addMember(e, ee.getDefaultValue() == null
+                            addMember(e, ((ExecutableElement) e).getDefaultValue() == null
                                     ? Kind.ANNOTATION_TYPE_MEMBER_REQUIRED
                                     : Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
                         } else {
@@ -884,69 +879,40 @@ public class VisibleMemberTable {
                     case CONSTRUCTOR:
                         addMember(e, Kind.CONSTRUCTORS);
                         break;
-                    case ENUM_CONSTANT:
-                        addMember(e, Kind.ENUM_CONSTANTS);
-                        break;
                 }
             }
 
-            // Freeze the data structures
+            // protect from unintended change
             for (Kind kind : Kind.values()) {
-                orderedMembers.computeIfPresent(kind, (k, v) -> Collections.unmodifiableList(v));
-                orderedMembers.computeIfAbsent(kind, t -> List.of());
-
-                memberMap.computeIfPresent(kind, (k, v) -> Collections.unmodifiableMap(v));
-                memberMap.computeIfAbsent(kind, t -> Map.of());
+                orderedMembers.compute(kind, (k, v) -> v == null ? List.of() : Collections.unmodifiableList(v));
+                namedMembers.compute(kind, (k, v) -> v == null ? Map.of() : Collections.unmodifiableMap(v));
             }
-        }
-
-        String getMemberKey(Element e) {
-            return new SimpleElementVisitor14<String, Void>() {
-                @Override
-                public String visitExecutable(ExecutableElement e, Void aVoid) {
-                    return e.getSimpleName() + ":" + e.getParameters().size();
-                }
-
-                @Override
-                protected String defaultAction(Element e, Void aVoid) {
-                    return e.getSimpleName().toString();
-                }
-            }.visit(e);
         }
 
         void addMember(Element e, Kind kind) {
-            List<Element> list = orderedMembers.computeIfAbsent(kind, k -> new ArrayList<>());
-            list.add(e);
-
-            Map<String, List<Element>> map = memberMap.computeIfAbsent(kind, k -> new HashMap<>());
-            list = map.computeIfAbsent(getMemberKey(e), l -> new ArrayList<>());
-            list.add(e);
+            orderedMembers.computeIfAbsent(kind, k -> new ArrayList<>()).add(e);
+            namedMembers.computeIfAbsent(kind, k -> new HashMap<>())
+                    .computeIfAbsent(e.getSimpleName(), l -> new ArrayList<>())
+                    .add(e);
         }
 
         List<Element> getOrderedMembers(Kind kind) {
             return orderedMembers.get(kind);
         }
 
-        List<Element> getMembers(Element e, Kind kind) {
-            String key = getMemberKey(e);
-            return getMembers(key, kind);
+        List<Element> getMembers(Name simplename, Kind kind) {
+            return namedMembers.get(kind).getOrDefault(simplename, List.of());
         }
 
-        List<Element> getMembers(String key, Kind kind) {
-            Map<String, List<Element>> map = memberMap.get(kind);
-            return map.getOrDefault(key, List.of());
-        }
-
-        <T extends Element> List<T> getMembers(String key, Kind kind, Class<T> clazz) {
-            Map<String, List<Element>> map = memberMap.get(kind);
-            return map.getOrDefault(key, List.of())
+        <T extends Element> List<T> getMembers(Name simplename, Kind kind, Class<T> clazz) {
+            return getMembers(simplename, kind)
                     .stream()
                     .map(clazz::cast)
                     .toList();
         }
 
-        List<ExecutableElement> getPropertyMethods(String methodName, int argcount) {
-            return getMembers(methodName + ":" + argcount, Kind.METHODS).stream()
+        List<ExecutableElement> getPropertyMethods(Name simplename) {
+            return getMembers(simplename, Kind.METHODS).stream()
                     .filter(m -> (utils.isPublic(m) || utils.isProtected(m)))
                     .map(m -> (ExecutableElement) m)
                     .toList();
@@ -1010,35 +976,35 @@ public class VisibleMemberTable {
         // Compute additional properties related sundries.
         for (ExecutableElement propertyMethod : propertyMethods) {
             String baseName = pUtils.getBaseName(propertyMethod);
-            List<VariableElement> flist = lmt.getMembers(baseName, Kind.FIELDS, VariableElement.class);
+            List<VariableElement> flist = lmt.getMembers(utils.elementUtils.getName(baseName), Kind.FIELDS, VariableElement.class);
             VariableElement field = flist.isEmpty() ? null : flist.get(0);
 
-            ExecutableElement getter = null, setter = null;
-            List<ExecutableElement> found = lmt.getPropertyMethods(pUtils.getGetName(propertyMethod), 0);
-            if (!found.isEmpty()) {
-                // Getters have zero params, no overloads! pick the first.
-                getter = found.get(0);
-            }
-            if (getter == null) {
+            // TODO: this code does not seem to be covered by tests well
+            ExecutableElement getter = null;
+            var g = lmt.getPropertyMethods(utils.elementUtils.getName(pUtils.getGetName(propertyMethod))).stream()
+                    .filter(m -> m.getParameters().isEmpty()) // Getters have zero params, no overloads!
+                    .findAny();
+            if (g.isPresent()) {
+                getter = g.get();
+            } else {
                 // Check if isProperty methods are present ?
-                found = lmt.getPropertyMethods(pUtils.getIsName(propertyMethod), 0);
-                if (!found.isEmpty()) {
+                var i = lmt.getPropertyMethods(utils.elementUtils.getName(pUtils.getIsName(propertyMethod))).stream()
+                        .filter(m -> m.getParameters().isEmpty())
+                        .findAny();
+                if (i.isPresent()) {
                     // Check if the return type of property method matches an isProperty method.
                     if (pUtils.hasIsMethod(propertyMethod)) {
-                        // Getters have zero params, no overloads!, pick the first.
-                        getter = found.get(0);
+                        // Getters have zero params, no overloads!
+                        getter = i.get();
                     }
                 }
             }
-            found = lmt.getPropertyMethods(pUtils.getSetName(propertyMethod), 1);
-            if (found != null) {
-                for (ExecutableElement e : found) {
-                    if (pUtils.isValidSetterMethod(e)) {
-                        setter = e;
-                        break;
-                    }
-                }
-            }
+
+            var setter = lmt.getPropertyMethods(utils.elementUtils.getName(pUtils.getSetName(propertyMethod))).stream()
+                    // TODO: number of parameters a setter take is not tested
+                    .filter(m -> m.getParameters().size() == 1 && pUtils.isValidSetterMethod(m))
+                    .findAny()
+                    .orElse(null);
 
             PropertyMembers pm = new PropertyMembers(propertyMethod, field, getter, setter);
             propertyMap.put(propertyMethod, pm);
