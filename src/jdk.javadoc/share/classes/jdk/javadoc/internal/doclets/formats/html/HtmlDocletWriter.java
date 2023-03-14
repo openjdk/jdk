@@ -289,23 +289,30 @@ public class HtmlDocletWriter {
      * @param dl the content to which the method information will be added
      */
     private void addMethodInfo(ExecutableElement method, Content dl) {
-        TypeElement enclosing = utils.getEnclosingTypeElement(method);
-        List<? extends TypeMirror> intfacs = enclosing.getInterfaces();
-        ExecutableElement overriddenMethod = utils.overriddenMethod(method);
-        VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
-        // Check whether there is any implementation or overridden info to be
-        // printed. If no overridden or implementation info needs to be
-        // printed, do not print this section.
-        if ((!intfacs.isEmpty()
-                && !vmt.getImplementedMethods(method).isEmpty())
-                || overriddenMethod != null) {
-            MethodWriterImpl.addImplementsInfo(this, method, dl);
-            if (overriddenMethod != null) {
-                MethodWriterImpl.addOverridden(this,
-                        utils.overriddenType(method),
-                        overriddenMethod,
-                        dl);
-            }
+        var enclosing = (TypeElement) method.getEnclosingElement();
+        var overrideInfo = utils.overriddenMethod(method);
+        var enclosingVmt = configuration.getVisibleMemberTable(enclosing);
+        var implementedMethods = enclosingVmt.getImplementedMethods(method);
+        if ((!enclosing.getInterfaces().isEmpty()
+                && !implementedMethods.isEmpty())
+                || overrideInfo != null) {
+            // TODO note that if there are any overridden interface methods throughout the
+            //   hierarchy, !enclosingVmt.getImplementedMethods(method).isEmpty(), their information
+            //   will be printed if *any* of the below is true:
+            //     * the enclosing has _directly_ implemented interfaces
+            //     * the overridden method is not null
+            //   If both are false, the information will not be printed: there will be no
+            //   "Specified by" documentation. The examples of that can be seen in documentation
+            //   for these methods:
+            //     * ForkJoinPool.execute(java.lang.Runnable)
+            //  This is a long-standing bug, which must be fixed separately: JDK-8302316
+            MethodWriterImpl.addImplementsInfo(this, method, implementedMethods, dl);
+        }
+        if (overrideInfo != null) {
+            MethodWriterImpl.addOverridden(this,
+                    overrideInfo.overriddenMethodOwner(),
+                    overrideInfo.overriddenMethod(),
+                    dl);
         }
     }
 

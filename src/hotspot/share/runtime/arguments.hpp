@@ -333,12 +333,12 @@ class Arguments : AllStatic {
 
   // -Xrun arguments
   static AgentLibraryList _libraryList;
-  static void add_init_library(const char* name, char* options);
+  static void add_init_library(const char* name, const char* options);
 
   // -agentlib and -agentpath arguments
   static AgentLibraryList _agentList;
-  static void add_init_agent(const char* name, char* options, bool absolute_path);
-  static void add_instrument_agent(const char* name, char* options, bool absolute_path);
+  static void add_init_agent(const char* name, const char* options, bool absolute_path);
+  static void add_instrument_agent(const char* name, const char* options, bool absolute_path);
 
   // Late-binding agents not started via arguments
   static void add_loaded_agent(AgentLibrary *agentLib);

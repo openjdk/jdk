@@ -1255,8 +1255,8 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassD
   // can happen
   NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
-    Klass* d = str.klass();
-    InstanceKlass::cast(d)->mark_dependent_nmethods(deopt_scope, changes);
+    InstanceKlass* d = str.klass();
+    d->mark_dependent_nmethods(deopt_scope, changes);
   }
 
 #ifndef PRODUCT
