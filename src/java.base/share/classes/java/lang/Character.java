@@ -10800,16 +10800,16 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
 
     /**
      * Determines if the specified character (Unicode code point) has the
-     * Emoji Presentation by default.
+     * Emoji Presentation property by default.
      * <p>
-     * A character is considered to have the Emoji Presentation if and only if it has
-     * the {@code Emoji_Presentation} property, defined in
+     * A character is considered to have the Emoji Presentation property if and
+     * only if it has the {@code Emoji_Presentation} property, defined in
      * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
      * Unicode Emoji (Technical Standard #51)</a>.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  {@code true} if the character has the Emoji Presentation;
-     *          {@code false} otherwise.
+     * @return  {@code true} if the character has the Emoji Presentation
+     *          property; {@code false} otherwise.
      * @since   21
      */
     public static boolean isEmojiPresentation(int codePoint) {
@@ -10874,7 +10874,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * Determines if the specified character (Unicode code point) is
      * an Extended Pictographic.
      * <p>
-     * A character is considered to be an Emoji Component if and only if it has
+     * A character is considered to be an Extended Pictographic if and only if it has
      * the {@code Extended_Pictographic} property, defined in
      * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
      * Unicode Emoji (Technical Standard #51)</a>.
