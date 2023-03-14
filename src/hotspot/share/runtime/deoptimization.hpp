@@ -37,6 +37,7 @@ class ObjectValue;
 class AutoBoxObjectValue;
 class ScopeValue;
 class compiledVFrame;
+class CompiledMethod;
 
 template<class E> class GrowableArray;
 
@@ -48,10 +49,14 @@ class DeoptimizationScope {
   static uint64_t _active_deopt_gen;
   // Indicate an in-progress deopt handshake.
   static bool     _committing_in_progress;
+  // List of methods in the deopt scope with active gen
+  static CompiledMethod* _root_deoptimization_link;
 
   // The required gen we need to execute/wait for
   uint64_t _required_gen;
   DEBUG_ONLY(bool _deopted;)
+
+  void verify_marked_nmethods_deoptimized(uint64_t committed_gen);
 
  public:
   DeoptimizationScope();
@@ -173,11 +178,6 @@ class Deoptimization : AllStatic {
   // Can reconstruct virtualized unsafe large accesses to byte arrays.
   static const int _support_large_access_byte_array_virtualization = 1;
 #endif
-
-  // Make all nmethods that are marked_for_deoptimization not_entrant and deoptimize any live
-  // activations using those nmethods. Scan of the code cache is done to
-  // find all marked nmethods and they are made not_entrant.
-  static void deoptimize_all_marked();
 
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.

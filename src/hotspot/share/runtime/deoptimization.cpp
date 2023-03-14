@@ -98,9 +98,10 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
 
-uint64_t DeoptimizationScope::_committed_deopt_gen = 0;
-uint64_t DeoptimizationScope::_active_deopt_gen    = 1;
-bool     DeoptimizationScope::_committing_in_progress = false;
+uint64_t        DeoptimizationScope::_committed_deopt_gen = 0;
+uint64_t        DeoptimizationScope::_active_deopt_gen    = 1;
+bool            DeoptimizationScope::_committing_in_progress = false;
+CompiledMethod* DeoptimizationScope::_root_deoptimization_link = nullptr;
 
 DeoptimizationScope::DeoptimizationScope() : _required_gen(0) {
   DEBUG_ONLY(_deopted = false;)
@@ -134,6 +135,9 @@ void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
 
   cm->_deoptimization_generation = DeoptimizationScope::_active_deopt_gen;
   _required_gen                  = DeoptimizationScope::_active_deopt_gen;
+
+  cm->_next_deoptimization_link = DeoptimizationScope::_root_deoptimization_link;
+  DeoptimizationScope::_root_deoptimization_link = cm;
 }
 
 void DeoptimizationScope::dependent(CompiledMethod* cm) {
@@ -144,6 +148,77 @@ void DeoptimizationScope::dependent(CompiledMethod* cm) {
   if (_required_gen < cm->_deoptimization_generation) {
     _required_gen = cm->_deoptimization_generation;
   }
+}
+
+class DeoptimizationScopeIterator {
+  CompiledMethod* _cursor;
+  CompiledMethod* _method;
+  DEBUG_ONLY(uint64_t _committing_gen);
+ public:
+  DeoptimizationScopeIterator(CompiledMethod* root, uint64_t committing_gen);
+  bool next();
+  CompiledMethod* method();
+};
+
+DeoptimizationScopeIterator::DeoptimizationScopeIterator(CompiledMethod* root, uint64_t committing_gen) :
+    _cursor(root), _method(nullptr) {
+  DEBUG_ONLY(_committing_gen = committing_gen);
+}
+
+bool DeoptimizationScopeIterator::next() {
+  _method = _cursor;
+  if (_method == nullptr) {
+    return false;
+  }
+  _cursor = _cursor->_next_deoptimization_link;
+  assert(_method->_deoptimization_generation == _committing_gen, "Bad deoptimization generation in list");
+  return true;
+}
+
+CompiledMethod* DeoptimizationScopeIterator::method() {
+  return _method;
+}
+
+class DeoptimizeMarkedClosure : public HandshakeClosure {
+ public:
+  DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
+  void do_thread(Thread* thread) {
+    JavaThread* jt = JavaThread::cast(thread);
+    jt->deoptimize_marked_methods();
+  }
+};
+
+static void deoptimize_all(DeoptimizationScopeIterator iter) {
+  ResourceMark rm;
+
+  // Make the dependent methods not entrant
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
+      nm->make_not_entrant();
+      nm->make_deoptimized();
+    }
+  }
+
+  DeoptimizeMarkedClosure deopt;
+  if (SafepointSynchronize::is_at_safepoint()) {
+    Threads::java_threads_do(&deopt);
+  } else {
+    Handshake::execute(&deopt);
+  }
+}
+
+void DeoptimizationScope::verify_marked_nmethods_deoptimized(uint64_t committed_gen) {
+#ifdef ASSERT
+  RelaxedCompiledMethodIterator iter(RelaxedCompiledMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    if (nm->_deoptimization_generation != committed_gen) {
+      continue;
+    }
+    assert(!nm->can_be_deoptimized() || nm->has_been_deoptimized(), "Missed deoptimization");
+  }
+#endif
 }
 
 void DeoptimizationScope::deoptimize_marked() {
@@ -157,13 +232,17 @@ void DeoptimizationScope::deoptimize_marked() {
 
   // Safepoints are a special case, handled here.
   if (SafepointSynchronize::is_at_safepoint()) {
+    DeoptimizationScopeIterator iter(DeoptimizationScope::_root_deoptimization_link, DeoptimizationScope::_active_deopt_gen);
     DeoptimizationScope::_committed_deopt_gen = DeoptimizationScope::_active_deopt_gen;
     DeoptimizationScope::_active_deopt_gen++;
-    Deoptimization::deoptimize_all_marked();
+    DeoptimizationScope::_root_deoptimization_link = nullptr;
+    deoptimize_all(iter);
+    verify_marked_nmethods_deoptimized(DeoptimizationScope::_committed_deopt_gen);
     DEBUG_ONLY(_deopted = true;)
     return;
   }
 
+  CompiledMethod* root = nullptr;
   uint64_t comitting = 0;
   bool wait = false;
   while (true) {
@@ -178,8 +257,10 @@ void DeoptimizationScope::deoptimize_marked() {
       if (!_committing_in_progress) {
         // The version we are about to commit.
         comitting = DeoptimizationScope::_active_deopt_gen;
+        root = DeoptimizationScope::_root_deoptimization_link;
         // Make sure new marks use a higher gen.
         DeoptimizationScope::_active_deopt_gen++;
+        DeoptimizationScope::_root_deoptimization_link = nullptr;
         _committing_in_progress = true;
         wait = false;
       } else {
@@ -193,7 +274,9 @@ void DeoptimizationScope::deoptimize_marked() {
       os::naked_yield();
     } else {
       // Performs the handshake.
-      Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occurred.
+      DeoptimizationScopeIterator iter(root, comitting);
+      deoptimize_all(iter); // May safepoint and an additional deopt may have occurred.
+      verify_marked_nmethods_deoptimized(comitting);
       DEBUG_ONLY(_deopted = true;)
       {
         MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
@@ -1020,29 +1103,6 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
 
   return bt;
 JRT_END
-
-class DeoptimizeMarkedClosure : public HandshakeClosure {
- public:
-  DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
-  void do_thread(Thread* thread) {
-    JavaThread* jt = JavaThread::cast(thread);
-    jt->deoptimize_marked_methods();
-  }
-};
-
-void Deoptimization::deoptimize_all_marked() {
-  ResourceMark rm;
-
-  // Make the dependent methods not entrant
-  CodeCache::make_marked_nmethods_deoptimized();
-
-  DeoptimizeMarkedClosure deopt;
-  if (SafepointSynchronize::is_at_safepoint()) {
-    Threads::java_threads_do(&deopt);
-  } else {
-    Handshake::execute(&deopt);
-  }
-}
 
 Deoptimization::DeoptAction Deoptimization::_unloaded_action
   = Deoptimization::Action_reinterpret;

@@ -141,6 +141,7 @@ public:
 class CompiledMethod : public CodeBlob {
   friend class VMStructs;
   friend class DeoptimizationScope;
+  friend class DeoptimizationScopeIterator;
   void init_defaults();
 protected:
   enum DeoptimizationStatus : u1 {
@@ -151,6 +152,9 @@ protected:
   };
 
   volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
+  // Used to link deoptimization marked methods.
+  // Invariant: all methods in the list have the same deoptimization generation.
+  CompiledMethod*               _next_deoptimization_link;
   // Used to track in which deoptimize handshake this method will be deoptimized.
   uint64_t                      _deoptimization_generation;
 

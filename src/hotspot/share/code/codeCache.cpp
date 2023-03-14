@@ -1383,17 +1383,6 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method
   }
 }
 
-void CodeCache::make_marked_nmethods_deoptimized() {
-  RelaxedCompiledMethodIterator iter(RelaxedCompiledMethodIterator::only_not_unloading);
-  while(iter.next()) {
-    CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
-      nm->make_not_entrant();
-      nm->make_deoptimized();
-    }
-  }
-}
-
 // Marks compiled methods dependent on dependee.
 void CodeCache::mark_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
