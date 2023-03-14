@@ -734,7 +734,6 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
-javax/script/Test7.java                                         8239361 generic-all
 
 jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
 
