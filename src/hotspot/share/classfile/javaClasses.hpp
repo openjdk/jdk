@@ -340,6 +340,7 @@ class java_lang_Class : AllStatic {
 
 class java_lang_Thread : AllStatic {
   friend class java_lang_VirtualThread;
+  friend class JVMCIVMStructs;
  private:
   // Note that for this class the layout changed between JDK1.2 and JDK1.3,
   // so we compute the offsets at startup rather than hard-wiring them.
@@ -453,9 +454,9 @@ class java_lang_Thread_FieldHolder : AllStatic {
   static jlong stackSize(oop holder);
 
   static bool is_daemon(oop holder);
-  static void set_daemon(oop holder);
+  static void set_daemon(oop holder, bool val);
 
-  static void set_thread_status(oop holder, JavaThreadStatus);
+  static void set_thread_status(oop holder, JavaThreadStatus status);
   static JavaThreadStatus get_thread_status(oop holder);
 
   friend class JavaClasses;
