@@ -4381,7 +4381,7 @@ Node* SWPointer::maybe_negate_invar(bool negate, Node* invar) {
 Node* SWPointer::register_if_new(Node* n) const {
   PhaseIterGVN& igvn = phase()->igvn();
   Node* prev = igvn.hash_find_insert(n);
-  if (prev != NULL) {
+  if (prev != nullptr) {
     n->destruct(&igvn);
     n = prev;
   } else {
@@ -4392,7 +4392,7 @@ Node* SWPointer::register_if_new(Node* n) const {
 }
 
 void SWPointer::maybe_add_to_invar(Node* new_invar) {
-  if (_invar == NULL) {
+  if (_invar == nullptr) {
     _invar = new_invar;
 #ifdef ASSERT
     _debug_invar = new_invar;
