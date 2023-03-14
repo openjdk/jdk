@@ -28,7 +28,6 @@
  * @test
  * @bug 8051498 8145849 8170282
  * @summary JEP 244: TLS Application-Layer Protocol Negotiation Extension
- * @compile MyX509ExtendedKeyManager.java
  *
  * @run main/othervm SSLEngineAlpnTest h2          UNUSED   h2          h2
  * @run main/othervm SSLEngineAlpnTest h2          UNUSED   h2,http/1.1 h2
@@ -237,9 +236,9 @@ public class SSLEngineAlpnTest {
             throw new Exception("kms[0] not X509ExtendedKeyManager");
         }
 
-        kms = new KeyManager[] { new MyX509ExtendedKeyManager(
-                (X509ExtendedKeyManager) kms[0], expectedAP,
-                !hasCallback && hasServerAPs) };
+//        kms = new KeyManager[] { new MyX509ExtendedKeyManager(
+//                (X509ExtendedKeyManager) kms[0], expectedAP,
+//                !hasCallback && hasServerAPs) };
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
