@@ -77,10 +77,10 @@
             fflush(stdout); \
         }
 
+extern "C" {
+
 // We want the C version instead, char16_t is unsigned short in C so this works
 WINCRYPT32API DWORD WINAPI CertGetNameStringW(PCCERT_CONTEXT, DWORD, DWORD, void*, unsigned short*, DWORD);
-
-extern "C" {
 
 char* trace = getenv("CAPI_TRACE");
 

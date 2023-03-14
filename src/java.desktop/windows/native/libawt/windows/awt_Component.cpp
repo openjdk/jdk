@@ -74,9 +74,6 @@
 
 #include <awt_DnDDT.h>
 
-// C version to avoid wchar_t issues
-WINUSERAPI int WINAPI ToUnicodeEx(UINT, UINT, const BYTE*, unsigned short*, int, UINT, HKL);
-
 LPCTSTR szAwtComponentClassName = TEXT("SunAwtComponent");
 // register a message that no other window in the process (even in a plugin
 // scenario) will be using
@@ -96,6 +93,9 @@ extern "C" {
     // This flag remains TRUE until the next WInputMethod.getNativeLocale() is
     // issued.
     BOOL g_bUserHasChangedInputLang = FALSE;
+
+    // C version to avoid wchar_t issues
+    WINUSERAPI int WINAPI ToUnicodeEx(UINT, UINT, const BYTE*, unsigned short*, int, UINT, HKL);
 }
 
 BOOL AwtComponent::sm_suppressFocusAndActivation = FALSE;
