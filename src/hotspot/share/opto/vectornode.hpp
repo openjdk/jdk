@@ -1438,6 +1438,7 @@ class VectorTestNode : public CmpNode {
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   virtual const Type* sub(const Type*, const Type*) const { return TypeInt::CC; }
   BoolTest::mask get_predicate() const { return _predicate; }
+  virtual bool is_arithmetic_cmp() const { return false; }
 
   virtual bool cmp( const Node &n ) const {
     return Node::cmp(n) && _predicate == ((VectorTestNode&)n)._predicate;

@@ -40,6 +40,7 @@ public:
 
   virtual uint ideal_reg() const { return Op_RegFlags; }
   virtual const Type* sub(const Type* t1, const Type* t2) const;
+  virtual bool is_arithmetic_cmp() const { return false; }
 };
 
 class OverflowINode : public OverflowNode {

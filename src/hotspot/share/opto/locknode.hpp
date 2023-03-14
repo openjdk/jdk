@@ -95,6 +95,7 @@ public:
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
+  virtual bool is_arithmetic_cmp() const { return false; }
 
   void create_rtm_lock_counter(JVMState* state);
   RTMLockingCounters*       rtm_counters() const { return _rtm_counters; }
@@ -120,7 +121,7 @@ public:
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
-
+  virtual bool is_arithmetic_cmp() const { return false; }
 };
 
 #endif // SHARE_OPTO_LOCKNODE_HPP

@@ -49,6 +49,7 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::CC; }
   bool depends_only_on_test() const { return false; };
+  virtual bool is_arithmetic_cmp() const { return false; }
 
 #ifdef ASSERT
 private:

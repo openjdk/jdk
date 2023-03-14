@@ -618,7 +618,30 @@ const Type *SubDNode::sub( const Type *t1, const Type *t2 ) const {
 // range -1, 0, 1.
 // And optimizations like those for (X + Y) - X fail if overflow happens.
 Node* CmpNode::Identity(PhaseGVN* phase) {
-  return this;
+  if (!is_arithmetic_cmp()) {
+    return this; // No progress
+  }
+  // (Cmp (Cast P1) P2) is identity to (Cmp P1 P2), we use latter form because
+  // deduplication is generally profitable than refining type
+  for (uint i = 1; i < req(); ++i) {
+    Node* n = in(i);
+    if (n == nullptr || phase->type(n) == Type::TOP) {
+      return this; // Missing inputs are TOP
+    }
+    Node* uncast = n->uncast();
+    if (uncast != n) {
+      for (DUIterator_Fast kmax, k = uncast->fast_outs(kmax); k < kmax; k++) {
+        Node* use = uncast->fast_out(k);
+        if (use->Opcode() == Opcode()) {
+          uint other_in = i == 1 ? 2 : 1;
+          if (use->in(other_in) == in(other_in)) {
+            return use;
+          }
+        }
+      }
+    }
+  }
+  return this; // No progress
 }
 
 CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +30,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8278228
+ * @bug 8278228 8304049
  * @summary C2: Improve identical back-to-back if elimination
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestBackToBackIfs
@@ -57,9 +58,30 @@ public class TestBackToBackIfs {
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.IF, "1" })
+    public static void test1(int a, int b) {
+        if (b != 0) {
+            int_field = 0x42;
+        } else {
+            int_field = 42;
+        }
+        if (b != 0) {
+            int_field = 0x42;
+        } else {
+            int_field = 42;
+        }
+    }
+
     @Run(test = "test")
     public static void test_runner() {
         test(42, 0x42);
         test(0x42, 0x42);
+    }
+
+    @Run(test = "test1")
+    @Warmup(1) // So C2 can't rely on profile data
+    public static void test_runner1() {
+        test1(0, 1);
     }
 }
