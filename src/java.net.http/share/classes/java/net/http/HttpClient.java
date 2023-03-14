@@ -807,7 +807,7 @@ public abstract class HttpClient implements AutoCloseable {
      * on these operations will ever be notified.
      *
      * @implSpec
-     * The default implementation of this simply calls {@link #shutdown()}.
+     * The default implementation of this method simply calls {@link #shutdown()}.
      * Subclasses should override this method to implement the appropriate
      * behavior.
      *
