@@ -1833,11 +1833,6 @@ void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack &nstack
   }
 }
 
-
-//
-//                   C L O N E   A   L O O P   B O D Y
-//
-
 // Passed in a Phi merging (recursively) some nearly equivalent Bool/Cmps.
 // "Nearly" because all Nodes have been cloned from the original in the loop,
 // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs

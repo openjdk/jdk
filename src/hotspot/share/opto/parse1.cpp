@@ -97,7 +97,7 @@ void Parse::print_statistics() {
 }
 #endif
 
-
+//------------------------------ON STACK REPLACEMENT---------------------------
 // Construct a node which can be used to get incoming state for
 // on stack replacement.
 Node *Parse::fetch_interpreter_state(int index,

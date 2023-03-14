@@ -43,6 +43,7 @@
 
 //
 //                  S U P E R W O R D   T R A N S F O R M
+//=============================================================================
 
 SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _phase(phase),

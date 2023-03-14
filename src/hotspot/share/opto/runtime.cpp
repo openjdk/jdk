@@ -189,9 +189,9 @@ const char* OptoRuntime::stub_name(address entry) {
 #endif
 }
 
-
+//=============================================================================
 // Opto compiler runtime routines
-
+//=============================================================================
 
 // We failed the fast-path allocation.  Now we need to do a scavenge or GC
 // and try allocation again.
@@ -698,7 +698,7 @@ const TypeFunc* OptoRuntime::Math_DD_D_Type() {
   return TypeFunc::make(domain, range);
 }
 
-
+//-------------- currentTimeMillis, currentTimeNanos, etc
 const TypeFunc* OptoRuntime::void_long_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(0);
@@ -1300,6 +1300,7 @@ const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
   return TypeFunc::make(domain, range);
 }
 
+//------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);

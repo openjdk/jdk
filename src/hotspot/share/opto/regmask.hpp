@@ -32,6 +32,8 @@
 
 class LRG;
 
+//-------------Non-zero bit search methods used by RegMask---------------------
+
 // Find lowest 1, undefined if empty/0
 static unsigned int find_lowest_bit(uintptr_t mask) {
   return count_trailing_zeros(mask);

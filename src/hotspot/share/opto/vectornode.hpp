@@ -130,6 +130,7 @@ class VectorNode : public TypeNode {
 };
 
 
+//===========================Vector ALU Operations=============================
 // Vector add byte
 class AddVBNode : public VectorNode {
  public:
@@ -743,7 +744,7 @@ class ExpandVNode: public VectorNode {
   virtual int Opcode() const;
 };
 
-
+//================================= M E M O R Y ===============================
 // Load Vector from memory
 class LoadVectorNode : public LoadNode {
  public:
@@ -1016,7 +1017,7 @@ class XorVMaskNode : public XorVNode {
   virtual int Opcode() const;
 };
 
-
+//=========================Promote_Scalar_to_Vector============================
 // Replicate byte scalar to be vector
 class ReplicateBNode : public VectorNode {
  public:
@@ -1059,6 +1060,7 @@ class ReplicateDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//========================Pack_Scalars_into_a_Vector===========================
 class PopulateIndexNode : public VectorNode {
  public:
   PopulateIndexNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
@@ -1151,7 +1153,7 @@ class VectorLoadConstNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-
+//========================Extract_Scalar_from_Vector===========================
 // Extract a scalar from a vector at position "pos"
 class ExtractNode : public Node {
  public:

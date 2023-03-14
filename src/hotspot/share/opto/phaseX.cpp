@@ -42,6 +42,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 #define NODE_HASH_MINIMUM_SIZE    255
+
 NodeHash::NodeHash(uint est_max_size) :
   _a(Thread::current()->resource_area()),
   _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
@@ -1874,6 +1875,7 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
 uint PhaseCCP::_total_invokes   = 0;
 uint PhaseCCP::_total_constants = 0;
 #endif
+
 // Conditional Constant Propagation, ala Wegman & Zadeck
 PhaseCCP::PhaseCCP( PhaseIterGVN *igvn ) : PhaseIterGVN(igvn) {
   NOT_PRODUCT( clear_constants(); )

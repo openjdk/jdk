@@ -1129,6 +1129,7 @@ Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset,
   return mem;
 }
 
+//=============================================================================
 //
 //                              A L L O C A T I O N
 //
@@ -1167,11 +1168,13 @@ Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset,
 // 7) Merge with the slow-path; cast the raw memory pointer to the correct
 // oop flavor.
 //
+//=============================================================================
 // FastAllocateSizeLimit value is in DOUBLEWORDS.
 // Allocations bigger than this always go the slow route.
 // This value must be small enough that allocation attempts that need to
 // trigger exceptions go the slow route.  Also, it must be small enough so
 // that heap_top + size_in_bytes does not wrap around the 4Gig limit.
+//=============================================================================
 // %%% Here is an old comment from parseHelper.cpp; is it outdated?
 // The allocator will coalesce int->oop copies away.  See comment in
 // coalesce.cpp about how this works.  It depends critically on the exact
