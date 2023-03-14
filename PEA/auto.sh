@@ -1,15 +1,19 @@
-#!/bin/bash 
+#!/bin/bash
 
-set -x
-JVM_FLAGS="-XX:+PrintEscapeAnalysis -XX:+PrintEliminateAllocations -XX:+PrintOptoAssembly"
-./run1.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run1_ivanov.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run2.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run2_merykitty.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run2b.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run2_1.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run3_1.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run3_2.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run3.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
-./run_str.sh  -Xlog:gc -XX:+DoPartialEscapeAnalysis -XX:-UseTLAB  $JVM_FLAGS
-./run_exception.sh -Xlog:gc -XX:+DoPartialEscapeAnalysis $JVM_FLAGS
+JVM_FLAGS="-XX:+PrintEscapeAnalysis -XX:+PrintEliminateAllocations -XX:+PrintOptoAssembly -Xlog:gc -XX:+DoPartialEscapeAnalysis"
+
+echo "using" `which java`
+java --version
+
+for t in run*.sh
+do
+    ./$t $JVM_FLAGS > $t.log
+
+    exitcode=$?
+    if [ $exitcode -eq 0 ] || [ $exitcode -eq 3 ];  then
+        echo -e "[$t]\tpassed."
+    else
+        echo -e "[$t]\tfailed!"
+        exit 1
+    fi
+done
