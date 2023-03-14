@@ -836,6 +836,20 @@ void Node::del_req_ordered( uint idx ) {
   Compile::current()->record_modified_node(this);
 }
 
+// Insert a new required input at the end
+void Node::ins_req( uint idx, Node *n ) {
+  assert( is_not_dead(n), "can not use dead node");
+  add_req(nullptr);                // Make space
+  assert( idx < _max, "Must have allocated enough space");
+  // Slide over
+  if(_cnt-idx-1 > 0) {
+    Copy::conjoint_words_to_higher((HeapWord*)&_in[idx], (HeapWord*)&_in[idx+1], ((_cnt-idx-1)*sizeof(Node*)));
+  }
+  _in[idx] = n;                            // Stuff over old required edge
+  if (n != nullptr) n->add_out((Node *)this); // Add reciprocal def-use edge
+  Compile::current()->record_modified_node(this);
+}
+
 int Node::find_edge(Node* n) {
   for (uint i = 0; i < len(); i++) {
     if (_in[i] == n)  return i;
@@ -954,6 +968,26 @@ bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
   return false;
 }
 
+Node* Node::uncast_helper(const Node* p, bool keep_deps) {
+#ifdef ASSERT
+  uint depth_count = 0;
+  const Node* orig_p = p;
+#endif
+
+  while (true) {
+#ifdef ASSERT
+    if (depth_count >= K) {
+      orig_p->dump(4);
+      if (p != orig_p)
+        p->dump(1);
+    }
+    assert(depth_count++ < K, "infinite loop in Node::uncast_helper");
+#endif
+    if (p == nullptr || p->req() != 2) {
+      break;
+    } else if (p->is_ConstraintCast()) {
+      if (keep_deps && p->as_ConstraintCast()->carry_dependency()) {
+        break; // stop at casts with dependencies
       }
       p = p->in(1);
     } else {
@@ -2307,7 +2341,6 @@ void Node::dump_bfs(const int max_distance) const {
   dump_bfs(max_distance, nullptr, nullptr);
 }
 
-// -----------------------------dump_idx---------------------------------------
 void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   if (dc != nullptr) {
     dc->pre_dump(st, this);
@@ -2333,7 +2366,6 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   }
 }
 
-// -----------------------------dump_name--------------------------------------
 void Node::dump_name(outputStream* st, DumpConfig* dc) const {
   if (dc != nullptr) {
     dc->pre_dump(st, this);
@@ -2344,7 +2376,6 @@ void Node::dump_name(outputStream* st, DumpConfig* dc) const {
   }
 }
 
-// -----------------------------Name-------------------------------------------
 extern const char *NodeClassNames[];
 const char *Node::Name() const { return NodeClassNames[Opcode()]; }
 
