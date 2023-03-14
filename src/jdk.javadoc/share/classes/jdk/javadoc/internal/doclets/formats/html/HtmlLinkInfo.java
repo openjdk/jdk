@@ -80,7 +80,7 @@ public class HtmlLinkInfo {
         LINK_TYPE_PARAMS_AND_BOUNDS;
     }
 
-    public final HtmlConfiguration configuration;
+    private final HtmlConfiguration configuration;
 
     // The context of the link.
     private Kind context = Kind.PLAIN;
