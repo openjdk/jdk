@@ -90,7 +90,6 @@ const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-
 // Do not match memory edge
 uint EncodeISOArrayNode::match_edge(uint idx) const {
   return idx == 2 || idx == 3; // EncodeISOArray src (Binary dst len)

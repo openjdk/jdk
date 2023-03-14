@@ -34,7 +34,6 @@
 
 // Optimization - Graph Style
 
-
 class AbstractLockNode;
 class AddNode;
 class AddPNode;
@@ -179,7 +178,6 @@ class ShiftVNode;
 class ExpandVNode;
 class CompressVNode;
 class CompressMNode;
-
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
 #ifdef ASSERT
@@ -582,7 +580,6 @@ public:
   // for( i = 0; i < X.req(); i++ ) ... X[i] ...
   // NOTE: Required edges can contain embedded null pointers.
 
-
   // Generate class IDs for (some) ideal nodes so that it is possible to determine
   // the type of a node using a non-virtual method call (the method is_<Node>() below).
   //
@@ -711,7 +708,6 @@ public:
         DEFINE_CLASS_ID(CompressM, Vector, 6)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
-
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -1012,7 +1008,6 @@ public:
 
   bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
 
-
   // Get the worst-case Type output for this Node.
   virtual const class Type *bottom_type() const;
 
@@ -1093,7 +1088,6 @@ public:
 
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
-
 
   // Ideal register class for Matching.  Zero means unmatched instruction
   // (these are cloned instead of converted to machine nodes).
@@ -1354,7 +1348,6 @@ bool Node::has_out(DUIterator& i) const
 Node*    Node::out(DUIterator& i) const
   { I_VDUI_ONLY(i, i.verify(this));     return debug_only(i._last=) _out[i._idx]; }
 
-
 // Faster DU iterator.  Disallows insertions into the out array.
 // Allows deletion from the out array only at the current point.
 // Usage:
@@ -1426,7 +1419,6 @@ Node* Node::fast_out(DUIterator_Fast& i) const {
   I_VDUI_ONLY(i, i.verify(this));
   return debug_only(i._last=) *i._outp;
 }
-
 
 // Faster DU iterator.  Requires each successive edge to be removed.
 // Does not allow insertion of any edges.
@@ -1507,7 +1499,6 @@ class SimpleDUIterator : public StackObj {
   void next() { i++; }
   Node* get() { return node->fast_out(i); }
 };
-
 
 // Map dense integer indices to Nodes.  Uses classic doubling-array trick.
 // Abstractly provides an infinite array of Node*'s, initialized to null.
@@ -1737,7 +1728,6 @@ public:
   Node* find(uint idx) const;
 };
 
-
 // Debugging or profiling annotations loosely and sparsely associated
 // with some nodes.  See Compile::node_notes_at for the accessor.
 class Node_Notes {
@@ -1812,7 +1802,6 @@ Compile::set_node_notes_at(int idx, Node_Notes* value) {
   assert(loc != nullptr, "");
   return loc->update_from(value);
 }
-
 
 // Node with a Type constant.
 class TypeNode : public Node {

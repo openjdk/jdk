@@ -91,7 +91,6 @@ public:
   static  const TypeTuple *osr_domain();
 };
 
-
 // Incoming parameters
 class ParmNode : public ProjNode {
   static const char * const names[TypeFunc::Parms+1];
@@ -107,7 +106,6 @@ public:
   virtual void dump_compact_spec(outputStream *st) const;
 #endif
 };
-
 
 // Return from subroutine node
 class ReturnNode : public Node {
@@ -125,7 +123,6 @@ public:
   virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
 };
-
 
 // Rethrow of exception at call site.  Ends a procedure before rethrowing;
 // ends the current basic block like a ReturnNode.  Restores registers and
@@ -145,7 +142,6 @@ class RethrowNode : public Node {
   virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
 };
-
 
 // Pop stack frame and jump indirect
 class TailCallNode : public ReturnNode {
@@ -546,7 +542,6 @@ public:
 #endif
 };
 
-
 // Simple container for the outgoing projections of a call.  Useful
 // for serious surgery on calls.
 class CallProjections : public StackObj {
@@ -648,7 +643,6 @@ public:
   virtual void        dump_spec(outputStream* st) const;
 #endif
 };
-
 
 // Make a static or dynamic subroutine call node using Java calling
 // convention.  (The "Java" calling convention is the compiler's calling
@@ -834,7 +828,6 @@ public:
   virtual int   Opcode() const;
   virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;
 };
-
 
 // High-level memory allocation
 //

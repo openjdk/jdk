@@ -32,7 +32,6 @@
 
 // Optimization - Graph Style
 
-
 // This class defines a Type lattice.  The lattice is used in the constant
 // propagation algorithms, and for some type-checking of the iloc code.
 // Basic types include RSD's (lower bound, upper bound, stride for integers),
@@ -167,7 +166,6 @@ private:
   // join to ensure my lattice is symmetric up and down.  Dual is computed
   // lazily, on demand, and cached in _dual.
   const Type *_dual;            // Cached dual value
-
 
   const Type *meet_helper(const Type *t, bool include_speculative) const;
   void check_symmetrical(const Type* t, const Type* mt, const VerifyMeet& verify) const NOT_DEBUG_RETURN;
@@ -565,8 +563,6 @@ public:
   static const TypeInteger* minus_1(BasicType type);
 };
 
-
-
 // Class of integer ranges, the set of integers between a lower bound and an
 // upper bound, inclusive.
 class TypeInt : public TypeInteger {
@@ -630,7 +626,6 @@ public:
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
 };
-
 
 // Class of long integer ranges, the set of integers between a lower bound and
 // an upper bound, inclusive.
@@ -806,7 +801,6 @@ public:
     return makemask(get_const_basic_type(elem_bt), length);
   }
   static const TypeVect *makemask(const Type* elem, uint length);
-
 
   virtual const Type *xmeet( const Type *t) const;
   virtual const Type *xdual() const;     // Compute dual right now.
@@ -1156,7 +1150,6 @@ public:
   }
   virtual bool is_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const { ShouldNotReachHere(); return false; }
   virtual bool maybe_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const { ShouldNotReachHere(); return false; }
-
 
   // Creates a type given a klass. Correctly handles multi-dimensional arrays
   // Respects UseUniqueSubclasses.
@@ -1891,7 +1884,6 @@ public:
          Parms      = AdlcVMDeps::Parms
   };
 
-
   // Accessors:
   const TypeTuple* domain() const { return _domain; }
   const TypeTuple* range()  const { return _range; }
@@ -2158,7 +2150,6 @@ inline bool Type::is_floatingpoint() const {
     return true;
   return false;
 }
-
 
 // ===============================================================
 // Things that need to be 64-bits in the 64-bit build but

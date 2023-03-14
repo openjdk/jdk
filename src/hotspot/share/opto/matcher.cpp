@@ -154,8 +154,6 @@ OptoReg::Name Compile::compute_old_SP() {
   return OptoReg::stack2reg(align_up(fixed + preserve, (int)Matcher::stack_alignment_in_slots()));
 }
 
-
-
 #ifdef ASSERT
 void Matcher::verify_new_nodes_only(Node* xroot) {
   // Make sure that the new graph only references new nodes
@@ -179,7 +177,6 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
   }
 }
 #endif
-
 
 void Matcher::match( ) {
   if( MaxLabelRootDepth < 100 ) { // Too small?
@@ -1240,7 +1237,6 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
   return OptoReg::as_OptoReg(reg);
 }
 
-
 // Helper function to match call instructions.  Calls match special.
 // They match alone with no children.  Their children, the incoming
 // arguments, match normally.
@@ -1331,7 +1327,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // These are usually backing store for register arguments for varargs.
   if( call != nullptr && call->is_CallRuntime() )
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
-
 
   // Do the normal argument list (parameters) register masks
   int argcnt = cnt - TypeFunc::Parms;
@@ -1537,7 +1532,6 @@ MachNode *Matcher::match_tree( const Node *n ) {
   return m;
 }
 
-
 // Choose to either match this Node in a register or part of the current
 // match tree.  Return true for requiring a register and false for matching
 // as part of the current match tree.
@@ -1588,7 +1582,6 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
   // Not forceable cloning.  If shared, put it into a register.
   return shared;
 }
-
 
 // Label method walks a "tree" of nodes, using the ADLC generated DFA to match
 // ideal nodes to machine instructions.  Trees are delimited by shared Nodes,
@@ -1698,7 +1691,6 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
   return control;
 }
 
-
 // Con nodes reduced using the same rule can share their MachNode
 // which reduces the number of copies of a constant in the final
 // program.  The register allocator is free to split uses later to
@@ -1735,7 +1727,6 @@ MachNode* Matcher::find_shared_node(Node* leaf, uint rule) {
   }
   return nullptr;
 }
-
 
 // Reduce a State tree (with given Control) into a tree of MachNodes.
 // This routine (and it's cohort ReduceOper) convert Ideal Nodes into
@@ -1905,7 +1896,6 @@ void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* ma
   return;
 }
 
-
 uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mach, uint num_opnds ) {
   handle_precedence_edges(s->_leaf, mach);
 
@@ -2024,7 +2014,6 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
     }
   }
 }
-
 
 // -------------------------------------------------------------------------
 // Java-Java calling convention

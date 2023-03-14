@@ -277,7 +277,6 @@ void PhaseChaitin::new_lrg(const Node *x, uint lrg) {
   _lrg_map.uf_extend(lrg, lrg);
 }
 
-
 int PhaseChaitin::clone_projs(Block* b, uint idx, Node* orig, Node* copy, uint& max_lrg_id) {
   assert(b->find_node(copy) == (idx - 1), "incorrect insert index for copy kill projections");
   DEBUG_ONLY( Block* borig = _cfg.get_block_for_node(orig); )
@@ -732,7 +731,6 @@ void PhaseChaitin::mark_ssa() {
   // Reset the Union-Find mapping to be identity
   _lrg_map.reset_uf_map(max_idx+1);
 }
-
 
 // Gather LiveRanGe information, including register masks.  Modification of
 // cisc spillable in_RegMasks should not be done before AggressiveCoalesce.
@@ -1873,7 +1871,6 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
       break;
     }
   }
-
 
   // Cache info for later passes
   derived_base_map[derived->_idx] = base;

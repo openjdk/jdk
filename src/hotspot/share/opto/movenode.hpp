@@ -154,5 +154,4 @@ class BinaryNode : public Node {
   virtual uint ideal_reg() const { return 0; }
 };
 
-
 #endif // SHARE_OPTO_MOVENODE_HPP

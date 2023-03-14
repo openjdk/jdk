@@ -207,7 +207,6 @@ int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *curre
   return yank_if_dead(old,current_block,value,regnd);
 }
 
-
 // Skip through any number of copies (that don't mod oop-i-ness)
 Node *PhaseChaitin::skip_copies( Node *c ) {
   int idx = c->is_Copy();
@@ -342,7 +341,6 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
   return blk_adjust;
 }
 
-
 //
 // Check if nreg already contains the constant value val.  Normal copy
 // elimination doesn't doesn't work on constants because multiple
@@ -473,7 +471,6 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
 
   return blk_adjust;
 }
-
 
 // Post-Allocation peephole copy removal.  We do this in 1 pass over the
 // basic blocks.  We maintain a mapping of registers to Nodes (an  array of

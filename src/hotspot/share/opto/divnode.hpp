@@ -34,7 +34,6 @@
 
 // Optimization - Graph Style
 
-
 // Integer division
 // Note: this is division as defined by JVMS, i.e., MinInt/-1 == MinInt.
 // On processors which don't naturally support this special case (e.g., x86),
@@ -216,7 +215,6 @@ public:
   // Make a divmod and associated projections from a div or mod.
   static DivModLNode* make(Node* div_or_mod);
 };
-
 
 // Unsigend integer division with remainder result.
 class UDivModINode : public DivModNode {

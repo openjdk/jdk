@@ -46,7 +46,6 @@ class       PhaseCCP;
 class   PhasePeephole;
 class   PhaseRegAlloc;
 
-
 // Expandable closed hash-table of nodes, initialized to null.
 // Note that the constructor just zeros things
 // Storage is reclaimed when the Arena's lifetime is over.
@@ -113,7 +112,6 @@ public:
 #endif
 };
 
-
 // Map dense integer indices to Types.  Uses classic doubling-array trick.
 // Abstractly provides an infinite array of Type*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
@@ -138,7 +136,6 @@ public:
   void dump() const;
 #endif
 };
-
 
 // Remove useless nodes from GVN hash-table, worklist, and graph
 class PhaseRemoveUseless : public Phase {
@@ -169,7 +166,6 @@ public:
                     Unique_Node_List* worklist, Unique_Node_List* new_worklist,
                     PhaseNumber phase_num = Remove_Useless_And_Renumber_Live);
 };
-
 
 // Phases that analyze, then transform.  Constructing the Phase object does any
 // global or slow analysis.  The results are cached later for a fast
@@ -402,7 +398,6 @@ public:
   uint    made_new_values() const { return _count_new_values; }
 #endif
 };
-
 
 // Phase for performing local, pessimistic GVN-style optimizations.
 class PhaseGVN : public PhaseValues {
@@ -652,7 +647,6 @@ class PhaseCCP : public PhaseIterGVN {
   static void print_statistics();
 #endif
 };
-
 
 // Phase for performing peephole optimizations on register allocated basic blocks.
 class PhasePeephole : public PhaseTransform {

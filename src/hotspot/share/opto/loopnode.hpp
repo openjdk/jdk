@@ -213,7 +213,6 @@ public:
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
 };
 
-
 class CountedLoopNode : public BaseCountedLoopNode {
   // Size is bigger to hold _main_idx.  However, _main_idx does not change
   // the semantics so it does not appear in the hash & cmp functions.
@@ -293,7 +292,6 @@ public:
 
   int main_idx() const { return _main_idx; }
 
-
   void set_pre_loop  (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Pre ; _main_idx = main->_idx; }
   void set_main_loop (                     ) { assert(is_normal_loop(),""); _loop_flags |= Main;                         }
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
@@ -366,7 +364,6 @@ public:
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
 };
-
 
 // CountedLoopEndNodes end simple trip counted loops.  They act much like
 // IfNodes.
@@ -463,7 +460,6 @@ public:
   }
 };
 
-
 inline BaseCountedLoopEndNode* BaseCountedLoopNode::loopexit_or_null() const {
   Node* bctrl = back_control();
   if (bctrl == nullptr) return nullptr;
@@ -515,7 +511,6 @@ inline jlong BaseCountedLoopNode::stride_con() const {
   BaseCountedLoopEndNode* cle = loopexit_or_null();
   return cle != nullptr ? cle->stride_con() : 0;
 }
-
 
 // Counted Loop limit node which represents exact final iterator value:
 // trip_count = (limit - init_trip + stride - 1)/stride
@@ -1530,7 +1525,6 @@ public:
   Node* clone_iff(PhiNode* phi);
   CmpNode* clone_bool(PhiNode* phi);
 
-
   // Rework addressing expressions to get the most loop-invariant stuff
   // moved out.  We'd like to do all associative operators, but it's especially
   // important (common) to do address expressions.
@@ -1713,7 +1707,6 @@ public:
 
   LoopNode* create_inner_head(IdealLoopTree* loop, BaseCountedLoopNode* head, IfNode* exit_test);
 
-
   int extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
                                       Node_List &range_checks);
 
@@ -1762,7 +1755,6 @@ public:
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
 };
 
-
 class AutoNodeBudget : public StackObj
 {
 public:
@@ -1806,7 +1798,6 @@ private:
   bool _check_at_final;
   uint _nodes_at_begin;
 };
-
 
 // This kit may be used for making of a reserved copy of a loop before this loop
 //  goes under non-reversible changes.

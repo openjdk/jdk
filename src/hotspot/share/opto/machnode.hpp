@@ -604,7 +604,6 @@ public:
   virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
-
 #ifndef PRODUCT
   static const char *spill_type(SpillType st) {
     switch (st) {
@@ -1021,7 +1020,6 @@ public:
   virtual const TypePtr *adr_type() const;
 };
 
-
 // Node used by the adlc to construct inputs to represent temporary registers
 class MachTempNode : public MachNode {
 private:
@@ -1046,8 +1044,6 @@ public:
   virtual const char *Name() const { return "MachTemp";}
 #endif
 };
-
-
 
 // Machine-independent version of label operand
 class labelOper : public MachOper {
@@ -1080,7 +1076,6 @@ public:
   virtual void ext_format(PhaseRegAlloc *ra, const MachNode *node, int idx, outputStream *st) const { int_format( ra, node, st ); }
 #endif
 };
-
 
 // Machine-independent version of method operand
 class methodOper : public MachOper {

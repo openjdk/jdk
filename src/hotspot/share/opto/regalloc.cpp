@@ -54,7 +54,6 @@ PhaseRegAlloc::PhaseRegAlloc( uint unique, PhaseCFG &cfg,
     _alloc_statistics[_num_allocators++] = pr_stats;
 }
 
-
 int PhaseRegAlloc::reg2offset_unchecked( OptoReg::Name reg ) const {
   // Slots below _max_in_arg_stack_reg are offset by the entire frame.
   // Slots above _max_in_arg_stack_reg are frame_slots and are not offset.

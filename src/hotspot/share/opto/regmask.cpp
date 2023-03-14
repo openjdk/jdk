@@ -32,7 +32,6 @@
 #include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-
 #ifndef PRODUCT
 void OptoReg::dump(int r, outputStream *st) {
   switch (r) {
@@ -45,7 +44,6 @@ void OptoReg::dump(int r, outputStream *st) {
   }
 }
 #endif
-
 
 const RegMask RegMask::Empty;
 

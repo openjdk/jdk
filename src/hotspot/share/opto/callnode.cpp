@@ -174,7 +174,6 @@ uint ReturnNode::match_edge(uint idx) const {
   return 0;
 }
 
-
 #ifndef PRODUCT
 void ReturnNode::dump_req(outputStream *st, DumpConfig* dc) const {
   // Dump the required inputs, after printing "returns"
@@ -511,7 +510,6 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
   if (caller() != nullptr) caller()->format(regalloc, n, st);
 }
 
-
 void JVMState::dump_spec(outputStream *st) const {
   if (_method != nullptr) {
     bool printed = false;
@@ -541,7 +539,6 @@ void JVMState::dump_spec(outputStream *st) const {
   }
   if (caller() != nullptr)  caller()->dump_spec(st);
 }
-
 
 void JVMState::dump_on(outputStream* st) const {
   bool print_map = _map && !((uintptr_t)_map & 1) &&
@@ -702,7 +699,6 @@ void CallNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint 
   // Use the standard compiler calling convention
   SharedRuntime::java_calling_convention(sig_bt, parm_regs, argcnt);
 }
-
 
 // Construct projections for control, I/O, memory-fields, ..., and
 // return result(s) along with their RegMask info
@@ -867,7 +863,6 @@ Node *CallNode::result_cast() {
   }
   return cast;
 }
-
 
 void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) {
   projs->fallthrough_proj      = nullptr;
@@ -1215,8 +1210,6 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
   SharedRuntime::vector_calling_convention(parm_regs, _num_bits, argcnt);
 }
 
-
-
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
@@ -1224,7 +1217,6 @@ void CallLeafNode::dump_spec(outputStream *st) const {
   CallNode::dump_spec(st);
 }
 #endif
-
 
 void SafePointNode::set_local(JVMState* jvms, uint idx, Node *c) {
   assert(verify_jvms(jvms), "jvms must match");
@@ -1256,7 +1248,6 @@ void SafePointNode::set_next_exception(SafePointNode* n) {
   }
 }
 
-
 SafePointNode* SafePointNode::next_exception() const {
   if (len() == req()) {
     return nullptr;
@@ -1266,7 +1257,6 @@ SafePointNode* SafePointNode::next_exception() const {
     return (SafePointNode*) n;
   }
 }
-
 
 // Skip over any collapsed Regions
 Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -1335,7 +1325,6 @@ const RegMask &SafePointNode::in_RegMask(uint idx) const {
 const RegMask &SafePointNode::out_RegMask() const {
   return RegMask::Empty;
 }
-
 
 void SafePointNode::grow_stack(JVMState* jvms, uint grow_by) {
   assert((int)grow_by > 0, "sanity");
@@ -1417,7 +1406,6 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   }
 }
 
-
 SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
 #ifdef ASSERT
                                                      Node* alloc,
@@ -1475,7 +1463,6 @@ SafePointScalarObjectNode::clone(Dict* sosn_map, bool& new_node) const {
   sosn_map->Insert((void*)this, (void*)res);
   return res;
 }
-
 
 #ifndef PRODUCT
 void SafePointScalarObjectNode::dump_spec(outputStream *st) const {

@@ -489,7 +489,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   }
 }
 
-
 // Select a nice fellow from the worklist to schedule next. If there is only one
 // choice, then use it. CreateEx nodes that are initially ready must start their
 // blocks and are given the highest priority, by being placed at the beginning
@@ -830,7 +829,6 @@ static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_p
   }
 }
 
-
 uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call) {
   RegMask regs;
 
@@ -923,7 +921,6 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
 
   return node_cnt;
 }
-
 
 // Topological sort within a block.  Someday become a real scheduler.
 bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, VectorSet& next_call, intptr_t *recalc_pressure_nodes) {
@@ -1360,7 +1357,6 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
       }
     }
   }
-
 
   // Fixup edges.  Check the def-use info per cloned Node
   for(uint i2 = beg; i2 < end; i2++ ) {

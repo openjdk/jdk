@@ -363,7 +363,6 @@ class Compile : public Phase {
   static IdealGraphPrinter* _debug_network_printer;
 #endif
 
-
   // Node management
   uint                  _unique;                // Counter for unique Node indices
   VectorSet             _dead_node_list;        // Set of dead nodes
@@ -385,7 +384,6 @@ class Compile : public Phase {
 
   // Constant table
   MachConstantBaseNode* _mach_constant_base_node;  // Constant table base node singleton.
-
 
   // Blocked array of debugging and profiling information,
   // tracked per node.
@@ -943,7 +941,6 @@ class Compile : public Phase {
   // Replace n by nn using initial_gvn, calling hash_delete and
   // record_for_igvn as needed.
   void gvn_replace_by(Node* n, Node* nn);
-
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);

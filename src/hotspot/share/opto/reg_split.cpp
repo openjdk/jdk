@@ -392,7 +392,6 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
     }
   }
 
-
   assert( spill->out_RegMask().is_UP(), "rematerialize to a reg" );
   // Rematerialized op is def->spilled+1
   set_was_spilled(spill);
@@ -447,7 +446,6 @@ bool PhaseChaitin::is_high_pressure( Block *b, LRG *lrg, uint insidx ) {
   // than live range has.
   return block_pres >= lrg_pres;
 }
-
 
 // True if lidx is used before any real register is def'd in the block
 bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
@@ -1373,7 +1371,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   }  // End for all Phi Nodes
   // Update _maxlrg to save Union asserts
   _lrg_map.set_max_lrg_id(maxlrg);
-
 
   //----------PASS 3----------
   // Pass over all Phi's to union the live ranges

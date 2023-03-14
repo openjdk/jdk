@@ -35,7 +35,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
-
 // register information defined by ADLC
 extern const char register_save_policy[];
 extern const int  register_save_type[];

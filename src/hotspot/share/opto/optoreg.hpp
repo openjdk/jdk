@@ -73,8 +73,6 @@ class OptoReg {
   // Stack pointer register
   static OptoReg::Name c_frame_pointer;
 
-
-
   // Increment a register number.  As in:
   //    "for ( OptoReg::Name i; i=Control; i = add(i,1) ) ..."
   static Name add( Name x, int y ) { return Name(x+y); }

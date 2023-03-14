@@ -117,7 +117,6 @@ SubNode* SubNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
-
 static bool is_cloop_increment(Node* inc) {
   precond(inc->Opcode() == Op_AddI || inc->Opcode() == Op_AddL);
 
@@ -529,7 +528,6 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
   return sub(t1,t2);            // Local flavor of type subtraction
 }
 
-
 Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t2 = phase->type( in(2) );
   // Convert "x-c0" into "x+ -c0".
@@ -679,7 +677,6 @@ const Type* CmpINode::Value(PhaseGVN* phase) const {
 
   return SubNode::Value(phase);
 }
-
 
 // Simplify a CmpU (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
@@ -882,7 +879,6 @@ const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::CC_GE;
   return TypeInt::CC;           // else use worst case results
 }
-
 
 // Simplify a CmpUL (compare 2 unsigned longs) node, based on local information.
 // If both inputs are constants, compare them.
@@ -1207,7 +1203,6 @@ const Type* CmpFNode::Value(PhaseGVN* phase) const {
   return TypeInt::CC_EQ;
 }
 
-
 // Simplify an CmpD (compare 2 doubles ) node, based on local information.
 // If both inputs are constants, compare them.
 const Type* CmpDNode::Value(PhaseGVN* phase) const {
@@ -1274,7 +1269,6 @@ Node *CmpDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   }
   return nullptr;                  // No change
 }
-
 
 // Convert a condition code type to a logical type
 const Type *BoolTest::cc2logical( const Type *CC ) const {

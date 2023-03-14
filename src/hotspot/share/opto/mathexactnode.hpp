@@ -54,7 +54,6 @@ public:
   virtual bool can_overflow(const Type* t1, const Type* t2) const = 0;
 };
 
-
 class OverflowLNode : public OverflowNode {
 public:
   typedef TypeLong TypeClass;

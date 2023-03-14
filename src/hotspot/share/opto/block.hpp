@@ -71,7 +71,6 @@ public:
   uint Max() const { debug_only(return _limit); return _size; }
 };
 
-
 class Block_List : public Block_Array {
   friend class VMStructs;
 public:
@@ -86,7 +85,6 @@ public:
   void reset() { _cnt = 0; }
   void print();
 };
-
 
 class CFGElement : public AnyObj {
   friend class VMStructs;
@@ -362,7 +360,6 @@ public:
   void dump(const PhaseCFG* cfg) const;
 #endif
 };
-
 
 // Build an array of Basic Block pointers, one per Node.
 class PhaseCFG : public Phase {
@@ -645,7 +642,6 @@ class PhaseCFG : public Phase {
   void verify() const NOT_DEBUG_RETURN;
 };
 
-
 // Map Block indices to a block-index for a cfg-cover.
 // Array lookup in the optimized case.
 class UnionFind : public ResourceObj {
@@ -742,7 +738,6 @@ class CFGLoop : public CFGElement {
 #endif
 };
 
-
 // A edge between two basic blocks that will be embodied by a branch or a
 // fall-through.
 class CFGEdge : public ResourceObj {
@@ -787,7 +782,6 @@ class CFGEdge : public ResourceObj {
   void dump( ) const;
 #endif
 };
-
 
 // An ordered list of basic blocks.
 class Trace : public ResourceObj {

@@ -83,5 +83,4 @@ class PopCountLNode : public CountBitsNode {
   virtual int Opcode() const;
 };
 
-
 #endif // SHARE_OPTO_COUNTBITSNODE_HPP

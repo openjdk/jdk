@@ -315,7 +315,6 @@ void NodeHash::remove_useless_nodes(VectorSet &useful) {
   }
 }
 
-
 void NodeHash::check_no_speculative_types() {
 #ifdef ASSERT
   uint max = size();
@@ -387,9 +386,7 @@ void NodeHash::operator=(const NodeHash& nh) {
   ((NodeHash*)&nh)->_table = (Node**)badAddress;
 }
 
-
 #endif
-
 
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
 PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist, PhaseNumber phase_num) : Phase(phase_num) {
@@ -615,7 +612,6 @@ void PhaseTransform::init_con_caches() {
   memset(_zcons,0,sizeof(_zcons));
 }
 
-
 const TypeInt* PhaseTransform::find_int_type(Node* n) {
   if (n == nullptr)  return nullptr;
   // Call type_or_null(n) to determine node's type since we might be in
@@ -626,7 +622,6 @@ const TypeInt* PhaseTransform::find_int_type(Node* n) {
   return t->isa_int();
 }
 
-
 const TypeLong* PhaseTransform::find_long_type(Node* n) {
   if (n == nullptr)  return nullptr;
   // (See comment above on type_or_null.)
@@ -634,7 +629,6 @@ const TypeLong* PhaseTransform::find_long_type(Node* n) {
   if (t == nullptr)  return nullptr;
   return t->isa_long();
 }
-
 
 #ifndef PRODUCT
 void PhaseTransform::dump_old2new_map() const {
@@ -676,7 +670,6 @@ void PhaseTransform::dump_nodes_and_types_recur( const Node *n, uint depth, bool
 }
 
 #endif
-
 
 // Set minimum table size to "255"
 PhaseValues::PhaseValues( Arena *arena, uint est_max_size )
@@ -778,7 +771,6 @@ ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
   return longcon(l);
 }
 
-
 // Fast zero or null constant. Same as "transform(ConNode::make(Type::get_zero_type(bt)))"
 ConNode* PhaseTransform::zerocon(BasicType bt) {
   assert((uint)bt <= _zcon_max, "domain check");
@@ -789,8 +781,6 @@ ConNode* PhaseTransform::zerocon(BasicType bt) {
   _zcons[bt] = zcon;
   return zcon;
 }
-
-
 
 Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   Node* i = BarrierSet::barrier_set()->barrier_set_c2()->ideal_node(this, k, can_reshape);
@@ -918,7 +908,6 @@ void PhaseGVN::dead_loop_check( Node *n ) {
     assert(no_dead_loop, "dead loop detected");
   }
 }
-
 
 /**
  * Dumps information that can help to debug the problem. A debug
@@ -1892,7 +1881,6 @@ PhaseCCP::~PhaseCCP() {
 }
 #endif
 
-
 #ifdef ASSERT
 void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
   if (tnew->meet(told) != tnew->remove_speculative()) {
@@ -2013,7 +2001,6 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_cast_ii(worklist, parent, use);
   push_opaque_zero_trip_guard(worklist, use);
 }
-
 
 // We must recheck Phis too if use is a Region.
 void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
@@ -2217,7 +2204,6 @@ Node *PhaseCCP::transform( Node *n ) {
   return new_root;
 }
 
-
 // For PhaseCCP, transformation is IDENTITY unless Node computed a constant.
 Node *PhaseCCP::transform_once( Node *n ) {
   const Type *t = type(n);
@@ -2308,7 +2294,6 @@ void PhaseCCP::print_statistics() {
 }
 #endif
 
-
 #ifndef PRODUCT
 uint PhasePeephole::_total_peepholes = 0;
 #endif
@@ -2381,7 +2366,6 @@ void PhasePeephole::print_statistics() {
   tty->print_cr("Peephole: peephole rules applied: %d",  _total_peepholes);
 }
 #endif
-
 
 void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
   assert( is_not_dead(n), "can not use dead node");

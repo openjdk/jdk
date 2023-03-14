@@ -25,7 +25,6 @@
 #ifndef SHARE_OPTO_AD_HPP
 #define SHARE_OPTO_AD_HPP
 
-
 #include "utilities/macros.hpp"
 
 #include CPU_HEADER(adfiles/ad)

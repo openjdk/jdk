@@ -302,7 +302,6 @@ class IndexSet : public ResourceObj {
                  const class PhaseIFG *ifg,
                  const RegMask &mask);
 
-
   //------------------------- Construction, initialization -----------------------
 
   IndexSet() {}
@@ -368,7 +367,6 @@ class IndexSet : public ResourceObj {
 
 #endif
 };
-
 
 // An iterator for IndexSets.
 

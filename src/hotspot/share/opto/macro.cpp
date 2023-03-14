@@ -59,7 +59,6 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif // INCLUDE_G1GC
 
-
 //
 // Replace any references to "oldref" in inputs to "use" with "newref".
 // Returns the number of replacements made.
@@ -1112,7 +1111,6 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   return true;
 }
 
-
 Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
   const TypePtr* adr_type = adr->bottom_type()->is_ptr();
@@ -1120,7 +1118,6 @@ Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, 
   transform_later(value);
   return value;
 }
-
 
 Node* PhaseMacroExpand::make_store(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
@@ -1861,7 +1858,6 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
    return i_o;
 }
 
-
 void PhaseMacroExpand::expand_allocate(AllocateNode *alloc) {
   expand_allocate_common(alloc, nullptr,
                          OptoRuntime::new_instance_Type(),
@@ -2136,7 +2132,6 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   _igvn.replace_node(memproj_fallthrough, mem);
   return true;
 }
-
 
 void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
@@ -2461,7 +2456,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   _igvn.optimize();
   if (C->failing())  return true;
   _igvn.set_delay_transform(true);
-
 
   // Because we run IGVN after each expansion, some macro nodes may go
   // dead and be removed from the list as we iterate over it. Move

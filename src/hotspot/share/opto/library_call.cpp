@@ -1062,7 +1062,6 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-
 bool LibraryCallKit::inline_countPositives() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1856,7 +1855,6 @@ bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
   return true;
 }
 
-
 bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   set_result(generate_min_max(id, argument(0), argument(1)));
   return true;
@@ -2151,7 +2149,6 @@ bool LibraryCallKit::inline_divmod_methods(vmIntrinsics::ID id) {
   set_result(_gvn.transform(n));
   return true;
 }
-
 
 const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type) {
   // Attempt to infer a sharper value type from the offset and base type.
@@ -2834,7 +2831,6 @@ bool LibraryCallKit::inline_native_classID() {
   Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(),
                                                  basic_plus_adr(cls, java_lang_Class::klass_offset()),
                                                  TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
-
 
   __ if_then(kls, BoolTest::ne, null()); {
     Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
@@ -3570,7 +3566,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     query_value = intcon(0);
     break;
 
-
   case vmIntrinsics::_getSuperclass:
     // The rules here are somewhat unfortunate, but we can still do better
     // with random logic than with a JNI call.
@@ -3698,7 +3693,6 @@ bool LibraryCallKit::inline_Class_cast() {
   }
   return true;
 }
-
 
 // This intrinsic takes the JNI calls out of the heart of
 // UnsafeFieldAccessorImpl.set, which improves Field.set, readObject, etc.
@@ -3846,7 +3840,6 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   Node* bol = _gvn.transform(new BoolNode(cmp, btest));
   return generate_fair_guard(bol, region);
 }
-
 
 // private static native Object java.lang.reflect.newArray(Class<?> componentType, int length);
 // private        native Object Unsafe.allocateUninitializedArray0(Class<?> cls, int size);
@@ -4099,7 +4092,6 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
   return true;
 }
 
-
 // Helper for hashCode and clone.  Peeks inside the vtable to avoid a call.
 Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
                                              RegionNode* slow_region) {
@@ -4178,7 +4170,6 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
   set_edges_for_java_call(slow_call);
   return slow_call;
 }
-
 
 /**
  * Build special case code for calls to hashCode on an object. This call may
@@ -5314,10 +5305,8 @@ bool LibraryCallKit::inline_arraycopy() {
   }
   clear_upper_avx();
 
-
   return true;
 }
-
 
 // Helper function which determines if an arraycopy immediately follows
 // an allocation, with no intervening tests or other escapes for the object.
@@ -5572,7 +5561,6 @@ bool LibraryCallKit::inline_squareToLen() {
   if (x_elem != T_INT || z_elem != T_INT) {
     return false;
   }
-
 
   Node* x_start = array_element_address(x, intcon(0), x_elem);
   Node* z_start = array_element_address(z, intcon(0), z_elem);
@@ -6304,7 +6292,6 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
   set_result(_gvn.transform(phi));
   return true;
 }
-
 
 Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString,
                                              DecoratorSet decorators, bool is_static,
@@ -7336,7 +7323,6 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* cnt_start = array_element_address(counter, intcon(0), T_BYTE);
   Node* state_start = array_element_address(state, intcon(0), T_LONG);
   Node* subkeyHtbl_start = array_element_address(subkeyHtbl, intcon(0), T_LONG);
-
 
   // Call the stub, passing params
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,

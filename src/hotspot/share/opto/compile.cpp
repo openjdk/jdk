@@ -92,7 +92,6 @@ MachConstantBaseNode* Compile::mach_constant_base_node() {
   return _mach_constant_base_node;
 }
 
-
 /// Support for intrinsics.
 
 // Return the index at which m must be inserted (or already exists).
@@ -288,7 +287,6 @@ void Compile::gvn_replace_by(Node* n, Node* nn) {
     i -= uses_found;    // we deleted 1 or more copies of this edge
   }
 }
-
 
 // Identify all nodes that are reachable from below, useful.
 // Use breadth-first pass that records state in a Unique_Node_List,
@@ -494,7 +492,6 @@ CompileWrapper::~CompileWrapper() {
   _compile->env()->set_compiler_data(nullptr);
 }
 
-
 void Compile::print_compile_messages() {
 #ifndef PRODUCT
   // Check if recompiling
@@ -579,7 +576,6 @@ debug_only( int Compile::_debug_idx = 100000; )
 
 // Compile a method.  entry_bci is -1 for normal compilations and indicates
 // the continuation bci for on stack replacement.
-
 
 Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   Options options, DirectiveSet* directive)
@@ -1216,7 +1212,6 @@ void Compile::verify_top(Node* tn) const {
 }
 #endif
 
-
 ///-------------------Managing Per-Node Debug & Profile Info-------------------
 
 void Compile::grow_node_notes(GrowableArray<Node_Notes*>* arr, int grow_by) {
@@ -1265,7 +1260,6 @@ bool Compile::copy_node_notes_to(Node* dest, Node* source) {
   return set_node_notes_at(dest->_idx, &merged_notes);
 }
 
-
 // Gating condition for coalescing similar range checks.
 // Sometimes we try 'speculatively' replacing a series of a range checks by a
 // single covering check that is at least as strong as any of them.
@@ -1279,7 +1273,6 @@ bool Compile::allow_range_check_smearing() const {
   uint already_trapped = trap_count(Deoptimization::Reason_range_check);
   return !already_trapped;
 }
-
 
 const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
   assert(do_aliasing(), "Aliasing should be enabled");
@@ -1569,13 +1562,11 @@ void print_alias_types() {
 }
 #endif
 
-
 Compile::AliasCacheEntry* Compile::probe_alias_cache(const TypePtr* adr_type) {
   intptr_t key = (intptr_t) adr_type;
   key ^= key >> logAliasCacheSize;
   return &_alias_cache[key & right_n_bits(logAliasCacheSize)];
 }
-
 
 void Compile::grow_alias_types() {
   const int old_ats  = _max_alias_types; // how many before?
@@ -1587,7 +1578,6 @@ void Compile::grow_alias_types() {
   Copy::zero_to_bytes(ats, sizeof(AliasType)*new_ats);
   for (int i = 0; i < new_ats; i++)  _alias_types[old_ats+i] = &ats[i];
 }
-
 
 Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_create, ciField* original_field) {
   if (!do_aliasing()) {
@@ -1712,7 +1702,6 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
   return alias_type(idx);
 }
 
-
 Compile::AliasType* Compile::alias_type(ciField* field) {
   const TypeOopPtr* t;
   if (field->is_static())
@@ -1723,7 +1712,6 @@ Compile::AliasType* Compile::alias_type(ciField* field) {
   assert((field->is_final() || field->is_stable()) == !atp->is_rewritable(), "must get the rewritable bits correct");
   return atp;
 }
-
 
 bool Compile::have_alias_type(const TypePtr* adr_type) {
   AliasCacheEntry* ace = probe_alias_cache(adr_type);
@@ -2476,7 +2464,6 @@ bool Compile::has_vbox_nodes() {
   }
   return false;
 }
-
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
@@ -4570,7 +4557,6 @@ void Compile::log_inline_failure(const char* msg) {
     C->log()->inline_fail(msg);
   }
 }
-
 
 // Dump inlining replay data to the stream.
 // Don't change thread state and acquire any locks.

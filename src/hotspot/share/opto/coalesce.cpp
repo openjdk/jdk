@@ -421,7 +421,6 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
   } // End of for all blocks
 }
 
-
 // Aggressive (but pessimistic) copy coalescing of a single block
 
 // The following coalesce pass represents a single round of aggressive
@@ -465,7 +464,6 @@ void PhaseAggressiveCoalesce::coalesce( Block *b ) {
       combine_these_two( n, n->in(j) );
     }
   } // End of for all successor blocks
-
 
   // Check _this_ block for 2-address instructions and copies.
   uint cnt = b->end_idx();
@@ -615,7 +613,6 @@ void PhaseConservativeCoalesce::update_ifg(uint lr1, uint lr2, IndexSet *n_lr1, 
     }
   }
 
-
   // lr2 is now called (coalesced into) lr1.
   // Remove lr2 from the IFG.
   LRG &lrg2 = lrgs(lr2);
@@ -750,7 +747,6 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
       return false;
     }
   } // End of if dst_copy & src_copy are different
-
 
   // ---- THE COMBINED LRG IS COLORABLE ----
 

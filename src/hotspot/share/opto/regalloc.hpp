@@ -73,11 +73,9 @@ public:
   // Do all the real work of allocate
   virtual void Register_Allocate() = 0;
 
-
   // notify the register allocator that "node" is a new reference
   // to the value produced by "old_node"
   virtual void add_reference( const Node *node, const Node *old_node) = 0;
-
 
   // Set the register associated with a new Node
   void set_bad( uint idx ) {

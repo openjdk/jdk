@@ -3735,7 +3735,6 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
   return dep;
 }
 
-
 // Adjust pre-loop limit so that in main loop, a load/store reference
 // to align_to_ref will be a position zero in the vector.
 //   (iv + k) mod vector_align == 0
@@ -4002,7 +4001,6 @@ char* SuperWord::blank(uint depth) {
   blanks[depth] = '\0';
   return blanks;
 }
-
 
 #ifndef PRODUCT
 int SWPointer::Tracer::_depth = 0;
@@ -4638,7 +4636,6 @@ const OrderedPair OrderedPair::initial;
 // ========================= SWNodeInfo =====================
 
 const SWNodeInfo SWNodeInfo::initial;
-
 
 // ============================ DepGraph ===========================
 

@@ -31,7 +31,6 @@
 #include "opto/movenode.hpp"
 #include "opto/opaquenode.hpp"
 
-
 // Split Node 'n' through merge point.
 RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   assert(n->is_CFG(), "");

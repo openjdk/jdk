@@ -80,7 +80,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/preserveException.hpp"
 
-
 // For debugging purposes:
 //  To force FullGCALot inside a runtime function, add the following two lines
 //
@@ -88,9 +87,6 @@
 //  MarkSweep::invoke(0, "Debugging");
 //
 // At command line specify the parameters: -XX:+FullGCALot -XX:FullGCALotStart=100000000
-
-
-
 
 // Compiled code entry points
 address OptoRuntime::_new_instance_Java                           = nullptr;
@@ -127,7 +123,6 @@ static bool check_compiled_frame(JavaThread* thread) {
 }
 #endif // ASSERT
 
-
 #define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, return_pc) \
   var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, return_pc); \
   if (var == nullptr) { return false; }
@@ -160,7 +155,6 @@ bool OptoRuntime::generate(ciEnv* env) {
 }
 
 #undef gen
-
 
 // Helper method to do generation of RunTimeStub's
 address OptoRuntime::generate_stub(ciEnv* env,
@@ -233,7 +227,6 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
 
-
 // array allocation
 JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaThread* current))
   JRT_BLOCK;
@@ -294,7 +287,6 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
   current->set_vm_result(result);
   JRT_BLOCK_END;
-
 
   // inform GC that we won't do card marks for initializing writes.
   SharedRuntime::on_slowpath_allocation_exit(current);
@@ -463,7 +455,6 @@ const TypeFunc *OptoRuntime::new_instance_Type() {
   return TypeFunc::make(domain, range);
 }
 
-
 const TypeFunc *OptoRuntime::athrow_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
@@ -477,7 +468,6 @@ const TypeFunc *OptoRuntime::athrow_Type() {
 
   return TypeFunc::make(domain, range);
 }
-
 
 const TypeFunc *OptoRuntime::new_array_Type() {
   // create input type (domain)
@@ -571,7 +561,6 @@ const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
 
   return TypeFunc::make(domain,range);
 }
-
 
 const TypeFunc *OptoRuntime::complete_monitor_exit_Type() {
   // create input type (domain)
@@ -735,7 +724,6 @@ const TypeFunc* OptoRuntime::void_void_Type() {
    return TypeFunc::make(domain, range);
  }
 
-
 // arraycopy stub variations:
 enum ArrayCopyType {
   ac_fast,                      // void(ptr, ptr, size_t)
@@ -802,7 +790,6 @@ const TypeFunc* OptoRuntime::generic_arraycopy_Type() {
   // This signature is like System.arraycopy, except that it returns status.
   return make_arraycopy_Type(ac_generic);
 }
-
 
 const TypeFunc* OptoRuntime::array_fill_Type() {
   const Type** fields;
@@ -1551,7 +1538,6 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   return SharedRuntime::raw_exception_handler_for_return_address(thread, ret_pc);
 }
 
-
 const TypeFunc *OptoRuntime::rethrow_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
@@ -1565,7 +1551,6 @@ const TypeFunc *OptoRuntime::rethrow_Type() {
 
   return TypeFunc::make(domain, range);
 }
-
 
 void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
   // Deoptimize the caller before continuing, as the compiled
@@ -1589,7 +1574,6 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread) {
   Deoptimization::deoptimize_frame(thread, caller_frame.id());
 }
 
-
 bool OptoRuntime::is_deoptimized_caller_frame(JavaThread *thread) {
   // Called from within the owner thread, so no need for safepoint
   RegisterMap reg_map(thread,
@@ -1601,7 +1585,6 @@ bool OptoRuntime::is_deoptimized_caller_frame(JavaThread *thread) {
   frame caller_frame = stub_frame.sender(&reg_map);
   return caller_frame.is_deoptimized_frame();
 }
-
 
 const TypeFunc *OptoRuntime::register_finalizer_Type() {
   // create input type (domain)
@@ -1667,13 +1650,11 @@ const TypeFunc *OptoRuntime::dtrace_object_alloc_Type() {
   return TypeFunc::make(domain,range);
 }
 
-
 JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer(oopDesc* obj, JavaThread* current))
   assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
-
 
 NamedCounter * volatile OptoRuntime::_named_counters = nullptr;
 

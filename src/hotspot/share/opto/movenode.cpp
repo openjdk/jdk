@@ -69,7 +69,6 @@
 
  */
 
-
 // Return a node which is more "ideal" than the current node.
 // Move constants to the right.
 Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -344,7 +343,6 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   return abs;
 }
-
 
 Node* MoveNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (can_reshape) {

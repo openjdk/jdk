@@ -28,7 +28,6 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 
-
 // cast to a different range
 class ConstraintCastNode: public TypeNode {
 public:
@@ -155,7 +154,6 @@ public:
   virtual uint ideal_reg() const { return in(1)->ideal_reg(); }
 };
 
-
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
   public:
@@ -180,7 +178,6 @@ class CheckCastPPNode: public ConstraintCastNode {
   virtual uint  ideal_reg() const { return Op_RegP; }
   bool depends_only_on_test() const { return !type()->isa_rawptr() && ConstraintCastNode::depends_only_on_test(); }
  };
-
 
 // convert a machine-pointer-sized integer to a raw pointer
 class CastX2PNode : public Node {
@@ -208,7 +205,5 @@ class CastP2XNode : public Node {
   // Return false to keep node from moving away from an associated card mark.
   virtual bool depends_only_on_test() const { return false; }
 };
-
-
 
 #endif // SHARE_OPTO_CASTNODE_HPP

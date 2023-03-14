@@ -102,7 +102,6 @@ void Parse::do_field_access(bool is_get, bool is_field) {
   }
 }
 
-
 void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   BasicType bt = field->layout_type();
 
@@ -279,7 +278,6 @@ void Parse::do_anewarray() {
   Node* obj = new_array(makecon(array_klass_type), count_val, 1);
   push(obj);
 }
-
 
 void Parse::do_newarray(BasicType elem_type) {
   kill_dead_locals();

@@ -25,7 +25,6 @@
 #ifndef SHARE_OPTO_ADLCVMDEPS_HPP
 #define SHARE_OPTO_ADLCVMDEPS_HPP
 
-
 // adlcVMDeps.hpp is used by both adlc and vm builds.
 // Don't inherit from AllStatic to avoid including memory/allocation.hpp.
 

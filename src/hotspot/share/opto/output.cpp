@@ -381,7 +381,6 @@ bool PhaseOutput::need_register_stack_bang() const {
   return (C->stub_function() == nullptr && C->has_java_calls());
 }
 
-
 // Compute the size of first NumberOfLoopInstrToAlign instructions at the top
 // of a loop. When aligning a loop we need to provide enough instructions
 // in cpu's fetch buffer to feed decoders. The loop alignment could be
@@ -703,7 +702,6 @@ static LocationValue *new_loc_value( PhaseRegAlloc *ra, OptoReg::Name regnum, Lo
          : new LocationValue(Location::new_stk_loc(l_type,  ra->reg2offset(regnum)));
 }
 
-
 ObjectValue*
 PhaseOutput::sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id) {
   for (int i = 0; i < objs->length(); i++) {
@@ -722,7 +720,6 @@ void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
   assert(sv_for_node_id(objs, sv->id()) == nullptr, "Precondition");
   objs->append(sv);
 }
-
 
 void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                             GrowableArray<ScopeValue*> *array,
@@ -1094,8 +1091,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Mark the end of the scope set.
   C->debug_info()->end_safepoint(safepoint_pc_offset);
 }
-
-
 
 // A simplified version of Process_OopMap_Node, to handle non-safepoints.
 class NonSafepointEmitter {
@@ -3179,7 +3174,6 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
   relocInfo* locs_buf = (relocInfo*) blob->content_end() - MAX_locs_size;
   set_scratch_locs_memory(locs_buf);
 }
-
 
 // Helper function that computes size by emitting code
 uint PhaseOutput::scratch_emit_size(const Node* n) {

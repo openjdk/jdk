@@ -76,8 +76,6 @@ GraphKit::GraphKit()
   debug_only(set_bci(-99));
 }
 
-
-
 // Clear away rubbish from the stack area of the JVM state.
 // This destroys any arguments that may be waiting on the stack.
 void GraphKit::clean_stack(int from_sp) {
@@ -92,7 +90,6 @@ void GraphKit::clean_stack(int from_sp) {
     }
   }
 }
-
 
 // Make sure our current jvms agrees with our parse state.
 JVMState* GraphKit::sync_jvms() const {
@@ -166,14 +163,12 @@ void GraphKit::stop_and_kill_map() {
   }
 }
 
-
 // Tell if _map is null, or control is top.
 bool GraphKit::stopped() {
   if (map() == nullptr)        return true;
   else if (control() == top()) return true;
   else                         return false;
 }
-
 
 // Tell if this method or any caller method has exception handlers.
 bool GraphKit::has_ex_handler() {
@@ -223,7 +218,6 @@ SafePointNode* GraphKit::make_exception_state(Node* ex_oop) {
   set_saved_ex_oop(ex_map, ex_oop);
   return ex_map;
 }
-
 
 // Add an exception to my list of exceptions.
 void GraphKit::add_exception_state(SafePointNode* ex_map) {
@@ -634,7 +628,6 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
   uncommon_trap(reason, action, (ciKlass*)nullptr, (char*)nullptr, must_throw);
 }
 
-
 PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
   debug_only(kit->verify_map());
   _kit    = kit;
@@ -659,7 +652,6 @@ PreserveJVMState::~PreserveJVMState() {
   kit->set_map(_map);
   kit->set_sp(_sp);
 }
-
 
 BuildCutout::BuildCutout(GraphKit* kit, Node* p, float prob, float cnt)
   : PreserveJVMState(kit)
@@ -741,7 +733,6 @@ void GraphKit::set_map_clone(SafePointNode* m) {
   _map->set_next_exception(nullptr);
   debug_only(verify_map());
 }
-
 
 // Detect any locals which are known to be dead, and force them to top.
 void GraphKit::kill_dead_locals() {
@@ -1129,8 +1120,6 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   return true;
 }
 
-
-
 Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
   // short-circuit a common case
   if (offset == intcon(0))  return ptr;
@@ -1399,7 +1388,6 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
   return value;
 }
 
-
 // Cast obj to not-null on this path
 Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
   const Type *t = _gvn.type(obj);
@@ -1446,7 +1434,6 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
   return cast_not_null(value, do_replace_in_map);
 }
 
-
 void GraphKit::replace_in_map(Node* old, Node* neww) {
   if (old == neww) {
     return;
@@ -1470,7 +1457,6 @@ void GraphKit::replace_in_map(Node* old, Node* neww) {
 
   map()->record_replaced_node(old, neww);
 }
-
 
 Node* GraphKit::memory(uint alias_idx) {
   MergeMemNode* mem = merged_memory();
@@ -1976,7 +1962,6 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   }
 }
 
-
 // for statistics: increment a VM counter by 1
 
 void GraphKit::increment_counter(address counter_addr) {
@@ -1991,7 +1976,6 @@ void GraphKit::increment_counter(Node* counter_addr) {
   Node* incr = _gvn.transform(new AddLNode(cnt, _gvn.longcon(1)));
   store_to_memory(ctrl, counter_addr, incr, T_LONG, adr_type, MemNode::unordered);
 }
-
 
 // Bail out to the interpreter in mid-method.  Implemented by calling the
 // uncommon_trap blob.  This helper function inserts a runtime call with the
@@ -2120,7 +2104,6 @@ Node* GraphKit::uncommon_trap(int trap_request,
   return call;
 }
 
-
 // Report the object that was just allocated.
 // It must be the case that there are no intervening safepoints.
 // We use this to determine if an object is so "fresh" that
@@ -2139,7 +2122,6 @@ Node* GraphKit::just_allocated_object(Node* current_control) {
   }
   return nullptr;
 }
-
 
 /**
  * Record profiling data exact_kls for Node n with the type system so
@@ -3403,7 +3385,6 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   return flock;
 }
 
-
 // Emit unlocking code.
 void GraphKit::shared_unlock(Node* box, Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
@@ -3905,7 +3886,6 @@ InitializeNode* AllocateNode::initialization() {
   }
   return nullptr;
 }
-
 
 void GraphKit::add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs) {
   // Too many traps seen?

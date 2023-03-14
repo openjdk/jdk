@@ -175,5 +175,4 @@ public:
   void     fill_jump_table(CodeBuffer& cb, MachConstantNode* n, GrowableArray<Label*> labels) const;
 };
 
-
 #endif // SHARE_OPTO_CONSTANTTABLE_HPP

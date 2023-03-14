@@ -234,7 +234,6 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
   return ctl;
 }
 
-
 // Set earliest legal control
 void PhaseIdealLoop::set_early_ctrl(Node* n, bool update_body) {
   Node *early = get_early_ctrl(n);
@@ -1890,7 +1889,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     }
   }
 
-
 #ifdef ASSERT
   if (iv_bt == T_INT &&
       !x->as_Loop()->is_loop_nest_inner_loop() &&
@@ -2243,7 +2241,6 @@ jlong BaseCountedLoopEndNode::stride_con() const {
   return stride()->bottom_type()->is_integer(bt())->get_con_as_long(bt());
 }
 
-
 BaseCountedLoopEndNode* BaseCountedLoopEndNode::make(Node* control, Node* test, float prob, float cnt, BasicType bt) {
   if (bt == T_INT) {
     return new CountedLoopEndNode(control, test, prob, cnt);
@@ -2562,7 +2559,6 @@ Node* CountedLoopNode::skip_predicates() {
   }
   return ctrl;
 }
-
 
 int CountedLoopNode::stride_con() const {
   CountedLoopEndNode* cle = loopexit_or_null();
@@ -3030,7 +3026,6 @@ const TypeInt* PhaseIdealLoop::filtered_type( Node *n, Node* n_ctrl) {
   return n_t;
 }
 
-
 // Return a possibly more restrictive type for val based on condition control flow of dominators
 const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *use_ctrl) {
   if (val->is_Con()) {
@@ -3068,7 +3063,6 @@ const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *u
   }
   return rtn_t;
 }
-
 
 // Dump special per-node info
 #ifndef PRODUCT
@@ -3343,7 +3337,6 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
       if( hot_idx ) n->add_req(hot_phi);
     }
   }
-
 
   // Insert a new IdealLoopTree inserted below me.  Turn it into a clone
   // of self loop tree.  Turn self into a loop headed by _head and with
@@ -3818,7 +3811,6 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
   if (loop->_next)  loop->_next ->counted_loop(phase);
 }
 
-
 // The Estimated Loop Clone Size:
 //   CloneFactor * (~112% * BodySize + BC) + CC + FanOutTerm,
 // where  BC and  CC are  totally ad-hoc/magic  "body" and "clone" constants,
@@ -4192,7 +4184,6 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
 }
 #endif
 
-
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
 void PhaseIdealLoop::build_and_optimize() {
@@ -4201,7 +4192,6 @@ void PhaseIdealLoop::build_and_optimize() {
   bool do_split_ifs = (_mode == LoopOptsDefault);
   bool skip_loop_opts = (_mode == LoopOptsNone);
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
-
 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -5435,7 +5425,6 @@ bool PhaseIdealLoop::verify_dominance(Node* n, Node* use, Node* LCA, Node* early
   return had_error;
 }
 
-
 Node* PhaseIdealLoop::compute_lca_of_uses(Node* n, Node* early, bool verify) {
   // Compute LCA over list of uses
   bool had_error = false;
@@ -5787,7 +5776,6 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
   }
 #endif
 }
-
 
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
@@ -6252,8 +6240,6 @@ void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_
     }
   }
 }
-
-
 
 // Advance to next loop tree using a preorder, left-to-right traversal.
 void LoopTreeIterator::next() {

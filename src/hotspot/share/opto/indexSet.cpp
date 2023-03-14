@@ -33,7 +33,6 @@
 // This data structure is used by the compiler in its liveness analysis and
 // during register allocation.  It also defines an iterator for this class.
 
-
 IndexSet::BitBlock  IndexSet::_empty_block     = IndexSet::BitBlock();
 
 #ifdef ASSERT
@@ -77,7 +76,6 @@ void IndexSet::populate_free_list() {
   }
 #endif
 }
-
 
 // Allocate a BitBlock from the free list.  If the free list is empty,
 // prime it.

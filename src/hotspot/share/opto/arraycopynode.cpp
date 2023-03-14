@@ -171,7 +171,6 @@ void ArrayCopyNode::store(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMe
   ctl = access.ctl();
 }
 
-
 Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int count) {
   if (!is_clonebasic()) {
     return nullptr;
@@ -192,7 +191,6 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   if (can_reshape) {
     phase->is_IterGVN()->_worklist.push(mem);
   }
-
 
   ciInstanceKlass* ik = inst_src->instance_klass();
 
@@ -518,7 +516,6 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
   }
   return true;
 }
-
 
 Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape))  return this;

@@ -184,7 +184,6 @@ bool PhaseCFG::is_dominating_control(Node* dom_ctrl, Node* n) {
   return false;
 }
 
-
 // Set the basic block for Nodes pinned into blocks
 void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
   // Allocate node stack of size C->live_nodes()+8 to avoid frequent realloc
@@ -296,7 +295,6 @@ static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
   assert(deepb != nullptr, "must be at least one input to n");
   return deepb;
 }
-
 
 // Find the earliest Block any instruction can be placed in.  Some instructions
 // are pinned into Blocks.  Unpinned instructions can appear in last block in
@@ -1252,7 +1250,6 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
   return least;
 }
 
-
 // Now schedule all codes as LATE as possible.  This is the LCA in the
 // dominator tree of all USES of a value.  Pick the block with the least
 // loop nesting depth that is lowest in the dominator tree.
@@ -1963,7 +1960,6 @@ float Block::succ_prob(uint i) {
     }
     op = n->as_Mach()->ideal_Opcode();
   }
-
 
   // Switch on branch type
   switch( op ) {

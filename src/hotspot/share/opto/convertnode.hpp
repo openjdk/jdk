@@ -28,7 +28,6 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 
-
 // Convert int/pointer to a Boolean.  Map zero to zero, all else to 1.
 class Conv2BNode : public Node {
   public:
@@ -116,7 +115,6 @@ class ConvF2INode : public Node {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
-
 
 // Convert float to long
 class ConvF2LNode : public Node {
@@ -225,7 +223,6 @@ class RoundFloatNode: public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-
 class RoundDoubleNode: public Node {
   public:
   RoundDoubleNode(Node* c, Node *in1): Node(c, in1) {}
@@ -251,6 +248,5 @@ class RoundDoubleModeNode: public Node {
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
-
 
 #endif // SHARE_OPTO_CONVERTNODE_HPP

@@ -40,7 +40,6 @@
 
 // Optimization - Graph Style
 
-
 #ifndef PRODUCT
 extern int explicit_null_checks_elided;
 #endif
@@ -479,7 +478,6 @@ ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
   return iftrap;
 }
 
-
 // Return 0 if not a range check.  Return 1 if a range check and set index and
 // offset.  Return 2 if we had to negate the test.  Index is null if the check
 // is versus a constant.
@@ -599,7 +597,6 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
   // Give up the search at true merges
   return nullptr;                  // Dead loop?  Or hit root?
 }
-
 
 // Return a possibly more restrictive type for val based on condition control flow for an if
 const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
@@ -1570,7 +1567,6 @@ Node* IfNode::search_identical(int dist) {
 
   return prev_dom;
 }
-
 
 static int subsuming_bool_test_encode(Node*);
 

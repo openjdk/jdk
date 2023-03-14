@@ -101,7 +101,6 @@ void Node::verify_construction() {
   _hash_lock = 0;
 }
 
-
 // #ifdef ASSERT ...
 
 #if OPTO_DU_ITERATOR_ASSERT
@@ -208,7 +207,6 @@ void DUIterator::verify_finish() {
   assert(!(_refresh_tick & 1), "the loop must run once with no refreshing");
 }
 
-
 void DUIterator_Fast::verify(const Node* node, bool at_end_ok) {
   DUIterator_Common::verify(node, at_end_ok);
   Node** out    = node->_out;
@@ -286,9 +284,7 @@ void DUIterator_Last::verify_step(uint num_edges) {
 
 #endif //OPTO_DU_ITERATOR_ASSERT
 
-
 #endif //ASSERT
-
 
 // This constant used to initialize _out may be any non-null value.
 // The value null is reserved for the top node only.
@@ -485,7 +481,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-
 
 //------------------------------clone------------------------------------------
 // Clone a Node.
@@ -1000,7 +995,6 @@ bool Node::has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) {
   return false;
 }
 
-
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p, bool keep_deps) {
 #ifdef ASSERT
@@ -1115,7 +1109,6 @@ const Node *Node::is_block_proj() const { return 0; }
 
 // Minimum guaranteed type
 const Type *Node::bottom_type() const { return Type::BOTTOM; }
-
 
 //------------------------------raise_bottom_type------------------------------
 // Get the worst-case Type output for this Node.
@@ -1573,7 +1566,6 @@ const TypeLong* Node::find_long_type() const {
   }
   return nullptr;
 }
-
 
 /**
  * Return a ptr type for nodes which should have it.
@@ -2610,7 +2602,6 @@ void Node::dump_req(outputStream* st, DumpConfig* dc) const {
   }
 }
 
-
 //------------------------------dump_prec-------------------------------------
 void Node::dump_prec(outputStream* st, DumpConfig* dc) const {
   // Dump the precedence edges
@@ -2848,7 +2839,6 @@ Node* Node::find_similar(int opc) {
   }
   return nullptr;
 }
-
 
 //--------------------------unique_ctrl_out_or_null-------------------------
 // Return the unique control out if only one. Null if none or more than one.

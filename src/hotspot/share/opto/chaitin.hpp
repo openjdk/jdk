@@ -214,7 +214,6 @@ public:
          _has_copy:1,           // Adjacent to some copy instruction
          _at_risk:1;            // Simplify says this guy is at risk to spill
 
-
   // Alive if non-zero, dead if zero
   bool alive() const { return _def != nullptr; }
   bool is_multidef() const { return _def == NodeSentinel; }

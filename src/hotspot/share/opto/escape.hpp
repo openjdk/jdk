@@ -167,7 +167,6 @@ public:
     ArraycopyDst      = 8   // Has edge to Arraycopy node
   } NodeFlags;
 
-
   inline PointsToNode(ConnectionGraph* CG, Node* n, EscapeState es, NodeType type);
 
   uint        pidx()   const { return _pidx; }
@@ -315,7 +314,6 @@ public:
   inline BaseIterator(const FieldNode* n) : PointsToIterator(n, n->base_count()) { }
   inline PointsToNode* get() const { return ((PointsToNode*)node)->as_Field()->base(i); }
 };
-
 
 class ConnectionGraph: public ArenaObj {
   friend class PointsToNode; // to access _compile

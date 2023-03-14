@@ -64,7 +64,6 @@ relocInfo::relocType MachOper::disp_reloc() const { return relocInfo::none; }
 Label*   MachOper::label()  const { ShouldNotReachHere(); return 0; }
 intptr_t MachOper::method() const { ShouldNotReachHere(); return 0; }
 
-
 // Negate conditional branches.  Error for non-branch operands
 void MachOper::negate() {
   ShouldNotCallThis();
@@ -116,8 +115,6 @@ bool methodOper::cmp( const MachOper &oper ) const {
   return (opcode() == oper.opcode()) && (_method == oper.method());
 }
 
-
-
 void MachNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   #ifdef ASSERT
   tty->print("missing MachNode emit function: ");
@@ -142,8 +139,6 @@ uint MachNode::emit_size(PhaseRegAlloc *ra_) const {
   assert(ra_ == ra_->C->regalloc(), "sanity");
   return ra_->C->output()->scratch_emit_size(this);
 }
-
-
 
 uint MachNode::hash() const {
   uint no = num_opnds();
@@ -173,7 +168,6 @@ MachNode *MachNode::cisc_version(int offset) {
 void MachNode::use_cisc_RegMask() {
   ShouldNotReachHere();
 }
-
 
 const RegMask &MachNode::in_RegMask( uint idx ) const {
   uint numopnds = num_opnds();        // Virtual call for number of operands
@@ -304,7 +298,6 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
   return base;
 }
 
-
 const class TypePtr *MachNode::adr_type() const {
   intptr_t offset = 0;
   const TypePtr *adr_type = TYPE_PTR_SENTINAL;  // attempt computing adr_type
@@ -364,7 +357,6 @@ const class TypePtr *MachNode::adr_type() const {
 
   return tp->add_offset(offset);
 }
-
 
 int MachNode::operand_index(uint operand) const {
   if (operand < 1)  return -1;
@@ -514,7 +506,6 @@ void MachTypeNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-
 int MachConstantNode::constant_offset() {
   // Bind the offset lazily.
   if (_constant.offset() == -1) {
@@ -632,8 +623,6 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
   assert(in(idx)->ideal_reg() != Op_RegFlags, "flags register is not spillable");
   return *Compile::current()->matcher()->idealreg2spillmask[in(idx)->ideal_reg()];
 }
-
-
 
 bool MachCallNode::cmp( const Node &n ) const
 { return _tf == ((MachCallNode&)n)._tf; }
@@ -794,7 +783,6 @@ uint MachMemBarNode::size_of() const { return sizeof(*this); }
 const TypePtr *MachMemBarNode::adr_type() const {
   return _adr_type;
 }
-
 
 #ifndef PRODUCT
 void labelOper::int_format(PhaseRegAlloc *ra, const MachNode *node, outputStream *st) const {

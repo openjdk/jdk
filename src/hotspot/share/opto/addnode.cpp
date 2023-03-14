@@ -41,7 +41,6 @@
 // all inherited from this class.  The various identity values are supplied
 // by virtual functions.
 
-
 // Hash function over AddNodes.  Needs to be commutative; i.e., I swap
 // (commute) inputs to AddNodes willy-nilly so the hash function must return
 // the same value in the presence of edge swapping.
@@ -358,7 +357,6 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   return AddNode::Ideal(phase, can_reshape);
 }
 
-
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
@@ -393,7 +391,6 @@ Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return AddNode::IdealIL(phase, can_reshape, T_INT);
 }
 
-
 // Fold (x-y)+y  OR  y+(x-y)  into  x
 Node* AddINode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_SubI && in(1)->in(2) == in(2)) {
@@ -403,7 +400,6 @@ Node* AddINode::Identity(PhaseGVN* phase) {
   }
   return AddNode::Identity(phase);
 }
-
 
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
@@ -432,11 +428,9 @@ const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::make( lo, hi, MAX2(r0->_widen,r1->_widen) );
 }
 
-
 Node* AddLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return AddNode::IdealIL(phase, can_reshape, T_LONG);
 }
-
 
 // Fold (x-y)+y  OR  y+(x-y)  into  x
 Node* AddLNode::Identity(PhaseGVN* phase) {
@@ -447,7 +441,6 @@ Node* AddLNode::Identity(PhaseGVN* phase) {
   }
   return AddNode::Identity(phase);
 }
-
 
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
@@ -476,7 +469,6 @@ const Type *AddLNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeLong::make( lo, hi, MAX2(r0->_widen,r1->_widen) );
 }
 
-
 // Check for addition of the identity
 const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
   // x ADD 0  should return x unless 'x' is a -zero
@@ -504,7 +496,6 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return commute(phase, this) ? this : nullptr;
 }
 
-
 // Check for addition of the identity
 const Type *AddDNode::add_of_identity( const Type *t1, const Type *t2 ) const {
   // x ADD 0  should return x unless 'x' is a -zero
@@ -530,7 +521,6 @@ Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Floating point additions are not associative because of boundary conditions (infinity)
   return commute(phase, this) ? this : nullptr;
 }
-
 
 // If one input is a constant 0, return the other input.
 Node* AddPNode::Identity(PhaseGVN* phase) {
@@ -876,7 +866,6 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   }
   return AddNode::Value(phase);
 }
-
 
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
 // the logical operations the ring's ADD is really a logical OR function.

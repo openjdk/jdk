@@ -29,7 +29,6 @@
 #include "opto/opcodes.hpp"
 #include "opto/connode.hpp"
 
-
 // The 2nd slow-half of a subtype check.  Scan the subklass's 2ndary superklass
 // array for an instance of the superklass.  Set a hidden internal cache on a
 // hit (cache is checked with exposed code in gen_subtype_check()).  Return

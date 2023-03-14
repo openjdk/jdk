@@ -230,7 +230,6 @@ const Type* Type::get_typeflow_type(ciType* type) {
   }
 }
 
-
 const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
                                      int stable_dimension, bool is_narrow_oop,
                                      bool is_autobox_cache) {
@@ -1254,7 +1253,6 @@ void Type::typerr( const Type *t ) const {
   ShouldNotReachHere();
 }
 
-
 // Convenience common pre-built types.
 const TypeF *TypeF::MAX;        // Floating point max
 const TypeF *TypeF::MIN;        // Floating point min
@@ -1803,7 +1801,6 @@ const TypeLong *TypeLong::make( jlong lo, jlong hi, int w ) {
   w = normalize_long_widen(lo, hi, w);
   return (TypeLong*)(new TypeLong(lo,hi,w))->hashcons();
 }
-
 
 // Compute the MEET of two types.  It returns a new Type representation object
 // with reference count equal to the number of Types pointing at it.
@@ -3140,7 +3137,6 @@ TypePtr::InterfaceSet::InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces)
   }
 }
 
-
 int TypePtr::InterfaceSet::compare(ciKlass* const& k1, ciKlass* const& k2) {
   if ((intptr_t)k1 < (intptr_t)k2) {
     return -1;
@@ -3442,7 +3438,6 @@ const TypeOopPtr *TypeOopPtr::make(PTR ptr, int offset, int instance_id,
   return (TypeOopPtr*)(new TypeOopPtr(OopPtr, ptr, k, InterfaceSet(), xk, o, offset, instance_id, speculative, inline_depth))->hashcons();
 }
 
-
 const TypeOopPtr* TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
@@ -3460,7 +3455,6 @@ const TypeOopPtr* TypeOopPtr::cast_to_exactness(bool klass_is_exact) const {
   // Return self unchanged.
   return this;
 }
-
 
 // Return the klass type corresponding to this instance or array type.
 // It is the type that is loaded from an object of this type.
@@ -3540,7 +3534,6 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
   } // End of switch
   return this;                  // Return the double constant
 }
-
 
 // Dual of a pure heap pointer.  No relevant klass or oop information.
 const Type *TypeOopPtr::xdual() const {
@@ -3667,7 +3660,6 @@ intptr_t TypeOopPtr::get_con() const {
 
   return (intptr_t)const_oop()->constant_encoding();
 }
-
 
 // Do not allow interface-vs.-noninterface joins to collapse to top.
 const Type *TypeOopPtr::filter_helper(const Type *kills, bool include_speculative) const {
@@ -3796,7 +3788,6 @@ int TypeOopPtr::dual_instance_id( ) const {
   if( _instance_id == InstanceBot ) return InstanceTop; // Map BOTTOM into TOP
   return _instance_id;              // Map everything else into self
 }
-
 
 TypePtr::InterfaceSet TypeOopPtr::meet_interfaces(const TypeOopPtr* other) const {
   if (above_centerline(_ptr) && above_centerline(other->_ptr)) {
@@ -3954,7 +3945,6 @@ const TypeInstPtr* TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
   return make(ptr, klass(), _interfaces, klass_is_exact(), ptr == Constant ? const_oop() : nullptr, _offset, _instance_id, _speculative, _inline_depth);
 }
 
-
 const TypeInstPtr* TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
   if( klass_is_exact == _klass_is_exact ) return this;
   if (!_klass->is_loaded())  return this;
@@ -4015,7 +4005,6 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst, const I
   }
   return TypeInstPtr::BOTTOM;
 }
-
 
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
@@ -4304,7 +4293,6 @@ ciType* TypeInstPtr::java_mirror_type() const {
   return const_oop()->as_instance()->java_mirror_type();
 }
 
-
 // Dual: do NOT dual on klasses.  This means I do NOT understand the Java
 // inheritance mechanism.
 const Type *TypeInstPtr::xdual() const {
@@ -4330,7 +4318,6 @@ bool TypeInstPtr::is_java_subtype_of_helper(const TypeOopPtr* other, bool this_e
   return TypePtr::is_java_subtype_of_helper_for_instance(this, other, this_exact, other_exact);
 }
 
-
 bool TypeInstPtr::is_same_java_type_as_helper(const TypeOopPtr* other) const {
   return TypePtr::is_same_java_type_as_helper_for_instance(this, other);
 }
@@ -4338,7 +4325,6 @@ bool TypeInstPtr::is_same_java_type_as_helper(const TypeOopPtr* other) const {
 bool TypeInstPtr::maybe_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const {
   return TypePtr::maybe_java_subtype_of_helper_for_instance(this, other, this_exact, other_exact);
 }
-
 
 // Dump oop Type
 #ifndef PRODUCT
@@ -4456,7 +4442,6 @@ template <class T1, class T2> bool TypePtr::is_meet_subtype_of_helper_for_instan
          (!this_xk || this_one->_interfaces.contains(other->_interfaces));
 }
 
-
 bool TypeInstPtr::is_meet_subtype_of_helper(const TypeOopPtr *other, bool this_xk, bool other_xk) const {
   return TypePtr::is_meet_subtype_of_helper_for_instance(this, other, this_xk, other_xk);
 }
@@ -4548,7 +4533,6 @@ const TypeAryPtr* TypeAryPtr::cast_to_ptr_type(PTR ptr) const {
   return make(ptr, ptr == Constant ? const_oop() : nullptr, _ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
-
 const TypeAryPtr* TypeAryPtr::cast_to_exactness(bool klass_is_exact) const {
   if( klass_is_exact == _klass_is_exact ) return this;
   if (_ary->ary_must_be_exact())  return this;  // cannot clear xk
@@ -4559,7 +4543,6 @@ const TypeAryPtr* TypeAryPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
   return make(_ptr, const_oop(), _ary, klass(), _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
-
 
 // A wrapper around arrayOopDesc::max_array_length(etype) with some input normalization.
 jint TypeAryPtr::max_array_length(BasicType etype) {
@@ -4848,7 +4831,6 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
   return this;                  // Lint noise
 }
 
-
 template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*& elem, const T* this_ary,
                                                            const T* other_ary, ciKlass*& res_klass, bool& res_xk) {
   int dummy;
@@ -4941,7 +4923,6 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
   }
   return result;
 }
-
 
 // Dual: compute field-by-field dual
 const Type *TypeAryPtr::xdual() const {
@@ -5036,7 +5017,6 @@ const TypePtr* TypeAryPtr::with_instance_id(int instance_id) const {
   return make(_ptr, _const_oop, _ary->remove_speculative()->is_ary(), _klass, _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
 
-
 // Type-specific hashing function.
 int TypeNarrowPtr::hash(void) const {
   return _ptrtype->hash() + 7;
@@ -5069,7 +5049,6 @@ const Type *TypeNarrowPtr::xdual() const {    // Compute dual right now.
   const TypePtr* odual = _ptrtype->dual()->is_ptr();
   return make_same_narrowptr(odual);
 }
-
 
 const Type *TypeNarrowPtr::filter_helper(const Type *kills, bool include_speculative) const {
   if (isa_same_narrowptr(kills)) {
@@ -5148,7 +5127,6 @@ void TypeNarrowPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
 const TypeNarrowOop *TypeNarrowOop::BOTTOM;
 const TypeNarrowOop *TypeNarrowOop::NULL_PTR;
 
-
 const TypeNarrowOop* TypeNarrowOop::make(const TypePtr* type) {
   return (const TypeNarrowOop*)(new TypeNarrowOop(type))->hashcons();
 }
@@ -5180,7 +5158,6 @@ void TypeNarrowKlass::dump2( Dict & d, uint depth, outputStream *st ) const {
   TypeNarrowPtr::dump2(d, depth, st);
 }
 #endif
-
 
 // Structural equality check for Type representations
 bool TypeMetadataPtr::eq( const Type *t ) const {
@@ -5324,7 +5301,6 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
   return this;                  // Return the double constant
 }
 
-
 // Dual of a pure metadata pointer.
 const Type *TypeMetadataPtr::xdual() const {
   return new TypeMetadataPtr(dual_ptr(), metadata(), dual_offset());
@@ -5342,7 +5318,6 @@ void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   }
 }
 #endif
-
 
 // Convenience common pre-built type.
 const TypeMetadataPtr *TypeMetadataPtr::BOTTOM;
@@ -5363,7 +5338,6 @@ const TypeMetadataPtr *TypeMetadataPtr::make(PTR ptr, ciMetadata* m, int offset)
   assert(m == nullptr || !m->is_klass(), "wrong type");
   return (TypeMetadataPtr*)(new TypeMetadataPtr(ptr, m, offset))->hashcons();
 }
-
 
 const TypeKlassPtr* TypeAryPtr::as_klass_type(bool try_for_exact) const {
   const Type* elem = _ary->_elem;
@@ -5391,7 +5365,6 @@ const TypeKlassPtr* TypeKlassPtr::make(PTR ptr, ciKlass* klass, int offset, Inte
   }
   return TypeAryKlassPtr::make(ptr, klass, offset, interface_handling);
 }
-
 
 TypeKlassPtr::TypeKlassPtr(TYPES t, PTR ptr, ciKlass* klass, const InterfaceSet& interfaces, int offset)
   : TypePtr(t, ptr, offset), _klass(klass), _interfaces(interfaces) {
@@ -5559,7 +5532,6 @@ const TypeInstKlassPtr* TypeInstKlassPtr::cast_to_ptr_type(PTR ptr) const {
   return make(ptr, _klass, _interfaces, _offset);
 }
 
-
 bool TypeInstKlassPtr::must_be_exact() const {
   if (!_klass->is_loaded())  return false;
   ciInstanceKlass* ik = _klass->as_instance_klass();
@@ -5573,7 +5545,6 @@ const TypeKlassPtr* TypeInstKlassPtr::cast_to_exactness(bool klass_is_exact) con
   ciKlass* k = klass();
   return make(klass_is_exact ? Constant : NotNull, k, _interfaces, _offset);
 }
-
 
 // Corresponding type for an instance of the given class.
 // It will be NotNull, and exact if and only if the klass type is exact.
@@ -5857,7 +5828,6 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
   return this;
 }
 
-
 const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, int offset) {
   return (TypeAryKlassPtr*)(new TypeAryKlassPtr(ptr, elem, k, offset))->hashcons();
 }
@@ -6018,7 +5988,6 @@ bool TypeAryKlassPtr::must_be_exact() const {
   return tk->must_be_exact();
 }
 
-
 const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) const {
   if (must_be_exact()) return this;  // cannot clear xk
   ciKlass* k = _klass;
@@ -6028,7 +5997,6 @@ const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) cons
   }
   return make(klass_is_exact ? Constant : NotNull, elem, k, _offset);
 }
-
 
 // Corresponding type for an instance of the given class.
 // It will be NotNull, and exact if and only if the klass type is exact.
@@ -6044,7 +6012,6 @@ const TypeOopPtr* TypeAryKlassPtr::as_instance_type(bool klass_change) const {
   }
   return TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(el, TypeInt::POS), k, xk, 0);
 }
-
 
 // Compute the MEET of two types, return a new Type object.
 const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
@@ -6467,7 +6434,6 @@ bool TypeFunc::singleton(void) const {
 bool TypeFunc::empty(void) const {
   return false;                 // Never empty
 }
-
 
 BasicType TypeFunc::return_type() const{
   if (range()->cnt() == TypeFunc::Parms) {

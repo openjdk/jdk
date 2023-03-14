@@ -217,7 +217,6 @@ private:
   // Exception handling
   static address rethrow_stub()             { return _rethrow_Java; }
 
-
   // Type functions
   // ======================================================
 

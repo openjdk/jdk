@@ -886,7 +886,6 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
   set_control(_gvn.transform( new CatchProjNode(catch_, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci)));
 }
 
-
 // Handle all exceptions thrown by an inlined method or individual bytecode.
 // Common case 1: we have no handler, so all exceptions merge right into
 // the rethrow case.
@@ -1037,9 +1036,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   catch_call_exceptions(handlers);
 }
 
-
 // (Note:  Moved add_debug_info into GraphKit::add_safepoint_edges.)
-
 
 #ifndef PRODUCT
 void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
@@ -1074,7 +1071,6 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
   }
 }
 #endif //PRODUCT
-
 
 ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klass,
                                          ciKlass* holder, ciMethod* callee,

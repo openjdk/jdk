@@ -120,7 +120,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-
 // Multiply 2 floats
 class MulFNode : public MulNode {
 public:
@@ -249,7 +248,6 @@ public:
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
-
 
 class RotateLeftNode : public TypeNode {
   public:

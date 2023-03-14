@@ -457,7 +457,6 @@ void IdealKit::do_memory_merge(Node* merging, Node* join) {
   }
 }
 
-
 // Trivial runtime call
 Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
                                address slow_call,

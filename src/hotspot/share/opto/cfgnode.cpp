@@ -119,8 +119,6 @@ static Node *merge_region(RegionNode *region, PhaseGVN *phase) {
   return progress;
 }
 
-
-
 // Helper function: Return any PhiNode that uses this region or null
 PhiNode* RegionNode::has_phi() const {
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
@@ -133,7 +131,6 @@ PhiNode* RegionNode::has_phi() const {
 
   return nullptr;
 }
-
 
 // Helper function: Return the only PhiNode that uses this region or null
 PhiNode* RegionNode::has_unique_phi() const {
@@ -153,7 +150,6 @@ PhiNode* RegionNode::has_unique_phi() const {
 
   return only_phi;
 }
-
 
 // Helper function for RegionNode's identification of FP clipping
 // Check inputs to the Phi
@@ -200,7 +196,6 @@ static bool check_phi_clipping( PhiNode *phi, ConNode * &min, uint &min_idx, Con
   return ( min && max && val && (min->get_int() <= 0) && (max->get_int() >=0) );
 }
 
-
 // Helper function for RegionNode's identification of FP clipping
 // Check that inputs to Region come from two IfNodes,
 //
@@ -244,7 +239,6 @@ static bool check_if_clipping( const RegionNode *region, IfNode * &bot_if, IfNod
   return (top_if != nullptr);
 }
 
-
 // Helper function for RegionNode's identification of FP clipping
 // Verify that the value input to the phi comes from "ConvF2I; LShift; RShift"
 static bool check_convf2i_clipping( PhiNode *phi, uint idx, ConvF2INode * &convf2i, Node *min, Node *max) {
@@ -282,7 +276,6 @@ static bool check_convf2i_clipping( PhiNode *phi, uint idx, ConvF2INode * &convf
   convf2i = (ConvF2INode*)conv;
   return true;
 }
-
 
 // Helper function for RegionNode's identification of FP clipping
 static bool check_compare_clipping( bool less_than, IfNode *iff, ConNode *limit, Node * & input ) {
@@ -704,7 +697,6 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;                // Record progress
   }
 
-
   // If a Region flows into a Region, merge into one big happy merge.
   if (can_reshape) {
     Node *m = merge_region(this, phase);
@@ -1004,7 +996,6 @@ Node *Node::nonnull_req() const {
   return nullptr;
 }
 
-
 // note that these functions assume that the _adr_type field is flattened
 uint PhiNode::hash() const {
   const Type* at = _adr_type;
@@ -1043,7 +1034,6 @@ PhiNode* PhiNode::make_blank(Node* r, Node* x) {
   if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->adr_type());
   return new PhiNode(r, t, at);
 }
-
 
 // create a new phi with narrowed memory type
 PhiNode* PhiNode::slice_memory(const TypePtr* adr_type) const {
@@ -1160,7 +1150,6 @@ void PhiNode::verify_adr_type(bool recursive) const {
   }
 }
 #endif
-
 
 // Compute the type of the PhiNode
 const Type* PhiNode::Value(PhaseGVN* phase) const {
@@ -1310,7 +1299,6 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   ft = phase->saturate_and_maybe_push_to_igvn_worklist(this, ft);
   return ft;
 }
-
 
 // Does this Phi represent a simple well-shaped diamond merge?  Return the
 // index of the true path or 0 otherwise.
@@ -2615,7 +2603,6 @@ void PhiNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-
 const Type* GotoNode::Value(PhaseGVN* phase) const {
   // If the input is reachable, then we are executed.
   // If the input is not reachable, then we are not executed.
@@ -2641,9 +2628,6 @@ const RegMask &JProjNode::out_RegMask() const {
 const RegMask &CProjNode::out_RegMask() const {
   return RegMask::Empty;
 }
-
-
-
 
 uint PCTableNode::hash() const { return Node::hash() + _size; }
 bool PCTableNode::cmp( const Node &n ) const
@@ -2737,12 +2721,10 @@ uint CatchProjNode::hash() const {
   return Node::hash() + _handler_bci;
 }
 
-
 bool CatchProjNode::cmp( const Node &n ) const {
   return ProjNode::cmp(n) &&
     _handler_bci == ((CatchProjNode&)n)._handler_bci;
 }
-
 
 // If only 1 target is possible, choose it if it is the main control
 Node* CatchProjNode::Identity(PhaseGVN* phase) {
@@ -2776,7 +2758,6 @@ Node* CatchProjNode::Identity(PhaseGVN* phase) {
   // Only my path is possible; I am identity on control to the jump
   return in(0)->in(0);
 }
-
 
 #ifndef PRODUCT
 void CatchProjNode::dump_spec(outputStream *st) const {

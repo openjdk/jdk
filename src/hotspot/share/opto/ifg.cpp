@@ -203,7 +203,6 @@ int PhaseIFG::effective_degree(uint lidx) const {
   return eff;
 }
 
-
 #ifndef PRODUCT
 void PhaseIFG::dump() const {
   tty->print_cr("-- Interference Graph --%s--",
@@ -514,7 +513,6 @@ void PhaseChaitin::raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pr
     }
   }
 }
-
 
 /*
  * Computes the initial register pressure of a block, looking at all live

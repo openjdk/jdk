@@ -180,7 +180,6 @@ public:
   void  next();
 };
 
-
 // ========================= SuperWord =====================
 
 // -----------------------------SWNodeInfo---------------------------------
@@ -614,8 +613,6 @@ class SuperWord : public ResourceObj {
 
   void packset_sort(int n);
 };
-
-
 
 // Information about an address for dependence checking and vector alignment
 class SWPointer : public ArenaObj {

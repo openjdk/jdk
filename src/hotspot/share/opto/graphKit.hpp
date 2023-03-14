@@ -306,7 +306,6 @@ class GraphKit : public Phase {
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset);
 
-
   // Some convenient shortcuts for common nodes
   Node* IfTrue(IfNode* iff)                   { return _gvn.transform(new IfTrueNode(iff));      }
   Node* IfFalse(IfNode* iff)                  { return _gvn.transform(new IfFalseNode(iff));     }
@@ -349,7 +348,6 @@ class GraphKit : public Phase {
   Node* array_ideal_length(AllocateArrayNode* alloc,
                            const TypeOopPtr* oop_type,
                            bool replace_length_in_map);
-
 
   // Helper function to do a null pointer check or ZERO check based on type.
   // Throw an exception if a given value is null.

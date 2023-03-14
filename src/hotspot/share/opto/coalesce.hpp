@@ -85,7 +85,6 @@ public:
   void insert_copy_with_overlap( Block *b, Node *copy, uint dst_name, uint src_name );
 };
 
-
 // Conservatively, pessimistic coalesce copies.  Conservative means do not
 // coalesce if the resultant live range will be uncolorable.  Pessimistic
 // means we cannot coalesce if 2 live ranges interfere.  This implies we do

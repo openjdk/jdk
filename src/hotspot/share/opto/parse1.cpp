@@ -185,7 +185,6 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   int max_locals = jvms()->loc_size();
   int max_stack  = jvms()->stk_size();
 
-
   // Mismatch between method and jvms can occur since map briefly held
   // an OSR entry state (which takes up one RawPtr word).
   assert(max_locals == method()->max_locals(), "sanity");
@@ -223,14 +222,12 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     // Make a BoxLockNode for the monitor.
     Node *box = _gvn.transform(new BoxLockNode(next_monitor()));
 
-
     // Displaced headers and locked objects are interleaved in the
     // temp OSR buffer.  We only copy the locked objects out here.
     // Fetch the locked object from the OSR temp buffer and copy to our fastlock node.
     Node *lock_object = fetch_interpreter_state(index*2, T_OBJECT, monitors_addr, osr_buf);
     // Try and copy the displaced header to the BoxNode
     Node *displaced_hdr = fetch_interpreter_state((index*2) + 1, T_ADDRESS, monitors_addr, osr_buf);
-
 
     store_to_memory(control(), box, displaced_hdr, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
 
@@ -804,7 +801,6 @@ void Parse::build_exits() {
   }
 }
 
-
 // Construct a state which contains only the incoming arguments from an
 // unknown caller.  The method & bci will be null & InvocationEntryBci.
 JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
@@ -849,7 +845,6 @@ Node_Notes* Parse::make_node_notes(Node_Notes* caller_nn) {
   nn->set_jvms(jvms);
   return nn;
 }
-
 
 void Compile::return_values(JVMState* jvms) {
   GraphKit kit(jvms);
@@ -1333,11 +1328,9 @@ Parse::Block* Parse::Block::successor_for_bci(int bci) {
   return nullptr;
 }
 
-
 const Type* Parse::Block::stack_type_at(int i) const {
   return get_type(flow()->stack_type_at(i));
 }
-
 
 const Type* Parse::Block::local_type_at(int i) const {
   // Make dead locals fall to bottom.
@@ -1352,7 +1345,6 @@ const Type* Parse::Block::local_type_at(int i) const {
 
   return get_type(flow()->local_type_at(i));
 }
-
 
 #ifndef PRODUCT
 
@@ -1401,7 +1393,6 @@ void Parse::BytecodeParseHistogram::record_change() {
     _new_values        [_initial_bytecode] += (current_count(BPH_values)     - _initial_values);
   }
 }
-
 
 void Parse::BytecodeParseHistogram::print(float cutoff) {
   ResourceMark rm;
@@ -1452,13 +1443,11 @@ void Parse::load_state_from(Block* block) {
   set_sp( block->start_sp());
 }
 
-
 void Parse::Block::record_state(Parse* p) {
   assert(!is_merged(), "can only record state once, on 1st inflow");
   assert(start_sp() == p->sp(), "stack pointer must agree with ciTypeFlow");
   set_start_map(p->stop());
 }
-
 
 void Parse::do_one_block() {
   if (TraceOptoParse) {
@@ -1546,7 +1535,6 @@ void Parse::do_one_block() {
     // point, starts a new basic block, and is handled like other basic blocks.
   }
 }
-
 
 void Parse::set_parse_bci(int bci) {
   set_bci(bci);
@@ -1792,7 +1780,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
   assert(stopped(), "");
 }
 
-
 void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
   // (nophi means we must not create phis, because we already parsed here)
   assert(n != nullptr, "");
@@ -1852,7 +1839,6 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
   }
 }
 
-
 void Parse::ensure_phis_everywhere() {
   ensure_phi(TypeFunc::I_O);
 
@@ -1889,7 +1875,6 @@ void Parse::ensure_phis_everywhere() {
     ensure_phi(map()->jvms()->monitor_obj_offset(m));
   }
 }
-
 
 // Add a previously unaccounted predecessor to this block.
 int Parse::Block::add_new_path() {
@@ -2186,7 +2171,6 @@ void Parse::return_current(Node* value) {
   stop_and_kill_map();          // This CFG path dies here
 }
 
-
 void Parse::add_safepoint() {
   uint parms = TypeFunc::Parms+1;
 
@@ -2304,7 +2288,6 @@ void Parse::show_parse_info() {
     tty->cr();
   }
 }
-
 
 // Dump information associated with the bytecodes of current _method
 void Parse::dump() {

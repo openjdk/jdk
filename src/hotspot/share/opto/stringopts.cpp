@@ -236,7 +236,6 @@ class StringConcat : public ResourceObj {
   }
 };
 
-
 void StringConcat::eliminate_unneeded_control() {
   for (uint i = 0; i < _control.size(); i++) {
     Node* n = _control.at(i);
@@ -271,7 +270,6 @@ void StringConcat::eliminate_unneeded_control() {
     }
   }
 }
-
 
 StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   StringConcat* result = new StringConcat(_stringopts, _end);
@@ -311,7 +309,6 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   result->_multiple = true;
   return result;
 }
-
 
 void StringConcat::eliminate_call(CallNode* call) {
   Compile* C = _stringopts->C;
@@ -630,7 +627,6 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   return nullptr;
 }
 
-
 PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   Phase(StringOpts),
   _gvn(gvn) {
@@ -702,7 +698,6 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
     }
   }
 
-
   for (int c = 0; c < concats.length(); c++) {
     StringConcat* sc = concats.at(c);
     replace_string_concat(sc);
@@ -761,7 +756,6 @@ void PhaseStringOpts::remove_dead_nodes() {
     }
   }
 }
-
 
 bool StringConcat::validate_mem_flow() {
   Compile* C = _stringopts->C;

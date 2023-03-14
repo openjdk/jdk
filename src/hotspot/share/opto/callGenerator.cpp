@@ -834,7 +834,6 @@ public:
   virtual JVMState* generate(JVMState* jvms);
 };
 
-
 CallGenerator* CallGenerator::for_predicted_call(ciKlass* predicted_receiver,
                                                  CallGenerator* if_missed,
                                                  CallGenerator* if_hit,
@@ -972,7 +971,6 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   }
   return kit.transfer_exceptions_into_jvms();
 }
-
 
 CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool allow_inline) {
   assert(callee->is_method_handle_intrinsic(), "for_method_handle_call mismatch");
@@ -1164,12 +1162,10 @@ public:
   virtual JVMState* generate(JVMState* jvms);
 };
 
-
 CallGenerator* CallGenerator::for_predicated_intrinsic(CallGenerator* intrinsic,
                                                        CallGenerator* cg) {
   return new PredicatedIntrinsicGenerator(intrinsic, cg);
 }
-
 
 JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
   // The code we want to generate here is:
@@ -1365,14 +1361,12 @@ public:
   virtual JVMState* generate(JVMState* jvms);
 };
 
-
 CallGenerator*
 CallGenerator::for_uncommon_trap(ciMethod* m,
                                  Deoptimization::DeoptReason reason,
                                  Deoptimization::DeoptAction action) {
   return new UncommonTrapCallGenerator(m, reason, action);
 }
-
 
 JVMState* UncommonTrapCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);

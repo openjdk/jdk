@@ -66,7 +66,6 @@ const Type* EncodePNode::Value(PhaseGVN* phase) const {
   return t->make_narrowoop();
 }
 
-
 Node* DecodeNKlassNode::Identity(PhaseGVN* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);

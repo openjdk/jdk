@@ -75,7 +75,6 @@
 // conflict/dead).  The other array will map to a callee-saved register or
 // OptoReg::Bad for not-callee-saved.
 
-
 // Structure to pass around
 struct OopFlow : public ArenaObj {
   short *_callees;              // Array mapping register to callee-saved
@@ -606,7 +605,6 @@ void PhaseOutput::BuildOopMaps() {
   // Array mapping blocks to completed oopflows
   OopFlow **flows = NEW_ARENA_ARRAY(A, OopFlow*, C->cfg()->number_of_blocks());
   memset( flows, 0, C->cfg()->number_of_blocks() * sizeof(OopFlow*) );
-
 
   // Do the first block 'by hand' to prime the worklist
   Block *entry = C->cfg()->get_block(1);

@@ -460,8 +460,6 @@ bool ConnectionGraph::has_arg_escape(CallJavaNode* call) {
   return false;
 }
 
-
-
 // Utility function for nodes that load an object
 void ConnectionGraph::add_objload_to_connection_graph(Node *n, Unique_Node_List *delayed_worklist) {
   // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
@@ -1308,7 +1306,6 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
     }
   }
 }
-
 
 // Finish Graph construction.
 bool ConnectionGraph::complete_connection_graph(
@@ -2426,7 +2423,6 @@ bool ConnectionGraph::not_global_escape(Node *n) {
   }
   return true;
 }
-
 
 // Helper functions
 

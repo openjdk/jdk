@@ -57,9 +57,6 @@ Node *IdealLoopTree::is_loop_exit(Node *iff) const {
   return nullptr;
 }
 
-
-
-
 // Put loop body on igvn work list
 void IdealLoopTree::record_for_igvn() {
   for (uint i = 0; i < _body.size(); i++) {
@@ -732,7 +729,6 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     }
   }
 
-
   // Step 3: Cut the backedge on the clone (so its not a loop) and remove the
   //         extra backedge user.
   Node* new_head = old_new[head->_idx];
@@ -857,7 +853,6 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
 
   return phase->may_require_nodes(new_body_size);
 }
-
 
 // Return TRUE or FALSE if the loop should be unrolled or not. Apply unroll if
 // the loop is  a counted loop and  the loop body is small  enough. When TRUE,
@@ -1100,7 +1095,6 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
     }
   }
 }
-
 
 // Return TRUE or FALSE if the loop should be range-check-eliminated or not.
 // When TRUE, the estimated node budget is also requested.
@@ -1400,7 +1394,6 @@ bool PhaseIdealLoop::subgraph_has_opaque(Node* n) {
   count_opaque_loop_nodes(n, init, stride);
   return init != 0 || stride != 0;
 }
-
 
 bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
   uint init;
@@ -1884,7 +1877,6 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   loop->record_for_igvn();
 }
 
-
 // Insert a copy of the rce'd main loop as a post loop,
 // We have not unrolled the main loop, so this is the right time to inject this.
 // Later we will examine the partner of this post loop pair which still has range checks
@@ -1930,7 +1922,6 @@ void PhaseIdealLoop::insert_scalar_rced_post_loop(IdealLoopTree *loop, Node_List
   peeled_dom_test_elim(loop, old_new);
   loop->record_for_igvn();
 }
-
 
 // Insert post loops.  Add a post loop to the given loop passed.
 Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
@@ -2447,7 +2438,6 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   }
 #endif
 }
-
 
 void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new) {
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
@@ -3435,7 +3425,6 @@ void IdealLoopTree::DCE_loop_body() {
   }
 }
 
-
 // Look for loop-exit tests with the 50/50 (or worse) guesses from the parsing stage.
 // Replace with a 1-in-10 exit guess.
 void IdealLoopTree::adjust_loop_exit_prob(PhaseIdealLoop *phase) {
@@ -3980,7 +3969,6 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   return true;
 }
 
-
 bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
   // Recursively iteration split nested loops
   if (_child && !_child->iteration_split(phase, old_new)) {
@@ -4017,7 +4005,6 @@ bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
   return true;
 }
 
-
 // Process all the loops in the loop tree and replace any fill
 // patterns with an intrinsic version.
 bool PhaseIdealLoop::do_intrinsify_fill() {
@@ -4028,7 +4015,6 @@ bool PhaseIdealLoop::do_intrinsify_fill() {
   }
   return changed;
 }
-
 
 // Examine an inner loop looking for a single store of an invariant
 // value in a unit stride loop,
@@ -4268,8 +4254,6 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
 
   return msg == nullptr;
 }
-
-
 
 bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // Only for counted inner loops

@@ -30,7 +30,6 @@
 #include "opto/live.hpp"
 #include "opto/machnode.hpp"
 
-
 // Compute live-in/live-out.  We use a totally incremental algorithm.  The LIVE
 // problem is monotonic.  The steady-state solution looks like this: pull a
 // block from the worklist.  It has a set of delta's - values which are newly

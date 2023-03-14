@@ -80,7 +80,6 @@ public:
   }
 };
 
-
 // Simple narrow oop constants
 class ConNNode : public ConNode {
 public:
@@ -94,7 +93,6 @@ public:
   ConNKlassNode( const TypeNarrowKlass *t ) : ConNode(t) {}
   virtual int Opcode() const;
 };
-
 
 // Simple long constants
 class ConLNode : public ConNode {
@@ -143,7 +141,5 @@ public:
     virtual const Type *bottom_type() const { return TypeRawPtr::BOTTOM;}
     virtual uint ideal_reg() const { return Op_RegP; }
 };
-
-
 
 #endif // SHARE_OPTO_CONNODE_HPP

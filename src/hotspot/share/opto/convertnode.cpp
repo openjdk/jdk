@@ -58,7 +58,6 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
   return TypeInt::BOOL;
 }
 
-
 // The conversions operations are all Alpha sorted.  Please keep it that way!
 const Type* ConvD2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
@@ -568,7 +567,6 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
   return false;
 }
 
-
 Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const TypeLong* this_type = this->type()->is_long();
   if (can_reshape && !phase->C->post_loop_opts_phase()) {
@@ -696,8 +694,6 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // in objects initialization code and Escape Analysis.
   return nullptr;
 }
-
-
 
 // Remove redundant roundings
 Node* RoundFloatNode::Identity(PhaseGVN* phase) {

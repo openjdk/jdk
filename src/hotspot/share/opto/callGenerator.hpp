@@ -188,7 +188,6 @@ class CallGenerator : public ArenaObj {
   static bool is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m);
 };
 
-
 class InlineCallGenerator : public CallGenerator {
  protected:
   InlineCallGenerator(ciMethod* method) : CallGenerator(method) {}

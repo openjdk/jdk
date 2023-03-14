@@ -61,7 +61,6 @@ class LibraryIntrinsic : public InlineCallGenerator {
   vmIntrinsics::ID intrinsic_id() const { return _intrinsic_id; }
 };
 
-
 // Local helper class for LibraryIntrinsic:
 class LibraryCallKit : public GraphKit {
  private:

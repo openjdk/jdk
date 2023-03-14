@@ -129,7 +129,6 @@ class VectorNode : public TypeNode {
   }
 };
 
-
 //===========================Vector ALU Operations=============================
 // Vector add byte
 class AddVBNode : public VectorNode {
@@ -1067,7 +1066,6 @@ class PopulateIndexNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-
 // Pack parent class (not for code generation).
 class PackNode : public VectorNode {
  public:
@@ -1145,7 +1143,6 @@ class Pack2DNode : public PackNode {
   Pack2DNode(Node* in1, Node* in2, const TypeVect* vt) : PackNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
-
 
 class VectorLoadConstNode : public VectorNode {
  public:

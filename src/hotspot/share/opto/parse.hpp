@@ -38,7 +38,6 @@ class InlineTree;
 class Parse;
 class SwitchRange;
 
-
 class InlineTree : public AnyObj {
   friend class VMStructs;
 
@@ -142,7 +141,6 @@ public:
   // Dump inlining replay data to the stream.
   void dump_replay_data(outputStream* out, int depth_adjust = 0);
 };
-
 
 // Parse bytecodes, build a Graph
 class Parse : public GraphKit {

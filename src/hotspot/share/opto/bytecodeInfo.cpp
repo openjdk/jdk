@@ -192,7 +192,6 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   return true;
 }
 
-
 // negative filter: should callee NOT be inlined?
 bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_method,
                                    int caller_bci, bool& should_delay, ciCallProfile& profile) {
@@ -643,7 +642,6 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
   return ilt;
 }
 
-
 InlineTree *InlineTree::callee_at(int bci, ciMethod* callee) const {
   for (int i = 0; i < _subtrees.length(); i++) {
     InlineTree* sub = _subtrees.at(i);
@@ -654,7 +652,6 @@ InlineTree *InlineTree::callee_at(int bci, ciMethod* callee) const {
   return nullptr;
 }
 
-
 InlineTree *InlineTree::build_inline_tree_root() {
   Compile* C = Compile::current();
 
@@ -663,7 +660,6 @@ InlineTree *InlineTree::build_inline_tree_root() {
 
   return ilt;
 }
-
 
 // Given a jvms, which determines a call chain from the root method,
 // find the corresponding inline tree.
@@ -705,7 +701,6 @@ void InlineTree::dump_replay_data(outputStream* out, int depth_adjust) {
     _subtrees.at(i)->dump_replay_data(out, depth_adjust);
   }
 }
-
 
 #ifndef PRODUCT
 void InlineTree::print_impl(outputStream* st, int indent) const {

@@ -63,7 +63,6 @@ public:
   static SubNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
-
 // NOTE: SubINode should be taken away and replaced by add and negate
 // Subtract 2 integers
 class SubINode : public SubNode {
@@ -251,7 +250,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-
 // Compare 2 double values, returning condition codes (-1, 0 or 1).
 // This implements the Java bytecode dcmpl, so unordered returns -1.
 // Operands may not commute.
@@ -276,7 +274,6 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
 };
-
 
 // Convert condition codes to a boolean test value (0 or -1).
 // We pick the values as 3 bits; the low order 2 bits we compare against the
@@ -388,7 +385,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-
 // If p < q, return -1 else return 0.  Nice for flow-free idioms.
 class CmpLTMaskNode : public Node {
 public:
@@ -397,7 +393,6 @@ public:
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
-
 
 class NegNode : public Node {
 public:
@@ -456,7 +451,6 @@ public:
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
 };
-
 
 // square root a double
 class SqrtDNode : public Node {

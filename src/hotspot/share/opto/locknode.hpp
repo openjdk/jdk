@@ -99,7 +99,6 @@ public:
   RTMLockingCounters* stack_rtm_counters() const { return _stack_rtm_counters; }
 };
 
-
 class FastUnlockNode: public CmpNode {
 public:
   FastUnlockNode(Node *ctrl, Node *oop, Node *box) : CmpNode(oop,box) {
@@ -108,7 +107,6 @@ public:
   }
   Node* obj_node() const { return in(1); }
   Node* box_node() const { return in(2); }
-
 
   // FastLock and FastUnlockNode do not hash, we need one for each corresponding
   // LockNode/UnLockNode to avoid creating Phi's.

@@ -35,7 +35,6 @@
 
 // Portions of code courtesy of Clifford Click
 
-
 // Hash function over MulNodes.  Needs to be commutative; i.e., I swap
 // (commute) inputs to MulNodes willy-nilly so the hash function must return
 // the same value in the presence of edge swapping.
@@ -219,7 +218,6 @@ MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
-
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const jint con = in(2)->find_int_con(0);
@@ -310,7 +308,6 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
   }
   return TypeInt::make(lo0, hi0, MAX2(r0->_widen,r1->_widen));
 }
-
 
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -740,7 +737,6 @@ LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
   }
   return nullptr;
 }
-
 
 static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
   const TypeInt* tcount = phase->type(shiftNode->in(2))->isa_int();
@@ -1567,7 +1563,6 @@ const Type* FmaFNode::Value(PhaseGVN* phase) const {
 uint MulAddS2INode::hash() const {
   return (uintptr_t)in(1) + (uintptr_t)in(2) + (uintptr_t)in(3) + (uintptr_t)in(4) + Opcode();
 }
-
 
 Node* RotateLeftNode::Identity(PhaseGVN* phase) {
   const Type* t1 = phase->type(in(1));

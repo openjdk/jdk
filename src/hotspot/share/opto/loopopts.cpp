@@ -1183,7 +1183,6 @@ static bool merge_point_safe(Node* region) {
   return true;
 }
 
-
 // Place some computation outside of this loop on the path to the use passed as argument
 Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) const {
   Node* head = loop->_head;
@@ -1206,7 +1205,6 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
   assert(find_non_split_ctrl(useblock) == useblock, "should be non split control");
   return useblock;
 }
-
 
 bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
   if (!n->is_If() || n->is_BaseCountedLoopEnd()) {
@@ -1237,7 +1235,6 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
 
   return true;
 }
-
 
 bool PhaseIdealLoop::can_split_if(Node* n_ctrl) {
   if (must_throttle_split_if()) {
@@ -2057,7 +2054,6 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
         split_cex_set->push(use);
       }
 
-
       // Get "block" use is in
       uint idx = 0;
       while( use->in(idx) != old ) idx++;
@@ -2615,7 +2611,6 @@ void PhaseIdealLoop::clone_loop_body(const Node_List& body, Node_List &old_new, 
   }
 }
 
-
 // Looks for an iff/bool/comp with one operand of the compare
 // being a cycle involving an add and a phi,
 // with an optional truncation (left-shift followed by a right-shift)
@@ -2673,7 +2668,6 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
   }
   return 0;
 }
-
 
 // Return the (unique) control output node that's in the loop (if it exists.)
 Node* PhaseIdealLoop::stay_in_loop( Node* n, IdealLoopTree *loop) {
@@ -2989,7 +2983,6 @@ void PhaseIdealLoop::scheduled_nodelist( IdealLoopTree *loop, VectorSet& member,
   }
 }
 
-
 // Has a use in the vector set
 bool PhaseIdealLoop::has_use_in_set( Node* n, VectorSet& vset ) {
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
@@ -3000,7 +2993,6 @@ bool PhaseIdealLoop::has_use_in_set( Node* n, VectorSet& vset ) {
   }
   return false;
 }
-
 
 // Has use internal to the vector set (ie. not in a phi at the loop head)
 bool PhaseIdealLoop::has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoopTree *loop ) {
@@ -3013,7 +3005,6 @@ bool PhaseIdealLoop::has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoo
   }
   return false;
 }
-
 
 // clone "n" for uses that are outside of loop
 int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist ) {
@@ -3064,7 +3055,6 @@ int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, No
   return cloned;
 }
 
-
 // clone "n" for special uses that are in the not_peeled region.
 // If these def-uses occur in separate blocks, the code generator
 // marks the method as not compilable.  For example, if a "BoolNode"
@@ -3108,7 +3098,6 @@ void PhaseIdealLoop::clone_for_special_use_inside_loop( IdealLoopTree *loop, Nod
     }
   }
 }
-
 
 // Insert phi(lp_entry_val, back_edge_val) at use->in(idx) for loop lp if phi does not already exist
 void PhaseIdealLoop::insert_phi_for_loop( Node* use, uint idx, Node* lp_entry_val, Node* back_edge_val, LoopNode* lp ) {

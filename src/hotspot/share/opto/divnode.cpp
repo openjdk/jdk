@@ -327,7 +327,6 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   return new AddLNode(temp1, temp2);
 }
 
-
 // Convert a division by constant divisor into an alternate Ideal graph.
 // Return null if no transformation occurs.
 static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divisor ) {
@@ -544,7 +543,6 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
   return TypeInt::INT;
 }
 
-
 // If the divisor is 1, we are an identity on the dividend.
 Node* DivLNode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) )->higher_equal(TypeLong::ONE)) ? in(1) : this;
@@ -646,7 +644,6 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
   return TypeLong::LONG;
 }
 
-
 // An DivFNode divides its inputs.  The third input is a Control input, used to
 // prevent hoisting the divide above an unsafe test.
 const Type* DivFNode::Value(PhaseGVN* phase) const {
@@ -695,7 +692,6 @@ const Type* DivFNode::Value(PhaseGVN* phase) const {
 Node* DivFNode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) ) == TypeF::ONE) ? in(1) : this;
 }
-
 
 Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
@@ -778,7 +774,6 @@ const Type* DivDNode::Value(PhaseGVN* phase) const {
   return Type::DOUBLE;
 }
 
-
 // Dividing by self is 1.
 // If the divisor is 1, we are an identity on the dividend.
 Node* DivDNode::Identity(PhaseGVN* phase) {
@@ -854,7 +849,6 @@ Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-
 // If the divisor is 1, we are an identity on the dividend.
 Node* UDivLNode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) )->higher_equal(TypeLong::ONE)) ? in(1) : this;
@@ -888,7 +882,6 @@ Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   return nullptr;
 }
-
 
 Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
@@ -1220,7 +1213,6 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( i1->get_con() % i2->get_con() );
 }
 
-
 const Type* ModFNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
@@ -1268,7 +1260,6 @@ Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-
 const Type* ModDNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
@@ -1310,7 +1301,6 @@ const Type* ModDNode::Value(PhaseGVN* phase) const {
   return TypeD::make(jdouble_cast(xr));
 }
 
-
 DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) {
   init_req(0, c);
   init_req(1, dividend);
@@ -1351,7 +1341,6 @@ Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
-
 
 // return result(s) along with their RegMask info
 Node *DivModLNode::match( const ProjNode *proj, const Matcher *match ) {
@@ -1400,7 +1389,6 @@ Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
-
 
 // return result(s) along with their RegMask info
 Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {

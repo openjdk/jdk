@@ -58,7 +58,6 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
                     thread, method_node);
 }
 
-
 void Parse::do_checkcast() {
   bool will_link;
   ciKlass* klass = iter().get_klass(will_link);
@@ -97,7 +96,6 @@ void Parse::do_checkcast() {
   pop();
   push(res);
 }
-
 
 void Parse::do_instanceof() {
   if (stopped())  return;
@@ -232,7 +230,6 @@ void Parse::array_store_check() {
   // Result is ignored, we just need the CFG effects.
   gen_checkcast(obj, a_e_klass);
 }
-
 
 void Parse::do_new() {
   kill_dead_locals();

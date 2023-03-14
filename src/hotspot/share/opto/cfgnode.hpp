@@ -473,7 +473,6 @@ protected:
   virtual bool always_taken(const TypeTuple* t) const { return t == TypeTuple::IFFALSE; }
 };
 
-
 // Build an indirect branch table.  Given a control and a table index,
 // control is passed to the Projection matching the table index.  Used to
 // implement switch statements and exception-handling capabilities.
@@ -588,7 +587,6 @@ public:
 #endif
 };
 
-
 // Helper node to create the exception coming back from a call
 class CreateExNode : public TypeNode {
 public:
@@ -646,6 +644,5 @@ public:
   virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
 #endif
 };
-
 
 #endif // SHARE_OPTO_CFGNODE_HPP

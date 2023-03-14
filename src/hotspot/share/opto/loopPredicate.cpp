@@ -484,7 +484,6 @@ void PhaseIdealLoop::check_created_predicate_for_unswitching(const Node* new_ent
 }
 #endif
 
-
 // Skip related predicates.
 Node* PhaseIdealLoop::skip_loop_predicates(Node* entry) {
   IfNode* iff = entry->in(0)->as_If();
@@ -1244,7 +1243,6 @@ void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *lo
   } while (stack.size() > 0);
 }
 
-
 bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode* proj, ProjNode *predicate_proj,
                                                   CountedLoopNode *cl, ConNode* zero, Invariance& invar,
                                                   Deoptimization::DeoptReason reason) {
@@ -1367,7 +1365,6 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
   C->set_major_progress();
   return true;
 }
-
 
 // After pre/main/post loops are created, we'll put a copy of some
 // range checks between the pre and main loop to validate the value
@@ -1496,7 +1493,6 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   Node_List if_proj_list;
   Node_List regions;
   Node* current_proj = loop->tail(); // start from tail
-
 
   Node_List controls;
   while (current_proj != head) {

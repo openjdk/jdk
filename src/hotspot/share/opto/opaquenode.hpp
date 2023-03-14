@@ -123,7 +123,6 @@ class Opaque4Node : public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-
 // A node represents value profile for a boolean during parsing.
 // Once parsing is over, the node goes away (during IGVN).
 // It is used to override branch frequencies from MDO (see has_injected_profile in parse2.cpp).

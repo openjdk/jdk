@@ -73,7 +73,6 @@ void Parse::array_load(BasicType bt) {
   }
 }
 
-
 void Parse::array_store(BasicType bt) {
   const Type* elemtype = Type::TOP;
   bool big_val = bt == T_DOUBLE || bt == T_LONG;
@@ -101,7 +100,6 @@ void Parse::array_store(BasicType bt) {
 
   access_store_at(array, adr, adr_type, val, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY);
 }
-
 
 // Pull array and index from the stack.  Compute pointer-to-element.
 Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
@@ -207,7 +205,6 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
   return ptr;
 }
 
-
 // returns IfNode
 IfNode* Parse::jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float prob, float cnt) {
   Node   *cmp = _gvn.transform(new CmpINode(a, b)); // two cases: shiftcount > 32 and shiftcount <= 32
@@ -215,7 +212,6 @@ IfNode* Parse::jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float pro
   IfNode *iff = create_and_map_if(control(), tst, prob, cnt);
   return iff;
 }
-
 
 // sentinel value for the target bci to mark never taken branches
 // (according to profiling)
@@ -279,7 +275,6 @@ void Parse::jump_if_always_fork(int dest_bci, bool unc) {
   }
 }
 
-
 extern "C" {
   static int jint_cmp(const void *i, const void *j) {
     int a = *(jint *)i;
@@ -287,7 +282,6 @@ extern "C" {
     return a > b ? 1 : a < b ? -1 : 0;
   }
 }
-
 
 class SwitchRange : public StackObj {
   // a range of integers coupled with a bci destination
@@ -478,7 +472,6 @@ void Parse::do_tableswitch() {
   jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
 }
 
-
 void Parse::do_lookupswitch() {
   // Get information about lookupswitch
   int default_dest = iter().get_dest_table(0);
@@ -659,7 +652,6 @@ static float compute_tree_cost(SwitchRange *lo, SwitchRange *hi, float total_cnt
       cost = r._cost;
     }
   } while (tree.length() > 0);
-
 
   return cost;
 }
@@ -994,7 +986,6 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
       assert(nr != 2 || mid == hi,   "should pick higher of 2");
       assert(nr != 3 || mid == hi-1, "should pick middle of 3");
     }
-
 
     Node *test_val = _gvn.intcon(mid == lo ? mid->hi() : mid->lo());
 
@@ -1549,7 +1540,6 @@ void Parse::maybe_add_predicate_after_if(Block* path) {
   }
 }
 
-
 // Adjust the JVM state to reflect the result of taking this path.
 // Basically, it means inspecting the CmpNode controlling this
 // branch, seeing how it constrains a tested value, and then
@@ -1607,7 +1597,6 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
   sharpen_type_after_if(btest, con, tcon, val, tval);
   maybe_add_predicate_after_if(path);
 }
-
 
 static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   Node* ldk;
@@ -2385,7 +2374,6 @@ void Parse::do_one_bytecode() {
     push(c);
     break;
 
-
     // Note for longs -> lo word is on TOS, hi word is on TOS - 1
   case Bytecodes::_land:
     b = pop_pair();
@@ -2715,7 +2703,6 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ret:
     do_ret();
     break;
-
 
   case Bytecodes::_monitorenter:
     do_monitor_enter();

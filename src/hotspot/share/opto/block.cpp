@@ -1250,7 +1250,6 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
 #endif
 }
 
-
 #ifndef PRODUCT
 void PhaseCFG::_dump_cfg( const Node *end, VectorSet &visited  ) const {
   const Node *x = end->is_block_proj();
@@ -1839,7 +1838,6 @@ PhaseBlockLayout::PhaseBlockLayout(PhaseCFG &cfg)
 
   assert(_cfg.number_of_blocks() >= (uint) (size - 1), "number of blocks can not shrink");
 }
-
 
 // Edge e completes a loop in a trace. If the target block is head of the
 // loop, rotate the loop block so that the loop ends in a conditional branch.

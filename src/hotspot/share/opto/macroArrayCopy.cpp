@@ -98,7 +98,6 @@ Node* PhaseMacroExpand::make_leaf_call(Node* ctrl, Node* mem,
   return call;
 }
 
-
 // Helper function for generating guarded fast-slow graph structures.
 // The given 'test', if true, guards a slow path.  If the test fails
 // then a fast path can be taken.  (We generally hope it fails.)
@@ -265,7 +264,6 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
 
   *ctrl = stub_block;
 }
-
 
 Node* PhaseMacroExpand::generate_nonpositive_guard(Node** ctrl, Node* index, bool never_negative) {
   if ((*ctrl)->is_top())  return nullptr;

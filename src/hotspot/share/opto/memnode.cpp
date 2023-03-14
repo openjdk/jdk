@@ -540,7 +540,6 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
   return false;
 }
 
-
 // Find an arraycopy ac that produces the memory state represented by parameter mem.
 // Return ac if
 // (a) can_see_stored_value=true  and ac must have set the value for this load or if
@@ -1037,7 +1036,6 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
   }
   return nullptr;
 }
-
 
 // This routine exists to make sure this set of tests is done the same
 // everywhere.  We need to make a coordinated change: first LoadNode::Ideal
@@ -1715,7 +1713,6 @@ AllocateNode* LoadNode::is_new_object_mark_load(PhaseGVN *phase) const {
   }
   return nullptr;
 }
-
 
 // If the load is from Field memory and the pointer is non-null, it might be possible to
 // zero out the control input.
@@ -2437,7 +2434,6 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   return this;
 }
 
-
 const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
   const Type *t = klass_value_common(phase);
   if (t == Type::TOP)
@@ -2640,7 +2636,6 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-
   // Capture an unaliased, unconditional, simple store into an initializer.
   // Or, if it is independent of the allocation, hoist it above the allocation.
   if (ReduceFieldZeroing && /*can_reshape &&*/
@@ -2780,7 +2775,6 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
   return nullptr;
 }
 
-
 // Check for useless sign-extension before a partial-word store
 // (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
 // If (conIL == conIR && conIR <= num_bits)  this simplifies to
@@ -2849,7 +2843,6 @@ MemBarNode* StoreNode::trailing_membar() const {
   return nullptr;
 }
 
-
 // If the store is from an AND mask that leaves the low bits untouched, then
 // we can skip the AND operation.  If the store is from a sign-extension
 // (a left shift, then right shift) we can skip both.
@@ -2912,7 +2905,6 @@ const Type* StoreCMNode::Value(PhaseGVN* phase) const {
   }
   return StoreNode::Value(phase);
 }
-
 
 const Type* SCMemProjNode::Value(PhaseGVN* phase) const
 {
@@ -3447,7 +3439,6 @@ MemBarNode* MemBarNode::leading_membar() const {
   assert(mb->_pair_idx == _pair_idx, "bad leading membar");
   return mb;
 }
-
 
 // SUMMARY:
 // This node acts as a memory barrier on raw memory, after some raw stores.
@@ -4266,7 +4257,6 @@ intptr_t InitializeNode::find_next_fullword_store(uint start, PhaseGVN* phase) {
   return -1;
 }
 
-
 // Called when the associated AllocateNode is expanded into CFG.
 // At this point, we may perform additional optimizations.
 // Linearize the stores by ascending offset, to make memory
@@ -4424,7 +4414,6 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
   return rawmem;
 }
 
-
 #ifdef ASSERT
 bool InitializeNode::stores_are_sane(PhaseTransform* phase) {
   if (is_complete())
@@ -4446,9 +4435,6 @@ bool InitializeNode::stores_are_sane(PhaseTransform* phase) {
   return true;
 }
 #endif //ASSERT
-
-
-
 
 //
 // SEMANTICS OF MEMORY MERGES:  A MergeMem is a memory state assembled from several
@@ -4614,7 +4600,6 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // but rewrite each "in(i)" relative to the new "in(Bot)".
   Node *progress = nullptr;
 
-
   Node* old_base = base_memory();
   Node* empty_mem = empty_memory();
   if (old_base == empty_mem)
@@ -4773,7 +4758,6 @@ void MergeMemNode::dump_spec(outputStream *st) const {
 }
 #endif // !PRODUCT
 
-
 #ifdef ASSERT
 static bool might_be_same(Node* a, Node* b) {
   if (a == b)  return true;
@@ -4820,7 +4804,6 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
 #else // !ASSERT
 #define verify_memory_slice(m,i,n) (void)(0)  // PRODUCT version is no-op
 #endif
-
 
 Node* MergeMemNode::memory_at(uint alias_idx) const {
   assert(alias_idx >= Compile::AliasIdxRaw ||
@@ -4870,8 +4853,6 @@ void MergeMemNode::set_memory_at(uint alias_idx, Node *n) {
   }
   set_req( alias_idx, n );
 }
-
-
 
 void MergeMemNode::iteration_setup(const MergeMemNode* other) {
   if (other != nullptr) {

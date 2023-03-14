@@ -482,7 +482,6 @@ public:
   virtual BasicType memory_type() const { return T_ADDRESS; }
 };
 
-
 // Load a narrow oop from memory (either object or array)
 class LoadNNode : public LoadNode {
 public:
@@ -527,7 +526,6 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
   virtual bool depends_only_on_test() const { return true; }
 };
-
 
 // Store value; requires Store, Address and Value
 class StoreNode : public MemNode {
@@ -929,7 +927,6 @@ public:
   virtual int Opcode() const;
 };
 
-
 class CompareAndExchangeSNode : public CompareAndExchangeNode {
 public:
   CompareAndExchangeSNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeInt::SHORT) { }
@@ -942,13 +939,11 @@ public:
   virtual int Opcode() const;
 };
 
-
 class CompareAndExchangeINode : public CompareAndExchangeNode {
 public:
   CompareAndExchangeINode( Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, MemNode::MemOrd mem_ord) : CompareAndExchangeNode(c, mem, adr, val, ex, mem_ord, at, TypeInt::INT) { }
   virtual int Opcode() const;
 };
-
 
 class CompareAndExchangePNode : public CompareAndExchangeNode {
 public:
@@ -1604,7 +1599,6 @@ public:
   virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
 };
-
 
 // Allocation prefetch which may fault, TLAB size have to be adjusted.
 class PrefetchAllocationNode : public Node {
