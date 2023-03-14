@@ -109,7 +109,7 @@ public:
     _return_type = return_type;
     set_flags(has_appendix);
     // Set the method last since it is read lock free.
-    // Resolution is indicated by whether or not he method is set.
+    // Resolution is indicated by whether or not the method is set.
     Atomic::release_store(&_method, m);
   }
 
