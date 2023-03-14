@@ -191,7 +191,7 @@ import sun.security.action.GetPropertyAction;
 public final class ProcessBuilder
 {
     // Lazily and racy initialize when needed, racy is ok, any logger is ok
-    private static System.Logger LOGGER ;
+    private static System.Logger LOGGER;
 
     private List<String> command;
     private File directory;
@@ -199,10 +199,6 @@ public final class ProcessBuilder
     private boolean redirectErrorStream;
     private Redirect[] redirects;
 
-    private static System.Logger initLogger() {
-        System.Logger logger = System.getLogger("java.lang.ProcessBuilder");
-        return logger.isLoggable(System.Logger.Level.DEBUG) ? logger : null;
-    }
     /**
      * Constructs a process builder with the specified operating
      * system program and arguments.  This constructor does <i>not</i>
