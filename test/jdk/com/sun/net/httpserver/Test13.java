@@ -93,11 +93,10 @@ public class Test13 extends Test {
             join (r);
             System.out.println ("OK");
         } finally {
-            delay();
             if (s1 != null)
-                s1.stop(2);
+                s1.stop(0);
             if (s2 != null)
-                s2.stop(2);
+                s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
         }

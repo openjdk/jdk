@@ -35,10 +35,4 @@ public class Test {
         logger.setLevel(Level.ALL);
         logger.addHandler(h);
     }
-
-    static void delay () {
-        try {
-            Thread.sleep (1000);
-        } catch (Exception e) {}
-    }
 }

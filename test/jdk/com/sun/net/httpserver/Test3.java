@@ -64,9 +64,8 @@ public class Test3 extends Test {
             doClient(port);
             System.out.println ("OK");
         } finally {
-            delay();
             if (server != null)
-                server.stop(2);
+                server.stop(0);
             if (exec != null)
                 exec.shutdown();
         }

@@ -74,11 +74,11 @@ public class B6886436 {
             is.close ();
 
         } catch (IOException e) {
-            server.stop(2);
+            server.stop(0);
             executor.shutdown();
             throw new RuntimeException ("Test failed");
         }
-        server.stop(2);
+        server.stop(0);
         executor.shutdown();
         System.out.println ("OK");
     }

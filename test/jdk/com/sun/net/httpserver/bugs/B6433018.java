@@ -77,7 +77,7 @@ public class B6433018 {
             os.write(cmd.getBytes());
             finished.await(30, TimeUnit.SECONDS);
         } finally {
-            server.stop(2);
+            server.stop(0);
         }
 
         if (finished.getCount() != 0)

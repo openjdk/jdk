@@ -75,7 +75,7 @@ public class B6341616 {
                 c ++;
             }
         } catch (IOException e) {
-            server.stop(2);
+            server.stop(0);
             executor.shutdown();
             System.out.println ("OK");
         }

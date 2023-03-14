@@ -130,7 +130,7 @@ public class B6401598 {
                 } catch (Exception e) {
                     throw new AssertionError("Unexpected exception: " + e, e);
                 } finally {
-                        server.stop (1);
+                        server.stop(0);
                         exec.shutdown();
                 }
         }

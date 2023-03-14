@@ -71,7 +71,7 @@ public class B6526913 {
             }
             is.close();
         } finally {
-            server.stop(2);
+            server.stop(0);
             executor.shutdown();
         }
         if (error) {

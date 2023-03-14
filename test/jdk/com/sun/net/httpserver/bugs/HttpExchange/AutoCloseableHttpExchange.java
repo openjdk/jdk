@@ -101,7 +101,7 @@ public class AutoCloseableHttpExchange {
             connectAndCheck("/test");
         }
         latch.await();
-        testHttpServer.stop(2);
+        testHttpServer.stop(0);
         executor.shutdown();
 
         if (exchangeCloseFail.get())

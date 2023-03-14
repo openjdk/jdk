@@ -85,7 +85,7 @@ public class B6431193 {
                       .toURL();
             InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream();
             read (is);
-            server.stop (1);
+            server.stop(0);
             if (error) {
                 throw new RuntimeException ("error in test");
             }

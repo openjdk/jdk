@@ -89,9 +89,8 @@ public class SelCacheTest extends Test {
             test(false, "https", root+"/test1", loopback, httpsport, "largefile.txt", 2730088);
             System.out.println("OK");
         } finally {
-            delay();
-            s1.stop(2);
-            s2.stop(2);
+            s1.stop(0);
+            s2.stop(0);
             executor.shutdown();
         }
     }

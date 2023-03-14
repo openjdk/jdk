@@ -87,7 +87,7 @@ public class DateFormatterTest {
 
     @AfterTest
     public void cleanUp() {
-        server.stop(1);
+        server.stop(0);
     }
 
     @Test

@@ -71,7 +71,7 @@ public class SimpleHttpServer {
     }
 
     public void stop() {
-        httpServer.stop(2);
+        httpServer.stop(0);
         executor.shutdown();
     }
 

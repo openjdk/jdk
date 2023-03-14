@@ -81,8 +81,7 @@ public class Test6 extends Test {
         if (error) {
             throw new RuntimeException ("test failed error");
         }
-        delay();
-        server.stop(2);
+        server.stop(0);
         executor.shutdown();
         System.out.println ("OK");
 

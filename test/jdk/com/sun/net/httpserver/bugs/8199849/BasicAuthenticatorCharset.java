@@ -181,7 +181,7 @@ public class BasicAuthenticatorCharset {
             connectAndAuth("/test3/defaultCharset.html", 200);
         }
 
-        testHttpServer.stop(2);
+        testHttpServer.stop(0);
         executor.shutdown();
 
         // should fail once with UNICODE_PW and unsupporting character set

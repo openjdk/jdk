@@ -78,7 +78,7 @@ public class Test11 {
             System.out.println ("OK");
         } finally {
             s.shutdown();
-            server.stop(2);
+            server.stop(0);
         }
     }
 }

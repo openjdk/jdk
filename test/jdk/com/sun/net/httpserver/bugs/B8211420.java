@@ -86,7 +86,7 @@ public class B8211420 {
                 throw new RuntimeException("Content-length not present or has wrong value");
             System.out.println("OK");
         } finally {
-            server.stop(2);
+            server.stop(0);
             executor.shutdown();
         }
     }

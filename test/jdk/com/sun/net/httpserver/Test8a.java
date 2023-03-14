@@ -99,8 +99,7 @@ public class Test8a extends Test {
             }
             is.close();
         } finally {
-            delay();
-            if (server != null) server.stop(2);
+            if (server != null) server.stop(0);
             if (executor != null) executor.shutdown();
         }
         if (error) {
