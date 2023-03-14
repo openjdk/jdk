@@ -281,44 +281,115 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-//------------------------------mul_ring---------------------------------------
-// Compute the product type of two integer ranges into this node.
-const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
+// Classes to perform mul_ring() for MulI/MulLNode.
+//
+// This class checks if all cross products of the left and right input of a multiplication have the same "overflow value".
+// Without overflow/underflow:
+// Product is positive? High signed multiplication result: 0
+// Product is negative? High signed multiplication result: -1
+//
+// We normalize these values (see normalize_overflow_value()) such that we get the same "overflow value" by adding 1 if
+// the product is negative. This allows us to compare all the cross product "overflow values". If one is different,
+// compared to the others, then we know that this multiplication has a different number of over- or underflows compared
+// to the others. In this case, we need to use bottom type and cannot guarantee a better type. Otherwise, we can take
+// the min und max of all computed cross products as type of this Mul node.
+template<typename IntegerType>
+class IntegerMulRing {
+  using NativeType = std::conditional_t<std::is_same<TypeInt, IntegerType>::value, jint, jlong>;
 
-  // Fetch endpoints of all ranges
-  jint lo0 = r0->_lo;
-  double a = (double)lo0;
-  jint hi0 = r0->_hi;
-  double b = (double)hi0;
-  jint lo1 = r1->_lo;
-  double c = (double)lo1;
-  jint hi1 = r1->_hi;
-  double d = (double)hi1;
+  NativeType _lo_left;
+  NativeType _lo_right;
+  NativeType _hi_left;
+  NativeType _hi_right;
+  NativeType _lo_lo_product;
+  NativeType _lo_hi_product;
+  NativeType _hi_lo_product;
+  NativeType _hi_hi_product;
+  short _widen_left;
+  short _widen_right;
 
-  // Compute all endpoints & check for overflow
-  int32_t A = java_multiply(lo0, lo1);
-  if( (double)A != a*c ) return TypeInt::INT; // Overflow?
-  int32_t B = java_multiply(lo0, hi1);
-  if( (double)B != a*d ) return TypeInt::INT; // Overflow?
-  int32_t C = java_multiply(hi0, lo1);
-  if( (double)C != b*c ) return TypeInt::INT; // Overflow?
-  int32_t D = java_multiply(hi0, hi1);
-  if( (double)D != b*d ) return TypeInt::INT; // Overflow?
+  static const Type* overflow_type();
+  static NativeType multiply_high_signed_overflow_value(NativeType x, NativeType y);
 
-  if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
-  else { lo0 = B; hi0 = A; }
-  if( C < D ) {
-    if( C < lo0 ) lo0 = C;
-    if( D > hi0 ) hi0 = D;
-  } else {
-    if( D < lo0 ) lo0 = D;
-    if( C > hi0 ) hi0 = C;
+  // Pre-compute cross products which are used at several places
+  void compute_cross_products() {
+    _lo_lo_product = java_multiply(_lo_left, _lo_right);
+    _lo_hi_product = java_multiply(_lo_left, _hi_right);
+    _hi_lo_product = java_multiply(_hi_left, _lo_right);
+    _hi_hi_product = java_multiply(_hi_left, _hi_right);
   }
-  return TypeInt::make(lo0, hi0, MAX2(r0->_widen,r1->_widen));
+
+  bool cross_products_not_same_overflow() const {
+    const NativeType lo_lo_high_product = multiply_high_signed_overflow_value(_lo_left, _lo_right);
+    const NativeType lo_hi_high_product = multiply_high_signed_overflow_value(_lo_left, _hi_right);
+    const NativeType hi_lo_high_product = multiply_high_signed_overflow_value(_hi_left, _lo_right);
+    const NativeType hi_hi_high_product = multiply_high_signed_overflow_value(_hi_left, _hi_right);
+    return lo_lo_high_product != lo_hi_high_product ||
+           lo_hi_high_product != hi_lo_high_product ||
+           hi_lo_high_product != hi_hi_high_product;
+  }
+
+  static NativeType normalize_overflow_value(const NativeType x, const NativeType y, NativeType result) {
+    return java_multiply(x, y) < 0 ? result + 1 : result;
+  }
+
+ public:
+  IntegerMulRing(const IntegerType* left, const IntegerType* right) : _lo_left(left->_lo), _lo_right(right->_lo),
+    _hi_left(left->_hi), _hi_right(right->_hi), _widen_left(left->_widen), _widen_right(right->_widen)  {
+    compute_cross_products();
+  }
+
+  // Compute the product type by multiplying the two input type ranges. We take the minimum and maximum of all possible
+  // values (requires 4 multiplications of all possible combinations of the two range boundary values). If any of these
+  // multiplications overflows/underflows, we need to make sure that they all have the same number of overflows/underflows
+  // If that is not the case, we return the bottom type to cover all values due to the inconsistent overflows/underflows).
+  const Type* compute() const {
+    if (cross_products_not_same_overflow()) {
+      return overflow_type();
+    }
+    const NativeType min = MIN4(_lo_lo_product, _lo_hi_product, _hi_lo_product, _hi_hi_product);
+    const NativeType max = MAX4(_lo_lo_product, _lo_hi_product, _hi_lo_product, _hi_hi_product);
+    return IntegerType::make(min, max, MAX2(_widen_left, _widen_right));
+  }
+};
+
+
+template <>
+const Type* IntegerMulRing<TypeInt>::overflow_type() {
+  return TypeInt::INT;
 }
 
+template <>
+jint IntegerMulRing<TypeInt>::multiply_high_signed_overflow_value(const jint x, const jint y) {
+  const jlong x_64 = x;
+  const jlong y_64 = y;
+  const jlong product = x_64 * y_64;
+  const jint result = (jint)((uint64_t)product >> 32u);
+  return normalize_overflow_value(x, y, result);
+}
+
+template <>
+const Type* IntegerMulRing<TypeLong>::overflow_type() {
+  return TypeLong::LONG;
+}
+
+template <>
+jlong IntegerMulRing<TypeLong>::multiply_high_signed_overflow_value(const jlong x, const jlong y) {
+  const jlong result = multiply_high_signed(x, y);
+  return normalize_overflow_value(x, y, result);
+}
+
+// Compute the product type of two integer ranges into this node.
+const Type* MulINode::mul_ring(const Type* type_left, const Type* type_right) const {
+  const IntegerMulRing<TypeInt> integer_mul_ring(type_left->is_int(), type_right->is_int());
+  return integer_mul_ring.compute();
+}
+
+// Compute the product type of two long ranges into this node.
+const Type* MulLNode::mul_ring(const Type* type_left, const Type* type_right) const {
+  const IntegerMulRing<TypeLong> integer_mul_ring(type_left->is_long(), type_right->is_long());
+  return integer_mul_ring.compute();
+}
 
 //=============================================================================
 //------------------------------Ideal------------------------------------------
@@ -375,44 +446,6 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   return res;                   // Return final result
-}
-
-//------------------------------mul_ring---------------------------------------
-// Compute the product type of two integer ranges into this node.
-const Type *MulLNode::mul_ring(const Type *t0, const Type *t1) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-
-  // Fetch endpoints of all ranges
-  jlong lo0 = r0->_lo;
-  double a = (double)lo0;
-  jlong hi0 = r0->_hi;
-  double b = (double)hi0;
-  jlong lo1 = r1->_lo;
-  double c = (double)lo1;
-  jlong hi1 = r1->_hi;
-  double d = (double)hi1;
-
-  // Compute all endpoints & check for overflow
-  jlong A = java_multiply(lo0, lo1);
-  if( (double)A != a*c ) return TypeLong::LONG; // Overflow?
-  jlong B = java_multiply(lo0, hi1);
-  if( (double)B != a*d ) return TypeLong::LONG; // Overflow?
-  jlong C = java_multiply(hi0, lo1);
-  if( (double)C != b*c ) return TypeLong::LONG; // Overflow?
-  jlong D = java_multiply(hi0, hi1);
-  if( (double)D != b*d ) return TypeLong::LONG; // Overflow?
-
-  if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
-  else { lo0 = B; hi0 = A; }
-  if( C < D ) {
-    if( C < lo0 ) lo0 = C;
-    if( D > hi0 ) hi0 = D;
-  } else {
-    if( D < lo0 ) lo0 = D;
-    if( C > hi0 ) hi0 = C;
-  }
-  return TypeLong::make(lo0, hi0, MAX2(r0->_widen,r1->_widen));
 }
 
 //=============================================================================
