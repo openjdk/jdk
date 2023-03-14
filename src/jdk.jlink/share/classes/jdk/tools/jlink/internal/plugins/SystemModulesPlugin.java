@@ -427,7 +427,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             try (InputStream in = getInputStream()) {
                 // parse module-info.class
                 return Classfile.parse(in.readAllBytes()).elementStream()
-                        .anyMatch(e -> e instanceof ModulePackagesAttribute mpa && !mpa.packages().isEmpty());
+                        .anyMatch(e -> e instanceof ModulePackagesAttribute mpa
+                                    && !mpa.packages().isEmpty());
             }
         }
 
@@ -863,7 +864,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                 cob.loadInstruction(TypeKind.ReferenceType, varIndex);
                             }
 
-                            MethodTypeDesc desc = MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;");
+                            MethodTypeDesc desc = MethodTypeDesc.ofDescriptor(
+                                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;");
                             cob.invokeInstruction(Opcode.INVOKESTATIC,
                                                CD_Map,
                                                "entry",
@@ -875,7 +877,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                         // invoke Map.ofEntries(Map$Entry[])
                         cob.invokeInstruction(Opcode.INVOKESTATIC, CD_Map, "ofEntries",
-                                MethodTypeDesc.ofDescriptor("([Ljava/util/Map$Entry;)Ljava/util/Map;"), true);
+                                MethodTypeDesc.ofDescriptor(
+                                        "([Ljava/util/Map$Entry;)Ljava/util/Map;"), true);
                         cob.returnInstruction(TypeKind.ReferenceType);
                     }));
         }
@@ -1257,7 +1260,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     cob.arrayStoreInstruction(TypeKind.ReferenceType);
                 }
                 cob.invokeInstruction(Opcode.INVOKESTATIC, CD_List,
-                    "of", MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/util/List;"), true);
+                    "of", MethodTypeDesc.ofDescriptor(
+                            "([Ljava/lang/Object;)Ljava/util/List;"), true);
                 cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
                     "newProvides", MTD_PROVIDES_STRING_LIST, false);
             }
@@ -1596,7 +1600,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         arrayIndex++;
                     }
                     cob.invokeInstruction(Opcode.INVOKESTATIC, CD_Set,
-                            "of", MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/util/Set;"), true);
+                            "of", MethodTypeDesc.ofDescriptor(
+                                    "([Ljava/lang/Object;)Ljava/util/Set;"), true);
                 }
                 cob.storeInstruction(TypeKind.ReferenceType, index);
             }
@@ -1698,7 +1703,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                                 int index = 0;
                                 for (String moduleName : sorted(map.keySet())) {
-                                    cob.stackInstruction(Opcode.DUP);                  // arrayref
+                                    cob.stackInstruction(Opcode.DUP); // arrayref
                                     cob.constantInstruction(index);
                                     cob.constantInstruction(moduleName);
                                     cob.arrayStoreInstruction(TypeKind.ReferenceType);
@@ -1718,7 +1723,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                                 int index = 0;
                                 for (String className : sorted(map.values())) {
-                                    cob.stackInstruction(Opcode.DUP);                  // arrayref
+                                    cob.stackInstruction(Opcode.DUP); // arrayref
                                     cob.constantInstruction(index);
                                     cob.constantInstruction(className);
                                     cob.arrayStoreInstruction(TypeKind.ReferenceType);
