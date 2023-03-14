@@ -92,7 +92,6 @@ public class Names {
     public final Name hasNext;
     public final Name hashCode;
     public final Name init;
-    public final Name matcher;
     public final Name iterator;
     public final Name length;
     public final Name next;
@@ -144,6 +143,7 @@ public class Names {
     public final Name LineNumberTable;
     public final Name LocalVariableTable;
     public final Name LocalVariableTypeTable;
+    public final Name Matcher;
     public final Name MethodParameters;
     public final Name Module;
     public final Name ModuleResolution;
@@ -282,7 +282,6 @@ public class Names {
         hasNext = fromString("hasNext");
         hashCode = fromString("hashCode");
         init = fromString("<init>");
-        matcher = fromString("<matcher>");
         iterator = fromString("iterator");
         length = fromString("length");
         next = fromString("next");
@@ -335,6 +334,7 @@ public class Names {
         LineNumberTable = fromString("LineNumberTable");
         LocalVariableTable = fromString("LocalVariableTable");
         LocalVariableTypeTable = fromString("LocalVariableTypeTable");
+        Matcher = fromString("Matcher");
         MethodParameters = fromString("MethodParameters");
         Module = fromString("Module");
         ModuleResolution = fromString("ModuleResolution");

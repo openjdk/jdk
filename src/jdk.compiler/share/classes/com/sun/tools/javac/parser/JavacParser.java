@@ -4573,7 +4573,7 @@ public class JavacParser implements Parser {
                         mods.flags |= Flags.COMPACT_RECORD_CONSTRUCTOR;
                     }
                     return List.of(methodDeclaratorRest(
-                        pos, mods, null, (mods.flags & Flags.MATCHER) == 0 ? names.init : names.matcher, typarams,
+                        pos, mods, null, (mods.flags & Flags.MATCHER) == 0 ? names.init : tk.name(), typarams,
                         isInterface, true, isRecord, dc));
                 } else if (isRecord && type.hasTag(IDENT) && token.kind == THROWS) {
                     // trying to define a compact constructor with a throws clause

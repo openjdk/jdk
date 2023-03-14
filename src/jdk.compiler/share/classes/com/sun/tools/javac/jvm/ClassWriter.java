@@ -864,6 +864,32 @@ public class ClassWriter extends ClassFile {
         return 1;
     }
 
+    int writeMatcherAttribute(MethodSymbol m) {
+        final int attrIndex = writeAttr(names.Matcher);
+
+        int patternFlags = 0;
+        databuf.appendChar(patternFlags);
+
+        Name patternName = m.name;
+        databuf.appendChar(poolWriter.putName(patternName));
+
+        Type patternDescriptor = m.type;
+        databuf.appendChar(poolWriter.putDescriptor(patternDescriptor));
+
+        int acountIdx = beginAttrs();
+        int acount = 0;
+
+        if (target.hasMethodParameters() && (options.isSet(PARAMETERS))) {
+            acount += writeMethodParametersAttr(m);
+        }
+//        acount += writeMemberAttrs(m, false); // TODO: which do we need?
+        acount += writeParameterAttrs(m.params);
+
+        endAttrs(acountIdx, acount);
+        endAttr(attrIndex);
+        return 1;
+    }
+
     /**
      * Write NestMembers attribute (if needed)
      */
@@ -1017,6 +1043,11 @@ public class ClassWriter extends ClassFile {
         acount += writeMemberAttrs(m, false);
         if (!m.isLambdaMethod())
             acount += writeParameterAttrs(m.params);
+
+        if ((m.flags() & MATCHER) != 0) {
+            acount += writeMatcherAttribute(m);
+        }
+
         acount += writeExtraAttributes(m);
         endAttrs(acountIdx, acount);
     }
