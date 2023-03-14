@@ -200,18 +200,18 @@ public class GenerateCharacter {
     // bit masks identify the 16-bit property field described above, in B
     // table
     private static final long
-        maskOtherLowercase  = 0x000100000000L,
-        maskOtherUppercase  = 0x000200000000L,
-        maskOtherAlphabetic = 0x000400000000L,
-        maskIdeographic     = 0x000800000000L,
-        maskIDStart         = 0x001000000000L,
-        maskIDContinue      = 0x002000000000L,
-        maskEmoji           = 0x004000000000L,
-        maskEmojiPresentation = 0x008000000000L,
-        maskEmojiModifier   = 0x010000000000L,
-        maskEmojiModifierBase = 0x020000000000L,
-        maskEmojiComponent  = 0x040000000000L,
-        maskExtendedPictographic = 0x080000000000L;
+        maskOtherLowercase          = 0x000100000000L,
+        maskOtherUppercase          = 0x000200000000L,
+        maskOtherAlphabetic         = 0x000400000000L,
+        maskIdeographic             = 0x000800000000L,
+        maskIDStart                 = 0x001000000000L,
+        maskIDContinue              = 0x002000000000L,
+        maskEmoji                   = 0x004000000000L,
+        maskEmojiPresentation       = 0x008000000000L,
+        maskEmojiModifier           = 0x010000000000L,
+        maskEmojiModifierBase       = 0x020000000000L,
+        maskEmojiComponent          = 0x040000000000L,
+        maskExtendedPictographic    = 0x080000000000L;
 
     // Can compare masked values with these to determine
     // numeric or lexical types.
@@ -1465,6 +1465,42 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if ((val & maskNumericType) == valueJavaSupradecimal) {
             result.append(", supradecimal ");
             result.append((val & maskDigitOffset) >> shiftDigitOffset);
+        }
+        if ((val & maskOtherLowercase) == maskOtherLowercase) {
+            result.append(", otherLowercase");
+        }
+        if ((val & maskOtherUppercase) == maskOtherUppercase) {
+            result.append(", otherUppercase");
+        }
+        if ((val & maskOtherAlphabetic) == maskOtherAlphabetic) {
+            result.append(", otherAlphabetic");
+        }
+        if ((val & maskIdeographic) == maskIdeographic) {
+            result.append(", ideographic");
+        }
+        if ((val & maskIDStart) == maskIDStart) {
+            result.append(", IDStart");
+        }
+        if ((val & maskIDContinue) == maskIDContinue) {
+            result.append(", IDContinue");
+        }
+        if ((val & maskEmoji) == maskEmoji) {
+            result.append(", emoji");
+        }
+        if ((val & maskEmojiPresentation) == maskEmojiPresentation) {
+            result.append(", emojiPresentation");
+        }
+        if ((val & maskEmojiModifier) == maskEmojiModifier) {
+            result.append(", emojiModifier");
+        }
+        if ((val & maskEmojiModifierBase) == maskEmojiModifierBase) {
+            result.append(", emojiModifierBase");
+        }
+        if ((val & maskEmojiComponent) == maskEmojiComponent) {
+            result.append(", emojiComponent");
+        }
+        if ((val & maskExtendedPictographic) == maskExtendedPictographic) {
+            result.append(", extendedPictographic");
         }
     }
 
