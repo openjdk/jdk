@@ -101,8 +101,6 @@ void Node::verify_construction() {
   _hash_lock = 0;
 }
 
-// #ifdef ASSERT ...
-
 #if OPTO_DU_ITERATOR_ASSERT
 void DUIterator_Common::sample(const Node* node) {
   _vdui     = VerifyDUIterators;

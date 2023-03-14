@@ -34,6 +34,7 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 
+//------------------------------Split--------------------------------------
 // Walk the graph in RPO and for each lrg which spills, propagate reaching
 // definitions.  During propagation, split the live range around regions of
 // High Register Pressure (HRP).  If a Def is in a region of Low Register

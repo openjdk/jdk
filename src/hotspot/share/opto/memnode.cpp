@@ -4436,6 +4436,7 @@ bool InitializeNode::stores_are_sane(PhaseTransform* phase) {
 }
 #endif //ASSERT
 
+//============================MergeMemNode=====================================
 //
 // SEMANTICS OF MEMORY MERGES:  A MergeMem is a memory state assembled from several
 // contributing store or call operations.  Each contributor provides the memory

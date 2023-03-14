@@ -30,6 +30,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 
+//================= Loop Unswitching =====================
 //
 // orig:                       transformed:
 //                               if (invariant-test) then
