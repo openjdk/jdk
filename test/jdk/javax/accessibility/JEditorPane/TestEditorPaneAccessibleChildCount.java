@@ -46,7 +46,6 @@ import javax.swing.text.html.HTMLEditorKit;
 public class TestEditorPaneAccessibleChildCount {
     private static JEditorPane jep;
     private static AccessibleContext ac;
-    private static URL url;
     private static JFrame frame;
 
     public TestEditorPaneAccessibleChildCount() {
@@ -60,7 +59,7 @@ public class TestEditorPaneAccessibleChildCount {
         jep = new JEditorPane();
         jep.setEditable(false);
         jep.setEditorKit(new HTMLEditorKit());
-        url = TestEditorPaneAccessibleChildCount.class.
+        URL url = TestEditorPaneAccessibleChildCount.class.
                 getResource("test1.html");
         loadHtmlPage(url);
         JScrollPane jScrollPane = new JScrollPane(jep);
@@ -94,13 +93,18 @@ public class TestEditorPaneAccessibleChildCount {
             SwingUtilities.invokeAndWait(() -> {
                 new TestEditorPaneAccessibleChildCount();
             });
+
             addDelay(500);
-            ac = jep.getAccessibleContext();
+            SwingUtilities.invokeAndWait(() -> {
+                ac = jep.getAccessibleContext();
+            });
             int childCount1 = ac.getAccessibleChildrenCount();
 
-            url = TestEditorPaneAccessibleChildCount.class.
-                    getResource("test2.html");
-            loadHtmlPage(url);
+            URL url = TestEditorPaneAccessibleChildCount.class.
+                        getResource("test2.html");
+            SwingUtilities.invokeAndWait(() -> {
+                loadHtmlPage(url);
+            });
             addDelay(500);
             int childCount2 = ac.getAccessibleChildrenCount();
 
