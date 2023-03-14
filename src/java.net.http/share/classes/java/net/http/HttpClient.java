@@ -38,6 +38,7 @@ import java.net.URLPermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -775,6 +776,7 @@ public abstract class HttpClient implements AutoCloseable {
      * @since 21
      */
     public boolean awaitTermination(Duration duration) throws InterruptedException {
+        Objects.requireNonNull(duration);
         return true;
     }
 

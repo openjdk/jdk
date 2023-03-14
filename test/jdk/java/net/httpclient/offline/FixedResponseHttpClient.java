@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -288,6 +289,7 @@ public class FixedResponseHttpClient extends DelegatingHttpClient {
 
     @Override
     public boolean awaitTermination(Duration duration) throws InterruptedException {
+        Objects.requireNonNull(duration);
         CompletableFuture[] futures;
         synchronized (this) {
             if (responses.isEmpty()) return true;

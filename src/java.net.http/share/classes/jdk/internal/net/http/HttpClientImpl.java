@@ -620,6 +620,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     @Override
     public boolean awaitTermination(Duration duration) throws InterruptedException {
+        // Implicit NPE will be thrown if duration is null
         return selmgr.join(duration);
     }
 
