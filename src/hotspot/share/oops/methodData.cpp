@@ -838,7 +838,7 @@ bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** 
   assert(failed_speculations_address != nullptr, "must be");
 
   FailedSpeculation** cursor = failed_speculations_address;
-  while (*cursor != NULL) {
+  while (*cursor != nullptr) {
     if ((*cursor)->data_len() == speculation_len && memcmp(speculation, (*cursor)->data(), speculation_len) == 0) {
       return false;
     }
@@ -855,7 +855,6 @@ bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** 
   guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
   guarantee_failed_speculations_alive(nm, failed_speculations_address);
 
-  cursor = failed_speculations_address;
   do {
     if (*cursor == nullptr) {
       FailedSpeculation* old_fs = Atomic::cmpxchg(cursor, (FailedSpeculation*) nullptr, fs);
