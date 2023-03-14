@@ -580,7 +580,6 @@ public:
   bool is_expanded(PhaseGVN *phase) const;
 };
 
-// -----------------------------IdealLoopTree----------------------------------
 class IdealLoopTree : public ResourceObj {
 public:
   IdealLoopTree *_parent;       // Parent in loop tree
@@ -810,7 +809,6 @@ public:
   bool empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase) const;
 };
 
-// -----------------------------PhaseIdealLoop---------------------------------
 // Computes the mapping from Nodes to IdealLoopTrees. Organizes IdealLoopTrees
 // into a loop tree. Drives the loop-based transformations on the ideal graph.
 class PhaseIdealLoop : public PhaseTransform {

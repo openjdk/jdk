@@ -82,7 +82,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
-// -------------------- Compile::mach_constant_base_node -----------------------
 // Constant table base node singleton.
 MachConstantBaseNode* Compile::mach_constant_base_node() {
   if (_mach_constant_base_node == nullptr) {
@@ -455,7 +454,6 @@ void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_Lis
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
 
-// ============================================================================
 class CompileWrapper : public StackObj {
   Compile *const _compile;
  public:
@@ -571,7 +569,6 @@ void Compile::print_ideal_ir(const char* phase_name) {
 }
 #endif
 
-// ============================================================================
 debug_only( int Compile::_debug_idx = 100000; )
 
 // Compile a method.  entry_bci is -1 for normal compilations and indicates

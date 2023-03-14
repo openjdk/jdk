@@ -182,7 +182,6 @@ public:
 
 // ========================= SuperWord =====================
 
-// -----------------------------SWNodeInfo---------------------------------
 // Per node info needed by SuperWord
 class SWNodeInfo {
  public:
@@ -239,7 +238,6 @@ class OrderedPair {
   static const OrderedPair initial;
 };
 
-// -----------------------VectorElementSizeStats-----------------------
 // Vector lane size statistics for loop vectorization with vector masks
 class VectorElementSizeStats {
  private:
@@ -278,7 +276,6 @@ class VectorElementSizeStats {
   }
 };
 
-// -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  friend class SWPointer;

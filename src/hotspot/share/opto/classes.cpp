@@ -53,7 +53,6 @@
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #endif
 
-// ----------------------------------------------------------------------------
 // Build a table of virtual functions to map from Nodes to dense integer
 // opcode names.
 int Node::Opcode() const { return Op_Node; }
