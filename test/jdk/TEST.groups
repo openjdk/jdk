@@ -44,6 +44,7 @@ tier1_part3 = \
     :jdk_vector_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
+    jdk/classfile \
     sun/nio/cs/ISO8859x.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups

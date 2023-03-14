@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // GraphBuilder::GraphBuilder() in src/share/vm/c1/c1_GraphBuilder.cpp
   // for more details.
 
-  virtual bool is_intrinsic_available(const methodHandle& method, DirectiveSet* directive) {
+  bool is_intrinsic_available(const methodHandle& method, DirectiveSet* directive) {
     return is_intrinsic_supported(method) &&
            !directive->is_intrinsic_disabled(method) &&
            !vmIntrinsics::is_disabled_by_flags(method);
