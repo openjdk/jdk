@@ -128,18 +128,20 @@ static void move_reg64(MacroAssembler* masm, int out_stk_bias,
       break;
     case StorageType::STACK:
       out_bias = out_stk_bias; // fallthrough
-    case StorageType::FRAME_DATA:
+    case StorageType::FRAME_DATA: {
       // Integer types always get a 64 bit slot in C.
-      // Note: The case in which we'd have to store into a Java frame slot doesn't happen,
-      // because we always have enough GP regs to hold all values passed in GP regs by C.
+      Register storeval = as_Register(from_reg);
       if (from_reg.segment_mask() == REG32_MASK) {
         // see CCallingConventionRequiresIntsAsLongs
         __ extsw(R0, as_Register(from_reg));
-        __ std(R0, reg2offset(to_reg, out_bias), R1_SP);
-      } else {
-        __ std(as_Register(from_reg), reg2offset(to_reg, out_bias), R1_SP);
+        storeval = R0;
       }
-      break;
+      switch (to_reg.stack_size()) {
+        case 8: __ std(storeval, reg2offset(to_reg, out_bias), R1_SP); break;
+        case 4: __ stw(storeval, reg2offset(to_reg, out_bias), R1_SP); break;
+        default: ShouldNotReachHere();
+      }
+    } break;
     default: ShouldNotReachHere();
   }
 }
