@@ -81,9 +81,9 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   __ str(rthread, Address(mon, ObjectMonitor::owner_offset_in_bytes()));
 
   // Pop owner object from lock-stack.
-  __ ldr(t, Address(rthread, JavaThread::lock_stack_offset_offset()));
-  __ sub(t, t, oopSize);
-  __ str(t, Address(rthread, JavaThread::lock_stack_offset_offset()));
+  __ ldrw(t, Address(rthread, JavaThread::lock_stack_offset_offset()));
+  __ subw(t, t, oopSize);
+  __ strw(t, Address(rthread, JavaThread::lock_stack_offset_offset()));
 
   __ b(continuation());
 }
