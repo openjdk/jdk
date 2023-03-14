@@ -310,11 +310,13 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
     case java_lang_math_abs     : tty->print("java_lang_math_abs"     ); break;
-    case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;
+    case java_lang_math_pow     : tty->print("java_lang_math_pow"     ); break;
+    case java_lang_math_exp     : tty->print("java_lang_math_exp"     ); break;
     case java_lang_math_fmaD    : tty->print("java_lang_math_fmaD"    ); break;
     case java_lang_math_fmaF    : tty->print("java_lang_math_fmaF"    ); break;
+    case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
     case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
@@ -327,6 +329,8 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_Float_floatToRawIntBits    : tty->print("java_lang_Float_floatToRawIntBits"); break;
     case java_lang_Double_longBitsToDouble    : tty->print("java_lang_Double_longBitsToDouble"); break;
     case java_lang_Double_doubleToRawLongBits : tty->print("java_lang_Double_doubleToRawLongBits"); break;
+    case java_lang_Float_float16ToFloat       : tty->print("java_lang_Float_float16ToFloat"); break;
+    case java_lang_Float_floatToFloat16       : tty->print("java_lang_Float_floatToFloat16"); break;
     default:
       if (kind >= method_handle_invoke_FIRST &&
           kind <= method_handle_invoke_LAST) {

@@ -420,36 +420,8 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::getter                 : break;
   case Interpreter::setter                 : break;
   case Interpreter::abstract               : entry_point = generate_abstract_entry(); break;
-
-  case Interpreter::java_lang_math_sin     : // fall thru
-  case Interpreter::java_lang_math_cos     : // fall thru
-  case Interpreter::java_lang_math_tan     : // fall thru
-  case Interpreter::java_lang_math_abs     : // fall thru
-  case Interpreter::java_lang_math_log     : // fall thru
-  case Interpreter::java_lang_math_log10   : // fall thru
-  case Interpreter::java_lang_math_sqrt    : // fall thru
-  case Interpreter::java_lang_math_sqrt_strict: // fall thru
-  case Interpreter::java_lang_math_pow     : // fall thru
-  case Interpreter::java_lang_math_exp     : // fall thru
-  case Interpreter::java_lang_math_fmaD    : // fall thru
-  case Interpreter::java_lang_math_fmaF    :
-  case Interpreter::java_lang_ref_reference_get:
-  case Interpreter::java_util_zip_CRC32_update:
-  case Interpreter::java_util_zip_CRC32_updateBytes:
-  case Interpreter::java_util_zip_CRC32_updateByteBuffer:
-  case Interpreter::java_util_zip_CRC32C_updateBytes:
-  case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer:
-  case Interpreter::java_lang_Thread_currentThread:
-  case Interpreter::java_lang_Float_float16ToFloat:
-  case Interpreter::java_lang_Float_floatToFloat16:
-  case Interpreter::java_lang_Float_intBitsToFloat:
-  case Interpreter::java_lang_Float_floatToRawIntBits:
-  case Interpreter::java_lang_Double_longBitsToDouble:
-  case Interpreter::java_lang_Double_doubleToRawLongBits:
-    entry_point = generate_intrinsic_entry(kind);
-    break;
   default:
-    fatal("unexpected method kind: %d", kind);
+    entry_point = generate_intrinsic_entry(kind); // process the rest
     break;
   }
 

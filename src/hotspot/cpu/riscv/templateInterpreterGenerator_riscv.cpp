@@ -297,10 +297,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   return entry_point;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
-
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
 address TemplateInterpreterGenerator::generate_abstract_entry(void) {
@@ -890,6 +886,8 @@ address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { re
 address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.
