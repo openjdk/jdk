@@ -120,7 +120,7 @@ serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
-serviceability/sa/UniqueVtableTest.java 8303921 linux-all
+serviceability/sa/UniqueVtableTest.java 8303921 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
