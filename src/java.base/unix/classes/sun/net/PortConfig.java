@@ -61,8 +61,7 @@ public final class PortConfig {
                 defaultUpper = 65535;
                 break;
             default:
-            throw new InternalError(
-                "sun.net.PortConfig: unknown OS");
+                throw new InternalError("sun.net.PortConfig: unsupported OS: " + OperatingSystem.current());
         }
 
         int v = getLower0();
