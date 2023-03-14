@@ -1787,7 +1787,7 @@ public class HtmlDocletWriter {
                                 ContentBuilder annotation,
                                 Map<? extends ExecutableElement, ? extends AnnotationValue> map,
                                 boolean linkBreak) {
-        linkInfo.label = Text.of("@" + annotationDoc.getSimpleName());
+        linkInfo.label("@" + annotationDoc.getSimpleName());
         annotation.add(getLink(linkInfo));
         if (!map.isEmpty()) {
             annotation.add("(");
@@ -1903,7 +1903,7 @@ public class HtmlDocletWriter {
                         String name = utils.isIncluded(t.asElement())
                                 ? t.asElement().getSimpleName().toString()
                                 : utils.getFullyQualifiedName(t.asElement());
-                        linkInfo.label = Text.of(name + utils.getDimension(t) + ".class");
+                        linkInfo.label(name + utils.getDimension(t) + ".class");
                         return getLink(linkInfo);
                     }
                     @Override
