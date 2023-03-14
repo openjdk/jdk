@@ -1194,7 +1194,7 @@ const int ObjectAlignmentInBytes = 8;
           "Trace frequency based inlining")                                 \
                                                                             \
   develop_pd(bool, InlineIntrinsics,                                        \
-          "Inline intrinsics that can be statically resolved")              \
+          "Use intrinsics in Interpreter that can be statically resolved")  \
                                                                             \
   product_pd(bool, ProfileInterpreter,                                      \
           "Profile at the bytecode level during interpretation")            \
