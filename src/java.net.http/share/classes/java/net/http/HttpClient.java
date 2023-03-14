@@ -130,9 +130,19 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * privileges, should do so within an appropriate {@linkplain
  * AccessController#doPrivileged(PrivilegedAction) privileged context}.
  *
+ * @apiNote
+ * Resources allocated by the {@code HttpClient} may be reclaimed early
+ * by {@linkplain #close() closing} the client.
+ * An {@code HttpClient} instance typically manages its own pools of
+ * connections, which it can typically reuse when another request is made to
+ * the same origin server using the same protocol version and security,
+ * through the same client. In the JDK implementation, connection pools
+ * are not shared between {@code HttpClient} instances. Creating a new client
+ * for each operation, though possible, will prevent reusing such connections.
+ *
  * @since 11
  */
-public abstract class HttpClient {
+public abstract class HttpClient implements AutoCloseable {
 
     /**
      * Creates an HttpClient.
@@ -730,4 +740,120 @@ public abstract class HttpClient {
     public WebSocket.Builder newWebSocketBuilder() {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * Initiates an orderly shutdown in which previously submitted
+     * operations are completed, but no new request will be accepted.
+     * Invocation has no additional effect if already shut down.
+     *
+     * <p>This method does not wait for previously submitted request
+     * to complete execution.  Use {@link #awaitTermination awaitTermination}
+     * to do that.
+     *
+     * @implSpec
+     * The default implementation of this method does nothing. Subclasses should
+     * override this method to implement the appropriate behavior.
+     *
+     * @since 21
+     */
+    public void shutdown() { }
+
+    /**
+     * Blocks until all operations have completed execution after a shutdown
+     * request, or the timeout occurs, or the current thread is
+     * interrupted, whichever happens first.
+     *
+     * @implSpec
+     * The default implementation of this method does nothing and returns true.
+     * Subclasses should override this method to implement the proper behavior.
+     *
+     * @param duration the maximum time to wait
+     * @return {@code true} if this client terminated and
+     *         {@code false} if the timeout elapsed before termination
+     * @throws InterruptedException if interrupted while waiting
+     *
+     * @since 21
+     */
+    public boolean awaitTermination(Duration duration) throws InterruptedException {
+        return true;
+    }
+
+    /**
+     * Returns {@code true} if all operations have completed following shut down.
+     * Note that {@code isTerminated} is never {@code true} unless
+     * either {@code shutdown} or {@code shutdownNow} was called first.
+     *
+     * @implSpec
+     * The default implementation of this method does nothing and returns false.
+     * Subclasses should override this method to implement the proper behavior.
+     *
+     * @return {@code true} if all tasks have completed following shut down
+     *
+     * @since 21
+     */
+    public boolean isTerminated() {
+        return false;
+    }
+
+    /**
+     * This method is called if the thread waiting on {@link #close()} is
+     * interrupted. An implementation of this method may attempt to
+     * interrupt operations that are actively running.
+     * The behavior of actively running operations when interrupted
+     * is undefined. In particular, there is no guarantee that
+     * interrupted operations will terminate, or that code waiting
+     * on these operations will ever be notified.
+     *
+     * @implSpec
+     * The default implementation of this simply calls {@link #shutdown()}.
+     * Subclasses should override this method to implement the appropriate
+     * behavior.
+     *
+     * @since 21
+     */
+    public void shutdownNow() {
+        shutdown();
+    }
+
+    /**
+     * Initiates an orderly shutdown in which previously submitted operation are
+     * executed, but no new request will be accepted. This method waits until all
+     * operations have completed execution and the client has terminated.
+     *
+     * <p> If interrupted while waiting, this method may attempt to stop all
+     * operations by calling {@link #shutdownNow()}. It then continues to wait
+     * until all actively executing operations have completed.
+     * The interrupt status will be re-asserted before this method returns.
+     *
+     * <p> If already terminated, invoking this method has no effect.
+     *
+     * @implSpec
+     * The default implementation invokes {@code shutdown()} and waits for tasks
+     * to complete execution with {@code awaitTermination}.
+     *
+     * @since 21
+     */
+    @Override
+    public void close() {
+        boolean terminated = isTerminated();
+        if (!terminated) {
+            shutdown();
+            boolean interrupted = false;
+            while (!terminated) {
+                try {
+                    terminated = awaitTermination(Duration.ofDays(1L));
+                } catch (InterruptedException e) {
+                    if (!interrupted) {
+                        interrupted = true;
+                        shutdownNow();
+                        if (isTerminated()) break;
+                    }
+                }
+            }
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
 }

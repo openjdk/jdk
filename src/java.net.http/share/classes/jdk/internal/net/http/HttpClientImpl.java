@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
@@ -404,6 +403,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final AtomicLong pendingSubscribersCount = new AtomicLong();
     private final AtomicBoolean isAlive = new AtomicBoolean();
     private final AtomicBoolean isStarted = new AtomicBoolean();
+    private volatile boolean shutdownRequested;
 
     /** A Set of, deadline first, ordered timeout events. */
     private final TreeSet<TimeoutEvent> timeouts;
@@ -606,6 +606,28 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
     }
 
+    @Override
+    public void shutdown() {
+        shutdownRequested = true;
+        selmgr.wakeupSelector();
+    }
+
+    @Override
+    public void shutdownNow() {
+        shutdown();
+        selmgr.abort(new IOException("shutdownNow"));
+    }
+
+    @Override
+    public boolean awaitTermination(Duration duration) throws InterruptedException {
+        return selmgr.join(duration);
+    }
+
+    @Override
+    public boolean isTerminated() {
+        return isStarted.get() && !isAlive.get();
+    }
+
     private static SSLParameters getDefaultParams(SSLContext ctx) {
         SSLParameters params = ctx.getDefaultSSLParameters();
         return params;
@@ -629,9 +651,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     // Increments the pendingTCPConnectionCount
     public void connectionOpened(PlainHttpConnection plainHttpConnection) {
-        if (openedConnections.add(plainHttpConnection)) {
-            pendingTCPConnectionCount.incrementAndGet();
-        }
+        if (!finished()) {
+            if (openedConnections.add(plainHttpConnection)) {
+                pendingTCPConnectionCount.incrementAndGet();
+            }
+        } else closeConnection(plainHttpConnection);
     }
 
     // Decrements the pendingTCPConnectionCount
@@ -665,7 +689,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long httpCount = pendingHttpOperationsCount.decrementAndGet();
         final long http2Count = pendingHttp2StreamCount.get();
         final long webSocketCount = pendingWebSocketCount.get();
-        if (count == 0 && facadeRef.refersTo(null)) {
+        if (count == 0 && (facadeRef.refersTo(null) || shutdownRequested)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";
@@ -687,7 +711,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long http2Count = pendingHttp2StreamCount.decrementAndGet();
         final long httpCount = pendingHttpOperationsCount.get();
         final long webSocketCount = pendingWebSocketCount.get();
-        if (count == 0 && facadeRef.refersTo(null)) {
+        if (count == 0 && (facadeRef.refersTo(null) || shutdownRequested)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";
@@ -709,7 +733,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         final long webSocketCount = pendingWebSocketCount.decrementAndGet();
         final long httpCount = pendingHttpOperationsCount.get();
         final long http2Count = pendingHttp2StreamCount.get();
-        if (count == 0 && facadeRef.refersTo(null)) {
+        if (count == 0 && (facadeRef.refersTo(null) || shutdownRequested)) {
             selmgr.wakeupSelector();
         }
         assert httpCount >= 0 : "count of HTTP/1.1 operations < 0";
@@ -824,7 +848,18 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     // Called by the SelectorManager thread to figure out whether it's time
     // to terminate.
-    boolean isReferenced() {
+    boolean finished() {
+        if (referenceCount() > 0) return false;
+        if (shutdownRequested) {
+            synchronized (this) {
+                // avoid race with sendAsync
+                if (referenceCount() == 0) return true;
+            }
+        }
+        return !isReferenced();
+    }
+
+    private boolean isReferenced() {
         return !facadeRef.refersTo(null) || referenceCount() > 0;
     }
 
@@ -955,6 +990,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         Objects.requireNonNull(userRequest);
         Objects.requireNonNull(responseHandler);
 
+        if (shutdownRequested) {
+            return MinimalFuture.failedFuture(new IOException("closed"));
+        }
+
         // should not happen, unless the selector manager has
         // exited abnormally
         if (selmgr.isClosed()) {
@@ -972,7 +1011,12 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
         long id = pendingRequestId.incrementAndGet();
         long start = DEBUGELAPSED ? System.nanoTime() : 0;
-        requestReference();
+        synchronized (this) {
+            if (shutdownRequested) {
+                return MinimalFuture.failedFuture(new IOException("closed"));
+            }
+            requestReference();
+        }
         try {
             if (debugelapsed.on())
                 debugelapsed.log("ClientImpl (async) send %s", userRequest);
@@ -1261,10 +1305,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
                     // Check whether client is still alive, and if not,
                     // gracefully stop this thread
-                    if (!owner.isReferenced()) {
+                    if (owner.finished()) {
                         Log.logTrace("{0}: {1}",
                                 getName(),
-                                "HttpClient no longer referenced. Exiting...");
+                                "HttpClient finished. Exiting...");
                         return;
                     }
 
@@ -1305,10 +1349,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     if (n == 0) {
                         // Check whether client is still alive, and if not,
                         // gracefully stop this thread
-                        if (!owner.isReferenced()) {
+                        if (owner.finished()) {
                             Log.logTrace("{0}: {1}",
                                     getName(),
-                                    "HttpClient no longer referenced. Exiting...");
+                                    "HttpClient finished. Exiting...");
                             return;
                         }
                         owner.purgeTimeoutsAndReturnNextDeadline();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,4 +112,30 @@ public class DelegatingHttpClient extends HttpClient {
               HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
         return client.sendAsync(request, responseBodyHandler, pushPromiseHandler);
     }
+
+    @Override
+    public boolean isTerminated() {
+        return client.isTerminated();
+    }
+
+    @Override
+    public void shutdown() {
+        client.shutdown();
+    }
+
+    @Override
+    public void shutdownNow() {
+        client.shutdownNow();
+    }
+
+    @Override
+    public boolean awaitTermination(Duration duration) throws InterruptedException {
+        return client.awaitTermination(duration);
+    }
+
+    @Override
+    public void close() {
+        client.close();
+    }
+
 }

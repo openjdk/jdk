@@ -140,9 +140,10 @@ class PlainHttpConnection extends HttpConnection {
                     debug.log("ConnectEvent: connect finished: %s, cancelled: %s, Local addr: %s",
                               finished, exchange.multi.requestCancelled(), chan.getLocalAddress());
                 assert finished || exchange.multi.requestCancelled() : "Expected channel to be connected";
-                client().connectionOpened(PlainHttpConnection.this);
-                // complete async since the event runs on the SelectorManager thread
-                cf.completeAsync(() -> ConnectState.SUCCESS, client().theExecutor());
+                if (connectionOpened()) {
+                    // complete async since the event runs on the SelectorManager thread
+                    cf.completeAsync(() -> ConnectState.SUCCESS, client().theExecutor());
+                } else throw new ConnectException("Connection closed");
             } catch (Throwable e) {
                 if (canRetryConnect(e)) {
                     unsuccessfulAttempts++;
@@ -213,8 +214,9 @@ class PlainHttpConnection extends HttpConnection {
             }
             if (finished) {
                 if (debug.on()) debug.log("connect finished without blocking");
-                client().connectionOpened(this);
-                cf.complete(ConnectState.SUCCESS);
+                if (connectionOpened()) {
+                    cf.complete(ConnectState.SUCCESS);
+                } else throw new ConnectException("connection closed");
             } else {
                 if (debug.on()) debug.log("registering connect event");
                 client().registerEvent(new ConnectEvent(cf, exchange));
@@ -234,6 +236,18 @@ class PlainHttpConnection extends HttpConnection {
         }
         return cf.handle((r,t) -> checkRetryConnect(r, t,exchange))
                 .thenCompose(Function.identity());
+    }
+
+    boolean connectionOpened() {
+        boolean closed = this.closed;
+        if (closed) return false;
+        synchronized (this) {
+            closed = this.closed;
+            if (!closed) {
+                client().connectionOpened(this);
+            }
+        }
+        return !closed;
     }
 
     /**
