@@ -576,6 +576,25 @@ C2V_VMENTRY_NULL(jobject, lookupClass, (JNIEnv* env, jobject, jclass mirror))
   return JVMCIENV->get_jobject(result);
 C2V_END
 
+C2V_VMENTRY_NULL(jobject, lookupJClass, (JNIEnv* env, jobject, jlong jclass_value))
+    if (jclass_value == 0L) {
+        JVMCI_THROW_MSG_NULL(IllegalArgumentException, "jclass must not be zero");
+    }
+    jclass mirror = reinterpret_cast<jclass>(jclass_value);
+    // Since the jclass_value is passed as a jlong, we perform additional checks to prevent the caller from accidentally
+    // sending a value that is not a JNI handle.
+    if (JNIHandles::handle_type(thread, mirror) == JNIInvalidRefType) {
+        JVMCI_THROW_MSG_NULL(IllegalArgumentException, "jclass is not a valid JNI reference");
+    }
+    oop obj = JNIHandles::resolve(mirror);
+    if (!java_lang_Class::is_instance(obj)) {
+        JVMCI_THROW_MSG_NULL(IllegalArgumentException, "jclass must be a reference to the Class object");
+    }
+    JVMCIKlassHandle klass(THREAD, java_lang_Class::as_Klass(obj));
+    JVMCIObject result = JVMCIENV->get_jvmci_type(klass, JVMCI_CHECK_NULL);
+    return JVMCIENV->get_jobject(result);
+C2V_END
+
 C2V_VMENTRY_NULL(jobject, getUncachedStringInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   constantTag tag = cp->tag_at(index);
@@ -2834,6 +2853,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "hasNeverInlineDirective",                      CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(hasNeverInlineDirective)},
   {CC "shouldInlineMethod",                           CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(shouldInlineMethod)},
   {CC "lookupType",                                   CC "(" STRING HS_KLASS2 "Z)" HS_RESOLVED_TYPE,                                        FN_PTR(lookupType)},
+  {CC "lookupJClass",                                 CC "(J)" HS_RESOLVED_TYPE,                                                            FN_PTR(lookupJClass)},
   {CC "getArrayType",                                 CC "(C" HS_KLASS2 ")" HS_KLASS,                                                       FN_PTR(getArrayType)},
   {CC "lookupClass",                                  CC "(" CLASS ")" HS_RESOLVED_TYPE,                                                    FN_PTR(lookupClass)},
   {CC "lookupNameInPool",                             CC "(" HS_CONSTANT_POOL2 "I)" STRING,                                                 FN_PTR(lookupNameInPool)},

@@ -1191,6 +1191,10 @@ public:
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
+
+  // Convert BootTest condition to Assembler condition.
+  // Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+  Assembler::Condition to_assembler_cond(BoolTest::mask cond);
 %}
 
 source %{
@@ -2525,6 +2529,50 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
     }
   }
   return true;
+}
+
+// Convert BootTest condition to Assembler condition.
+// Replicate the logic of cmpOpOper::ccode() and cmpOpUOper::ccode().
+Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
+  Assembler::Condition result;
+  switch(cond) {
+    case BoolTest::eq:
+      result = Assembler::EQ; break;
+    case BoolTest::ne:
+      result = Assembler::NE; break;
+    case BoolTest::le:
+      result = Assembler::LE; break;
+    case BoolTest::ge:
+      result = Assembler::GE; break;
+    case BoolTest::lt:
+      result = Assembler::LT; break;
+    case BoolTest::gt:
+      result = Assembler::GT; break;
+    case BoolTest::ule:
+      result = Assembler::LS; break;
+    case BoolTest::uge:
+      result = Assembler::HS; break;
+    case BoolTest::ult:
+      result = Assembler::LO; break;
+    case BoolTest::ugt:
+      result = Assembler::HI; break;
+    case BoolTest::overflow:
+      result = Assembler::VS; break;
+    case BoolTest::no_overflow:
+      result = Assembler::VC; break;
+    default:
+      ShouldNotReachHere();
+      return Assembler::Condition(-1);
+  }
+
+  // Check conversion
+  if (cond & BoolTest::unsigned_compare) {
+    assert(cmpOpUOper((BoolTest::mask)((int)cond & ~(BoolTest::unsigned_compare))).ccode() == result, "Invalid conversion");
+  } else {
+    assert(cmpOpOper(cond).ccode() == result, "Invalid conversion");
+  }
+
+  return result;
 }
 
 // Binary src (Replicate con)
@@ -4256,6 +4304,17 @@ operand immI_65535()
 operand immI_positive()
 %{
   predicate(n->get_int() > 0);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// BoolTest condition for signed compare
+operand immI_cmp_cond()
+%{
+  predicate(n->get_int() < (int)(BoolTest::unsigned_compare));
   match(ConI);
 
   op_cost(0);
@@ -8937,14 +8996,12 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
-// This section is generated from aarch64_ad_cas.m4
-
+// This section is generated from cas.m4
 
 
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8963,7 +9020,6 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8982,7 +9038,6 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9000,7 +9055,6 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9018,7 +9072,6 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -9164,7 +9217,6 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9184,7 +9236,6 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9204,7 +9255,6 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9224,7 +9274,6 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -9244,7 +9293,6 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -14995,8 +15043,7 @@ instruct convF2HF_reg_reg(iRegINoSp dst, vRegF src, vRegF tmp) %{
   %}
   effect(TEMP tmp);
   ins_encode %{
-      __ fcvtsh($tmp$$FloatRegister, $src$$FloatRegister);
-      __ smov($dst$$Register, $tmp$$FloatRegister, __ H, 0);
+      __ flt_to_flt16($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -15008,8 +15055,7 @@ instruct convHF2F_reg_reg(vRegF dst, iRegINoSp src, vRegF tmp) %{
   %}
   effect(TEMP tmp);
   ins_encode %{
-      __ mov($tmp$$FloatRegister, __ H, 0, $src$$Register);
-      __ fcvths($dst$$FloatRegister, $tmp$$FloatRegister);
+      __ flt16_to_flt($dst$$FloatRegister, $src$$Register, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}

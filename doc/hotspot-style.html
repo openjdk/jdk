@@ -82,6 +82,7 @@ id="toc-uniform-initialization">Uniform Initialization</a></li>
 id="toc-local-function-objects">Local Function Objects</a></li>
 <li><a href="#inheriting-constructors"
 id="toc-inheriting-constructors">Inheriting constructors</a></li>
+<li><a href="#attributes" id="toc-attributes">Attributes</a></li>
 <li><a href="#additional-permitted-features"
 id="toc-additional-permitted-features">Additional Permitted
 Features</a></li>
@@ -597,9 +598,16 @@ conventions might appear jarring and reduce readability.</p></li>
 <code>std::nothrow</code>, and <code>std::nothrow_t</code>.</li>
 <li><code>#include &lt;limits&gt;</code> to use
 <code>std::numeric_limits</code>.</li>
-<li><code>#include &lt;type_traits&gt;</code>.</li>
+<li><code>#include &lt;type_traits&gt;</code> with some restrictions,
+listed below.</li>
 <li><code>#include &lt;cstddef&gt;</code> to use
 <code>std::nullptr_t</code> and <code>std::max_align_t</code>.</li>
+</ul>
+<p>Certain restrictions apply to the declarations provided by
+<code>&lt;type_traits&gt;</code>.</p>
+<ul>
+<li>The <code>alignof</code> operator should be used rather than
+<code>std::alignment_of&lt;&gt;</code>.</li>
 </ul>
 <p>TODO: Rather than directly #including (permitted) Standard Library
 headers, use a convention of #including wrapper headers (in some
@@ -1057,9 +1065,36 @@ using C++17 or later. It is also enabled by default for
 C++11/14, as the change is considered a Defect Report that applies to
 those versions. Earlier versions of gcc don't have that option, and
 other supported compilers may not have anything similar.</p>
+<h3 id="attributes">Attributes</h3>
+<p>The use of some attributes (<a
+href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf">n2761</a>)
+(listed below) is permitted. (Note that some of the attributes defined
+in that paper didn't make it into the final specification.)</p>
+<p>Attributes are syntactically permitted in a broad set of locations,
+but specific attributes are only permitted in a subset of those
+locations. In some cases an attribute that appertains to a given element
+may be placed in any of several locations with the same meaning. In
+those cases HotSpot has a preferred location.</p>
+<ul>
+<li>An attribute that appertains to a function is placed at the
+beginning of the function's declaration, rather than between the
+function name and the parameter list.</li>
+</ul>
+<p>Only the following attributes are permitted:</p>
+<ul>
+<li><code>[[noreturn]]</code></li>
+</ul>
+<p>The following attributes are expressly forbidden:</p>
+<ul>
+<li><code>[[carries_dependency]]</code> - Related to
+<code>memory_order_consume</code>.</li>
+<li><code>[[deprecated]]</code> - Not relevant in HotSpot code.</li>
+</ul>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
+<li><p><code>alignof</code> (<a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">n2341</a>)</p></li>
 <li><p><code>constexpr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>)
 (<a
@@ -1149,9 +1184,6 @@ initialization or destruction. Initialization order problems can be
 difficult to deal with and lead to surprises, as can destruction
 ordering. HotSpot doesn't generally try to cleanup on exit, and running
 destructors at exit can also lead to problems.</p></li>
-<li><p><code>[[deprecated]]</code> attribute (<a
-href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3760.html">n3760</a>)
-— Not relevant in HotSpot code.</p></li>
 <li><p>Avoid most operator overloading, preferring named functions. When
 operator overloading is used, ensure the semantics conform to the normal
 expected behavior of the operation.</p></li>
@@ -1171,8 +1203,6 @@ href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm">n2541</
 href="https://isocpp.org/files/papers/N3651.pdf">n3651</a>)</p></li>
 <li><p>Member initializers and aggregates (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html">n3653</a>)</p></li>
-<li><p><code>[[noreturn]]</code> attribute (<a
-href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf">n2761</a>)</p></li>
 <li><p>Rvalue references and move semantics</p></li>
 </ul>
 </body>
