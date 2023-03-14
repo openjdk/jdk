@@ -13024,6 +13024,7 @@ instruct jmpDir(label labl)
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpCon(cmpOp cop, rFlagsReg cr, label labl)
 %{
+  predicate(!UseBranchHints);
   match(If cop cr);
   effect(USE labl);
 
@@ -13040,6 +13041,7 @@ instruct jmpCon(cmpOp cop, rFlagsReg cr, label labl)
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
 %{
+  predicate(!UseBranchHints);
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
@@ -13055,6 +13057,7 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -13069,6 +13072,7 @@ instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -13084,6 +13088,7 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
 
 // Jump Direct Conditional - using unsigned comparison
 instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(If cop cmp);
   effect(USE labl);
 
@@ -13098,6 +13103,7 @@ instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpConUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(If cop cmp);
   effect(USE labl);
 
@@ -13112,6 +13118,7 @@ instruct jmpConUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
 %}
 
 instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(If cop cmp);
   effect(USE labl);
 
@@ -13135,6 +13142,264 @@ instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
       Label done;
       __ jccb(Assembler::parity, done);
       __ jcc(Assembler::equal, *l, false);
+      __ bind(done);
+    } else {
+       ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpCon_t(cmpOp cop, rFlagsReg cr, label labl)
+%{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(If cop cr);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop     $labl" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, true, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEnd_t(cmpOp cop, rFlagsReg cr, label labl)
+%{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(CountedLoopEnd cop cr);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop     $labl\t# loop end" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, true, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEndU_t(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,u   $labl\t# loop end" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, true, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+instruct jmpLoopEndUCF_t(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ "j$cop,u   $labl\t# loop end" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, true, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - using unsigned comparison
+instruct jmpConU_t(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,u   $labl" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, true, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+instruct jmpConUCF_t(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ "j$cop,u   $labl" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, true, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+instruct jmpConUCF2_t(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ $$template
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      $$emit$$"jp,u    $labl\n\t"
+      $$emit$$"j$cop,u   $labl"
+    } else {
+      $$emit$$"jp,u    done\n\t"
+      $$emit$$"j$cop,u   $labl\n\t"
+      $$emit$$"done:"
+    }
+  %}
+  ins_encode %{
+    Label* l = $labl$$label;
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      __ jcc(Assembler::parity, *l, true, false);
+      __ jcc(Assembler::notEqual, *l, true, false);
+    } else if ($cop$$cmpcode == Assembler::equal) {
+      Label done;
+      __ jccb(Assembler::parity, done, true);
+      __ jcc(Assembler::equal, *l, true, false);
+      __ bind(done);
+    } else {
+       ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpCon_nt(cmpOp cop, rFlagsReg cr, label labl)
+%{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(If cop cr);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop     $labl" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEnd_nt(cmpOp cop, rFlagsReg cr, label labl)
+%{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(CountedLoopEnd cop cr);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop     $labl\t# loop end" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEndU_nt(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,u   $labl\t# loop end" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+instruct jmpLoopEndUCF_nt(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ "j$cop,u   $labl\t# loop end" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+// Jump Direct Conditional - using unsigned comparison
+instruct jmpConU_nt(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,u   $labl" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+instruct jmpConUCF_nt(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ "j$cop,u   $labl" %}
+  size(7);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false, false); // Always long jump
+  %}
+  ins_pipe(pipe_jcc);
+%}
+
+instruct jmpConUCF2_nt(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(200);
+  format %{ $$template
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      $$emit$$"jp,u    $labl\n\t"
+      $$emit$$"j$cop,u   $labl"
+    } else {
+      $$emit$$"jp,u    done\n\t"
+      $$emit$$"j$cop,u   $labl\n\t"
+      $$emit$$"done:"
+    }
+  %}
+  ins_encode %{
+    Label* l = $labl$$label;
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      __ jcc(Assembler::parity, *l, false, false);
+      __ jcc(Assembler::notEqual, *l, false, false);
+    } else if ($cop$$cmpcode == Assembler::equal) {
+      Label done;
+      __ jccb(Assembler::parity, done, false);
+      __ jcc(Assembler::equal, *l, false, false);
       __ bind(done);
     } else {
        ShouldNotReachHere();
@@ -13224,6 +13489,7 @@ instruct jmpDir_short(label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpCon_short(cmpOp cop, rFlagsReg cr, label labl) %{
+  predicate(!UseBranchHints);
   match(If cop cr);
   effect(USE labl);
 
@@ -13240,6 +13506,7 @@ instruct jmpCon_short(cmpOp cop, rFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
+  predicate(!UseBranchHints);
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
@@ -13256,6 +13523,7 @@ instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -13271,6 +13539,7 @@ instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -13287,6 +13556,7 @@ instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
 
 // Jump Direct Conditional - using unsigned comparison
 instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(If cop cmp);
   effect(USE labl);
 
@@ -13302,6 +13572,7 @@ instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpConUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(If cop cmp);
   effect(USE labl);
 
@@ -13317,6 +13588,7 @@ instruct jmpConUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
 %}
 
 instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(!UseBranchHints);
   match(If cop cmp);
   effect(USE labl);
 
@@ -13341,6 +13613,276 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
       Label done;
       __ jccb(Assembler::parity, done);
       __ jccb(Assembler::equal, *l);
+      __ bind(done);
+    } else {
+       ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpCon_short_t(cmpOp cop, rFlagsReg cr, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(If cop cr);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,s   $labl" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, true);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEnd_short_t(cmpOp cop, rFlagsReg cr, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(CountedLoopEnd cop cr);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,s   $labl\t# loop end" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, true);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEndU_short_t(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl\t# loop end" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, true);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+instruct jmpLoopEndUCF_short_t(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl\t# loop end" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, true);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - using unsigned comparison
+instruct jmpConU_short_t(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, true);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+instruct jmpConUCF_short_t(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, true);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+instruct jmpConUCF2_short_t(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob > 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ $$template
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      $$emit$$"jp,u,s  $labl\n\t"
+      $$emit$$"j$cop,u,s  $labl"
+    } else {
+      $$emit$$"jp,u,s  done\n\t"
+      $$emit$$"j$cop,u,s  $labl\n\t"
+      $$emit$$"done:"
+    }
+  %}
+  size(6);
+  ins_encode %{
+    Label* l = $labl$$label;
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      __ jccb(Assembler::parity, *l, true);
+      __ jccb(Assembler::notEqual, *l, true);
+    } else if ($cop$$cmpcode == Assembler::equal) {
+      Label done;
+      __ jccb(Assembler::parity, done, true);
+      __ jccb(Assembler::equal, *l, true);
+      __ bind(done);
+    } else {
+       ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpCon_short_nt(cmpOp cop, rFlagsReg cr, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(If cop cr);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,s   $labl" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, false);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEnd_short_nt(cmpOp cop, rFlagsReg cr, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(CountedLoopEnd cop cr);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,s   $labl\t# loop end" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, false);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - Label defines a relative address from Jcc+1
+instruct jmpLoopEndU_short_nt(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl\t# loop end" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, false);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+instruct jmpLoopEndUCF_short_nt(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(CountedLoopEnd cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl\t# loop end" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, false);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+// Jump Direct Conditional - using unsigned comparison
+instruct jmpConU_short_nt(cmpOpU cop, rFlagsRegU cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, false);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+instruct jmpConUCF_short_nt(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ "j$cop,us  $labl" %}
+  size(3);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L, false);
+  %}
+  ins_pipe(pipe_jcc);
+  ins_short_branch(1);
+%}
+
+instruct jmpConUCF2_short_nt(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
+  predicate(UseBranchHints && ((IfNode *)n)->_prob <= 0.85);
+  match(If cop cmp);
+  effect(USE labl);
+
+  ins_cost(300);
+  format %{ $$template
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      $$emit$$"jp,u,s  $labl\n\t"
+      $$emit$$"j$cop,u,s  $labl"
+    } else {
+      $$emit$$"jp,u,s  done\n\t"
+      $$emit$$"j$cop,u,s  $labl\n\t"
+      $$emit$$"done:"
+    }
+  %}
+  size(6);
+  ins_encode %{
+    Label* l = $labl$$label;
+    if ($cop$$cmpcode == Assembler::notEqual) {
+      __ jccb(Assembler::parity, *l, false);
+      __ jccb(Assembler::notEqual, *l, false);
+    } else if ($cop$$cmpcode == Assembler::equal) {
+      Label done;
+      __ jccb(Assembler::parity, done, false);
+      __ jccb(Assembler::equal, *l, false);
       __ bind(done);
     } else {
        ShouldNotReachHere();

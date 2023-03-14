@@ -2430,6 +2430,43 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
   }
 }
 
+void Assembler::jcc(Condition cc, Label& L, int is_taken, bool maybe_short) {
+  if (!UseBranchHints || !is_taken) {     // For now, only add taken hints
+    return jcc(cc, L, maybe_short);
+  }
+  InstructionMark im(this);
+  assert((0 <= cc) && (cc < 16), "illegal cc");
+  uint8_t taken = is_taken ? 0x3e : 0x2e;
+  if (L.is_bound()) {
+    address dst = target(L);
+    assert(dst != NULL, "jcc most probably wrong");
+
+    const int short_size = 3;
+    const int long_size = 7;
+    intptr_t offs = (intptr_t)dst - (intptr_t)pc();
+    emit_int8(taken);
+    if (maybe_short && is8bit(offs - short_size)) {
+      // 0111 tttn #8-bit disp
+      emit_int16(0x70 | cc, (offs - short_size) & 0xFF);
+    } else {
+      // 0000 1111 1000 tttn #32-bit disp
+      assert(is_simm32(offs - long_size),
+             "must be 32bit offset (call4)");
+      emit_int16(0x0F, (0x80 | cc));
+      emit_int32(offs - long_size);
+    }
+  } else {
+    // Note: could eliminate cond. jumps to this jump if condition
+    //       is the same however, seems to be rather unlikely case.
+    // Note: use jccb() if label to be bound is very close to get
+    //       an 8-bit displacement
+    L.add_patch_at(code(), locator());
+    emit_int8(taken);
+    emit_int16(0x0F, (0x80 | cc));
+    emit_int32(0);
+  }
+}
+
 void Assembler::jccb_0(Condition cc, Label& L, const char* file, int line) {
   if (L.is_bound()) {
     const int short_size = 2;
@@ -2447,7 +2484,35 @@ void Assembler::jccb_0(Condition cc, Label& L, const char* file, int line) {
     emit_int16(0x70 | cc, (offs - short_size) & 0xFF);
   } else {
     InstructionMark im(this);
+    L.add_patch_at(code(), locator());
+    emit_int16(0x70 | cc, 0);
+  }
+}
+
+void Assembler::jccb_h(Condition cc, Label& L, int is_taken, const char* file, int line) {
+  if (!UseBranchHints || !is_taken) {     // For now, only add taken hints
+    return jccb_0(cc, L, file, line);
+  }
+  uint8_t taken = is_taken ? 0x3e : 0x2e;
+  if (L.is_bound()) {
+    const int short_size = 3;
+    address entry = target(L);
+#ifdef ASSERT
+    intptr_t dist = (intptr_t)entry - ((intptr_t)pc() + short_size);
+    intptr_t delta = short_branch_delta();
+    if (delta != 0) {
+      dist += (dist < 0 ? (-delta) :delta);
+    }
+    assert(is8bit(dist), "Dispacement too large for a short jmp at %s:%d", file, line);
+#endif
+    intptr_t offs = (intptr_t)entry - (intptr_t)pc();
+    // 0111 tttn #8-bit disp
+    emit_int8(taken);
+    emit_int16(0x70 | cc, (offs - short_size) & 0xFF);
+  } else {
+    InstructionMark im(this);
     L.add_patch_at(code(), locator(), file, line);
+    emit_int8(taken);
     emit_int16(0x70 | cc, 0);
   }
 }

@@ -1431,6 +1431,7 @@ private:
   // but it may be bound only once.
 
   void jcc(Condition cc, Label& L, bool maybe_short = true);
+  void jcc(Condition cc, Label& L, int is_taken, bool maybe_short = true);
 
   // Conditional jump to a 8-bit offset to L.
   // WARNING: be very careful using this for forward jumps.  If the label is
@@ -1438,8 +1439,16 @@ private:
   // will occur.
 
   // Use macro to record file and line number.
-  #define jccb(cc, L) jccb_0(cc, L, __FILE__, __LINE__)
+  #define GET_MACRO(_1, _2, _3, NAME, ...) NAME
+  #ifdef _WIN64
+    #define jccb(...) EXPAND(GET_MACRO(__VA_ARGS__, jccb_H, jccb_NH)(__VA_ARGS__))
+  #else
+    #define jccb(...) GET_MACRO(__VA_ARGS__, jccb_H, jccb_NH)(__VA_ARGS__)
+  #endif
+  #define jccb_H(cc, L, cond) jccb_h(cc, L, cond, __FILE__, __LINE__)
+  #define jccb_NH(cc, L) jccb_0(cc, L, __FILE__, __LINE__)
 
+  void jccb_h(Condition cc, Label& L, int cond, const char* file, int line);
   void jccb_0(Condition cc, Label& L, const char* file, int line);
 
   void jmp(Address entry);    // pc <- entry

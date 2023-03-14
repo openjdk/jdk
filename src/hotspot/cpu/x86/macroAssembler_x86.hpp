@@ -106,23 +106,28 @@ class MacroAssembler: public Assembler {
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
   void pd_patch_instruction(address branch, address target, const char* file, int line) {
     unsigned char op = branch[0];
+    unsigned char offset = 0;
+    if ((op == 0x2e) || (op == 0x3e)) {
+      offset++;
+      op = branch[1];
+    }
     assert(op == 0xE8 /* call */ ||
         op == 0xE9 /* jmp */ ||
         op == 0xEB /* short jmp */ ||
         (op & 0xF0) == 0x70 /* short jcc */ ||
-        op == 0x0F && (branch[1] & 0xF0) == 0x80 /* jcc */ ||
-        op == 0xC7 && branch[1] == 0xF8 /* xbegin */,
+        op == 0x0F && (branch[offset + 1] & 0xF0) == 0x80 /* jcc */ ||
+        op == 0xC7 && branch[offset + 1] == 0xF8 /* xbegin */,
         "Invalid opcode at patch point");
 
     if (op == 0xEB || (op & 0xF0) == 0x70) {
       // short offset operators (jmp and jcc)
-      char* disp = (char*) &branch[1];
+      char* disp = (char*) &branch[offset + 1];
       int imm8 = target - (address) &disp[1];
       guarantee(this->is8bit(imm8), "Short forward jump exceeds 8-bit offset at %s:%d",
                 file == NULL ? "<NULL>" : file, line);
       *disp = imm8;
     } else {
-      int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? 2: 1];
+      int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? offset + 2: offset + 1];
       int imm32 = target - (address) &disp[1];
       *disp = imm32;
     }
