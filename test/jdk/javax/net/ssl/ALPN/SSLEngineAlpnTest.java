@@ -236,10 +236,6 @@ public class SSLEngineAlpnTest {
             throw new Exception("kms[0] not X509ExtendedKeyManager");
         }
 
-//        kms = new KeyManager[] { new MyX509ExtendedKeyManager(
-//                (X509ExtendedKeyManager) kms[0], expectedAP,
-//                !hasCallback && hasServerAPs) };
-
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
 

@@ -78,7 +78,6 @@
  * This example is based on our standard SSLSocketTemplate.
  */
 import java.io.*;
-import java.security.KeyStore;
 import java.util.Arrays;
 
 import javax.net.ssl.*;
@@ -117,6 +116,7 @@ public class SSLSocketAlpnTest extends SSLSocketTemplate {
      * If the server prematurely exits, serverReady will be set to true
      * to avoid infinite hangs.
      */
+    @Override
     protected void runServerApplication(SSLSocket sslSocket) throws Exception {
         System.out.println("in runServerApplication(SSLSocket)");
         SSLParameters sslp = sslSocket.getSSLParameters();
@@ -202,6 +202,7 @@ public class SSLSocketAlpnTest extends SSLSocketTemplate {
      * If the server prematurely exits, serverReady will be set to true
      * to avoid infinite hangs.
      */
+    @Override
     protected void runClientApplication(SSLSocket sslSocket) throws Exception {
         System.out.println("in runClientApplication(SSLSocket)");
 

@@ -42,19 +42,9 @@
  * @run main/othervm DisabledShortRSAKeys SunX509 SSLv3
  */
 
-import java.net.*;
-import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
 import java.security.Security;
-import java.security.KeyStore;
-import java.security.KeyFactory;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.spec.*;
-import java.security.interfaces.*;
-import java.util.Base64;
-
 
 public class DisabledShortRSAKeys extends SSLSocketTemplate {
 

@@ -48,7 +48,8 @@ public class DisabledCurve extends SSLSocketTemplate {
             { { "TLSv1.2" }, { "TLSv1.2" } }, { { "TLSv1.1" }, { "TLSv1.1" } },
             { { "TLSv1" }, { "TLSv1" } } };
 
-    public SSLContext createClientSSLContext() throws Exception {
+    @Override
+    protected SSLContext createClientSSLContext() throws Exception {
         return createSSLContext(
                 new SSLContextTemplate.Cert[] {
                         SSLContextTemplate.Cert.CA_ECDSA_SECP384R1 },
@@ -57,7 +58,8 @@ public class DisabledCurve extends SSLSocketTemplate {
                 getClientContextParameters());
     }
 
-    public SSLContext createServerSSLContext() throws Exception {
+    @Override
+    protected SSLContext createServerSSLContext() throws Exception {
         return createSSLContext(
                 new SSLContextTemplate.Cert[] {
                         SSLContextTemplate.Cert.CA_ECDSA_SECP384R1 },

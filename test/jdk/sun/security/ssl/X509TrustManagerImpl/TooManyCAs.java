@@ -72,7 +72,7 @@ public class TooManyCAs extends SSLSocketTemplate {
                 needClientAuth);
     }
 
-    // Servers are configured before clients, increment test case after.
+    @Override
     protected void configureClientSocket(SSLSocket clientSocket) {
         System.out.println("Setting client protocol(s): "
                 + String.join(",", clientProtocols));
@@ -80,6 +80,7 @@ public class TooManyCAs extends SSLSocketTemplate {
         clientSocket.setEnabledProtocols(clientProtocols);
     }
 
+    @Override
     protected void configureServerSocket(SSLServerSocket serverSocket) {
         serverSocket.setNeedClientAuth(needClientAuth);
         serverSocket.setEnableSessionCreation(true);
@@ -92,14 +93,14 @@ public class TooManyCAs extends SSLSocketTemplate {
     }
 
     @Override
-    public TrustManager createClientTrustManager() throws Exception {
+    protected TrustManager createClientTrustManager() throws Exception {
         TrustManager trustManager = super.createClientTrustManager();
         return new BogusX509TrustManager(
                 (X509TrustManager)trustManager);
     }
 
     @Override
-    public TrustManager createServerTrustManager() throws Exception {
+    protected TrustManager createServerTrustManager() throws Exception {
         TrustManager trustManager = super.createServerTrustManager();
         return new BogusX509TrustManager(
                 (X509TrustManager)trustManager);
