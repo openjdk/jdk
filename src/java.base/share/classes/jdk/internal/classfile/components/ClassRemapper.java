@@ -317,7 +317,9 @@ public sealed interface ClassRemapper extends ClassTransform {
                     case InvokeDynamicInstruction idi ->
                         cob.invokeDynamicInstruction(DynamicCallSiteDesc.of(
                                 idi.bootstrapMethod(), idi.name().stringValue(),
-                                mapMethodDesc(idi.typeSymbol())));
+                                mapMethodDesc(idi.typeSymbol()),
+                                idi.bootstrapArgs().stream().map(this::mapConstantValue).toArray(ConstantDesc[]::new)
+                                ));
                     case NewObjectInstruction c ->
                         cob.newObjectInstruction(map(c.className().asSymbol()));
                     case NewReferenceArrayInstruction c ->
