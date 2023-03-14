@@ -189,6 +189,11 @@ class CAccessible extends CFRetainedResource implements Accessible {
                     if (thisRole == AccessibleRole.RADIO_BUTTON) {
                         valueChanged(ptr);
                     }
+
+                    // Do send toggle button state changes to native side
+                    if (thisRole == AccessibleRole.TOGGLE_BUTTON) {
+                        valueChanged(ptr);
+                    }
                 } else if (name.equals(ACCESSIBLE_NAME_PROPERTY)) {
                     //for now trigger only for JTabbedPane.
                     if (e.getSource() instanceof JTabbedPane) {
