@@ -4226,6 +4226,14 @@ void Assembler::vpermd(XMMRegister dst, XMMRegister nds, Address src, int vector
   emit_operand(dst, src, 0);
 }
 
+void Assembler::vpermps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_evex(), "");
+  // VEX.NDS.XXX.66.0F38.W0 16 /r
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x16, (0xC0 | encode));
+}
+
 void Assembler::vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8) {
   assert(VM_Version::supports_avx2(), "");
   InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -4245,6 +4253,13 @@ void Assembler::vpermilps(XMMRegister dst, XMMRegister src, int imm8, int vector
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x04, (0xC0 | encode), imm8);
+}
+
+void Assembler::vpermilps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx() : VM_Version::supports_evex(), "");
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x0C, (0xC0 | encode));
 }
 
 void Assembler::vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len) {
