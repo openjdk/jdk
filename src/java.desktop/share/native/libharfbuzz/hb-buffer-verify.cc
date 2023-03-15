@@ -150,7 +150,7 @@ buffer_verify_unsafe_to_break (hb_buffer_t  *buffer,
     assert (text_start < text_end);
 
     if (0)
-      printf("start %d end %d text start %d end %d\n", start, end, text_start, text_end);
+      printf("start %u end %u text start %u end %u\n", start, end, text_start, text_end);
 
     hb_buffer_clear_contents (fragment);
 
@@ -186,7 +186,7 @@ buffer_verify_unsafe_to_break (hb_buffer_t  *buffer,
 
   bool ret = true;
   hb_buffer_diff_flags_t diff = hb_buffer_diff (reconstruction, buffer, (hb_codepoint_t) -1, 0);
-  if (diff)
+  if (diff & ~HB_BUFFER_DIFF_FLAG_GLYPH_FLAGS_MISMATCH)
   {
     buffer_verify_error (buffer, font, BUFFER_VERIFY_ERROR "unsafe-to-break test failed.");
     ret = false;
@@ -292,7 +292,7 @@ buffer_verify_unsafe_to_concat (hb_buffer_t        *buffer,
       assert (text_start < text_end);
 
       if (0)
-        printf("start %d end %d text start %d end %d\n", start, end, text_start, text_end);
+        printf("start %u end %u text start %u end %u\n", start, end, text_start, text_end);
 
 #if 0
       hb_buffer_flags_t flags = hb_buffer_get_flags (fragment);
@@ -313,7 +313,6 @@ buffer_verify_unsafe_to_concat (hb_buffer_t        *buffer,
 
   bool ret = true;
   hb_buffer_diff_flags_t diff;
-
   /*
    * Shape the two fragment streams.
    */
@@ -382,7 +381,7 @@ buffer_verify_unsafe_to_concat (hb_buffer_t        *buffer,
    * Diff results.
    */
   diff = hb_buffer_diff (reconstruction, buffer, (hb_codepoint_t) -1, 0);
-  if (diff)
+  if (diff & ~HB_BUFFER_DIFF_FLAG_GLYPH_FLAGS_MISMATCH)
   {
     buffer_verify_error (buffer, font, BUFFER_VERIFY_ERROR "unsafe-to-concat test failed.");
     ret = false;
