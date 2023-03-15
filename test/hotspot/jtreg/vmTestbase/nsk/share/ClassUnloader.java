@@ -44,12 +44,12 @@ import nsk.share.test.Stresser;
  *
  * <p>ClassUnloader mainly intends to unload a class which was loaded
  * with especial <code>ClassUnloader.loadClass()</code> method.
- * A class is considered unloaded if its class loader is reclaimed.
- * A runnable lambda is registered to JVM to be called whenever the
- * class loader becomes unreachable.
- * After setting the class loader to null, if within a timeout no notification
- * of its reclaim is received, class is considered still loaded and
- * <code>unloadClass()</code> method returns <i>false</i>.
+ * A class is eligible for unloading if its class loader has been reclaimed.
+ * A Cleaner is used to inform the main test code when the class loader
+ * becomes unreachable and is reclaimed.
+ * If, after setting the class loader to null, no notification that it has become
+ * reclaimed is received within the timeout interval, then the class is considered
+ * to still be loaded and <code>unloadClass()</code> returns <i>false</i>.
  *
  * <p>Such reclaiming control applies only to a class loaded by
  * ClassUnloader's <code>loadClass()</code> method. Otherwise, if there
@@ -77,17 +77,17 @@ public class ClassUnloader {
     public static final String INTERNAL_CLASS_LOADER_NAME = "nsk.share.CustomClassLoader";
 
     /**
-     * Whole amount of time in milliseconds to wait for class loader reclaim.
+     * Whole amount of time in milliseconds to wait for class loader to be reclaimed.
      */
     private static final int WAIT_TIMEOUT = 15000;
 
     /**
-     * Piece of time in milliseconds to wait in a loop for class loader reclaim.
+     * Sleep time in milliseconds for the loop waiting for the class loader to be reclaimed.
      */
     private static final int WAIT_DELTA = 1000;
 
     /**
-     * Has class loader been is_reclaimed or not.
+     * Has class loader been reclaimed or not.
      */
     volatile boolean is_reclaimed = false;
 
@@ -138,7 +138,7 @@ public class ClassUnloader {
         customClassLoader = new CustomClassLoader();
         classObjects.removeAllElements();
 
-        // When customClassLoader becomes unreachable, the lambda is called by JVM/GC.
+        // Register a Cleaner to inform us when the class loader has been reclaimed.
         Cleaner.create().register(customClassLoader, () -> { is_reclaimed = true; } );
 
         return customClassLoader;
@@ -154,7 +154,7 @@ public class ClassUnloader {
         this.customClassLoader = customClassLoader;
         classObjects.removeAllElements();
 
-        // When customClassLoader becomes unreachable, the lambda is called by JVM/GC.
+        // Register a Cleaner to inform us when the class loader has been reclaimed.
         Cleaner.create().register(customClassLoader, () -> { is_reclaimed = true; } );
     }
 
@@ -274,7 +274,7 @@ public class ClassUnloader {
             return true;
         }
 
-        // class loader has not been is_reclaimed
+        // class loader has not been reclaimed
         return false;
     }
 
