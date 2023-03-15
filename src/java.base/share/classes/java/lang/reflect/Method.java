@@ -82,7 +82,7 @@ public final class Method extends Executable {
     // Generics and annotations support
     private final transient String    signature;
     // generic info repository; lazily initialized
-    private transient MethodRepository genericInfo;
+    private transient volatile MethodRepository genericInfo;
     private final byte[]              annotations;
     private final byte[]              parameterAnnotations;
     private final byte[]              annotationDefault;

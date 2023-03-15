@@ -77,7 +77,7 @@ class Field extends AccessibleObject implements Member {
     // Generics and annotations support
     private final transient String    signature;
     // generic info repository; lazily initialized
-    private transient FieldRepository genericInfo;
+    private transient volatile FieldRepository genericInfo;
     private final byte[]              annotations;
     // Cached field accessor created without override
     @Stable

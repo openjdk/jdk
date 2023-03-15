@@ -54,7 +54,7 @@ public final class RecordComponent implements AnnotatedElement {
     private Method accessor;
     private String signature;
     // generic info repository; lazily initialized
-    private transient FieldRepository genericInfo;
+    private transient volatile FieldRepository genericInfo;
     private byte[] annotations;
     private byte[] typeAnnotations;
     private RecordComponent root;

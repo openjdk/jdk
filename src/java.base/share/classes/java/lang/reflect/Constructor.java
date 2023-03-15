@@ -73,7 +73,7 @@ public final class Constructor<T> extends Executable {
     // Generics and annotations support
     private final transient String    signature;
     // generic info repository; lazily initialized
-    private transient ConstructorRepository genericInfo;
+    private transient volatile ConstructorRepository genericInfo;
     private final byte[]              annotations;
     private final byte[]              parameterAnnotations;
 
