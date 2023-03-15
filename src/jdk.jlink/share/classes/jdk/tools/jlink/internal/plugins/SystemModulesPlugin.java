@@ -45,6 +45,7 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -610,16 +611,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate bytecode for no-arg constructor
          */
         private void genConstructor(ClassBuilder clb) {
-            clb.withMethod("<init>", MethodTypeDesc.of(CD_void),
-                    ACC_PUBLIC, mb -> mb.withFlags(ACC_PUBLIC).withCode( cob -> {
-                        cob.loadInstruction(TypeKind.ReferenceType, 0);
-                        cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                              CD_Object,
-                                              "<init>",
-                                              MethodTypeDesc.of(CD_void),
-                                              false);
-                        cob.returnInstruction(TypeKind.VoidType);
-                    }));
+            clb.withMethodBody(
+                    "<init>",
+                    MethodTypeDesc.of(CD_void),
+                    ACC_PUBLIC,
+                    cob -> cob.aload(0)
+                              .invokespecial(CD_Object,
+                                             "<init>",
+                                             MethodTypeDesc.of(CD_void))
+                              .return_());
         }
 
         /**
@@ -632,13 +632,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     .allMatch(new HashSet<>()::add);
             boolean hasSplitPackages = !distinct;
 
-            clb.withMethod("hasSplitPackages",
+            clb.withMethodBody(
+                    "hasSplitPackages",
                     MethodTypeDesc.of(CD_boolean),
                     ACC_PUBLIC,
-                    mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
-                        cob.constantInstruction(hasSplitPackages ? 1 : 0);
-                        cob.returnInstruction(TypeKind.IntType);
-                    }));
+                    cob -> cob.constantInstruction(hasSplitPackages ? 1 : 0)
+                              .ireturn());
         }
 
         /**
@@ -651,26 +650,26 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     .findFirst()
                     .isPresent();
 
-            clb.withMethod("hasIncubatorModules",
+            clb.withMethodBody(
+                    "hasIncubatorModules",
                     MethodTypeDesc.of(CD_boolean),
                     ACC_PUBLIC,
-                    mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
-                        cob.constantInstruction(hasIncubatorModules ? 1 : 0);
-                        cob.returnInstruction(TypeKind.IntType);
-                    }));
+                    cob -> cob.constantInstruction(hasIncubatorModules ? 1 : 0)
+                              .ireturn());
         }
 
         /**
          * Generate bytecode for moduleDescriptors method
          */
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
-            clb.withMethod("moduleDescriptors",
+            clb.withMethodBody(
+                    "moduleDescriptors",
                     MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
                     ACC_PUBLIC,
-                    mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
-                        cob.constantInstruction(moduleInfos.size());
-                        cob.anewarray(CD_MODULE_DESCRIPTOR);
-                        cob.storeInstruction(TypeKind.ReferenceType, MD_VAR);
+                    cob -> {
+                        cob.constantInstruction(moduleInfos.size())
+                           .anewarray(CD_MODULE_DESCRIPTOR)
+                           .astore(MD_VAR);
 
                         for (int index = 0; index < moduleInfos.size(); index++) {
                             ModuleInfo minfo = moduleInfos.get(index);
@@ -679,22 +678,23 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                                         minfo.packages(),
                                                         index).build();
                         }
-                        cob.loadInstruction(TypeKind.ReferenceType, MD_VAR);
-                        cob.returnInstruction(TypeKind.ReferenceType);
-                    }));
+                        cob.aload(MD_VAR)
+                           .areturn();
+                    });
         }
 
         /**
          * Generate bytecode for moduleTargets method
          */
         private void genModuleTargetsMethod(ClassBuilder clb) {
-            clb.withMethod("moduleTargets",
+            clb.withMethodBody(
+                    "moduleTargets",
                     MethodTypeDesc.of(CD_MODULE_TARGET.arrayType()),
                     ACC_PUBLIC,
-                    mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
-                        cob.constantInstruction(moduleInfos.size());
-                        cob.anewarray(CD_MODULE_TARGET);
-                        cob.storeInstruction(TypeKind.ReferenceType, MT_VAR);
+                    cob -> {
+                        cob.constantInstruction(moduleInfos.size())
+                           .anewarray(CD_MODULE_TARGET)
+                           .astore(MT_VAR);
 
                         // if java.base has a ModuleTarget attribute then generate the array
                         // with one element, all other elements will be null.
@@ -714,36 +714,38 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         for (int index = 0; index < count; index++) {
                             ModuleInfo minfo = moduleInfos.get(index);
                             if (minfo.target() != null) {
-                                cob.loadInstruction(TypeKind.ReferenceType, MT_VAR);
-                                cob.constantInstruction(index);
+                                cob.aload(MT_VAR)
+                                   .constantInstruction(index);
 
                                 // new ModuleTarget(String)
-                                cob.newObjectInstruction(CD_MODULE_TARGET);
-                                cob.stackInstruction(Opcode.DUP);
-                                cob.constantInstruction(minfo.target().targetPlatform());
-                                cob.invokeInstruction(Opcode.INVOKESPECIAL, CD_MODULE_TARGET,
-                                                   "<init>", MethodTypeDesc.of(CD_void, CD_String), false);
+                                cob.new_(CD_MODULE_TARGET)
+                                   .dup()
+                                   .constantInstruction(minfo.target().targetPlatform())
+                                   .invokespecial(CD_MODULE_TARGET,
+                                                  "<init>",
+                                                  MethodTypeDesc.of(CD_void, CD_String));
 
-                                cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                                cob.aastore();
                             }
                         }
 
-                        cob.loadInstruction(TypeKind.ReferenceType, MT_VAR);
-                        cob.returnInstruction(TypeKind.ReferenceType);
-                    }));
+                        cob.aload(MT_VAR)
+                           .areturn();
+                    });
         }
 
         /**
          * Generate bytecode for moduleHashes method
          */
         private void genModuleHashesMethod(ClassBuilder clb) {
-            clb.withMethod("moduleHashes",
+            clb.withMethodBody(
+                    "moduleHashes",
                     MethodTypeDesc.of(CD_MODULE_HASHES.arrayType()),
                     ACC_PUBLIC,
-                    mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
-                        cob.constantInstruction(moduleInfos.size());
-                        cob.anewarray(CD_MODULE_HASHES);
-                        cob.storeInstruction(TypeKind.ReferenceType, MH_VAR);
+                    cob -> {
+                        cob.constantInstruction(moduleInfos.size())
+                           .anewarray(CD_MODULE_HASHES)
+                           .astore(MH_VAR);
 
                         for (int index = 0; index < moduleInfos.size(); index++) {
                             ModuleInfo minfo = moduleInfos.get(index);
@@ -754,41 +756,41 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             }
                         }
 
-                        cob.loadInstruction(TypeKind.ReferenceType, MH_VAR);
-                        cob.returnInstruction(TypeKind.ReferenceType);
-                    }));
+                        cob.aload(MH_VAR)
+                           .areturn();
+                    });
         }
 
         /**
          * Generate bytecode for moduleResolutions method
          */
         private void genModuleResolutionsMethod(ClassBuilder clb) {
-            clb.withMethod("moduleResolutions",
-                MethodTypeDesc.of(CD_MODULE_RESOLUTION.arrayType()),
-                ACC_PUBLIC,
-                mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
-                    cob.constantInstruction(moduleInfos.size());
-                    cob.anewarray(CD_MODULE_RESOLUTION);
-                    cob.storeInstruction(TypeKind.ReferenceType, 0);
+            clb.withMethodBody(
+                    "moduleResolutions",
+                    MethodTypeDesc.of(CD_MODULE_RESOLUTION.arrayType()),
+                    ACC_PUBLIC,
+                    cob -> {
+                        cob.constantInstruction(moduleInfos.size())
+                           .anewarray(CD_MODULE_RESOLUTION)
+                           .astore(0);
 
-                    for (int index=0; index < moduleInfos.size(); index++) {
-                        ModuleInfo minfo = moduleInfos.get(index);
-                        if (minfo.moduleResolution() != null) {
-                            cob.loadInstruction(TypeKind.ReferenceType, 0);
-                            cob.constantInstruction(index);
-                            cob.newObjectInstruction(CD_MODULE_RESOLUTION);
-                            cob.stackInstruction(Opcode.DUP);
-                            cob.constantInstruction(minfo.moduleResolution().value());
-                            cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                                  CD_MODULE_RESOLUTION,
+                        for (int index=0; index < moduleInfos.size(); index++) {
+                            ModuleInfo minfo = moduleInfos.get(index);
+                            if (minfo.moduleResolution() != null) {
+                                cob.aload(0)
+                                   .constantInstruction(index)
+                                   .new_(CD_MODULE_RESOLUTION)
+                                   .dup()
+                                   .constantInstruction(minfo.moduleResolution().value())
+                                   .invokespecial(CD_MODULE_RESOLUTION,
                                                   "<init>",
-                                                  MethodTypeDesc.of(CD_void, CD_int), false);
-                            cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                                                  MethodTypeDesc.of(CD_void, CD_int))
+                                   .aastore();
+                            }
                         }
-                    }
-                    cob.loadInstruction(TypeKind.ReferenceType, 0);
-                    cob.returnInstruction(TypeKind.ReferenceType);
-                }));
+                        cob.aload(0)
+                           .areturn();
+                    });
         }
 
         /**
@@ -814,10 +816,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                               String methodName,
                               Map<String, Set<String>> map,
                               boolean dedup) {
-            clb.withMethod(methodName,
+            clb.withMethodBody(
+                    methodName,
                     MethodTypeDesc.of(CD_Map),
                     ACC_PUBLIC,
-                    mb -> mb.withFlags(ACC_PUBLIC).withCode(cob -> {
+                    cob -> {
 
                         // map of Set -> local
                         Map<Set<String>, Integer> locals;
@@ -833,7 +836,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             int index = 1;
                             for (Set<String> s : duplicateSets) {
                                 genImmutableSet(cob, s);
-                                cob.storeInstruction(TypeKind.ReferenceType, index);
+                                cob.astore(index);
                                 locals.put(s, index);
                                 if (++index >= MAX_LOCAL_VARS) {
                                     break;
@@ -852,35 +855,36 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             String name = e.getKey();
                             Set<String> s = e.getValue();
 
-                            cob.stackInstruction(Opcode.DUP);
-                            cob.constantInstruction(index);
-                            cob.constantInstruction(name);
+                            cob.dup()
+                               .constantInstruction(index)
+                               .constantInstruction(name);
 
                             // if de-duplicated then load the local, otherwise generate code
                             Integer varIndex = locals.get(s);
                             if (varIndex == null) {
                                 genImmutableSet(cob, s);
                             } else {
-                                cob.loadInstruction(TypeKind.ReferenceType, varIndex);
+                                cob.aload(varIndex);
                             }
 
                             MethodTypeDesc desc = MethodTypeDesc.ofDescriptor(
                                     "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;");
-                            cob.invokeInstruction(Opcode.INVOKESTATIC,
-                                               CD_Map,
-                                               "entry",
-                                               desc,
-                                               true);
-                            cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                            cob.invokestatic(CD_Map,
+                                             "entry",
+                                             desc,
+                                             true);
+                            cob.aastore();
                             index++;
                         }
 
                         // invoke Map.ofEntries(Map$Entry[])
-                        cob.invokeInstruction(Opcode.INVOKESTATIC, CD_Map, "ofEntries",
-                                MethodTypeDesc.ofDescriptor(
-                                        "([Ljava/util/Map$Entry;)Ljava/util/Map;"), true);
-                        cob.returnInstruction(TypeKind.ReferenceType);
-                    }));
+                        cob.invokestatic(CD_Map,
+                                         "ofEntries",
+                                         MethodTypeDesc.ofDescriptor(
+                                                 "([Ljava/util/Map$Entry;)Ljava/util/Map;"),
+                                         true);
+                        cob.areturn();
+                    });
         }
 
         /**
@@ -908,16 +912,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/util/Set;"),
                         true);
             } else {
-                StringBuilder sb = new StringBuilder("(");
                 for (String element : sorted(set)) {
                     cob.constantInstruction(element);
-                    sb.append("Ljava/lang/Object;");
                 }
-                sb.append(")Ljava/util/Set;");
+                var mtdArgs = new ClassDesc[size];
+                Arrays.fill(mtdArgs, CD_Object);
                 cob.invokeInstruction(Opcode.INVOKESTATIC,
                         CD_Set,
                         "of",
-                        MethodTypeDesc.ofDescriptor(sb.toString()),
+                        MethodTypeDesc.of(CD_Set, mtdArgs),
                         true);
             }
         }
@@ -1010,13 +1013,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             }
 
             void newBuilder() {
-                cob.newObjectInstruction(CD_MODULE_BUILDER);
-                cob.stackInstruction(Opcode.DUP);
-                cob.constantInstruction(md.name());
-                cob.invokeInstruction(Opcode.INVOKESPECIAL, CD_MODULE_BUILDER,
-                    "<init>", MethodTypeDesc.of(CD_void, CD_String), false);
-                cob.storeInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
+                cob.new_(CD_MODULE_BUILDER)
+                   .dup()
+                   .constantInstruction(md.name())
+                   .invokespecial(CD_MODULE_BUILDER,
+                                  "<init>",
+                                  MethodTypeDesc.of(CD_void, CD_String))
+                   .astore(BUILDER_VAR)
+                   .aload(BUILDER_VAR);
 
                 if (md.isOpen()) {
                     setModuleBit("open", true);
@@ -1033,25 +1037,26 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Invoke Builder.<methodName>(boolean value)
              */
             void setModuleBit(String methodName, boolean value) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(value ? 1 : 0);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    methodName, MTD_BOOLEAN, false);
-                cob.stackInstruction(Opcode.POP);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(value ? 1 : 0)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  methodName,
+                                  MTD_BOOLEAN)
+                   .pop();
             }
 
             /*
              * Put ModuleDescriptor into the modules array
              */
             void putModuleDescriptor() {
-                cob.loadInstruction(TypeKind.ReferenceType, MD_VAR);
-                cob.constantInstruction(index);
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(md.hashCode());
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "build", MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int),
-                    false);
-                cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                cob.aload(MD_VAR)
+                   .constantInstruction(index)
+                   .aload(BUILDER_VAR)
+                   .constantInstruction(md.hashCode())
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "build",
+                                  MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int))
+                   .aastore();
             }
 
             /*
@@ -1061,9 +1066,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              *
              */
             void requires(Set<Requires> requires) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(requires.size());
-                cob.anewarray(CD_REQUIRES);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(requires.size())
+                   .anewarray(CD_REQUIRES);
                 int arrayIndex = 0;
                 for (Requires require : sorted(requires)) {
                     String compiledVersion = null;
@@ -1071,13 +1076,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         compiledVersion = require.compiledVersion().get().toString();
                     }
 
-                    cob.stackInstruction(Opcode.DUP);               // arrayref
-                    cob.constantInstruction(arrayIndex++);
+                    cob.dup()               // arrayref
+                       .constantInstruction(arrayIndex++);
                     newRequires(require.modifiers(), require.name(), compiledVersion);
-                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                    cob.aastore();
                 }
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "requires", MTD_REQUIRES_ARRAY, false);
+                cob.invokevirtual(CD_MODULE_BUILDER,
+                                  "requires",
+                                  MTD_REQUIRES_ARRAY);
             }
 
             /*
@@ -1088,15 +1094,17 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void newRequires(Set<Requires.Modifier> mods, String name, String compiledVersion) {
                 int varIndex = dedupSetBuilder.indexOfRequiresModifiers(cob, mods);
-                cob.loadInstruction(TypeKind.ReferenceType, varIndex);
-                cob.constantInstruction(name);
+                cob.aload(varIndex)
+                   .constantInstruction(name);
                 if (compiledVersion != null) {
-                    cob.constantInstruction(compiledVersion);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
-                        "newRequires", MTD_REQUIRES_SET_STRING_STRING, false);
+                    cob.constantInstruction(compiledVersion)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newRequires",
+                                     MTD_REQUIRES_SET_STRING_STRING);
                 } else {
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
-                        "newRequires", MTD_REQUIRES_SET_STRING, false);
+                    cob.invokestatic(CD_MODULE_BUILDER,
+                                     "newRequires",
+                                     MTD_REQUIRES_SET_STRING);
                 }
             }
 
@@ -1107,18 +1115,19 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              *
              */
             void exports(Set<Exports> exports) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(exports.size());
-                cob.anewarray(CD_EXPORTS);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(exports.size())
+                   .anewarray(CD_EXPORTS);
                 int arrayIndex = 0;
                 for (Exports export : sorted(exports)) {
-                    cob.stackInstruction(Opcode.DUP);    // arrayref
-                    cob.constantInstruction(arrayIndex++);
+                    cob.dup()    // arrayref
+                       .constantInstruction(arrayIndex++);
                     newExports(export.modifiers(), export.source(), export.targets());
-                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                    cob.aastore();
                 }
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "exports", MTD_EXPORTS_ARRAY, false);
+                cob.invokevirtual(CD_MODULE_BUILDER,
+                                  "exports",
+                                  MTD_EXPORTS_ARRAY);
             }
 
             /*
@@ -1140,16 +1149,18 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 int modifiersSetIndex = dedupSetBuilder.indexOfExportsModifiers(cob, ms);
                 if (!targets.isEmpty()) {
                     int stringSetIndex = dedupSetBuilder.indexOfStringSet(cob, targets);
-                    cob.loadInstruction(TypeKind.ReferenceType, modifiersSetIndex);
-                    cob.constantInstruction(pn);
-                    cob.loadInstruction(TypeKind.ReferenceType, stringSetIndex);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
-                        "newExports", MTD_EXPORTS_MODIFIER_SET_STRING_SET, false);
+                    cob.aload(modifiersSetIndex)
+                       .constantInstruction(pn)
+                       .aload(stringSetIndex)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newExports",
+                                     MTD_EXPORTS_MODIFIER_SET_STRING_SET);
                 } else {
-                    cob.loadInstruction(TypeKind.ReferenceType, modifiersSetIndex);
-                    cob.constantInstruction(pn);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
-                        "newExports", MTD_EXPORTS_MODIFIER_SET_STRING, false);
+                    cob.aload(modifiersSetIndex)
+                       .constantInstruction(pn)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newExports",
+                                     MTD_EXPORTS_MODIFIER_SET_STRING);
                 }
             }
 
@@ -1160,18 +1171,19 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.opens(Opens[])
              */
             void opens(Set<Opens> opens) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(opens.size());
-                cob.anewarray(CD_OPENS);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(opens.size())
+                   .anewarray(CD_OPENS);
                 int arrayIndex = 0;
                 for (Opens open : sorted(opens)) {
-                    cob.stackInstruction(Opcode.DUP);    // arrayref
-                    cob.constantInstruction(arrayIndex++);
+                    cob.dup()    // arrayref
+                       .constantInstruction(arrayIndex++);
                     newOpens(open.modifiers(), open.source(), open.targets());
-                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                    cob.aastore();
                 }
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "opens", MTD_OPENS_ARRAY, false);
+                cob.invokevirtual(CD_MODULE_BUILDER,
+                                  "opens",
+                                  MTD_OPENS_ARRAY);
             }
 
             /*
@@ -1193,16 +1205,18 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 int modifiersSetIndex = dedupSetBuilder.indexOfOpensModifiers(cob, ms);
                 if (!targets.isEmpty()) {
                     int stringSetIndex = dedupSetBuilder.indexOfStringSet(cob, targets);
-                    cob.loadInstruction(TypeKind.ReferenceType, modifiersSetIndex);
-                    cob.constantInstruction(pn);
-                    cob.loadInstruction(TypeKind.ReferenceType, stringSetIndex);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
-                        "newOpens", MTD_OPENS_MODIFIER_SET_STRING_SET, false);
+                    cob.aload(modifiersSetIndex)
+                       .constantInstruction(pn)
+                       .aload(stringSetIndex)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newOpens",
+                                     MTD_OPENS_MODIFIER_SET_STRING_SET);
                 } else {
-                    cob.loadInstruction(TypeKind.ReferenceType, modifiersSetIndex);
-                    cob.constantInstruction(pn);
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
-                        "newOpens", MTD_OPENS_MODIFIER_SET_STRING, false);
+                    cob.aload(modifiersSetIndex)
+                       .constantInstruction(pn)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newOpens",
+                                     MTD_OPENS_MODIFIER_SET_STRING);
                 }
             }
 
@@ -1211,11 +1225,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void uses(Set<String> uses) {
                 int varIndex = dedupSetBuilder.indexOfStringSet(cob, uses);
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.loadInstruction(TypeKind.ReferenceType, varIndex);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "uses", MTD_SET, false);
-                cob.stackInstruction(Opcode.POP);
+                cob.aload(BUILDER_VAR)
+                   .aload(varIndex)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "uses",
+                                  MTD_SET)
+                   .pop();
             }
 
             /*
@@ -1249,21 +1264,24 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.newProvides(service, providers);
              */
             void newProvides(String service, List<String> providers) {
-                cob.constantInstruction(service);
-                cob.constantInstruction(providers.size());
-                cob.anewarray(CD_String);
+                cob.constantInstruction(service)
+                   .constantInstruction(providers.size())
+                   .anewarray(CD_String);
                 int arrayIndex = 0;
                 for (String provider : providers) {
-                    cob.stackInstruction(Opcode.DUP);    // arrayref
-                    cob.constantInstruction(arrayIndex++);
-                    cob.constantInstruction(provider);
-                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                    cob.dup()    // arrayref
+                       .constantInstruction(arrayIndex++)
+                       .constantInstruction(provider)
+                       .aastore();
                 }
-                cob.invokeInstruction(Opcode.INVOKESTATIC, CD_List,
-                    "of", MethodTypeDesc.ofDescriptor(
-                            "([Ljava/lang/Object;)Ljava/util/List;"), true);
-                cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MODULE_BUILDER,
-                    "newProvides", MTD_PROVIDES_STRING_LIST, false);
+                cob.invokestatic(CD_List,
+                                 "of",
+                                 MethodTypeDesc.ofDescriptor(
+                                        "([Ljava/lang/Object;)Ljava/util/List;"),
+                                 true)
+                   .invokestatic(CD_MODULE_BUILDER,
+                                 "newProvides",
+                                 MTD_PROVIDES_STRING_LIST);
             }
 
             /*
@@ -1271,41 +1289,45 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void packages(Set<String> packages) {
                 int varIndex = dedupSetBuilder.newStringSet(cob, packages);
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.loadInstruction(TypeKind.ReferenceType, varIndex);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "packages", MTD_SET, false);
-                cob.stackInstruction(Opcode.POP);
+                cob.aload(BUILDER_VAR)
+                   .aload(varIndex)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "packages",
+                                  MTD_SET)
+                   .pop();
             }
 
             /*
              * Invoke Builder.mainClass(String cn)
              */
             void mainClass(String cn) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(cn);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "mainClass", MTD_STRING, false);
-                cob.stackInstruction(Opcode.POP);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(cn)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "mainClass",
+                                  MTD_STRING)
+                   .pop();
             }
 
             /*
              * Invoke Builder.version(Version v);
              */
             void version(Version v) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(v.toString());
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "version", MTD_STRING, false);
-                cob.stackInstruction(Opcode.POP);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(v.toString())
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "version",
+                                  MTD_STRING)
+                   .pop();
             }
 
             void invokeBuilderMethod(String methodName, String value) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(value);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    methodName, MTD_STRING, false);
-                cob.stackInstruction(Opcode.POP);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(value)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  methodName,
+                                  MTD_STRING)
+                   .pop();
             }
         }
 
@@ -1351,14 +1373,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Create ModuleHashes.Builder instance
              */
             void newModuleHashesBuilder() {
-                cob.newObjectInstruction(MODULE_HASHES_BUILDER);
-                cob.stackInstruction(Opcode.DUP);
-                cob.constantInstruction(recordedHashes.algorithm());
-                cob.constantInstruction(((4 * recordedHashes.names().size()) / 3) + 1);
-                cob.invokeInstruction(Opcode.INVOKESPECIAL, MODULE_HASHES_BUILDER,
-                    "<init>", MethodTypeDesc.of(CD_void, CD_String, CD_int), false);
-                cob.storeInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
+                cob.new_(MODULE_HASHES_BUILDER)
+                   .dup()
+                   .constantInstruction(recordedHashes.algorithm())
+                   .constantInstruction(((4 * recordedHashes.names().size()) / 3) + 1)
+                   .invokespecial(MODULE_HASHES_BUILDER,
+                                  "<init>",
+                                  MethodTypeDesc.of(CD_void, CD_String, CD_int))
+                   .astore(BUILDER_VAR)
+                   .aload(BUILDER_VAR);
             }
 
 
@@ -1367,34 +1390,34 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * ModuleHashes to the hashes array
              */
             void pushModuleHashes() {
-                cob.loadInstruction(TypeKind.ReferenceType, MH_VAR);
-                cob.constantInstruction(index);
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_HASHES_BUILDER,
-                    "build", MethodTypeDesc.of(CD_MODULE_HASHES),
-                    false);
-                cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                cob.aload(MH_VAR)
+                   .constantInstruction(index)
+                   .aload(BUILDER_VAR)
+                   .invokevirtual(MODULE_HASHES_BUILDER,
+                                  "build",
+                                  MethodTypeDesc.of(CD_MODULE_HASHES))
+                   .aastore();
             }
 
             /*
              * Invoke ModuleHashes.Builder.hashForModule(String name, byte[] hash);
              */
             void hashForModule(String name, byte[] hash) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(name);
-
-                cob.constantInstruction(hash.length);
-                cob.newarray(TypeKind.ByteType);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(name)
+                   .constantInstruction(hash.length)
+                   .newarray(TypeKind.ByteType);
                 for (int i = 0; i < hash.length; i++) {
-                    cob.stackInstruction(Opcode.DUP);              // arrayref
-                    cob.constantInstruction(i);
-                    cob.constantInstruction((int)hash[i]);
-                    cob.arrayStoreInstruction(TypeKind.ByteType);
+                    cob.dup()              // arrayref
+                       .constantInstruction(i)
+                       .constantInstruction((int)hash[i])
+                       .bastore();
                 }
 
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, MODULE_HASHES_BUILDER,
-                    "hashForModule", STRING_BYTE_ARRAY_SIG, false);
-                cob.stackInstruction(Opcode.POP);
+                cob.invokevirtual(MODULE_HASHES_BUILDER,
+                                  "hashForModule",
+                                  STRING_BYTE_ARRAY_SIG)
+                   .pop();
             }
         }
 
@@ -1579,31 +1602,34 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             private void generateSetOf(CodeBuilder cob, int index) {
                 if (elements.size() <= 10) {
                     // call Set.of(e1, e2, ...)
-                    StringBuilder sb = new StringBuilder("(");
                     for (T t : sorted(elements)) {
-                        sb.append("Ljava/lang/Object;");
                         visitElement(t, cob);
                     }
-                    sb.append(")Ljava/util/Set;");
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_Set,
-                            "of", MethodTypeDesc.ofDescriptor(sb.toString()), true);
+                    var mtdArgs = new ClassDesc[elements.size()];
+                    Arrays.fill(mtdArgs, CD_Object);
+                    cob.invokestatic(CD_Set,
+                                     "of",
+                                     MethodTypeDesc.of(CD_Set, mtdArgs),
+                                     true);
                 } else {
                     // call Set.of(E... elements)
-                    cob.constantInstruction(elements.size());
-                    cob.anewarray(CD_String);
+                    cob.constantInstruction(elements.size())
+                       .anewarray(CD_String);
                     int arrayIndex = 0;
                     for (T t : sorted(elements)) {
-                        cob.stackInstruction(Opcode.DUP);    // arrayref
-                        cob.constantInstruction(arrayIndex);
+                        cob.dup()    // arrayref
+                           .constantInstruction(arrayIndex);
                         visitElement(t, cob);  // value
-                        cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                        cob.aastore();
                         arrayIndex++;
                     }
-                    cob.invokeInstruction(Opcode.INVOKESTATIC, CD_Set,
-                            "of", MethodTypeDesc.ofDescriptor(
-                                    "([Ljava/lang/Object;)Ljava/util/Set;"), true);
+                    cob.invokestatic(CD_Set,
+                                     "of",
+                                     MethodTypeDesc.ofDescriptor(
+                                            "([Ljava/lang/Object;)Ljava/util/Set;"),
+                                     true);
                 }
-                cob.storeInstruction(TypeKind.ReferenceType, index);
+                cob.astore(index);
             }
         }
 
@@ -1626,7 +1652,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             @Override
             void visitElement(T t, CodeBuilder cob) {
-                cob.fieldInstruction(Opcode.GETSTATIC, classDesc, t.toString(), classDesc);
+                cob.getstatic(classDesc, t.toString(), classDesc);
             }
         }
     }
@@ -1645,94 +1671,85 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASSNAME + ".class";
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.build(
                 CD_SYSTEM_MODULES_MAP,
-                clb -> {
-                    clb.withFlags(ACC_FINAL + ACC_SUPER);
-                    clb.withVersion(52, 0);
+                clb -> clb.withFlags(ACC_FINAL + ACC_SUPER)
+                          .withVersion(52, 0)
 
-                    // <init>
-                    clb.withMethod("<init>",
-                            MethodTypeDesc.of(CD_void),
-                            0,
-                            mb -> mb.withCode(cob -> {
-                                cob.loadInstruction(TypeKind.ReferenceType, 0);
-                                cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                                      CD_Object,
-                                                     "<init>",
-                                                      MethodTypeDesc.of(CD_void),
-                                                      false);
-                                cob.returnInstruction(TypeKind.VoidType);
-                            }));
+                          // <init>
+                          .withMethodBody(
+                                  "<init>",
+                                  MethodTypeDesc.of(CD_void),
+                                  0,
+                                  cob -> cob.aload(0)
+                                            .invokespecial(CD_Object,
+                                                           "<init>",
+                                                           MethodTypeDesc.of(CD_void))
+                                            .return_())
 
-                    // allSystemModules()
-                    clb.withMethod("allSystemModules",
-                            MethodTypeDesc.of(CD_SYSTEM_MODULES),
-                            ACC_STATIC,
-                            mb -> mb.withFlags(ACC_STATIC).withCode(cob -> {
-                                cob.newObjectInstruction(allSystemModules);
-                                cob.stackInstruction(Opcode.DUP);
-                                cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                                      allSystemModules,
-                                                      "<init>",
-                                                      MethodTypeDesc.of(CD_void),
-                                                      false);
-                                cob.returnInstruction(TypeKind.ReferenceType);
-                            }));
+                          // allSystemModules()
+                          .withMethodBody(
+                                  "allSystemModules",
+                                  MethodTypeDesc.of(CD_SYSTEM_MODULES),
+                                  ACC_STATIC,
+                                  cob -> cob.new_(allSystemModules)
+                                            .dup()
+                                            .invokespecial(allSystemModules,
+                                                           "<init>",
+                                                           MethodTypeDesc.of(CD_void))
+                                            .areturn())
 
-                    // defaultSystemModules()
-                    clb.withMethod("defaultSystemModules",
-                            MethodTypeDesc.of(CD_SYSTEM_MODULES),
-                            ACC_STATIC,
-                            mb -> mb.withFlags(ACC_STATIC).withCode(cob -> {
-                                cob.newObjectInstruction(defaultSystemModules);
-                                cob.stackInstruction(Opcode.DUP);
-                                cob.invokeInstruction(Opcode.INVOKESPECIAL,
-                                                      defaultSystemModules,
-                                                      "<init>",
-                                                       MethodTypeDesc.of(CD_void),
-                                                      false);
-                                cob.returnInstruction(TypeKind.ReferenceType);
-                            }));
+                          // defaultSystemModules()
+                          .withMethodBody(
+                                  "defaultSystemModules",
+                                   MethodTypeDesc.of(CD_SYSTEM_MODULES),
+                                   ACC_STATIC,
+                                   cob -> cob.new_(defaultSystemModules)
+                                             .dup()
+                                             .invokespecial(defaultSystemModules,
+                                                            "<init>",
+                                                            MethodTypeDesc.of(CD_void))
+                                             .areturn())
 
-                    // moduleNames()
-                    clb.withMethod("moduleNames",
-                            MethodTypeDesc.of(CD_String.arrayType()),
-                            ACC_STATIC,
-                            mb -> mb.withFlags(ACC_STATIC).withCode(cob -> {
-                                cob.constantInstruction(map.size());
-                                cob.anewarray(CD_String);
+                          // moduleNames()
+                          .withMethodBody(
+                                  "moduleNames",
+                                  MethodTypeDesc.of(CD_String.arrayType()),
+                                  ACC_STATIC,
+                                  cob -> {
+                                      cob.constantInstruction(map.size());
+                                      cob.anewarray(CD_String);
 
-                                int index = 0;
-                                for (String moduleName : sorted(map.keySet())) {
-                                    cob.stackInstruction(Opcode.DUP); // arrayref
-                                    cob.constantInstruction(index);
-                                    cob.constantInstruction(moduleName);
-                                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
-                                    index++;
-                                }
+                                      int index = 0;
+                                      for (String moduleName : sorted(map.keySet())) {
+                                          cob.dup() // arrayref
+                                             .constantInstruction(index)
+                                             .constantInstruction(moduleName)
+                                             .aastore();
+                                          index++;
+                                      }
 
-                                cob.returnInstruction(TypeKind.ReferenceType);
-                            }));
+                                      cob.areturn();
+                                  })
 
-                    // classNames()
-                    clb.withMethod("classNames",
-                            MethodTypeDesc.of(CD_String.arrayType()),
-                            ACC_STATIC,
-                            mb -> mb.withFlags(ACC_STATIC).withCode(cob -> {
-                                cob.constantInstruction(map.size());
-                                cob.anewarray(CD_String);
+                          // classNames()
+                          .withMethodBody(
+                                  "classNames",
+                                  MethodTypeDesc.of(CD_String.arrayType()),
+                                  ACC_STATIC,
+                                  cob -> {
+                                      cob.constantInstruction(map.size())
+                                         .anewarray(CD_String);
 
-                                int index = 0;
-                                for (String className : sorted(map.values())) {
-                                    cob.stackInstruction(Opcode.DUP); // arrayref
-                                    cob.constantInstruction(index);
-                                    cob.constantInstruction(className);
-                                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
-                                    index++;
-                                }
+                                      int index = 0;
+                                      for (String className : sorted(map.values())) {
+                                          cob.dup() // arrayref
+                                             .constantInstruction(index)
+                                             .constantInstruction(className.replace('/', '.'))
+                                             .aastore();
+                                          index++;
+                                      }
 
-                                cob.returnInstruction(TypeKind.ReferenceType);
-                            }));
-                }));
+                                      cob.areturn();
+                                  })));
 
         out.add(e);
 
