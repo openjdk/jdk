@@ -4417,9 +4417,8 @@ XXX Code for transations where no currency is involved
                 <!-- gregorian territories are assumed, so these are all in addition -->
         <calendar type="japanese">
           <calendarSystem type="solar" />
+          <inheritEras calendar="gregorian" />
           <eras>
-              <era type="-2" end="0-12-31" code="japanese-inverse" aliases="gregory-inverse bc bce"/>
-              <era type="-1" start="1-01-01" code="japanese" aliases="gregory ad ce"/>
               <era type="0" start="645-6-19"/>
               <era type="1" start="650-2-15"/>
               <era type="2" start="672-1-1"/>

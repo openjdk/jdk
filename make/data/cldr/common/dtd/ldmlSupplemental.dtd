@@ -216,7 +216,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT calendarData ( calendar* ) >
 
-<!ELEMENT calendar ( calendarSystem?, eras? ) >
+<!ELEMENT calendar ( calendarSystem?, inheritEras?, eras? ) >
 <!ATTLIST calendar type NMTOKEN #REQUIRED >
     <!--@MATCH:bcp47/ca-->
 <!ATTLIST calendar territories NMTOKENS #IMPLIED >
@@ -237,13 +237,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST calendarSystem references CDATA #IMPLIED >
     <!--@METADATA-->
 
+<!ELEMENT inheritEras EMPTY >
+<!ATTLIST inheritEras calendar NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+    <!--@MATCH:bcp47/ca-->
+
 <!ELEMENT eras ( era* ) >
 <!ATTLIST eras references CDATA #IMPLIED >
     <!--@METADATA-->
 
 <!ELEMENT era EMPTY >
 <!ATTLIST era type NMTOKEN #REQUIRED >
-    <!--@MATCH:range/-2~250-->
+    <!--@MATCH:range/0~250-->
 <!ATTLIST era start CDATA #IMPLIED >
     <!--@MATCH:time/yyyy-MM-dd-->
     <!--@VALUE-->
