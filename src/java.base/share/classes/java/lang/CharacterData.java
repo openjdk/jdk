@@ -69,7 +69,7 @@ abstract class CharacterData {
     // Should revisit after optimization of table initialization.
 
     static final CharacterData of(int ch) {
-        if (ch >>> 8 == 0) {     // fast-path
+        if (ch >= 0 && ch <= 0xFF) {     // fast-path
             return CharacterDataLatin1.instance;
         } else {
             return switch (ch >>> 16) {  //plane 00-16
