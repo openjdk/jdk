@@ -882,14 +882,14 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for "(x >> C1) << C2"
   if (add1_op == Op_RShiftI || add1_op == Op_URShiftI) {
+    int add1Con = 0;
+    const_shift_count(phase, add1, &add1Con);
+
     // Special case C1 == C2, which just masks off low bits
-    if (add1->in(2) == in(2)) {
+    if (add1Con > 0 && con == add1Con) {
       // Convert to "(x & -(1 << C2))"
       return new AndINode(add1->in(1), phase->intcon(-(1 << con)));
     } else {
-      int add1Con = 0;
-      const_shift_count(phase, add1, &add1Con);
-
       // Wait until the right shift has been sharpened to the correct count
       if (add1Con > 0 && add1Con < BitsPerJavaInteger) {
         // As loop parsing can produce LShiftI nodes, we should wait until the graph is fully formed
@@ -1058,14 +1058,14 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for "(x >> C1) << C2"
   if (add1_op == Op_RShiftL || add1_op == Op_URShiftL) {
+    int add1Con = 0;
+    const_shift_count(phase, add1, &add1Con);
+
     // Special case C1 == C2, which just masks off low bits
-    if (add1->in(2) == in(2)) {
+    if (add1Con > 0 && con == add1Con) {
       // Convert to "(x & -(1 << C2))"
       return new AndLNode(add1->in(1), phase->longcon(-(CONST64(1) << con)));
     } else {
-      int add1Con = 0;
-      const_shift_count(phase, add1, &add1Con);
-
       // Wait until the right shift has been sharpened to the correct count
       if (add1Con > 0 && add1Con < BitsPerJavaLong) {
         // As loop parsing can produce LShiftI nodes, we should wait until the graph is fully formed
