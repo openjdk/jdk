@@ -1053,25 +1053,24 @@ public final class Matcher implements MatchResult {
                     int refNum = -1;
                     if (nextChar == '{') {
                         cursor++;
-                        StringBuilder gsb = new StringBuilder();
+                        int begin = cursor;
                         while (cursor < replacement.length()) {
                             nextChar = replacement.charAt(cursor);
                             if (ASCII.isLower(nextChar) ||
                                     ASCII.isUpper(nextChar) ||
                                     ASCII.isDigit(nextChar)) {
-                                gsb.append(nextChar);
                                 cursor++;
                             } else {
                                 break;
                             }
                         }
-                        if (gsb.length() == 0)
+                        if (begin == cursor)
                             throw new IllegalArgumentException(
                                     "named capturing group has 0 length name");
                         if (nextChar != '}')
                             throw new IllegalArgumentException(
                                     "named capturing group is missing trailing '}'");
-                        String gname = gsb.toString();
+                        String gname = replacement.substring(begin, cursor);
                         if (ASCII.isDigit(gname.charAt(0)))
                             throw new IllegalArgumentException(
                                     "capturing group name {" + gname +
