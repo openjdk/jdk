@@ -47,10 +47,6 @@
 
 package nsk.stress.strace;
 
-import nsk.share.ArgumentParser;
-import nsk.share.Log;
-
-import java.io.PrintStream;
 import java.util.Map;
 
 /**
@@ -66,30 +62,16 @@ public class strace004 extends StraceBase {
     static final int DEPTH = 100;
     static final int THRD_COUNT = 100;
     static final int REPEAT_COUNT = 10;
-
     static volatile boolean isLocked = false;
-    static PrintStream out;
-    static long waitTime = 2;
 
     static Object waitStart = new Object();
 
     static strace004Thread[] threads;
     static StackTraceElement[][] snapshots = new StackTraceElement[THRD_COUNT][];
-    static Log log;
 
     volatile int achivedCount = 0;
 
     public static void main(String[] args) {
-        out = System.out;
-        int exitCode = run(args);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String[] args) {
-        ArgumentParser argHandler = new ArgumentParser(args);
-        log = new Log(out, argHandler);
-        waitTime = argHandler.getWaitTime() * 60000;
-
         strace004 test = new strace004();
         boolean res = true;
 
@@ -103,11 +85,9 @@ public class strace004 extends StraceBase {
         }
 
         if (!res) {
-            complain("***>>>Test failed<<<***");
-            return 2;
+            new RuntimeException("***>>>Test failed<<<***");
         }
 
-        return 0;
     }
 
     void startThreads() {
@@ -153,9 +133,9 @@ public class strace004 extends StraceBase {
 
     boolean makeSnapshot(int repeat_number) {
 
-        Map traces = Thread.getAllStackTraces();
+        Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
         for (int i = 0; i < threads.length; i++) {
-            snapshots[i] = (StackTraceElement[]) traces.get(threads[i]);
+            snapshots[i] = traces.get(threads[i]);
         }
 
         return checkTraces(repeat_number);
@@ -217,14 +197,6 @@ public class strace004 extends StraceBase {
             complain("" + e);
         }
         isLocked = false;
-    }
-
-    static void display(String message) {
-        log.display(message);
-    }
-
-    static void complain(String message) {
-        log.complain(message);
     }
 
 }

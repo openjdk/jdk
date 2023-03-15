@@ -451,7 +451,7 @@ else
                         -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
    endif
    ifeq ($(call isTargetOs, linux macosx), true)
-     HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
+     HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES -DHB_NO_VISIBILITY
    endif
 
    # Early re-canonizing has to be disabled to workaround an internal XlC compiler error

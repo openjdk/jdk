@@ -37,6 +37,7 @@
  *                   compiler.vectorization.runner.LoopRangeStrideTest
  *
  * @requires vm.compiler2.enabled & vm.flagless
+ * @requires (os.arch=="amd64" | os.arch=="x86_64" | os.simpleArch == "aarch64")
  */
 
 package compiler.vectorization.runner;

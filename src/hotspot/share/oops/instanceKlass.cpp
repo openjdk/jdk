@@ -74,6 +74,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -980,18 +981,18 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   // If the initialization error is OOM, this might not work, but if GC kicks in
   // this would be still be helpful.
   JavaThread* THREAD = current;
-  Handle cause = java_lang_Throwable::get_cause_with_stack_trace(exception, THREAD);
-  if (HAS_PENDING_EXCEPTION || cause.is_null()) {
-    CLEAR_PENDING_EXCEPTION;
+  Handle init_error = java_lang_Throwable::create_initialization_error(current, exception);
+  ResourceMark rm(THREAD);
+  if (init_error.is_null()) {
+    log_trace(class, init)("Initialization error is null for class %s", external_name());
     return;
   }
 
   MutexLocker ml(THREAD, ClassInitError_lock);
-  OopHandle elem = OopHandle(Universe::vm_global(), cause());
-  bool created = false;
+  OopHandle elem = OopHandle(Universe::vm_global(), init_error());
+  bool created;
   _initialization_error_table.put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
-  ResourceMark rm(THREAD);
   log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 
@@ -1178,15 +1179,20 @@ void InstanceKlass::initialize_impl(TRAPS) {
 void InstanceKlass::set_initialization_state_and_notify(ClassState state, JavaThread* current) {
   MonitorLocker ml(current, _init_monitor);
 
-  // Now flush all code that assume the class is not linked.
-  // Set state under the Compile_lock also.
   if (state == linked && UseVtableBasedCHA && Universe::is_fully_initialized()) {
-    MutexLocker ml(current, Compile_lock);
+    DeoptimizationScope deopt_scope;
+    {
+      // Now mark all code that assumes the class is not linked.
+      // Set state under the Compile_lock also.
+      MutexLocker ml(current, Compile_lock);
 
-    set_init_thread(nullptr); // reset _init_thread before changing _init_state
-    set_init_state(state);
+      set_init_thread(nullptr); // reset _init_thread before changing _init_state
+      set_init_state(state);
 
-    CodeCache::flush_dependents_on(this);
+      CodeCache::mark_dependents_on(&deopt_scope, this);
+    }
+    // Perform the deopt handshake outside Compile_lock.
+    deopt_scope.deoptimize_marked();
   } else {
     set_init_thread(nullptr); // reset _init_thread before changing _init_state
     set_init_state(state);
@@ -2325,8 +2331,8 @@ inline DependencyContext InstanceKlass::dependencies() {
   return dep_context;
 }
 
-int InstanceKlass::mark_dependent_nmethods(KlassDepChange& changes) {
-  return dependencies().mark_dependent_nmethods(changes);
+void InstanceKlass::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, KlassDepChange& changes) {
+  dependencies().mark_dependent_nmethods(deopt_scope, changes);
 }
 
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
@@ -2406,7 +2412,21 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 #if INCLUDE_JVMTI
   it->push(&_previous_versions);
 #endif
-  it->push(&_methods);
+#if INCLUDE_CDS
+  // For "old" classes with methods containing the jsr bytecode, the _methods array will
+  // be rewritten during runtime (see Rewriter::rewrite_jsrs()). So setting the _methods to
+  // be writable. The length check on the _methods is necessary because classes which
+  // don't have any methods share the Universe::_the_empty_method_array which is in the RO region.
+  if (_methods != nullptr && _methods->length() > 0 &&
+      !can_be_verified_at_dumptime() && methods_contain_jsr_bytecode()) {
+    // To handle jsr bytecode, new Method* maybe stored into _methods
+    it->push(&_methods, MetaspaceClosure::_writable);
+  } else {
+#endif
+    it->push(&_methods);
+#if INCLUDE_CDS
+  }
+#endif
   it->push(&_default_methods);
   it->push(&_local_interfaces);
   it->push(&_transitive_interfaces);
@@ -2613,6 +2633,21 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     }
   }
   return true;
+}
+
+bool InstanceKlass::methods_contain_jsr_bytecode() const {
+  Thread* thread = Thread::current();
+  for (int i = 0; i < _methods->length(); i++) {
+    methodHandle m(thread, _methods->at(i));
+    BytecodeStream bcs(m);
+    while (!bcs.is_last_bytecode()) {
+      Bytecodes::Code opcode = bcs.next();
+      if (opcode == Bytecodes::_jsr || opcode == Bytecodes::_jsr_w) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 #endif // INCLUDE_CDS
 
@@ -3272,7 +3307,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   return found;
 }
 
-int InstanceKlass::mark_osr_nmethods(const Method* m) {
+int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m) {
   MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
@@ -3280,7 +3315,7 @@ int InstanceKlass::mark_osr_nmethods(const Method* m) {
   while (osr != nullptr) {
     assert(osr->is_osr_method(), "wrong kind of nmethod found in chain");
     if (osr->method() == m) {
-      osr->mark_for_deoptimization();
+      deopt_scope->mark(osr);
       found++;
     }
     osr = osr->osr_link();
