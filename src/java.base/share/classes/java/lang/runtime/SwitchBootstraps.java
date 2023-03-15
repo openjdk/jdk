@@ -288,17 +288,4 @@ public class SwitchBootstraps {
 
         return labels.length;
     }
-
-    /**
-     * X
-     * @param carrier X
-     * @param componentIndex X
-     * @param params X
-     * @return X
-     * @throws Throwable X
-     */
-    public static Object readComponent(Object carrier, int componentIndex, Class<?>... params) throws Throwable {
-        MethodType returnType = MethodType.methodType(Object.class, params);
-        return Carriers.component(returnType, componentIndex).invoke(carrier);
-    }
 }

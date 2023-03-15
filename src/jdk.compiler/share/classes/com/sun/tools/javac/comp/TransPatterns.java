@@ -307,10 +307,12 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private UnrolledRecordPattern unrollRecordPattern(JCRecordPattern recordPattern) {
-//            if (o instanceof Matcher $m && Matcher."Matcher$Ljava\\|lang\\|String\\?$I"($m)) instanceof Object unmatched) {
-//                MethodType returnType = MethodType.methodType(Object.class, String.class, int.class); //TODO: return type of the Carrier constructor?
-//                    os = (String) Carriers.component(returnType, 0).invoke(unmatched);
-//                    oi = (int) Carriers.component(returnType, 1).invoke(unmatched);
+        // if (o instanceof Matcher $m && Matcher."Matcher$Ljava\\|lang\\|String\\?$I"($m)) instanceof Object unmatched) {
+        //      MethodType returnType = MethodType.methodType(Object.class, String.class, int.class); //TODO: return type of the Carrier constructor?
+        //      os = (String) Carriers.component(returnType, 0).invoke(unmatched);
+        //      oi = (int) Carriers.component(returnType, 1).invoke(unmatched);
+        //      ...
+        // }
         if (recordPattern.matcher != null) {
             Type recordType = recordPattern.record.erasure(types);
             BindingSymbol tempBind = new BindingSymbol(Flags.SYNTHETIC,
@@ -323,8 +325,6 @@ public class TransPatterns extends TreeTranslator {
             JCVariableDecl unmatchedVar = make.VarDef(unmatched, null);
             JCExpression nullCheck = make.TypeTest(make.App(make.Select(make.Ident(recordPattern.matcher.owner), recordPattern.matcher), List.of(make.Ident(tempBind))).setType(syms.objectType),
                           (JCBindingPattern) make.BindingPattern(unmatchedVar).setType(unmatched.type)).setType(syms.booleanType);
-            
-
 
             VarSymbol recordBinding = recordBindingVar.sym;
             List<? extends RecordComponent> components = recordPattern.record.getRecordComponents();
@@ -334,10 +334,23 @@ public class TransPatterns extends TreeTranslator {
             JCExpression secondLevelChecks = null;
             int index = -1;
 
+            // TODO: Load it through ConstantDynamic for perf
+            MethodSymbol methodTypeCallSym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.methodTypeType, names.fromString("methodType"), List.of(syms.classType, types.makeArrayType(types.erasure(syms.classType))), List.nil());
+            List<JCExpression> params =  recordPattern.matcher.params.map(v -> classOfType(types.erasure(v.type), recordPattern.pos())).prepend(classOfType(syms.objectType, recordPattern.pos()));
+            JCMethodInvocation methodTypeCall = make.App(make.QualIdent(methodTypeCallSym), params).setType(syms.methodTypeType);
+            methodTypeCall.varargsElement = types.erasure(types.elemtype(methodTypeCallSym.type.getParameterTypes().last()));
+
+            VarSymbol methodTypeVar = new VarSymbol(Flags.SYNTHETIC,
+                    names.fromString("index" + target.syntheticNameChar() + variableIndex++),
+                    syms.methodTypeType,
+                    currentMethodSym);
+
+            JCVariableDecl returnTypeVar = make.VarDef(methodTypeVar, methodTypeCall);
+
+            // TODO: cleanup duplication
             while (components.nonEmpty()) {
                 index++;
 
-                RecordComponent component = components.head;
                 Type componentType = types.erasure(nestedFullComponentTypes.head);
                 JCPattern nestedPattern = TreeInfo.skipParens(nestedPatterns.head);
                 JCBindingPattern nestedBinding;
@@ -360,26 +373,19 @@ public class TransPatterns extends TreeTranslator {
                                                 types.boxedTypeOrType(types.erasure(nestedBinding.type)));
                 }
 
+                /*
+                *  Generate:
+                *       Carriers.component(returnType, componentIndex).invoke(carrier);
+                * */
+                MethodSymbol carriersComponentCallSym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.carriersType, names.fromString("component"), List.of(syms.methodTypeType, syms.intType), List.nil());
+                List<JCExpression> carriersComponentParams = List.of(methodTypeCall, makeLit(syms.intType, index));
+                JCMethodInvocation carriersComponentCall = make.App(make.QualIdent(carriersComponentCallSym), carriersComponentParams).setType(syms.methodHandleType);
 
-//                MethodType returnType = MethodType.methodType(Object.class, String.class, int.class); //TODO: return type of the Carrier constructor?
-//                    os = (String) Carriers.component(returnType, 0).invoke(unmatched);
+                List<JCExpression> invokeComponentParams = List.of(make.Ident(unmatched));
+                MethodSymbol invokeComponentCallSym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.methodHandleType, names.fromString("invoke"), List.of(syms.objectType), List.nil());
+                JCMethodInvocation invokeComponentCall = make.App(make.Select(carriersComponentCall, invokeComponentCallSym), invokeComponentParams);
 
-                
-                MethodSymbol msym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.switchBootstrapsType, names.fromString("readComponent"), List.of(syms.objectType, syms.intType, types.makeArrayType(types.erasure(syms.classType))), List.nil());
-                JCMethodInvocation componentAccessor =
-                        make.App(make.QualIdent(msym), recordPattern.matcher.params.map(v -> classOfType(types.erasure(v.type), recordPattern.pos())).prepend(makeLit(syms.intType, index)).prepend(make.Ident(unmatched)))
-                        .setType(syms.objectType);
-                componentAccessor.varargsElement = types.erasure(types.elemtype(msym.type.getParameterTypes().last()));
-//                        make.App(make.Select(convert(make.Ident(recordBinding), recordBinding.type), //TODO - cast needed????
-//                                 component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
-
-
-//                if (deconstructorCalls == null) {
-//                    deconstructorCalls = Collections.newSetFromMap(new IdentityHashMap<>());
-//                }
-//                deconstructorCalls.add(componentAccessor);
-                JCExpression accessedComponentValue =
-                        convert(componentAccessor, componentType);
+                JCExpression accessedComponentValue = convert(invokeComponentCall, componentType);
                 JCInstanceOf firstLevelCheck = (JCInstanceOf) make.TypeTest(accessedComponentValue, nestedBinding).setType(syms.booleanType);
                 //TODO: verify deep/complex nesting with nulls
                 firstLevelCheck.allowNull = allowNull;
@@ -401,7 +407,10 @@ public class TransPatterns extends TreeTranslator {
                     guard = mergeConditions(guard, secondLevelChecks);
                 }
             }
-            return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), guard);
+
+            LetExpr let = (LetExpr) make.LetExpr(returnTypeVar, guard).setType(syms.booleanType);
+            let.needsCond = true;
+            return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), let);
         }
         //Convert a record pattern in the basic binding pattern and additional conditions
         //implementing the record pattern:

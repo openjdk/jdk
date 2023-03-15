@@ -4,7 +4,6 @@
  * @compile Matcher.java
  * @run main Matcher
  */
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,33 +14,40 @@ import java.lang.template.Carriers;
 import java.util.Objects;
 
 public record Matcher(String s, int i) {
+    /*
+        TODO
+        ask about exceptions on matchers
+        ask about deprecated for matcher bindings -- makes sense at all?
+        generating the matcher body
+        separate compilation: Matcher attribute (ClassWriter, ClassReader)
+        reflection: JVM and javax.lang.Model support
+        clean TransPatterns.java
+        flags in Matcher attribute
+        overloading selection
+
+        OK
+        clean translation to not use SwitchBootstraps
+        test switch with the record Matcher
+    */
 
     public static void main(String... args) {
-        test(new Matcher("a", 0));
+        assertEquals("a", test(new Matcher("a", 0)));
         assertEquals(2, test2(new Matcher("a", 42)));
     }
 
-    public static void test(Object o) {
-        //original code:
+    public static String test(Object o) {
         if (o instanceof Matcher(String os, int oi)) {
-            System.err.println("os: " + os);
-            System.err.println("i: " + oi);
+            return os;
         }
+        return "error";
     }
 
     public static int test2(Matcher o) {
-        //original code:
         return switch (o) {
             case Matcher(String s, int i) when s.isEmpty() -> 1;
             case Matcher(String s, int i) when i == 42 -> 2;
             case Matcher mm -> 3;
         };
-    }
-
-    @Target(ElementType.METHOD) // TODO: element type must target matchers
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface MyCustomAnnotation{
-        int annotField();
     }
 
     //original code:
@@ -53,20 +59,12 @@ public record Matcher(String s, int i) {
         // i = this.i;
     }
 
-    /*
-        ask about exceptions on matchers
-        ask about deprecated for matcher bindings -- makes sense at all?
-        generating the matcher body
-        separate compilation: Matcher attribute (ClassWriter, ClassReader)
-        reflection: JVM and javax.lang.Model support
-        test switch with the record Matcher
-        clean translation to not use SwitchBootstraps
-        clean TransPatterns.java
-        flags in Matcher attribute
-        overloading selection
-    */
-
-    private static void assertEquals(int expected, int actual) {
+    @Target(ElementType.METHOD) // TODO: element type must target matchers
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface MyCustomAnnotation{
+        int annotField();
+    }
+    private static <T> void assertEquals(T expected, T actual) {
         if (!Objects.equals(expected, actual)) {
             throw new AssertionError("Expected: " + expected + ", but got: " + actual);
         }
