@@ -26,7 +26,7 @@
  * @summary Test transferFrom to a position greater than size
  * @library .. /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main TransferFromExtend
+ * @run junit TransferFromExtend
  * @key randomness
  */
 
@@ -38,72 +38,71 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
-import jdk.test.lib.RandomFactory;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardOpenOption.*;
+
+import jdk.test.lib.RandomFactory;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class TransferFromExtend {
     private static final Random RND = RandomFactory.getRandom();
 
-    private static final int ITERATIONS = 10;
+    private static final Path DIR = Path.of(System.getProperty("test.dir", "."));
 
-    private static final int TARGET_INITIAL_POS_MAX    = 1024;
-    private static final int FAST_TRANSFER_SIZE_MIN    = 16*1024 + 1;
-    private static final int FAST_TRANSFER_SIZE_MAX    = 500*1024;
-    private static final int TARGET_OFFSET_POS_MIN     = 1;
-    private static final int TARGET_OFFSET_POS_MAX     = 2048;
-    private static final int GENERIC_TRANSFER_SIZE_MAX = 64*1024;
-
-    public static void main(String[] args) throws IOException {
-        for (int i = 1; i <= ITERATIONS; i++) {
-            System.out.printf("Iteration %d of %d%n", i, ITERATIONS);
-            test();
+    private static Stream<Arguments> paramProvider(int transferSizeMin,
+                                                   int transferSizeMax) {
+        List<Arguments> list = new ArrayList<Arguments>();
+        int sizeDelta = transferSizeMax - transferSizeMin;
+        for (int i = 0; i < 10; i++) {
+            Arguments args =
+                Arguments.of(RND.nextInt(1024),
+                             transferSizeMin + RND.nextInt(sizeDelta),
+                             1 + RND.nextInt(2047));
+            list.add(args);
         }
+        return list.stream();
     }
 
-    private static final void test() throws IOException {
-        Path dir = Path.of(System.getProperty("test.dir", "."));
-        Path file = Files.createTempFile(dir, "foo", "bar");
-        try (FileChannel fc = FileChannel.open(file, DELETE_ON_CLOSE,
-                                               READ, WRITE)) {
-            fc.position(RND.nextInt(TARGET_INITIAL_POS_MAX));
-            fc.write(ByteBuffer.wrap(new byte[] {(byte)42}));
-            fromDirectlyOrMapped(dir, fc);
-            fromArbitrary(fc);
-        }
+    //
+    // transfer size must be greater than the threshold
+    // sun.nio.ch.FileChannelImpl::MAPPED_TRANSFER_THRESHOLD (16K)
+    // for a mapped transfer to be used when direct is unavailable
+    //
+    private static Stream<Arguments> fastParamProvider() {
+        return paramProvider(16*1024 + 1, 500*1024);
+    }
+
+    private static Stream<Arguments> slowParamProvider() {
+        return paramProvider(1, 64*1024);
     }
 
     //
     // Test the direct and memory-mapped paths. At present the direct path
     // is implemented only on Linux. The mapped path will be taken only if
-    // there is no direct path and the size of the transfer is more than 16K.
+    // there is no direct path and the size of the transfer is more than
+    // sun.nio.ch.FileChannelImpl::MAPPED_TRANSFER_THRESHOLD (16K).
     // This method therefore tests the direct path on Linux and the mapped
     // path on other platforms.
     //
-    private static void fromDirectlyOrMapped(Path dir, FileChannel target)
+    @ParameterizedTest
+    @MethodSource("fastParamProvider")
+    void fromFast(long initialPosition, int bufSize, long offset)
         throws IOException {
-        Path file = Files.createTempFile(dir, "foo", "bar");
+        Path file = Files.createTempFile(DIR, "foo", "bar");
         try (FileChannel src = FileChannel.open(file, DELETE_ON_CLOSE,
                                                 READ, WRITE)) {
-            int bufSize = FAST_TRANSFER_SIZE_MIN +
-                RND.nextInt(FAST_TRANSFER_SIZE_MAX - FAST_TRANSFER_SIZE_MIN);
             byte[] bytes = new byte[bufSize];
             RND.nextBytes(bytes);
             src.write(ByteBuffer.wrap(bytes), 0);
-
-            final long size = target.size();
-            final long position = size + TARGET_OFFSET_POS_MIN +
-                RND.nextInt(TARGET_OFFSET_POS_MAX - TARGET_OFFSET_POS_MIN);
-            final long count = src.size();
-            final long transferred = target.transferFrom(src, position, count);
-            if (transferred != count)
-                throw new RuntimeException(transferred + " != " + count);
-            ByteBuffer buf = ByteBuffer.allocate((int)count);
-            target.read(buf, position);
-            if (!Arrays.equals(buf.array(), bytes))
-                throw new RuntimeException("arrays unequal");
+            transferFrom(src, src.size(), initialPosition, offset, bytes);
         }
     }
 
@@ -111,18 +110,41 @@ public class TransferFromExtend {
     // Test the arbitrary source path. This method tests the
     // generic path on all platforms.
     //
-    private static void fromArbitrary(FileChannel target)
+    @ParameterizedTest
+    @MethodSource("slowParamProvider")
+    void fromSlow(long initialPosition, int bufSize, long offset)
         throws IOException {
-        int bufSize = 1 + RND.nextInt(GENERIC_TRANSFER_SIZE_MAX - 1);
         byte[] bytes = new byte[bufSize];
         RND.nextBytes(bytes);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         try (ReadableByteChannel src = Channels.newChannel(bais)) {
-            final long size = target.size();
-            final long position = size + TARGET_OFFSET_POS_MIN +
-                RND.nextInt(TARGET_OFFSET_POS_MAX - TARGET_OFFSET_POS_MIN);
-            final long count = bytes.length;
-            final long transferred = target.transferFrom(src, position, count);
+            transferFrom(src, bufSize, initialPosition, offset, bytes);
+        }
+    }
+
+    /**
+     * Tests transferring bytes to a FileChannel from a ReadableByteChannel.
+     *
+     * @param src        the source of the bytes to transfer
+     * @param count the  number of bytes to transfer
+     * @param initialPos the position of the target channel before the transfer
+     * @param offset     the offset beyong the end of the target channel
+     * @param bytes      the bytes expected to be transferred
+     *
+     * @throws RuntimeException if an unexpected number of bytes is transferred
+     *                          or the transferred values are not as expected
+     */
+    private static void transferFrom(ReadableByteChannel src, long count,
+                                     long initialPos, long offset, byte[] bytes)
+        throws IOException {
+        Path file = Files.createTempFile(DIR, "foo", "bar");
+        try (FileChannel target = FileChannel.open(file, DELETE_ON_CLOSE,
+                                                   READ, WRITE)) {
+            target.position(initialPos);
+            target.write(ByteBuffer.wrap(new byte[] {(byte)42}));
+
+            long position = target.size() + offset;
+            long transferred = target.transferFrom(src, position, count);
             if (transferred != count)
                 throw new RuntimeException(transferred + " != " + count);
             ByteBuffer buf = ByteBuffer.allocate((int)count);
