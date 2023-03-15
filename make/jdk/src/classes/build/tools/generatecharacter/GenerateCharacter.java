@@ -199,19 +199,19 @@ public class GenerateCharacter {
 
     // bit masks identify the 16-bit property field described above, in B
     // table
-    private static final long
-        maskOtherLowercase          = 0x000100000000L,
-        maskOtherUppercase          = 0x000200000000L,
-        maskOtherAlphabetic         = 0x000400000000L,
-        maskIdeographic             = 0x000800000000L,
-        maskIDStart                 = 0x001000000000L,
-        maskIDContinue              = 0x002000000000L,
-        maskEmoji                   = 0x004000000000L,
-        maskEmojiPresentation       = 0x008000000000L,
-        maskEmojiModifier           = 0x010000000000L,
-        maskEmojiModifierBase       = 0x020000000000L,
-        maskEmojiComponent          = 0x040000000000L,
-        maskExtendedPictographic    = 0x080000000000L;
+    static final long
+        maskOtherLowercase          = 1L << 32,
+        maskOtherUppercase          = 1L << 33,
+        maskOtherAlphabetic         = 1L << 34,
+        maskIdeographic             = 1L << 35,
+        maskIDStart                 = 1L << 36,
+        maskIDContinue              = 1L << 37,
+        maskEmoji                   = 1L << 38,
+        maskEmojiPresentation       = 1L << 39,
+        maskEmojiModifier           = 1L << 40,
+        maskEmojiModifierBase       = 1L << 41,
+        maskEmojiComponent          = 1L << 42,
+        maskExtendedPictographic    = 1L << 43;
 
     // Can compare masked values with these to determine
     // numeric or lexical types.
@@ -605,7 +605,7 @@ public class GenerateCharacter {
         for (int cp : emojiData.codepoints()) {
             var index = cp & 0xFFFF;
             if (index < map.length)
-                map[index] |= emojiData.properties(cp) << 32;
+                map[index] |= emojiData.properties(cp);
         }
     }
 

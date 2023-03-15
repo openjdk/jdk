@@ -42,15 +42,6 @@ import java.util.stream.Stream;
  * https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files
  */
 class EmojiData {
-    // Masks representing Emoji properties (16-bit `B` table masks in
-    // CharacterData.java)
-    private static final int EMOJI = 0x0040;
-    private static final int EMOJI_PRESENTATION = 0x0080;
-    private static final int EMOJI_MODIFIER = 0x0100;
-    private static final int EMOJI_MODIFIER_BASE = 0x0200;
-    private static final int EMOJI_COMPONENT = 0x0400;
-    private static final int EXTENDED_PICTOGRAPHIC = 0x0800;
-
     // Emoji properties map
     private final Map<Integer, Long> emojiProps;
 
@@ -90,13 +81,13 @@ class EmojiData {
 
     private static long convertType(String type) {
         return switch (type) {
-            case "Emoji" -> EMOJI;
-            case "Emoji_Presentation" -> EMOJI_PRESENTATION;
-            case "Emoji_Modifier" -> EMOJI_MODIFIER;
-            case "Emoji_Modifier_Base" -> EMOJI_MODIFIER_BASE;
-            case "Emoji_Component" -> EMOJI_COMPONENT;
-            case "Extended_Pictographic" -> EXTENDED_PICTOGRAPHIC;
-            default -> throw new InternalError();
+            case "Emoji" -> GenerateCharacter.maskEmoji;
+            case "Emoji_Presentation" -> GenerateCharacter.maskEmojiPresentation;
+            case "Emoji_Modifier" -> GenerateCharacter.maskEmojiModifier;
+            case "Emoji_Modifier_Base" -> GenerateCharacter.maskEmojiModifierBase;
+            case "Emoji_Component" -> GenerateCharacter.maskEmojiComponent;
+            case "Extended_Pictographic" -> GenerateCharacter.maskExtendedPictographic;
+            default -> throw new InternalError("Unrecognizable Emoji type: " + type);
         };
     }
 }
