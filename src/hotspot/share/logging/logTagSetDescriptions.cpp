@@ -31,7 +31,11 @@
 // -Xlog:help (or "VM.log list")
 #define LOG_TAG_SET_DESCRIPTION_LIST \
   LOG_TAG_SET_DESCRIPTION(LOG_TAGS(logging), \
-                          "Logging for the log framework itself")
+                          "Logging for the log framework itself") \
+  NOT_PRODUCT(LOG_TAG_SET_DESCRIPTION(LOG_TAGS(foreign, downcall), \
+                          "Generation of foreign linker downcall stubs")) \
+  NOT_PRODUCT(LOG_TAG_SET_DESCRIPTION(LOG_TAGS(foreign, upcall), \
+                          "Generation of foreign linker upcall stubs"))
 
 #define LOG_TAG_SET_DESCRIPTION(tags, descr) \
   { &LogTagSetMapping<tags>::tagset(), descr },
