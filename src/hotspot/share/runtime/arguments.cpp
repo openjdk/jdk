@@ -4001,9 +4001,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
   bool trace_dependencies = log_is_enabled(Debug, dependencies);
   if (trace_dependencies && VerifyDependencies) {
-    if (trace_dependencies) {
-      warning("dependency logging results may be inflated by VerifyDependencies");
-    }
+    warning("dependency logging results may be inflated by VerifyDependencies");
   }
 
   apply_debugger_ergo();
