@@ -29,8 +29,6 @@ prepare-version:
 .create-sysroot:
   stage: prebuild
   image: ubuntu:20.04
-  tags:
-    - docker-qemu-binfmt
   cache:
     - when: on_success
       key: sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}-${CACHE_VERSION}
