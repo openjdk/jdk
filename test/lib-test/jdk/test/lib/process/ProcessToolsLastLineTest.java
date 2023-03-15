@@ -30,23 +30,21 @@
  */
 
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Asserts;
 
 public class ProcessToolsLastLineTest {
 
-    static void test(String expectedOut) throws Exception {
+    static void test(String output) throws Exception {
         final StringBuffer sb = new StringBuffer();
         Process p = ProcessTools.startProcess("process",
-                ProcessTools.createJavaProcessBuilder(ProcessToolsLastLineTest.class.getName(), expectedOut),
+                ProcessTools.createJavaProcessBuilder(ProcessToolsLastLineTest.class.getName(), output),
                 line -> { sb.append(line);});
         p.waitFor();
-        if (!sb.toString().contains(expectedOut.replace("\n", ""))) {
-            throw new RuntimeException("Output doesn't contains " + expectedOut + ". Output:" + sb);
-        }
-
+        String expectedOutput = output.replace("\n", "");
+        Asserts.assertEQ(sb.toString(), expectedOutput);
     }
 
     public static void main(String[] args) throws Exception {
-        final String expectedOut = "ARG1";
 
         if (args.length > 0) {
             System.out.print(args[0]);
@@ -55,6 +53,16 @@ public class ProcessToolsLastLineTest {
             test("ARG1\nARG2");
             test("ARG1\nARG2\n");
             test("\nARG1\nARG2\n");
+            test("\nARG1\nVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINE" + "" +
+                    "VERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINE" +
+                    "VERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINE" +
+                    "VERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINE" +
+                    "\nARG2\n");
+            test("\nARG1\nVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINE" + "" +
+                    "VERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINE" +
+                    "VERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINE" +
+                    "VERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINEVERYVERYLONGLINE" +
+                    "VERYVERYLONGLASTLINE");
         }
 
     }

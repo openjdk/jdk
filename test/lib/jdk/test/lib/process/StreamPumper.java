@@ -140,11 +140,12 @@ public final class StreamPumper implements Runnable {
                         lineBos.write(buf, lastcrlf + 1, len - lastcrlf - 1);
                         linelen += len - lastcrlf - 1;
                     }
-                    final String line = lineBos.toString();
-                    linePumps.forEach((lp) -> lp.processLine(line));
                 }
             }
-
+            final String line = lineBos.toString();
+            if (!line.isEmpty()) {
+                linePumps.forEach((lp) -> lp.processLine(line));
+            }
         } catch (IOException e) {
             if (!e.getMessage().equalsIgnoreCase("stream closed")) {
                 e.printStackTrace();
