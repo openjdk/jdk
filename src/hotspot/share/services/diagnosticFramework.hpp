@@ -276,9 +276,7 @@ public:
     return p;
   }
   // num_arguments() is used by the DCmdFactoryImpl::get_num_arguments() template functions.
-  // - For subclasses of DCmdWithParser, it's calculated by DCmdParser::num_arguments().
-  // - Other subclasses of DCmd have zero arguments by default. You can change this
-  //   by defining your own version of MyDCmd::num_arguments().
+  // All subclasses should override this to report the actual number of arguments.
   static int num_arguments()        { return 0; }
   outputStream* output() const      { return _output; }
   bool is_heap_allocated() const    { return _is_heap_allocated; }
