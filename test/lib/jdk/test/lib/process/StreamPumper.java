@@ -95,8 +95,9 @@ public final class StreamPumper implements Runnable {
 
     /**
      * Implements Thread.run(). Continuously read from {@code in} and write to
-     * {@code out} until {@code in} has reached end of stream. Abort on
-     * interruption. Abort on IOExceptions.
+     * {@code out} until {@code in} has reached end of stream.
+     * Additionally this method also split data read from buffer into the lines and process each line using linePumps.
+     * Abort on interruption. Abort on IOExceptions.
      */
     @Override
     public void run() {
@@ -133,6 +134,8 @@ public final class StreamPumper implements Runnable {
 
                         i++;
                     }
+                    // The remaining after last '\n' (lastcrlf position) buffer data is written into lineBos.
+                    // The end of this line from next buffer is concatenated to this data in the next iteration.
                     if (lastcrlf == -1) {
                         lineBos.write(buf, 0, len);
                         linelen += len;
@@ -142,6 +145,8 @@ public final class StreamPumper implements Runnable {
                     }
                 }
             }
+            // Process data remaining after last '\n' in the last buffer.
+            // It is already written in the lineBos buffer but not processed because '\n' hasn't been met.
             final String line = lineBos.toString();
             if (!line.isEmpty()) {
                 linePumps.forEach((lp) -> lp.processLine(line));
