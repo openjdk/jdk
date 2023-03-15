@@ -281,7 +281,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * @return a SequencedSet view of this map's keySet
      */
     default SequencedSet<K> sequencedKeySet() {
-        class SeqKeySet extends AbstractViewCollection<K> implements SequencedSet<K> {
+        class SeqKeySet extends AbstractMap.ViewCollection<K> implements SequencedSet<K> {
             SeqKeySet() {
                 super(SequencedMap.this.keySet());
             }
@@ -305,7 +305,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * @return a SequencedCollection view of this map's values collection
      */
     default SequencedCollection<V> sequencedValues() {
-        class SeqValues extends AbstractViewCollection<V> implements SequencedCollection<V> {
+        class SeqValues extends AbstractMap.ViewCollection<V> implements SequencedCollection<V> {
             SeqValues() {
                 super(SequencedMap.this.values());
             }
@@ -329,7 +329,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * @return a SequencedSet view of this map's entrySet
      */
     default SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
-        class SeqEntrySet extends AbstractViewCollection<Map.Entry<K, V>>
+        class SeqEntrySet extends AbstractMap.ViewCollection<Map.Entry<K, V>>
                 implements SequencedSet<Map.Entry<K, V>> {
             SeqEntrySet() {
                 super(SequencedMap.this.entrySet());
@@ -339,45 +339,5 @@ public interface SequencedMap<K, V> extends Map<K, V> {
             }
         }
         return new SeqEntrySet();
-    }
-
-    /**
-     * Delegates all Collection methods to the provided non-sequenced map view,
-     * except add() and addAll(), which throw UOE. This provides the common
-     * implementation of each of the sequenced views of the SequencedMap.
-     * Each view implementation is a subclass that provides an intance of the
-     * non-sequenced view as a delegate and an implementation of the reversed().
-     * Each view also inherits the default implementations for the sequenced
-     * methods from SequencedCollection or SequencedSet.
-     *
-     * @param <E> the view's element type
-     */
-    class AbstractViewCollection<E> implements Collection<E> {
-        UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
-        final Collection<E> view;
-
-        AbstractViewCollection(Collection<E> view) { this.view = view; }
-
-        public boolean add(E t) { throw uoe(); }
-        public boolean addAll(Collection<? extends E> c) { throw uoe(); }
-        public void clear() { view.clear(); }
-        public boolean contains(Object o) { return view.contains(o); }
-        public boolean containsAll(Collection<?> c) { return view.containsAll(c); }
-        public boolean equals(Object o) { return view.equals(o); }
-        public void forEach(Consumer<? super E> c) { view.forEach(c); }
-        public int hashCode() { return view.hashCode(); }
-        public boolean isEmpty() { return view.isEmpty(); }
-        public Iterator<E> iterator() { return view.iterator(); }
-        public Stream<E> parallelStream() { return view.parallelStream(); }
-        public boolean remove(Object o) { return view.remove(o); }
-        public boolean removeAll(Collection<?> c) { return view.removeAll(c); }
-        public boolean removeIf(Predicate<? super E> filter) { return view.removeIf(filter); }
-        public boolean retainAll(Collection<?> c) { return view.retainAll(c); }
-        public int size() { return view.size(); }
-        public Spliterator<E> spliterator() { return view.spliterator(); }
-        public Stream<E> stream() { return view.stream(); }
-        public Object[] toArray() { return view.toArray(); }
-        public <T> T[] toArray(IntFunction<T[]> generator) { return view.toArray(generator); }
-        public <T> T[] toArray(T[] a) { return view.toArray(a); }
     }
 }
