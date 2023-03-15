@@ -48,7 +48,7 @@ final class StringLatin1 {
     }
 
     public static boolean canEncode(int cp) {
-        return cp >>> 8 == 0;
+        return cp >= 0 && cp <= 0xFF;
     }
 
     public static int length(byte[] value) {
