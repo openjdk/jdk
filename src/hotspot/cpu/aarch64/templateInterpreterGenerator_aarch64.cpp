@@ -479,12 +479,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ profile_return_type(mdp, obj, tmp);
   }
 
-  const Register temp =  r3;
   const Register cache = r1;
   const Register index = r2;
 
   if (index_size == sizeof(u4)) {
-    __ load_resolved_indy_entry(cache, index, temp);
+    __ load_resolved_indy_entry(cache, index);
     __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
     __ add(esp, esp, cache, Assembler::LSL, 3);
   } else {
