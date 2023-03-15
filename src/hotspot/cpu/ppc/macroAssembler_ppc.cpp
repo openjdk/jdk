@@ -1816,7 +1816,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
     }
   }
 
-  // for (scan = klass->itable(); scan->interface() != null; scan += scan_step) {
+  // for (scan = klass->itable(); scan->interface() != nullptr; scan += scan_step) {
   //   if (scan->interface() == intf) {
   //     result = (klass + scan->offset() + itable_index);
   //   }
@@ -2707,7 +2707,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   // Handle existing monitor.
   bind(object_has_monitor);
-  // The object's monitor m is unlocked iff m->owner == null,
+  // The object's monitor m is unlocked iff m->owner is null,
   // otherwise m->owner may contain a thread or a stack address.
 
 #if INCLUDE_RTM_OPT
