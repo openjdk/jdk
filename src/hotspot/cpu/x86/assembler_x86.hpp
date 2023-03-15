@@ -1441,6 +1441,7 @@ private:
   // Use macro to record file and line number.
   #define GET_MACRO(_1, _2, _3, NAME, ...) NAME
   #ifdef _WIN64
+    #define EXPAND(x) x
     #define jccb(...) EXPAND(GET_MACRO(__VA_ARGS__, jccb_H, jccb_NH)(__VA_ARGS__))
   #else
     #define jccb(...) GET_MACRO(__VA_ARGS__, jccb_H, jccb_NH)(__VA_ARGS__)
