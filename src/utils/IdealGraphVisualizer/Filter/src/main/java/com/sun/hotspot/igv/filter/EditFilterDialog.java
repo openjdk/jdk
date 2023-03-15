@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,12 @@
  */
 package com.sun.hotspot.igv.filter;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.swing.SwingUtilities;
+import javax.swing.text.*;
 import org.openide.windows.WindowManager;
 
 /**
@@ -32,7 +38,7 @@ import org.openide.windows.WindowManager;
  */
 public class EditFilterDialog extends javax.swing.JDialog {
 
-    private CustomFilter customFilter;
+    private final CustomFilter customFilter;
     private boolean accepted;
 
     /** Creates new form EditFilterDialog */
@@ -40,6 +46,78 @@ public class EditFilterDialog extends javax.swing.JDialog {
         super(WindowManager.getDefault().getMainWindow(), true);
         this.customFilter = customFilter;
         initComponents();
+
+        sourceTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        AbstractDocument doc = (AbstractDocument) sourceTextArea.getDocument();
+        doc.setDocumentFilter(new DocumentFilter(){
+            private final StyledDocument styledDocument = sourceTextArea.getStyledDocument();
+            private final StyleContext styleContext = StyleContext.getDefaultStyleContext();
+            private final AttributeSet blueAttributeSet = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, new Color(8,8,255));
+            private final AttributeSet greenAttributeSet = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, new Color(80,160,80));
+            private final AttributeSet greyAttributeSet = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.GRAY);
+            private final AttributeSet blackAttributeSet = styleContext.addAttribute(styleContext.getEmptySet(), StyleConstants.Foreground, Color.BLACK);
+            private final Pattern comments_pattern = Pattern.compile("(?://.*)|(/\\*(?:.|[\\n\\r])*?\\*/)");
+            private final Pattern quote_pattern = Pattern.compile("([\"'])((?:\\\\\\1|(?:(?!\\1)).)*)(\\1)");
+            private final Pattern keywords_pattern = buildKeywordsPattern();
+            private final String tabSpaces = "  ";
+
+
+            private Pattern buildKeywordsPattern() {
+                StringBuilder pattern = new StringBuilder();
+                String[] keywords = new String[]{"await","break","case","catch","class","const","continue","debugger",
+                        "default","delete","do","else","enum","export","extends","false","finally","for","function",
+                        "if","implements","import","in","instanceof","interface","let","new","null","package","private",
+                        "protected","public","return","super","switch","static","this","throw","try","true","typeof",
+                        "var","void","while","with","yield"
+                };
+                for (String keyword : keywords) {
+                    pattern.append("\\b").append(keyword).append("\\b|");
+                }
+                if (pattern.length()>0) {
+                    pattern.deleteCharAt(pattern.length()-1);
+                }
+                return Pattern.compile(pattern.toString());
+            }
+
+            @Override
+            public void insertString(FilterBypass fb, int offset, String text, AttributeSet attrs) throws BadLocationException {
+                text = text.replace("\t", tabSpaces);
+                super.insertString(fb, offset, text, attrs);
+                SwingUtilities.invokeLater(this::updateSyntaxHighlighting);
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                super.remove(fb, offset, length);
+                SwingUtilities.invokeLater(this::updateSyntaxHighlighting);
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                text = text.replace("\t", tabSpaces);
+                super.replace(fb, offset, length, text, attrs);
+                SwingUtilities.invokeLater(this::updateSyntaxHighlighting);
+            }
+
+            private void updateSyntaxHighlighting() {
+                styledDocument.setCharacterAttributes(0, sourceTextArea.getText().length(), blackAttributeSet, true);
+
+                Matcher keyword_matcher = keywords_pattern.matcher(sourceTextArea.getText());
+                while (keyword_matcher.find()) {
+                    styledDocument.setCharacterAttributes(keyword_matcher.start(), keyword_matcher.end() - keyword_matcher.start(), blueAttributeSet, false);
+                }
+
+                Matcher quote_matcher = quote_pattern.matcher(sourceTextArea.getText());
+                while (quote_matcher.find()) {
+                    styledDocument.setCharacterAttributes(quote_matcher.start(), quote_matcher.end() - quote_matcher.start(), greenAttributeSet, false);
+                }
+
+                Matcher comments_matcher = comments_pattern.matcher(sourceTextArea.getText());
+                while (comments_matcher.find()) {
+                    styledDocument.setCharacterAttributes(comments_matcher.start(), comments_matcher.end() - comments_matcher.start(), greyAttributeSet, false);
+                }
+            }
+        });
 
         sourceTextArea.setText(customFilter.getCode());
         nameTextField.setText(customFilter.getName());
@@ -58,7 +136,8 @@ public class EditFilterDialog extends javax.swing.JDialog {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        sourceTextArea = new javax.swing.JTextArea();
+        jPanel1 = new javax.swing.JPanel();
+        sourceTextArea = new javax.swing.JTextPane();
         nameTextField = new javax.swing.JTextField();
         nameLabel = new javax.swing.JLabel();
         sourceLabel = new javax.swing.JLabel();
@@ -67,13 +146,13 @@ public class EditFilterDialog extends javax.swing.JDialog {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "title")); // NOI18N
-        setResizable(false);
 
-        sourceTextArea.setColumns(20);
-        sourceTextArea.setRows(5);
-        jScrollPane1.setViewportView(sourceTextArea);
+        jPanel1.setLayout(new java.awt.BorderLayout());
+        jPanel1.add(sourceTextArea, java.awt.BorderLayout.CENTER);
 
-        nameTextField.setText("null");
+        jScrollPane1.setViewportView(jPanel1);
+
+        nameTextField.setText(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "nameTextField.text")); // NOI18N
 
         nameLabel.setText(org.openide.util.NbBundle.getMessage(EditFilterDialog.class, "jLabel1.text")); // NOI18N
 
@@ -125,8 +204,8 @@ public class EditFilterDialog extends javax.swing.JDialog {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(sourceLabel)
-                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 337, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 16, Short.MAX_VALUE)
+                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 383, Short.MAX_VALUE))
+                .add(16, 16, 16)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(cancelButton)
                     .add(okButton))
@@ -150,12 +229,13 @@ private void cancelButtonClicked(java.awt.event.ActionEvent evt) {//GEN-FIRST:ev
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel nameLabel;
     private javax.swing.JTextField nameTextField;
     private javax.swing.JButton okButton;
     private javax.swing.JLabel sourceLabel;
-    private javax.swing.JTextArea sourceTextArea;
+    private javax.swing.JTextPane sourceTextArea;
     // End of variables declaration//GEN-END:variables
 
 }

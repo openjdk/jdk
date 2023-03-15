@@ -28,6 +28,7 @@
 #include "code/dependencyContext.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
@@ -62,17 +63,14 @@ void DependencyContext::init() {
 //
 // Walk the list of dependent nmethods searching for nmethods which
 // are dependent on the changes that were passed in and mark them for
-// deoptimization.  Returns the number of nmethods found.
+// deoptimization.
 //
-int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
-  int found = 0;
+void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, DepChange& changes) {
   for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
     if (b->count() > 0) {
       if (nm->is_marked_for_deoptimization()) {
-        // Also count already (concurrently) marked nmethods to make sure
-        // deoptimization is triggered before execution in this thread continues.
-        found++;
+        deopt_scope->dependent(nm);
       } else if (nm->check_dependency_on(changes)) {
         if (TraceDependencies) {
           ResourceMark rm;
@@ -81,12 +79,10 @@ int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
           nm->print();
           nm->print_dependencies();
         }
-        changes.mark_for_deoptimization(nm);
-        found++;
+        deopt_scope->mark(nm, !changes.is_call_site_change());
       }
     }
   }
-  return found;
 }
 
 //
@@ -189,21 +185,18 @@ void DependencyContext::remove_all_dependents() {
   assert(b == nullptr, "All dependents should be unloading");
 }
 
-int DependencyContext::remove_and_mark_for_deoptimization_all_dependents() {
+void DependencyContext::remove_and_mark_for_deoptimization_all_dependents(DeoptimizationScope* deopt_scope) {
   nmethodBucket* b = dependencies_not_unloading();
   set_dependencies(nullptr);
-  int marked = 0;
   while (b != nullptr) {
     nmethod* nm = b->get_nmethod();
     if (b->count() > 0) {
       // Also count already (concurrently) marked nmethods to make sure
       // deoptimization is triggered before execution in this thread continues.
-      nm->mark_for_deoptimization();
-      marked++;
+      deopt_scope->mark(nm);
     }
     b = release_and_get_next_not_unloading(b);
   }
-  return marked;
 }
 
 #ifndef PRODUCT
