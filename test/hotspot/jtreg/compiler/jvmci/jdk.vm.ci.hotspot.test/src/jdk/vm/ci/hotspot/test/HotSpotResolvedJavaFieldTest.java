@@ -22,14 +22,6 @@
  */
 package jdk.vm.ci.hotspot.test;
 
-import static java.lang.reflect.Modifier.FINAL;
-import static java.lang.reflect.Modifier.PRIVATE;
-import static java.lang.reflect.Modifier.PROTECTED;
-import static java.lang.reflect.Modifier.PUBLIC;
-import static java.lang.reflect.Modifier.STATIC;
-import static java.lang.reflect.Modifier.TRANSIENT;
-import static java.lang.reflect.Modifier.VOLATILE;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -38,8 +30,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.hotspot.HotSpotModifiers;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
-import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -63,35 +55,28 @@ public class HotSpotResolvedJavaFieldTest {
 
     private static final Method createFieldMethod;
     private static final Field indexField;
+    private static final Field internalFlagsField;
 
     static {
         Method m = null;
-        Field f = null;
+        Field f1 = null;
+        Field f2 = null;
         try {
             Class<?> typeImpl = Class.forName("jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl");
             m = typeImpl.getDeclaredMethod("createField", JavaType.class, int.class, int.class, int.class, int.class);
             m.setAccessible(true);
             Class<?> fieldImpl = Class.forName("jdk.vm.ci.hotspot.HotSpotResolvedJavaFieldImpl");
-            f = fieldImpl.getDeclaredField("index");
-            f.setAccessible(true);
+            f1 = fieldImpl.getDeclaredField("index");
+            f1.setAccessible(true);
+            f2 = fieldImpl.getDeclaredField("internalFlags");
+            f2.setAccessible(true);
         } catch (Exception e) {
             throw new AssertionError(e);
         }
 
         createFieldMethod = m;
-        indexField = f;
-    }
-
-    /**
-     * Same as {@code HotSpotModifiers.jvmFieldModifiers()} but works when using a JVMCI version
-     * prior to the introduction of that method.
-     */
-    private int jvmFieldModifiers() {
-        HotSpotJVMCIRuntime runtime = runtime();
-        HotSpotVMConfigAccess access = new HotSpotVMConfigAccess(runtime.getConfigStore());
-        int accEnum = access.getConstant("JVM_ACC_ENUM", Integer.class, 0x4000);
-        int accSynthetic = access.getConstant("JVM_ACC_SYNTHETIC", Integer.class, 0x1000);
-        return PUBLIC | PRIVATE | PROTECTED | STATIC | FINAL | VOLATILE | TRANSIENT | accEnum | accSynthetic;
+        indexField = f1;
+        internalFlagsField = f2;
     }
 
     HotSpotJVMCIRuntime runtime() {
@@ -113,14 +98,14 @@ public class HotSpotResolvedJavaFieldTest {
             ResolvedJavaType type = getMetaAccess().lookupJavaType(c);
             for (ResolvedJavaField field : type.getInstanceFields(false)) {
                 if (field.isInternal()) {
-                    Assert.assertEquals(0, ~jvmFieldModifiers() & field.getModifiers());
+                    Assert.assertEquals(0, ~HotSpotModifiers.jvmFieldModifiers() & field.getModifiers());
                 }
             }
         }
     }
 
     /**
-     * Tests that {@code HotSpotResolvedObjectTypeImpl#createField(String, JavaType, long, int)}
+     * Tests that {@code HotSpotResolvedObjectTypeImpl#createField(String, JavaType, int, int)}
      * always returns an {@linkplain ResolvedJavaField#equals(Object) equivalent} object for an
      * internal field.
      *
@@ -136,7 +121,8 @@ public class HotSpotResolvedJavaFieldTest {
                 if (field.isInternal()) {
                     HotSpotResolvedJavaField expected = (HotSpotResolvedJavaField) field;
                     int index = indexField.getInt(expected);
-                    ResolvedJavaField actual = (ResolvedJavaField) createFieldMethod.invoke(type, expected.getType(), expected.getOffset(), expected.getModifiers(), expected.getInternalModifiers(), index);
+                    int internalFlags = internalFlagsField.getInt(expected);
+                    ResolvedJavaField actual = (ResolvedJavaField) createFieldMethod.invoke(type, expected.getType(), expected.getOffset(), expected.getModifiers(), internalFlags, index);
                     Assert.assertEquals(expected, actual);
                 }
             }

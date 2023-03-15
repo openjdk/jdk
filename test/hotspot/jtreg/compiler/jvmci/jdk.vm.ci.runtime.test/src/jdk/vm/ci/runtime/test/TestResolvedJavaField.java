@@ -94,16 +94,6 @@ public class TestResolvedJavaField extends FieldUniverse {
     }
 
     @Test
-    public void getInternalModifiersTest() {
-        for (Map.Entry<Field, ResolvedJavaField> e : fields.entrySet()) {
-            // Reflection currently doesn't export InternalModifiers, no way to test them for now
-            // int expected = e.getKey().getInternalModifiers();
-            int actual = e.getValue().getInternalModifiers();
-            // assertEquals(expected, actual);
-        }
-    }
-
-    @Test
     public void isSyntheticTest() {
         for (Map.Entry<Field, ResolvedJavaField> e : fields.entrySet()) {
             boolean expected = e.getKey().isSynthetic();

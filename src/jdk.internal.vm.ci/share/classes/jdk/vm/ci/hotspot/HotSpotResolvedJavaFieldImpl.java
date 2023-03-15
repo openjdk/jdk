@@ -58,19 +58,19 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     /**
      * This value contains all flags from the class file
      */
-    private final int modifiers;
+    private final int classfileFlags;
 
     /**
      * This value contains VM internal flags
      */
-    private final int internalModifiers;
+    private final int internalFlags;
 
-    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, JavaType type, int offset, int modifiers, int internalModifiers, int index) {
+    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, JavaType type, int offset, int classfileFlags, int internalFlags, int index) {
         this.holder = holder;
         this.type = type;
         this.offset = offset;
-        this.modifiers = modifiers;
-        this.internalModifiers = internalModifiers;
+        this.classfileFlags = classfileFlags;
+        this.internalFlags = internalFlags;
         this.index = index;
     }
 
@@ -97,17 +97,12 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public int getModifiers() {
-        return modifiers & HotSpotModifiers.jvmFieldModifiers();
-    }
-
-    @Override
-    public int getInternalModifiers() {
-        return internalModifiers;
+        return classfileFlags & HotSpotModifiers.jvmFieldModifiers();
     }
 
     @Override
     public boolean isInternal() {
-        return (internalModifiers & (1 << config().jvmFieldFlagInternalShift)) != 0;
+        return (internalFlags & (1 << config().jvmFieldFlagInternalShift)) != 0;
     }
 
     /**
@@ -176,7 +171,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public boolean isSynthetic() {
-        return (config().jvmAccSynthetic & modifiers) != 0;
+        return (config().jvmAccSynthetic & classfileFlags) != 0;
     }
 
     /**
@@ -186,7 +181,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
      */
     @Override
     public boolean isStable() {
-        return (1 << (config().jvmFieldFlagStableShift ) & internalModifiers) != 0;
+        return (1 << (config().jvmFieldFlagStableShift ) & internalFlags) != 0;
     }
 
     private boolean hasAnnotations() {

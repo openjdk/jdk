@@ -413,7 +413,6 @@
   declare_constant(JVM_ACC_IS_VALUE_BASED_CLASS)                          \
   declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
-  declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
   declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \
   declare_preprocessor_constant("JVM_ACC_BRIDGE", JVM_ACC_BRIDGE)         \
   declare_preprocessor_constant("JVM_ACC_ANNOTATION", JVM_ACC_ANNOTATION) \

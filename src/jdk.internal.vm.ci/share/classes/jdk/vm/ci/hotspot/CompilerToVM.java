@@ -461,9 +461,10 @@ final class CompilerToVM {
      * {@code info} are:
      *
      * <pre>
-     *     [ flags,  // fieldDescriptor::access_flags()
-     *       offset, // fieldDescriptor::offset()
-     *       index   // fieldDescriptor::index()
+     *     [ aflags,  // fieldDescriptor::access_flags()
+     *       offset,  // fieldDescriptor::offset()
+     *       index,   // fieldDescriptor::index()
+     *       fflags   // fieldDescriptor::field_flags()
      *     ]
      * </pre>
      *

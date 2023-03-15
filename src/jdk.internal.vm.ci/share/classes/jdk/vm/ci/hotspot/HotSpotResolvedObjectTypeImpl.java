@@ -85,7 +85,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private HotSpotResolvedJavaType componentType;
 
     /**
-     * Lazily initialized cache for FieldInfo
+     * Lazily initialized cache for FieldInfo.
      */
     private FieldInfo[] fieldInfo;
 
@@ -581,8 +581,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return result;
     }
 
-    HotSpotResolvedJavaField createField(JavaType type, int offset, int rawFlags, int internFlags, int index) {
-        return new HotSpotResolvedJavaFieldImpl(this, type, offset, rawFlags, internFlags, index);
+    HotSpotResolvedJavaField createField(JavaType type, int offset, int classfileFlags, int internalFlags, int index) {
+        return new HotSpotResolvedJavaFieldImpl(this, type, offset, classfileFlags, internalFlags, index);
     }
 
     @Override
@@ -674,8 +674,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         private final int nameIndex;
         private final int signatureIndex;
         private final int offset;
-        private final int accessFlags;
-        private final int fieldFlags;
+        private final int classfileFlags;
+        private final int internalFlags;
         private final int initializerIndex;
 
         /**
@@ -684,25 +684,25 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
          * @param nameIndex index of field's name in the constant pool
          * @param signatureIndex index of field's signature in the constant pool
          * @param offset field's offset
-         * @param accessFlags field's access flags (from the class file)
-         * @param fieldFlags field's internal flags (from the VM)
+         * @param classfileFlags field's access flags (from the class file)
+         * @param internalFlags field's internal flags (from the VM)
          * @param initializerIndex field's initial value index in the constant pool
          */
-        FieldInfo(int nameIndex, int signatureIndex, int offset, int accessFlags, int fieldFlags, int initializerIndex) {
+        FieldInfo(int nameIndex, int signatureIndex, int offset, int classfileFlags, int internalFlags, int initializerIndex) {
             this.nameIndex = nameIndex;
             this.signatureIndex = signatureIndex;
             this.offset = offset;
-            this.accessFlags = accessFlags;
-            this.fieldFlags = fieldFlags;
+            this.classfileFlags = classfileFlags;
+            this.internalFlags = internalFlags;
             this.initializerIndex = initializerIndex;
         }
 
-        private int getAccessFlags() {
-            return accessFlags;
+        private int getClassfileFlags() {
+            return classfileFlags;
         }
 
-        private int getFieldFlags() {
-            return fieldFlags;
+        private int getInternalFlags() {
+            return internalFlags;
         }
 
         private int getNameIndex() {
@@ -757,11 +757,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         }
 
         private boolean isInternal() {
-            return (getFieldFlags() & (1 << config().jvmFieldFlagInternalShift)) != 0;
+            return (getInternalFlags() & (1 << config().jvmFieldFlagInternalShift)) != 0;
         }
 
         public boolean isStatic() {
-            return Modifier.isStatic(getAccessFlags());
+            return Modifier.isStatic(getClassfileFlags());
         }
     }
 
@@ -855,7 +855,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             FieldInfo field = getFieldInfo(i);
             if (field.isStatic() == retrieveStaticFields) {
                 int offset = field.getOffset();
-                HotSpotResolvedJavaField resolvedJavaField = createField(field.getType(this), offset, field.getAccessFlags(), field.getFieldFlags(), i);
+                HotSpotResolvedJavaField resolvedJavaField = createField(field.getType(this), offset, field.getClassfileFlags(), field.getInternalFlags(), i);
                 result[resultIndex++] = resolvedJavaField;
             }
         }

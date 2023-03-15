@@ -105,7 +105,7 @@ public class InstanceKlass extends Klass {
     CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
     CLASS_STATE_INITIALIZATION_ERROR = db.lookupIntConstant("InstanceKlass::initialization_error").intValue();
     // We need a new fieldsCache each time we attach.
-    fieldsCache = new HashMap<Address, Field[]>();
+    fieldsCache = new WeakHashMap<Address, Field[]>();
   }
 
   public InstanceKlass(Address addr) {
@@ -280,9 +280,9 @@ public class InstanceKlass extends Klass {
     return (short)getField(index).getAccessFlags();
   }
 
-  public short getFieldNameIndex(int index) {
+  public int getFieldNameIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return (short)getField(index).getNameIndex();
+    return getField(index).getNameIndex();
   }
 
   public Symbol getFieldName(int index) {
@@ -298,9 +298,9 @@ public class InstanceKlass extends Klass {
     }
   }
 
-  public short getFieldSignatureIndex(int index) {
+  public int getFieldSignatureIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return (short)getField(index).getGenericSignatureIndex();
+    return getField(index).getGenericSignatureIndex();
   }
 
   public Symbol getFieldSignature(int index) {
@@ -308,7 +308,7 @@ public class InstanceKlass extends Klass {
     return getField(index).getSignature();
   }
 
-  public short getFieldGenericSignatureIndex(int index) {
+  public int getFieldGenericSignatureIndex(int index) {
     return getField(index).getGenericSignatureIndex();
   }
 
@@ -316,9 +316,9 @@ public class InstanceKlass extends Klass {
     return getField(index).getGenericSignature();
   }
 
-  public short getFieldInitialValueIndex(int index) {
+  public int getFieldInitialValueIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return (short)getField(index).getInitialValueIndex();
+    return getField(index).getInitialValueIndex();
   }
 
   public int getFieldOffset(int index) {
