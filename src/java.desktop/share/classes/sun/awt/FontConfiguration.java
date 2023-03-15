@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,7 @@ public abstract class FontConfiguration {
             initFontConfig();
             inited = true;
         }
+
         return true;
     }
 
@@ -153,6 +154,7 @@ public abstract class FontConfiguration {
      */
     public boolean fontFilesArePresent() {
         init();
+
         short fontNameID = compFontNameIDs[0][0][0];
         short fileNameID = getComponentFileID(fontNameID);
         final String fileName = mapFileName(getComponentFileName(fileNameID));
@@ -1249,10 +1251,16 @@ public abstract class FontConfiguration {
      * search path.
      */
     public String getExtraFontPath() {
+        if (head == null) {
+            throw new RuntimeException("Fontconfig head is null, check your fonts or fonts configuration");
+        }
         return getString(head[INDEX_appendedfontpath]);
     }
 
     public String getVersion() {
+        if (head == null) {
+            throw new RuntimeException("Fontconfig head is null, check your fonts or fonts configuration");
+        }
         return getString(head[INDEX_version]);
     }
 
