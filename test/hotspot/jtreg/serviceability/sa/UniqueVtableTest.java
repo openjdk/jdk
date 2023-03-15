@@ -155,9 +155,9 @@ public class UniqueVtableTest {
             "UniqueVtableTest",
             Long.toString(lingeredAppPid));
         SATestUtils.addPrivilegesIfNeeded(processBuilder);
-        OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
-        SAOutput.shouldHaveExitValue(0);
-        System.out.println(SAOutput.getOutput());
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
+        output.shouldHaveExitValue(0);
+        System.out.println(output.getOutput());
     }
 
     private static void runMain() throws Throwable {
@@ -189,8 +189,10 @@ public class UniqueVtableTest {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
         if (args == null || args.length == 0) {
+            // Main test process.
             runMain();
         } else {
+            // Sub-process to attach, arg[0] is the target process pid.
             runTest(Long.parseLong(args[0]));
         }
     }
