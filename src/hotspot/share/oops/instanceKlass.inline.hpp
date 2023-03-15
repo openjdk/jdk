@@ -27,7 +27,6 @@
 
 #include "oops/instanceKlass.hpp"
 
-#include "classfile/vmSymbols.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
