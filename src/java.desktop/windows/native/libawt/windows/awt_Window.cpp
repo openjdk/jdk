@@ -371,6 +371,20 @@ void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
 MsgRouting AwtWindow::WmWindowPosChanged(LPARAM windowPos) {
     WINDOWPOS * wp = (WINDOWPOS *)windowPos;
 
+    // There's no good way to detect partial maximization (e.g. Aero Snap),
+    // but by inspecting SWP_* flags we can guess it and reset
+    // prevScaleRec to neutralize the CheckWindowDPIChange logic.
+    // Here are the flags, observed on Windows 11 for reference:
+    // Restore/maximize:        SWP_NOZORDER | SWP_DRAWFRAME
+    // Partial Aero Snap:       SWP_NOZORDER | SWP_NOREPOSITION
+    // DPI change (new screen): SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS
+    if (!(wp->flags & (SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)) &&
+        prevScaleRec.screen != -1 && prevScaleRec.screen != m_screenNum) {
+        prevScaleRec.screen = -1;
+        prevScaleRec.scaleX = -1.0f;
+        prevScaleRec.scaleY = -1.0f;
+    }
+
     // Reposition the warning window
     if (IsUntrusted() && warningWindow != NULL) {
         if (wp->flags & SWP_HIDEWINDOW) {
@@ -2187,7 +2201,7 @@ void AwtWindow::CheckWindowDPIChange() {
     if (prevScaleRec.screen != -1 && prevScaleRec.screen != m_screenNum) {
         Devices::InstanceAccess devices;
         AwtWin32GraphicsDevice *device = devices->GetDevice(m_screenNum);
-        if (device && !::IsZoomed(GetHWnd())) {
+        if (device) {
             if (prevScaleRec.scaleX != device->GetScaleX()
                     || prevScaleRec.scaleY != device->GetScaleY()) {
                 RECT rect;
