@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
@@ -44,6 +43,14 @@ import jdk.jshell.JShellConsole;
  */
 public class ConsoleImpl {
 
+    public static void ensureOutputAreWritten() {
+        var console = ConsoleProviderImpl.console;
+
+        if (console != null) {
+            console.ensureOutputAreWritten();
+        }
+    }
+
     public static class ConsoleProviderImpl implements JdkConsoleProvider {
 
         public ConsoleProviderImpl() {
@@ -51,21 +58,25 @@ public class ConsoleImpl {
 
         private static InputStream remoteOutput;
         private static OutputStream remoteInput;
+        private static RemoteConsole console;
 
         @Override
         public JdkConsole console(boolean isTTY, Charset charset) {
-            if (remoteOutput != null && remoteInput != null) {
-                return new RemoteConsole(remoteOutput, remoteInput);
+            synchronized (ConsoleProviderImpl.class) {
+                if (remoteOutput != null && remoteInput != null) {
+                    return console = new RemoteConsole(remoteOutput, remoteInput);
+                }
+                return null;
             }
-            return null;
         }
 
-        public static void setRemoteOutput(InputStream remoteOutput) {
+        public static synchronized void setRemoteOutput(InputStream remoteOutput) {
             ConsoleProviderImpl.remoteOutput = remoteOutput;
         }
 
-        public static void setRemoteInput(OutputStream remoteInput) {
-            ConsoleProviderImpl.remoteInput = remoteInput;
+        public static synchronized void setRemoteInput(OutputStream remoteInput) {
+            ConsoleProviderImpl.remoteInput =
+                    new BufferedOutputStream(remoteInput);
         }
 
     }
@@ -135,7 +146,6 @@ public class ConsoleImpl {
                         sendAndReceive(() -> {
                             remoteInput.write(Task.WRITE_CHARS.ordinal());
                             sendChars(cbuf, off, len);
-                            remoteOutput.read();
                             return null;
                         });
                     }
@@ -277,6 +287,17 @@ public class ConsoleImpl {
             }
         }
 
+        void ensureOutputAreWritten() {
+            try {
+                sendAndReceive(() -> {
+                    remoteInput.write(Task.ENSURE_OUTPUTS_ARE_WRITTEN.ordinal());
+                    return remoteOutput.read();
+                });
+            } catch (IOException ex) {
+                throw new IOError(ex);
+            }
+        }
+
         private synchronized <R, E extends Exception> R sendAndReceive(SendAndReceive<R, E> task) throws IOException, E {
             return task.run();
         }
@@ -315,7 +336,6 @@ public class ConsoleImpl {
                     char[] data = readCharsOrNull(1);
                     if (data != null) {
                         console.writer().write(data);
-                        sinkOutput.write(0);
                         bp = 0;
                     }
                 }
@@ -358,6 +378,10 @@ public class ConsoleImpl {
                 case CHARSET -> {
                     char[] name = console.charset().name().toCharArray();
                     sendChars(sinkOutput, name, 0, name.length);
+                    bp = 0;
+                }
+                case ENSURE_OUTPUTS_ARE_WRITTEN -> {
+                    sinkOutput.write(0);
                     bp = 0;
                 }
             }
@@ -415,6 +439,7 @@ public class ConsoleImpl {
         READ_PASSWORD,
         FLUSH_CONSOLE,
         CHARSET,
+        ENSURE_OUTPUTS_ARE_WRITTEN,
         ;
     }
 }

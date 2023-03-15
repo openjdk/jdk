@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import jdk.jshell.spi.ExecutionControl;
+import jdk.jshell.execution.impl.ConsoleImpl;
 import jdk.jshell.execution.impl.ConsoleImpl.ConsoleProviderImpl;
 import static jdk.jshell.execution.Util.forwardExecutionControlAndIO;
 
@@ -116,7 +117,11 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
     // Overridden only so this stack frame is seen
     @Override
     protected String invoke(Method doitMethod) throws Exception {
-        return super.invoke(doitMethod);
+        try {
+            return super.invoke(doitMethod);
+        } finally {
+            ConsoleImpl.ensureOutputAreWritten();
+        }
     }
 
     /**
