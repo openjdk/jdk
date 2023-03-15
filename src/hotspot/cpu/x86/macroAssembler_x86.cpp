@@ -4262,7 +4262,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
     lea(recv_klass, Address(recv_klass, itable_index, Address::times_ptr, itentry_off));
   }
 
-  // for (scan = klass->itable(); scan->interface() != null; scan += scan_step) {
+  // for (scan = klass->itable(); scan->interface() != nullptr; scan += scan_step) {
   //   if (scan->interface() == intf) {
   //     result = (klass + scan->offset() + itable_index);
   //   }

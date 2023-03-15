@@ -399,7 +399,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
     movptr(tmp, Address(rthread, JavaThread::jvmti_thread_state_offset()));
     testptr(tmp, tmp);
-    jcc(Assembler::zero, L); // if (thread->jvmti_thread_state() == null) exit;
+    jcc(Assembler::zero, L); // if (thread->jvmti_thread_state() == nullptr) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
@@ -1776,13 +1776,13 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Reg
 // Example state machine code for three profile rows:
 //   // main copy of decision tree, rooted at row[1]
 //   if (row[0].rec == rec) { row[0].incr(); goto done; }
-//   if (row[0].rec != null) {
+//   if (row[0].rec != nullptr) {
 //     // inner copy of decision tree, rooted at row[1]
 //     if (row[1].rec == rec) { row[1].incr(); goto done; }
-//     if (row[1].rec != null) {
+//     if (row[1].rec != nullptr) {
 //       // degenerate decision tree, rooted at row[2]
 //       if (row[2].rec == rec) { row[2].incr(); goto done; }
-//       if (row[2].rec != null) { count.incr(); goto done; } // overflow
+//       if (row[2].rec != nullptr) { count.incr(); goto done; } // overflow
 //       row[2].init(rec); goto done;
 //     } else {
 //       // remember row[1] is empty
