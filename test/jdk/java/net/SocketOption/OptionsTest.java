@@ -106,7 +106,7 @@ public class OptionsTest {
             Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
             while (nifs.hasMoreElements()) {
                 NetworkInterface ni = nifs.nextElement();
-                if (ni.supportsMulticast() && !ni.getInterfaceAddresses().isEmpty()) {
+                if (ni.supportsMulticast()) {
                     return ni;
                 }
             }
