@@ -522,7 +522,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // If the receiver is null then it is OK to jump to the slow path.
   __ ld(R3_RET, Interpreter::stackElementSize, R15_esp); // get receiver
 
-  // Check if receiver == null and go the slow path.
+  // Check if receiver == nullptr and go the slow path.
   __ cmpdi(CCR0, R3_RET, 0);
   __ beq(CCR0, slow_path);
 

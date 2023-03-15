@@ -2418,9 +2418,9 @@ class StubGenerator: public StubCodeGenerator {
     // (8) dst_pos + length must not exceed length of dst.
     BLOCK_COMMENT("arraycopy initial argument checks");
 
-    __ cmpdi(CCR1, src, 0);      // if (src == null) return -1;
+    __ cmpdi(CCR1, src, 0);      // if (src == nullptr) return -1;
     __ extsw_(src_pos, src_pos); // if (src_pos < 0) return -1;
-    __ cmpdi(CCR5, dst, 0);      // if (dst == null) return -1;
+    __ cmpdi(CCR5, dst, 0);      // if (dst == nullptr) return -1;
     __ cror(CCR1, Assembler::equal, CCR0, Assembler::less);
     __ extsw_(dst_pos, dst_pos); // if (src_pos < 0) return -1;
     __ cror(CCR5, Assembler::equal, CCR0, Assembler::less);

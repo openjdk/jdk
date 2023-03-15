@@ -917,7 +917,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     //   // We stored the monitor address into the object's mark word.
     // } else if (THREAD->is_lock_owned((address)displaced_header))
     //   // Simple recursive case.
-    //   monitor->lock()->set_displaced_header(null);
+    //   monitor->lock()->set_displaced_header(nullptr);
     // } else {
     //   // Slow path.
     //   InterpreterRuntime::monitorenter(THREAD, monitor);
@@ -978,7 +978,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // } else if (THREAD->is_lock_owned((address)displaced_header))
     //   // Simple recursive case.
-    //   monitor->lock()->set_displaced_header(null);
+    //   monitor->lock()->set_displaced_header(nullptr);
 
     // We did not see an unlocked object so try the fast recursive case.
 
@@ -1028,12 +1028,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     // template code:
     //
-    // if ((displaced_header = monitor->displaced_header()) == null) {
+    // if ((displaced_header = monitor->displaced_header()) == nullptr) {
     //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
-    //   monitor->set_obj(null);
+    //   monitor->set_obj(nullptr);
     // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
     //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-    //   monitor->set_obj(null);
+    //   monitor->set_obj(nullptr);
     // } else {
     //   // Slow path.
     //   InterpreterRuntime::monitorexit(monitor);
@@ -1059,7 +1059,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
     //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-    //   monitor->set_obj(null);
+    //   monitor->set_obj(nullptr);
 
     // If we still have a lightweight lock, unlock the object and be done.
 
@@ -1094,7 +1094,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     Label done;
     b(done); // Monitor register may be overwritten! Runtime has already freed the slot.
 
-    // Exchange worked, do monitor->set_obj(null);
+    // Exchange worked, do monitor->set_obj(nullptr);
     align(32, 12);
     bind(free_slot);
     li(R0, 0);

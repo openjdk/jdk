@@ -111,7 +111,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // At this point, there still is a chance that fp_safe is false.
-    // In particular, (fp == null) might be true. So let's check and
+    // In particular, (fp == nullptr) might be true. So let's check and
     // bail out before we actually dereference from fp.
     if (!fp_safe) {
       return false;

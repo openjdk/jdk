@@ -94,7 +94,7 @@ int AbstractInterpreter::size_activation(int max_stack,
 //
 // Parameters:
 //
-// interpreter_frame != null:
+// interpreter_frame != nullptr:
 //   set up the method, locals, and monitors.
 //   The frame interpreter_frame, if not null, is guaranteed to be the
 //   right size, as determined by a previous call to this method.
