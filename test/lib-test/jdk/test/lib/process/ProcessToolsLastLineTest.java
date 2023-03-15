@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 8303697
+ * @summary Test verifies that ProcessTools.startProcess() print all lines even the last line doesn't end with '\n'
+ * @library /test/lib
+ * @run main ProcessToolsLastLineTest
+ */
+
+import jdk.test.lib.process.ProcessTools;
+
+public class ProcessToolsLastLineTest {
+
+    static void test(String expectedOut) throws Exception {
+        final StringBuffer sb = new StringBuffer();
+        Process p = ProcessTools.startProcess("process",
+                ProcessTools.createJavaProcessBuilder(ProcessToolsLastLineTest.class.getName(), expectedOut),
+                line -> { sb.append(line);});
+        p.waitFor();
+        if (!sb.toString().contains(expectedOut.replace("\n", ""))) {
+            throw new RuntimeException("Output doesn't contains " + expectedOut + ". Output:" + sb);
+        }
+
+    }
+
+    public static void main(String[] args) throws Exception {
+        final String expectedOut = "ARG1";
+
+        if (args.length > 0) {
+            System.out.print(args[0]);
+        } else {
+            test("ARG1");
+            test("ARG1\nARG2");
+            test("ARG1\nARG2\n");
+            test("\nARG1\nARG2\n");
+        }
+
+    }
+}
