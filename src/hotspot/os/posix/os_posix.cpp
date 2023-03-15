@@ -286,11 +286,7 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
                        flags, -1, 0);
 
   if (addr != MAP_FAILED) {
-    MemTracker::record_virtual_memory_reserve(
-        (address)addr, bytes,
-        ((MemTracker ::tracking_level() == NMT_detail)
-             ? NativeCallStack(1)
-             : NativeCallStack(NativeCallStack ::FakeMarker ::its_fake)));
+    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC);
     return addr;
   }
   return nullptr;
