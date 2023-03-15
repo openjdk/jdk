@@ -178,7 +178,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     assert(_region_commit_map.find_first_set_bit(start_idx, region_limit) == region_limit,
            "Should be no committed regions in the range [%u, %u)", start_idx, region_limit);
 
-    size_t const NoPage = ~(size_t)0;
+    size_t const NoPage = SIZE_MAX;
 
     size_t first_committed = NoPage;
     size_t num_committed = 0;

@@ -33,8 +33,13 @@ import java.util.Set;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.SimpleTypeVisitor14;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -45,59 +50,200 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
-import jdk.javadoc.internal.doclets.toolkit.util.links.LinkFactory;
-import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 
 /**
  * A factory that returns a link given the information about it.
  */
-public class HtmlLinkFactory extends LinkFactory {
+public class HtmlLinkFactory {
 
     private final HtmlDocletWriter m_writer;
     private final DocPaths docPaths;
+    private final Utils utils;
 
+    /**
+     * Constructs a new link factory.
+     *
+     * @param writer the HTML doclet writer
+     */
     public HtmlLinkFactory(HtmlDocletWriter writer) {
-        super(writer.configuration.utils);
         m_writer = writer;
         docPaths = writer.configuration.docPaths;
+        utils = writer.configuration.utils;
     }
 
-    @Override
+    /**
+     * {@return a new instance of a content object}
+     */
     protected Content newContent() {
         return new ContentBuilder();
     }
 
-    @Override
-    protected Content getClassLink(LinkInfo linkInfo) {
+    /**
+     * Constructs a link from the given link information.
+     *
+     * @param linkInfo the information about the link.
+     * @return the link.
+     */
+    public Content getLink(HtmlLinkInfo linkInfo) {
+        if (linkInfo.getType() != null) {
+            SimpleTypeVisitor14<Content, HtmlLinkInfo> linkVisitor = new SimpleTypeVisitor14<>() {
+
+                final Content link = newContent();
+
+                // handles primitives, no types and error types
+                @Override
+                protected Content defaultAction(TypeMirror type, HtmlLinkInfo linkInfo) {
+                    link.add(utils.getTypeName(type, false));
+                    return link;
+                }
+
+                int currentDepth = 0;
+                @Override
+                public Content visitArray(ArrayType type, HtmlLinkInfo linkInfo) {
+                    // keep track of the dimension depth and replace the last dimension
+                    // specifier with varargs, when the stack is fully unwound.
+                    currentDepth++;
+                    var componentType = type.getComponentType();
+                    visit(componentType, linkInfo.forType(componentType));
+                    currentDepth--;
+                    if (utils.isAnnotated(type)) {
+                        link.add(" ");
+                        link.add(getTypeAnnotationLinks(linkInfo));
+                    }
+                    // use vararg if required
+                    if (linkInfo.isVarArg() && currentDepth == 0) {
+                        link.add("...");
+                    } else {
+                        link.add("[]");
+                    }
+                    return link;
+                }
+
+                @Override
+                public Content visitWildcard(WildcardType type, HtmlLinkInfo linkInfo) {
+                    link.add(getTypeAnnotationLinks(linkInfo));
+                    link.add("?");
+                    TypeMirror extendsBound = type.getExtendsBound();
+                    if (extendsBound != null) {
+                        link.add(" extends ");
+                        link.add(getLink(getBoundsLinkInfo(linkInfo, extendsBound)));
+                    }
+                    TypeMirror superBound = type.getSuperBound();
+                    if (superBound != null) {
+                        link.add(" super ");
+                        link.add(getLink(getBoundsLinkInfo(linkInfo, superBound)));
+                    }
+                    return link;
+                }
+
+                @Override
+                public Content visitTypeVariable(TypeVariable type, HtmlLinkInfo linkInfo) {
+                    link.add(getTypeAnnotationLinks(linkInfo));
+                    TypeVariable typevariable = (utils.isArrayType(type))
+                            ? (TypeVariable) utils.getComponentType(type)
+                            : type;
+                    Element owner = typevariable.asElement().getEnclosingElement();
+                    if (linkInfo.linkTypeParameters() && utils.isTypeElement(owner)) {
+                        linkInfo.setTypeElement((TypeElement) owner);
+                        Content label = newContent();
+                        label.add(utils.getTypeName(type, false));
+                        linkInfo.label(label).skipPreview(true);
+                        link.add(getClassLink(linkInfo));
+                    } else {
+                        // No need to link method type parameters.
+                        link.add(utils.getTypeName(typevariable, false));
+                    }
+
+                    if (linkInfo.showTypeBounds()) {
+                        linkInfo.showTypeBounds(false);
+                        TypeParameterElement tpe = ((TypeParameterElement) typevariable.asElement());
+                        boolean more = false;
+                        List<? extends TypeMirror> bounds = utils.getBounds(tpe);
+                        for (TypeMirror bound : bounds) {
+                            // we get everything as extends java.lang.Object we suppress
+                            // all of them except those that have multiple extends
+                            if (bounds.size() == 1 &&
+                                    utils.typeUtils.isSameType(bound, utils.getObjectType()) &&
+                                    !utils.isAnnotated(bound)) {
+                                continue;
+                            }
+                            link.add(more ? " & " : " extends ");
+                            link.add(getLink(getBoundsLinkInfo(linkInfo, bound)));
+                            more = true;
+                        }
+                    }
+                    return link;
+                }
+
+                @Override
+                public Content visitDeclared(DeclaredType type, HtmlLinkInfo linkInfo) {
+                    TypeMirror enc = type.getEnclosingType();
+                    if (enc instanceof DeclaredType dt && utils.isGenericType(dt)) {
+                        // If an enclosing type has type parameters render them as separate links as
+                        // otherwise this information is lost. On the other hand, plain enclosing types
+                        // are not linked separately as they are easy to reach from the nested type.
+                        visitDeclared(dt, linkInfo.forType(dt));
+                        link.add(".");
+                    }
+                    link.add(getTypeAnnotationLinks(linkInfo));
+                    linkInfo.setTypeElement(utils.asTypeElement(type));
+                    link.add(getClassLink(linkInfo));
+                    if (linkInfo.showTypeParameters()) {
+                        link.add(getTypeParameterLinks(linkInfo));
+                    }
+                    return link;
+                }
+            };
+            return linkVisitor.visit(linkInfo.getType(), linkInfo);
+        } else if (linkInfo.getTypeElement() != null) {
+            Content link = newContent();
+            link.add(getClassLink(linkInfo));
+            if (linkInfo.showTypeParameters()) {
+                link.add(getTypeParameterLinks(linkInfo));
+            }
+            return link;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns a link to the given class.
+     *
+     * @param linkInfo the information about the link to construct
+     * @return the link for the given class.
+     */
+    protected Content getClassLink(HtmlLinkInfo linkInfo) {
         BaseConfiguration configuration = m_writer.configuration;
-        HtmlLinkInfo classLinkInfo = (HtmlLinkInfo) linkInfo;
-        TypeElement typeElement = classLinkInfo.typeElement;
+        TypeElement typeElement = linkInfo.getTypeElement();
         // Create a tool tip if we are linking to a class or interface.  Don't
         // create one if we are linking to a member.
         String title = "";
-        boolean hasWhere = classLinkInfo.fragment != null && classLinkInfo.fragment.length() != 0;
-        if (!hasWhere) {
-            boolean isTypeLink = classLinkInfo.type != null &&
-                     utils.isTypeVariable(utils.getComponentType(classLinkInfo.type));
+        String fragment = linkInfo.getFragment();
+        boolean hasFragment = fragment != null && !fragment.isEmpty();
+        if (!hasFragment) {
+            boolean isTypeLink = linkInfo.getType() != null &&
+                     utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
             title = getClassToolTip(typeElement, isTypeLink);
         }
-        Content label = classLinkInfo.getClassLinkLabel(configuration);
-        if (classLinkInfo.context == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
+        Content label = linkInfo.getClassLinkLabel(configuration);
+        if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
             // For this kind of link, type parameters are included in the link label
             // (and obviously not added after the link).
-            label.add(getTypeParameterLinks(classLinkInfo));
+            label.add(getTypeParameterLinks(linkInfo));
         }
         Set<ElementFlag> flags;
         Element previewTarget;
-        boolean showPreview = !classLinkInfo.skipPreview;
-        if (!hasWhere && showPreview) {
+        boolean showPreview = !linkInfo.isSkipPreview();
+        if (!hasFragment && showPreview) {
             flags = utils.elementFlags(typeElement);
             previewTarget = typeElement;
-        } else if (classLinkInfo.context == HtmlLinkInfo.Kind.SHOW_PREVIEW
-                && classLinkInfo.targetMember != null && showPreview) {
-            flags = utils.elementFlags(classLinkInfo.targetMember);
-            TypeElement enclosing = utils.getEnclosingTypeElement(classLinkInfo.targetMember);
+        } else if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_PREVIEW
+                && linkInfo.getTargetMember() != null && showPreview) {
+            flags = utils.elementFlags(linkInfo.getTargetMember());
+            TypeElement enclosing = utils.getEnclosingTypeElement(linkInfo.getTargetMember());
             Set<ElementFlag> enclosingFlags = utils.elementFlags(enclosing);
             if (flags.contains(ElementFlag.PREVIEW) && enclosingFlags.contains(ElementFlag.PREVIEW)) {
                 if (enclosing.equals(m_writer.getCurrentPageElement())) {
@@ -107,7 +253,7 @@ public class HtmlLinkFactory extends LinkFactory {
                 }
                 previewTarget = enclosing;
             } else {
-                previewTarget = classLinkInfo.targetMember;
+                previewTarget = linkInfo.getTargetMember();
             }
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
@@ -117,12 +263,12 @@ public class HtmlLinkFactory extends LinkFactory {
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
-                DocPath filename = getPath(classLinkInfo);
-                if (linkInfo.linkToSelf || typeElement != m_writer.getCurrentPageElement()) {
+                DocPath filename = getPath(linkInfo);
+                if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentPageElement()) {
                         link.add(m_writer.links.createLink(
-                                filename.fragment(classLinkInfo.fragment),
+                                filename.fragment(linkInfo.getFragment()),
                                 label,
-                                classLinkInfo.style,
+                                linkInfo.getStyle(),
                                 title));
                         if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(HtmlTree.SUP(m_writer.links.createLink(
@@ -134,8 +280,8 @@ public class HtmlLinkFactory extends LinkFactory {
             }
         } else {
             Content crossLink = m_writer.getCrossClassLink(
-                typeElement, classLinkInfo.fragment,
-                label, classLinkInfo.style, true);
+                typeElement, linkInfo.getFragment(),
+                label, linkInfo.getStyle(), true);
             if (crossLink != null) {
                 link.add(crossLink);
                 if (flags.contains(ElementFlag.PREVIEW)) {
@@ -156,21 +302,26 @@ public class HtmlLinkFactory extends LinkFactory {
         return link;
     }
 
-    @Override
-    protected Content getTypeParameterLinks(LinkInfo linkInfo) {
+    /**
+     * Returns links to the type parameters.
+     *
+     * @param linkInfo the information about the link to construct
+     * @return the links to the type parameters
+     */
+    protected Content getTypeParameterLinks(HtmlLinkInfo linkInfo) {
         Content links = newContent();
         List<TypeMirror> vars = new ArrayList<>();
-        TypeMirror ctype = linkInfo.type != null
-                ? utils.getComponentType(linkInfo.type)
+        TypeMirror ctype = linkInfo.getType() != null
+                ? utils.getComponentType(linkInfo.getType())
                 : null;
-        if (linkInfo.executableElement != null) {
-            linkInfo.executableElement.getTypeParameters().forEach(t -> vars.add(t.asType()));
-        } else if (linkInfo.type != null && utils.isDeclaredType(linkInfo.type)) {
-            vars.addAll(((DeclaredType) linkInfo.type).getTypeArguments());
+        if (linkInfo.getExecutableElement() != null) {
+            linkInfo.getExecutableElement().getTypeParameters().forEach(t -> vars.add(t.asType()));
+        } else if (linkInfo.getType() != null && utils.isDeclaredType(linkInfo.getType())) {
+            vars.addAll(((DeclaredType) linkInfo.getType()).getTypeArguments());
         } else if (ctype != null && utils.isDeclaredType(ctype)) {
             vars.addAll(((DeclaredType) ctype).getTypeArguments());
-        } else if (ctype == null && linkInfo.typeElement != null) {
-            linkInfo.typeElement.getTypeParameters().forEach(t -> vars.add(t.asType()));
+        } else if (ctype == null && linkInfo.getTypeElement() != null) {
+            linkInfo.getTypeElement().getTypeParameters().forEach(t -> vars.add(t.asType()));
         } else {
             // Nothing to document.
             return links;
@@ -182,11 +333,11 @@ public class HtmlLinkFactory extends LinkFactory {
                 if (many) {
                     links.add(",");
                     links.add(new HtmlTree(TagName.WBR));
-                    if (linkInfo.addLineBreaksInTypeParameters) {
+                    if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);
                     }
                 }
-                links.add(getTypeParameterLink(linkInfo, t));
+                links.add(getLink(linkInfo.forType(t)));
                 many = true;
             }
             links.add(">");
@@ -195,31 +346,18 @@ public class HtmlLinkFactory extends LinkFactory {
     }
 
     /**
-     * Returns a link to the given type parameter.
+     * Returns links to the type annotations.
      *
-     * @param linkInfo     the information about the link to construct
-     * @param typeParam the type parameter to link to
-     * @return the link
+     * @param linkInfo the information about the link to construct
+     * @return the links to the type annotations
      */
-    protected Content getTypeParameterLink(LinkInfo linkInfo, TypeMirror typeParam) {
-        HtmlLinkInfo typeLinkInfo = new HtmlLinkInfo(m_writer.configuration,
-                ((HtmlLinkInfo) linkInfo).getContext(), typeParam);
-        typeLinkInfo.showTypeBounds = linkInfo.showTypeBounds;
-        typeLinkInfo.linkTypeParameters = linkInfo.linkTypeParameters;
-        typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
-        typeLinkInfo.addLineBreaksInTypeParameters = linkInfo.addLineBreaksInTypeParameters;
-        typeLinkInfo.showTypeParameterAnnotations = linkInfo.showTypeParameterAnnotations;
-        return getLink(typeLinkInfo);
-    }
-
-    @Override
-    public Content getTypeAnnotationLinks(LinkInfo linkInfo) {
+    public Content getTypeAnnotationLinks(HtmlLinkInfo linkInfo) {
         ContentBuilder links = new ContentBuilder();
         List<? extends AnnotationMirror> annotations;
-        if (utils.isAnnotated(linkInfo.type)) {
-            annotations = linkInfo.type.getAnnotationMirrors();
-        } else if (utils.isTypeVariable(linkInfo.type) && linkInfo.showTypeParameterAnnotations) {
-            Element element = utils.typeUtils.asElement(linkInfo.type);
+        if (utils.isAnnotated(linkInfo.getType())) {
+            annotations = linkInfo.getType().getAnnotationMirrors();
+        } else if (utils.isTypeVariable(linkInfo.getType()) && linkInfo.showTypeParameterAnnotations()) {
+            Element element = utils.typeUtils.asElement(linkInfo.getType());
             annotations = element.getAnnotationMirrors();
         } else {
             return links;
@@ -235,6 +373,13 @@ public class HtmlLinkFactory extends LinkFactory {
                 });
 
         return links;
+    }
+
+    /*
+     * Returns a link info for a type bounds link.
+     */
+    private HtmlLinkInfo getBoundsLinkInfo(HtmlLinkInfo linkInfo, TypeMirror bound) {
+        return linkInfo.forType(bound).skipPreview(false);
     }
 
     /**
@@ -272,6 +417,6 @@ public class HtmlLinkFactory extends LinkFactory {
      * @param linkInfo the information about the link.
      */
     private DocPath getPath(HtmlLinkInfo linkInfo) {
-        return m_writer.pathToRoot.resolve(docPaths.forClass(linkInfo.typeElement));
+        return m_writer.pathToRoot.resolve(docPaths.forClass(linkInfo.getTypeElement()));
     }
 }
