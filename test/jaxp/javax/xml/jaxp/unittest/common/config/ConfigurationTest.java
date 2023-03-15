@@ -28,7 +28,7 @@ import org.testng.annotations.DataProvider;
  * Configuration Test
  */
 public class ConfigurationTest {
-    static final String SP_CONFIG = "jdk.xml.config.file";
+    static final String SP_CONFIG = "java.xml.config.file";
     static final String SP_ENTITY_EXPANSION = "jdk.xml.entityExpansionLimit";
 
 

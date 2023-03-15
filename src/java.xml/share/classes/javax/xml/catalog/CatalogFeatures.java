@@ -24,8 +24,6 @@
  */
 package javax.xml.catalog;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.xml.internal.SecuritySupport;
@@ -42,8 +40,8 @@ import jdk.xml.internal.SecuritySupport;
  * <th scope="col" rowspan="2">Description</th>
  * <th scope="col" rowspan="2">Property Name</th>
  * <th scope="col" rowspan="2">System Property [1]</th>
- * <th scope="col" rowspan="2"><a href="../../../module-summary.html#ConfigurationFile">configuration file</a> [1]</th>
- * <th scope="col" colspan="2" style="text-align:center">Value [2]</th>
+ * <th scope="col" rowspan="2"><a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a> [2]</th>
+ * <th scope="col" colspan="2" style="text-align:center">Value [3]</th>
  * <th scope="col" rowspan="2">Action</th>
  * </tr>
  * <tr>
@@ -61,7 +59,7 @@ import jdk.xml.internal.SecuritySupport;
  * </td>
  * <td>javax.xml.catalog.files</td>
  * <td>javax.xml.catalog.files</td>
- * <td>javax.xml.catalog.files</td>
+ * <td>Yes</td>
  * <td>String</td>
  * <th id="URIs" scope="row" style="font-weight:normal">URIs</th>
  * <td>
@@ -73,10 +71,10 @@ import jdk.xml.internal.SecuritySupport;
  * <tr>
  * <th rowspan="2" scope="row" style="font-weight:normal" id="PREFER">PREFER</th>
  * <td rowspan="2">Indicates the preference between the public and system
- * identifiers. The default value is public [3].</td>
+ * identifiers. The default value is public [4].</td>
  * <td rowspan="2">javax.xml.catalog.prefer</td>
  * <td rowspan="2">N/A</td>
- * <td rowspan="2">N/A</td>
+ * <td rowspan="2">No</td>
  * <td rowspan="2">String</td>
  * <th scope="row" id="system" style="font-weight:normal">{@code system}</th>
  * <td>
@@ -95,9 +93,9 @@ import jdk.xml.internal.SecuritySupport;
  * <td rowspan="2">Indicates that the alternative catalogs including those
  * specified in delegate entries or nextCatalog are not read until they are
  * needed. The default value is true.</td>
- * <td rowspan="2">javax.xml.catalog.defer [4]</td>
+ * <td rowspan="2">javax.xml.catalog.defer [5]</td>
  * <td rowspan="2">javax.xml.catalog.defer</td>
- * <td rowspan="2">javax.xml.catalog.defer</td>
+ * <td rowspan="2">Yes</td>
  * <td rowspan="2">String</td>
  * <th scope="row" id="true" style="font-weight:normal">{@code true}</th>
  * <td>
@@ -107,7 +105,7 @@ import jdk.xml.internal.SecuritySupport;
  * <tr>
  * <th scope="row" id="false" style="font-weight:normal">{@code false}</th>
  * <td>
- * Loads all catalogs[5]. </td>
+ * Loads all catalogs[6]. </td>
  * </tr>
  *
  * <tr>
@@ -116,7 +114,7 @@ import jdk.xml.internal.SecuritySupport;
  * all of the specified catalogs are exhausted. The default is strict.</td>
  * <td rowspan="3">javax.xml.catalog.resolve [4]</td>
  * <td rowspan="3">javax.xml.catalog.resolve</td>
- * <td rowspan="3">javax.xml.catalog.resolve</td>
+ * <td rowspan="3">Yes</td>
  * <td rowspan="3">String</td>
  * <th scope="row" id="strict" style="font-weight:normal">{@code strict}</th>
  * <td>
@@ -140,12 +138,14 @@ import jdk.xml.internal.SecuritySupport;
  * </table>
  * <p>
  * <b>[1]</b> There is no System property for the features that marked as "N/A".
- *
  * <p>
- * <b>[2]</b> The value shall be exactly as listed in this table, case-sensitive.
+ * <b>[2]</b> The value "yes" indicates that the system property can be placed in
+ * the configuration file, "no" otherwise.
+ * <p>
+ * <b>[3]</b> The value shall be exactly as listed in this table, case-sensitive.
  * Any unspecified value will result in {@link IllegalArgumentException}.
  * <p>
- * <b>[3]</b> The Catalog specification defined complex rules on
+ * <b>[4]</b> The Catalog specification defined complex rules on
  * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#attrib.prefer">
  * the prefer attribute</a>. Although the prefer can be public or system, the
  * specification actually made system the preferred option, that is, no matter
@@ -154,39 +154,28 @@ import jdk.xml.internal.SecuritySupport;
  * therefore recommended that the prefer attribute be set as public
  * (which is the default).
  * <p>
- * <b>[4]</b> Although non-standard attributes in the OASIS Catalog specification,
+ * <b>[5]</b> Although non-standard attributes in the OASIS Catalog specification,
  * {@code defer} and {@code resolve} are recognized by the Java Catalog API the
  * same as the {@code prefer} as being an attribute in the catalog entry of the
  * main catalog. Note that only the attributes specified for the catalog entry
  * of the main Catalog file will be used.
   * <p>
- * <b>[5]</b> If the intention is to share an entire catalog store, it may be desirable to
+ * <b>[6]</b> If the intention is to share an entire catalog store, it may be desirable to
  * set the property {@code javax.xml.catalog.defer} to false to allow the entire
  * catalog to be pre-loaded.
  *
  * <h2>Scope and Order</h2>
- * Features and properties can be set through the catalog file, the Catalog API,
- * system properties, and
- * <a href="../../../module-summary.html#ConfigurationFile">configuration file</a>,
- * with a preference in the same order.
- * <p>
- * Properties that are specified as attributes in the catalog file for the
- * catalog and group entries shall take preference over any of the other settings.
+ * The Catalog Features follow the
+ * <a href="{@docRoot}/java.xml/module-summary.html#PSO">Property Scope and Order</a>
+ * as described in the module summary with regards to settings with the configuration
+ * file, system and API properties. In addition to the general procedure,
+ * the Catalog Features are further supported in the catalog file itself where
+ * they can be specified as attributes for the catalog and group entries. When
+ * the attributes are specified, they shall take preference over any of
+ * the other settings.
  * For example, if a {@code prefer} attribute is set in the catalog file as in
  * {@code <catalog prefer="public">}, any other input for the "prefer" property
  * is not necessary or will be ignored.
- * <p>
- * Properties set through the Catalog API override those that may have been set
- * by system properties and/or in the
- * <a href="../../../module-summary.html#ConfigurationFile">configuration file</a>.
- * In case of multiple interfaces, the latest in a procedure shall take preference.
- * For {@link Feature#FILES}, this means that the URI(s) specified through the methods
- * of the {@link CatalogManager} will override any that may have been entered
- * through the {@link Builder}.
- *
- * <p>
- * System properties when set shall override those in the
- * <a href="../../../module-summary.html#ConfigurationFile">configuration file</a>.
  *
  * <p>
  * A CatalogFeatures instance can be created through its builder as illustrated

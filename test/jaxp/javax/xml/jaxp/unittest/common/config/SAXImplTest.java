@@ -39,7 +39,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @modules java.xml/jdk.xml.internal
  * @run testng/othervm common.config.SAXImplTest
  * @summary verifies that JAXP configuration file is customizable with a system
- * property "jdk.xml.config.file".
+ * property "java.xml.config.file".
  */
 public class SAXImplTest extends SAXParserFactory {
     @DataProvider(name = "getImpl")

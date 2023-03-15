@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
  * @modules java.xml/jdk.xml.internal
  * @run testng/othervm common.config.SchemaFactoryTest
  * @summary verifies that JAXP configuration file is customizable with a system
- * property "jdk.xml.config.file".
+ * property "java.xml.config.file".
  */
 public class SchemaFactoryTest extends SchemaFactory {
     @DataProvider(name = "getImpl")

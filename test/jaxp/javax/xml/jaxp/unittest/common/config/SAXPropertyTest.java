@@ -34,7 +34,7 @@ import org.xml.sax.XMLReader;
  * @modules java.xml/jdk.xml.internal
  * @run testng/othervm common.config.SAXPropertyTest
  * @summary verifies that JAXP configuration file is customizable with a system
- * property "jdk.xml.config.file".
+ * property "java.xml.config.file".
  */
 public class SAXPropertyTest extends ConfigurationTest {
     @Test(dataProvider = "getProperty")

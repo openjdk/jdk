@@ -287,7 +287,7 @@ public final class JdkConstants {
      * System Property for the Configuration File
      * @since 21
      */
-    public static final String CONFIG_FILE = "jdk.xml.config.file";
+    public static final String CONFIG_FILE = "java.xml.config.file";
 
     /**
      * Values for a feature

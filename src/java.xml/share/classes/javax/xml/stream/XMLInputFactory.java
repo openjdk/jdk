@@ -168,7 +168,7 @@ public abstract class XMLInputFactory {
 
   /**
    * Creates a new instance of the factory. This method uses the
-   * <a href="../../../module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
+   * <a href="{@docRoot}/java.xml/module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
    * to determine the {@code XMLInputFactory} implementation class to load.
    * <p>
    * Once an application has obtained a reference to a {@code XMLInputFactory}, it
@@ -222,10 +222,9 @@ public abstract class XMLInputFactory {
    * <li>
    *   <p>
    *   Use the value of the property {@code factoryId} set in the
-   * <a href="../../../module-summary.html#ConfigurationFile">configuration file</a>,
-   * stax.properties or jaxp.properties by default. If the file exists and
-   * the property {@code factoryId} is specified in the file, its value will be
-   * used as the implementation class.
+   * <a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a>,
+   * jaxp.properties by default. If the file exists and the property {@code factoryId}
+   * is specified in the file, its value will be used as the implementation class.
    * </li>
    * <li>
    *   <p>

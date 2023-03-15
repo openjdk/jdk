@@ -28,75 +28,49 @@
  * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
  *
  * <h2 id="ConfigurationFile">Configuration File</h2>
- * The java.xml (JAXP) Configuration File is used for configuring factories in the
- * <a href="#LookupMechanism">Factory Lookup Mechanism</a>, secure processing,
- * and Catalog API.
+ * The XML processing APIs in this module support the use of a configuration file for
+ * setting properties that have defined corresponding system properties.
  *
  * <h3>Format</h3>
- * The configuration file is in standard {@link java.util.Properties} format.
+ * The configuration file must be in standard {@link java.util.Properties} format.
  * <p>
- * The keys are:
- * <ul>
- * <li>
- * For the <a href="#LookupMechanism">Factory Lookup Mechanism</a>, System properties
- * as listed in column System Property of the table <a href="#Factories">JAXP Factories</a>.
- * </li>
- * <li>
+ * The keys are the names of the system properties, for example, those listed in
+ * column {@code System Property Name} of the table <a href="#Factories">JAXP Factories</a>,
+ * or {@code System Property} in table {@code Catalog Features}
+ * of class {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}.
+ *
  * <p>
- * For secure processing, {@code Full Name} in
- * table <a href="#Properties">Implementation Specific Properties</a> and
- * <a href="#Features">Features</a>
- * </li>
- * <li>
- * <p>
- * For the Catalog API, {@code System Property} in table {@code Catalog Features}
- * of class {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}
- * </li>
- * </ul>
- * <p>
- * The values are:
- * <ul>
- * <li>
- * For the <a href="#LookupMechanism">Factory Lookup Mechanism</a>, the fully
- * qualified name of the implementation class.
- * </li>
- * <li>
- * <p>
- * For secure processing, {@code Value} in
- * table <a href="#Properties">Implementation Specific Properties</a> and
- * <a href="#Features">Features</a>
- * </li>
- * <li>
- * <p>
- * For the Catalog API, {@code value} in table {@code Catalog Features}
- * of class {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}
- * </li>
- * </ul>
+ * The values are those defined in the specific API or process, for example, the
+ * fully qualified name of the implementation class for the
+ * <a href="#LookupMechanism">Factory Lookup Mechanism</a>, or {@code value} in
+ * table {@code Catalog Features} of class
+ * {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}.
+ *
  * <p>
  * Below are examples on what can be placed in the configuration file:
  * <pre>
  *     {@code javax.xml.parsers.DocumentBuilderFactory=packagename.DocumentBuilderFactoryImpl}
- *     {@code jdk.xml.entityExpansionLimit=2000}
+ *     {@code javax.xml.catalog.resolve=strict}
  * </pre>
  *
  *
  * <h3 id="CF_Default">Default</h3>
- * The JDK may be distributed with a configuration file called {@code jaxp.properties}
- * that is used by all factories listed in <a href="#Factories">the Factories table</a> below.
- * It may also include one called {@code stax.properties} that will be used by
- * the StAX factories for the <a href="#LookupMechanism">Factory Lookup Mechanism</a>
- * only. The files, if exist, are typically located in the {@code conf}
- * directory of the Java installation.
+ * By default, the <a href="#Factories">JAXP Factories</a> will look for a
+ * configuration file called {@code jaxp.properties} in the {@code conf} directory
+ * of the Java installation if the
+ * <a href="#CF_SP">system property {@code java.xml.config.file}</a>
+ * is not specified.
+ *
  * <p>
- * The default files will be read only once during a factory initialization and
+ * The default file will be read only once during a factory initialization and
  * the values are used while the factory is alive.  If the file does not exist when
  * the first attempt is made to read from it, no further attempts are made to check
  * for its existence. It is not possible to change the value of any property after
  * it has been read for the first time.
  *
  *
- * <h3>System Property</h3>
- * The system property {@code jdk.xml.config.file} can be used to set up a
+ * <h3 id="CF_SP">System Property</h3>
+ * The system property {@code java.xml.config.file} can be used to set up a
  * configuration file outside of the JDK to override the default configuration
  * file (jaxp.properties).
  * <p>
@@ -167,7 +141,7 @@
  * <td style="text-align:center">{@code javax.xml.stream.XMLEventFactory}</td>
  * <td style="text-align:center">
  *     <a href="#ConfigurationFile">Configuration File</a>,
- *     <a href="#CF_Default">stax.properties</a> and/or <a href="#CF_Default">jaxp.properties</a> by default
+ *     <a href="#CF_Default">jaxp.properties</a> by default
  * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLEventFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
@@ -179,7 +153,7 @@
  * <td style="text-align:center">{@code javax.xml.stream.XMLInputFactory}</td>
  * <td style="text-align:center">
  *     <a href="#ConfigurationFile">Configuration File</a>,
- *     <a href="#CF_Default">stax.properties</a> and/or <a href="#CF_Default">jaxp.properties</a> by default
+ *     <a href="#CF_Default">jaxp.properties</a> by default
  * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLInputFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
@@ -191,7 +165,7 @@
  * <td style="text-align:center">{@code javax.xml.stream.XMLOutputFactory}</td>
  * <td style="text-align:center">
  *     <a href="#ConfigurationFile">Configuration File</a>,
- *     <a href="#CF_Default">stax.properties</a> and/or <a href="#CF_Default">jaxp.properties</a> by default
+ *     <a href="#CF_Default">jaxp.properties</a> by default
  * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLOutputFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
@@ -240,11 +214,11 @@
  * <ul>
  * <li>
  * Use the system property as described in column System Property of the table
- * <a href="#Factories">JAXP Factories</a> above.
+ * <a href="#Factories">JAXP Factories</a> above;
  * </li>
  * <li>
  * <p>
- * Use the <a href="#ConfigurationFile">Configuration File</a>.
+ * Use the <a href="#ConfigurationFile">Configuration File</a>;
  * </li>
  * <li>
  * <p>
@@ -295,7 +269,58 @@
  * </li>
  * </ul>
  *
+ * <h2 id="PSO">Property Scope and Order</h2>
+ * Properties in this module may be set in several different ways, including
+ * initialization, the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
+ * (hereafter referred to FSP), <a href="#ConfigurationFile">configuration file</a>,
+ * system properties, the API properties. These settings will be in effect in
+ * different scopes and follow an overriding order. In general, a setting in a
+ * more specific or narrower scope overrides the one in general or wider scope.
+ * The followings describe the scope of the settings and the overriding order that
+ * is in descending order, with the later overriding the former:
+ *
+ * <ul>
+ * <li>
+ *      In a factory scope, properties are initialized with default values;
+ * </li>
+ * <li><p>
+ *      In a factory scope, the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING}
+ * feature (hereafter referred to FSP) may set a more restrictive value to override
+ * the default. This process applies only to security-related properties that
+ * have defined a restrictive value on top of the default one.
+ * </li>
+ * <li><p>
+ *      In a scope of all invocations of the JDK, properties that have corresponding
+ * system properties defined may be set in the <a href="#ConfigurationFile">configuration file</a>;
+ * </li>
+ * <li><p>
+ *      In a scope of a JDK instance, system properties, if any, may be set on
+ * the commandline;
+ * </li>
+ * <li><p>
+ *      System properties may be set through the System Property API to have effect
+ * on the procedure where they are set;
+ * </li>
+ * <li><p>
+ *      And last, in a scope of a factory or processor, properties specified
+ * through factories or processors API.
+ * </li>
+ * </ul>
+ *
  * @implNote
+ *
+ * <h2 id="ConfigurationFile">Configuration File</h2>
+ * The <a href="#ConfigurationFile">configuration file</a> defined by the XML
+ * processing API may be used to set the JDK implementation specific properties
+ * and features. For that purpose, the JDK may be distributed with the
+ * <a href="#CF_Default">default file {@code jaxp.properties}</a> that may contain
+ * any of the properties listed in table
+ * <a href="#Properties">Implementation Specific Properties</a> and
+ * <a href="#Features">Features</a>. See also
+ * <a href="#PSO">Property Scope and Order</a> for the use of the configuration
+ * file in setting properties.
+ *
+ *
  * <h2>Implementation Specific Features and Properties</h2>
  *
  * In addition to the standard features and properties described within the public
@@ -340,38 +365,29 @@
  * <h3>Configuration File</h3>
  * A system property can be specified in the <a href="#ConfigurationFile">Configuration File</a>
  * to set the behavior for all invocations of the JDK. The format is
- * {@code system-property-name=value}. For example:
+ * {@code key=value}, where the key is the property name as listed in column
+ * {@code Full Name} and value in column {@code Value} in table
+ * <a href="#Properties">Implementation Specific Properties</a> and
+ * <a href="#Features">Features</a>. For example:
  * <pre>
+ *     {@code jdk.xml.entityExpansionLimit=2000}
  *     {@code jdk.xml.isStandalone=true}
  * </pre>
  *
  * <h3 id="ScopeAndOrder">Scope and Order</h3>
- * The {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature
- * (hereafter referred to as secure processing) is required for XML processors
- * including DOM, SAX, Schema Validation, XSLT, and XPath. When secure processing
- * is set to true, security related features and properties, such as those flagged
- * as {@code "security: yes"} (hereafter referred to as security properties) in
- * table <a href="#Features">Implementation Specific Features</a> and
- * <a href="#Properties">Properties</a>,
- * are enforced. Such enforcement includes setting security properties and features
- * to more restrictive values and limits as shown in {@code "Value"}'s
- * subcolumn {@code "Enforced"} in the tables. When secure processing
- * is set to false, however, the property values will not be affected.
+ * The JDK implementation specific features and properties follow the same procedure
+ * as described in section <a href="#PSO">Property Scope and Order</a>. Specific
+ * to the 2nd step in the procedure, that is, settings by
+ * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP}, security related
+ * features and properties are flagged as {@code "security: yes"} in table
+ * <a href="#Features">Implementation Specific Features</a> and
+ * <a href="#Properties">Properties</a>. Their values are shown in {@code "Value"}'s
+ * subcolumn {@code "Enforced"} in the tables.
+ *
  * <p>
- * When the Java Security Manager is present, secure processing is set to true
- * and can not be turned off. The security properties are therefore enforced.
- * <p>
- * Properties specified in the configuration file affect all invocations of
- * the JDK, and will override their default values, or those that may have been
- * set by secure processing.
- * <p>
- * System properties, when set, affect the invocation of the JDK and override
- * the default settings or those that may have been set in the configuration file
- * or by secure processing.
- * <p>
- * JAXP properties specified through JAXP factories or processors (e.g. SAXParser)
- * take preference over system properties, the configuration file, as well as
- * secure processing.
+ * Furthermore, when the Java Security Manager is present, the JDK sets
+ * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} to true and does
+ * not allow it to be turned off. The security properties are therefore enforced.
  *
  * <h3 id="Processor">Processor Support</h3>
  * Features and properties may be supported by one or more processors. The

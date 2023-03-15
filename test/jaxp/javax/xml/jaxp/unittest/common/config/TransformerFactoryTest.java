@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
  * @modules java.xml/jdk.xml.internal
  * @run testng/othervm common.config.TransformerFactoryTest
  * @summary verifies that JAXP configuration file is customizable with a system
- * property "jdk.xml.config.file".
+ * property "java.xml.config.file".
  */
 public class TransformerFactoryTest extends TransformerFactory {
     @DataProvider(name = "getImpl")
