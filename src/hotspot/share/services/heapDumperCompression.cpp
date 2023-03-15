@@ -54,10 +54,14 @@ char const* FileWriter::write_buf(char* buf, ssize_t size) {
   assert(_fd >= 0, "Must be open");
   assert(size > 0, "Must write at least one byte");
 
-  ssize_t n = (ssize_t) os::write(_fd, buf, (uint) size);
+  while (size > 0) {
+    ssize_t n = os::write(_fd, buf, (uint) size);
+    if (n <= 0) {
+      return os::strerror(errno);
+    }
 
-  if (n <= 0) {
-    return os::strerror(errno);
+    buf += n;
+    size -= n;
   }
 
   return NULL;
