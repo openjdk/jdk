@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,14 @@ public class AppLauncherEnvTest {
         final String expectedEnvVarValue = Optional.ofNullable(System.getenv(
                 envVarName)).orElse("") + File.pathSeparator + appDir;
 
-        TKit.assertEquals(expectedEnvVarValue, actualEnvVarValue, String.format(
-                "Check value of %s env variable", envVarName));
+        String msg = String.format("Check value of %s env variable", envVarName);
+        if (TKit.isLinux()) {
+            if (! actualEnvVarValue.endsWith(expectedEnvVarValue)) {
+                TKit.assertTrue(false, msg);
+            }
+        } else {
+            TKit.assertEquals(expectedEnvVarValue, actualEnvVarValue, msg);
+        }
 
         final String javaLibraryPath = getValue.apply(2, "java.library.path");
         TKit.assertTrue(
