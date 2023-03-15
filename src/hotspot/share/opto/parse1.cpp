@@ -208,11 +208,14 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   // Check bailouts.  We currently do not perform on stack replacement
   // of loops in catch blocks or loops which branch with a non-empty stack.
   if (sp() != 0) {
+    // Bailout. But we should probably kick into normal compilation?
     C->record_method_not_compilable("OSR starts with non-empty stack");
     return;
   }
   // Do not OSR inside finally clauses:
   if (osr_block->has_trap_at(osr_block->start())) {
+    assert(false, "OSR starts with an immediate trap");
+    // Bailout. But we should probably kick into normal compilation?
     C->record_method_not_compilable("OSR starts with an immediate trap");
     return;
   }
@@ -253,6 +256,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   MethodLivenessResult live_locals = method()->liveness_at_bci(osr_bci());
   if (!live_locals.is_valid()) {
     // Degenerate or breakpointed method.
+    assert(false, "OSR in empty or breakpointed method");
     C->record_method_not_compilable("OSR in empty or breakpointed method");
     return;
   }
@@ -429,6 +433,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _iter.reset_to_method(method());
   _flow = method()->get_flow_analysis();
   if (_flow->failing()) {
+    assert(false, "flow fails during parsing");
     C->record_method_not_compilable(_flow->failure_reason());
   }
 
@@ -507,6 +512,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     _entry_bci = C->entry_bci();
     _flow = method()->get_osr_flow_analysis(osr_bci());
     if (_flow->failing()) {
+      assert(false, "OSR flow failure");
       C->record_method_not_compilable(_flow->failure_reason());
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
@@ -1044,6 +1050,7 @@ void Parse::do_exits() {
       // loading.  It could also be due to an error, so mark this method as not compilable because
       // otherwise this could lead to an infinite compile loop.
       // In any case, this code path is rarely (and never in my testing) reached.
+      assert(false, "Can't determine return type.");
       C->record_method_not_compilable("Can't determine return type.");
       return;
     }
@@ -1119,6 +1126,7 @@ SafePointNode* Parse::create_entry_map() {
   // Check for really stupid bail-out cases.
   uint len = TypeFunc::Parms + method()->max_locals() + method()->max_stack();
   if (len >= 32760) {
+    // Bailout expected, this is a very rare edge case.
     C->record_method_not_compilable("too many local variables");
     return NULL;
   }

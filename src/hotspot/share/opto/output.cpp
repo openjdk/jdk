@@ -2844,6 +2844,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
       pinch = new Node(1); // Pinch point to-be
     }
     if (pinch->_idx >= _regalloc->node_regs_max_index()) {
+      assert(false, "too many D-U pinch points");
       _cfg->C->record_method_not_compilable("too many D-U pinch points");
       return;
     }

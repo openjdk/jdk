@@ -4310,6 +4310,7 @@ void PhaseIdealLoop::build_and_optimize() {
   if (!has_node(C->root())) {
     if (!_verify_only) {
       C->clear_major_progress();
+      assert(false, "empty program detected during loop optimization");
       C->record_method_not_compilable("empty program detected during loop optimization");
     }
     return;
@@ -5171,6 +5172,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
             m->dump();
           }
 #endif
+          // This is a rare case that we do not want to handle in C2.
           C->record_method_not_compilable("unhandled CFG detected during loop optimization");
           return pre_order;
         }

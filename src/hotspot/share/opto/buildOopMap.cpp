@@ -251,6 +251,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 
       // Check for a legal reg name in the oopMap and bailout if it is not.
       if (!omap->legal_vm_reg_name(r)) {
+        assert(false, "illegal oopMap register name");
         regalloc->C->record_method_not_compilable("illegal oopMap register name");
         continue;
       }
@@ -318,6 +319,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
       assert( !OptoReg::is_valid(_callees[reg]), "oop can't be callee save" );
       // Check for a legal reg name in the oopMap and bailout if it is not.
       if (!omap->legal_vm_reg_name(r)) {
+        assert(false, "illegal oopMap register name");
         regalloc->C->record_method_not_compilable("illegal oopMap register name");
         continue;
       }

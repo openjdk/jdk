@@ -753,7 +753,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     }
     if (failing())  return;
     if (cg == NULL) {
-      record_method_not_compilable("cannot parse method");
+      const char* reason = InlineTree::check_can_parse(method());
+      assert(reason != nullptr, "cannot parse method: why?");
+      stringStream ss;
+      ss.print("cannot parse method: %s", reason);
+      record_method_not_compilable(ss.as_string());
       return;
     }
 
@@ -762,7 +766,10 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == NULL) {
       if (!failure_reason_is(C2Compiler::retry_class_loading_during_parsing())) {
-        record_method_not_compilable("method parse failed");
+        assert(failure_reason() != nullptr, "method parse failed: why?");
+        stringStream ss;
+        ss.print("method parse failed: %s", failure_reason());
+        record_method_not_compilable(ss.as_string());
       }
       return;
     }
@@ -3922,6 +3929,8 @@ bool Compile::final_graph_reshaping() {
   // an infinite loop may have been eliminated by the optimizer,
   // in which case the graph will be empty.
   if (root()->req() == 1) {
+    // Do not compile method that is only a trivial infinite loop,
+    // since the content of the loop may have been eliminated.
     record_method_not_compilable("trivial infinite loop");
     return true;
   }
@@ -3989,6 +3998,7 @@ bool Compile::final_graph_reshaping() {
       }
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
+        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
@@ -4007,6 +4017,7 @@ bool Compile::final_graph_reshaping() {
     // must be infinite loops.
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++)
       if (!frc._visited.test(n->fast_out(j)->_idx)) {
+        assert(false, "infinite loop");
         record_method_not_compilable("infinite loop");
         return true;            // Found unvisited kid; must be unreach
       }

@@ -1500,6 +1500,7 @@ void PhaseCFG::global_code_motion() {
   Node_Stack stack((C->live_nodes() >> 2) + 16); // pre-grow
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
+    assert(false, "early schedule failed");
     C->record_method_not_compilable("early schedule failed");
     return;
   }
@@ -1600,6 +1601,7 @@ void PhaseCFG::global_code_motion() {
     Block* block = get_block(i);
     if (!schedule_local(block, ready_cnt, visited, recalc_pressure_nodes)) {
       if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
+        assert(false, "local schedule failed");
         C->record_method_not_compilable("local schedule failed");
       }
       _regalloc = NULL;
