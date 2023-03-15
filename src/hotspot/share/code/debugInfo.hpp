@@ -188,7 +188,7 @@ class ObjectValue: public ScopeValue {
 };
 
 // An ObjectMergeValue describes objects that were inputs to a Phi in C2 and at
-// least one of them were scalar replaced.
+// least one of them was scalar replaced.
 // '_selector' is an integer value that will be '-1' if during the execution of
 // the C2 compiled code the path taken was that of the Phi input that was NOT
 // scalar replaced. In that case '_merge_pointer' is a pointer to an already
@@ -210,15 +210,15 @@ public:
      : _id(id)
      , _selector(selector)
      , _merge_pointer(merge_pointer)
-     , _selected(NULL)
+     , _selected(nullptr)
      , _value()
      , _visited(false) {}
 
   ObjectMergeValue(int id)
      : _id(id)
-     , _selector(NULL)
-     , _merge_pointer(NULL)
-     , _selected(NULL)
+     , _selector(nullptr)
+     , _merge_pointer(nullptr)
+     , _selected(nullptr)
      , _value()
      , _visited(false) {}
 
@@ -230,7 +230,7 @@ public:
   Handle                      value() const                   { return _value; }
   bool                        is_visited() const              { return _visited; }
   ObjectValue*                select(frame* fr, RegisterMap* reg_map) ;
-  ObjectValue*                selected()                      { assert(_selected != NULL, "not yet."); return _selected; };
+  ObjectValue*                selected()                      { assert(_selected != nullptr, "not yet."); return _selected; };
 
   void                        set_value(oop value);
   void                        set_visited(bool visited)       { _visited = visited; }

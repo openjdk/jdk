@@ -626,7 +626,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "null or TOP memory";)
           can_eliminate = false;
-        } else if (safepoints != NULL) {
+        } else if (safepoints != nullptr) {
           safepoints->append_if_missing(sfpt);
         }
       } else if (ignore_merges && use->is_Phi()) {
@@ -653,7 +653,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   }
 
 #ifndef PRODUCT
-  if (PrintEliminateAllocations && safepoints != NULL) {
+  if (PrintEliminateAllocations && safepoints != nullptr) {
     if (can_eliminate) {
       tty->print("Scalar ");
       if (res == nullptr)

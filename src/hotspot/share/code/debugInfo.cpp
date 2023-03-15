@@ -85,7 +85,7 @@ ScopeValue* DebugInfoReadStream::read_object_value(bool is_auto_box) {
 ScopeValue* DebugInfoReadStream::read_object_merge_value() {
   int id = read_int();
 #ifdef ASSERT
-  assert(_obj_pool != NULL, "object pool does not exist");
+  assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
     assert(!_obj_pool->at(i)->is_object() || _obj_pool->at(i)->as_ObjectValue()->id() != id, "should not be read twice");
     assert(!_obj_pool->at(i)->is_object_merge() || _obj_pool->at(i)->as_ObjectMergeValue()->id() != id, "should not be read twice");
@@ -227,10 +227,10 @@ void ObjectValue::print_fields_on(outputStream* st) const {
 // took during execution of the Trap that triggered the rematerialization
 // of the object.
 ObjectValue* ObjectMergeValue::select(frame* fr, RegisterMap* reg_map) {
-  assert(fr != NULL && reg_map != NULL, "sanity");
+  assert(fr != nullptr && reg_map != nullptr, "sanity");
 
   // If we call select again on the same merge we should return the same result
-  if (_selected != NULL) {
+  if (_selected != nullptr) {
     return _selected;
   }
 
@@ -266,10 +266,10 @@ ObjectValue* ObjectMergeValue::select(frame* fr, RegisterMap* reg_map) {
     // Candidate is not candidate anymore, it's the real object
     _selected->set_merge_candidate(false);
 
-    // Returns NULL and that should indicate to the caller that
+    // Returns null and that should indicate to the caller that
     // one of the candidate objects, inside this merge, became
     // a real object.
-    return NULL;
+    return nullptr;
   }
 }
 

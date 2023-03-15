@@ -1106,7 +1106,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 //----------------------------is_uncommon_trap----------------------------
 // Returns true if this is an uncommon trap.
 bool CallStaticJavaNode::is_uncommon_trap() const {
-  return (_name != NULL && !strcmp(_name, "uncommon_trap"));
+  return (_name != nullptr && !strcmp(_name, "uncommon_trap"));
 }
 
 //----------------------------uncommon_trap_request----------------------------

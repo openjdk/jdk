@@ -299,7 +299,7 @@ static void print_objects(JavaThread* deoptee_thread,
   fieldDescriptor fd;
 
   for (int i = 0; i < objects->length(); i++) {
-    ObjectValue* sv = NULL;
+    ObjectValue* sv = nullptr;
 
     if (objects->at(i)->is_object()) {
       sv = objects->at(i)->as_ObjectValue();
@@ -1213,7 +1213,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       // If this is true it means that a candidate object became a
       // real object and we are going to reach that object in a later
       // iteration of the outer loop.
-      if (sv == NULL) {
+      if (sv == nullptr) {
         continue;
       }
 
@@ -1580,7 +1580,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       // If the object is only a candidate inside an ObjectMergeValue we
       // skip processing it.
       //
-      // If the pointer didn't came from a scalar replaced object then
+      // If the pointer didn't come from a scalar replaced object then
       // we don't need to do field reassignment.
       if (sv->is_merge_candidate() || sv->skip_field_assignment()) {
         continue;
