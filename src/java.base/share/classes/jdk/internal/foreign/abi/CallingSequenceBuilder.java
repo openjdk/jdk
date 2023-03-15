@@ -35,12 +35,9 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 import static java.lang.invoke.MethodType.methodType;
-import static jdk.internal.foreign.abi.Binding.Tag.*;
 
 public class CallingSequenceBuilder {
     private static final boolean VERIFY_BINDINGS = Boolean.parseBoolean(
@@ -92,7 +89,7 @@ public class CallingSequenceBuilder {
 
     public CallingSequence build() {
         boolean needsReturnBuffer = needsReturnBuffer();
-        long returnBufferSize = needsReturnBuffer ? computeReturnBuferSize() : 0;
+        long returnBufferSize = needsReturnBuffer ? computeReturnBufferSize() : 0;
         long allocationSize = computeAllocationSize() + returnBufferSize;
         MethodType callerMethodType;
         MethodType calleeMethodType;
@@ -171,7 +168,7 @@ public class CallingSequenceBuilder {
         return size;
     }
 
-    private long computeReturnBuferSize() {
+    private long computeReturnBufferSize() {
         return outputBindings.stream()
                 .filter(Binding.Move.class::isInstance)
                 .map(Binding.Move.class::cast)
@@ -191,25 +188,12 @@ public class CallingSequenceBuilder {
         }
     }
 
-    private static final Set<Binding.Tag> UNBOX_TAGS = EnumSet.of(
-        VM_STORE,
-        //VM_LOAD,
-        //BUFFER_STORE,
-        BUFFER_LOAD,
-        COPY_BUFFER,
-        //ALLOC_BUFFER,
-        //BOX_ADDRESS,
-        UNBOX_ADDRESS,
-        DUP,
-        CAST
-    );
-
     private static void verifyUnboxBindings(Class<?> inType, List<Binding> bindings) {
         Deque<Class<?>> stack = new ArrayDeque<>();
         stack.push(inType);
 
         for (Binding b : bindings) {
-            if (!UNBOX_TAGS.contains(b.tag()))
+            if (!isUnbox(b))
                 throw new IllegalArgumentException("Unexpected operator: " + b);
             b.verify(stack);
         }
@@ -219,24 +203,26 @@ public class CallingSequenceBuilder {
         }
     }
 
-    private static final Set<Binding.Tag> BOX_TAGS = EnumSet.of(
-        //VM_STORE,
-        VM_LOAD,
-        BUFFER_STORE,
-        //BUFFER_LOAD,
-        COPY_BUFFER,
-        ALLOC_BUFFER,
-        BOX_ADDRESS,
-        //UNBOX_ADDRESS,
-        DUP,
-        CAST
-    );
+    static boolean isUnbox(Binding binding) {
+        return switch (binding) {
+            case Binding.VMStore unused -> true;
+            case Binding.VMLoad unused -> false;
+            case Binding.BufferStore unused -> false;
+            case Binding.BufferLoad unused -> true;
+            case Binding.Copy unused -> true;
+            case Binding.Allocate unused -> false;
+            case Binding.BoxAddress unused -> false;
+            case Binding.UnboxAddress unused -> true;
+            case Binding.Dup unused -> true;
+            case Binding.Cast unused-> true;
+        };
+    }
 
     private static void verifyBoxBindings(Class<?> expectedOutType, List<Binding> bindings) {
         Deque<Class<?>> stack = new ArrayDeque<>();
 
         for (Binding b : bindings) {
-            if (!BOX_TAGS.contains(b.tag()))
+            if (!isBox(b))
                 throw new IllegalArgumentException("Unexpected operator: " + b);
             b.verify(stack);
         }
@@ -248,4 +234,20 @@ public class CallingSequenceBuilder {
         Class<?> actualOutType = stack.pop();
         SharedUtils.checkType(actualOutType, expectedOutType);
     }
+
+    static boolean isBox(Binding binding) {
+        return switch (binding) {
+            case Binding.VMStore unused -> false;
+            case Binding.VMLoad unused -> true;
+            case Binding.BufferStore unused -> true;
+            case Binding.BufferLoad unused -> false;
+            case Binding.Copy unused -> true;
+            case Binding.Allocate unused -> true;
+            case Binding.BoxAddress unused -> true;
+            case Binding.UnboxAddress unused -> false;
+            case Binding.Dup unused -> true;
+            case Binding.Cast unused-> true;
+        };
+    }
+
 }

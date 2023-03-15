@@ -467,17 +467,17 @@ public class BindingSpecializer {
 
     private void doBindings(List<Binding> bindings) {
         for (Binding binding : bindings) {
-            switch (binding.tag()) {
-                case VM_STORE -> emitVMStore((Binding.VMStore) binding);
-                case VM_LOAD -> emitVMLoad((Binding.VMLoad) binding);
-                case BUFFER_STORE -> emitBufferStore((Binding.BufferStore) binding);
-                case BUFFER_LOAD -> emitBufferLoad((Binding.BufferLoad) binding);
-                case COPY_BUFFER -> emitCopyBuffer((Binding.Copy) binding);
-                case ALLOC_BUFFER -> emitAllocBuffer((Binding.Allocate) binding);
-                case BOX_ADDRESS -> emitBoxAddress((Binding.BoxAddress) binding);
-                case UNBOX_ADDRESS -> emitUnboxAddress();
-                case DUP -> emitDupBinding();
-                case CAST -> emitCast((Binding.Cast) binding);
+            switch (binding) {
+                case Binding.VMStore vmStore -> emitVMStore(vmStore);
+                case Binding.VMLoad vmLoad -> emitVMLoad(vmLoad);
+                case Binding.BufferStore bufferStore -> emitBufferStore(bufferStore);
+                case Binding.BufferLoad bufferLoad -> emitBufferLoad(bufferLoad);
+                case Binding.Copy copy -> emitCopyBuffer(copy);
+                case Binding.Allocate allocate -> emitAllocBuffer(allocate);
+                case Binding.BoxAddress boxAddress -> emitBoxAddress(boxAddress);
+                case Binding.UnboxAddress unused -> emitUnboxAddress();
+                case Binding.Dup unused -> emitDupBinding();
+                case Binding.Cast cast -> emitCast(cast);
             }
         }
     }
@@ -638,15 +638,15 @@ public class BindingSpecializer {
                 Class<?> chunkStoreType;
                 long mask;
                 switch (chunkSize) {
-                    case 4 -> {
+                    case Integer.BYTES -> {
                         chunkStoreType = int.class;
                         mask = 0xFFFF_FFFFL;
                     }
-                    case 2 -> {
+                    case Short.BYTES -> {
                         chunkStoreType = short.class;
                         mask = 0xFFFFL;
                     }
-                    case 1 -> {
+                    case Byte.BYTES -> {
                         chunkStoreType = byte.class;
                         mask = 0xFFL;
                     }
@@ -802,17 +802,17 @@ public class BindingSpecializer {
                 Class<?> toULongHolder;
                 String toULongDescriptor;
                 switch (chunkSize) {
-                    case 4 -> {
+                    case Integer.BYTES -> {
                         chunkType = int.class;
                         toULongHolder = Integer.class;
                         toULongDescriptor = INTEGER_TO_UNSIGNED_LONG_DESC;
                     }
-                    case 2 -> {
+                    case Short.BYTES -> {
                         chunkType = short.class;
                         toULongHolder = Short.class;
                         toULongDescriptor = SHORT_TO_UNSIGNED_LONG_DESC;
                     }
-                    case 1 -> {
+                    case Byte.BYTES -> {
                         chunkType = byte.class;
                         toULongHolder = Byte.class;
                         toULongDescriptor = BYTE_TO_UNSIGNED_LONG_DESC;

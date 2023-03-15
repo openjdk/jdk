@@ -46,13 +46,12 @@ public class AArch64Architecture implements Architecture {
 
     @Override
     public int typeSize(int cls) {
-        switch (cls) {
-            case StorageType.INTEGER: return INTEGER_REG_SIZE;
-            case StorageType.VECTOR: return VECTOR_REG_SIZE;
+        return switch (cls) {
+            case StorageType.INTEGER -> INTEGER_REG_SIZE;
+            case StorageType.VECTOR -> VECTOR_REG_SIZE;
             // STACK is deliberately omitted
-        }
-
-        throw new IllegalArgumentException("Invalid Storage Class: " + cls);
+            default -> throw new IllegalArgumentException("Invalid Storage Class: " + cls);
+        };
     }
 
     public interface StorageType {

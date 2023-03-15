@@ -83,30 +83,33 @@ public enum TypeClass {
         static final FieldCounter SINGLE_POINTER = new FieldCounter(0, 0, 1);
 
         static FieldCounter flatten(MemoryLayout layout) {
-            if (layout instanceof ValueLayout valueLayout) {
-                return switch (classifyValueType(valueLayout)) {
-                    case INTEGER -> FieldCounter.SINGLE_INTEGER;
-                    case FLOAT -> FieldCounter.SINGLE_FLOAT;
-                    case POINTER -> FieldCounter.SINGLE_POINTER;
-                    default -> throw new IllegalStateException("Should not reach here.");
-                };
-            } else if (layout instanceof GroupLayout groupLayout) {
-                FieldCounter currCounter = FieldCounter.EMPTY;
-                for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
-                    if (memberLayout instanceof PaddingLayout) {
-                        continue;
+            switch (layout) {
+                case ValueLayout valueLayout -> {
+                    return switch (classifyValueType(valueLayout)) {
+                        case INTEGER -> FieldCounter.SINGLE_INTEGER;
+                        case FLOAT -> FieldCounter.SINGLE_FLOAT;
+                        case POINTER -> FieldCounter.SINGLE_POINTER;
+                        default -> throw new IllegalStateException("Should not reach here.");
+                    };
+                }
+                case GroupLayout groupLayout -> {
+                    FieldCounter currCounter = FieldCounter.EMPTY;
+                    for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
+                        if (memberLayout instanceof PaddingLayout) {
+                            continue;
+                        }
+                        currCounter = currCounter.add(flatten(memberLayout));
                     }
-                    currCounter = currCounter.add(flatten(memberLayout));
+                    return currCounter;
                 }
-                return currCounter;
-            } else if (layout instanceof SequenceLayout sequenceLayout) {
-                long elementCount = sequenceLayout.elementCount();
-                if (elementCount == 0) {
-                    return FieldCounter.EMPTY;
+                case SequenceLayout sequenceLayout -> {
+                    long elementCount = sequenceLayout.elementCount();
+                    if (elementCount == 0) {
+                        return FieldCounter.EMPTY;
+                    }
+                    return flatten(sequenceLayout.elementLayout()).mul(elementCount);
                 }
-                return flatten(sequenceLayout.elementLayout()).mul(elementCount);
-            } else {
-                throw new IllegalStateException("Cannot get here: " + layout);
+                case null, default -> throw new IllegalStateException("Cannot get here: " + layout);
             }
         }
 
