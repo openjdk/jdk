@@ -130,7 +130,7 @@ void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
 
   uint dest_start_idx = _g1h->addr_to_region(destination);
   // Update the metadata for the destination regions.
-  _g1h->reset_humongous_metadata(_g1h->region_at(dest_start_idx), num_regions, word_size, false);
+  _g1h->set_humongous_metadata(_g1h->region_at(dest_start_idx), num_regions, word_size, false);
 
   // Free the source regions that do not overlap with the destination regions.
   uint src_start_idx = src_hr->hrm_index();

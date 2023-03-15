@@ -193,10 +193,10 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size,
   return res;
 }
 
-void G1CollectedHeap::reset_humongous_metadata(HeapRegion* first_hr,
-                                               uint num_regions,
-                                               size_t word_size,
-                                               bool update_remsets) {
+void G1CollectedHeap::set_humongous_metadata(HeapRegion* first_hr,
+                                             uint num_regions,
+                                             size_t word_size,
+                                             bool update_remsets) {
   // Calculate the new top of the humongous object.
   HeapWord* obj_top = first_hr->bottom() + word_size;
   // The word size sum of all the regions used
@@ -315,7 +315,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
   Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
 
   // Next, update the metadata for the regions.
-  reset_humongous_metadata(first_hr, num_regions, word_size, true);
+  set_humongous_metadata(first_hr, num_regions, word_size, true);
 
   HeapRegion* last_hr = region_at(last);
   size_t used = byte_size(first_hr->bottom(), last_hr->top());

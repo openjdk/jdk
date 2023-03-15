@@ -44,7 +44,7 @@ class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   void initialize_values();
   void switch_region();
   HeapRegion* next_region();
-  Pair<uint, uint> find_contiguous_before(HeapRegion* hr, uint num_regions);
+  uint find_contiguous_before(HeapRegion* hr, uint num_regions);
 
 public:
   G1FullGCCompactionPoint(G1FullCollector* collector);

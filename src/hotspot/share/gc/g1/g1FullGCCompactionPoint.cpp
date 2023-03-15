@@ -157,11 +157,9 @@ uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   }
 
   // Find contiguous compaction target regions for the humongous object.
-  Pair<uint, uint> range = find_contiguous_before(hr, num_regions);
-  uint range_begin = range.first;
-  uint range_end = range.second;
+  uint range_begin = find_contiguous_before(hr, num_regions);
 
-  if (range_begin == range_end) {
+  if (range_begin == UINT_MAX) {
     // No contiguous compaction target regions found, so the object cannot be moved.
     return num_regions;
   }
@@ -182,13 +180,13 @@ uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   return num_regions;
 }
 
-Pair<uint, uint> G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr, uint num_regions) {
+uint G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr, uint num_regions) {
   assert(num_regions > 0, "Sanity!");
   assert(has_regions(), "Sanity!");
 
   if (num_regions == 1) {
     // If only one region, return the first region.
-    return Pair<uint, uint> (0, 1);
+    return 0;
   }
 
   uint contiguous_region_count = 1;
@@ -206,11 +204,11 @@ Pair<uint, uint> G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr,
   }
 
   if (contiguous_region_count < num_regions &&
-      hr->hrm_index() -  _compaction_regions->at(range_end-1)->hrm_index() != 1) {
-    // We reached the end but the final region is not contiguous with the target region,
-    // reset the length to 1.
-    contiguous_region_count = 1;
+      hr->hrm_index() - _compaction_regions->at(range_end-1)->hrm_index() != 1) {
+    // We reached the end but the final region is not contiguous with the target region;
+    // no contiguous regions to move to.
+    return UINT_MAX;
   }
-  // Return the indices of the first and last contiguous regions.
-  return Pair<uint, uint> (range_end - contiguous_region_count, range_end - 1);
+  // Return the index of the first region in the range of contiguous regions.
+  return range_end - contiguous_region_count;
 }
