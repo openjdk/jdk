@@ -44,7 +44,7 @@ Java_sun_management_VMManagementImpl_getVersion0
     // for internal use
     unsigned int micro = (unsigned int) jmm_version & 0xFF;
 
-    sprintf(buf, "%d.%d", major, minor);
+    snprintf(buf, sizeof(buf), "%d.%d", major, minor);
     version_string = (*env)->NewStringUTF(env, buf);
     return version_string;
 }

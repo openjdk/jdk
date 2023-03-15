@@ -107,8 +107,8 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
                                          Register temp_reg3,
                                          Label& L_success) {
   Label L_failure;
-  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg, temp_reg2, &L_success, &L_failure, NULL);
-  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, temp_reg2, temp_reg3, &L_success, NULL);
+  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg, temp_reg2, &L_success, &L_failure, nullptr);
+  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, temp_reg2, temp_reg3, &L_success, nullptr);
   bind(L_failure);
 };
 
@@ -125,10 +125,10 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 
   Label L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  if (L_slow_path == NULL) { L_slow_path = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  if (L_slow_path == nullptr) { L_slow_path = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
@@ -205,9 +205,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   Label L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   // a couple of useful fields in sub_klass:
   int ss_offset = in_bytes(Klass::secondary_supers_offset());
@@ -630,7 +630,7 @@ void MacroAssembler::mov_oop(Register rd, jobject o, int oop_index,
                              AsmCondition cond
                              ) {
 
-  if (o == NULL) {
+  if (o == nullptr) {
     mov(rd, 0, cond);
     return;
   }
@@ -651,7 +651,7 @@ void MacroAssembler::mov_oop(Register rd, jobject o, int oop_index,
 }
 
 void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) {
-  if (o == NULL) {
+  if (o == nullptr) {
     mov(rd, 0);
     return;
   }
@@ -842,7 +842,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     block_comment(buffer);
   }
 #endif
-  const char* msg_buffer = NULL;
+  const char* msg_buffer = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -884,7 +884,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
-  const char* msg_buffer = NULL;
+  const char* msg_buffer = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -940,7 +940,7 @@ void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
     if (tmp == noreg) {
       tmp = Rtemp;
       assert((! Thread::current()->is_Compiler_thread()) ||
-             (! (ciEnv::current()->task() == NULL)) ||
+             (! (ciEnv::current()->task() == nullptr)) ||
              (! (ciEnv::current()->comp_level() == CompLevel_full_optimization)),
              "Rtemp not available in C2"); // explicit tmp register required
       // XXX: could we mark the code buffer as not compatible with C2 ?
@@ -970,7 +970,7 @@ void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
 
 void MacroAssembler::arm_stack_overflow_check(int frame_size_in_bytes, Register tmp) {
   // Version of AbstractAssembler::generate_stack_overflow_check optimized for ARM
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
 
   sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
   strb(R0, Address(tmp));
@@ -1104,7 +1104,7 @@ void MacroAssembler::debug(const char* msg, const intx* registers) {
 }
 
 void MacroAssembler::unimplemented(const char* what) {
-  const char* buf = NULL;
+  const char* buf = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -1249,7 +1249,7 @@ void MacroAssembler::cas_for_lock_release(Register oldval, Register newval,
 // Preserves flags and all registers.
 // On SMP the updated value might not be visible to external observers without a synchronization barrier
 void MacroAssembler::cond_atomic_inc32(AsmCondition cond, int* counter_addr) {
-  if (counter_addr != NULL) {
+  if (counter_addr != nullptr) {
     InlinedAddress counter_addr_literal((address)counter_addr);
     Label done, retry;
     if (cond != al) {
@@ -1286,7 +1286,7 @@ void MacroAssembler::resolve_jobject(Register value,
   assert_different_registers(value, tmp1, tmp2);
   Label done, tagged, weak_tagged;
 
-  cbz(value, done);           // Use NULL as-is.
+  cbz(value, done);           // Use null as-is.
   tst(value, JNIHandles::tag_mask); // Test for tag.
   b(tagged, ne);
 
@@ -1319,7 +1319,7 @@ void MacroAssembler::resolve_global_jobject(Register value,
   assert_different_registers(value, tmp1, tmp2);
   Label done;
 
-  cbz(value, done);           // Use NULL as-is.
+  cbz(value, done);           // Use null as-is.
 
 #ifdef ASSERT
   {
@@ -1656,6 +1656,10 @@ void MacroAssembler::load_klass(Register dst_klass, Register src_oop, AsmConditi
   ldr(dst_klass, Address(src_oop, oopDesc::klass_offset_in_bytes()), cond);
 }
 
+void MacroAssembler::load_klass_check_null(Register dst_klass, Register src_oop, Register tmp, AsmCondition cond) {
+  null_check(src_oop, tmp, oopDesc::klass_offset_in_bytes());
+  load_klass(dst_klass, src_oop, cond);
+}
 
 // Blows src_klass.
 void MacroAssembler::store_klass(Register src_klass, Register dst_oop) {

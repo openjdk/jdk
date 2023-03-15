@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "utilities/bitMap.inline.hpp"
 
 inline ParMarkBitMap::ParMarkBitMap():
-  _region_start(NULL), _region_size(0), _beg_bits(), _end_bits(), _virtual_space(NULL), _reserved_byte_size(0)
+  _region_start(nullptr), _region_size(0), _beg_bits(), _end_bits(), _virtual_space(nullptr), _reserved_byte_size(0)
 { }
 
 inline void ParMarkBitMap::clear_range(idx_t beg, idx_t end) {

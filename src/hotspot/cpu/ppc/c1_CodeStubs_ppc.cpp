@@ -64,18 +64,6 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   }
 }
 
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
-  : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != nullptr, "must have info");
-  _info = new CodeEmitInfo(info);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
-  assert(info != nullptr, "must have info");
-  _info = new CodeEmitInfo(info);
-}
-
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
@@ -280,13 +268,6 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ b(_continuation);
-}
-
-
-// Implementation of MonitorAccessStubs
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
-  : MonitorAccessStub(obj_reg, lock_reg) {
-  _info = new CodeEmitInfo(info);
 }
 
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {

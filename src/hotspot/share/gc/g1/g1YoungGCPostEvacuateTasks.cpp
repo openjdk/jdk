@@ -37,6 +37,8 @@
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/ticks.hpp"
 
 class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
@@ -235,14 +237,6 @@ public:
   size_t bytes_freed() const {
     return _freed_bytes;
   }
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask : public G1AbstractSubTask {
-public:
-  ResetHotCardCacheTask() : G1AbstractSubTask(G1GCPhaseTimes::ResetHotCardCache) { }
-
-  double worker_cost() const override { return 0.5; }
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->reset_hot_card_cache(); }
 };
 
 #if COMPILER2_OR_JVMCI
@@ -701,12 +695,36 @@ public:
   }
 };
 
+class G1PostEvacuateCollectionSetCleanupTask2::ResizeTLABsTask : public G1AbstractSubTask {
+  G1JavaThreadsListClaimer _claimer;
+
+  // There is not much work per thread so the number of threads per worker is high.
+  static const uint ThreadsPerWorker = 250;
+
+public:
+  ResizeTLABsTask() : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _claimer(ThreadsPerWorker) { }
+
+  void do_work(uint worker_id) override {
+    class ResizeClosure : public ThreadClosure {
+    public:
+
+      void do_thread(Thread* thread) {
+        static_cast<JavaThread*>(thread)->tlab().resize();
+      }
+    } cl;
+    _claimer.apply(&cl);
+  }
+
+  double worker_cost() const override {
+    return (double)_claimer.length() / ThreadsPerWorker;
+  }
+};
+
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacInfo* evacuation_info,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
-  add_serial_task(new ResetHotCardCacheTask());
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
@@ -722,6 +740,9 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     }
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
+  if (UseTLAB && ResizeTLAB) {
+    add_parallel_task(new ResizeTLABsTask());
+  }
   add_parallel_task(new FreeCollectionSetTask(evacuation_info,
                                               per_thread_states->surviving_young_words(),
                                               evac_failure_regions));

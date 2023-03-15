@@ -246,6 +246,18 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
+  // Neoverse V1
+  if (_cpu == CPU_ARM && (_model == 0xd40 || _model2 == 0xd40)) {
+    if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
+      FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
+    }
+  }
+
+  if (UseCryptoPmullForCRC32 && (!VM_Version::supports_pmull() || !VM_Version::supports_sha3() || !VM_Version::supports_crc32())) {
+    warning("UseCryptoPmullForCRC32 specified, but not supported on this CPU");
+    FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, false);
+  }
+
   if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
   }
@@ -564,37 +576,53 @@ void VM_Version::initialize() {
   check_virtualizations();
 }
 
-void VM_Version::check_virtualizations() {
 #if defined(LINUX)
-  const char* info_file = "/sys/devices/virtual/dmi/id/product_name";
-  // check for various strings in the dmi data indicating virtualizations
+static bool check_info_file(const char* fpath,
+                            const char* virt1, VirtualizationType vt1,
+                            const char* virt2, VirtualizationType vt2) {
   char line[500];
-  FILE* fp = os::fopen(info_file, "r");
+  FILE* fp = os::fopen(fpath, "r");
   if (fp == nullptr) {
-    return;
+    return false;
   }
   while (fgets(line, sizeof(line), fp) != nullptr) {
-    if (strcasestr(line, "KVM") != 0) {
-      Abstract_VM_Version::_detected_virtualization = KVM;
-      break;
+    if (strcasestr(line, virt1) != 0) {
+      Abstract_VM_Version::_detected_virtualization = vt1;
+      fclose(fp);
+      return true;
     }
-    if (strcasestr(line, "VMware") != 0) {
-      Abstract_VM_Version::_detected_virtualization = VMWare;
-      break;
+    if (virt2 != NULL && strcasestr(line, virt2) != 0) {
+      Abstract_VM_Version::_detected_virtualization = vt2;
+      fclose(fp);
+      return true;
     }
   }
   fclose(fp);
+  return false;
+}
+#endif
+
+void VM_Version::check_virtualizations() {
+#if defined(LINUX)
+  const char* pname_file = "/sys/devices/virtual/dmi/id/product_name";
+  const char* tname_file = "/sys/hypervisor/type";
+  if (check_info_file(pname_file, "KVM", KVM, "VMWare", VMWare)) {
+    return;
+  }
+  check_info_file(tname_file, "Xen", XenPVHVM, NULL, NoDetectedVirtualization);
 #endif
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
 #if defined(LINUX)
-    VirtualizationType vrt = VM_Version::get_detected_virtualization();
-    if (vrt == KVM) {
-      st->print_cr("KVM virtualization detected");
-    } else if (vrt == VMWare) {
-      st->print_cr("VMWare virtualization detected");
-    }
+  VirtualizationType vrt = VM_Version::get_detected_virtualization();
+  if (vrt == KVM) {
+    st->print_cr("KVM virtualization detected");
+  } else if (vrt == VMWare) {
+    st->print_cr("VMWare virtualization detected");
+  } else if (vrt == XenPVHVM) {
+    st->print_cr("Xen virtualization detected");
+  }
 #endif
 }
 

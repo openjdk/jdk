@@ -223,6 +223,9 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_Double_longBitsToDouble);
   method_entry(java_lang_Double_doubleToRawLongBits);
 
+  method_entry(java_lang_Float_float16ToFloat);
+  method_entry(java_lang_Float_floatToFloat16);
+
 #undef method_entry
 
   // Bytecodes
@@ -437,7 +440,10 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_Thread_currentThread
                                            : entry_point = generate_currentThread(); break;
 #endif
-
+  case Interpreter::java_lang_Float_float16ToFloat
+                                           : entry_point = generate_Float_float16ToFloat_entry(); break;
+  case Interpreter::java_lang_Float_floatToFloat16
+                                           : entry_point = generate_Float_floatToFloat16_entry(); break;
 #ifdef IA32
   // On x86_32 platforms, a special entry is generated for the following four methods.
   // On other platforms the normal entry is used to enter these methods.

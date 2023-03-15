@@ -109,12 +109,8 @@ final class StringLatin1 {
 
     public static int compareTo(byte[] value, byte[] other, int len1, int len2) {
         int lim = Math.min(len1, len2);
-        for (int k = 0; k < lim; k++) {
-            if (value[k] != other[k]) {
-                return getChar(value, k) - getChar(other, k);
-            }
-        }
-        return len1 - len2;
+        int k = ArraysSupport.mismatch(value, other, lim);
+        return (k < 0) ? len1 - len2 : getChar(value, k) - getChar(other, k);
     }
 
     @IntrinsicCandidate
@@ -196,18 +192,16 @@ final class StringLatin1 {
         };
     }
 
-    public static int indexOf(byte[] value, int ch, int fromIndex) {
+    public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (!canEncode(ch)) {
             return -1;
         }
-        int max = value.length;
-        if (fromIndex < 0) {
-            fromIndex = 0;
-        } else if (fromIndex >= max) {
-            // Note: fromIndex might be near -1>>>1.
+        fromIndex = Math.max(fromIndex, 0);
+        toIndex = Math.min(toIndex, value.length);
+        if (fromIndex >= toIndex) {
             return -1;
         }
-        return indexOfChar(value, ch, fromIndex, max);
+        return indexOfChar(value, ch, fromIndex, toIndex);
     }
 
     @IntrinsicCandidate
@@ -388,14 +382,9 @@ final class StringLatin1 {
                                           byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
-            char c1 = (char)(value[toffset++] & 0xff);
-            char c2 = (char)(other[ooffset++] & 0xff);
-            if (c1 == c2) {
-                continue;
-            }
-            int u1 = CharacterDataLatin1.instance.toUpperCase(c1);
-            int u2 = CharacterDataLatin1.instance.toUpperCase(c2);
-            if (u1 == u2) {
+            byte b1 = value[toffset++];
+            byte b2 = other[ooffset++];
+            if (CharacterDataLatin1.equalsIgnoreCase(b1, b2)) {
                 continue;
             }
             return false;

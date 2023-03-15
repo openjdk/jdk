@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ void JvmtiClassFileReconstituter::write_field_infos() {
     guarantee(name_index != 0 && signature_index != 0, "bad constant pool index for field");
     // int offset = ik()->field_offset( index );
     int generic_signature_index = fs.generic_signature_index();
-    AnnotationArray* anno = fields_anno == NULL ? NULL : fields_anno->at(fs.index());
-    AnnotationArray* type_anno = fields_type_anno == NULL ? NULL : fields_type_anno->at(fs.index());
+    AnnotationArray* anno = fields_anno == nullptr ? nullptr : fields_anno->at(fs.index());
+    AnnotationArray* type_anno = fields_type_anno == nullptr ? nullptr : fields_type_anno->at(fs.index());
 
     // JVMSpec|   field_info {
     // JVMSpec|         u2 access_flags;
@@ -95,10 +95,10 @@ void JvmtiClassFileReconstituter::write_field_infos() {
     if (generic_signature_index != 0) {
       ++attr_count;
     }
-    if (anno != NULL) {
+    if (anno != nullptr) {
       ++attr_count;     // has RuntimeVisibleAnnotations attribute
     }
-    if (type_anno != NULL) {
+    if (type_anno != nullptr) {
       ++attr_count;     // has RuntimeVisibleTypeAnnotations attribute
     }
 
@@ -115,10 +115,10 @@ void JvmtiClassFileReconstituter::write_field_infos() {
     if (generic_signature_index != 0) {
       write_signature_attribute(generic_signature_index);
     }
-    if (anno != NULL) {
+    if (anno != nullptr) {
       write_annotations_attribute("RuntimeVisibleAnnotations", anno);
     }
-    if (type_anno != NULL) {
+    if (type_anno != nullptr) {
       write_annotations_attribute("RuntimeVisibleTypeAnnotations", type_anno);
     }
   }
@@ -319,7 +319,7 @@ void JvmtiClassFileReconstituter::write_method_parameter_attribute(const ConstMe
 // JVMSpec|     u2 sourcefile_index;
 // JVMSpec|   }
 void JvmtiClassFileReconstituter::write_source_file_attribute() {
-  assert(ik()->source_file_name() != NULL, "caller must check");
+  assert(ik()->source_file_name() != nullptr, "caller must check");
 
   write_attribute_name_index("SourceFile");
   write_u4(2);  // always length 2
@@ -333,7 +333,7 @@ void JvmtiClassFileReconstituter::write_source_file_attribute() {
 // JSR45|       u1 debug_extension[attribute_length];
 // JSR45|   }
 void JvmtiClassFileReconstituter::write_source_debug_extension_attribute() {
-  assert(ik()->source_debug_extension() != NULL, "caller must check");
+  assert(ik()->source_debug_extension() != nullptr, "caller must check");
 
   write_attribute_name_index("SourceDebugExtension");
   int len = (int)strlen(ik()->source_debug_extension());
@@ -493,10 +493,10 @@ void JvmtiClassFileReconstituter::write_record_attribute() {
       length += 8; // Signature attribute size
       assert(component->attributes_count() > 0, "Bad component attributes count");
     }
-    if (component->annotations() != NULL) {
+    if (component->annotations() != nullptr) {
       length += 6 + component->annotations()->length();
     }
-    if (component->type_annotations() != NULL) {
+    if (component->type_annotations() != nullptr) {
       length += 6 + component->type_annotations()->length();
     }
   }
@@ -512,10 +512,10 @@ void JvmtiClassFileReconstituter::write_record_attribute() {
     if (component->generic_signature_index() != 0) {
       write_signature_attribute(component->generic_signature_index());
     }
-    if (component->annotations() != NULL) {
+    if (component->annotations() != nullptr) {
       write_annotations_attribute("RuntimeVisibleAnnotations", component->annotations());
     }
-    if (component->type_annotations() != NULL) {
+    if (component->type_annotations() != nullptr) {
       write_annotations_attribute("RuntimeVisibleTypeAnnotations", component->type_annotations());
     }
   }
@@ -711,7 +711,7 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
   if (const_method->has_checked_exceptions()) {
     ++attr_count;     // has Exceptions attribute
   }
-  if (default_anno != NULL) {
+  if (default_anno != nullptr) {
     ++attr_count;     // has AnnotationDefault attribute
   }
   if (const_method->has_method_parameters()) {
@@ -724,13 +724,13 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
   if (generic_signature_index != 0) {
     ++attr_count;
   }
-  if (anno != NULL) {
+  if (anno != nullptr) {
     ++attr_count;     // has RuntimeVisibleAnnotations attribute
   }
-  if (param_anno != NULL) {
+  if (param_anno != nullptr) {
     ++attr_count;     // has RuntimeVisibleParameterAnnotations attribute
   }
-  if (type_anno != NULL) {
+  if (type_anno != nullptr) {
     ++attr_count;     // has RuntimeVisibleTypeAnnotations attribute
   }
 
@@ -741,7 +741,7 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
   if (const_method->has_checked_exceptions()) {
     write_exceptions_attribute(const_method);
   }
-  if (default_anno != NULL) {
+  if (default_anno != nullptr) {
     write_annotations_attribute("AnnotationDefault", default_anno);
   }
   if (const_method->has_method_parameters()) {
@@ -754,13 +754,13 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
   if (generic_signature_index != 0) {
     write_signature_attribute(generic_signature_index);
   }
-  if (anno != NULL) {
+  if (anno != nullptr) {
     write_annotations_attribute("RuntimeVisibleAnnotations", anno);
   }
-  if (param_anno != NULL) {
+  if (param_anno != nullptr) {
     write_annotations_attribute("RuntimeVisibleParameterAnnotations", param_anno);
   }
-  if (type_anno != NULL) {
+  if (type_anno != nullptr) {
     write_annotations_attribute("RuntimeVisibleTypeAnnotations", type_anno);
   }
 }
@@ -775,25 +775,25 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   AnnotationArray* type_anno = ik()->class_type_annotations();
 
   int attr_count = 0;
-  if (generic_signature != NULL) {
+  if (generic_signature != nullptr) {
     ++attr_count;
   }
-  if (ik()->source_file_name() != NULL) {
+  if (ik()->source_file_name() != nullptr) {
     ++attr_count;
   }
-  if (ik()->source_debug_extension() != NULL) {
+  if (ik()->source_debug_extension() != nullptr) {
     ++attr_count;
   }
   if (inner_classes_length > 0) {
     ++attr_count;
   }
-  if (anno != NULL) {
+  if (anno != nullptr) {
     ++attr_count;     // has RuntimeVisibleAnnotations attribute
   }
-  if (type_anno != NULL) {
+  if (type_anno != nullptr) {
     ++attr_count;     // has RuntimeVisibleTypeAnnotations attribute
   }
-  if (cpool()->operands() != NULL) {
+  if (cpool()->operands() != nullptr) {
     ++attr_count;
   }
   if (ik()->nest_host_index() != 0) {
@@ -805,25 +805,25 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   if (ik()->permitted_subclasses() != Universe::the_empty_short_array()) {
     ++attr_count;
   }
-  if (ik()->record_components() != NULL) {
+  if (ik()->record_components() != nullptr) {
     ++attr_count;
   }
 
   write_u2(attr_count);
 
-  if (generic_signature != NULL) {
+  if (generic_signature != nullptr) {
     write_signature_attribute(symbol_to_cpool_index(generic_signature));
   }
-  if (ik()->source_file_name() != NULL) {
+  if (ik()->source_file_name() != nullptr) {
     write_source_file_attribute();
   }
-  if (ik()->source_debug_extension() != NULL) {
+  if (ik()->source_debug_extension() != nullptr) {
     write_source_debug_extension_attribute();
   }
-  if (anno != NULL) {
+  if (anno != nullptr) {
     write_annotations_attribute("RuntimeVisibleAnnotations", anno);
   }
-  if (type_anno != NULL) {
+  if (type_anno != nullptr) {
     write_annotations_attribute("RuntimeVisibleTypeAnnotations", type_anno);
   }
   if (ik()->nest_host_index() != 0) {
@@ -835,10 +835,10 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   if (ik()->permitted_subclasses() != Universe::the_empty_short_array()) {
     write_permitted_subclasses_attribute();
   }
-  if (ik()->record_components() != NULL) {
+  if (ik()->record_components() != nullptr) {
     write_record_attribute();
   }
-  if (cpool()->operands() != NULL) {
+  if (cpool()->operands() != nullptr) {
     write_bootstrapmethod_attribute();
   }
   if (inner_classes_length > 0) {
@@ -919,7 +919,7 @@ void JvmtiClassFileReconstituter::write_class_file_format() {
   // JVMSpec|           u2 super_class;
   write_u2(class_symbol_to_cpool_index(ik()->name()));
   Klass* super_class = ik()->super();
-  write_u2(super_class == NULL? 0 :  // zero for java.lang.Object
+  write_u2(super_class == nullptr? 0 :  // zero for java.lang.Object
                 class_symbol_to_cpool_index(super_class->name()));
 
   // JVMSpec|           u2 interfaces_count;
@@ -967,7 +967,7 @@ address JvmtiClassFileReconstituter::writeable_address(size_t size) {
 
 void JvmtiClassFileReconstituter::write_attribute_name_index(const char* name) {
   TempNewSymbol sym = SymbolTable::probe(name, (int)strlen(name));
-  assert(sym != NULL, "attribute name symbol not found");
+  assert(sym != nullptr, "attribute name symbol not found");
   u2 attr_name_index = symbol_to_cpool_index(sym);
   assert(attr_name_index != 0, "attribute name symbol not in constant pool");
   write_u2(attr_name_index);

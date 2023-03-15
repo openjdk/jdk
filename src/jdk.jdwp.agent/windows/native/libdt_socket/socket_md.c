@@ -392,7 +392,7 @@ dbgsysGetLastIOError(char *buf, jint size) {
     if (i < table_size) {
         strcpy(buf, winsock_errors[i].errString);
     } else {
-        sprintf(buf, "winsock error %d", error);
+        snprintf(buf, size, "winsock error %d", error);
     }
     return 0;
 }

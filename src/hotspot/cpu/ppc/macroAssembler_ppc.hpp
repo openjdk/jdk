@@ -732,6 +732,7 @@ class MacroAssembler: public Assembler {
 
   // Load/Store klass oop from klass field. Compress.
   void load_klass(Register dst, Register src);
+  void load_klass_check_null(Register dst, Register src, Label* is_null = NULL);
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
 
@@ -893,9 +894,6 @@ class MacroAssembler: public Assembler {
   void asm_assert_mem8_isnot_zero(int mem_offset, Register mem_base, const char* msg) {
     asm_assert_mems_zero(false, 8, mem_offset, mem_base, msg);
   }
-
-  // Verify R16_thread contents.
-  void verify_thread();
 
   // Calls verify_oop. If UseCompressedOops is on, decodes the oop.
   // Preserves reg.

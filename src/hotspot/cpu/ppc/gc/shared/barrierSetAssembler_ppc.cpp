@@ -255,3 +255,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
 
   __ block_comment("} c2i_entry_barrier (c2i_entry_barrier)");
 }
+
+void BarrierSetAssembler::check_oop(MacroAssembler *masm, Register oop, const char* msg) {
+  __ verify_oop(oop, msg);
+}

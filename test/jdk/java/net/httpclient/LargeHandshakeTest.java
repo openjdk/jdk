@@ -62,6 +62,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * @test
@@ -1000,9 +1002,7 @@ public class LargeHandshakeTest implements HttpServerAdapters {
             InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
             // HTTP/1.1
-            HttpServer server1 = HttpServer.create(sa, 0);
-            server1.setExecutor(executor);
-            http1Server = HttpTestServer.of(server1);
+            http1Server = HttpTestServer.create(HTTP_1_1, null, executor);
             http1Server.addHandler(new HttpTestLargeHandler(), "/LargeHandshakeTest/http1/");
             http1Server.start();
             http1URI = new URI("http://" + http1Server.serverAuthority() + "/LargeHandshakeTest/http1/");
@@ -1018,15 +1018,13 @@ public class LargeHandshakeTest implements HttpServerAdapters {
             https1URI = new URI("https://" + https1Server.serverAuthority() + "/LargeHandshakeTest/https1/");
 
             // HTTP/2.0
-            http2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", false, 0));
+            http2Server = HttpTestServer.create(HTTP_2);
             http2Server.addHandler(new HttpTestLargeHandler(), "/LargeHandshakeTest/http2/");
             http2Server.start();
             http2URI = new URI("http://" + http2Server.serverAuthority() + "/LargeHandshakeTest/http2/");
 
             // HTTPS/2.0
-            https2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", true, 0));
+            https2Server = HttpTestServer.create(HTTP_2, SSLContext.getDefault());
             https2Server.addHandler(new HttpTestLargeHandler(), "/LargeHandshakeTest/https2/");
             https2Server.start();
             https2URI = new URI("https://" + https2Server.serverAuthority() + "/LargeHandshakeTest/https2/");

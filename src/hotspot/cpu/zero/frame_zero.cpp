@@ -53,7 +53,7 @@ bool frame::is_fake_stub_frame() const {
 
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_entry_frame(), "wrong type of frame");
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
   assert(!entry_frame_is_first(), "next Java fp must be non zero");
   assert(entry_frame_call_wrapper()->anchor()->last_Java_sp() == sender_sp(),
          "sender should be next Java frame");
@@ -88,14 +88,14 @@ BasicObjectLock* frame::interpreter_frame_monitor_end() const {
 }
 
 void frame::patch_pc(Thread* thread, address pc) {
-  if (pc != NULL) {
+  if (pc != nullptr) {
     assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
     _pc = pc;
     _deopt_state = is_deoptimized;
   } else {
     // We borrow this call to set the thread pointer in the interpreter
     // state; the hook to set up deoptimized frames isn't supplied it.
-    assert(pc == NULL, "should be");
+    assert(pc == nullptr, "should be");
     get_interpreterState()->set_thread(JavaThread::cast(thread));
   }
 }
@@ -207,9 +207,9 @@ BasicType frame::interpreter_frame_result(oop* oop_result,
     }
     else {
       oop* obj_p = (oop *) tos_addr;
-      obj = (obj_p == NULL) ? (oop) NULL : *obj_p;
+      obj = (obj_p == nullptr) ? (oop) nullptr : *obj_p;
     }
-    assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+    assert(obj == nullptr || Universe::heap()->is_in(obj), "sanity check");
     *oop_result = obj;
     break;
 
@@ -338,7 +338,7 @@ void InterpreterFrame::identify_word(int   frame_index,
   // JNI stuff
   if (istate->method()->is_native() && addr < istate->stack_base()) {
     address hA = istate->method()->signature_handler();
-    if (hA != NULL) {
+    if (hA != nullptr) {
       if (hA != (address) InterpreterRuntime::slow_signature_handler) {
         InterpreterRuntime::SignatureHandler *handler =
           InterpreterRuntime::SignatureHandler::from_handlerAddr(hA);

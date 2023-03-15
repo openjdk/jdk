@@ -1980,34 +1980,38 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   Label L_pinned;
 
-  __ cmpdi(CCR0, R3_RET, 0);
+  __ cmpwi(CCR0, R3_RET, 0);
   __ bne(CCR0, L_pinned);
+
+  // yield succeeded
 
   // Pop frames of continuation including this stub's frame
   __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
   // The frame pushed by gen_continuation_enter is on top now again
   continuation_enter_cleanup(masm);
 
-  __ bind(L_pinned); // pinned -- return to caller
+  // Pop frame and return
+  Label L_return;
+  __ bind(L_return);
+  __ pop_frame();
+  __ ld(R0, _abi0(lr), R1_SP); // Return pc
+  __ mtlr(R0);
+  __ blr();
+
+  // yield failed - continuation is pinned
+
+  __ bind(L_pinned);
 
   // handle pending exception thrown by freeze
-  Label ok;
   __ ld(tmp, in_bytes(JavaThread::pending_exception_offset()), R16_thread);
   __ cmpdi(CCR0, tmp, 0);
-  __ beq(CCR0, ok);
+  __ beq(CCR0, L_return); // return if no exception is pending
   __ pop_frame();
   __ ld(R0, _abi0(lr), R1_SP); // Return pc
   __ mtlr(R0);
   __ load_const_optimized(tmp, StubRoutines::forward_exception_entry(), R0);
   __ mtctr(tmp);
   __ bctr();
-  __ bind(ok);
-
-  // Pop frame and return
-  __ pop_frame();
-  __ ld(R0, _abi0(lr), R1_SP); // Return pc
-  __ mtlr(R0);
-  __ blr();
 }
 
 // ---------------------------------------------------------------------------
@@ -2304,8 +2308,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   bs->nmethod_entry_barrier(masm, r_temp_1);
 
   frame_done_pc = (intptr_t)__ pc();
-
-  __ verify_thread();
 
   // Native nmethod wrappers never take possession of the oop arguments.
   // So the caller will gc the arguments.
@@ -3090,6 +3092,13 @@ void SharedRuntime::generate_deopt_blob() {
 
   // stack: (caller_of_deoptee, ...).
 
+  // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
+  // If not compiled the loaded value is equal to the current SP (see frame::initial_deoptimization_info())
+  // and the frame is effectively not resized.
+  Register caller_sp = R23_tmp3;
+  __ ld_ptr(caller_sp, Deoptimization::UnrollBlock::initial_info_offset_in_bytes(), unroll_block_reg);
+  __ resize_frame_absolute(caller_sp, R24_tmp4, R25_tmp5);
+
   // Loop through the `UnrollBlock' info and create interpreter frames.
   push_skeleton_frames(masm, true/*deopt*/,
                        unroll_block_reg,
@@ -3224,6 +3233,13 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ cmpdi(CCR0, R22_tmp2, (unsigned)Deoptimization::Unpack_uncommon_trap);
   __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
 #endif
+
+  // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
+  // If not compiled the loaded value is equal to the current SP (see frame::initial_deoptimization_info())
+  // and the frame is effectively not resized.
+  Register caller_sp = R23_tmp3;
+  __ ld_ptr(caller_sp, Deoptimization::UnrollBlock::initial_info_offset_in_bytes(), unroll_block_reg);
+  __ resize_frame_absolute(caller_sp, R24_tmp4, R25_tmp5);
 
   // Allocate new interpreter frame(s) and possibly a c2i adapter
   // frame.

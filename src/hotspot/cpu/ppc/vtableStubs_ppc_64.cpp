@@ -83,10 +83,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   const Register rcvr_klass = R11_scratch1;
   address npe_addr = __ pc(); // npe = null pointer exception
-  // check if we must do an explicit check (implicit checks disabled, offset too large).
-  __ null_check(R3, oopDesc::klass_offset_in_bytes(), /*implicit only*/nullptr);
   // Get receiver klass.
-  __ load_klass(rcvr_klass, R3);
+  __ load_klass_check_null(rcvr_klass, R3);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -180,8 +178,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                  tmp2       = R22_tmp2;
 
   address npe_addr = __ pc(); // npe = null pointer exception
-  __ null_check(R3_ARG1, oopDesc::klass_offset_in_bytes(), /*implicit only*/nullptr);
-  __ load_klass(rcvr_klass, R3_ARG1);
+  __ load_klass_check_null(rcvr_klass, R3_ARG1);
 
   // Receiver subtype check against REFC.
   __ ld(interface, CompiledICHolder::holder_klass_offset(), R19_method);
