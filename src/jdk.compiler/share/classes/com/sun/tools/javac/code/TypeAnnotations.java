@@ -1128,7 +1128,7 @@ public class TypeAnnotations {
             }
             if (sigOnly) {
                 if (!tree.mods.annotations.isEmpty()) {
-                    if (tree.sym.isConstructor()) {
+                    if (tree.sym.isConstructor() || tree.sym.isMatcher()) {
                         final TypeAnnotationPosition pos =
                             TypeAnnotationPosition.methodReturn(tree.pos);
                         // Use null to mark that the annotations go

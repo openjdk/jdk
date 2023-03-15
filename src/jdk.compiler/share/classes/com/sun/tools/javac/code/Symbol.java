@@ -462,6 +462,12 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return name == name.table.names.init;
     }
 
+    /** Is this symbol a matcher?
+     */
+    public boolean isMatcher() {
+        return (flags() & MATCHER) != 0;
+    }
+
     public boolean isDynamic() {
         return false;
     }
