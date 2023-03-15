@@ -27,6 +27,7 @@ package jdk.tools.jlink.internal.plugins;
 import java.util.function.Predicate;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.CodeTransform;
 import jdk.internal.classfile.MethodTransform;
 import jdk.internal.classfile.attribute.MethodParametersAttribute;
 import jdk.internal.classfile.attribute.SourceFileAttribute;
@@ -61,7 +62,7 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                 String path = resource.path();
                 if (path.endsWith(".class")) {
                     if (path.endsWith("module-info.class")) {
-                        // XXX. Do we have debug info? Is Asm ready for module-info?
+                        // XXX. Do we have debug info?
                     } else {
                         byte[] content = newClassReader(path, resource,
                                 Classfile.Option.processDebug(false),
@@ -69,7 +70,9 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                                         .dropping(cle -> cle instanceof SourceFileAttribute
                                                       || cle instanceof SourceDebugExtensionAttribute)
                                         .andThen(ClassTransform.transformingMethods(MethodTransform
-                                                .dropping(me -> me instanceof MethodParametersAttribute))));
+                                                .dropping(me -> me instanceof MethodParametersAttribute)
+                                                .andThen(MethodTransform
+                                                        .transformingCode(CodeTransform.ACCEPT_ALL)))));
                         res = resource.copyWithContent(content);
                     }
                 }
