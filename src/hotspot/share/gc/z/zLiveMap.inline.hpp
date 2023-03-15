@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,11 +81,11 @@ inline bool ZLiveMap::claim_segment(BitMap::idx_t segment) {
 }
 
 inline BitMap::idx_t ZLiveMap::first_live_segment() const {
-  return segment_live_bits().get_next_one_offset(0, nsegments);
+  return segment_live_bits().find_first_set_bit(0, nsegments);
 }
 
 inline BitMap::idx_t ZLiveMap::next_live_segment(BitMap::idx_t segment) const {
-  return segment_live_bits().get_next_one_offset(segment + 1, nsegments);
+  return segment_live_bits().find_first_set_bit(segment + 1, nsegments);
 }
 
 inline BitMap::idx_t ZLiveMap::segment_size() const {
@@ -138,7 +138,7 @@ inline void ZLiveMap::iterate_segment(ObjectClosure* cl, BitMap::idx_t segment, 
 
   const BitMap::idx_t start_index = segment_start(segment);
   const BitMap::idx_t end_index   = segment_end(segment);
-  BitMap::idx_t index = _bitmap.get_next_one_offset(start_index, end_index);
+  BitMap::idx_t index = _bitmap.find_first_set_bit(start_index, end_index);
 
   while (index < end_index) {
     // Calculate object address
@@ -159,7 +159,7 @@ inline void ZLiveMap::iterate_segment(ObjectClosure* cl, BitMap::idx_t segment, 
       break;
     }
 
-    index = _bitmap.get_next_one_offset(next_index, end_index);
+    index = _bitmap.find_first_set_bit(next_index, end_index);
   }
 }
 
