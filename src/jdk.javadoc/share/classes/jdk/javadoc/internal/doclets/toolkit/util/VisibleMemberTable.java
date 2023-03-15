@@ -900,19 +900,19 @@ public class VisibleMemberTable {
             return orderedMembers.get(kind);
         }
 
-        List<Element> getMembers(Name simplename, Kind kind) {
-            return namedMembers.get(kind).getOrDefault(simplename, List.of());
+        List<Element> getMembers(Name simpleName, Kind kind) {
+            return namedMembers.get(kind).getOrDefault(simpleName, List.of());
         }
 
-        <T extends Element> List<T> getMembers(Name simplename, Kind kind, Class<T> clazz) {
-            return getMembers(simplename, kind)
+        <T extends Element> List<T> getMembers(Name simpleName, Kind kind, Class<T> clazz) {
+            return getMembers(simpleName, kind)
                     .stream()
                     .map(clazz::cast)
                     .toList();
         }
 
-        List<ExecutableElement> getPropertyMethods(Name simplename) {
-            return getMembers(simplename, Kind.METHODS).stream()
+        List<ExecutableElement> getPropertyMethods(Name simpleName) {
+            return getMembers(simpleName, Kind.METHODS).stream()
                     .filter(m -> (utils.isPublic(m) || utils.isProtected(m)))
                     .map(m -> (ExecutableElement) m)
                     .toList();
@@ -979,7 +979,7 @@ public class VisibleMemberTable {
             List<VariableElement> flist = lmt.getMembers(utils.elementUtils.getName(baseName), Kind.FIELDS, VariableElement.class);
             VariableElement field = flist.isEmpty() ? null : flist.get(0);
 
-            // TODO: this code does not seem to be covered by tests well
+            // TODO: this code does not seem to be covered by tests well (JDK-8304170)
             ExecutableElement getter = null;
             var g = lmt.getPropertyMethods(utils.elementUtils.getName(pUtils.getGetName(propertyMethod))).stream()
                     .filter(m -> m.getParameters().isEmpty()) // Getters have zero params, no overloads!
@@ -1001,7 +1001,7 @@ public class VisibleMemberTable {
             }
 
             var setter = lmt.getPropertyMethods(utils.elementUtils.getName(pUtils.getSetName(propertyMethod))).stream()
-                    // TODO: number of parameters a setter take is not tested
+                    // TODO: number of parameters a setter take is not tested (JDK-8304170)
                     .filter(m -> m.getParameters().size() == 1 && pUtils.isValidSetterMethod(m))
                     .findAny()
                     .orElse(null);
