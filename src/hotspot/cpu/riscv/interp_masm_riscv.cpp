@@ -887,19 +887,28 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     save_bcp(); // Save in case of exception
 
+    if (!UseFastLocking) {
+      // Convert from BasicObjectLock structure to object and BasicLock
+      // structure Store the BasicLock address into x10
+      la(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
+    }
+
+    // Load oop into obj_reg(c_rarg3)
+    ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+
+    // Free entry
+    sd(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+
     if (UseFastLocking) {
       Label slow_case;
-      // Load oop into obj_reg(c_rarg3)
-      ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
-
-      // Free entry
-      sd(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
 
       // Check for non-symmetric locking. This is allowed by the spec and the interpreter
       // must handle it.
       Register tmp = header_reg;
-      ld(tmp, Address(xthread, JavaThread::lock_stack_current_offset()));
-      ld(tmp, Address(tmp, -oopSize));
+      lwu(tmp, Address(xthread, JavaThread::lock_stack_offset_offset()));
+      subw(tmp, tmp, oopSize);
+      add(tmp, xthread, tmp);
+      ld(tmp, Address(tmp, 0));
       bne(tmp, obj_reg, slow_case);
 
       ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
@@ -908,16 +917,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
       bind(slow_case);
     } else {
-      // Convert from BasicObjectLock structure to object and BasicLock
-      // structure Store the BasicLock address into x10
-      la(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
-
-      // Load oop into obj_reg(c_rarg3)
-      ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
-
-      // Free entry
-      sd(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
-
       // Load the old header from BasicLock structure
       ld(header_reg, Address(swap_reg,
                              BasicLock::displaced_header_offset_in_bytes()));

@@ -2384,7 +2384,7 @@ encode %{
     }
   %}
 
-  // using the cr register as the bool result: 0 for success; others failed.
+  // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
   enc_class riscv_enc_fast_lock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register flag = t1;
@@ -2394,7 +2394,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label no_count;
+    Label count, no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr, t0);
 
@@ -2402,10 +2402,10 @@ encode %{
     __ ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
-      __ load_klass(flag, oop);
-      __ lwu(flag, Address(flag, Klass::access_flags_offset()));
-      __ andi(flag, flag, JVM_ACC_IS_VALUE_BASED_CLASS, tmp /* tmp */);
-      __ bnez(flag, cont, true /* is_far */);
+      __ load_klass(tmp, oop);
+      __ lwu(tmp, Address(tmp, Klass::access_flags_offset()));
+      __ andi(flag, tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
+      __ bnez(flag, cont, /* is_far */ true);
     }
 
     // Check for existing monitor
@@ -2416,11 +2416,13 @@ encode %{
       if (UseFastLocking) {
         Label slow;
         __ fast_lock(oop, disp_hdr, tmp, t0, slow);
-        // Indicate success at cont.
+
+        // Indicate success on completion.
         __ mv(flag, zr);
-        __ j(cont);
+        __ j(count);
         __ bind(slow);
         __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
+        __ j(no_count);
       } else {
         // Set tmp to be (markWord of object | UNLOCK_VALUE).
         __ ori(tmp, disp_hdr, markWord::unlocked_value);
@@ -2453,11 +2455,11 @@ encode %{
         __ sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
         __ mv(flag, tmp); // we can use the value of tmp as the result here
       }
+      __ j(cont);
     } else {
       __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
+      __ j(cont);
     }
-
-    __ j(cont);
 
     // Handle existing monitor.
     __ bind(object_has_monitor);
@@ -2487,15 +2489,17 @@ encode %{
     __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1, t0, tmp);
 
     __ bind(cont);
-
+    // zero flag indicates success
+    // non-zero flag indicates failure
     __ bnez(flag, no_count);
 
+    __ bind(count);
     __ increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
   %}
 
-  // using cr flag to indicate the fast_unlock result: 0 for success; others failed.
+  // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
   enc_class riscv_enc_fast_unlock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register flag = t1;
@@ -2505,7 +2509,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label no_count;
+    Label count, no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr, flag);
 
@@ -2528,11 +2532,12 @@ encode %{
         Label slow;
         __ fast_unlock(oop, tmp, box, disp_hdr, slow);
 
-        // Indicate success at cont.
+        // Indicate success on completion.
         __ mv(flag, zr);
-        __ j(cont);
+        __ j(count);
         __ bind(slow);
         __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+        __ j(no_count);
       } else {
         // Check if it is still a light weight lock, this is true if we
         // see the stack address of the basicLock in the markWord of the
@@ -2541,11 +2546,12 @@ encode %{
         __ cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64, Assembler::relaxed,
                    Assembler::rl, /*result*/tmp);
         __ xorr(flag, box, tmp); // box == tmp if cas succeeds
+        __ j(cont);
       }
     } else {
       __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+      __ j(cont);
     }
-    __ j(cont);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
@@ -2555,13 +2561,14 @@ encode %{
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
 
     if (UseFastLocking) {
-      Label L;
-      __ ld(disp_hdr, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      __ mv(t0, (unsigned char)(intptr_t)ANONYMOUS_OWNER);
-      __ bne(disp_hdr, t0, L);
-      __ mv(flag, 1); // Indicate failure at cont -- dive into slow-path.
-      __ j(cont);
-      __ bind(L);
+      // If the owner is anonymous, we need to fix it -- in an outline stub.
+      Register tmp2 = disp_hdr;
+      __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+      __ andi(t0, tmp2, (int64_t)(intptr_t)ANONYMOUS_OWNER);
+      C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
+      Compile::current()->output()->add_stub(stub);
+      __ bnez(t0, stub->entry(), /* is_far */ true);
+      __ bind(stub->continuation());
     }
 
     __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
@@ -2586,9 +2593,11 @@ encode %{
     __ sd(zr, Address(tmp)); // set unowned
 
     __ bind(cont);
-
+    // zero flag indicates success
+    // non-zero flag indicates failure
     __ bnez(flag, no_count);
 
+    __ bind(count);
     __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);

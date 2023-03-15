@@ -52,8 +52,7 @@ void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   const int aligned_mask = BytesPerWord - 1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
-  Label done;
+  assert_different_registers(hdr, obj, disp_hdr);
   int null_check_offset = -1;
 
   verify_oop(obj);
@@ -67,7 +66,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     load_klass(hdr, obj);
     lwu(hdr, Address(hdr, Klass::access_flags_offset()));
     andi(t0, hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
-    bnez(t0, slow_case, true /* is_far */);
+    bnez(t0, slow_case, /* is_far */ true);
   }
 
   // Load object header
@@ -76,6 +75,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   if (UseFastLocking) {
     fast_lock(obj, hdr, t0, t1, slow_case);
   } else {
+    Label done;
     // and mark it as unlocked
     ori(hdr, hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
@@ -107,9 +107,9 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     sd(hdr, Address(disp_hdr, 0));
     // otherwise we don't care about the result and handle locking via runtime call
     bnez(hdr, slow_case, /* is_far */ true);
+    // done
+    bind(done);
   }
-  // done
-  bind(done);
   increment(Address(xthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
@@ -120,21 +120,22 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
   Label done;
 
-  if (UseFastLocking) {
-    // load object
-    ld(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-    verify_oop(obj);
-    ld(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
-    fast_unlock(obj, hdr, t0, t1, slow_case);
-  } else {
+  if (!UseFastLocking) {
     // load displaced header
     ld(hdr, Address(disp_hdr, 0));
     // if the loaded hdr is null we had recursive locking
     // if we had recursive locking, we are done
     beqz(hdr, done);
-    // load object
-    ld(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-    verify_oop(obj);
+  }
+
+  // load object
+  ld(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+  verify_oop(obj);
+
+  if (UseFastLocking) {
+    ld(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+    fast_unlock(obj, hdr, t0, t1, slow_case);
+  } else {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to
     // the displaced header, get the object header instead

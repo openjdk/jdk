@@ -2420,10 +2420,10 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
     membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   }
   if (at_return) {
-    bgtu(in_nmethod ? sp : fp, t0, slow_path, true /* is_far */);
+    bgtu(in_nmethod ? sp : fp, t0, slow_path, /* is_far */ true);
   } else {
     andi(t0, t0, SafepointMechanism::poll_bit());
-    bnez(t0, slow_path, true /* is_far */);
+    bnez(t0, slow_path, /* is_far */ true);
   }
 }
 
@@ -4494,26 +4494,26 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Regist
   assert_different_registers(obj, hdr, tmp1, tmp2);
 
   // Check if we would have space on lock-stack for the object.
-  ld(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
-  ld(tmp2, Address(xthread, JavaThread::lock_stack_limit_offset()));
-  bge(tmp1, tmp2, slow, true);
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
+  mv(tmp2, (unsigned)LockStack::end_offset());
+  bge(tmp1, tmp2, slow, /* is_far */ true);
 
   // Load (object->mark() | 1) into hdr
   ori(hdr, hdr, markWord::unlocked_value);
   // Clear lock-bits, into tmp2
   xori(tmp2, hdr, markWord::unlocked_value);
+
   // Try to swing header from unlocked to locked
   Label success;
   cmpxchgptr(hdr, tmp2, obj, tmp1, success, &slow);
   bind(success);
 
   // After successful lock, push object on lock-stack
-  // TODO: Can we avoid re-loading the current offset? The CAS above clobbers it.
-  // Maybe we could ensure that we have enough space on the lock stack more cleverly.
-  ld(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
-  sd(obj, Address(tmp1, 0));
-  add(tmp1, tmp1, oopSize);
-  sd(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
+  add(tmp2, xthread, tmp1);
+  sd(obj, Address(tmp2, 0));
+  addw(tmp1, tmp1, oopSize);
+  sw(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
 }
 
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
@@ -4533,7 +4533,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Regi
   bind(success);
 
   // After successful unlock, pop object from lock-stack
-  ld(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
-  sub(tmp1, tmp1, oopSize);
-  sd(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
+  subw(tmp1, tmp1, oopSize);
+  sw(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
 }
