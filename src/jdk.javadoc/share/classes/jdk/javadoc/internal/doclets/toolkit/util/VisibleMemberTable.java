@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -882,11 +883,13 @@ public class VisibleMemberTable {
                 }
             }
 
-            // protect from unintended change
-            for (Kind kind : Kind.values()) {
-                orderedMembers.compute(kind, (k, v) -> v == null ? List.of() : Collections.unmodifiableList(v));
-                namedMembers.compute(kind, (k, v) -> v == null ? Map.of() : Collections.unmodifiableMap(v));
-            }
+            // protect element lists from unintended changes by clients
+            orderedMembers.replaceAll(this::sealList);
+            namedMembers.values().forEach(m -> m.replaceAll(this::sealList));
+        }
+
+        private <K, V> List<V> sealList(K unusedKey, List<V> v) {
+            return Collections.unmodifiableList(v);
         }
 
         void addMember(Element e, Kind kind) {
@@ -897,11 +900,12 @@ public class VisibleMemberTable {
         }
 
         List<Element> getOrderedMembers(Kind kind) {
-            return orderedMembers.get(kind);
+            return orderedMembers.getOrDefault(kind, List.of());
         }
 
         List<Element> getMembers(Name simpleName, Kind kind) {
-            return namedMembers.get(kind).getOrDefault(simpleName, List.of());
+            return namedMembers.getOrDefault(kind, Map.of())
+                    .getOrDefault(simpleName, List.of());
         }
 
         <T extends Element> List<T> getMembers(Name simpleName, Kind kind, Class<T> clazz) {
