@@ -6039,7 +6039,9 @@ void MacroAssembler::poly1305_step_foo(const FloatRegister s[], const FloatRegis
                                        AbstractRegSet<FloatRegister> scratch) {
   auto vregs = scratch.begin();
   FloatRegister scratch1 = *vregs++, scratch2 = *vregs++;
-  ldpd(scratch1, scratch2, post(input_start, 2 * wordSize));
+  // ldpd(scratch1, scratch2, post(input_start, 2 * wordSize));
+  ld2(scratch1, scratch2, D, 0, post(input_start, 2 * wordSize));
+  ld2(scratch1, scratch2, D, 1, post(input_start, 2 * wordSize));
 
   orr(s[0], T16B, scratch1, scratch1);
   bic(s[0], T16B, s[0], upper_bits);
@@ -6057,11 +6059,13 @@ void MacroAssembler::poly1305_step_foo(const FloatRegister s[], const FloatRegis
 
   ushr(s[4], T2D, scratch2, 14+26);
 
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 5; i++) {
     addv(s[i], T2D, u[i], s[i]);
+    uzp1(s[i], T4S, s[i], s[i]);
+  }
 
-  mov(scratch1, T2D, 1 << 24);
-  addv(s[4], T2D, s[4], scratch1);
+  mov(scratch1, T4S, 1 << 24);
+  addv(s[4], T4S, s[4], scratch1);
 }
 
 // void MacroAssembler::poly1305_multiply_foo(const FloatRegister u_v[],
@@ -6140,17 +6144,17 @@ void MacroAssembler::poly1305_reduce_foo(const FloatRegister u[],
 }
 
 void MacroAssembler::poly1305_transfer(const RegPair u0[],
-                                       const FloatRegister s[],
+                                       const FloatRegister s[], int index,
                                        FloatRegister vscratch) {
   shl(vscratch, T2D, s[1], 26);
   Assembler::add(vscratch, T2D, s[0], vscratch);
-  umov(u0[0]._lo, vscratch, D, 0);
+  umov(u0[0]._lo, vscratch, D, index);
 
   shl(vscratch, T2D, s[3], 26);
   Assembler::add(vscratch, T2D, s[2], vscratch);
-  umov(u0[1]._lo, vscratch, D, 0);
+  umov(u0[1]._lo, vscratch, D, index);
 
-  umov(u0[2]._lo, s[4], D, 0);
+  umov(u0[2]._lo, s[4], D, index);
 }
 
 void MacroAssembler::poly1305_reduce(const RegPair u[]) {

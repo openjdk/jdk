@@ -92,7 +92,7 @@ address generate_poly1305_processBlocks2() {
 
   static constexpr int BLOCK_LENGTH = 16;
 
-  const FloatRegister v_u1[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
+  const FloatRegister v_u0[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
   FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
 
   FloatRegister upper_bits = *vregs++;
@@ -111,7 +111,7 @@ address generate_poly1305_processBlocks2() {
   }
 
     // KLUDGE
-    __ copy_3_to_5_regs(v_u1, u1[0]._lo, u1[1]._lo, u1[2]._lo);
+    __ copy_3_to_5_regs(v_u0, u1[0]._lo, u1[1]._lo, u1[2]._lo);
 
   {
     Label DONE, LOOP;
@@ -120,18 +120,19 @@ address generate_poly1305_processBlocks2() {
     __ subsw(rscratch1, length, BLOCK_LENGTH * 4);
     __ br(Assembler::LT, DONE);
 
-    __ poly1305_step(S0, u0, input_start);
-    __ poly1305_multiply(u0, S0, R, RR2, regs);
-    __ poly1305_reduce(u0);
+    // __ poly1305_step(S0, u0, input_start);
+    // __ poly1305_multiply(u0, S0, R, RR2, regs);
+    // __ poly1305_reduce(u0);
 
     // __ poly1305_step(S1, u1, input_start);
     // __ poly1305_multiply(u1, S1, R, RR2, regs);
     // __ poly1305_reduce(u1);
     // __ sub(input_start, input_start, BLOCK_LENGTH);
 
-    __ poly1305_step_foo(s_v, v_u1, upper_bits, input_start, vregs.remaining());
-    __ poly1305_multiply_foo(v_u1, vregs.remaining(), s_v, r_v, rr_v);
-    __ poly1305_reduce_foo(v_u1, upper_bits, vregs.remaining());
+    __ poly1305_step_foo(s_v, v_u0, upper_bits, input_start, vregs.remaining());
+
+    __ poly1305_multiply_foo(v_u0, vregs.remaining(), s_v, r_v, rr_v);
+    __ poly1305_reduce_foo(v_u0, upper_bits, vregs.remaining());
 
     poo = __ pc();
 
@@ -143,7 +144,8 @@ address generate_poly1305_processBlocks2() {
     __ bind(DONE);
   }
 
-  __ poly1305_transfer(u1, v_u1, *vregs);
+  __ poly1305_transfer(u0, v_u0, 0, *vregs);
+  __ poly1305_transfer(u1, v_u0, 1, *vregs);
 
   // Last two parallel blocks
   {

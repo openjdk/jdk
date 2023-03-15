@@ -2563,6 +2563,11 @@ template<typename R, typename... Rx>
   INSN3(st3, 0b001101000, 0b0010);
   INSN4(st4, 0b001101001, 0b0010);
 
+  INSN1(ld1, 0b001101010, 0b0000);
+  INSN2(ld2, 0b001101011, 0b0000);
+  INSN3(ld3, 0b001101010, 0b0010);
+  INSN4(ld4, 0b001101011, 0b0010);
+
 #undef INSN1
 #undef INSN2
 #undef INSN3

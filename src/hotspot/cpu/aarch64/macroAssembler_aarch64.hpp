@@ -1607,7 +1607,7 @@ public:
   void poly1305_fully_reduce(Register dest[], const RegPair u[]);
   void poly1305_step(Register s[], const RegPair u[], Register input_start);
   void poly1305_transfer(const RegPair d[], const FloatRegister s[],
-                         FloatRegister vscratch);
+                         int lane, FloatRegister vscratch);
   void copy_3_regs(const Register dest[], const Register src[]);
   void add_3_reg_pairs(const RegPair dest[], const RegPair src[]);
 
