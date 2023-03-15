@@ -6259,7 +6259,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
   br(Assembler::NE, slow);
 
   // After successful unlock, pop object from lock-stack
-  ldr(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
-  sub(t1, t1, oopSize);
-  str(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
+  ldrw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
+  subw(t1, t1, oopSize);
+  strw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
 }
