@@ -82,7 +82,10 @@ class NativeMethodPrefixAgent {
                                         "wrapped_" + trname + "_", (name, h) -> {
                                             h.constantInstruction(name);
                                             h.constantInstruction(transformId);
-                                            h.invokestatic(ClassDesc.ofInternalName("bootreporter/StringIdCallbackReporter"), "tracker", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;I)V"));
+                                            h.invokestatic(
+                                                    ClassDesc.ofInternalName("bootreporter/StringIdCallbackReporter"),
+                                                    "tracker",
+                                                    MethodTypeDesc.ofDescriptor("(Ljava/lang/String;I)V"));
                                         })
                                    .apply();
                     /*** debugging ...

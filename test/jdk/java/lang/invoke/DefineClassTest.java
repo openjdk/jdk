@@ -40,7 +40,6 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
 import java.lang.reflect.AccessFlag;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -49,6 +48,9 @@ import java.nio.file.Paths;
 
 import jdk.internal.classfile.Classfile;
 import org.testng.annotations.Test;
+
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import static org.testng.Assert.*;
 
 public class DefineClassTest {
@@ -305,12 +307,12 @@ public class DefineClassTest {
         return Classfile.build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
-            clb.withMethodBody(CTOR_NAME, MD_void, PUBLIC, cob -> {
+            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
                 cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
                 cob.return_();
             });
-            clb.withMethodBody("<clinit>", MD_void, AccessFlag.STATIC.mask(), cob -> {
+            clb.withMethodBody("<clinit>", MD_void, ACC_STATIC, cob -> {
                 cob.invokestatic(ClassDesc.of(targetClass), targetMethod, MD_void);
                 cob.return_();
             });
@@ -324,7 +326,7 @@ public class DefineClassTest {
         return Classfile.build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_MissingSuperClass);
-            clb.withMethodBody(CTOR_NAME, MD_void, PUBLIC, cob -> {
+            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
                 cob.invokespecial(CD_MissingSuperClass, CTOR_NAME, MD_void);
                 cob.return_();

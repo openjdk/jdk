@@ -41,6 +41,8 @@ import jdk.internal.classfile.attribute.InnerClassesAttribute;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
 public class GetSimpleNameTest {
     static class NestedClass {}
@@ -147,7 +149,7 @@ public class GetSimpleNameTest {
         }
 
         static void makeDefaultCtor(ClassBuilder clb) {
-            clb.withMethodBody(CTOR_NAME, MD_void, AccessFlag.PUBLIC.mask(), cb -> {
+            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cb -> {
                 cb.aload(0);
                 cb.invokespecial(CD_Object, CTOR_NAME, MD_void);
                 cb.return_();
@@ -156,9 +158,11 @@ public class GetSimpleNameTest {
 
         void makeCtxk(ClassBuilder clb, boolean isInner) {
             if (isInner) {
-                clb.accept(EnclosingMethodAttribute.of(outerName, Optional.of("f"), Optional.of(MD_void)));
+                clb.accept(EnclosingMethodAttribute.of(outerName,
+                        Optional.of("f"), Optional.of(MD_void)));
             } else {
-                clb.withMethodBody("f", MD_void, AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask(), CodeBuilder::return_);
+                clb.withMethodBody("f", MD_void, ACC_PUBLIC | ACC_STATIC,
+                        CodeBuilder::return_);
             }
         }
 
@@ -168,8 +172,9 @@ public class GetSimpleNameTest {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.accept(InnerClassesAttribute.of(
-                        InnerClassInfo.of(innerName, Optional.of(outerName), Optional.of(simpleName))
-                ));
+                        InnerClassInfo.of(innerName,
+                                Optional.of(outerName),
+                                Optional.of(simpleName))));
                 makeDefaultCtor(clb);
             });
         }
@@ -180,8 +185,10 @@ public class GetSimpleNameTest {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.accept(InnerClassesAttribute.of(
-                        InnerClassInfo.of(innerName, Optional.of(outerName), Optional.of(simpleName), AccessFlag.PUBLIC)
-                ));
+                        InnerClassInfo.of(innerName,
+                                Optional.of(outerName),
+                                Optional.of(simpleName),
+                                AccessFlag.PUBLIC)));
                 makeDefaultCtor(clb);
             });
         }
@@ -192,8 +199,10 @@ public class GetSimpleNameTest {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.accept(InnerClassesAttribute.of(
-                        InnerClassInfo.of(innerName, Optional.empty(), Optional.of(simpleName), AccessFlag.PUBLIC, AccessFlag.STATIC)
-                ));
+                        InnerClassInfo.of(innerName,
+                                Optional.empty(),
+                                Optional.of(simpleName),
+                                AccessFlag.PUBLIC, AccessFlag.STATIC)));
                 makeDefaultCtor(clb);
                 makeCtxk(clb, isInner);
             });
@@ -205,8 +214,10 @@ public class GetSimpleNameTest {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.accept(InnerClassesAttribute.of(
-                        InnerClassInfo.of(innerName, Optional.empty(), Optional.empty(), AccessFlag.PUBLIC, AccessFlag.STATIC)
-                ));
+                        InnerClassInfo.of(innerName,
+                                Optional.empty(),
+                                Optional.empty(),
+                                AccessFlag.PUBLIC, AccessFlag.STATIC)));
                 makeDefaultCtor(clb);
                 makeCtxk(clb, isInner);
             });

@@ -44,12 +44,15 @@ import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
 import jdk.internal.classfile.attribute.ExceptionsAttribute;
 import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
+import static java.lang.constant.ConstantDescs.CD_Exception;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.reflect.AccessFlag.ABSTRACT;
 import static java.lang.reflect.AccessFlag.INTERFACE;
 import static java.lang.reflect.AccessFlag.PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_ABSTRACT;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 
 
 public class ClassFileGenerator {
@@ -91,11 +94,11 @@ public class ClassFileGenerator {
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                        Annotation.of(CD_Retention, AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_void), PUBLIC.mask() | ABSTRACT.mask(), mb -> {
-                    mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1)));
-                });
+                clb.withMethod("m", MethodTypeDesc.of(CD_void), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
             });
         }
     }
@@ -116,11 +119,11 @@ public class ClassFileGenerator {
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                        Annotation.of(CD_Retention, AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int, CD_int), PUBLIC.mask() | ABSTRACT.mask(), mb -> {
-                    mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(-1)));
-                });
+                clb.withMethod("m", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(-1))));
             });
         }
     }
@@ -141,11 +144,11 @@ public class ClassFileGenerator {
                 clb.withInterfaceSymbols(CD_Annotation, Serializable.class.describeConstable().orElseThrow());
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                        Annotation.of(CD_Retention, AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int), PUBLIC.mask() | ABSTRACT.mask(), mb -> {
-                    mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1)));
-                });
+                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
             });
         }
     }
@@ -166,11 +169,12 @@ public class ClassFileGenerator {
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                        Annotation.of(CD_Retention, AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int), PUBLIC.mask() | ABSTRACT.mask(), mb -> {
+                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT, mb -> {
                     mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1)));
-                    mb.with(ExceptionsAttribute.ofSymbols(Exception.class.describeConstable().orElseThrow()));
+                    mb.with(ExceptionsAttribute.ofSymbols(CD_Exception));
                 });
             });
         }
@@ -192,11 +196,11 @@ public class ClassFileGenerator {
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                        Annotation.of(CD_Retention, AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("hashCode", MethodTypeDesc.of(CD_int), PUBLIC.mask() | ABSTRACT.mask(), mb -> {
-                    mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1)));
-                });
+                clb.withMethod("hashCode", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
             });
         }
     }
@@ -218,12 +222,12 @@ public class ClassFileGenerator {
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                        Annotation.of(CD_Retention, AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int), PUBLIC.mask() | ABSTRACT.mask(), mb -> {
-                    mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1)));
-                });
-                clb.withMethod("d", MethodTypeDesc.of(CD_int), PUBLIC.mask(), mb -> {
+                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
+                clb.withMethod("d", MethodTypeDesc.of(CD_int), ACC_PUBLIC, mb -> {
                     mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(2)));
                     mb.withCode(cob -> {
                         cob.iconst_2();
@@ -250,11 +254,11 @@ public class ClassFileGenerator {
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, /*AccessFlag.ANNOTATION,*/ ABSTRACT, AccessFlag.INTERFACE);
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                        Annotation.of(CD_Retention, AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME)))
+                        Annotation.of(CD_Retention, AnnotationElement.of("value",
+                                AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int), PUBLIC.mask() | ABSTRACT.mask(), mb -> {
-                    mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1)));
-                });
+                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                        mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
             });
         }
     }

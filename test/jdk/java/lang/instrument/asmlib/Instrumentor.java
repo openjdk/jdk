@@ -110,7 +110,8 @@ public class Instrumentor {
 
                         @Override
                         public void atEnd(MethodBuilder mb) {
-                            mb.withCode(((Consumer<CodeBuilder>) cb0 -> injector.accept(name, cb0)).andThen(cb -> {
+                            Consumer<CodeBuilder> injection = cb -> injector.accept(name, cb);
+                            mb.withCode(injection.andThen(cb -> {
                                 int ptr;
                                 boolean isStatic = mm.flags().has(AccessFlag.STATIC);
                                 if (!isStatic) {

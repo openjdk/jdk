@@ -46,6 +46,8 @@ import java.lang.reflect.AccessFlag;
 import java.lang.reflect.InvocationTargetException;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
+import static jdk.internal.classfile.Classfile.ACC_ABSTRACT;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 
 public class ArrayTypeMismatchTest {
 
@@ -88,16 +90,13 @@ public class ArrayTypeMismatchTest {
     private static byte[] carrierType() {
         return Classfile.build(ClassDesc.of("sample", "Carrier"), clb -> {
             clb.withSuperclass(CD_Object);
-            clb.with(RuntimeVisibleAnnotationsAttribute.of(
+            var badAnnotationArray = AnnotationValue.ofArray(AnnotationValue.ofAnnotation(
                     jdk.internal.classfile.Annotation.of(
-                            ClassDesc.of("sample", "Host"),
-                            AnnotationElement.of("value", AnnotationValue.ofArray(
-                                    AnnotationValue.ofAnnotation(
-                                            jdk.internal.classfile.Annotation.of(
-                                                    NoAnnotation.class.describeConstable().orElseThrow()
-                                            )
-                                    )
-                            ))
+                            NoAnnotation.class.describeConstable().orElseThrow()
+                    )));
+            clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                    jdk.internal.classfile.Annotation.of(ClassDesc.of("sample", "Host"),
+                            AnnotationElement.of("value", badAnnotationArray)
                     )
             ));
         });
@@ -107,15 +106,16 @@ public class ArrayTypeMismatchTest {
         return Classfile.build(ClassDesc.of("sample", "Host"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(Annotation.class.describeConstable().orElseThrow());
-            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.ABSTRACT, AccessFlag.INTERFACE, AccessFlag.ANNOTATION);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.ABSTRACT, AccessFlag.INTERFACE,
+                    AccessFlag.ANNOTATION);
             clb.with(RuntimeVisibleAnnotationsAttribute.of(
                     jdk.internal.classfile.Annotation.of(
                             Retention.class.describeConstable().orElseThrow(),
                             AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME))
                     )
             ));
-            clb.withMethod("value", MethodTypeDesc.of(NoAnnotation[].class.describeConstable().orElseThrow()),
-                    AccessFlag.PUBLIC.mask() | AccessFlag.ABSTRACT.mask(), mb -> {});
+            clb.withMethod("value", MethodTypeDesc.of(NoAnnotation[].class.describeConstable()
+                    .orElseThrow()), ACC_PUBLIC | ACC_ABSTRACT, mb -> {});
         });
     }
 

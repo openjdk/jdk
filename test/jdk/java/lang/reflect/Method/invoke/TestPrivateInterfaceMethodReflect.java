@@ -38,6 +38,8 @@ import jdk.internal.classfile.Classfile;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
+import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 
 public class TestPrivateInterfaceMethodReflect {
 
@@ -66,7 +68,7 @@ public class TestPrivateInterfaceMethodReflect {
                 case INTERFACE_NAME -> Classfile.build(ClassDesc.ofInternalName(INTERFACE_NAME), clb -> {
                     clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE, AccessFlag.PUBLIC);
                     clb.withSuperclass(CD_Object);
-                    clb.withMethodBody("privInstance", MethodTypeDesc.of(CD_int), AccessFlag.PRIVATE.mask(), cob -> {
+                    clb.withMethodBody("privInstance", MethodTypeDesc.of(CD_int), ACC_PRIVATE, cob -> {
                         cob.constantInstruction(EXPECTED);
                         cob.ireturn();
                     });
@@ -75,7 +77,7 @@ public class TestPrivateInterfaceMethodReflect {
                     clb.withFlags(AccessFlag.PUBLIC);
                     clb.withSuperclass(CD_Object);
                     clb.withInterfaceSymbols(ClassDesc.ofInternalName(INTERFACE_NAME));
-                    clb.withMethodBody(CTOR_NAME, CTOR_DESC, AccessFlag.PUBLIC.mask(), cob -> {
+                    clb.withMethodBody(CTOR_NAME, CTOR_DESC, ACC_PUBLIC, cob -> {
                         cob.aload(0);
                         cob.invokespecial(CD_Object, CTOR_NAME, CTOR_DESC);
                         cob.return_();

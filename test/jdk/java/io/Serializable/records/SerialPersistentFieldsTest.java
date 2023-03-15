@@ -227,7 +227,7 @@ public class SerialPersistentFieldsTest {
 
     static byte[] addSerialPersistentFields(byte[] classBytes,
                                             ObjectStreamField[] spf) {
-        var model =  Classfile.parse(classBytes);
+        var model = Classfile.parse(classBytes);
         return model.transform(new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
     }
 

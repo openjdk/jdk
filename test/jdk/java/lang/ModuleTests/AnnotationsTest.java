@@ -31,14 +31,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import jdk.internal.classfile.AnnotationElement;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.ModuleTargetAttribute;
 import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.internal.module.ModuleInfoWriter;
 
@@ -143,15 +140,15 @@ public class AnnotationsTest {
      * Adds the Deprecated annotation to the given module-info class file.
      */
     static byte[] addDeprecated(byte[] bytes, boolean forRemoval, String since) {
-        return Classfile.parse(bytes).transform(ClassTransform.ACCEPT_ALL.andThen(ClassTransform.endHandler(clb -> {
-            clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                    jdk.internal.classfile.Annotation.of(
-                            Deprecated.class.describeConstable().orElseThrow(),
-                            AnnotationElement.ofBoolean("forRemoval", forRemoval),
-                            AnnotationElement.ofString("since", since)
-                    )
-            ));
-        })));
+        return Classfile.parse(bytes)
+                .transform(ClassTransform.endHandler(clb ->
+                        clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                                jdk.internal.classfile.Annotation.of(
+                                        Deprecated.class.describeConstable().orElseThrow(),
+                                        AnnotationElement.ofBoolean("forRemoval", forRemoval),
+                                        AnnotationElement.ofString("since", since)
+                                )
+                        ))));
     }
 
     /**

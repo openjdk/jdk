@@ -43,6 +43,8 @@ import jdk.internal.classfile.Classfile;
 import org.testng.annotations.*;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.SPECIAL;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import static org.testng.Assert.*;
 
 /**
@@ -121,12 +123,12 @@ public class SpecialStatic {
         return Classfile.build(CD_T1, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-            clb.withMethodBody(CTOR_NAME, MD_void, AccessFlag.PUBLIC.mask(), cob -> {
+            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
                 cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
                 cob.return_();
             });
-            clb.withMethodBody(METHOD_NAME, MD_int, AccessFlag.PUBLIC.mask(), cob -> {
+            clb.withMethodBody(METHOD_NAME, MD_int, ACC_PUBLIC, cob -> {
                 cob.bipush(1);
                 cob.ireturn();
             });
@@ -137,12 +139,12 @@ public class SpecialStatic {
         return Classfile.build(CD_T2, clb -> {
             clb.withSuperclass(CD_T1);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-            clb.withMethodBody(CTOR_NAME, MD_void, AccessFlag.PUBLIC.mask(), cob -> {
+            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
                 cob.invokespecial(CD_T1, CTOR_NAME, MD_void);
                 cob.return_();
             });
-            clb.withMethodBody(METHOD_NAME, MD_int, AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask(), cob -> {
+            clb.withMethodBody(METHOD_NAME, MD_int, ACC_PUBLIC | ACC_STATIC, cob -> {
                 cob.bipush(2);
                 cob.ireturn();
             });
@@ -153,22 +155,22 @@ public class SpecialStatic {
         return Classfile.build(CD_T3, clb -> {
             clb.withSuperclass(CD_T2);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-            clb.withMethodBody(CTOR_NAME, MD_void, AccessFlag.PUBLIC.mask(), cob -> {
+            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
                 cob.invokespecial(CD_T2, CTOR_NAME, MD_void);
                 cob.return_();
             });
-            clb.withMethodBody(METHOD_NAME, MD_int, AccessFlag.PUBLIC.mask(), cob -> {
+            clb.withMethodBody(METHOD_NAME, MD_int, ACC_PUBLIC, cob -> {
                 cob.bipush(3);
                 cob.ireturn();
             });
             clb.withMethodBody("getMethodHandle", MethodTypeDesc.of(CD_MethodHandle),
-                    AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask(), cob -> {
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
                 cob.constantInstruction(MethodHandleDesc.ofMethod(SPECIAL, CD_T1, METHOD_NAME, MD_int));
                 cob.areturn();
             });
             clb.withMethodBody("getLookup", MD_Lookup,
-                    AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask(), cob -> {
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
                 cob.invokestatic(CD_MethodHandles, "lookup", MD_Lookup);
                 cob.areturn();
             });

@@ -56,6 +56,8 @@ import org.testng.annotations.DataProvider;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import static org.testng.Assert.*;
 
 /**
@@ -213,25 +215,26 @@ public class BadProvidersTest {
         var bytes = Classfile.build(ClassDesc.of("p", "ProviderFactory"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-            var provider$1Desc = ClassDesc.of("p", "ProviderFactory$1");
+
+            var providerFactory$1 = ClassDesc.of("p", "ProviderFactory$1");
 
             // public static p.Service provider()
             clb.withMethodBody("provider", MethodTypeDesc.of(ClassDesc.of("p", "Service")),
-                    AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask(), cob -> {
-                cob.new_(provider$1Desc);
-                cob.dup();
-                cob.invokespecial(provider$1Desc, "<init>", MethodTypeDesc.of(CD_void));
-                cob.areturn();
-            });
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
+                        cob.new_(providerFactory$1);
+                        cob.dup();
+                        cob.invokespecial(providerFactory$1, "<init>", MethodTypeDesc.of(CD_void));
+                        cob.areturn();
+                    });
 
             // public static p.ProviderFactory$1 provider()
-            clb.withMethodBody("provider", MethodTypeDesc.of(provider$1Desc),
-                    AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask(), cob -> {
-                cob.new_(provider$1Desc);
-                cob.dup();
-                cob.invokespecial(provider$1Desc, "<init>", MethodTypeDesc.of(CD_void));
-                cob.areturn();
-            });
+            clb.withMethodBody("provider", MethodTypeDesc.of(providerFactory$1),
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
+                        cob.new_(providerFactory$1);
+                        cob.dup();
+                        cob.invokespecial(providerFactory$1, "<init>", MethodTypeDesc.of(CD_void));
+                        cob.areturn();
+                    });
         });
 
         // write the class bytes into the compiled module directory

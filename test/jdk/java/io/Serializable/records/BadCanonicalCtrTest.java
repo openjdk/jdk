@@ -217,13 +217,13 @@ public class BadCanonicalCtrTest {
      */
     static byte[] modifyConstructor(byte[] classBytes) {
         return Classfile.parse(classBytes).transform(ClassTransform.dropping(ce ->
-                ce instanceof MethodModel mm && mm.methodName().equalsString(CTR_NAME))
-                .andThen(ClassTransform.endHandler(clb -> {
-                    clb.withMethodBody(CTR_NAME, MethodTypeDesc.of(CD_void, CD_Object), ACC_PUBLIC, cob -> {
-                        cob.aload(0);
-                        cob.invokespecial(Record.class.describeConstable().orElseThrow(), CTR_NAME, MethodTypeDesc.of(CD_void));
-                        cob.return_();
-                    });
-                })));
+                        ce instanceof MethodModel mm && mm.methodName().equalsString(CTR_NAME))
+                .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(CTR_NAME,
+                        MethodTypeDesc.of(CD_void, CD_Object), ACC_PUBLIC, cob -> {
+                            cob.aload(0);
+                            cob.invokespecial(Record.class.describeConstable().orElseThrow(),
+                                    CTR_NAME, MethodTypeDesc.of(CD_void));
+                            cob.return_();
+                        }))));
     }
 }

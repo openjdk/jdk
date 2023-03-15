@@ -67,6 +67,7 @@ import static java.lang.reflect.AccessFlag.ANNOTATION;
 import static java.lang.reflect.AccessFlag.ENUM;
 import static java.lang.reflect.AccessFlag.INTERFACE;
 import static java.lang.reflect.AccessFlag.SYNTHETIC;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 import static org.testng.Assert.*;
 
 interface HiddenTest {
@@ -279,7 +280,9 @@ public class BasicTest {
         assertEquals(hc.isInterface(), accessFlags.contains(INTERFACE));
 
         assertTrue(hc.isHidden());
-        assertEquals(hc.getModifiers(), accessFlags.stream().mapToInt(AccessFlag::mask).reduce(AccessFlag.PUBLIC.mask(), (a, b) -> a | b));
+        assertEquals(hc.getModifiers(), accessFlags.stream()
+                .mapToInt(AccessFlag::mask)
+                .reduce(ACC_PUBLIC, (a, b) -> a | b));
         assertFalse(hc.isLocalClass());
         assertFalse(hc.isMemberClass());
         assertFalse(hc.isAnonymousClass());

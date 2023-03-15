@@ -43,8 +43,8 @@ import org.testng.annotations.Test;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
-import static java.lang.reflect.AccessFlag.PUBLIC;
-import static java.lang.reflect.AccessFlag.STATIC;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
 public class StaticInvocableTest {
     public static void main(String[] args) throws Throwable {
@@ -118,13 +118,14 @@ public class StaticInvocableTest {
     public static byte[] dumpClass(String pkg) {
         return Classfile.build(ClassDesc.of(pkg.replace('/', '.'), "MyClass"), clb -> {
             clb.withSuperclass(CD_Object);
-            clb.withFlags(PUBLIC, AccessFlag.SUPER);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withMethodBody(CTOR_NAME, CTOR_DESC, 0, cob -> {
                 cob.aload(0);
                 cob.invokespecial(CD_Object, CTOR_NAME, CTOR_DESC);
                 cob.return_();
             });
-            clb.withMethodBody("get", MethodTypeDesc.of(CD_Object, CD_int), PUBLIC.mask() | STATIC.mask(), cob -> {
+            clb.withMethodBody("get", MethodTypeDesc.of(CD_Object, CD_int),
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
                 cob.aconst_null();
                 cob.areturn();
             });

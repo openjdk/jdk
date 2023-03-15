@@ -43,6 +43,9 @@ import jdk.test.lib.ByteCodeLoader;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static jdk.internal.classfile.Classfile.ACC_ABSTRACT;
+import static jdk.internal.classfile.Classfile.ACC_FINAL;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -83,9 +86,9 @@ public class IsRecordTest {
         out.println("\n--- testDirectSubClass isFinal=%s, isAbstract=%s, extendsJLR=%s, withRecordAttr=%s, expectIsRecord=%s ---"
                 .formatted(isFinal, isAbstract, extendsJLR, withRecordAttr, expectIsRecord));
 
-        List<RecordComponentEntry> rc = null;
+        List<RecordComponentInfo> rc = null;
         if (withRecordAttr)
-            rc = List.of(new RecordComponentEntry("x", "I"));
+            rc = List.of(RecordComponentInfo.of("x", CD_int));
         String superName = extendsJLR ? "java/lang/Record" : "java/lang/Object";
         var classBytes = generateClassBytes("C", isFinal, isAbstract, superName, rc);
         Class<?> cls = ByteCodeLoader.load("C", classBytes);
@@ -110,9 +113,9 @@ public class IsRecordTest {
         out.println("\n--- testIndirectSubClass isFinal=%s, isAbstract=%s withRecordAttr=%s ---"
                 .formatted(isFinal, isAbstract, withRecordAttr));
 
-        List<RecordComponentEntry> rc = null;
+        List<RecordComponentInfo> rc = null;
         if (withRecordAttr)
-            rc = List.of(new RecordComponentEntry("x", "I"));
+            rc = List.of(RecordComponentInfo.of("x", CD_int));
         var supFooClassBytes = generateClassBytes("SupFoo", false, isAbstract, "java/lang/Record", rc);
         var subFooClassBytes = generateClassBytes("SubFoo", isFinal, isAbstract, "SupFoo", rc);
         var allClassBytes = Map.of("SupFoo", supFooClassBytes,
@@ -162,22 +165,18 @@ public class IsRecordTest {
                               boolean isFinal,
                               boolean isAbstract,
                               String superName,
-                              List<RecordComponentEntry> components) {
+                              List<RecordComponentInfo> components) {
         return Classfile.build(ClassDesc.ofInternalName(className), clb -> {
             int access = 0;
             if (isFinal)
-                access = access | AccessFlag.FINAL.mask();
+                access = access | ACC_FINAL;
             if (isAbstract)
-                access = access | AccessFlag.ABSTRACT.mask();
+                access = access | ACC_ABSTRACT;
             clb.withFlags(access);
             clb.withSuperclass(ClassDesc.ofInternalName(superName));
             if (components != null)
-                clb.accept(RecordAttribute.of(components.stream()
-                        .map(e -> RecordComponentInfo.of(e.name, ClassDesc.ofDescriptor(e.descriptor)))
-                        .toList()));
+                clb.accept(RecordAttribute.of(components));
         });
     }
-
-    record RecordComponentEntry (String name, String descriptor) { }
 
 }

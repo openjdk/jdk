@@ -44,8 +44,10 @@ import jdk.internal.classfile.Classfile;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_String;
-import static java.lang.reflect.AccessFlag.ABSTRACT;
 import static java.lang.reflect.AccessFlag.PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_ABSTRACT;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
 public class LambdaStackTrace {
 
@@ -137,9 +139,10 @@ public class LambdaStackTrace {
         //   Object make();
         // }
         return Classfile.build(CD_Maker, clb -> {
-            clb.withFlags(ABSTRACT, AccessFlag.INTERFACE);
+            clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE);
             clb.withSuperclass(CD_Object);
-            clb.withMethod("make", MethodTypeDesc.of(CD_Object), PUBLIC.mask() | ABSTRACT.mask(), mb -> {});
+            clb.withMethod("make", MethodTypeDesc.of(CD_Object),
+                    ACC_PUBLIC | ACC_STATIC, mb -> {});
         });
     }
 
@@ -148,10 +151,11 @@ public class LambdaStackTrace {
         //   String make();
         // }
         return Classfile.build(ClassDesc.of("StringMaker"), clb -> {
-            clb.withFlags(ABSTRACT, AccessFlag.INTERFACE);
+            clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE);
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(CD_Maker);
-            clb.withMethod("make", MethodTypeDesc.of(CD_String), PUBLIC.mask() | ABSTRACT.mask(), mb -> {});
+            clb.withMethod("make", MethodTypeDesc.of(CD_String),
+                    ACC_PUBLIC | ACC_ABSTRACT, mb -> {});
         });
     }
 

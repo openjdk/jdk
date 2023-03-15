@@ -41,6 +41,10 @@ import jdk.internal.classfile.AccessFlags;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.MethodModel;
 
+import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
+import static jdk.internal.classfile.Classfile.ACC_PROTECTED;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+
 public class MHIllegalAccess {
 
    public static void main(String[] args) throws Throwable  {
@@ -52,11 +56,7 @@ public class MHIllegalAccess {
        */
       var privatize = ClassTransform.transformingMethods(m -> m.methodName().equalsString("m"), (mb, me) -> {
           if (me instanceof AccessFlags af) {
-              Set<AccessFlag> set = EnumSet.copyOf(af.flags());
-              set.add(AccessFlag.PRIVATE);
-              set.remove(AccessFlag.PROTECTED);
-              set.remove(AccessFlag.PUBLIC);
-              mb.withFlags(set.toArray(AccessFlag[]::new));
+              mb.withFlags((af.flagsMask() | ACC_PRIVATE) & ~ (ACC_PUBLIC | ACC_PROTECTED));
           } else {
               mb.accept(me);
           }

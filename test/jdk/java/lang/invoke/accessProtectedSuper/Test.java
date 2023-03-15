@@ -43,6 +43,10 @@ import jdk.internal.classfile.attribute.InnerClassesAttribute;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
+import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
+import static jdk.internal.classfile.Classfile.ACC_PROTECTED;
+import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+
 interface MyFunctionalInterface {
 
     void invokeMethodReference();
@@ -55,18 +59,14 @@ public class Test {
         ClassTransform makeProtectedMod = (cb, ce) -> {
             if (ce instanceof InnerClassesAttribute ica) {
                 cb.accept(InnerClassesAttribute.of(ica.classes().stream().map(ici -> {
-                    var flags = EnumSet.copyOf(ici.flags());
-                    flags.remove(AccessFlag.PRIVATE);
-                    flags.remove(AccessFlag.PUBLIC);
-                    flags.add(AccessFlag.PROTECTED);
                     // AccessFlags doesn't support inner class flags yet
-                    var updatedFlags = flags.stream().mapToInt(AccessFlag::mask).reduce(0, (a, b) -> a | b);
+                    var flags = (ACC_PROTECTED | ici.flagsMask()) & ~(ACC_PRIVATE | ACC_PUBLIC);
                     System.out.println("visitInnerClass: name = " + ici.innerClass().asInternalName()
                             + ", outerName = " + ici.outerClass().map(ClassEntry::asInternalName).orElse("null")
                             + ", innerName = " + ici.innerName().map(Utf8Entry::stringValue).orElse("null")
                             + ", access original = 0x" + Integer.toHexString(ici.flagsMask())
-                            + ", access modified to 0x" + Integer.toHexString(updatedFlags));
-                    return InnerClassInfo.of(ici.innerClass(), ici.outerClass(), ici.innerName(), updatedFlags);
+                            + ", access modified to 0x" + Integer.toHexString(flags));
+                    return InnerClassInfo.of(ici.innerClass(), ici.outerClass(), ici.innerName(), flags);
                 }).toList()));
             } else {
                 cb.accept(ce);

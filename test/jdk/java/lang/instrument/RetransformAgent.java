@@ -90,7 +90,8 @@ class RetransformAgent {
                                         nname,
                                         cb -> {
                                            cb.constantInstruction(fixedIndex);
-                                           cb.invokestatic(RetransformAgent.class.describeConstable().orElseThrow(),
+                                           cb.invokestatic(
+                                                   RetransformAgent.class.describeConstable().orElseThrow(),
                                                    "callTracker", MethodTypeDesc.of(CD_void, CD_int));
                                         })
                                    .apply();
