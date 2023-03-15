@@ -213,9 +213,9 @@ bool BootstrapInfo::save_and_throw_indy_exc(TRAPS) {
   assert(_indy_index != -1, "");
   assert(_indy_index >= 0, "Indy index must be decoded by now");
   bool recorded_res_status = _pool->cache()->save_and_throw_indy_exc(_pool, _bss_index,
-                                                          _indy_index,
-                                                          pool()->tag_at(_bss_index),
-                                                          CHECK_false);
+                                                                     _indy_index,
+                                                                     pool()->tag_at(_bss_index),
+                                                                     CHECK_false);
   return recorded_res_status;
 }
 
@@ -231,9 +231,9 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
 
   if (_indy_index > -1) {
     os::snprintf_checked(what, sizeof(what), "indy#%d", _indy_index);
-  }
-  else
+  } else {
     os::snprintf_checked(what, sizeof(what), "condy");
+  }
   bool have_msg = (msg != nullptr && strlen(msg) > 0);
   st->print_cr("%s%sBootstrap in %s %s@CP[%d] %s:%s%s BSMS[%d] BSM@CP[%d]%s argc=%d%s",
                 (have_msg ? msg : ""), (have_msg ? " " : ""),

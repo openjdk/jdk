@@ -34,40 +34,40 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 public class ResolvedIndyArray extends GenericArray {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-      public void update(Observable o, Object data) {
-        initialize(VM.getVM().getTypeDataBase());
-      }
-    });
-  }
+    static {
+        VM.registerVMInitializedObserver(new Observer() {
+            public void update(Observable o, Object data) {
+                initialize(VM.getVM().getTypeDataBase());
+            }
+        });
+    }
 
-  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    elemType = db.lookupType("ResolvedIndyEntry");
+    private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
+        elemType = db.lookupType("ResolvedIndyEntry");
 
-    Type type = db.lookupType("Array<ResolvedIndyEntry>");
-    dataFieldOffset = type.getAddressField("_data").getOffset();
-  }
+        Type type = db.lookupType("Array<ResolvedIndyEntry>");
+        dataFieldOffset = type.getAddressField("_data").getOffset();
+    }
 
-  private static long dataFieldOffset;
-  protected static Type elemType;
+    private static long dataFieldOffset;
+    protected static Type elemType;
 
-  public ResolvedIndyArray(Address addr) {
-    super(addr, dataFieldOffset);
-  }
+    public ResolvedIndyArray(Address addr) {
+        super(addr, dataFieldOffset);
+    }
 
-  public ResolvedIndyEntry getAt(int index) {
-    if (index < 0 || index >= length()) throw new ArrayIndexOutOfBoundsException(index + " " + length());
+    public ResolvedIndyEntry getAt(int index) {
+        if (index < 0 || index >= length()) throw new ArrayIndexOutOfBoundsException(index + " " + length());
 
-    Type elemType = getElemType();
+        Type elemType = getElemType();
 
-    Address data = getAddress().addOffsetTo(dataFieldOffset);
-    long elemSize = elemType.getSize();
+        Address data = getAddress().addOffsetTo(dataFieldOffset);
+        long elemSize = elemType.getSize();
 
-    return new ResolvedIndyEntry(data.addOffsetTo(index* elemSize));
-  }
+        return new ResolvedIndyEntry(data.addOffsetTo(index* elemSize));
+    }
 
-  public Type getElemType() {
-    return elemType;
-  }
+    public Type getElemType() {
+        return elemType;
+    }
 }

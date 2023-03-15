@@ -33,32 +33,32 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 public class ResolvedIndyEntry extends VMObject {
-  private static long          size;
-  private static long          baseOffset;
-  private static CIntegerField cpIndex;
+    private static long          size;
+    private static long          baseOffset;
+    private static CIntegerField cpIndex;
 
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
+    static {
+        VM.registerVMInitializedObserver(new Observer() {
+            public void update(Observable o, Object data) {
+                initialize(VM.getVM().getTypeDataBase());
+            }
+        });
+    }
 
-  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("ResolvedIndyEntry");
-    size = type.getSize();
+    private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
+        Type type            = db.lookupType("ResolvedIndyEntry");
+        size = type.getSize();
 
-    cpIndex = type.getCIntegerField("_cpool_index");
-  }
+        cpIndex = type.getCIntegerField("_cpool_index");
+    }
 
-  ResolvedIndyEntry(Address addr) {
-    super(addr);
-  }
+    ResolvedIndyEntry(Address addr) {
+        super(addr);
+    }
 
-  public int getConstantPoolIndex() {
-    return this.getAddress().getJShortAt(cpIndex.getOffset());
-  }
+    public int getConstantPoolIndex() {
+        return this.getAddress().getJShortAt(cpIndex.getOffset());
+    }
 
-  public void iterateFields(MetadataVisitor visitor) { }
+    public void iterateFields(MetadataVisitor visitor) { }
 }

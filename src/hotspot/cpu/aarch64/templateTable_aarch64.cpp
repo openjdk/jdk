@@ -2331,7 +2331,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
 
   Label resolved;
 
-  __ load_resolved_indy_entry(cache, index, appendix);
+  __ load_resolved_indy_entry(cache, index);
   __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
   // Compare the method to zero
@@ -2345,7 +2345,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ mov(method, code); // this is essentially Bytecodes::_invokedynamic
   __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
   // Update registers with resolved info
-  __ load_resolved_indy_entry(cache, index, appendix);
+  __ load_resolved_indy_entry(cache, index);
   __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
 #ifdef ASSERT

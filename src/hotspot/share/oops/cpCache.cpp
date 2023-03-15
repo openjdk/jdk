@@ -615,7 +615,6 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
                  is_forced_virtual(), is_final(), is_vfinal(),
                  indy_resolution_failed(), parameter_size());
     if ((bytecode_1() == Bytecodes::_invokehandle)) {
-      constantPoolHandle cph(Thread::current(), cache->constant_pool());
       oop appendix = appendix_if_resolved(cph);
       if (appendix != nullptr) {
         st->print("  appendix: ");
@@ -649,19 +648,19 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   const int length = index_map.length();
   int size = ConstantPoolCache::size(length);
 
-  // Initialize resolvedinvokedynamicinfo array with available data
-  Array<ResolvedIndyEntry>* array;
+  // Initialize ResolvedIndyEntry array with available data
+  Array<ResolvedIndyEntry>* resolved_indy_entries;
   if (indy_entries.length()) {
-    array = MetadataFactory::new_array<ResolvedIndyEntry>(loader_data, indy_entries.length(), CHECK_NULL);
+    resolved_indy_entries = MetadataFactory::new_array<ResolvedIndyEntry>(loader_data, indy_entries.length(), CHECK_NULL);
     for (int i = 0; i < indy_entries.length(); i++) {
-      array->at_put(i, indy_entries.at(i));
+      resolved_indy_entries->at_put(i, indy_entries.at(i));
     }
   } else {
-    array = nullptr;
+    resolved_indy_entries = nullptr;
   }
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
-    ConstantPoolCache(length, index_map, invokedynamic_map, array);
+              ConstantPoolCache(length, index_map, invokedynamic_map, resolved_indy_entries);
 }
 
 void ConstantPoolCache::initialize(const intArray& inverse_index_map,
