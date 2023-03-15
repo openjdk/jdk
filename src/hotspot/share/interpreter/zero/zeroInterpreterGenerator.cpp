@@ -56,6 +56,7 @@ void ZeroInterpreterGenerator::generate_all() {
     method_entry(java_lang_math_tan   );
     method_entry(java_lang_math_abs   );
     method_entry(java_lang_math_sqrt  );
+    method_entry(java_lang_math_sqrt_strict);
     method_entry(java_lang_math_log   );
     method_entry(java_lang_math_log10 );
     method_entry(java_lang_math_pow );
@@ -98,6 +99,7 @@ address ZeroInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_log     : // fall thru
   case Interpreter::java_lang_math_log10   : // fall thru
   case Interpreter::java_lang_math_sqrt    : // fall thru
+  case Interpreter::java_lang_math_sqrt_strict: // fall thru
   case Interpreter::java_lang_math_pow     : // fall thru
   case Interpreter::java_lang_math_exp     : // fall thru
   case Interpreter::java_lang_math_fmaD    : // fall thru
