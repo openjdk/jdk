@@ -67,7 +67,7 @@ class SynthComboPopup extends BasicComboPopup {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to take into account any popup insets specified in
      * SynthComboBoxUI

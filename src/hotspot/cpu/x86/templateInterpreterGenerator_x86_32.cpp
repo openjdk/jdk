@@ -314,6 +314,58 @@ address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry(
   return nullptr;
 }
 
+/**
+ * Method entry for static method:
+ *    java.lang.Float.float16ToFloat(short floatBinary16)
+ */
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  // vmIntrinsics checks InlineIntrinsics flag, no need to check it here.
+  if (!VM_Version::supports_float16() ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_float16ToFloat) ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_floatToFloat16)) {
+    return nullptr; // Generate a vanilla entry
+  }
+  address entry = __ pc();
+
+  // rsi: the sender's SP
+
+  // Load value into xmm0 and convert
+  __ movswl(rax, Address(rsp, wordSize));
+  __ flt16_to_flt(xmm0, rax);
+
+  // Return
+  __ pop(rdi); // get return address
+  __ mov(rsp, rsi); // set rsp to the sender's SP
+  __ jmp(rdi);
+  return entry;
+}
+
+/**
+ * Method entry for static method:
+ *    java.lang.Float.floatToFloat16(float value)
+ */
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  // vmIntrinsics checks InlineIntrinsics flag, no need to check it here.
+  if (!VM_Version::supports_float16() ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_floatToFloat16) ||
+      vmIntrinsics::is_disabled_by_flags(vmIntrinsics::_float16ToFloat)) {
+    return nullptr; // Generate a vanilla entry
+  }
+  address entry = __ pc();
+
+  // rsi: the sender's SP
+
+  // Load value into xmm0, convert and put result into rax
+  __ movflt(xmm0, Address(rsp, wordSize));
+  __ flt_to_flt16(rax, xmm0, xmm1);
+
+  // Return
+  __ pop(rdi); // get return address
+  __ mov(rsp, rsi); // set rsp to the sender's SP
+  __ jmp(rdi);
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // rbx,: Method*

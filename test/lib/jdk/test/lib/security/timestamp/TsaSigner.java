@@ -83,7 +83,7 @@ public class TsaSigner {
     /**
      * Sign data.
      *
-     * @returns the time-stamping response data
+     * @return the time-stamping response data
      */
     public byte[] sign() throws Exception {
         TsaParam requestParam = parseRequestParam();

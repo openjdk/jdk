@@ -2454,6 +2454,10 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_
       default      : ShouldNotReachHere();
     }
 #endif // !_LP64
+  } else if (code == lir_f2hf) {
+    __ flt_to_flt16(dest->as_register(), value->as_xmm_float_reg(), tmp->as_xmm_float_reg());
+  } else if (code == lir_hf2f) {
+    __ flt16_to_flt(dest->as_xmm_float_reg(), value->as_register());
   } else {
     Unimplemented();
   }

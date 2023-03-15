@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8245462 8229822 8254786 8297075 8297149 8298340
+ * @bug 8245462 8229822 8254786 8297075 8297149 8298340 8302635
  * @summary Tests cancelling the request.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @key randomness
@@ -86,6 +86,9 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.arraycopy;
 import static java.lang.System.out;
+import static java.lang.System.err;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -354,14 +357,22 @@ public class CancelRequestTest implements HttpServerAdapters {
             } catch (ExecutionException x) {
                 assertEquals(response.isDone(), true);
                 Throwable wrapped = x.getCause();
-                assertTrue(CancellationException.class.isAssignableFrom(wrapped.getClass()));
-                Throwable cause = wrapped.getCause();
-                out.println("CancellationException cause: " + x);
-                assertTrue(IOException.class.isAssignableFrom(cause.getClass()));
-                if (cause instanceof HttpConnectTimeoutException) {
-                    cause.printStackTrace(out);
-                    throw new RuntimeException("Unexpected timeout exception", cause);
+                Throwable cause = wrapped;
+                if (mayInterruptIfRunning) {
+                    assertTrue(CancellationException.class.isAssignableFrom(wrapped.getClass()),
+                            "Unexpected exception: " + wrapped);
+                    cause = wrapped.getCause();
+                    out.println("CancellationException cause: " + x);
+                    if (cause instanceof HttpConnectTimeoutException) {
+                        cause.printStackTrace(out);
+                        throw new RuntimeException("Unexpected timeout exception", cause);
+                    }
                 }
+                if (!IOException.class.isInstance(cause)) {
+                    out.println("Unexpected cause: " + cause.getClass());
+                    cause.printStackTrace(out);
+                }
+                assertTrue(IOException.class.isAssignableFrom(cause.getClass()));
                 if (mayInterruptIfRunning) {
                     out.println("Got expected exception: " + wrapped);
                     out.println("\tcause: " + cause);
@@ -379,7 +390,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
 
-            var error = TRACKER.check(tracker, 200,
+            var error = TRACKER.check(tracker, 1000,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testGetSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
@@ -491,7 +502,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
 
-            var error = TRACKER.check(tracker, 200,
+            var error = TRACKER.check(tracker, 1000,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testPostSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
@@ -513,9 +524,11 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             Thread main = Thread.currentThread();
             CompletableFuture<Thread> interruptingThread = new CompletableFuture<>();
+            var uriStr = uri + "/post/req=" + i;
             Runnable interrupt = () -> {
                 Thread current = Thread.currentThread();
-                out.printf("%s Interrupting main from: %s (%s)", now(), current, uri);
+                out.printf("%s Interrupting main from: %s (%s)%n", now(), current, uriStr);
+                err.printf("%s Interrupting main from: %s (%s)%n", now(), current, uriStr);
                 interruptingThread.complete(current);
                 main.interrupt();
             };
@@ -526,36 +539,44 @@ public class CancelRequestTest implements HttpServerAdapters {
                 return List.of(BODY.getBytes(UTF_8)).iterator();
             };
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+            HttpRequest req = HttpRequest.newBuilder(URI.create(uriStr))
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
                     .build();
             String body = null;
             Exception failed = null;
             try {
+                out.println("Sending: " + uriStr);
                 body = client.send(req, BodyHandlers.ofString()).body();
             } catch (Exception x) {
                 failed = x;
             }
-
+            out.println(uriStr + ": got result or exception");
             if (failed instanceof InterruptedException) {
-                out.println("Got expected exception: " + failed);
+                out.println(uriStr + ": Got expected exception: " + failed);
             } else if (failed instanceof IOException) {
+                out.println(uriStr + ": got IOException: " + failed);
                 // that could be OK if the main thread was interrupted
                 // from the main thread: the interrupt status could have
                 // been caught by writing to the socket from the main
                 // thread.
-                if (interruptingThread.get() == main) {
-                    out.println("Accepting IOException: " + failed);
+                if (interruptingThread.isDone() && interruptingThread.get() == main) {
+                    out.println(uriStr + ": Accepting IOException: " + failed);
                     failed.printStackTrace(out);
                 } else {
+                    out.println(uriStr + ": unexpected exception: " + failed);
                     throw failed;
                 }
             } else if (failed != null) {
-                assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
+                out.println(uriStr + ": unexpected exception: " + failed);
                 throw failed;
+            } else {
+                assert failed == null;
+                out.println(uriStr + ": got body: " + body);
+                assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
             }
+            out.println("next iteration");
 
-            var error = TRACKER.check(tracker, 200,
+            var error = TRACKER.check(tracker, 1000,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
                     "subscribers for testPostInterrupt(%s)\n\t step [%s]".formatted(req.uri(), i),
                     false);
@@ -574,25 +595,22 @@ public class CancelRequestTest implements HttpServerAdapters {
 
         // HTTP/1.1
         HttpTestHandler h1_chunkHandler = new HTTPSlowHandler();
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(h1_chunkHandler, "/http1/x/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/x/";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(h1_chunkHandler, "/https1/x/");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/x/";
 
         // HTTP/2
         HttpTestHandler h2_chunkedHandler = new HTTPSlowHandler();
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(h2_chunkedHandler, "/http2/x/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/x/";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/x/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/x/";
 

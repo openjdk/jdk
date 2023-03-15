@@ -103,6 +103,9 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_Double_longBitsToDouble_entry();
   address generate_Double_doubleToRawLongBits_entry();
 #endif // IA32
+  address generate_Float_float16ToFloat_entry();
+  address generate_Float_floatToFloat16_entry();
+
   // Some platforms don't need registers, other need two. Unused function is
   // left unimplemented.
   void generate_stack_overflow_check(void);

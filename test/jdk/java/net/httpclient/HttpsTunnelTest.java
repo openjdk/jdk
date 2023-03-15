@@ -42,6 +42,8 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import static java.lang.String.format;
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * @test
@@ -102,15 +104,11 @@ public class HttpsTunnelTest implements HttpServerAdapters {
     }
 
     public static void main(String[] args) throws Exception {
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        HttpsServer server1 = HttpsServer.create(sa, 0);
-        server1.setHttpsConfigurator(new HttpsConfigurator(context));
         HttpTestServer http1Server =
-                HttpTestServer.of(server1);
+                HttpTestServer.create(HTTP_1_1, context);
         http1Server.addHandler(new HttpTestEchoHandler(), "/");
         http1Server.start();
-        HttpTestServer http2Server = HttpTestServer.of(
-                new Http2TestServer("localhost", true, 0));
+        HttpTestServer http2Server = HttpTestServer.create(HTTP_2, SSLContext.getDefault());
         http2Server.addHandler(new HttpTestEchoHandler(), "/");
         http2Server.start();
 
@@ -154,7 +152,7 @@ public class HttpsTunnelTest implements HttpServerAdapters {
             if (response.statusCode() != 200) {
                 throw new RuntimeException("Unexpected status code: " + response);
             }
-            if (response.version() != Version.HTTP_1_1) {
+            if (response.version() != HTTP_1_1) {
                 throw new RuntimeException("Unexpected protocol version: "
                         + response.version());
             }
