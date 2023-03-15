@@ -1001,7 +1001,7 @@ public class VisibleMemberTable {
             }
 
             var setter = lmt.getPropertyMethods(utils.elementUtils.getName(pUtils.getSetName(propertyMethod))).stream()
-                    // TODO: number of parameters a setter take is not tested (JDK-8304170)
+                    // TODO: the number and the types of parameters a setter takes is not tested (JDK-8304170)
                     .filter(m -> m.getParameters().size() == 1 && pUtils.isValidSetterMethod(m))
                     .findAny()
                     .orElse(null);
