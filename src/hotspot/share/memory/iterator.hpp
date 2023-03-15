@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ class OopIterateClosure : public OopClosure {
 
  protected:
   OopIterateClosure(ReferenceDiscoverer* rd) : _ref_discoverer(rd) { }
-  OopIterateClosure() : _ref_discoverer(NULL) { }
+  OopIterateClosure() : _ref_discoverer(nullptr) { }
   ~OopIterateClosure() { }
 
   void set_ref_discoverer_internal(ReferenceDiscoverer* rd) { _ref_discoverer = rd; }
@@ -114,7 +114,7 @@ class OopIterateClosure : public OopClosure {
 // An OopIterateClosure that can be used when there's no need to visit the Metadata.
 class BasicOopIterateClosure : public OopIterateClosure {
 public:
-  BasicOopIterateClosure(ReferenceDiscoverer* rd = NULL) : OopIterateClosure(rd) {}
+  BasicOopIterateClosure(ReferenceDiscoverer* rd = nullptr) : OopIterateClosure(rd) {}
 
   virtual bool do_metadata() { return false; }
   virtual void do_klass(Klass* k) { ShouldNotReachHere(); }
@@ -176,7 +176,7 @@ class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
   const int _claim;
 
  public:
-  ClaimMetadataVisitingOopIterateClosure(int claim, ReferenceDiscoverer* rd = NULL) :
+  ClaimMetadataVisitingOopIterateClosure(int claim, ReferenceDiscoverer* rd = nullptr) :
       OopIterateClosure(rd),
       _claim(claim) { }
 
@@ -192,7 +192,7 @@ class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
 // It's used to proxy through the metadata to the oops defined in them.
 class MetadataVisitingOopIterateClosure: public ClaimMetadataVisitingOopIterateClosure {
  public:
-  MetadataVisitingOopIterateClosure(ReferenceDiscoverer* rd = NULL);
+  MetadataVisitingOopIterateClosure(ReferenceDiscoverer* rd = nullptr);
 };
 
 // ObjectClosure is used for iterating through an object space
@@ -231,7 +231,6 @@ public:
 // SpaceClosure is used for iterating over spaces
 
 class Space;
-class CompactibleSpace;
 
 class SpaceClosure : public StackObj {
  public:

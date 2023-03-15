@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import jdk.internal.org.jline.utils.NonBlocking;
 import jdk.internal.org.jline.terminal.spi.Pty;
@@ -34,11 +35,12 @@ public class PosixSysTerminal extends AbstractPosixTerminal {
     protected final Map<Signal, Object> nativeHandlers = new HashMap<>();
     protected final Task closer;
 
-    public PosixSysTerminal(String name, String type, Pty pty, InputStream in, OutputStream out, Charset encoding,
-                            boolean nativeSignals, SignalHandler signalHandler) throws IOException {
+    public PosixSysTerminal(String name, String type, Pty pty, Charset encoding,
+                            boolean nativeSignals, SignalHandler signalHandler,
+                            Function<InputStream, InputStream> inputStreamWrapper) throws IOException {
         super(name, type, pty, encoding, signalHandler);
-        this.input = NonBlocking.nonBlocking(getName(), in);
-        this.output = out;
+        this.input = NonBlocking.nonBlocking(getName(), inputStreamWrapper.apply(pty.getSlaveInput()));
+        this.output = pty.getSlaveOutput();
         this.reader = NonBlocking.nonBlocking(getName(), input, encoding());
         this.writer = new PrintWriter(new OutputStreamWriter(output, encoding()));
         parseInfoCmp();

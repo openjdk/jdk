@@ -24,8 +24,9 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @requires !vm.musl
+ * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
@@ -33,21 +34,17 @@
  *   TestUpcallAsync
  */
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 
 import org.testng.annotations.Test;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class TestUpcallAsync extends TestUpcallBase {
@@ -60,29 +57,35 @@ public class TestUpcallAsync extends TestUpcallBase {
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
     public void testUpcallsAsync(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
-        List<Consumer<Object[]>> argChecks = new ArrayList<>();
+        List<Consumer<Object>> argChecks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow(fName);
         try (Arena arena = Arena.openShared()) {
             FunctionDescriptor descriptor = function(ret, paramTypes, fields);
-            MethodHandle mh = downcallHandle(ABI, addr, arena, descriptor);
-            Object[] args = makeArgs(SegmentScope.auto(), ret, paramTypes, fields, returnChecks, argChecks);
+            MethodHandle mh = downcallHandle(LINKER, addr, arena, descriptor);
+            AtomicReference<Object[]> capturedArgs = new AtomicReference<>();
+            Object[] args = makeArgs(capturedArgs, arena, descriptor, returnChecks, argChecks, 0);
 
             mh = mh.asSpreader(Object[].class, args.length);
             mh = MethodHandles.insertArguments(mh, 0, (Object) args);
             FunctionDescriptor callbackDesc = descriptor.returnLayout()
                     .map(FunctionDescriptor::of)
                     .orElse(FunctionDescriptor.ofVoid());
-            MemorySegment callback = ABI.upcallStub(mh, callbackDesc, arena.scope());
+            MemorySegment callback = LINKER.upcallStub(mh, callbackDesc, arena.scope());
 
             MethodHandle invoker = asyncInvoker(ret, ret == Ret.VOID ? null : paramTypes.get(0), fields);
 
             Object res = (descriptor.returnLayout().isPresent() &&
                          descriptor.returnLayout().get() instanceof GroupLayout)
-                    ? invoker.invoke(arena.scope(), callback)
+                    ? invoker.invoke(arena, callback)
                     : invoker.invoke(callback);
-            argChecks.forEach(c -> c.accept(args));
+
             if (ret == Ret.NON_VOID) {
                 returnChecks.forEach(c -> c.accept(res));
+            }
+
+            Object[] capturedArgsArr = capturedArgs.get();
+            for (int i = 0; i < capturedArgsArr.length; i++) {
+                argChecks.get(i).accept(capturedArgsArr[i]);
             }
         }
     }
@@ -93,7 +96,7 @@ public class TestUpcallAsync extends TestUpcallBase {
         if (ret == Ret.VOID) {
             String name = "call_async_V";
             return INVOKERS.computeIfAbsent(name, symbol ->
-                    ABI.downcallHandle(
+                    LINKER.downcallHandle(
                             findNativeOrThrow(symbol),
                             FunctionDescriptor.ofVoid(C_POINTER)));
         }
@@ -106,7 +109,7 @@ public class TestUpcallAsync extends TestUpcallBase {
             MemoryLayout returnLayout = returnType.layout(fields);
             FunctionDescriptor desc = FunctionDescriptor.of(returnLayout, C_POINTER);
 
-            return ABI.downcallHandle(invokerSymbol, desc);
+            return LINKER.downcallHandle(invokerSymbol, desc);
         });
     }
 

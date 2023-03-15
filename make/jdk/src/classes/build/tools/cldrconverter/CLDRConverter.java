@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.text.MessageFormat;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -71,6 +69,7 @@ public class CLDRConverter {
     private static String WINZONES_SOURCE_FILE;
     private static String PLURALS_SOURCE_FILE;
     private static String DAYPERIODRULE_SOURCE_FILE;
+    private static String COVERAGELEVELS_FILE;
     static String DESTINATION_DIR = "build/gensrc";
 
     static final String LOCALE_NAME_PREFIX = "locale.displayname.";
@@ -260,6 +259,7 @@ public class CLDRConverter {
         WINZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/windowsZones.xml";
         PLURALS_SOURCE_FILE = CLDR_BASE + "/supplemental/plurals.xml";
         DAYPERIODRULE_SOURCE_FILE = CLDR_BASE + "/supplemental/dayPeriods.xml";
+        COVERAGELEVELS_FILE = CLDR_BASE + "/properties/coverageLevels.txt";
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
@@ -361,13 +361,18 @@ public class CLDRConverter {
     private static List<Bundle> readBundleList() throws Exception {
         List<Bundle> retList = new ArrayList<>();
         Path path = FileSystems.getDefault().getPath(SOURCE_FILE_DIR);
+        var coverageMap = coverageLevelsMap();
         try (DirectoryStream<Path> dirStr = Files.newDirectoryStream(path)) {
             for (Path entry : dirStr) {
                 String fileName = entry.getFileName().toString();
                 if (fileName.endsWith(".xml")) {
                     String id = fileName.substring(0, fileName.indexOf('.'));
                     Locale cldrLoc = Locale.forLanguageTag(toLanguageTag(id));
-                    StringBuilder sb = getCandLocales(cldrLoc);
+                    List<Locale> candList = getCandidateLocales(cldrLoc);
+                    if (!"root".equals(id) && candList.stream().noneMatch(coverageMap::containsKey)) {
+                        continue;
+                    }
+                    StringBuilder sb = getCandLocales(candList);
                     if (sb.indexOf("root") == -1) {
                         sb.append("root");
                     }
@@ -512,8 +517,7 @@ public class CLDRConverter {
         parser.parse(srcfile, handler);
     }
 
-    private static StringBuilder getCandLocales(Locale cldrLoc) {
-        List<Locale> candList = getCandidateLocales(cldrLoc);
+    private static StringBuilder getCandLocales(List<Locale> candList) {
         StringBuilder sb = new StringBuilder();
         for (Locale loc : candList) {
             if (!loc.equals(Locale.ROOT)) {
@@ -609,16 +613,19 @@ public class CLDRConverter {
      * Translate the aliases into the real entries in the bundle map.
      */
     static void handleAliases(Map<String, Object> bundleMap) {
-        Set<String> bundleKeys = bundleMap.keySet();
-        try {
-            for (String key : aliases.keySet()) {
-                String targetKey = aliases.get(key);
-                if (bundleKeys.contains(targetKey)) {
-                    bundleMap.putIfAbsent(key, bundleMap.get(targetKey));
+        for (String key : aliases.keySet()) {
+            var source = bundleMap.get(aliases.get(key));
+            if (source != null) {
+                if (bundleMap.get(key) instanceof String[] sa) {
+                    // fill missing elements in case of String array
+                    for (int i = 0; i < sa.length; i++) {
+                        if (sa[i] == null && ((String[])source)[i] != null) {
+                            sa[i] = ((String[])source)[i];
+                        }
+                    }
                 }
+                bundleMap.putIfAbsent(key, source);
             }
-        } catch (Exception ex) {
-            Logger.getLogger(CLDRConverter.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -1192,6 +1199,26 @@ public class CLDRConverter {
                     .map(String::trim)
                     .collect(Collectors.joining(";"));
             }));
+    }
+
+    private static Map<Locale, String> coverageLevelsMap() throws Exception {
+        // First, parse `coverageLevels.txt` file
+        var covMap = Files.readAllLines(Path.of(COVERAGELEVELS_FILE)).stream()
+            .filter(line -> !line.isBlank() && !line.startsWith("#"))
+            .map(line -> line.split("[\s\t]*;[\s\t]*", 3))
+            .filter(a -> a[1].matches("basic|moderate|modern|comprehensive"))
+            .collect(Collectors.toMap(
+                    a -> Locale.forLanguageTag(a[0].replaceAll("_", "-")),
+                    a -> a[1],
+                    (v1, v2) -> v2, // should never happen
+                    HashMap::new));
+
+        // Add other common (non-seed) locales (below `basic` coverage level) as of v42
+        ResourceBundle.getBundle(CLDRConverter.class.getPackageName() + ".OtherCommonLocales")
+            .keySet()
+            .forEach(k -> covMap.put(Locale.forLanguageTag(k), ""));
+
+        return covMap;
     }
 
     // for debug

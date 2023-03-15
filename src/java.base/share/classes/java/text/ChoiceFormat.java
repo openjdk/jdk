@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ import java.util.Arrays;
  * <p>
  * Here is a simple example that shows formatting and parsing:
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * double[] limits = {1,2,3,4,5,6,7};
  * String[] dayOfWeekNames = {"Sun","Mon","Tue","Wed","Thur","Fri","Sat"};
  * ChoiceFormat form = new ChoiceFormat(limits, dayOfWeekNames);
@@ -95,11 +95,11 @@ import java.util.Arrays;
  *     System.out.println(i + " -> " + form.format(i) + " -> "
  *                              + form.parse(form.format(i),status));
  * }
- * }</pre>
+ * }
  * </blockquote>
  * Here is a more complex example, with a pattern format:
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * double[] filelimits = {0,1,2};
  * String[] filepart = {"are no files","is one file","are {2} files"};
  * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
@@ -108,17 +108,17 @@ import java.util.Arrays;
  * pattform.setFormats(testFormats);
  * Object[] testArgs = {null, "ADisk", null};
  * for (int i = 0; i < 4; ++i) {
- *     testArgs[0] = new Integer(i);
+ *     testArgs[0] = Integer.valueOf(i);
  *     testArgs[2] = testArgs[0];
  *     System.out.println(pattform.format(testArgs));
  * }
- * }</pre>
+ * }
  * </blockquote>
  * <p>
  * Specifying a pattern for ChoiceFormat objects is fairly straightforward.
  * For example:
  * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * ChoiceFormat fmt = new ChoiceFormat(
  *      "-1#is negative| 0#is zero or fraction | 1#is one |1.0<is 1+ |2#is two |2<is more than 2.");
  * System.out.println("Formatter Pattern : " + fmt.toPattern());
@@ -133,7 +133,7 @@ import java.util.Arrays;
  * System.out.println("Format with 2.1 : " + fmt.format(2.1));
  * System.out.println("Format with NaN : " + fmt.format(Double.NaN));
  * System.out.println("Format with +INF : " + fmt.format(Double.POSITIVE_INFINITY));
- * }</pre>
+ * }
  * </blockquote>
  * And the output result would be like the following:
  * <blockquote>

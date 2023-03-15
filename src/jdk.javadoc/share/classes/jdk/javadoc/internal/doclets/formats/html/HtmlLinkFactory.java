@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class HtmlLinkFactory extends LinkFactory {
         // Create a tool tip if we are linking to a class or interface.  Don't
         // create one if we are linking to a member.
         String title = "";
-        boolean hasWhere = classLinkInfo.where != null && classLinkInfo.where.length() != 0;
+        boolean hasWhere = classLinkInfo.fragment != null && classLinkInfo.fragment.length() != 0;
         if (!hasWhere) {
             boolean isTypeLink = classLinkInfo.type != null &&
                      utils.isTypeVariable(utils.getComponentType(classLinkInfo.type));
@@ -89,8 +89,8 @@ public class HtmlLinkFactory extends LinkFactory {
         if (!hasWhere && showPreview) {
             flags = utils.elementFlags(typeElement);
             previewTarget = typeElement;
-        } else if ((classLinkInfo.context == HtmlLinkInfo.Kind.SEE_TAG || classLinkInfo.context == HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW) &&
-                   classLinkInfo.targetMember != null && showPreview) {
+        } else if (classLinkInfo.context == HtmlLinkInfo.Kind.SHOW_PREVIEW
+                && classLinkInfo.targetMember != null && showPreview) {
             flags = utils.elementFlags(classLinkInfo.targetMember);
             TypeElement enclosing = utils.getEnclosingTypeElement(classLinkInfo.targetMember);
             Set<ElementFlag> enclosingFlags = utils.elementFlags(enclosing);
@@ -115,7 +115,7 @@ public class HtmlLinkFactory extends LinkFactory {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf || typeElement != m_writer.getCurrentPageElement()) {
                         link.add(m_writer.links.createLink(
-                                filename.fragment(classLinkInfo.where),
+                                filename.fragment(classLinkInfo.fragment),
                                 label,
                                 classLinkInfo.style,
                                 title));
@@ -129,7 +129,7 @@ public class HtmlLinkFactory extends LinkFactory {
             }
         } else {
             Content crossLink = m_writer.getCrossClassLink(
-                typeElement, classLinkInfo.where,
+                typeElement, classLinkInfo.fragment,
                 label, classLinkInfo.style, true);
             if (crossLink != null) {
                 link.add(crossLink);
@@ -177,7 +177,7 @@ public class HtmlLinkFactory extends LinkFactory {
                 if (many) {
                     links.add(",");
                     links.add(new HtmlTree(TagName.WBR));
-                    if (((HtmlLinkInfo) linkInfo).getContext() == HtmlLinkInfo.Kind.MEMBER_TYPE_PARAMS) {
+                    if (linkInfo.addLineBreaksInTypeParameters) {
                         links.add(Text.NL);
                     }
                 }
@@ -199,9 +199,11 @@ public class HtmlLinkFactory extends LinkFactory {
     protected Content getTypeParameterLink(LinkInfo linkInfo, TypeMirror typeParam) {
         HtmlLinkInfo typeLinkInfo = new HtmlLinkInfo(m_writer.configuration,
                 ((HtmlLinkInfo) linkInfo).getContext(), typeParam);
-        typeLinkInfo.excludeTypeBounds = linkInfo.excludeTypeBounds;
-        typeLinkInfo.excludeTypeParameterLinks = linkInfo.excludeTypeParameterLinks;
+        typeLinkInfo.showTypeBounds = linkInfo.showTypeBounds;
+        typeLinkInfo.linkTypeParameters = linkInfo.linkTypeParameters;
         typeLinkInfo.linkToSelf = linkInfo.linkToSelf;
+        typeLinkInfo.addLineBreaksInTypeParameters = linkInfo.addLineBreaksInTypeParameters;
+        typeLinkInfo.showTypeParameterAnnotations = linkInfo.showTypeParameterAnnotations;
         return getLink(typeLinkInfo);
     }
 
@@ -211,21 +213,9 @@ public class HtmlLinkFactory extends LinkFactory {
         List<? extends AnnotationMirror> annotations;
         if (utils.isAnnotated(linkInfo.type)) {
             annotations = linkInfo.type.getAnnotationMirrors();
-        } else if (utils.isTypeVariable(linkInfo.type)) {
-            // TODO: use the context for now, and special case for Receiver_Types,
-            // which takes the default case.
-            switch (((HtmlLinkInfo)linkInfo).context) {
-                case MEMBER_TYPE_PARAMS:
-                case EXECUTABLE_MEMBER_PARAM:
-                case CLASS_SIGNATURE:
-                    Element element = utils.typeUtils.asElement(linkInfo.type);
-                    annotations = element.getAnnotationMirrors();
-                    break;
-                default:
-                    annotations = linkInfo.type.getAnnotationMirrors();
-                    break;
-            }
-
+        } else if (utils.isTypeVariable(linkInfo.type) && linkInfo.showTypeParameterAnnotations) {
+            Element element = utils.typeUtils.asElement(linkInfo.type);
+            annotations = element.getAnnotationMirrors();
         } else {
             return links;
         }

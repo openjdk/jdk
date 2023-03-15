@@ -80,7 +80,7 @@ public abstract class FileView {
      */
     public String getName(File f) {
         return null;
-    };
+    }
 
     /**
      * A human readable description of the file. For example,

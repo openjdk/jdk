@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2022, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2731,6 +2731,52 @@ instruct vcvtDtoF_gt64b(vReg dst, vReg src, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// VectorCastHF2F
+
+instruct vcvtHFtoF(vReg dst, vReg src) %{
+  match(Set dst (VectorCastHF2F src));
+  format %{ "vcvtHFtoF $dst, $src" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      // 4HF to 4F
+      __ fcvtl($dst$$FloatRegister, __ T4S, $src$$FloatRegister, __ T4H);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_vector_extend($dst$$FloatRegister, __ S, $src$$FloatRegister, __ H);
+      __ sve_fcvt($dst$$FloatRegister, __ S, ptrue, $dst$$FloatRegister, __ H);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// VectorCastF2HF
+
+instruct vcvtFtoHF_neon(vReg dst, vReg src) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(1))));
+  match(Set dst (VectorCastF2HF src));
+  format %{ "vcvtFtoHF_neon $dst, $src\t# 4F to 4HF" %}
+  ins_encode %{
+    // 4F to 4HF
+    __ fcvtn($dst$$FloatRegister, __ T4H, $src$$FloatRegister, __ T4S);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvtFtoHF_sve(vReg dst, vReg src, vReg tmp) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(1))));
+  match(Set dst (VectorCastF2HF src));
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "vcvtFtoHF_sve $dst, $src\t# KILL $tmp" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    __ sve_fcvt($dst$$FloatRegister, __ H, ptrue, $src$$FloatRegister, __ S);
+    __ sve_vector_narrow($dst$$FloatRegister, __ H,
+                         $dst$$FloatRegister, __ S, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Replicate ------------------------------------
 
 dnl REPLICATE_INT($1,   $2,       $3  )
@@ -3507,6 +3553,42 @@ instruct vmaskcmp_neon(vReg dst, vReg src1, vReg src2, immI cond) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vmaskcmp_zeroI_neon(vReg dst, vReg src, immI0 zero, immI_cmp_cond cond) %{
+  predicate(UseSVE == 0);
+  match(Set dst (VectorMaskCmp (Binary src (ReplicateB zero)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (ReplicateS zero)) cond));
+  match(Set dst (VectorMaskCmp (Binary src (ReplicateI zero)) cond));
+  format %{ "vmaskcmp_zeroI_neon $dst, $src, #0, $cond" %}
+  ins_encode %{
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ neon_compare_zero($dst$$FloatRegister, bt, $src$$FloatRegister,
+                         condition, /* isQ */ length_in_bytes == 16);
+  %}
+  ins_pipe(pipe_slow);
+%}
+dnl
+dnl VMASKCMP_ZERO_NEON($1,   $2        )
+dnl VMASKCMP_ZERO_NEON(type, basic_type)
+define(`VMASKCMP_ZERO_NEON', `
+instruct vmaskcmp_zero$1_neon(vReg dst, vReg src, imm`$1'0 zero, immI_cmp_cond cond) %{
+  predicate(UseSVE == 0);
+  match(Set dst (VectorMaskCmp (Binary src (Replicate$1 zero)) cond));
+  format %{ "vmaskcmp_zero$1_neon $dst, $src, #0, $cond" %}
+  ins_encode %{
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ neon_compare_zero($dst$$FloatRegister, $2, $src$$FloatRegister,
+                         condition, /* isQ */ length_in_bytes == 16);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+VMASKCMP_ZERO_NEON(L, T_LONG)
+VMASKCMP_ZERO_NEON(F, T_FLOAT)
+VMASKCMP_ZERO_NEON(D, T_DOUBLE)
+
 instruct vmaskcmp_sve(pReg dst, vReg src1, vReg src2, immI cond, rFlagsReg cr) %{
   predicate(UseSVE > 0);
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
@@ -4022,6 +4104,18 @@ instruct vmask_gen_imm(pReg pd, immL con, rFlagsReg cr) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_gen_mask_imm($pd$$PRegister, bt, (uint)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_gen_sub(pReg pd, iRegL src1, iRegL src2, rFlagsReg cr) %{
+  predicate(UseSVE > 0);
+  match(Set pd (VectorMaskGen (SubL src1 src2)));
+  effect(KILL cr);
+  format %{ "vmask_gen_sub $pd, $src2, $src1\t# KILL cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_whilelo($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_slow);
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import static sun.security.util.SignatureFileVerifier.isInMetaInf;
+
 /**
  * An immutable utility class to sign a jar file.
  * <p>
@@ -76,16 +78,16 @@ import java.util.zip.ZipOutputStream;
  * a {@link NullPointerException}.
  * <p>
  * Example:
- * <pre>
- * JarSigner signer = new JarSigner.Builder(key, certPath)
- *         .digestAlgorithm("SHA-1")
- *         .signatureAlgorithm("SHA1withDSA")
- *         .build();
- * try (ZipFile in = new ZipFile(inputFile);
- *         FileOutputStream out = new FileOutputStream(outputFile)) {
- *     signer.sign(in, out);
+ * {@snippet lang="java" :
+ *     JarSigner signer = new JarSigner.Builder(key, certPath)
+ *             .digestAlgorithm("SHA-256")
+ *             .signatureAlgorithm("SHA256withRSA")
+ *             .build();
+ *     try (ZipFile  in = new ZipFile(inputFile);
+ *             FileOutputStream out = new FileOutputStream(outputFile)) {
+ *         signer.sign(in, out);
+ *     }
  * }
- * </pre>
  *
  * @since 9
  */
@@ -475,8 +477,6 @@ public final class JarSigner {
         }
     }
 
-    private static final String META_INF = "META-INF/";
-
     // All fields in Builder are duplicated here as final. Those not
     // provided but has a default value will be filled with default value.
 
@@ -688,7 +688,8 @@ public final class JarSigner {
             throw new AssertionError(asae);
         }
 
-        ZipOutputStream zos = new ZipOutputStream(os);
+        ZipOutputStream zos = new ZipOutputStream(
+                (os instanceof BufferedOutputStream) ? os : new BufferedOutputStream(os));
 
         Manifest manifest = new Manifest();
         byte[] mfRawBytes = null;
@@ -731,7 +732,7 @@ public final class JarSigner {
              enum_.hasMoreElements(); ) {
             ZipEntry ze = enum_.nextElement();
 
-            if (ze.getName().startsWith(META_INF)) {
+            if (isInMetaInf(ze.getName())) {
                 // Store META-INF files in vector, so they can be written
                 // out first
                 mfFiles.addElement(ze);
@@ -959,7 +960,7 @@ public final class JarSigner {
              enum_.hasMoreElements(); ) {
             ZipEntry ze = enum_.nextElement();
 
-            if (!ze.getName().startsWith(META_INF)) {
+            if (!isInMetaInf(ze.getName())) {
                 if (handler != null) {
                     if (manifest.getAttributes(ze.getName()) != null) {
                         handler.accept("signing", ze.getName());
@@ -973,6 +974,7 @@ public final class JarSigner {
         zipFile.close();
         zos.close();
     }
+
 
     private void writeEntry(ZipFile zf, ZipOutputStream os, ZipEntry ze)
             throws IOException {

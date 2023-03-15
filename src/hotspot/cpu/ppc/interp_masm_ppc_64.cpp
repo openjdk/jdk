@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -53,6 +53,11 @@
 void InterpreterMacroAssembler::null_check_throw(Register a, int offset, Register temp_reg) {
   address exception_entry = Interpreter::throw_NullPointerException_entry();
   MacroAssembler::null_check_throw(a, offset, temp_reg, exception_entry);
+}
+
+void InterpreterMacroAssembler::load_klass_check_null_throw(Register dst, Register src, Register temp_reg) {
+  null_check_throw(src, oopDesc::klass_offset_in_bytes(), temp_reg);
+  load_klass(dst, src);
 }
 
 void InterpreterMacroAssembler::jump_to_entry(address entry, Register Rscratch) {
@@ -890,7 +895,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   }
 
   verify_oop(R17_tos, state);
-  verify_thread();
 
   merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
   mtlr(R0);
@@ -1129,7 +1133,6 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
     // compiled code in threads for which the event is enabled. Check here for
     // interp_only_mode if these events CAN be enabled.
     Label done;
-    verify_thread();
     cmpwi(CCR0, Rinterp_only, 0);
     beq(CCR0, done);
     ld(Rtarget_addr, in_bytes(Method::interpreter_entry_offset()), Rtarget_method);
@@ -2170,7 +2173,7 @@ void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
 }
 
 void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool bcp_and_mdx_only, bool restore_top_frame_sp) {
-  ld(scratch, 0, R1_SP);
+  ld_ptr(scratch, _abi0(callers_sp), R1_SP);   // Load frame pointer.
   if (restore_top_frame_sp) {
     // After thawing the top frame of a continuation we reach here with frame::abi_minframe.
     // therefore we have to restore top_frame_sp before the assertion below.
@@ -2189,6 +2192,8 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
     // Following ones are stack addresses and don't require reload.
     ld(R15_esp, _ijava_state_neg(esp), scratch);
     ld(R18_locals, _ijava_state_neg(locals), scratch);
+    sldi(R18_locals, R18_locals, Interpreter::logStackElementSize);
+    add(R18_locals, R18_locals, scratch);
     ld(R26_monitor, _ijava_state_neg(monitors), scratch);
   }
 #ifdef ASSERT

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 #define CSR_VLENB    0xC22        // VLEN/8 (vector register length in bytes)
 #define CSR_CYCLE    0xc00        // Cycle counter for RDCYCLE instruction.
 #define CSR_TIME     0xc01        // Timer for RDTIME instruction.
-#define CSR_INSTERT  0xc02        // Instructions-retired counter for RDINSTRET instruction.
+#define CSR_INSTRET  0xc02        // Instructions-retired counter for RDINSTRET instruction.
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -70,9 +70,9 @@ class Register {
 
    public:
     // accessors
-    int raw_encoding() const { return this - first(); }
-    int encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    bool is_valid() const    { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
     // for rvc
     int compressed_raw_encoding() const {
@@ -104,7 +104,7 @@ class Register {
   int operator==(const Register r) const { return _encoding == r._encoding; }
   int operator!=(const Register r) const { return _encoding != r._encoding; }
 
-  const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
+  constexpr const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
 };
 
 extern Register::RegisterImpl all_RegisterImpls[Register::number_of_registers + 1] INTERNAL_VISIBILITY;
@@ -187,9 +187,9 @@ class FloatRegister {
 
    public:
     // accessors
-    int raw_encoding() const { return this - first(); }
-    int encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    bool is_valid() const    { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
     // for rvc
     int compressed_raw_encoding() const {
@@ -219,7 +219,7 @@ class FloatRegister {
   int operator==(const FloatRegister r) const { return _encoding == r._encoding; }
   int operator!=(const FloatRegister r) const { return _encoding != r._encoding; }
 
-  const FloatRegisterImpl* operator->() const { return FloatRegisterImpl::first() + _encoding; }
+  constexpr const FloatRegisterImpl* operator->() const { return FloatRegisterImpl::first() + _encoding; }
 };
 
 extern FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
@@ -297,9 +297,9 @@ class VectorRegister {
 
    public:
     // accessors
-    int raw_encoding() const { return this - first(); }
-    int encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    bool is_valid() const    { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
     // derived registers, offsets, and addresses
     inline VectorRegister successor() const;
@@ -314,7 +314,7 @@ class VectorRegister {
   int operator==(const VectorRegister r) const { return _encoding == r._encoding; }
   int operator!=(const VectorRegister r) const { return _encoding != r._encoding; }
 
-  const VectorRegisterImpl* operator->() const { return VectorRegisterImpl::first() + _encoding; }
+  constexpr const VectorRegisterImpl* operator->() const { return VectorRegisterImpl::first() + _encoding; }
 };
 
 extern VectorRegister::VectorRegisterImpl all_VectorRegisterImpls[VectorRegister::number_of_registers + 1] INTERNAL_VISIBILITY;

@@ -255,7 +255,7 @@ final class BootstrapMethodInvoker {
 
     /**
      * @return true iff the BSM method type exactly matches
-     *         {@see java.lang.invoke.StringConcatFactory#makeConcatWithConstants(MethodHandles.Lookup,
+     *         {@link java.lang.invoke.StringConcatFactory#makeConcatWithConstants(MethodHandles.Lookup,
      *                 String,MethodType,String,Object...))}
      */
     private static boolean isStringConcatFactoryBSM(MethodType bsmType) {
@@ -264,7 +264,7 @@ final class BootstrapMethodInvoker {
 
     /**
      * @return true iff the BSM method type exactly matches
-     *         {@see java.lang.invoke.LambdaMetafactory#metafactory(
+     *         {@link java.lang.invoke.LambdaMetafactory#metafactory(
      *          MethodHandles.Lookup,String,Class,MethodType,MethodHandle,MethodType)}
      */
     private static boolean isLambdaMetafactoryCondyBSM(MethodType bsmType) {
@@ -273,7 +273,7 @@ final class BootstrapMethodInvoker {
 
     /**
      * @return true iff the BSM method type exactly matches
-     *         {@see java.lang.invoke.LambdaMetafactory#metafactory(
+     *         {@link java.lang.invoke.LambdaMetafactory#metafactory(
      *          MethodHandles.Lookup,String,MethodType,MethodType,MethodHandle,MethodType)}
      */
     private static boolean isLambdaMetafactoryIndyBSM(MethodType bsmType) {
@@ -282,7 +282,7 @@ final class BootstrapMethodInvoker {
 
     /**
      * @return true iff the BSM method type exactly matches
-     *         {@see java.lang.invoke.LambdaMetafactory#altMetafactory(
+     *         {@link java.lang.invoke.LambdaMetafactory#altMetafactory(
      *          MethodHandles.Lookup,String,MethodType,Object[])}
      */
     private static boolean isLambdaMetafactoryAltMetafactoryBSM(MethodType bsmType) {
