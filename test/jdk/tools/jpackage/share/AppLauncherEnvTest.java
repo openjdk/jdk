@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
@@ -83,14 +84,10 @@ public class AppLauncherEnvTest {
         final String expectedEnvVarValue = Optional.ofNullable(System.getenv(
                 envVarName)).orElse("") + File.pathSeparator + appDir;
 
-        String msg = String.format("Check value of %s env variable", envVarName);
-        if (TKit.isLinux()) {
-            if (! actualEnvVarValue.endsWith(expectedEnvVarValue)) {
-                TKit.assertTrue(false, msg);
-            }
-        } else {
-            TKit.assertEquals(expectedEnvVarValue, actualEnvVarValue, msg);
-        }
+        TKit.assertTextStream(expectedEnvVarValue)
+            .predicate(TKit.isLinux() ? String::endsWith : String::equals)
+            .label(String.format("value of %s env variable", envVarName))
+            .apply(Stream.of(actualEnvVarValue));
 
         final String javaLibraryPath = getValue.apply(2, "java.library.path");
         TKit.assertTrue(
