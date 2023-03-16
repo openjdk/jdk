@@ -87,7 +87,7 @@ public enum TypeClass {
                 case ValueLayout valueLayout -> {
                     return switch (classifyValueType(valueLayout)) {
                         case INTEGER -> FieldCounter.SINGLE_INTEGER;
-                        case FLOAT -> FieldCounter.SINGLE_FLOAT;
+                        case FLOAT   -> FieldCounter.SINGLE_FLOAT;
                         case POINTER -> FieldCounter.SINGLE_POINTER;
                         default -> throw new IllegalStateException("Should not reach here.");
                     };

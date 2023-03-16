@@ -50,7 +50,7 @@ public class RISCV64Architecture implements Architecture {
     public int typeSize(int cls) {
         return switch (cls) {
             case StorageType.INTEGER -> INTEGER_REG_SIZE;
-            case StorageType.FLOAT -> FLOAT_REG_SIZE;
+            case StorageType.FLOAT   -> FLOAT_REG_SIZE;
             // STACK is deliberately omitted
             default -> throw new IllegalArgumentException("Invalid Storage Class: " + cls);
         };

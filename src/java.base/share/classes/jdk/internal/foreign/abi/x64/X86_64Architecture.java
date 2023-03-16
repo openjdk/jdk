@@ -57,8 +57,8 @@ public class X86_64Architecture implements Architecture {
     public int typeSize(int cls) {
         return switch (cls) {
             case StorageType.INTEGER -> INTEGER_REG_SIZE;
-            case StorageType.VECTOR -> VECTOR_REG_SIZE;
-            case StorageType.X87 -> X87_REG_SIZE;
+            case StorageType.VECTOR  -> VECTOR_REG_SIZE;
+            case StorageType.X87     -> X87_REG_SIZE;
             // STACK is deliberately omitted
             default -> throw new IllegalArgumentException("Invalid Storage Class: " +cls);
         };
