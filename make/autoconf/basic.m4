@@ -477,7 +477,11 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
     # df on AIX does not understand -l. On modern AIXes it understands "-T local" which
     # is the same. On older AIXes we just continue to live with a "not local build" warning.
     if test "x$OPENJDK_TARGET_OS" = xaix; then
-      DF_LOCAL_ONLY_OPTION='-T local'
+      if "$DF -T local > /dev/null 2>&1"; then
+        DF_LOCAL_ONLY_OPTION='-T local'
+      else # AIX may use GNU-utils instead
+        DF_LOCAL_ONLY_OPTION='-l'
+      fi
     elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
       # In WSL1, we can only build on a drvfs file system (that is, a mounted real Windows drive)
       DF_LOCAL_ONLY_OPTION='-t drvfs'
