@@ -107,7 +107,12 @@ public class OptionsTest {
             while (nifs.hasMoreElements()) {
                 NetworkInterface ni = nifs.nextElement();
                 if (ni.supportsMulticast()) {
-                    return ni;
+                    try (MulticastSocket ms = new MulticastSocket()) {
+                        ms.setNetworkInterface(ni);
+                        return ni;
+                    } catch (SocketException ex) {
+                        // continue
+                    }
                 }
             }
         } catch (Exception e) {
