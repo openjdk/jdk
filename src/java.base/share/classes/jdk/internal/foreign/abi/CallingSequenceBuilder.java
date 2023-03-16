@@ -25,6 +25,16 @@
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.Utils;
+import jdk.internal.foreign.abi.Binding.Allocate;
+import jdk.internal.foreign.abi.Binding.BoxAddress;
+import jdk.internal.foreign.abi.Binding.BufferLoad;
+import jdk.internal.foreign.abi.Binding.BufferStore;
+import jdk.internal.foreign.abi.Binding.Cast;
+import jdk.internal.foreign.abi.Binding.Copy;
+import jdk.internal.foreign.abi.Binding.Dup;
+import jdk.internal.foreign.abi.Binding.UnboxAddress;
+import jdk.internal.foreign.abi.Binding.VMLoad;
+import jdk.internal.foreign.abi.Binding.VMStore;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.FunctionDescriptor;
@@ -125,11 +135,11 @@ public class CallingSequenceBuilder {
     }
 
     private MethodType computeCallerTypeForUpcall() {
-        return computeTypeHelper(Binding.VMLoad.class, Binding.VMStore.class);
+        return computeTypeHelper(VMLoad.class, VMStore.class);
     }
 
     private MethodType computeCalleeTypeForDowncall() {
-        return computeTypeHelper(Binding.VMStore.class, Binding.VMLoad.class);
+        return computeTypeHelper(VMStore.class, VMLoad.class);
     }
 
     private MethodType computeTypeHelper(Class<? extends Binding.Move> inputVMClass,
@@ -156,10 +166,10 @@ public class CallingSequenceBuilder {
         long size = 0;
         for (List<Binding> bindings : inputBindings) {
             for (Binding b : bindings) {
-                if (b instanceof Binding.Copy copy) {
+                if (b instanceof Copy copy) {
                     size = Utils.alignUp(size, copy.alignment());
                     size += copy.size();
-                } else if (b instanceof Binding.Allocate allocate) {
+                } else if (b instanceof Allocate allocate) {
                     size = Utils.alignUp(size, allocate.alignment());
                     size += allocate.size();
                 }
@@ -205,16 +215,17 @@ public class CallingSequenceBuilder {
 
     static boolean isUnbox(Binding binding) {
         return switch (binding) {
-            case Binding.VMStore unused -> true;
-            case Binding.VMLoad unused -> false;
-            case Binding.BufferStore unused -> false;
-            case Binding.BufferLoad unused -> true;
-            case Binding.Copy unused -> true;
-            case Binding.Allocate unused -> false;
-            case Binding.BoxAddress unused -> false;
-            case Binding.UnboxAddress unused -> true;
-            case Binding.Dup unused -> true;
-            case Binding.Cast unused-> true;
+            case VMStore      unused -> true;
+            case BufferLoad   unused -> true;
+            case Copy         unused -> true;
+            case UnboxAddress unused -> true;
+            case Dup          unused -> true;
+            case Cast         unused -> true;
+
+            case VMLoad       unused -> false;
+            case BufferStore  unused -> false;
+            case Allocate     unused -> false;
+            case BoxAddress   unused -> false;
         };
     }
 
@@ -237,16 +248,17 @@ public class CallingSequenceBuilder {
 
     static boolean isBox(Binding binding) {
         return switch (binding) {
-            case Binding.VMStore unused -> false;
-            case Binding.VMLoad unused -> true;
-            case Binding.BufferStore unused -> true;
-            case Binding.BufferLoad unused -> false;
-            case Binding.Copy unused -> true;
-            case Binding.Allocate unused -> true;
-            case Binding.BoxAddress unused -> true;
-            case Binding.UnboxAddress unused -> false;
-            case Binding.Dup unused -> true;
-            case Binding.Cast unused-> true;
+            case VMLoad       unused -> true;
+            case BufferStore  unused -> true;
+            case Copy         unused -> true;
+            case Allocate     unused -> true;
+            case BoxAddress   unused -> true;
+            case Dup          unused -> true;
+            case Cast         unused -> true;
+
+            case VMStore      unused -> false;
+            case BufferLoad   unused -> false;
+            case UnboxAddress unused -> false;
         };
     }
 

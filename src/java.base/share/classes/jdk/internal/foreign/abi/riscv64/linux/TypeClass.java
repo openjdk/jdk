@@ -109,7 +109,7 @@ public enum TypeClass {
                     }
                     return flatten(sequenceLayout.elementLayout()).mul(elementCount);
                 }
-                case null, default -> throw new IllegalStateException("Cannot get here: " + layout);
+                default -> throw new IllegalStateException("Cannot get here: " + layout);
             }
         }
 
