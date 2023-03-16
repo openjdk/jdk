@@ -140,7 +140,7 @@ void CardTableRS::clear_into_younger(Generation* old_gen) {
   // below to avoid missing cards at the fringes. If clear() or
   // invalidate() are changed in the future, this code should
   // be revisited. 20040107.ysr
-  clear(old_gen->prev_used_region());
+  clear_MemRegion(old_gen->prev_used_region());
 }
 
 void CardTableRS::invalidate_or_clear(Generation* old_gen) {
@@ -155,9 +155,9 @@ void CardTableRS::invalidate_or_clear(Generation* old_gen) {
   MemRegion used_mr = old_gen->used_region();
   MemRegion to_be_cleared_mr = old_gen->prev_used_region().minus(used_mr);
   if (!to_be_cleared_mr.is_empty()) {
-    clear(to_be_cleared_mr);
+    clear_MemRegion(to_be_cleared_mr);
   }
-  invalidate(used_mr);
+  dirty_MemRegion(used_mr);
 }
 
 
