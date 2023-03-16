@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 /*
  * @test
  * @summary Test features provided by the Carriers class.
- * @modules java.base/java.lang.template
+ * @modules java.base/java.lang.runtime
  * @enablePreview true
  * @compile --patch-module java.base=${test.src} CarriersTest.java
- * @run main/othervm --patch-module java.base=${test.class.path} java.lang.template.CarriersTest
+ * @run main/othervm --patch-module java.base=${test.class.path} java.lang.runtime.CarriersTest
  */
 
-package java.lang.template;
+package java.lang.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
  * questions.
  */
 
-package java.lang.template;
+package java.lang.runtime;
 
+import java.lang.StringTemplate.StringProcessor;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -41,21 +42,19 @@ import jdk.internal.javac.PreviewFeature;
  * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-final class TemplateSupport {
+final class TemplateSupport implements JavaTemplateAccess {
 
     /**
      * Private constructor.
      */
     private TemplateSupport() {
-        throw new AssertionError("private constructor");
     }
 
     static {
-        SharedSecrets.setJavaTemplateAccess(new StringTemplateImplFactory());
+        SharedSecrets.setJavaTemplateAccess(new TemplateSupport());
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    private static final JavaTemplateAccess JTA = SharedSecrets.getJavaTemplateAccess();
 
     /**
      * Returns a StringTemplate composed from fragments and values.
@@ -74,8 +73,9 @@ final class TemplateSupport {
      *
      * @implNote Contents of both lists are copied to construct immutable lists.
      */
-    static StringTemplate of(List<String> fragments, List<?> values) {
-        return JTA.newStringTemplate(fragments, values);
+    @Override
+    public StringTemplate of(List<String> fragments, List<?> values) {
+        return StringTemplateImplFactory.newStringTemplate(fragments, values);
     }
 
     /**
@@ -87,7 +87,8 @@ final class TemplateSupport {
      *
      * @return String interpolation of fragments and values
      */
-    static String interpolate(List<String> fragments, List<?> values) {
+    @Override
+    public String interpolate(List<String> fragments, List<?> values) {
         int fragmentsSize = fragments.size();
         int valuesSize = values.size();
         if (fragmentsSize == 1) {
@@ -117,7 +118,8 @@ final class TemplateSupport {
      *
      * @throws NullPointerException if sts is null or if any element of sts is null
      */
-    static StringTemplate combine(StringTemplate... sts) {
+    @Override
+    public StringTemplate combine(StringTemplate... sts) {
         Objects.requireNonNull(sts, "sts must not be null");
         if (sts.length == 0) {
             return StringTemplate.of("");
@@ -144,17 +146,7 @@ final class TemplateSupport {
                 combinedValues[valueIndex++] = value;
             }
         }
-        return JTA.newStringTemplate(combinedFragments, combinedValues);
-    }
-
-    /**
-     * Return the basic string interpolate process, and, initialize the SharedSecret.
-     *
-     * @return basic string interpolate process
-     */
-    static StringProcessor basicInterpolate() {
-        SharedSecrets.setJavaTemplateAccess(new StringTemplateImplFactory());
-        return StringTemplate::interpolate;
+        return StringTemplateImplFactory.newStringTemplate(combinedFragments, combinedValues);
     }
 
 }

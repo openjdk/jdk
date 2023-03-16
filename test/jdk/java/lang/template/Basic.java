@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,12 @@
  * @enablePreview true
  */
 
-import java.lang.template.*;
+import java.lang.StringTemplate.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import static java.lang.template.StringTemplate.RAW;
+import static java.lang.StringTemplate.RAW;
 
 public class Basic {
     public static void main(String... arg) {
@@ -43,7 +43,7 @@ public class Basic {
         limitsTests();
         processorTests();
         stringTemplateCoverage();
-        templateProcessorCoverage();
+        simpleProcessorCoverage();
     }
 
     static void ASSERT(String a, String b) {
@@ -375,7 +375,7 @@ public class Basic {
     /*
      * Processor tests.
      */
-    public static final TemplateProcessor<StringTemplate> STRINGIFY = st -> {
+    public static final SimpleProcessor<StringTemplate> STRINGIFY = st -> {
         List<Object> values = st.values()
                 .stream()
                 .map(v -> (Object)String.valueOf(v))
@@ -384,7 +384,7 @@ public class Basic {
         return StringTemplate.of(st.fragments(), values);
     };
 
-    public static final TemplateProcessor<StringTemplate> UPPER = st -> {
+    public static final SimpleProcessor<StringTemplate> UPPER = st -> {
         List<String> fragments = st.fragments()
                 .stream()
                 .map(String::toUpperCase)
@@ -430,10 +430,10 @@ public class Basic {
     }
 
     /*
-     * TemplateProcessor coverage.
+     * SimpleProcessor coverage.
      */
 
-    static class Processor0 implements ValidatingProcessor<String, IllegalArgumentException> {
+    static class Processor0 implements Processor<String, IllegalArgumentException> {
         @Override
         public String process(StringTemplate stringTemplate) throws IllegalArgumentException {
             StringBuilder sb = new StringBuilder();
@@ -457,10 +457,10 @@ public class Basic {
 
     static Processor0 processor0 = new Processor0();
 
-    static ValidatingProcessor<String, RuntimeException> processor1 =
+    static Processor<String, RuntimeException> processor1 =
         st -> st.interpolate();
 
-    static TemplateProcessor<String> processor2 = st -> st.interpolate();
+    static SimpleProcessor<String> processor2 = st -> st.interpolate();
 
     static StringProcessor processor3 = st -> st.interpolate();
 
@@ -468,7 +468,7 @@ public class Basic {
         StringTemplate.interpolate(st.fragments(), st.values());
 
 
-    static void templateProcessorCoverage() {
+    static void simpleProcessorCoverage() {
         try {
             int x = 10;
             int y = 20;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@
  // key: compiler.note.preview.recompile
  // key: compiler.misc.unexpected.ret.val
  // key: compiler.err.prob.found.req
- // key: compiler.err.template.processor.type.cannot.be.a.raw.type
+ // key: compiler.err.cant.resolve.location
+ // key: compiler.err.processor.type.cannot.be.a.raw.type
+ // key: compiler.misc.location
  // options: --enable-preview -source 21
 
-import java.lang.template.*;
+import java.lang.*;
 
 class StringTemplateRawProcessor {
     void m() {
-        TemplateProcessor processor = ts -> ts.interpolate();
+        SimpleProcessor processor = ts -> ts.interpolate();
         try {
             int x = 10, y = 20;
             return processor."\{x} + \{y} = \{x + y}";
@@ -41,3 +43,4 @@ class StringTemplateRawProcessor {
         }
     }
 }
+

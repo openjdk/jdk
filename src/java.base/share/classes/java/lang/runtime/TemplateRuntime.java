@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.template.ProcessorLinkage;
-import java.lang.template.StringTemplate;
-import java.lang.template.ValidatingProcessor;
+import java.lang.StringTemplate.Processor;
+import java.lang.StringTemplate.Processor.Linkage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,7 +55,7 @@ import jdk.internal.javac.PreviewFeature;
  * optimized {@link StringTemplate StringTemplates}.
  * <p>
  * The {@link TemplateRuntime#newLargeStringTemplate} bootstrap method is used
- * to bind to specialized processors that implement {@link ProcessorLinkage}.
+ * to bind to specialized processors that implement {@link Linkage}.
  *
  * @since 21
  */
@@ -82,7 +81,7 @@ public final class TemplateRuntime {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
 
             MethodType mt = MethodType.methodType(Object.class,
-                    List.class, ValidatingProcessor.class, Object[].class);
+                    List.class, Processor.class, Object[].class);
             DEFAULT_PROCESS_MH = lookup.findStatic(TemplateRuntime.class, "defaultProcess", mt);
 
             mt = MethodType.methodType(StringTemplate.class, String[].class, Object[].class);
@@ -143,7 +142,7 @@ public final class TemplateRuntime {
         Objects.requireNonNull(type, "type is null");
         Objects.requireNonNull(fragments, "fragments is null");
 
-        MethodHandle mh = JTA
+        MethodHandle mh = StringTemplateImplFactory
                 .createStringTemplateImplMH(List.of(fragments), type).asType(type);
 
         return new ConstantCallSite(mh);
@@ -174,9 +173,9 @@ public final class TemplateRuntime {
         Objects.requireNonNull(processorGetter, "processorGetter is null");
         Objects.requireNonNull(fragments, "fragments is null");
 
-        ValidatingProcessor<?, ?> processor = (ValidatingProcessor<?, ?>)processorGetter.invoke();
-        MethodHandle mh = processor instanceof ProcessorLinkage processorLinkage
-                ? processorLinkage.linkage(List.of(fragments), type)
+        Processor<?, ?> processor = (Processor<?, ?>)processorGetter.invoke();
+        MethodHandle mh = processor instanceof Linkage linkage
+                ? linkage.linkage(List.of(fragments), type)
                 : defaultProcessMethodHandle(type, processor, List.of(fragments));
 
         return new ConstantCallSite(mh);
@@ -186,14 +185,14 @@ public final class TemplateRuntime {
      * Creates a simple {@link StringTemplate} and then invokes the processor's process method.
      *
      * @param fragments fragments from string template
-     * @param processor {@link ValidatingProcessor} to process
+     * @param processor {@link Processor} to process
      * @param values    array of expression values
      *
      * @return result of processing the string template
      */
     private static Object defaultProcess(
             List<String> fragments,
-            ValidatingProcessor<?, ?> processor,
+            Processor<?, ?> processor,
             Object[] values
     ) throws Throwable {
         List<Object> asList = Collections.unmodifiableList(new ArrayList<>(Arrays.asList(values)));
@@ -208,7 +207,7 @@ public final class TemplateRuntime {
      */
     private static MethodHandle defaultProcessMethodHandle(
             MethodType type,
-            ValidatingProcessor<?, ?> processor,
+            Processor<?, ?> processor,
             List<String> fragments
     ) {
         MethodHandle mh = MethodHandles.insertArguments(DEFAULT_PROCESS_MH, 0, fragments, processor);
@@ -225,7 +224,7 @@ public final class TemplateRuntime {
      * @return new {@link StringTemplate}
      */
     private static StringTemplate fromArrays(String[] fragments, Object[] values) {
-        return JTA.newStringTemplate(fragments, values);
+        return StringTemplateImplFactory.newStringTemplate(fragments, values);
     }
 }
 

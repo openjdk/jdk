@@ -4316,7 +4316,7 @@ public class Check {
 
     public Type checkProcessorType(JCExpression processor, Type resultType, Env<AttrContext> env) {
         Type processorType = processor.type;
-        Type interfaceType = types.asSuper(processorType, syms.validatingProcessorType.tsym);
+        Type interfaceType = types.asSuper(processorType, syms.processorType.tsym);
 
         if (interfaceType != null) {
             List<Type> typeArguments = interfaceType.getTypeArguments();
@@ -4325,11 +4325,11 @@ public class Check {
                 resultType = typeArguments.head;
             } else {
                 log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
-                        Errors.TemplateProcessorTypeCannotBeARawType(processorType.tsym));
+                        Errors.ProcessorTypeCannotBeARawType(processorType.tsym));
             }
         } else {
             log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
-                    Errors.NotTemplateProcessorType(processorType.tsym));
+                    Errors.NotAProcessorType(processorType.tsym));
         }
 
         return resultType;

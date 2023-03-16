@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 /*
  * @test
  * @summary Test features provided by the ReferencedKeyMap class.
- * @modules java.base/java.lang.template
+ * @modules java.base/java.lang.runtime
  * @enablePreview
  * @compile --patch-module java.base=${test.src} ReferencedKeyTest.java
- * @run main/othervm --patch-module java.base=${test.class.path} java.lang.template.ReferencedKeyTest
+ * @run main/othervm --patch-module java.base=${test.class.path} java.lang.runtime.ReferencedKeyTest
  */
 
-package java.lang.template;
+package java.lang.runtime;
 
 import java.util.HashMap;
 import java.util.Map;

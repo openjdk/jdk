@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang.template;
+package java.lang.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -33,19 +33,18 @@ import java.lang.invoke.StringConcatFactory;
 import java.util.List;
 
 import jdk.internal.access.JavaUtilCollectionAccess;
-import jdk.internal.access.JavaTemplateAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 
 /**
  * This class synthesizes {@link StringTemplate StringTemplates} based on
  * fragments and bootstrap method type. Usage is primarily from
- * {@link java.lang.runtime.TemplateRuntime} via {@code SharedSecrets.getJavaTemplateAccess()}.
+ * {@link java.lang.runtime.TemplateRuntime}.
  *
  * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-final class StringTemplateImplFactory implements JavaTemplateAccess {
+final class StringTemplateImplFactory {
 
     private static final JavaUtilCollectionAccess JUCA = SharedSecrets.getJavaUtilCollectionAccess();
 
@@ -53,6 +52,7 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
      * Private constructor.
      */
     StringTemplateImplFactory() {
+        throw new AssertionError("private constructor");
     }
 
     /*
@@ -90,8 +90,7 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
      * @return {@link MethodHandle} that can construct a {@link StringTemplateImpl} with arguments
      * used as values.
      */
-    @Override
-    public MethodHandle createStringTemplateImplMH(List<String> fragments, MethodType type) {
+    static MethodHandle createStringTemplateImplMH(List<String> fragments, MethodType type) {
         Carriers.CarrierElements elements = Carriers.CarrierFactory.of(type);
         MethodHandle[] components = elements
                 .components()
@@ -155,8 +154,7 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
      *
      * @return StringTemplate composed from fragments and values
      */
-    @Override
-    public StringTemplate newStringTemplate(String[] fragments, Object[] values) {
+    static StringTemplate newStringTemplate(String[] fragments, Object[] values) {
         return new SimpleStringTemplate(List.of(fragments), toList(values));
     }
 
@@ -168,8 +166,7 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
      *
      * @return StringTemplate composed from fragments and values
      */
-    @Override
-    public StringTemplate newStringTemplate(List<String> fragments, Object[] values) {
+    static StringTemplate newStringTemplate(List<String> fragments, Object[] values) {
         return new SimpleStringTemplate(List.copyOf(fragments), toList(values));
     }
 
@@ -181,8 +178,7 @@ final class StringTemplateImplFactory implements JavaTemplateAccess {
      *
      * @return StringTemplate composed from fragments and values
      */
-    @Override
-    public StringTemplate newStringTemplate(List<String> fragments, List<?> values) {
+    static StringTemplate newStringTemplate(List<String> fragments, List<?> values) {
         return new SimpleStringTemplate(List.copyOf(fragments), toList(values.stream().toArray()));
     }
 

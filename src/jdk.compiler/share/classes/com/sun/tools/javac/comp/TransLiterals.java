@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,7 @@ public final class TransLiterals extends TreeTranslator {
                     indyType,
                     staticArgValues.toArray(new LoadableConstant[0])
             );
-            JCFieldAccess qualifier = make.Select(make.Type(syms.validatingProcessorType), dynSym.name);
+            JCFieldAccess qualifier = make.Select(make.Type(syms.processorType), dynSym.name);
             qualifier.sym = dynSym;
             qualifier.type = type;
             JCMethodInvocation apply = make.Apply(List.nil(), qualifier, args);
@@ -203,7 +203,7 @@ public final class TransLiterals extends TreeTranslator {
 
         JCExpression processCall(JCExpression stringTemplate) {
             MethodSymbol appyMeth = lookupMethod(tree.pos(), names.process,
-                    syms.validatingProcessorType, List.of(syms.stringTemplateType));
+                    syms.processorType, List.of(syms.stringTemplateType));
             JCExpression applySelect = make.Select(processor, appyMeth);
             JCExpression process = make.Apply(null, applySelect, List.of(stringTemplate))
                     .setType(syms.objectType);
@@ -267,7 +267,7 @@ public final class TransLiterals extends TreeTranslator {
         boolean isLinkageProcessor() {
             return processor != null &&
                    !useValuesList &&
-                   types.isSubtype(processor.type, syms.processorLinkage) &&
+                   types.isSubtype(processor.type, syms.linkageType) &&
                    processor.type.isFinal() &&
                    TreeInfo.symbol(processor) instanceof VarSymbol varSymbol &&
                    varSymbol.isStatic() &&

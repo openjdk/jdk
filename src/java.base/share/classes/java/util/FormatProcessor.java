@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,8 @@ package java.util;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.template.ProcessorLinkage;
-import java.lang.template.StringProcessor;
-import java.lang.template.StringTemplate;
+import java.lang.StringTemplate.Processor.Linkage;
+import java.lang.StringTemplate.StringProcessor;
 import java.util.regex.Matcher;
 
 import jdk.internal.javac.PreviewFeature;
@@ -93,10 +92,10 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 21
  *
- * @see java.lang.template.StringProcessor
+ * @see StringProcessor
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-public final class FormatProcessor implements StringProcessor, ProcessorLinkage {
+public final class FormatProcessor implements StringProcessor, Linkage {
     /**
      * {@link Locale} used to format
      */
@@ -169,7 +168,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * prescanning the fragments and value types of a {@link StringTemplate}.
      * <p>
      * Process template expressions can be specialized  when the processor is
-     * of type {@link ProcessorLinkage} and fetched from a static constant as is
+     * of type {@link Linkage} and fetched from a static constant as is
      * {@link FormatProcessor#FMT} ({@code static final FormatProcessor}).
      * <p>
      * Other {@link FormatProcessor FormatProcessors} can be specialized when stored in a static
