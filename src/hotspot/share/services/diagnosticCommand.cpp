@@ -1073,17 +1073,6 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_argument(&_filepath);
 }
 
-int ThreadDumpToFileDCmd::num_arguments() {
-  ResourceMark rm;
-  ThreadDumpToFileDCmd* dcmd = new ThreadDumpToFileDCmd(nullptr, false);
-  if (dcmd != nullptr) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {
   bool json = (_format.value() != nullptr) && (strcmp(_format.value(), "json") == 0);
   char* path = _filepath.value();
