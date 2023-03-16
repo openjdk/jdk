@@ -25,10 +25,16 @@
 
 package sun.awt.X11;
 
+import java.awt.AWTEvent;
 import java.awt.AWTException;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.font.TextHitInfo;
 import java.awt.im.spi.InputMethodContext;
 import java.awt.peer.ComponentPeer;
 
@@ -45,25 +51,35 @@ import sun.util.logging.PlatformLogger;
 public class XInputMethod extends X11InputMethod {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XInputMethod");
 
+    private InputMethodContext inputContext;
+
     public XInputMethod() throws AWTException {
         super();
     }
 
+    @Override
     public void setInputMethodContext(InputMethodContext context) {
+        this.inputContext = context;
         context.enableClientWindowNotification(this, true);
     }
 
+    @Override
     public void notifyClientWindowChange(Rectangle location) {
         XComponentPeer peer = (XComponentPeer)getPeer(clientComponentWindow);
         if (peer != null) {
             adjustStatusWindow(peer.getContentWindow());
         }
+
+        //After window moved, this would called.
+        positionCandidateWindow();
     }
 
+    @Override
     protected boolean openXIM() {
         return openXIMNative(XToolkit.getDisplay());
     }
 
+    @Override
     protected boolean createXIC() {
         XComponentPeer peer = (XComponentPeer)getPeer(clientComponentWindow);
         if (peer == null) {
@@ -75,6 +91,7 @@ public class XInputMethod extends X11InputMethod {
 
     private static volatile long xicFocus;
 
+    @Override
     protected void setXICFocus(ComponentPeer peer,
                                     boolean value, boolean active) {
         if (peer == null) {
@@ -93,6 +110,7 @@ public class XInputMethod extends X11InputMethod {
 /* XAWT_HACK  FIX ME!
    do NOT call client code!
 */
+    @Override
     protected Container getParent(Component client) {
         return client.getParent();
     }
@@ -101,6 +119,7 @@ public class XInputMethod extends X11InputMethod {
      * Returns peer of the given client component. If the given client component
      * doesn't have peer, peer of the native container of the client is returned.
      */
+    @Override
     protected ComponentPeer getPeer(Component client) {
         XComponentPeer peer;
 
@@ -126,15 +145,18 @@ public class XInputMethod extends X11InputMethod {
      * Subclasses should override disposeImpl() instead of dispose(). Client
      * code should always invoke dispose(), never disposeImpl().
      */
+    @Override
     protected synchronized void disposeImpl() {
         super.disposeImpl();
         clientComponentWindow = null;
     }
 
+    @Override
     protected void awtLock() {
         XToolkit.awtLock();
     }
 
+    @Override
     protected void awtUnlock() {
         XToolkit.awtUnlock();
     }
@@ -145,6 +167,62 @@ public class XInputMethod extends X11InputMethod {
         return peer.getContentWindow();
     }
 
+    @Override
+    public void dispatchEvent(AWTEvent e) {
+        switch (e.getID()) {
+            case KeyEvent.KEY_PRESSED:
+            case KeyEvent.KEY_RELEASED:
+            case MouseEvent.MOUSE_CLICKED:
+                positionCandidateWindow();
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    private void positionCandidateWindow() {
+        if (this.inputContext == null) {
+            return;
+        }
+
+        Component client = getClientComponent();
+        if (client == null || !client.isShowing()) {
+            return;
+        }
+
+        int x = 0;
+        int y = 0;
+
+        // Get this textcomponent coordinate from root window.
+        Component temp = client;
+        while (temp != null) {
+             Component parent = temp.getParent();
+             if (parent == null) {
+                 break;
+             }
+
+             x += temp.getX();
+             y += temp.getY();
+             temp = parent;
+        }
+
+        if (haveActiveClient()) {
+            Rectangle rc = inputContext.getTextLocation(TextHitInfo.leading(0));
+            x += rc.x;
+            y += rc.y + rc.height;
+
+            Point p = client.getLocationOnScreen();
+            x -= p.x;
+            y -= p.y;
+        } else {
+            Dimension size = client.getSize();
+            y += size.height;
+        }
+
+        moveCandidateWindow(x, y);
+    }
+
     /*
      * Native methods
      */
@@ -153,4 +231,5 @@ public class XInputMethod extends X11InputMethod {
     private native void setXICFocusNative(long window,
                                     boolean value, boolean active);
     private native void adjustStatusWindow(long window);
+    private native void moveCandidateWindow(int x, int y);
 }

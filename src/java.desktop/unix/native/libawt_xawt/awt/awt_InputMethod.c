@@ -863,11 +863,14 @@ static Bool
 createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
 {
     XVaNestedList preedit = NULL;
-    XVaNestedList status = NULL;
-    XIMStyle on_the_spot_styles = XIMPreeditCallbacks,
-             active_styles = 0,
-             passive_styles = 0,
-             no_styles = 0;
+    XVaNestedList status  = NULL;
+    /* On ubuntu, XIMPreeditCallbacks doesn't work,
+       and block the candidate window to move with caret.
+     */
+    XIMStyle on_the_spot_styles = XIMPreeditNothing,
+             active_styles      = 0,
+             passive_styles     = 0,
+             no_styles          = 0;
     XIMCallback *callbacks;
     unsigned short i;
     XIMStyles *im_styles;
@@ -894,18 +897,22 @@ createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
       at the same time, so use StatusCallback to draw the status
       ourself
     */
+    /*
     for (i = 0; i < im_styles->count_styles; i++) {
         if (im_styles->supported_styles[i] == (XIMPreeditCallbacks | XIMStatusCallbacks)) {
             on_the_spot_styles = (XIMPreeditCallbacks | XIMStatusCallbacks);
             break;
         }
     }
+    */
+#else
+    on_the_spot_styles |= XIMPreeditCallbacks;
 #endif /* __linux__ */
 
     for (i = 0; i < im_styles->count_styles; i++) {
-        active_styles |= im_styles->supported_styles[i] & on_the_spot_styles;
+        active_styles  |= im_styles->supported_styles[i] & on_the_spot_styles;
         passive_styles |= im_styles->supported_styles[i] & ROOT_WINDOW_STYLES;
-        no_styles |= im_styles->supported_styles[i] & NO_STYLES;
+        no_styles      |= im_styles->supported_styles[i] & NO_STYLES;
     }
 
     XFree(im_styles);
@@ -1732,3 +1739,28 @@ static Window getParentWindow(Window w)
     return parent;
 }
 #endif
+
+JNIEXPORT void JNICALL Java_sun_awt_X11_XInputMethod_moveCandidateWindow
+ (JNIEnv *env, jobject this, jint x, jint y)
+{
+    X11InputMethodData *pX11IMData;
+    XVaNestedList preedit_attr;
+    XPoint nspot;
+
+    AWT_LOCK();
+
+    pX11IMData = getX11InputMethodData(env, this);
+    if ((pX11IMData == NULL) || (pX11IMData->current_ic == NULL)) {
+        AWT_UNLOCK();
+        return;
+    }
+
+    nspot.x = x;
+    nspot.y = y;
+    preedit_attr = XVaCreateNestedList(0, XNSpotLocation, &nspot, NULL);
+    XSetICValues(pX11IMData->current_ic, XNPreeditAttributes, preedit_attr, NULL);
+
+    XFree(preedit_attr);
+
+    AWT_UNLOCK();
+}
