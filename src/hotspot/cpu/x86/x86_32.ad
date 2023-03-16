@@ -614,7 +614,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != nullptr);
+  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != NULL);
 
   C->output()->set_frame_complete(cbuf.insts_size());
 

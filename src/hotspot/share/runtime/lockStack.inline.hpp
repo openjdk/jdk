@@ -81,7 +81,6 @@ inline bool LockStack::contains(oop o) const {
   for (int i = end - 1; i >= 0; i--) {
     if (_base[i] == o) {
       validate("post-contains");
-      validate("post-contains");
       return true;
     }
   }

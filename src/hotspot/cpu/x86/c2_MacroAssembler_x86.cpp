@@ -658,7 +658,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   xorptr(tmpReg, tmpReg);
 
-  // Appears unlocked - try to swing _owner from null to curren thread.
+  // Appears unlocked - try to swing _owner from null to current thread.
   // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
   lock();
   cmpxchgptr(thread, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));

@@ -47,8 +47,8 @@ private:
   static inline int to_index(int offset);
 
 public:
-  static ByteSize offset_offset()    { return byte_offset_of(LockStack, _offset); }
-  static ByteSize base_offset()    { return byte_offset_of(LockStack, _base); }
+  static ByteSize offset_offset() { return byte_offset_of(LockStack, _offset); }
+  static ByteSize base_offset()   { return byte_offset_of(LockStack, _base); }
 
   LockStack();
 
