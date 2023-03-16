@@ -1485,7 +1485,7 @@ Node* ReductionNode::make_reduction_input_from_scalar_opc(PhaseGVN& gvn, int opc
   int vopc = opcode(opc, bt);
   guarantee(vopc != opc, "Vector reduction for '%s' is not implemented", NodeClassNames[opc]);
 
-  return make_reduction_input_from_scalar_opc(gvn, vopc, bt);
+  return make_reduction_input_from_vector_opc(gvn, vopc, bt);
 }
 
 // Input opc of vector reduction, eg. AddReductionVI
