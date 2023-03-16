@@ -51,6 +51,7 @@ public abstract class Attribute {
     public static final String LineNumberTable          = "LineNumberTable";
     public static final String LocalVariableTable       = "LocalVariableTable";
     public static final String LocalVariableTypeTable   = "LocalVariableTypeTable";
+    public static final String Matcher                  = "Matcher";
     public static final String MethodParameters         = "MethodParameters";
     public static final String Module                   = "Module";
     public static final String ModuleHashes             = "ModuleHashes";
@@ -127,6 +128,7 @@ public abstract class Attribute {
             standardAttributes.put(LineNumberTable,   LineNumberTable_attribute.class);
             standardAttributes.put(LocalVariableTable, LocalVariableTable_attribute.class);
             standardAttributes.put(LocalVariableTypeTable, LocalVariableTypeTable_attribute.class);
+            standardAttributes.put(Matcher,           Matcher_attribute.class);
             standardAttributes.put(MethodParameters,  MethodParameters_attribute.class);
             standardAttributes.put(Module,            Module_attribute.class);
             standardAttributes.put(ModuleHashes,      ModuleHashes_attribute.class);
@@ -194,6 +196,7 @@ public abstract class Attribute {
         R visitLineNumberTable(LineNumberTable_attribute attr, P p);
         R visitLocalVariableTable(LocalVariableTable_attribute attr, P p);
         R visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr, P p);
+        R visitMatcher(Matcher_attribute attr, P p);
         R visitMethodParameters(MethodParameters_attribute attr, P p);
         R visitModule(Module_attribute attr, P p);
         R visitModuleHashes(ModuleHashes_attribute attr, P p);

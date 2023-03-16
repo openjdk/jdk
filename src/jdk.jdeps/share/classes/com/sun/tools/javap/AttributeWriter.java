@@ -27,56 +27,11 @@ package com.sun.tools.javap;
 
 import java.util.Collection;
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.AnnotationDefault_attribute;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.CharacterRangeTable_attribute;
+import com.sun.tools.classfile.*;
 import com.sun.tools.classfile.CharacterRangeTable_attribute.Entry;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.CompilationID_attribute;
-import com.sun.tools.classfile.ConstantPool;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.ConstantValue_attribute;
-import com.sun.tools.classfile.DefaultAttribute;
-import com.sun.tools.classfile.Deprecated_attribute;
-import com.sun.tools.classfile.Descriptor;
 import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
-import com.sun.tools.classfile.EnclosingMethod_attribute;
-import com.sun.tools.classfile.Exceptions_attribute;
-import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.InnerClasses_attribute.Info;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.LocalVariableTable_attribute;
-import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
-import com.sun.tools.classfile.MethodParameters_attribute;
-import com.sun.tools.classfile.Module_attribute;
-import com.sun.tools.classfile.ModuleHashes_attribute;
-import com.sun.tools.classfile.ModuleMainClass_attribute;
-import com.sun.tools.classfile.ModulePackages_attribute;
-import com.sun.tools.classfile.ModuleResolution_attribute;
-import com.sun.tools.classfile.ModuleTarget_attribute;
-import com.sun.tools.classfile.NestHost_attribute;
-import com.sun.tools.classfile.NestMembers_attribute;
-import com.sun.tools.classfile.Record_attribute;
-import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeParameterAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
-import com.sun.tools.classfile.PermittedSubclasses_attribute;
-import com.sun.tools.classfile.Signature_attribute;
-import com.sun.tools.classfile.SourceDebugExtension_attribute;
-import com.sun.tools.classfile.SourceFile_attribute;
-import com.sun.tools.classfile.SourceID_attribute;
-import com.sun.tools.classfile.StackMapTable_attribute;
-import com.sun.tools.classfile.StackMap_attribute;
-import com.sun.tools.classfile.Synthetic_attribute;
-import com.sun.tools.classfile.Type;
 
 import static com.sun.tools.classfile.AccessFlags.*;
 
@@ -404,6 +359,25 @@ public class AttributeWriter extends BasicWriter
                     constantWriter.stringValue(entry.name_index),
                     constantWriter.stringValue(entry.signature_index)));
         }
+        indent(-1);
+        return null;
+    }
+
+    @Override
+    public Void visitMatcher(Matcher_attribute attr, Void unused) {
+        println("Matcher:");
+        indent(+1);
+
+        if (options.showDescriptors) {
+            println("pattern_descriptor: " + getValue(attr.pattern_descriptor));
+        }
+        if (options.showAllAttrs) {
+            for (Attribute matcherAttribute: attr.attributes)
+                write(attr, matcherAttribute, constant_pool);
+            println();
+        }
+        indent(-1);
+
         indent(-1);
         return null;
     }

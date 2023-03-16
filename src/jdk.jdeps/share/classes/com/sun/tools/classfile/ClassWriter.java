@@ -527,6 +527,18 @@ public class ClassWriter {
         }
 
         @Override
+        public Void visitMatcher(Matcher_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.pattern_flags);
+            out.writeShort(attr.pattern_name_index);
+            out.writeShort(attr.pattern_descriptor.index);
+            int size = attr.attributes.size();
+            out.writeShort(size);
+            for (Attribute componentAttr: attr.attributes)
+                write(componentAttr, out);
+            return null;
+        }
+
+        @Override
         public Void visitNestHost(NestHost_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.top_index);
             return null;
