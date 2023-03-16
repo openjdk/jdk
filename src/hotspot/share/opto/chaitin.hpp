@@ -442,7 +442,6 @@ class PhaseChaitin : public PhaseRegAlloc {
   uint split_DEF(Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
   int split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
 
-  //------------------------------clone_projs------------------------------------
   // After cloning some rematerialized instruction, clone any MachProj's that
   // follow it.  Example: Intel zero is XOR, kills flags.  Sparc FP constants
   // use G3 as an address temp.

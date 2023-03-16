@@ -382,8 +382,6 @@ const Type* MulLNode::mul_ring(const Type* type_left, const Type* type_right) co
   return integer_mul_ring.compute();
 }
 
-//=============================================================================
-//------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const jlong con = in(2)->find_long_con(0);
@@ -439,8 +437,6 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-//=============================================================================
-//------------------------------mul_ring---------------------------------------
 // Compute the product type of two double ranges into this node.
 const Type *MulFNode::mul_ring(const Type *t0, const Type *t1) const {
   if( t0 == Type::FLOAT || t1 == Type::FLOAT ) return Type::FLOAT;

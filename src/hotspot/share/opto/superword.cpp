@@ -838,7 +838,6 @@ bool SuperWord::is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int 
   return true;
 }
 
-//------------------------------find_align_to_ref---------------------------
 // Find a memory reference to align the loop induction variable to.
 // Looks first at stores then at loads, looking for a memory reference
 // with the largest number of references similar to it.
@@ -1359,7 +1358,6 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   return independent_path(shallow, deep);
 }
 
-//------------------------------find_dependence---------------------
 // Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
 // We could query independent(s1, s2) for all pairs, but that results
 // in O(p.size * p.size) graph traversals. We can do it all in one BFS!
@@ -1397,7 +1395,6 @@ Node* SuperWord::find_dependence(Node_List* p) {
   return nullptr;
 }
 
-//--------------------------have_similar_inputs-----------------------
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
 bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
@@ -2310,7 +2307,6 @@ void SuperWord::verify_packs() {
 }
 #endif
 
-//------------------------------schedule---------------------------
 // Adjust the memory graph for the packed operations
 void SuperWord::schedule() {
 

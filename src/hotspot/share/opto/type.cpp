@@ -5198,7 +5198,6 @@ const Type *TypeMetadataPtr::filter_helper(const Type *kills, bool include_specu
   return ft;
 }
 
- //------------------------------get_con----------------------------------------
 intptr_t TypeMetadataPtr::get_con() const {
   assert( _ptr == Null || _ptr == Constant, "" );
   assert( _offset >= 0, "" );

@@ -1583,6 +1583,7 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
   return shared;
 }
 
+//------------------------------Instruction Selection--------------------------
 // Label method walks a "tree" of nodes, using the ADLC generated DFA to match
 // ideal nodes to machine instructions.  Trees are delimited by shared Nodes,
 // things the Matcher does not match (e.g., Memory), and things with different
