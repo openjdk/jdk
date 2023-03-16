@@ -109,22 +109,9 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
 
   MarkSweep::_string_dedup_requests->flush();
 
-  // If compaction completely evacuated the young generation then we
-  // can clear the card table.  Otherwise, we must invalidate
-  // it (consider all cards dirty).  In the future, we might consider doing
-  // compaction within generations only, and doing card-table sliding.
-  CardTableRS* rs = gch->rem_set();
-  Generation* old_gen = gch->old_gen();
-
-  // Clear/invalidate below make use of the "prev_used_regions" saved earlier.
-  if (gch->young_gen()->used() == 0) {
-    // We've evacuated the young generation.
-    rs->clear_into_younger(old_gen);
-  } else {
-    // Invalidate the cards corresponding to the currently used
-    // region and clear those corresponding to the evacuated region.
-    rs->invalidate_or_clear(old_gen);
-  }
+  // Update old-gen cards to maintain old-to-young-pointer invariant
+  bool is_young_gen_empty = (gch->young_gen()->used() == 0);
+  gch->rem_set()->update_old_gen_cards(gch->old_gen(), is_young_gen_empty);
 
   gch->prune_scavengable_nmethods();
 
