@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import jdk.internal.classfile.ClassHierarchyResolver;
@@ -181,5 +182,24 @@ public final class ClassHierarchyImpl {
         public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
             return map.get(classDesc);
         }
+    }
+
+    public static abstract class ReflectionClassHierarchyResolver implements ClassHierarchyResolver {
+        private final Map<ClassDesc, Optional<ClassHierarchyInfo>> cache = new HashMap<>();
+
+        @Override
+        public ClassHierarchyInfo getClassInfo(ClassDesc cd) {
+            return cache.computeIfAbsent(cd, desc -> {
+                var cl = resolve(desc);
+                if (cl == null) {
+                    return Optional.empty();
+                }
+                var sup = cl.getSuperclass();
+                return Optional.of(new ClassHierarchyInfo(desc, cl.isInterface(),
+                        sup == null ? null : ClassDesc.of(sup.getName())));
+            }).orElse(null);
+        }
+
+        protected abstract Class<?> resolve(ClassDesc cd);
     }
 }

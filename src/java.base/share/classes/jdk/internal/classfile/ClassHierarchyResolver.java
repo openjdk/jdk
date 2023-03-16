@@ -26,6 +26,7 @@ package jdk.internal.classfile;
 
 import java.io.InputStream;
 import java.lang.constant.ClassDesc;
+import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
@@ -111,5 +112,47 @@ public interface ClassHierarchyResolver {
     public static ClassHierarchyResolver of(Collection<ClassDesc> interfaces,
                                             Map<ClassDesc, ClassDesc> classToSuperClass) {
         return new ClassHierarchyImpl.StaticClassHierarchyResolver(interfaces, classToSuperClass);
+    }
+
+    /**
+     * Returns a ClassHierarchyResolver that extracts class hierarchy information via
+     * the Reflection API with a {@linkplain ClassLoader}.
+     *
+     * @param loader the class loader
+     * @return the class hierarchy resolver
+     */
+    static ClassHierarchyResolver of(ClassLoader loader) {
+        return new ClassHierarchyImpl.ReflectionClassHierarchyResolver() {
+            @Override
+            protected Class<?> resolve(ClassDesc cd) {
+                var desc = cd.descriptorString();
+                var binary = desc.substring(0, desc.length() - 1).replace('/', '.');
+                try {
+                    return Class.forName(binary, false, loader);
+                } catch (ClassNotFoundException ex) {
+                    return null;
+                }
+            }
+        };
+    }
+
+    /**
+     * Returns a ClassHierarchyResolver that extracts class hierarchy information via
+     * the Reflection API with a {@linkplain MethodHandles.Lookup Lookup}.
+     *
+     * @param lookup the lookup
+     * @return the class hierarchy resolver
+     */
+    static ClassHierarchyResolver of(MethodHandles.Lookup lookup) {
+        return new ClassHierarchyImpl.ReflectionClassHierarchyResolver() {
+            @Override
+            protected Class<?> resolve(ClassDesc cd) {
+                try {
+                    return (Class<?>) cd.resolveConstantDesc(lookup);
+                } catch (ReflectiveOperationException ex) {
+                    return null;
+                }
+            }
+        };
     }
 }
