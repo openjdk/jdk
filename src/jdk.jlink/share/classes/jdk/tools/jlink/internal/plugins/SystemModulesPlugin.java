@@ -577,9 +577,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         public byte[] getClassWriter(Configuration cf) {
             return Classfile.build(classDesc,
                     clb -> {
-                        clb.withFlags(ACC_FINAL + ACC_SUPER);
-                        clb.withInterfaceSymbols(List.of(CD_SYSTEM_MODULES));
-                        clb.withVersion(52, 0);
+                        clb.withFlags(ACC_FINAL + ACC_SUPER)
+                           .withInterfaceSymbols(List.of(CD_SYSTEM_MODULES))
+                           .withVersion(52, 0);
 
                         // generate <init>
                         genConstructor(clb);
@@ -847,8 +847,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         }
 
                         // new Map$Entry[size]
-                        cob.constantInstruction(map.size());
-                        cob.anewarray(ClassDesc.ofInternalName("java/util/Map$Entry"));
+                        cob.constantInstruction(map.size())
+                           .anewarray(ClassDesc.ofInternalName("java/util/Map$Entry"));
 
                         int index = 0;
                         for (var e : new TreeMap<>(map).entrySet()) {
@@ -872,8 +872,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             cob.invokestatic(CD_Map,
                                              "entry",
                                              desc,
-                                             true);
-                            cob.aastore();
+                                             true)
+                               .aastore();
                             index++;
                         }
 
@@ -882,8 +882,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                          "ofEntries",
                                          MethodTypeDesc.ofDescriptor(
                                                  "([Ljava/util/Map$Entry;)Ljava/util/Map;"),
-                                         true);
-                        cob.areturn();
+                                         true)
+                           .areturn();
                     });
         }
 
@@ -896,32 +896,31 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             // use Set.of(Object[]) when there are more than 2 elements
             // use Set.of(Object) or Set.of(Object, Object) when fewer
             if (size > 2) {
-                cob.constantInstruction(size);
-                cob.anewarray(CD_String);
+                cob.constantInstruction(size)
+                   .anewarray(CD_String);
                 int i = 0;
                 for (String element : sorted(set)) {
-                    cob.stackInstruction(Opcode.DUP);
-                    cob.constantInstruction(i);
-                    cob.constantInstruction(element);
-                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                    cob.dup()
+                       .constantInstruction(i)
+                       .constantInstruction(element)
+                       .aastore();
                     i++;
                 }
-                cob.invokeInstruction(Opcode.INVOKESTATIC,
-                        CD_Set,
-                        "of",
-                        MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/util/Set;"),
-                        true);
+                cob.invokestatic(CD_Set,
+                                 "of",
+                                 MethodTypeDesc.ofDescriptor(
+                                         "([Ljava/lang/Object;)Ljava/util/Set;"),
+                                 true);
             } else {
                 for (String element : sorted(set)) {
                     cob.constantInstruction(element);
                 }
                 var mtdArgs = new ClassDesc[size];
                 Arrays.fill(mtdArgs, CD_Object);
-                cob.invokeInstruction(Opcode.INVOKESTATIC,
-                        CD_Set,
-                        "of",
-                        MethodTypeDesc.of(CD_Set, mtdArgs),
-                        true);
+                cob.invokestatic(CD_Set,
+                                 "of",
+                                 MethodTypeDesc.of(CD_Set, mtdArgs),
+                                 true);
             }
         }
 
@@ -1240,18 +1239,19 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             *
             */
             void provides(Collection<Provides> provides) {
-                cob.loadInstruction(TypeKind.ReferenceType, BUILDER_VAR);
-                cob.constantInstruction(provides.size());
-                cob.anewarray(CD_PROVIDES);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(provides.size())
+                   .anewarray(CD_PROVIDES);
                 int arrayIndex = 0;
                 for (Provides provide : sorted(provides)) {
-                    cob.stackInstruction(Opcode.DUP);    // arrayref
-                    cob.constantInstruction(arrayIndex++);
+                    cob.dup()    // arrayref
+                       .constantInstruction(arrayIndex++);
                     newProvides(provide.service(), provide.providers());
-                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                    cob.aastore();
                 }
-                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MODULE_BUILDER,
-                    "provides", MTD_PROVIDES_ARRAY, false);
+                cob.invokevirtual(CD_MODULE_BUILDER,
+                                  "provides",
+                                  MTD_PROVIDES_ARRAY);
             }
 
             /*
