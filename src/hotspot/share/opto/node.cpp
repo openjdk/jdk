@@ -1097,16 +1097,20 @@ juint Node::max_flags() {
 bool Node::in_reduction_cycle(uint input) const {
   // First find input reduction path to phi node.
   auto has_my_opcode = [&](const Node* n){ return n->Opcode() == this->Opcode(); };
-  const Node* phi = find_in_path(input, LoopMaxUnroll, has_my_opcode,
-                                 [&](const Node* n) { return n->is_Phi(); });
+  const Pair<const Node*, int> path_to_phi =
+    find_in_path(input, LoopMaxUnroll, has_my_opcode,
+                 [&](const Node* n) { return n->is_Phi(); });
+  const Node* phi = path_to_phi.first;
   if (phi == nullptr) {
     return false;
   }
   // If there is an input reduction path from the the phi's loop-back to me,
   // then I am part of a reduction cycle.
   const Node* last = phi->in(LoopNode::LoopBackControl);
-  return this == last->find_in_path(input, LoopMaxUnroll, has_my_opcode,
-                                    [&](const Node* n) { return n == this; });
+  const Pair<const Node*, int> path_from_phi =
+    last->find_in_path(input, LoopMaxUnroll, has_my_opcode,
+                       [&](const Node* n) { return n == this; });
+  return this == path_from_phi.first;
 }
 
 //------------------------------format-----------------------------------------

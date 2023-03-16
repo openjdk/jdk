@@ -469,26 +469,29 @@ void SuperWord::mark_reductions(IdealLoopTree* lpt) {
     }
     // Test that 'last' is the bottom of a reduction cycle. To contain the
     // number of searched paths, assume that all nodes in a reduction cycle are
-    // connected via the same edge index. This assumption is realistic because
-    // non-trivial reduction cycles are typically formed by nodes cloned by loop
-    // unrolling. To further bound the search, constrain the size of reduction
-    // cycles to the loop's unrolled count.
+    // connected via the same edge index (accounting for swapped inputs). This
+    // assumption is realistic because non-trivial reduction cycles are usually
+    // formed by nodes cloned by loop unrolling. To further bound the search,
+    // constrain the size of reduction cycles to the loop's unrolled count.
     int reduction_input = -1;
+    int path_nodes = -1;
     for (uint input = 1; input < last->req(); input++) {
-      // Test whether there is a reduction path of length
-      // 'loop_head->unrolled_count()' from 'last' to the phi node following
-      // edge index 'input' (typically 1 or 2).
-      // FIXME: add parameter to require that the path's length is equal to
-      // 'loop_head->unrolled_count()'.
-      if (last->find_in_path(input, loop_head->unrolled_count(),
-                             [&](const Node* n) {
-                               Node* ctrl = _phase->get_ctrl(n);
-                               return (n->Opcode() == last->Opcode() &&
-                                       ctrl != nullptr &&
-                                       lpt->is_member(_phase->get_loop(ctrl)));
-                             },
-                             [&](const Node* n) {return n == phi;})) {
+      // Test whether there is a reduction path of at most
+      // 'loop_head->unrolled_count()' nodes from 'last' to the phi node
+      // following edge index 'input' (typically 1 or 2).
+      Pair<const Node*, int> path =
+        last->find_in_path(input,
+                           loop_head->unrolled_count(),
+                           [&](const Node* n) {
+                             Node* ctrl = _phase->get_ctrl(n);
+                             return (n->Opcode() == last->Opcode() &&
+                                     ctrl != nullptr &&
+                                     lpt->is_member(_phase->get_loop(ctrl)));
+                           },
+                           [&](const Node* n) {return n == phi;});
+      if (path.first != nullptr) {
         reduction_input = input;
+        path_nodes = path.second;
         break;
       }
     }
@@ -497,9 +500,9 @@ void SuperWord::mark_reductions(IdealLoopTree* lpt) {
     }
     // Mark all nodes in the found path as reductions.
     Node* current = last;
-    for (int i = 0; i < loop_head->unrolled_count(); i++) {
+    for (int i = 0; i < path_nodes; i++) {
       _loop_reductions.set(current->_idx);
-      current = current->in(reduction_input);
+      current = current->original_in(reduction_input);
     }
   }
 }
