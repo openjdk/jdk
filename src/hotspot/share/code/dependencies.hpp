@@ -682,8 +682,6 @@ class DepChange : public StackObj {
   virtual bool is_klass_init_change() const { return false; }
   virtual bool is_call_site_change()  const { return false; }
 
-  virtual void mark_for_deoptimization(nmethod* nm) = 0;
-
   // Subclass casting with assertions.
   KlassDepChange*    as_klass_change() {
     assert(is_klass_change(), "bad cast");
@@ -716,7 +714,7 @@ class DepChange : public StackObj {
 
   // Usage:
   // for (DepChange::ContextStream str(changes); str.next(); ) {
-  //   Klass* k = str.klass();
+  //   InstanceKlass* k = str.klass();
   //   switch (str.change_type()) {
   //     ...
   //   }
@@ -727,8 +725,8 @@ class DepChange : public StackObj {
     friend class DepChange;
 
     // iteration variables:
-    ChangeType  _change_type;
-    Klass*      _klass;
+    ChangeType     _change_type;
+    InstanceKlass* _klass;
     Array<InstanceKlass*>* _ti_base;    // i.e., transitive_interfaces
     int         _ti_index;
     int         _ti_limit;
@@ -749,7 +747,7 @@ class DepChange : public StackObj {
     bool next();
 
     ChangeType change_type()     { return _change_type; }
-    Klass*     klass()           { return _klass; }
+    InstanceKlass* klass()       { return _klass; }
   };
   friend class DepChange::ContextStream;
 };
@@ -779,10 +777,6 @@ class KlassDepChange : public DepChange {
  public:
   // What kind of DepChange is this?
   virtual bool is_klass_change() const { return true; }
-
-  virtual void mark_for_deoptimization(nmethod* nm) {
-    nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
-  }
 
   InstanceKlass* type() { return _type; }
 
@@ -821,10 +815,6 @@ class CallSiteDepChange : public DepChange {
 
   // What kind of DepChange is this?
   virtual bool is_call_site_change() const { return true; }
-
-  virtual void mark_for_deoptimization(nmethod* nm) {
-    nm->mark_for_deoptimization(/*inc_recompile_counts=*/false);
-  }
 
   oop call_site()     const { return _call_site();     }
   oop method_handle() const { return _method_handle(); }

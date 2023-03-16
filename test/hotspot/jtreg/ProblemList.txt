@@ -49,6 +49,7 @@ compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
 compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64,generic-i586
@@ -65,6 +66,8 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
+
+compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
 #############################################################################
 
@@ -119,6 +122,7 @@ serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
+serviceability/sa/UniqueVtableTest.java 8303921 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 

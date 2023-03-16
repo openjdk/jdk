@@ -16,7 +16,7 @@ template<typename IteratorIn, typename IteratorOut,
          hb_requires (hb_is_source_of (IteratorIn, unsigned int)),
          hb_requires (hb_is_sink_of (IteratorOut, unsigned))>
 static void
-_write_loca (IteratorIn it, bool short_offsets, IteratorOut dest)
+_write_loca (IteratorIn&& it, bool short_offsets, IteratorOut&& dest)
 {
   unsigned right_shift = short_offsets ? 1 : 0;
   unsigned int offset = 0;
@@ -25,7 +25,7 @@ _write_loca (IteratorIn it, bool short_offsets, IteratorOut dest)
   | hb_map ([=, &offset] (unsigned int padded_size)
             {
               offset += padded_size;
-              DEBUG_MSG (SUBSET, nullptr, "loca entry offset %d", offset);
+              DEBUG_MSG (SUBSET, nullptr, "loca entry offset %u", offset);
               return offset >> right_shift;
             })
   | hb_sink (dest)
@@ -44,6 +44,20 @@ _add_head_and_set_loca_version (hb_subset_plan_t *plan, bool use_short_loca)
 
   head *head_prime = (head *) hb_blob_get_data_writable (head_prime_blob, nullptr);
   head_prime->indexToLocFormat = use_short_loca ? 0 : 1;
+  if (plan->normalized_coords)
+  {
+    head_prime->xMin = plan->head_maxp_info.xMin;
+    head_prime->xMax = plan->head_maxp_info.xMax;
+    head_prime->yMin = plan->head_maxp_info.yMin;
+    head_prime->yMax = plan->head_maxp_info.yMax;
+
+    unsigned orig_flag = head_prime->flags;
+    if (plan->head_maxp_info.allXMinIsLsb)
+      orig_flag |= 1 << 1;
+    else
+      orig_flag &= ~(1 << 1);
+    head_prime->flags = orig_flag;
+  }
   bool success = plan->add_table (HB_OT_TAG_head, head_prime_blob);
 
   hb_blob_destroy (head_prime_blob);
@@ -61,7 +75,7 @@ _add_loca_and_head (hb_subset_plan_t * plan, Iterator padded_offsets, bool use_s
 
   if (unlikely (!loca_prime_data)) return false;
 
-  DEBUG_MSG (SUBSET, nullptr, "loca entry_size %d num_offsets %d size %d",
+  DEBUG_MSG (SUBSET, nullptr, "loca entry_size %u num_offsets %u size %u",
              entry_size, num_offsets, entry_size * num_offsets);
 
   if (use_short_loca)

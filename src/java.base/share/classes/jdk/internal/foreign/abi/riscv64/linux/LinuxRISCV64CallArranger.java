@@ -302,7 +302,7 @@ public class LinuxRISCV64CallArranger {
                         if (offset + copy < layout.byteSize()) {
                             bindings.dup();
                         }
-                        bindings.bufferLoad(offset, type)
+                        bindings.bufferLoad(offset, type, (int) copy)
                                 .vmStore(storage, type);
                         offset += copy;
                     }
@@ -412,7 +412,7 @@ public class LinuxRISCV64CallArranger {
                         VMStorage storage = locations[locIndex++];
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, false);
                         bindings.dup().vmLoad(storage, type)
-                                .bufferStore(offset, type);
+                                .bufferStore(offset, type, (int) copy);
                         offset += copy;
                     }
                 }

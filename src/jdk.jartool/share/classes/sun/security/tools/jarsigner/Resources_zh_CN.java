@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"provider.class.not.found", "\u672A\u627E\u5230\u63D0\u4F9B\u65B9 \"%s\""},
         {"jarsigner.error.", "jarsigner \u9519\u8BEF: "},
         {"Illegal.option.", "\u975E\u6CD5\u9009\u9879: "},
-        {"This.option.is.forremoval", "\u8BE5\u9009\u9879\u5DF2\u8FC7\u65F6\uFF0C\u5728\u5C06\u6765\u7684\u53D1\u884C\u7248\u4E2D\u5C06\u88AB\u5220\u9664\uFF1A"},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "\u5982\u679C -storetype \u4E3A {0}, \u5219 -keystore \u5FC5\u987B\u4E3A NONE"},
         {".keypass.can.not.be.specified.if.storetype.is.{0}",
@@ -97,10 +96,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "[-tsapolicyid <oid>]        \u65F6\u95F4\u6233\u9881\u53D1\u673A\u6784\u7684 TSAPolicyID"},
         {".tsadigestalg.algorithm.of.digest.data.in.timestamping.request",
                 "[-tsadigestalg <\u7B97\u6CD5>]      \u65F6\u95F4\u6233\u8BF7\u6C42\u4E2D\u7684\u6458\u8981\u6570\u636E\u7684\u7B97\u6CD5"},
-        {".altsigner.class.class.name.of.an.alternative.signing.mechanism",
-                "[-altsigner <class>]        \u66FF\u4EE3\u7B7E\u540D\u673A\u5236\u7684\u7C7B\u540D\n                            \uFF08\u8BE5\u9009\u9879\u5DF2\u8FC7\u65F6\uFF0C\u5728\u5C06\u6765\u7684\u53D1\u884C\u7248\u4E2D\u5C06\u88AB\u5220\u9664\u3002\uFF09"},
-        {".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism",
-                "[-altsignerpath <pathlist>] \u66FF\u4EE3\u7B7E\u540D\u673A\u5236\u7684\u4F4D\u7F6E\n                            \uFF08\u8BE5\u9009\u9879\u5DF2\u8FC7\u65F6\uFF0C\u5728\u5C06\u6765\u7684\u53D1\u884C\u7248\u4E2D\u5C06\u88AB\u5220\u9664\u3002\uFF09"},
         {".internalsf.include.the.SF.file.inside.the.signature.block",
                 "[-internalsf]               \u5728\u7B7E\u540D\u5757\u5185\u5305\u542B .SF \u6587\u4EF6"},
         {".sectionsonly.don.t.compute.hash.of.entire.manifest",
@@ -236,8 +231,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"or", "\u6216"},
         {"Certificate.not.found.for.alias.alias.must.reference.a.valid.KeyStore.entry.containing.an.X.509.public.key.certificate.for.the",
                 "\u627E\u4E0D\u5230{0}\u7684\u8BC1\u4E66\u3002{1}\u5FC5\u987B\u5F15\u7528\u5305\u542B\u65F6\u95F4\u6233\u9881\u53D1\u673A\u6784\u7684 X.509 \u516C\u5171\u5BC6\u94A5\u8BC1\u4E66\u7684\u6709\u6548\u5BC6\u94A5\u5E93\u6761\u76EE\u3002"},
-        {"using.an.alternative.signing.mechanism",
-                "\u6B63\u5728\u4F7F\u7528\u66FF\u4EE3\u7684\u7B7E\u540D\u673A\u5236"},
         {"entry.was.signed.on", "\u6761\u76EE\u7684\u7B7E\u540D\u65E5\u671F\u4E3A {0}"},
         {"Warning.", "\u8B66\u544A: "},
         {"Error.", "\u9519\u8BEF: "},

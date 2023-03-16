@@ -2009,6 +2009,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (serverAuthKey != null) {
                 AuthenticationInfo.endAuthRequest(serverAuthKey);
             }
+            if (proxyAuthentication != null) {
+                proxyAuthentication.disposeContext();
+            }
+            if (serverAuthentication != null) {
+                serverAuthentication.disposeContext();
+            }
         }
     }
 
@@ -2251,6 +2257,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         } finally  {
             if (proxyAuthKey != null) {
                 AuthenticationInfo.endAuthRequest(proxyAuthKey);
+            }
+            if (proxyAuthentication != null) {
+                proxyAuthentication.disposeContext();
             }
         }
 
@@ -2502,6 +2511,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
             if (ret != null) {
                 if (!ret.setHeaders(this, p, raw)) {
+                    ret.disposeContext();
                     ret = null;
                 }
             }
@@ -2674,6 +2684,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             if (ret != null ) {
                 if (!ret.setHeaders(this, p, raw)) {
+                    ret.disposeContext();
                     ret = null;
                 }
             }
@@ -2700,6 +2711,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     DigestAuthentication da = (DigestAuthentication)
                         currentProxyCredentials;
                     da.checkResponse (raw, method, getRequestURI());
+                    currentProxyCredentials.disposeContext();
                     currentProxyCredentials = null;
                 }
             }
@@ -2710,6 +2722,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     DigestAuthentication da = (DigestAuthentication)
                         currentServerCredentials;
                     da.checkResponse (raw, method, url);
+                    currentServerCredentials.disposeContext();
                     currentServerCredentials = null;
                 }
             }
