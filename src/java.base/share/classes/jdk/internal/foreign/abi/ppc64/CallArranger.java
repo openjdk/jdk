@@ -40,7 +40,7 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.ppc64.linux.ABIv2CallArranger;
+import jdk.internal.foreign.abi.ppc64.ABIv2CallArranger;
 import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.SegmentScope;
