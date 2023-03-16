@@ -3841,9 +3841,10 @@ encode %{
         __ fast_lock(oop, disp_hdr, tmp, rscratch1, slow);
 
         // Indicate success on completion.
-        __ cmp(oop, oop);
+        __ cmp(oop, oop); // Force ZF=1 to indicate success.
         __ b(count);
         __ bind(slow);
+        __ tst(oop, oop); // Force ZF=0 to indicate failure and take slow-path. We know that oop != null.
         __ b(no_count);
       } else {
         // Set tmp to be (markWord of object | UNLOCK_VALUE).
