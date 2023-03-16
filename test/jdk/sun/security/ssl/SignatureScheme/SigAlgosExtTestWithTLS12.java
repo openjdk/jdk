@@ -61,115 +61,7 @@ public class SigAlgosExtTestWithTLS12 extends SSLEngineTemplate {
     private static final boolean EXPECT_FAIL
             = Boolean.getBoolean("test.expectFail");
 
-    private static final String[] CA_CERTS = new String[] {
-            // SHA256withECDSA, curve secp256r1
-            // Validity
-            //     Not Before: May 22 07:18:16 2018 GMT
-            //     Not After : May 17 07:18:16 2038 GMT
-            // Subject Key Identifier:
-            //     60:CF:BD:73:FF:FA:1A:30:D2:A4:EC:D3:49:71:46:EF:1A:35:A0:86
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIIBvjCCAWOgAwIBAgIJAIvFG6GbTroCMAoGCCqGSM49BAMCMDsxCzAJBgNVBAYT\n" +
-            "AlVTMQ0wCwYDVQQKDARKYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3QgU2VyaXZj\n" +
-            "ZTAeFw0xODA1MjIwNzE4MTZaFw0zODA1MTcwNzE4MTZaMDsxCzAJBgNVBAYTAlVT\n" +
-            "MQ0wCwYDVQQKDARKYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3QgU2VyaXZjZTBZ\n" +
-            "MBMGByqGSM49AgEGCCqGSM49AwEHA0IABBz1WeVb6gM2mh85z3QlvaB/l11b5h0v\n" +
-            "LIzmkC3DKlVukZT+ltH2Eq1oEkpXuf7QmbM0ibrUgtjsWH3mULfmcWmjUDBOMB0G\n" +
-            "A1UdDgQWBBRgz71z//oaMNKk7NNJcUbvGjWghjAfBgNVHSMEGDAWgBRgz71z//oa\n" +
-            "MNKk7NNJcUbvGjWghjAMBgNVHRMEBTADAQH/MAoGCCqGSM49BAMCA0kAMEYCIQCG\n" +
-            "6wluh1r2/T6L31mZXRKf9JxeSf9pIzoLj+8xQeUChQIhAJ09wAi1kV8yePLh2FD9\n" +
-            "2YEHlSQUAbwwqCDEVB5KxaqP\n" +
-            "-----END CERTIFICATE-----",
-
-            // SHA384withECDSA, curve secp384r1
-            // Validity
-            //     Not Before: Jun 24 08:15:06 2019 GMT
-            //     Not After : Jun 19 08:15:06 2039 GMT
-            // Subject Key Identifier:
-            //     0a:93:a9:a0:bf:e7:d5:48:9d:4f:89:15:c6:51:98:80:05:51:4e:4e
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIICCDCCAY6gAwIBAgIUCpOpoL/n1UidT4kVxlGYgAVRTk4wCgYIKoZIzj0EAwMw\n" +
-            "OzELMAkGA1UEBhMCVVMxDTALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0Ug\n" +
-            "VGVzdCBTZXJpdmNlMB4XDTE5MDYyNDA4MTUwNloXDTM5MDYxOTA4MTUwNlowOzEL\n" +
-            "MAkGA1UEBhMCVVMxDTALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0UgVGVz\n" +
-            "dCBTZXJpdmNlMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAENVQN1wXWFdgC6u/dDdiC\n" +
-            "y+WtMTF66oL/0BSm+1ZqsogamzCryawOcHgiuXgWzx5CQ3LuOC+tDFyXpGfHuCvb\n" +
-            "dkzxPrP5n9NrR8/uRPe5l1KOUbchviU8z9cTP+LZxnZDo1MwUTAdBgNVHQ4EFgQU\n" +
-            "SktSFArR1p/5mXV0kyo0RxIVa/UwHwYDVR0jBBgwFoAUSktSFArR1p/5mXV0kyo0\n" +
-            "RxIVa/UwDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAwNoADBlAjBZvoNmq3/v\n" +
-            "RD2gBTyvxjS9h0rsMRLHDnvul/KWngytwGPTOBo0Y8ixQXSjdKoc3rkCMQDkiNgx\n" +
-            "IDxuHedmrLQKIPnVcthTmwv7//jHiqGoKofwChMo2a1P+DQdhszmeHD/ARQ=\n" +
-            "-----END CERTIFICATE-----"
-    };
-
-    private static final String[] EE_CERTS = new String[] {
-            // SHA256withECDSA, curve secp256r1
-            // Validity
-            //     Not Before: May 22 07:18:16 2018 GMT
-            //     Not After : May 17 07:18:16 2038 GMT
-            // Authority Key Identifier:
-            //     60:CF:BD:73:FF:FA:1A:30:D2:A4:EC:D3:49:71:46:EF:1A:35:A0:86
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIIBqjCCAVCgAwIBAgIJAPLY8qZjgNRAMAoGCCqGSM49BAMCMDsxCzAJBgNVBAYT\n" +
-            "AlVTMQ0wCwYDVQQKDARKYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3QgU2VyaXZj\n" +
-            "ZTAeFw0xODA1MjIwNzE4MTZaFw0zODA1MTcwNzE4MTZaMFUxCzAJBgNVBAYTAlVT\n" +
-            "MQ0wCwYDVQQKDARKYXZhMR0wGwYDVQQLDBRTdW5KU1NFIFRlc3QgU2VyaXZjZTEY\n" +
-            "MBYGA1UEAwwPUmVncmVzc2lvbiBUZXN0MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcD\n" +
-            "QgAEb+9n05qfXnfHUb0xtQJNS4JeSi6IjOfW5NqchvKnfJey9VkJzR7QHLuOESdf\n" +
-            "xlR7q8YIWgih3iWLGfB+wxHiOqMjMCEwHwYDVR0jBBgwFoAUYM+9c//6GjDSpOzT\n" +
-            "SXFG7xo1oIYwCgYIKoZIzj0EAwIDSAAwRQIgWpRegWXMheiD3qFdd8kMdrkLxRbq\n" +
-            "1zj8nQMEwFTUjjQCIQDRIrAjZX+YXHN9b0SoWWLPUq0HmiFIi8RwMnO//wJIGQ==\n" +
-            "-----END CERTIFICATE-----",
-
-            // SHA384withECDSA, curve secp384r1
-            // Validity
-            //     Not Before: Jun 24 08:15:06 2019 GMT
-            //     Not After : Jun 19 08:15:06 2039 GMT
-            // Authority Key Identifier:
-            //     40:2D:AA:EE:66:AA:33:27:AD:9B:5D:52:9B:60:67:6A:2B:AD:52:D2
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIICEjCCAZegAwIBAgIUS3F0AqAXWRg07CnbknJzxofyBQMwCgYIKoZIzj0EAwMw\n" +
-            "OzELMAkGA1UEBhMCVVMxDTALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0Ug\n" +
-            "VGVzdCBTZXJpdmNlMB4XDTE5MDYyNDA4MTUwNloXDTM5MDYxOTA4MTUwNlowVTEL\n" +
-            "MAkGA1UEBhMCVVMxDTALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0UgVGVz\n" +
-            "dCBTZXJpdmNlMRgwFgYDVQQDDA9SZWdyZXNzaW9uIFRlc3QwdjAQBgcqhkjOPQIB\n" +
-            "BgUrgQQAIgNiAARqElz8b6T07eyKomIinhztV3/3XBk9bKGtJ0W+JOltjuhMmP/w\n" +
-            "G8ASSevpgqgpi6EzpBZaaJxE3zNfkNnxXOZmQi2Ypd1uK0zRdbEOKg0XOcTTZwEj\n" +
-            "iLjYmt3O0pwpklijQjBAMB0GA1UdDgQWBBRALaruZqozJ62bXVKbYGdqK61S0jAf\n" +
-            "BgNVHSMEGDAWgBRKS1IUCtHWn/mZdXSTKjRHEhVr9TAKBggqhkjOPQQDAwNpADBm\n" +
-            "AjEArVDFKf48xijN6huVUJzKCOP0zlWB5Js+DItIkZmLQuhciPLhLIB/rChf3Y4C\n" +
-            "xuP4AjEAmfLhQRI0O3pifpYzYSVh2G7/jHNG4eO+2dvgAcU+Lh2IIj/cpLaPFSvL\n" +
-            "J8FXY9Nj\n" +
-            "-----END CERTIFICATE-----"
-    };
-
-    private static final String[] EE_KEYS = new String[] {
-            "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgn5K03bpTLjEtFQRa\n" +
-            "JUtx22gtmGEvvSUSQdimhGthdtihRANCAARv72fTmp9ed8dRvTG1Ak1Lgl5KLoiM\n" +
-            "59bk2pyG8qd8l7L1WQnNHtAcu44RJ1/GVHurxghaCKHeJYsZ8H7DEeI6",
-            "MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDASuI9EtK29APXPipkc\n" +
-            "qDA+qwlewMjv/OcjUJ77kP1Vz62oVF9iY9SRIyFIUju8wt+hZANiAARqElz8b6T0\n" +
-            "7eyKomIinhztV3/3XBk9bKGtJ0W+JOltjuhMmP/wG8ASSevpgqgpi6EzpBZaaJxE\n" +
-            "3zNfkNnxXOZmQi2Ypd1uK0zRdbEOKg0XOcTTZwEjiLjYmt3O0pwpklg="
-    };
-
-    private static final String[] EE_ALGS = new String[] {
-            "EC",
-            "EC"
-    };
-
-    private static final String[] EE_ALIASES = new String[] {
-            "EC-SHA256",
-            "EC-SHA384"
-    };
-
-    private static final Map<Integer, String> SIG_SCHEMES_MAP = Map.of(
-            0x0403, "ecdsa_secp256r1_sha256",
-            0x0503, "ecdsa_secp384r1_sha384");
-
-    private static final int TLS_HS_CLI_HELLO = 1;
     private static final int TLS_HS_CERT_REQ = 13;
-    private static final int HELLO_EXT_SIG_ALGS = 13;
 
     public SigAlgosExtTestWithTLS12() throws Exception {
         super();
@@ -178,36 +70,31 @@ public class SigAlgosExtTestWithTLS12 extends SSLEngineTemplate {
     /*
      * Create an instance of KeyManager for client use.
      */
-    public KeyManager createClientKeyManager() throws Exception {
-        return SSLContextTemplate.createKeyManager(
-                EE_CERTS,
-                EE_KEYS,
-                EE_ALGS,
-                EE_ALIASES,
-                getServerContextParameters());
+    @Override
+    protected KeyManager createClientKeyManager() throws Exception {
+        return createKeyManager(
+                new Cert[]{Cert.EE_ECDSA_SECP256R1, Cert.EE_ECDSA_SECP384R1},
+                getClientContextParameters());
     }
 
     @Override
     public TrustManager createClientTrustManager() throws Exception {
-        return SSLContextTemplate.createTrustManager(
-                CA_CERTS,
+        return createTrustManager(
+                new Cert[]{Cert.CA_ECDSA_SECP256R1, Cert.CA_ECDSA_SECP384R1},
                 getServerContextParameters());
     }
 
     @Override
     public KeyManager createServerKeyManager() throws Exception {
-        return SSLContextTemplate.createKeyManager(
-                EE_CERTS,
-                EE_KEYS,
-                EE_ALGS,
-                EE_ALIASES,
+        return createKeyManager(
+                new Cert[]{Cert.EE_ECDSA_SECP256R1, Cert.EE_ECDSA_SECP384R1},
                 getServerContextParameters());
     }
 
     @Override
     public TrustManager createServerTrustManager() throws Exception {
-        return SSLContextTemplate.createTrustManager(
-                CA_CERTS,
+        return createTrustManager(
+                new Cert[]{Cert.CA_ECDSA_SECP256R1, Cert.CA_ECDSA_SECP384R1},
                 getServerContextParameters());
     }
 

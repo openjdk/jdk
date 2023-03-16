@@ -7,6 +7,7 @@
 #include "../../hb-ot-hmtx-table.hh"
 #include "../../hb-ot-var-gvar-table.hh"
 #include "../../hb-draw.hh"
+#include "../../hb-paint.hh"
 
 #include "glyf-helpers.hh"
 #include "Glyph.hh"
@@ -23,7 +24,6 @@ namespace OT {
  * https://docs.microsoft.com/en-us/typography/opentype/spec/glyf
  */
 #define HB_OT_TAG_glyf HB_TAG('g','l','y','f')
-
 
 struct glyf
 {
@@ -46,8 +46,11 @@ struct glyf
                   const hb_subset_plan_t *plan)
   {
     TRACE_SERIALIZE (this);
+
     unsigned init_len = c->length ();
-    for (const auto &_ : it) _.serialize (c, use_short_loca, plan);
+    for (auto &_ : it)
+      if (unlikely (!_.serialize (c, use_short_loca, plan)))
+        return false;
 
     /* As a special case when all glyph in the font are empty, add a zero byte
      * to the table, so that OTS doesn’t reject it, and to make the table work
@@ -72,36 +75,67 @@ struct glyf
     glyf *glyf_prime = c->serializer->start_embed <glyf> ();
     if (unlikely (!c->serializer->check_success (glyf_prime))) return_trace (false);
 
-    hb_vector_t<glyf_impl::SubsetGlyph> glyphs;
-    _populate_subset_glyphs (c->plan, &glyphs);
-
-    auto padded_offsets =
-    + hb_iter (glyphs)
-    | hb_map (&glyf_impl::SubsetGlyph::padded_size)
-    ;
-
-    unsigned max_offset = + padded_offsets | hb_reduce (hb_add, 0);
-    bool use_short_loca = max_offset < 0x1FFFF;
-
-
-    glyf_prime->serialize (c->serializer, hb_iter (glyphs), use_short_loca, c->plan);
-    if (!use_short_loca) {
-      padded_offsets =
-          + hb_iter (glyphs)
-          | hb_map (&glyf_impl::SubsetGlyph::length)
-          ;
+    hb_font_t *font = nullptr;
+    if (c->plan->normalized_coords)
+    {
+      font = _create_font_for_instancing (c->plan);
+      if (unlikely (!font)) return false;
     }
 
+    hb_vector_t<unsigned> padded_offsets;
+    unsigned num_glyphs = c->plan->num_output_glyphs ();
+    if (unlikely (!padded_offsets.resize (num_glyphs)))
+      return false;
+
+    hb_vector_t<glyf_impl::SubsetGlyph> glyphs;
+    if (!_populate_subset_glyphs (c->plan, font, glyphs))
+      return false;
+
+    if (font)
+      hb_font_destroy (font);
+
+    unsigned max_offset = 0;
+    for (unsigned i = 0; i < num_glyphs; i++)
+    {
+      padded_offsets[i] = glyphs[i].padded_size ();
+      max_offset += padded_offsets[i];
+    }
+
+    bool use_short_loca = false;
+    if (likely (!c->plan->force_long_loca))
+      use_short_loca = max_offset < 0x1FFFF;
+
+    if (!use_short_loca) {
+      for (unsigned i = 0; i < num_glyphs; i++)
+        padded_offsets[i] = glyphs[i].length ();
+    }
+
+    bool result = glyf_prime->serialize (c->serializer, glyphs.writer (), use_short_loca, c->plan);
+    if (c->plan->normalized_coords && !c->plan->pinned_at_default)
+      _free_compiled_subset_glyphs (glyphs, glyphs.length - 1);
+
+    if (!result) return false;
 
     if (unlikely (c->serializer->in_error ())) return_trace (false);
+
     return_trace (c->serializer->check_success (glyf_impl::_add_loca_and_head (c->plan,
-                                                                               padded_offsets,
+                                                                               padded_offsets.iter (),
                                                                                use_short_loca)));
   }
 
-  void
+  bool
   _populate_subset_glyphs (const hb_subset_plan_t   *plan,
-                           hb_vector_t<glyf_impl::SubsetGlyph> *glyphs /* OUT */) const;
+                           hb_font_t                *font,
+                           hb_vector_t<glyf_impl::SubsetGlyph> &glyphs /* OUT */) const;
+
+  hb_font_t *
+  _create_font_for_instancing (const hb_subset_plan_t *plan) const;
+
+  void _free_compiled_subset_glyphs (hb_vector_t<glyf_impl::SubsetGlyph> &glyphs, unsigned index) const
+  {
+    for (unsigned i = 0; i <= index && i < glyphs.length; i++)
+      glyphs[i].free_compiled_bytes ();
+  }
 
   protected:
   UnsizedArrayOf<HBUINT8>
@@ -166,7 +200,7 @@ struct glyf_accelerator_t
     contour_point_vector_t all_points;
 
     bool phantom_only = !consumer.is_consuming_contour_points ();
-    if (unlikely (!glyph_for_gid (gid).get_points (font, *this, all_points, phantom_only)))
+    if (unlikely (!glyph_for_gid (gid).get_points (font, *this, all_points, nullptr, nullptr, nullptr, true, true, phantom_only)))
       return false;
 
     if (consumer.is_consuming_contour_points ())
@@ -194,6 +228,7 @@ struct glyf_accelerator_t
     hb_font_t *font;
     hb_glyph_extents_t *extents;
     contour_point_t *phantoms;
+    bool scaled;
 
     struct contour_bounds_t
     {
@@ -209,7 +244,7 @@ struct glyf_accelerator_t
 
       bool empty () const { return (min_x >= max_x) || (min_y >= max_y); }
 
-      void get_extents (hb_font_t *font, hb_glyph_extents_t *extents)
+      void get_extents (hb_font_t *font, hb_glyph_extents_t *extents, bool scaled)
       {
         if (unlikely (empty ()))
         {
@@ -219,26 +254,32 @@ struct glyf_accelerator_t
           extents->y_bearing = 0;
           return;
         }
-        extents->x_bearing = font->em_scalef_x (min_x);
-        extents->width = font->em_scalef_x (max_x) - extents->x_bearing;
-        extents->y_bearing = font->em_scalef_y (max_y);
-        extents->height = font->em_scalef_y (min_y) - extents->y_bearing;
+        {
+          extents->x_bearing = roundf (min_x);
+          extents->width = roundf (max_x - extents->x_bearing);
+          extents->y_bearing = roundf (max_y);
+          extents->height = roundf (min_y - extents->y_bearing);
+
+          if (scaled)
+            font->scale_glyph_extents (extents);
+        }
       }
 
       protected:
       float min_x, min_y, max_x, max_y;
     } bounds;
 
-    points_aggregator_t (hb_font_t *font_, hb_glyph_extents_t *extents_, contour_point_t *phantoms_)
+    points_aggregator_t (hb_font_t *font_, hb_glyph_extents_t *extents_, contour_point_t *phantoms_, bool scaled_)
     {
       font = font_;
       extents = extents_;
       phantoms = phantoms_;
+      scaled = scaled_;
       if (extents) bounds = contour_bounds_t ();
     }
 
     void consume_point (const contour_point_t &point) { bounds.add (point); }
-    void points_end () { bounds.get_extents (font, extents); }
+    void points_end () { bounds.get_extents (font, extents, scaled); }
 
     bool is_consuming_contour_points () { return extents; }
     contour_point_t *get_phantoms_sink () { return phantoms; }
@@ -246,22 +287,22 @@ struct glyf_accelerator_t
 
   public:
   unsigned
-  get_advance_var (hb_font_t *font, hb_codepoint_t gid, bool is_vertical) const
+  get_advance_with_var_unscaled (hb_font_t *font, hb_codepoint_t gid, bool is_vertical) const
   {
     if (unlikely (gid >= num_glyphs)) return 0;
 
     bool success = false;
 
     contour_point_t phantoms[glyf_impl::PHANTOM_COUNT];
-    if (likely (font->num_coords == gvar->get_axis_count ()))
-      success = get_points (font, gid, points_aggregator_t (font, nullptr, phantoms));
+    if (font->num_coords)
+      success = get_points (font, gid, points_aggregator_t (font, nullptr, phantoms, false));
 
     if (unlikely (!success))
       return
 #ifndef HB_NO_VERTICAL
-        is_vertical ? vmtx->get_advance (gid) :
+        is_vertical ? vmtx->get_advance_without_var_unscaled (gid) :
 #endif
-        hmtx->get_advance (gid);
+        hmtx->get_advance_without_var_unscaled (gid);
 
     float result = is_vertical
                  ? phantoms[glyf_impl::PHANTOM_TOP].y - phantoms[glyf_impl::PHANTOM_BOTTOM].y
@@ -269,23 +310,20 @@ struct glyf_accelerator_t
     return hb_clamp (roundf (result), 0.f, (float) UINT_MAX / 2);
   }
 
-  int get_side_bearing_var (hb_font_t *font, hb_codepoint_t gid, bool is_vertical) const
+  bool get_leading_bearing_with_var_unscaled (hb_font_t *font, hb_codepoint_t gid, bool is_vertical, int *lsb) const
   {
-    if (unlikely (gid >= num_glyphs)) return 0;
+    if (unlikely (gid >= num_glyphs)) return false;
 
     hb_glyph_extents_t extents;
 
     contour_point_t phantoms[glyf_impl::PHANTOM_COUNT];
-    if (unlikely (!get_points (font, gid, points_aggregator_t (font, &extents, phantoms))))
-      return
-#ifndef HB_NO_VERTICAL
-        is_vertical ? vmtx->get_side_bearing (gid) :
-#endif
-        hmtx->get_side_bearing (gid);
+    if (unlikely (!get_points (font, gid, points_aggregator_t (font, &extents, phantoms, false))))
+      return false;
 
-    return is_vertical
-         ? ceilf (phantoms[glyf_impl::PHANTOM_TOP].y) - extents.y_bearing
-         : floorf (phantoms[glyf_impl::PHANTOM_LEFT].x);
+    *lsb = is_vertical
+         ? roundf (phantoms[glyf_impl::PHANTOM_TOP].y) - extents.y_bearing
+         : roundf (phantoms[glyf_impl::PHANTOM_LEFT].x);
+    return true;
   }
 #endif
 
@@ -296,9 +334,18 @@ struct glyf_accelerator_t
 
 #ifndef HB_NO_VAR
     if (font->num_coords)
-      return get_points (font, gid, points_aggregator_t (font, extents, nullptr));
+      return get_points (font, gid, points_aggregator_t (font, extents, nullptr, true));
 #endif
-    return glyph_for_gid (gid).get_extents (font, *this, extents);
+    return glyph_for_gid (gid).get_extents_without_var_scaled (font, *this, extents);
+  }
+
+  bool paint_glyph (hb_font_t *font, hb_codepoint_t gid, hb_paint_funcs_t *funcs, void *data, hb_color_t foreground) const
+  {
+    funcs->push_clip_glyph (data, gid, font);
+    funcs->color (data, true, foreground);
+    funcs->pop_clip (data);
+
+    return true;
   }
 
   const glyf_impl::Glyph
@@ -349,37 +396,76 @@ struct glyf_accelerator_t
 };
 
 
-inline void
+inline bool
 glyf::_populate_subset_glyphs (const hb_subset_plan_t   *plan,
-                               hb_vector_t<glyf_impl::SubsetGlyph> *glyphs /* OUT */) const
+                               hb_font_t *font,
+                               hb_vector_t<glyf_impl::SubsetGlyph>& glyphs /* OUT */) const
 {
   OT::glyf_accelerator_t glyf (plan->source);
+  unsigned num_glyphs = plan->num_output_glyphs ();
+  if (!glyphs.resize (num_glyphs)) return false;
 
-  + hb_range (plan->num_output_glyphs ())
-  | hb_map ([&] (hb_codepoint_t new_gid)
-        {
-          glyf_impl::SubsetGlyph subset_glyph = {0};
-          subset_glyph.new_gid = new_gid;
+  unsigned idx = 0;
+  for (auto p : plan->glyph_map->iter ())
+  {
+    unsigned new_gid = p.second;
+    glyf_impl::SubsetGlyph& subset_glyph = glyphs.arrayZ[new_gid];
+    subset_glyph.old_gid = p.first;
 
-          /* should never fail: all old gids should be mapped */
-          if (!plan->old_gid_for_new_gid (new_gid, &subset_glyph.old_gid))
-            return subset_glyph;
+    if (unlikely (new_gid == 0 &&
+                  !(plan->flags & HB_SUBSET_FLAGS_NOTDEF_OUTLINE)) &&
+                  !plan->normalized_coords)
+      subset_glyph.source_glyph = glyf_impl::Glyph ();
+    else
+    {
+      /* If plan has an accelerator, the preprocessing step already trimmed glyphs.
+       * Don't trim them again! */
+      subset_glyph.source_glyph = glyf.glyph_for_gid (subset_glyph.old_gid, !plan->accelerator);
+    }
 
-          if (new_gid == 0 &&
-              !(plan->flags & HB_SUBSET_FLAGS_NOTDEF_OUTLINE))
-            subset_glyph.source_glyph = glyf_impl::Glyph ();
-          else
-            subset_glyph.source_glyph = glyf.glyph_for_gid (subset_glyph.old_gid, true);
-          if (plan->flags & HB_SUBSET_FLAGS_NO_HINTING)
-            subset_glyph.drop_hints_bytes ();
-          else
-            subset_glyph.dest_start = subset_glyph.source_glyph.get_bytes ();
-          return subset_glyph;
-        })
-  | hb_sink (glyphs)
-  ;
+    if (plan->flags & HB_SUBSET_FLAGS_NO_HINTING)
+      subset_glyph.drop_hints_bytes ();
+    else
+      subset_glyph.dest_start = subset_glyph.source_glyph.get_bytes ();
+
+    if (font)
+    {
+      if (unlikely (!subset_glyph.compile_bytes_with_deltas (plan, font, glyf)))
+      {
+        // when pinned at default, only bounds are updated, thus no need to free
+        if (!plan->pinned_at_default && idx > 0)
+          _free_compiled_subset_glyphs (glyphs, idx - 1);
+        return false;
+      }
+      idx++;
+    }
+  }
+  return true;
 }
 
+inline hb_font_t *
+glyf::_create_font_for_instancing (const hb_subset_plan_t *plan) const
+{
+  hb_font_t *font = hb_font_create (plan->source);
+  if (unlikely (font == hb_font_get_empty ())) return nullptr;
+
+  hb_vector_t<hb_variation_t> vars;
+  if (unlikely (!vars.alloc (plan->user_axes_location.get_population (), true)))
+    return nullptr;
+
+  for (auto _ : plan->user_axes_location)
+  {
+    hb_variation_t var;
+    var.tag = _.first;
+    var.value = _.second;
+    vars.push (var);
+  }
+
+#ifndef HB_NO_VAR
+  hb_font_set_variations (font, vars.arrayZ, plan->user_axes_location.get_population ());
+#endif
+  return font;
+}
 
 
 } /* namespace OT */

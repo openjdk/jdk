@@ -732,7 +732,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       ciField* field = nullptr;
       if (iklass != nullptr) {
         field = iklass->nonstatic_field_at(j);
-        offset = field->offset();
+        offset = field->offset_in_bytes();
         ciType* elem_type = field->type();
         basic_elem_type = field->layout_type();
 

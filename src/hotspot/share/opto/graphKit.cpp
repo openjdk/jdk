@@ -3520,7 +3520,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
       ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
       for (int i = 0, len = ik->nof_nonstatic_fields(); i < len; i++) {
         ciField* field = ik->nonstatic_field_at(i);
-        if (field->offset() >= TrackedInitializationLimit * HeapWordSize)
+        if (field->offset_in_bytes() >= TrackedInitializationLimit * HeapWordSize)
           continue;  // do not bother to track really large numbers of fields
         // Find (or create) the alias category for this field:
         int fieldidx = C->alias_type(field)->index();

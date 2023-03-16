@@ -748,53 +748,55 @@
     __ fmin(v23, __ T2S, v24, v25);                    //       fmin    v23.2S, v24.2S, v25.2S
     __ fmin(v25, __ T4S, v26, v27);                    //       fmin    v25.4S, v26.4S, v27.4S
     __ fmin(v15, __ T2D, v16, v17);                    //       fmin    v15.2D, v16.2D, v17.2D
-    __ cmeq(v29, __ T8B, v30, v31);                    //       cmeq    v29.8B, v30.8B, v31.8B
-    __ cmeq(v3, __ T16B, v4, v5);                      //       cmeq    v3.16B, v4.16B, v5.16B
-    __ cmeq(v10, __ T4H, v11, v12);                    //       cmeq    v10.4H, v11.4H, v12.4H
-    __ cmeq(v22, __ T8H, v23, v24);                    //       cmeq    v22.8H, v23.8H, v24.8H
-    __ cmeq(v10, __ T2S, v11, v12);                    //       cmeq    v10.2S, v11.2S, v12.2S
-    __ cmeq(v4, __ T4S, v5, v6);                       //       cmeq    v4.4S, v5.4S, v6.4S
-    __ cmeq(v17, __ T2D, v18, v19);                    //       cmeq    v17.2D, v18.2D, v19.2D
-    __ fcmeq(v1, __ T2S, v2, v3);                      //       fcmeq   v1.2S, v2.2S, v3.2S
-    __ fcmeq(v11, __ T4S, v12, v13);                   //       fcmeq   v11.4S, v12.4S, v13.4S
-    __ fcmeq(v7, __ T2D, v8, v9);                      //       fcmeq   v7.2D, v8.2D, v9.2D
-    __ cmgt(v10, __ T8B, v11, v12);                    //       cmgt    v10.8B, v11.8B, v12.8B
-    __ cmgt(v15, __ T16B, v16, v17);                   //       cmgt    v15.16B, v16.16B, v17.16B
-    __ cmgt(v16, __ T4H, v17, v18);                    //       cmgt    v16.4H, v17.4H, v18.4H
-    __ cmgt(v2, __ T8H, v3, v4);                       //       cmgt    v2.8H, v3.8H, v4.8H
-    __ cmgt(v9, __ T2S, v10, v11);                     //       cmgt    v9.2S, v10.2S, v11.2S
-    __ cmgt(v11, __ T4S, v12, v13);                    //       cmgt    v11.4S, v12.4S, v13.4S
-    __ cmgt(v12, __ T2D, v13, v14);                    //       cmgt    v12.2D, v13.2D, v14.2D
-    __ cmhi(v14, __ T8B, v15, v16);                    //       cmhi    v14.8B, v15.8B, v16.8B
-    __ cmhi(v13, __ T16B, v14, v15);                   //       cmhi    v13.16B, v14.16B, v15.16B
-    __ cmhi(v2, __ T4H, v3, v4);                       //       cmhi    v2.4H, v3.4H, v4.4H
-    __ cmhi(v6, __ T8H, v7, v8);                       //       cmhi    v6.8H, v7.8H, v8.8H
-    __ cmhi(v19, __ T2S, v20, v21);                    //       cmhi    v19.2S, v20.2S, v21.2S
-    __ cmhi(v25, __ T4S, v26, v27);                    //       cmhi    v25.4S, v26.4S, v27.4S
-    __ cmhi(v15, __ T2D, v16, v17);                    //       cmhi    v15.2D, v16.2D, v17.2D
-    __ cmhs(v4, __ T8B, v5, v6);                       //       cmhs    v4.8B, v5.8B, v6.8B
-    __ cmhs(v2, __ T16B, v3, v4);                      //       cmhs    v2.16B, v3.16B, v4.16B
-    __ cmhs(v4, __ T4H, v5, v6);                       //       cmhs    v4.4H, v5.4H, v6.4H
-    __ cmhs(v11, __ T8H, v12, v13);                    //       cmhs    v11.8H, v12.8H, v13.8H
-    __ cmhs(v17, __ T2S, v18, v19);                    //       cmhs    v17.2S, v18.2S, v19.2S
-    __ cmhs(v20, __ T4S, v21, v22);                    //       cmhs    v20.4S, v21.4S, v22.4S
-    __ cmhs(v16, __ T2D, v17, v18);                    //       cmhs    v16.2D, v17.2D, v18.2D
-    __ fcmgt(v17, __ T2S, v18, v19);                   //       fcmgt   v17.2S, v18.2S, v19.2S
-    __ fcmgt(v10, __ T4S, v11, v12);                   //       fcmgt   v10.4S, v11.4S, v12.4S
-    __ fcmgt(v20, __ T2D, v21, v22);                   //       fcmgt   v20.2D, v21.2D, v22.2D
-    __ cmge(v22, __ T8B, v23, v24);                    //       cmge    v22.8B, v23.8B, v24.8B
-    __ cmge(v12, __ T16B, v13, v14);                   //       cmge    v12.16B, v13.16B, v14.16B
-    __ cmge(v25, __ T4H, v26, v27);                    //       cmge    v25.4H, v26.4H, v27.4H
-    __ cmge(v23, __ T8H, v24, v25);                    //       cmge    v23.8H, v24.8H, v25.8H
-    __ cmge(v28, __ T2S, v29, v30);                    //       cmge    v28.2S, v29.2S, v30.2S
-    __ cmge(v14, __ T4S, v15, v16);                    //       cmge    v14.4S, v15.4S, v16.4S
-    __ cmge(v10, __ T2D, v11, v12);                    //       cmge    v10.2D, v11.2D, v12.2D
-    __ fcmge(v24, __ T2S, v25, v26);                   //       fcmge   v24.2S, v25.2S, v26.2S
-    __ fcmge(v1, __ T4S, v2, v3);                      //       fcmge   v1.4S, v2.4S, v3.4S
-    __ fcmge(v11, __ T2D, v12, v13);                   //       fcmge   v11.2D, v12.2D, v13.2D
-    __ facgt(v30, __ T2S, v31, v0);                    //       facgt   v30.2S, v31.2S, v0.2S
-    __ facgt(v10, __ T4S, v11, v12);                   //       facgt   v10.4S, v11.4S, v12.4S
-    __ facgt(v15, __ T2D, v16, v17);                   //       facgt   v15.2D, v16.2D, v17.2D
+    __ facgt(v29, __ T2S, v30, v31);                   //       facgt   v29.2S, v30.2S, v31.2S
+    __ facgt(v3, __ T4S, v4, v5);                      //       facgt   v3.4S, v4.4S, v5.4S
+    __ facgt(v10, __ T2D, v11, v12);                   //       facgt   v10.2D, v11.2D, v12.2D
+
+// NEONVectorCompare
+    __ cm(Assembler::GT, v22, __ T8B, v23, v24);       //       cmgt    v22.8B, v23.8B, v24.8B
+    __ cm(Assembler::GT, v10, __ T16B, v11, v12);      //       cmgt    v10.16B, v11.16B, v12.16B
+    __ cm(Assembler::GT, v4, __ T4H, v5, v6);          //       cmgt    v4.4H, v5.4H, v6.4H
+    __ cm(Assembler::GT, v17, __ T8H, v18, v19);       //       cmgt    v17.8H, v18.8H, v19.8H
+    __ cm(Assembler::GT, v1, __ T2S, v2, v3);          //       cmgt    v1.2S, v2.2S, v3.2S
+    __ cm(Assembler::GT, v11, __ T4S, v12, v13);       //       cmgt    v11.4S, v12.4S, v13.4S
+    __ cm(Assembler::GT, v7, __ T2D, v8, v9);          //       cmgt    v7.2D, v8.2D, v9.2D
+    __ cm(Assembler::GE, v10, __ T8B, v11, v12);       //       cmge    v10.8B, v11.8B, v12.8B
+    __ cm(Assembler::GE, v15, __ T16B, v16, v17);      //       cmge    v15.16B, v16.16B, v17.16B
+    __ cm(Assembler::GE, v16, __ T4H, v17, v18);       //       cmge    v16.4H, v17.4H, v18.4H
+    __ cm(Assembler::GE, v2, __ T8H, v3, v4);          //       cmge    v2.8H, v3.8H, v4.8H
+    __ cm(Assembler::GE, v9, __ T2S, v10, v11);        //       cmge    v9.2S, v10.2S, v11.2S
+    __ cm(Assembler::GE, v11, __ T4S, v12, v13);       //       cmge    v11.4S, v12.4S, v13.4S
+    __ cm(Assembler::GE, v12, __ T2D, v13, v14);       //       cmge    v12.2D, v13.2D, v14.2D
+    __ cm(Assembler::EQ, v14, __ T8B, v15, v16);       //       cmeq    v14.8B, v15.8B, v16.8B
+    __ cm(Assembler::EQ, v13, __ T16B, v14, v15);      //       cmeq    v13.16B, v14.16B, v15.16B
+    __ cm(Assembler::EQ, v2, __ T4H, v3, v4);          //       cmeq    v2.4H, v3.4H, v4.4H
+    __ cm(Assembler::EQ, v6, __ T8H, v7, v8);          //       cmeq    v6.8H, v7.8H, v8.8H
+    __ cm(Assembler::EQ, v19, __ T2S, v20, v21);       //       cmeq    v19.2S, v20.2S, v21.2S
+    __ cm(Assembler::EQ, v25, __ T4S, v26, v27);       //       cmeq    v25.4S, v26.4S, v27.4S
+    __ cm(Assembler::EQ, v15, __ T2D, v16, v17);       //       cmeq    v15.2D, v16.2D, v17.2D
+    __ cm(Assembler::HI, v4, __ T8B, v5, v6);          //       cmhi    v4.8B, v5.8B, v6.8B
+    __ cm(Assembler::HI, v2, __ T16B, v3, v4);         //       cmhi    v2.16B, v3.16B, v4.16B
+    __ cm(Assembler::HI, v4, __ T4H, v5, v6);          //       cmhi    v4.4H, v5.4H, v6.4H
+    __ cm(Assembler::HI, v11, __ T8H, v12, v13);       //       cmhi    v11.8H, v12.8H, v13.8H
+    __ cm(Assembler::HI, v17, __ T2S, v18, v19);       //       cmhi    v17.2S, v18.2S, v19.2S
+    __ cm(Assembler::HI, v20, __ T4S, v21, v22);       //       cmhi    v20.4S, v21.4S, v22.4S
+    __ cm(Assembler::HI, v16, __ T2D, v17, v18);       //       cmhi    v16.2D, v17.2D, v18.2D
+    __ cm(Assembler::HS, v17, __ T8B, v18, v19);       //       cmhs    v17.8B, v18.8B, v19.8B
+    __ cm(Assembler::HS, v10, __ T16B, v11, v12);      //       cmhs    v10.16B, v11.16B, v12.16B
+    __ cm(Assembler::HS, v20, __ T4H, v21, v22);       //       cmhs    v20.4H, v21.4H, v22.4H
+    __ cm(Assembler::HS, v22, __ T8H, v23, v24);       //       cmhs    v22.8H, v23.8H, v24.8H
+    __ cm(Assembler::HS, v12, __ T2S, v13, v14);       //       cmhs    v12.2S, v13.2S, v14.2S
+    __ cm(Assembler::HS, v25, __ T4S, v26, v27);       //       cmhs    v25.4S, v26.4S, v27.4S
+    __ cm(Assembler::HS, v23, __ T2D, v24, v25);       //       cmhs    v23.2D, v24.2D, v25.2D
+    __ fcm(Assembler::EQ, v28, __ T2S, v29, v30);      //       fcmeq   v28.2S, v29.2S, v30.2S
+    __ fcm(Assembler::EQ, v14, __ T4S, v15, v16);      //       fcmeq   v14.4S, v15.4S, v16.4S
+    __ fcm(Assembler::EQ, v10, __ T2D, v11, v12);      //       fcmeq   v10.2D, v11.2D, v12.2D
+    __ fcm(Assembler::GT, v24, __ T2S, v25, v26);      //       fcmgt   v24.2S, v25.2S, v26.2S
+    __ fcm(Assembler::GT, v1, __ T4S, v2, v3);         //       fcmgt   v1.4S, v2.4S, v3.4S
+    __ fcm(Assembler::GT, v11, __ T2D, v12, v13);      //       fcmgt   v11.2D, v12.2D, v13.2D
+    __ fcm(Assembler::GE, v30, __ T2S, v31, v0);       //       fcmge   v30.2S, v31.2S, v0.2S
+    __ fcm(Assembler::GE, v10, __ T4S, v11, v12);      //       fcmge   v10.4S, v11.4S, v12.4S
+    __ fcm(Assembler::GE, v15, __ T2D, v16, v17);      //       fcmge   v15.2D, v16.2D, v17.2D
 
 // SVEComparisonWithZero
     __ sve_fcm(Assembler::EQ, p3, __ S, p3, z2, 0.0);  //       fcmeq   p3.s, p3/z, z2.s, #0.0
@@ -1429,18 +1431,18 @@
     0x4e696d07,     0x0eae6dac,     0x4ea26c20,     0x0e35ae93,
     0x4e23ac41,     0x0e79af17,     0x4e64ac62,     0x0ea2ac20,
     0x4eaaad28,     0x0eb9f717,     0x4ebbf759,     0x4ef1f60f,
-    0x2e3f8fdd,     0x6e258c83,     0x2e6c8d6a,     0x6e788ef6,
-    0x2eac8d6a,     0x6ea68ca4,     0x6ef38e51,     0x0e23e441,
-    0x4e2de58b,     0x4e69e507,     0x0e2c356a,     0x4e31360f,
-    0x0e723630,     0x4e643462,     0x0eab3549,     0x4ead358b,
-    0x4eee35ac,     0x2e3035ee,     0x6e2f35cd,     0x2e643462,
-    0x6e6834e6,     0x2eb53693,     0x6ebb3759,     0x6ef1360f,
-    0x2e263ca4,     0x6e243c62,     0x2e663ca4,     0x6e6d3d8b,
-    0x2eb33e51,     0x6eb63eb4,     0x6ef23e30,     0x2eb3e651,
-    0x6eace56a,     0x6ef6e6b4,     0x0e383ef6,     0x4e2e3dac,
-    0x0e7b3f59,     0x4e793f17,     0x0ebe3fbc,     0x4eb03dee,
-    0x4eec3d6a,     0x2e3ae738,     0x6e23e441,     0x6e6de58b,
-    0x2ea0effe,     0x6eaced6a,     0x6ef1ee0f,     0x65922c43,
+    0x2ebfefdd,     0x6ea5ec83,     0x6eeced6a,     0x0e3836f6,
+    0x4e2c356a,     0x0e6634a4,     0x4e733651,     0x0ea33441,
+    0x4ead358b,     0x4ee93507,     0x0e2c3d6a,     0x4e313e0f,
+    0x0e723e30,     0x4e643c62,     0x0eab3d49,     0x4ead3d8b,
+    0x4eee3dac,     0x2e308dee,     0x6e2f8dcd,     0x2e648c62,
+    0x6e688ce6,     0x2eb58e93,     0x6ebb8f59,     0x6ef18e0f,
+    0x2e2634a4,     0x6e243462,     0x2e6634a4,     0x6e6d358b,
+    0x2eb33651,     0x6eb636b4,     0x6ef23630,     0x2e333e51,
+    0x6e2c3d6a,     0x2e763eb4,     0x6e783ef6,     0x2eae3dac,
+    0x6ebb3f59,     0x6ef93f17,     0x0e3ee7bc,     0x4e30e5ee,
+    0x4e6ce56a,     0x2ebae738,     0x6ea3e441,     0x6eede58b,
+    0x2e20e7fe,     0x6e2ce56a,     0x6e71e60f,     0x65922c43,
     0x65d02219,     0x65d02560,     0x65d13dc4,     0x65913690,
     0x65d33b6b,     0xba5fd3e3,     0x3a5f03e5,     0xfa411be4,
     0x7a42cbe2,     0x93df03ff,     0xc820ffff,     0x8822fc7f,

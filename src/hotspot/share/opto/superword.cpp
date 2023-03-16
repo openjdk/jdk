@@ -534,6 +534,8 @@ bool SuperWord::SLP_extract() {
 
     filter_packs();
 
+    DEBUG_ONLY(verify_packs();)
+
     schedule();
 
     // Record eventual count of vector packs for checks in post loop vectorization
@@ -634,54 +636,10 @@ void SuperWord::find_adjacent_refs() {
       }
     }
 
-    // Create initial pack pairs of memory operations for which
-    // alignment is set and vectors will be aligned.
-    bool create_pack = true;
-    if (memory_alignment(mem_ref, best_iv_adjustment) == 0 || _do_vector_loop) {
-      if (vectors_should_be_aligned()) {
-        int vw = vector_width(mem_ref);
-        int vw_best = vector_width(best_align_to_mem_ref);
-        if (vw > vw_best) {
-          // Do not vectorize a memory access with more elements per vector
-          // if unaligned memory access is not allowed because number of
-          // iterations in pre-loop will be not enough to align it.
-          create_pack = false;
-        } else {
-          SWPointer p2(best_align_to_mem_ref, this, nullptr, false);
-          if (!align_to_ref_p.invar_equals(p2)) {
-            // Do not vectorize memory accesses with different invariants
-            // if unaligned memory accesses are not allowed.
-            create_pack = false;
-          }
-        }
-      }
-    } else {
-      if (same_memory_slice(best_align_to_mem_ref, mem_ref)) {
-        // Can't allow vectorization of unaligned memory accesses with the
-        // same memory slice since it could be overlapped accesses to the same array.
-        create_pack = false;
-      } else {
-        // Allow independent (different type) unaligned memory operations
-        // if HW supports them.
-        if (vectors_should_be_aligned()) {
-          create_pack = false;
-        } else {
-          // Check if packs of the same memory slice but
-          // with a different alignment were created before.
-          for (uint i = 0; i < align_to_refs.size(); i++) {
-            MemNode* mr = align_to_refs.at(i)->as_Mem();
-            if (mr == mem_ref) {
-              // Skip when we are looking at same memory operation.
-              continue;
-            }
-            if (same_memory_slice(mem_ref, mr) &&
-                memory_alignment(mr, iv_adjustment) != 0)
-              create_pack = false;
-          }
-        }
-      }
-    }
-    if (create_pack) {
+    if (can_create_pairs(mem_ref, iv_adjustment, align_to_ref_p,
+                         best_align_to_mem_ref, best_iv_adjustment,
+                         align_to_refs)) {
+      // Create initial pack pairs of memory operations for which alignment was set.
       for (uint i = 0; i < memops.size(); i++) {
         Node* s1 = memops.at(i);
         int align = alignment(s1);
@@ -701,7 +659,9 @@ void SuperWord::find_adjacent_refs() {
           }
         }
       }
-    } else { // Don't create unaligned pack
+    } else {
+      // Cannot create pairs for mem_ref. Reject all related memops forever.
+
       // First, remove remaining memory ops of the same memory slice from the list.
       for (int i = memops.size() - 1; i >= 0; i--) {
         MemNode* s = memops.at(i)->as_Mem();
@@ -788,6 +748,97 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 }
 #endif
 
+// Check if we can create the pack pairs for mem_ref:
+// If required, enforce strict alignment requirements of hardware.
+// Else, only enforce alignment within a memory slice, so that there cannot be any
+// memory-dependence between different vector "lanes".
+bool SuperWord::can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                                 MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                                 Node_List &align_to_refs) {
+  bool is_aligned_with_best = memory_alignment(mem_ref, best_iv_adjustment) == 0;
+
+  if (vectors_should_be_aligned()) {
+    // All vectors need to be memory aligned, modulo their vector_width. This is more strict
+    // than the hardware probably requires. Most hardware at most requires 4-byte alignment.
+    //
+    // In the pre-loop, we align best_align_to_mem_ref to its vector_length. To ensure that
+    // all mem_ref's are memory aligned modulo their vector_width, we only need to check that
+    // they are all aligned to best_align_to_mem_ref, modulo their vector_width. For that,
+    // we check the following 3 conditions.
+
+    // (1) All packs are aligned with best_align_to_mem_ref.
+    if (!is_aligned_with_best) {
+      return false;
+    }
+    // (2) All other vectors have vector_size less or equal to that of best_align_to_mem_ref.
+    int vw = vector_width(mem_ref);
+    int vw_best = vector_width(best_align_to_mem_ref);
+    if (vw > vw_best) {
+      // We only align to vector_width of best_align_to_mem_ref during pre-loop.
+      // A mem_ref with a larger vector_width might thus not be vector_width aligned.
+      return false;
+    }
+    // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
+    //     address = base + k*iv + constant [+ invar]
+    //     memory_alignment ignores the invariant.
+    SWPointer p2(best_align_to_mem_ref, this, nullptr, false);
+    if (!align_to_ref_p.invar_equals(p2)) {
+      // Do not vectorize memory accesses with different invariants
+      // if unaligned memory accesses are not allowed.
+      return false;
+    }
+    return true;
+  } else {
+    // Alignment is not required by the hardware.
+
+    // However, we need to ensure that the pack for mem_ref is independent, i.e. all members
+    // of the pack are mutually independent.
+
+    if (_do_vector_loop) {
+      // Wait until combine_packs to check independence of packs. For now we just know that
+      // the adjacent pairs are independent. This allows us to vectorize when we do not have
+      // alignment modulo vector_width. For example (forward read):
+      // for (int i ...) { v[i] = v[i + 1] + 5; }
+      // The following will be filtered out in combine_packs (forward write):
+      // for (int i ...) { v[i + 1] = v[i] + 5; }
+      return true;
+    }
+
+    // If all mem_ref's are modulo vector_width aligned with all other mem_ref's of their
+    // memory slice, then the VectorLoad / VectorStore regions are either exactly overlapping
+    // or completely non-overlapping. This ensures that there cannot be memory-dependencies
+    // between different vector "lanes".
+    // During SuperWord::filter_packs -> SuperWord::profitable -> SuperWord::is_vector_use,
+    // we check that all inputs are vectors that match on every element (with some reasonable
+    // exceptions). This ensures that every "lane" is isomorpic and independent to all other
+    // "lanes". This allows us to vectorize these cases:
+    // for (int i ...) { v[i] = v[i] + 5; }      // same alignment
+    // for (int i ...) { v[i] = v[i + 32] + 5; } // alignment modulo vector_width
+    if (same_memory_slice(mem_ref, best_align_to_mem_ref)) {
+      return is_aligned_with_best;
+    } else {
+      return is_mem_ref_aligned_with_same_memory_slice(mem_ref, iv_adjustment, align_to_refs);
+    }
+  }
+}
+
+// Check if alignment of mem_ref is consistent with the other packs of the same memory slice
+bool SuperWord::is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment,
+                                                          Node_List &align_to_refs) {
+  for (uint i = 0; i < align_to_refs.size(); i++) {
+    MemNode* mr = align_to_refs.at(i)->as_Mem();
+    if (mr != mem_ref &&
+        same_memory_slice(mr, mem_ref) &&
+        memory_alignment(mr, iv_adjustment) != 0) {
+      // mem_ref is misaligned with mr, another ref of the same memory slice.
+      return false;
+    }
+  }
+  // No misalignment found.
+  return true;
+}
+
+//------------------------------find_align_to_ref---------------------------
 // Find a memory reference to align the loop induction variable to.
 // Looks first at stores then at loads, looking for a memory reference
 // with the largest number of references similar to it.
@@ -1308,6 +1359,45 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   return independent_path(shallow, deep);
 }
 
+//------------------------------find_dependence---------------------
+// Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
+// We could query independent(s1, s2) for all pairs, but that results
+// in O(p.size * p.size) graph traversals. We can do it all in one BFS!
+// Start the BFS traversal at all nodes from the pack. Traverse DepPreds
+// recursively, for nodes that have at least depth min_d, which is the
+// smallest depth of all nodes from the pack. Once we have traversed all
+// those nodes, and have not found another node from the pack, we know
+// that all nodes in the pack are independent.
+Node* SuperWord::find_dependence(Node_List* p) {
+  if (p->at(0)->is_reduction()) {
+    return nullptr; // ignore reductions
+  }
+  ResourceMark rm;
+  Unique_Node_List worklist; // traversal queue
+  int min_d = depth(p->at(0));
+  visited_clear();
+  for (uint k = 0; k < p->size(); k++) {
+    Node* n = p->at(k);
+    min_d = MIN2(min_d, depth(n));
+    worklist.push(n); // start traversal at all nodes in p
+    visited_set(n); // mark node
+  }
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+      Node* pred = preds.current();
+      if (in_bb(pred) && depth(pred) >= min_d) {
+        if (visited_test(pred)) { // marked as in p?
+          return pred;
+        }
+        worklist.push(pred);
+      }
+    }
+  }
+  return nullptr;
+}
+
+//--------------------------have_similar_inputs-----------------------
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
 bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
@@ -1457,8 +1547,10 @@ bool SuperWord::follow_use_defs(Node_List* p) {
     int align = alignment(s1);
     Node* t1 = s1->in(j);
     Node* t2 = s2->in(j);
-    if (!in_bb(t1) || !in_bb(t2))
+    if (!in_bb(t1) || !in_bb(t2) || t1->is_Mem() || t2->is_Mem())  {
+      // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
+    }
     align = adjust_alignment_for_type_conversion(s1, t1, align);
     if (stmts_can_pack(t1, t2, align)) {
       if (est_savings(t1, t2) >= 0) {
@@ -1495,10 +1587,16 @@ bool SuperWord::follow_def_uses(Node_List* p) {
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* t1 = s1->fast_out(i);
     num_s1_uses++;
-    if (!in_bb(t1)) continue;
+    if (!in_bb(t1) || t1->is_Mem()) {
+      // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
+      continue;
+    }
     for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
       Node* t2 = s2->fast_out(j);
-      if (!in_bb(t2)) continue;
+      if (!in_bb(t2) || t2->is_Mem()) {
+        // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
+        continue;
+      }
       if (t2->Opcode() == Op_AddI && t2 == _lp->as_CountedLoop()->incr()) continue; // don't mess with the iv
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;
@@ -1682,7 +1780,6 @@ void SuperWord::combine_packs() {
       for (int j = i + 1; j < _packset.length(); j++) {
         Node_List* p2 = _packset.at(j);
         if (p2 == nullptr) continue;
-        if (i == j) continue;
         if (p1->at(p1->size()-1) == p2->at(0)) {
           for (uint k = 1; k < p2->size(); k++) {
             p1->push(p2->at(k));
@@ -1723,6 +1820,32 @@ void SuperWord::combine_packs() {
     }
   }
 
+  if (_do_vector_loop) {
+    // Since we did not enforce exact alignment of the packsets, we only know that there
+    // is no dependence with distance 1, because we have checked independent(s1, s2) for
+    // all adjacent memops. But there could be a dependence of a different distance.
+    // Hence: remove the pack if there is a dependence.
+    for (int i = 0; i < _packset.length(); i++) {
+      Node_List* p = _packset.at(i);
+      if (p != nullptr) {
+        Node* dependence = find_dependence(p);
+        if (dependence != nullptr) {
+#ifndef PRODUCT
+          if (TraceSuperWord) {
+            tty->cr();
+            tty->print_cr("WARNING: Found dependency.");
+            tty->print_cr("Cannot vectorize despite compile directive Vectorize.");
+            dependence->dump();
+            tty->print_cr("In pack[%d]", i);
+            print_pack(p);
+          }
+#endif
+          _packset.at_put(i, nullptr);
+        }
+      }
+    }
+  }
+
   // Compress list.
   for (int i = _packset.length() - 1; i >= 0; i--) {
     Node_List* p1 = _packset.at(i);
@@ -1740,7 +1863,6 @@ void SuperWord::combine_packs() {
 // Construct the map from nodes to packs.  Only valid after the
 // point where a node is only in one pack (after combine_packs).
 void SuperWord::construct_my_pack_map() {
-  Node_List* rslt = nullptr;
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     for (uint j = 0; j < p->size(); j++) {
@@ -2165,6 +2287,30 @@ bool SuperWord::profitable(Node_List* p) {
   return true;
 }
 
+#ifdef ASSERT
+void SuperWord::verify_packs() {
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    Node* dependence = find_dependence(p);
+    if (dependence != nullptr) {
+      tty->print_cr("Other nodes in pack have dependence on:");
+      dependence->dump();
+      tty->print_cr("The following nodes are not independent:");
+      for (uint k = 0; k < p->size(); k++) {
+        Node* n = p->at(k);
+        if (!independent(n, dependence)) {
+          n->dump();
+        }
+      }
+      tty->print_cr("They are all from pack[%d]", i);
+      print_pack(p);
+    }
+    assert(dependence == nullptr, "all nodes in pack must be mutually independent");
+  }
+}
+#endif
+
+//------------------------------schedule---------------------------
 // Adjust the memory graph for the packed operations
 void SuperWord::schedule() {
 
@@ -3963,7 +4109,11 @@ void SuperWord::print_packset() {
   for (int i = 0; i < _packset.length(); i++) {
     tty->print_cr("Pack: %d", i);
     Node_List* p = _packset.at(i);
-    print_pack(p);
+    if (p == nullptr) {
+      tty->print_cr("  nullptr");
+    } else {
+      print_pack(p);
+    }
   }
 #endif
 }

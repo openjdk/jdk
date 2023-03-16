@@ -44,7 +44,7 @@ import jtreg.SkippedException;
 // This class contains common test utilities for testing CDS
 public class CDSTestUtils {
     public static final String MSG_RANGE_NOT_WITHIN_HEAP =
-        "UseSharedSpaces: Unable to allocate region, range is not within java heap.";
+        "Unable to allocate region, range is not within java heap.";
     public static final String MSG_RANGE_ALREADT_IN_USE =
         "Unable to allocate region, java heap range is already in use.";
     public static final String MSG_DYNAMIC_NOT_SUPPORTED =
