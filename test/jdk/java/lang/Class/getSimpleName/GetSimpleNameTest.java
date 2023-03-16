@@ -158,7 +158,7 @@ public class GetSimpleNameTest {
 
         void makeCtxk(ClassBuilder clb, boolean isInner) {
             if (isInner) {
-                clb.accept(EnclosingMethodAttribute.of(outerName,
+                clb.with(EnclosingMethodAttribute.of(outerName,
                         Optional.of("f"), Optional.of(MD_void)));
             } else {
                 clb.withMethodBody("f", MD_void, ACC_PUBLIC | ACC_STATIC,
@@ -171,7 +171,7 @@ public class GetSimpleNameTest {
             return Classfile.build(name, clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-                clb.accept(InnerClassesAttribute.of(
+                clb.with(InnerClassesAttribute.of(
                         InnerClassInfo.of(innerName,
                                 Optional.of(outerName),
                                 Optional.of(simpleName))));
@@ -184,7 +184,7 @@ public class GetSimpleNameTest {
             return Classfile.build(name, clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-                clb.accept(InnerClassesAttribute.of(
+                clb.with(InnerClassesAttribute.of(
                         InnerClassInfo.of(innerName,
                                 Optional.of(outerName),
                                 Optional.of(simpleName),
@@ -198,7 +198,7 @@ public class GetSimpleNameTest {
             return Classfile.build(name, clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-                clb.accept(InnerClassesAttribute.of(
+                clb.with(InnerClassesAttribute.of(
                         InnerClassInfo.of(innerName,
                                 Optional.empty(),
                                 Optional.of(simpleName),
@@ -213,7 +213,7 @@ public class GetSimpleNameTest {
             return Classfile.build(name, clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-                clb.accept(InnerClassesAttribute.of(
+                clb.with(InnerClassesAttribute.of(
                         InnerClassInfo.of(innerName,
                                 Optional.empty(),
                                 Optional.empty(),

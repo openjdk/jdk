@@ -142,7 +142,7 @@ public class LambdaStackTrace {
             clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE);
             clb.withSuperclass(CD_Object);
             clb.withMethod("make", MethodTypeDesc.of(CD_Object),
-                    ACC_PUBLIC | ACC_STATIC, mb -> {});
+                    ACC_PUBLIC , mb -> {});
         });
     }
 
