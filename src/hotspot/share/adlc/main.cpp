@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._DFA_file, "opto/narrowptrnode.hpp");
   AD.addInclude(AD._DFA_file, "opto/opcodes.hpp");
   AD.addInclude(AD._DFA_file, "opto/convertnode.hpp");
+  AD.addInclude(AD._DFA_file, "opto/superword.hpp");
   AD.addInclude(AD._DFA_file, "utilities/powerOfTwo.hpp");
 
   // Make sure each .cpp file starts with include lines:

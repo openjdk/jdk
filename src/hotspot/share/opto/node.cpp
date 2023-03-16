@@ -1094,25 +1094,6 @@ juint Node::max_flags() {
 }
 #endif
 
-bool Node::in_reduction_cycle(uint input) const {
-  // First find input reduction path to phi node.
-  auto has_my_opcode = [&](const Node* n){ return n->Opcode() == this->Opcode(); };
-  const Pair<const Node*, int> path_to_phi =
-    find_in_path(input, LoopMaxUnroll, has_my_opcode,
-                 [&](const Node* n) { return n->is_Phi(); });
-  const Node* phi = path_to_phi.first;
-  if (phi == nullptr) {
-    return false;
-  }
-  // If there is an input reduction path from the the phi's loop-back to me,
-  // then I am part of a reduction cycle.
-  const Node* last = phi->in(LoopNode::LoopBackControl);
-  const Pair<const Node*, int> path_from_phi =
-    last->find_in_path(input, LoopMaxUnroll, has_my_opcode,
-                       [&](const Node* n) { return n == this; });
-  return this == path_from_phi.first;
-}
-
 //------------------------------format-----------------------------------------
 // Print as assembly
 void Node::format( PhaseRegAlloc *, outputStream *st ) const {}
@@ -2916,26 +2897,6 @@ bool Node::is_dead_loop_safe() const {
       return false;
     }
     return true;
-  }
-  return false;
-}
-
-bool Node::is_reduction_operator() const {
-  int opc = Opcode();
-  return (opc != ReductionNode::opcode(opc, bottom_type()->basic_type())
-          || opc == Op_MinD || opc == Op_MinF || opc == Op_MaxD || opc == Op_MaxF);
-}
-
-bool Node::is_reduction() const {
-  if (!is_reduction_operator()) {
-    return false;
-  }
-  // Test whether there is a reduction cycle via every edge index
-  // (typically indices 1 and 2).
-  for (uint input = 1; input < req(); input++) {
-    if (in_reduction_cycle(input)) {
-      return true;
-    }
   }
   return false;
 }

@@ -29,6 +29,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/pair.hpp"
 #include "libadt/dict.hpp"
 
 //
@@ -340,6 +341,10 @@ class SuperWord : public ResourceObj {
 
   bool early_return() const        { return _early_return; }
 
+  // An arithmetic node which accumulates a data in a loop.
+  // It must be part of a reduction cycle within the loop.
+  static bool is_reduction(const Node* n);
+
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
   bool     is_trace_alignment()    { return (_vector_loop_debug & 2) > 0; }
@@ -468,12 +473,45 @@ class SuperWord : public ResourceObj {
 
   // methods
 
-  // Whether n is marked as a reduction node.
-  bool is_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
-  // Whether the current loop has any reduction node.
-  bool is_reduction_loop() { return !_loop_reductions.is_empty(); }
+  // Search for a 'input'-indexed, swapped-edge-adjusted path P from a node b to
+  // a node e such that: path(n) for all n in P, end(e), and |P| <= 'max'.
+  // Return <e, |P|>, if P is found, or <nullptr, -1> otherwise.
+  template <typename NodePredicate1, typename NodePredicate2>
+  static const Pair<const Node*, int>
+  find_in_path(const Node* b, uint input, int max,
+               NodePredicate1 path, NodePredicate2 end) {
+    const Node* current = b;
+    const Pair<const Node*, int> no_path(nullptr, -1);
+    int no_nodes = 0;
+    for (int i = 0; i <= max; i++) {
+      if (current == nullptr) {
+        return no_path;
+      }
+      if (end(current)) {
+        return Pair<const Node*, int>(current, no_nodes);
+      }
+      if (!path(current)) {
+        return no_path;
+      }
+      current = original_input(current, input);
+      no_nodes++;
+    }
+    return no_path;
+  }
+
+  // Whether n is a standard reduction operator.
+  static bool is_reduction_operator(const Node* n);
+  // Whether n is part of a reduction cycle via the 'input' edge index.
+  static bool in_reduction_cycle(const Node* n, uint input);
+  // Reference to the i'th input node of n before any swap operation. Assumes n
+  // is a commutative, binary operation.
+  static Node* original_input(const Node* n, uint i);
   // Find and mark reductions in a loop.
   void mark_reductions(IdealLoopTree* lpt);
+  // Whether n is marked as a reduction node.
+  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
+  // Whether the current loop has any reduction node.
+  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
   // Extract the superword level parallelism
   bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.

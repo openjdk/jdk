@@ -29,7 +29,6 @@
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -579,6 +578,7 @@ public:
     _in[i2] = n1;
     // If this node is in the hash table, make sure it doesn't need a rehash.
     assert(check_hash == NO_HASH || check_hash == hash(), "edge swap must preserve hash code");
+    // Flip swapped edges flag.
     if (has_swapped_edges()) {
       remove_flag(Node::Flag_has_swapped_edges);
     } else {
@@ -808,9 +808,6 @@ private:
 
   static juint max_flags();
 
-  // Whether the node is part of a reduction cycle via the 'input' edge index.
-  bool in_reduction_cycle(uint input) const;
-
 protected:
   // These methods should be called from constructors only.
   void init_class_id(juint c) {
@@ -1010,53 +1007,8 @@ public:
   bool is_macro() const { return (_flags & Flag_is_macro) != 0; }
   // The node is expensive: the best control is set during loop opts
   bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != nullptr; }
-
-  // Search for an 'edge'-index path P to a node e such that: path(n) for all n
-  // in P, end(e), and |P| <= 'max'. Return <e, |P|>, if P is found, or
-  // <nullptr, -1> otherwise.
-  template <typename NodePredicate1, typename NodePredicate2>
-  const Pair<const Node*, int> find_in_path(uint input, int max,
-                                            NodePredicate1 path,
-                                            NodePredicate2 end) const {
-    const Node* current = this;
-    const Pair<const Node*, int> no_path(nullptr, -1);
-    int no_nodes = 0;
-    for (int i = 0; i <= max; i++) {
-      if (current == nullptr) {
-        return no_path;
-      }
-      if (end(current)) {
-        return Pair<const Node*, int>(current, no_nodes);
-      }
-      if (!path(current)) {
-        return no_path;
-      }
-      current = current->original_in(input);
-      no_nodes++;
-    }
-    return no_path;
-  }
-
-  // Whether the node is a standard reduction operator.
-  bool is_reduction_operator() const;
-
-  // An arithmetic node which accumulates a data in a loop.
-  // It must be part of a reduction cycle within the loop.
-  bool is_reduction() const;
-
+  // The node's original edge position is swapped.
   bool has_swapped_edges() const { return (_flags & Flag_has_swapped_edges) != 0; }
-
-  Node* original_in(uint i) const {
-    assert(this->is_Add() || this->is_Mul(), "");
-    if (has_swapped_edges()) {
-      if (i == 1) {
-        return in(2);
-      } else if (i == 2) {
-        return in(1);
-      }
-    }
-    return in(i);
-  }
 
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 
