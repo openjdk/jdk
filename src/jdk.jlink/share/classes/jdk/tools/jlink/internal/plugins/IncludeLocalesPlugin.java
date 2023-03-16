@@ -157,9 +157,8 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 if (resource != null &&
                     resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
                     byte[] bytes = resource.contentBytes();
-                    if (newClassReader(path, bytes).interfaces().stream()
-                        .anyMatch(i -> i.asInternalName().contains(METAINFONAME)) &&
-                        stripUnsupportedLocales(bytes)) {
+                    var helper = new ResourceFileHelper(bytes);
+                    if (helper.interfacesContainMetaInfo() && helper.stripUnsupportedLocales()) {
                         resource = resource.copyWithContent(bytes);
                     }
                 }
@@ -267,46 +266,77 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             .toList();
     }
 
-    private boolean stripUnsupportedLocales(byte[] bytes) {
-        boolean modified = false;
-        // scan CP entries directly to read the bytes of UTF8 entries and
-        // patch in place with unsupported locale tags stripped
-        final int cpLength = (bytes[8] << 8) + (int)bytes[9];
-        int offset = 10;
-        for (int cpSlot=1; cpSlot<cpLength; cpSlot++) {
-            switch (bytes[offset]) { //entry tag
-                case TAG_UTF8 -> {
-                    final int length = (bytes[offset+1] << 8) + (int)bytes[offset+2];
-                    if (bytes[offset + 3] == (byte)' ') { // fast check for leading space
-                        byte[] b = new byte[length];
-                        System.arraycopy(bytes, offset + 3, b, 0, length);
-                        if (filterOutUnsupportedTags(b)) {
-                            // copy back
-                            System.arraycopy(b, 0, bytes, offset + 3, length);
-                            modified = true;
+    class ResourceFileHelper {
+
+        final byte[] data;
+        final int[] cpOffsets;
+        final int intfsOffset;
+
+        public ResourceFileHelper(byte[] data) {
+            this.data = data;
+            this.cpOffsets = new int[readU2(8)];
+            int p = 10;
+            for (int i = 1; i < cpOffsets.length; ++i) {
+                cpOffsets[i] = p;
+                byte tag = data[p];
+                ++p;
+                switch (tag) {
+                    case TAG_CLASS, TAG_METHODTYPE, TAG_MODULE, TAG_STRING, TAG_PACKAGE -> p += 2;
+                    case TAG_METHODHANDLE -> p += 3;
+                    case TAG_CONSTANTDYNAMIC, TAG_FIELDREF, TAG_FLOAT, TAG_INTEGER,
+                         TAG_INTERFACEMETHODREF, TAG_INVOKEDYNAMIC, TAG_METHODREF,
+                         TAG_NAMEANDTYPE -> p += 4;
+                    case TAG_DOUBLE, TAG_LONG -> {
+                        p += 8;
+                        ++i;
+                    }
+                    case TAG_UTF8 -> p += 2 + readU2(p);
+                    default -> throw new IllegalArgumentException(
+                            "Bad tag (" + tag + ") at index (" + i + ") position (" + p + ")");
+                }
+            }
+            intfsOffset = p + 6;
+        }
+
+        public boolean interfacesContainMetaInfo() {
+            int iCount = readU2(intfsOffset);
+            for (int i = 0; i < iCount; i++) {
+                int iClassOff = cpOffsets[readU2(intfsOffset + 2 + 2 * i)];
+                if (data[iClassOff] == TAG_CLASS) {
+                    int iNameOff = cpOffsets[readU2(iClassOff + 1)];
+                    if (data[iNameOff] == TAG_UTF8) {
+                        int iNameLength = readU2(iNameOff + 1);
+                        if (new String(data, iNameOff + 3, iNameLength).contains(METAINFONAME)) {
+                            return true;
                         }
                     }
-                    offset += 3 + length;
                 }
-                case TAG_CLASS,
-                        TAG_STRING,
-                        TAG_METHODTYPE,
-                        TAG_MODULE,
-                        TAG_PACKAGE -> offset += 3;
-                case TAG_METHODHANDLE -> offset += 4;
-                case TAG_INTEGER,
-                        TAG_FLOAT,
-                        TAG_FIELDREF,
-                        TAG_METHODREF,
-                        TAG_INTERFACEMETHODREF,
-                        TAG_NAMEANDTYPE,
-                        TAG_CONSTANTDYNAMIC,
-                        TAG_INVOKEDYNAMIC -> offset += 5;
-                case TAG_LONG,
-                        TAG_DOUBLE -> {offset += 9; cpSlot++;} //additional slot for double and long entries
             }
+            return false;
         }
-        return modified;
+
+        public boolean stripUnsupportedLocales() {
+            boolean modified = false;
+            for (int o : cpOffsets) {
+                if (o > 0 && data[o] == TAG_UTF8 && data[o + 3] == (byte)' ') {
+                    int length = readU2(o + 1);
+                    byte[] b = new byte[length];
+                    System.arraycopy(data, o + 3, b, 0, length);
+                    if (filterOutUnsupportedTags(b)) {
+                        // copy back
+                        System.arraycopy(b, 0, data, o + 3, length);
+                        modified = true;
+                    }
+                }
+            }
+            return modified;
+        }
+
+        private int readU2(int p) {
+            int b1 = data[p] & 0xFF;
+            int b2 = data[p + 1] & 0xFF;
+            return (b1 << 8) + b2;
+        }
     }
 
     private boolean filterOutUnsupportedTags(byte[] b) {
