@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.lang.constant.ClassDesc;
@@ -46,7 +47,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.lang.constant.ConstantDescs.*;
-import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertEquals;
 
 /*
  * @test
@@ -56,65 +57,70 @@ import static org.testng.Assert.assertSame;
  */
 public class ConstantDescsTest {
 
+    @DataProvider(name = "validateFields")
+    public Object[][] knownFieldsData() {
+        return new Object[][]{
+                {CD_Object, Object.class},
+                {CD_String, String.class},
+                {CD_Class, Class.class},
+                {CD_Number, Number.class},
+                {CD_Integer, Integer.class},
+                {CD_Long, Long.class},
+                {CD_Float, Float.class},
+                {CD_Double, Double.class},
+                {CD_Short, Short.class},
+                {CD_Byte, Byte.class},
+                {CD_Character, Character.class},
+                {CD_Boolean, Boolean.class},
+                {CD_Void, Void.class},
+                {CD_Exception, Exception.class},
+                {CD_Throwable, Throwable.class},
+                {CD_Enum, Enum.class},
+                {CD_VarHandle, VarHandle.class},
+                {CD_MethodHandles, MethodHandles.class},
+                {CD_MethodHandles_Lookup, MethodHandles.Lookup.class},
+                {CD_MethodHandle, MethodHandle.class},
+                {CD_MethodType, MethodType.class},
+                {CD_CallSite, CallSite.class},
+                {CD_Collection, Collection.class},
+                {CD_List, List.class},
+                {CD_Set, Set.class},
+                {CD_Map, Map.class},
+                {CD_ConstantDesc, ConstantDesc.class},
+                {CD_ClassDesc, ClassDesc.class},
+                {CD_EnumDesc, Enum.EnumDesc.class},
+                {CD_MethodTypeDesc, MethodTypeDesc.class},
+                {CD_MethodHandleDesc, MethodHandleDesc.class},
+                {CD_DirectMethodHandleDesc, DirectMethodHandleDesc.class},
+                {CD_VarHandleDesc, VarHandle.VarHandleDesc.class},
+                {CD_MethodHandleDesc_Kind, DirectMethodHandleDesc.Kind.class},
+                {CD_DynamicConstantDesc, DynamicConstantDesc.class},
+                {CD_DynamicCallSiteDesc, DynamicCallSiteDesc.class},
+                {CD_ConstantBootstraps, ConstantBootstraps.class},
+                {CD_int, int.class},
+                {CD_long, long.class},
+                {CD_float, float.class},
+                {CD_double, double.class},
+                {CD_short, short.class},
+                {CD_byte, byte.class},
+                {CD_char, char.class},
+                {CD_boolean, boolean.class},
+                {CD_void, void.class},
+                {NULL, null},
+                {TRUE, Boolean.TRUE},
+                {FALSE, Boolean.FALSE},
+        };
+    }
+
     /**
      * Checks that ConstantDescs descriptor fields resolve to the right
      * constants.
      * @throws ReflectiveOperationException if the test fails
      */
-    @Test
-    public void validateAllFields() throws ReflectiveOperationException {
+    @Test(dataProvider = "validateFields")
+    public void validateFields(ConstantDesc desc, Object value) throws ReflectiveOperationException {
         // Use a minimally-trusted lookup
-        var lookup = MethodHandles.publicLookup();
-
-        assertSame(CD_Object.resolveConstantDesc(lookup), Object.class);
-        assertSame(CD_String.resolveConstantDesc(lookup), String.class);
-        assertSame(CD_Class.resolveConstantDesc(lookup), Class.class);
-        assertSame(CD_Number.resolveConstantDesc(lookup), Number.class);
-        assertSame(CD_Integer.resolveConstantDesc(lookup), Integer.class);
-        assertSame(CD_Long.resolveConstantDesc(lookup), Long.class);
-        assertSame(CD_Float.resolveConstantDesc(lookup), Float.class);
-        assertSame(CD_Double.resolveConstantDesc(lookup), Double.class);
-        assertSame(CD_Short.resolveConstantDesc(lookup), Short.class);
-        assertSame(CD_Byte.resolveConstantDesc(lookup), Byte.class);
-        assertSame(CD_Character.resolveConstantDesc(lookup), Character.class);
-        assertSame(CD_Boolean.resolveConstantDesc(lookup), Boolean.class);
-        assertSame(CD_Void.resolveConstantDesc(lookup), Void.class);
-        assertSame(CD_Exception.resolveConstantDesc(lookup), Exception.class);
-        assertSame(CD_Throwable.resolveConstantDesc(lookup), Throwable.class);
-        assertSame(CD_Enum.resolveConstantDesc(lookup), Enum.class);
-        assertSame(CD_VarHandle.resolveConstantDesc(lookup), VarHandle.class);
-        assertSame(CD_MethodHandles.resolveConstantDesc(lookup), MethodHandles.class);
-        assertSame(CD_MethodHandles_Lookup.resolveConstantDesc(lookup), MethodHandles.Lookup.class);
-        assertSame(CD_MethodHandle.resolveConstantDesc(lookup), MethodHandle.class);
-        assertSame(CD_MethodType.resolveConstantDesc(lookup), MethodType.class);
-        assertSame(CD_CallSite.resolveConstantDesc(lookup), CallSite.class);
-        assertSame(CD_Collection.resolveConstantDesc(lookup), Collection.class);
-        assertSame(CD_List.resolveConstantDesc(lookup), List.class);
-        assertSame(CD_Set.resolveConstantDesc(lookup), Set.class);
-        assertSame(CD_Map.resolveConstantDesc(lookup), Map.class);
-        assertSame(CD_ConstantDesc.resolveConstantDesc(lookup), ConstantDesc.class);
-        assertSame(CD_ClassDesc.resolveConstantDesc(lookup), ClassDesc.class);
-        assertSame(CD_EnumDesc.resolveConstantDesc(lookup), Enum.EnumDesc.class);
-        assertSame(CD_MethodTypeDesc.resolveConstantDesc(lookup), MethodTypeDesc.class);
-        assertSame(CD_MethodHandleDesc.resolveConstantDesc(lookup), MethodHandleDesc.class);
-        assertSame(CD_DirectMethodHandleDesc.resolveConstantDesc(lookup), DirectMethodHandleDesc.class);
-        assertSame(CD_VarHandleDesc.resolveConstantDesc(lookup), VarHandle.VarHandleDesc.class);
-        assertSame(CD_MethodHandleDesc_Kind.resolveConstantDesc(lookup), DirectMethodHandleDesc.Kind.class);
-        assertSame(CD_DynamicConstantDesc.resolveConstantDesc(lookup), DynamicConstantDesc.class);
-        assertSame(CD_DynamicCallSiteDesc.resolveConstantDesc(lookup), DynamicCallSiteDesc.class);
-        assertSame(CD_ConstantBootstraps.resolveConstantDesc(lookup), ConstantBootstraps.class);
-        assertSame(CD_int.resolveConstantDesc(lookup), int.class);
-        assertSame(CD_long.resolveConstantDesc(lookup), long.class);
-        assertSame(CD_float.resolveConstantDesc(lookup), float.class);
-        assertSame(CD_double.resolveConstantDesc(lookup), double.class);
-        assertSame(CD_short.resolveConstantDesc(lookup), short.class);
-        assertSame(CD_byte.resolveConstantDesc(lookup), byte.class);
-        assertSame(CD_char.resolveConstantDesc(lookup), char.class);
-        assertSame(CD_boolean.resolveConstantDesc(lookup), boolean.class);
-        assertSame(CD_void.resolveConstantDesc(lookup), void.class);
-        assertSame(NULL.resolveConstantDesc(lookup), null);
-        assertSame(TRUE.resolveConstantDesc(lookup), Boolean.TRUE);
-        assertSame(FALSE.resolveConstantDesc(lookup), Boolean.FALSE);
+        assertEquals(desc.resolveConstantDesc(MethodHandles.publicLookup()), value);
     }
 
     /**
