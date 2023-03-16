@@ -65,7 +65,6 @@ final class ProxyGenerator {
             CD_IllegalAccessException = ClassDesc.ofInternalName("java/lang/IllegalAccessException"),
             CD_InvocationHandler = ClassDesc.ofInternalName("java/lang/reflect/InvocationHandler"),
             CD_Method = ClassDesc.ofInternalName("java/lang/reflect/Method"),
-            CD_MethodHandles$Lookup = ClassDesc.ofInternalName("java/lang/invoke/MethodHandles$Lookup"),
             CD_NoClassDefFoundError = ClassDesc.ofInternalName("java/lang/NoClassDefFoundError"),
             CD_NoSuchMethodError = ClassDesc.ofInternalName("java/lang/NoSuchMethodError"),
             CD_NoSuchMethodException = ClassDesc.ofInternalName("java/lang/NoSuchMethodException"),
@@ -81,8 +80,8 @@ final class ProxyGenerator {
             MTD_Class = MethodTypeDesc.of(CD_Class),
             MTD_Class_String_boolean_ClassLoader = MethodTypeDesc.of(CD_Class, CD_String, CD_boolean, CD_ClassLoader),
             MTD_ClassLoader = MethodTypeDesc.of(CD_ClassLoader),
-            MTD_MethodHandles$Lookup = MethodTypeDesc.of(CD_MethodHandles$Lookup),
-            MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDesc.of(CD_MethodHandles$Lookup, CD_MethodHandles$Lookup),
+            MTD_MethodHandles$Lookup = MethodTypeDesc.of(CD_MethodHandles_Lookup),
+            MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDesc.of(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
             MTD_Method_String_ClassArray = MethodTypeDesc.of(CD_Method, CD_String, CD_Class.arrayType()),
             MTD_Object_Object_Method_ObjectArray = MethodTypeDesc.of(CD_Object, CD_Object, CD_Method, CD_Object.arrayType()),
             MTD_String = MethodTypeDesc.of(CD_String);
@@ -599,18 +598,18 @@ final class ProxyGenerator {
                         .withCode(cob -> cob
                             .block(blockBuilder -> blockBuilder
                                     .aload(cob.parameterSlot(0))
-                                    .invokevirtual(CD_MethodHandles$Lookup, "lookupClass", MTD_Class)
+                                    .invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class)
                                     .constantInstruction(Opcode.LDC, CD_Proxy)
                                     .if_acmpne(blockBuilder.breakLabel())
                                     .aload(cob.parameterSlot(0))
-                                    .invokevirtual(CD_MethodHandles$Lookup, "hasFullPrivilegeAccess", MTD_boolean)
+                                    .invokevirtual(CD_MethodHandles_Lookup, "hasFullPrivilegeAccess", MTD_boolean)
                                     .ifeq(blockBuilder.breakLabel())
                                     .invokestatic(CD_MethodHandles, "lookup", MTD_MethodHandles$Lookup)
                                     .areturn())
                             .new_(CD_IllegalAccessException)
                             .dup()
                             .aload(cob.parameterSlot(0))
-                            .invokevirtual(CD_MethodHandles$Lookup, "toString", MTD_String)
+                            .invokevirtual(CD_MethodHandles_Lookup, "toString", MTD_String)
                             .invokespecial(CD_IllegalAccessException, NAME_CTOR, MTD_void_String)
                             .athrow()));
     }
