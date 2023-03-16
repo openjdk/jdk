@@ -657,7 +657,8 @@ final class ProxyGenerator {
          * Generate this method, including the code and exception table entry.
          */
         private void generateMethod(ClassBuilder clb, ClassDesc className) {
-            MethodTypeDesc desc = MethodType.methodType(returnType, parameterTypes).describeConstable().orElseThrow();
+            MethodTypeDesc desc = MethodTypeDesc.of(toClassDesc(returnType),
+                    Arrays.stream(parameterTypes).map(ProxyGenerator::toClassDesc).toArray(ClassDesc[]::new));
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
             var catchList = computeUniqueCatchList(exceptionTypes);
