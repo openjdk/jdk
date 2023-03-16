@@ -53,7 +53,8 @@ public class EditableComboBoxPopupPos {
     private static JComboBox cb1, cb2, cb3, cb4;
     private static String lafName, cb1Str, cb2Str, cb3Str, cb4Str;
     private static Point cb1Point, cb2Point, cb3Point, cb4Point;
-    private static int cb1Width, cb1Height, cb2Width, cb2Height, cb3Width, cb3Height, cb4Width, cb4Height;
+    private static int cb1Width, cb1Height, cb2Width, cb2Height,
+            cb3Width, cb3Height, cb4Width, cb4Height;
 
     private static final int BUTTON_OFFSET = 8;
     private static final int POPUP_OFFSET = 6;
@@ -89,6 +90,13 @@ public class EditableComboBoxPopupPos {
 
                     cb4 = new JComboBox(comboStrings);
                     cb4.setEditable(false);
+
+                    if (lafName.contains("Mac")) {
+                        // By default, non-editable ComboBoxes don't appear
+                        // underneath unless this is explicitly set
+                        cb3.putClientProperty("JComboBox.isPopDown", Boolean.TRUE);
+                        cb4.putClientProperty("JComboBox.isPopDown", Boolean.TRUE);
+                    }
 
                     panel.add(cb1);
                     panel.add(cb2);
@@ -140,7 +148,7 @@ public class EditableComboBoxPopupPos {
                     cb4Str = cb4.getSelectedItem().toString();
                 });
 
-                checkSelection(cb1Str, cb2Str, cb3Str);
+                checkSelection(cb1Str, cb2Str, cb3Str, cb4Str);
             } finally {
                 SwingUtilities.invokeAndWait(() -> frame.dispose());
             }
@@ -183,8 +191,10 @@ public class EditableComboBoxPopupPos {
 
     }
 
-    private static void checkSelection(String s1, String s2, String s3) {
-        if (s1.equals("One") && s2.equals("One") && s3.equals("One")) {
+    private static void checkSelection(String s1, String s2,
+                                       String s3, String s4) {
+        if (s1.equals("One") && s2.equals("One")
+                && s3.equals("One") && s4.equals("One")) {
             System.out.println(lafName + " Passed");
         } else {
             throw new RuntimeException(lafName + " Failed");
