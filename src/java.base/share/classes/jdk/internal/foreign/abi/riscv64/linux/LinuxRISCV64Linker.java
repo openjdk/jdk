@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -57,8 +57,8 @@ public final class LinuxRISCV64Linker extends AbstractLinker {
     }
 
     @Override
-    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, SegmentScope scope) {
-        return LinuxRISCV64CallArranger.arrangeUpcall(target, targetType, function, scope);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
+        return LinuxRISCV64CallArranger.arrangeUpcall(targetType, function);
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
