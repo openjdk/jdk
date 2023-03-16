@@ -1222,6 +1222,17 @@ public class BigIntegerTest {
      *
      */
     public static void main(String[] args) throws Exception {
+        // subset zero indicates to run all subsets
+        int subset = Integer.valueOf(System.getProperty("subset",
+            String.valueOf(1 + random.nextInt(3))));
+        if (subset < 0 || subset > 3) {
+            throw new RuntimeException("Unknown subset " + subset);
+        }
+        if (subset == 0)
+            System.out.println("Testing all subsets");
+        else
+            System.out.println("Testing subset " + subset);
+
         // Some variables for sizing test numbers in bits
         int order1 = ORDER_MEDIUM;
         int order2 = ORDER_SMALL;
@@ -1237,12 +1248,7 @@ public class BigIntegerTest {
         if (args.length >3)
             order4 = (int)((Integer.parseInt(args[3]))* 3.333);
 
-        int subset = Integer.valueOf(System.getProperty("subset",
-            String.valueOf(1 + random.nextInt(3))));
-        System.out.println("Testing subset " + subset);
-
-        switch (subset) {
-        case 1:
+        if (subset == 0 || subset == 1) {
             constructor();
 
             prime();
@@ -1278,26 +1284,20 @@ public class BigIntegerTest {
 
             modInv(order1);   // small numbers
             modInv(order3);   // Karatsuba range
-            break;
-
-        case 2:
+        }
+        if (subset == 0 || subset == 2) {
             modInv(order4);   // Toom-Cook / Burnikel-Ziegler range
 
             modExp(order1, order2);
             modExp2(order1);
-            break;
-
-        case 3:
+        }
+        if (subset == 0 || subset == 3) {
             stringConv();
             serialize();
 
             multiplyLarge();
             squareLarge();
             divideLarge();
-            break;
-
-        default:
-            throw new RuntimeException("Unknown subset " + subset);
         }
 
         if (failure)

@@ -622,25 +622,31 @@ public class SymmetricRangeTests {
     }
 
     public static void main(String... args) {
+        // subset zero indicates to run all subsets
         int subset = Integer.valueOf(System.getProperty("subset",
             String.valueOf(1 + RANDOM.nextInt(4))));
-        System.out.println("Testing subset " + subset);
+        if (subset < 0 || subset > 4) {
+            throw new RuntimeException("Unknown subset " + subset);
+        }
+        if (subset == 0)
+            System.out.println("Testing all subsets");
+        else
+            System.out.println("Testing subset " + subset);
 
-        switch (subset) {
-        case 1:
+        if (subset == 0 || subset == 1) {
             testOverflowInMakePositive();
             testBug8021204();
             testOverflowInBitSieve();
             testAdd();
             testSubtract();
-            break;
-        case 2:
+        }
+        if (subset == 0 || subset == 2) {
             testMultiply();
             testDivide();
             testDivideAndRemainder();
             testBug9005933();
-            break;
-        case 3:
+        }
+        if (subset == 0 || subset == 3) {
             testRemainder();
             testPow();
             testGcd();
@@ -661,8 +667,8 @@ public class SymmetricRangeTests {
             testGetLowestSetBit();
             testBitLength();
             testBitCount();
-            break;
-        case 4:
+        }
+        if (subset == 0 || subset == 4) {
             testToString();
             testToByteArrayWithConstructor();
             testIntValue();
@@ -674,9 +680,6 @@ public class SymmetricRangeTests {
             testIntValueExact();
             testShortValueExact();
             testByteValueExact();
-            break;
-        default:
-            throw new RuntimeException("Unknown subset " + subset);
         }
     }
 }
