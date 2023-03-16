@@ -23,6 +23,8 @@
  * questions.
  */
 
+#define ToUnicodeEx ToUnicodeExCPP
+
 #include "awt.h"
 
 #include <windowsx.h>
@@ -74,6 +76,8 @@
 
 #include <awt_DnDDT.h>
 
+#undef ToUnicodeEx
+
 LPCTSTR szAwtComponentClassName = TEXT("SunAwtComponent");
 // register a message that no other window in the process (even in a plugin
 // scenario) will be using
@@ -94,8 +98,8 @@ extern "C" {
     // issued.
     BOOL g_bUserHasChangedInputLang = FALSE;
 
-    // C version to avoid wchar_t issues
-    WINUSERAPI int WINAPI ToUnicodeEx(UINT, UINT, const BYTE*, unsigned short*, int, UINT, HKL);
+    // Replace with our own UTF-16 declaration
+    WINUSERAPI int WINAPI ToUnicodeEx(UINT, UINT, const BYTE*, char16_t*, int, UINT, HKL);
 }
 
 BOOL AwtComponent::sm_suppressFocusAndActivation = FALSE;
@@ -3401,7 +3405,7 @@ BOOL AwtComponent::IsNumPadKey(UINT vkey, BOOL extended)
 static void
 resetKbdState( BYTE kstate[256]) {
     BYTE tmpState[256];
-    WCHAR wc[2];
+    char16_t wc[2];
     memmove(tmpState, kstate, 256 * sizeof(BYTE));
     tmpState[VK_SHIFT] = 0;
     tmpState[VK_CONTROL] = 0;
@@ -3462,8 +3466,8 @@ AwtComponent::BuildPrimaryDynamicTable() {
 
         // XXX process cases like VK_SHIFT etc.
         kbdState[i] = 0x80; // "key pressed".
-        WCHAR wc[16];
-        int k = ::ToUnicodeEx(i, sc, kbdState, wc, 16, 0, hkl);
+        unsigned short wc[16];
+        int k = ::ToUnicodeEx(i, sc, kbdState, static_cast<char16_t*>(wc), 16, 0, hkl);
         if (k == 1) {
             // unicode
             dynPrimaryKeymap[i].unicode = wc[0];
@@ -3630,7 +3634,7 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
     } else {
         UINT scancode = ::MapVirtualKey(wkey, 0);
         converted = ::ToUnicodeEx(wkey, scancode, keyboardState,
-                                              wChar, 2, 0, GetKeyboardLayout());
+                                              static_cast<char16_t*>(wChar), 2, 0, GetKeyboardLayout());
     }
 
     UINT translation;

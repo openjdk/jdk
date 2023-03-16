@@ -28,14 +28,16 @@
 //=--------------------------------------------------------------------------=
 //
 
+#define CertGetNameStringW CertGetNameStringWCPP
+
 #include <jni.h>
 #include "jni_util.h"
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <windows.h>
 #include <BaseTsd.h>
 #include <wincrypt.h>
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <memory>
 #include "sun_security_mscapi_CKey.h"
@@ -47,6 +49,8 @@
 #include "sun_security_mscapi_CPublicKey_CRSAPublicKey.h"
 #include "sun_security_mscapi_CSignature.h"
 #include "sun_security_mscapi_CSignature_RSA.h"
+
+#undef CertGetNameStringW
 
 #define OID_EKU_ANY         "2.5.29.37.0"
 
@@ -79,8 +83,8 @@
 
 extern "C" {
 
-// We want the C version instead, char16_t is unsigned short in C so this works
-WINCRYPT32API DWORD WINAPI CertGetNameStringW(PCCERT_CONTEXT, DWORD, DWORD, void*, unsigned short*, DWORD);
+// char16_t will fortunately correctly translate to what C requires here
+WINCRYPT32API DWORD WINAPI CertGetNameStringW(PCCERT_CONTEXT, DWORD, DWORD, void*, char16_t*, DWORD);
 
 char* trace = getenv("CAPI_TRACE");
 
@@ -625,7 +629,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
 
                                 CertGetNameStringW(pc,
                                     CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL,
-                                    pszNameString, cchNameString);
+                                    static_cast<char16_t*>(pszNameString), cchNameString);
                             }
                         }
 
@@ -1791,8 +1795,8 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
             }
 
             ::CertGetNameStringW(pTBDCertContext,
-                CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, pszNameString,
-                cchNameString);
+                CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL,
+                static_cast<char16_t*>(pszNameString), cchNameString);
 
             // Compare the certificate's friendly name with supplied alias name
             if ((pszCertAliasName = env->GetStringChars(jCertAliasName, NULL))
