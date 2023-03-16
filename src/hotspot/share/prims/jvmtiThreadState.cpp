@@ -226,7 +226,7 @@ volatile int JvmtiVTMSTransitionDisabler::_VTMS_transition_disable_for_all_count
 volatile bool JvmtiVTMSTransitionDisabler::_SR_mode = false;
 
 // Notifications from VirtualThread about VTMS events are enabled.  
-bool JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events = false;
+bool JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events = false;
 
 #ifdef ASSERT
 void

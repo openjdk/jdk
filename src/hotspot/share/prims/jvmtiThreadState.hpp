@@ -94,8 +94,9 @@ class JvmtiVTMSTransitionDisabler {
   void VTMS_transition_enable_for_all();
 
  public:
-  static bool VTMS_notify_jvmti_events;                  // enable notifications from VirtualThread about VTMS events  
-  static void set_VTMS_notify_jvmti_events(bool val) { VTMS_notify_jvmti_events = val; }
+  static bool _VTMS_notify_jvmti_events;                  // enable notifications from VirtualThread about VTMS events  
+  static bool VTMS_notify_jvmti_events()             { return _VTMS_notify_jvmti_events; }
+  static void set_VTMS_notify_jvmti_events(bool val) { _VTMS_notify_jvmti_events = val; }
 
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);

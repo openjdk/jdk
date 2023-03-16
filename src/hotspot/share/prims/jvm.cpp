@@ -3923,7 +3923,7 @@ JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hi
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events) {
+  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     thread->set_is_in_VTMS_transition(hide);
     return;
   }
@@ -3943,7 +3943,7 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events) {
+  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     thread->set_is_in_VTMS_transition(hide);
     return;
   }
@@ -3963,7 +3963,7 @@ JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboole
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events) {
+  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     return;
   }
   assert(!thread->is_in_VTMS_transition(), "sanity check");

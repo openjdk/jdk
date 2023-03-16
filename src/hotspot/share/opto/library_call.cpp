@@ -2864,7 +2864,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   Node* hide   = _gvn.transform(argument(1));
   Node* cond   = _gvn.transform(argument(2));
 
-  Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events));
+  Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events));
   Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
@@ -2894,7 +2894,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_hide() {
   IdealKit ideal(this);
 
   Node* ONE = ideal.ConI(1);
-  Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events));
+  Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events));
   Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
