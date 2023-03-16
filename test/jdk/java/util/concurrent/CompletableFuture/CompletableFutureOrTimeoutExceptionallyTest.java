@@ -39,11 +39,11 @@ class CompletableFutureOrTimeoutExceptionallyTest {
      * Test that orTimeout task is cancelled if the CompletableFuture is completed Exceptionally
      */
     @Test
-    void testOrTimeoutWithCompleteExceptionallyDoesNotLeak() throws Exception {
-        var startTime = System.currentTimeMillis();
-        var testRunTime = Duration.ofSeconds(10).toMillis();
-        while ((System.currentTimeMillis() - startTime) < testRunTime) {
+    void testOrTimeoutWithCompleteExceptionallyDoesNotLeak() {
+        var count = 0L;
+        while(count < 2_000_000) {
             new CompletableFuture<>().orTimeout(12, TimeUnit.HOURS).completeExceptionally(new RuntimeException("This is fine"));
+            ++count;
         }
     }
 }
