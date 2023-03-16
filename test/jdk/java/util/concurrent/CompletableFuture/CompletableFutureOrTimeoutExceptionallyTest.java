@@ -42,7 +42,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
     void testOrTimeoutWithCompleteExceptionallyDoesNotLeak() throws Exception {
         var startTime = System.currentTimeMillis();
         var testRunTime = Duration.ofSeconds(10).toMillis();
-        while((System.currentTimeMillis() - startTime) < testRunTime) {
+        while ((System.currentTimeMillis() - startTime) < testRunTime) {
             new CompletableFuture<>().orTimeout(12, TimeUnit.HOURS).completeExceptionally(new RuntimeException("This is fine"));
         }
     }
