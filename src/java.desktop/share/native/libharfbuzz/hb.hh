@@ -115,11 +115,11 @@
 
 /* Ignored currently, but should be fixed at some point. */
 #ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_IGNORED
-#pragma GCC diagnostic ignored "-Wconversion"                   // TODO fix
-#pragma GCC diagnostic ignored "-Wshadow"                       // TODO fix
-#pragma GCC diagnostic ignored "-Wunused-parameter"             // TODO fix
+#pragma GCC diagnostic ignored "-Wconversion"			// TODO fix
+#pragma GCC diagnostic ignored "-Wshadow"			// TODO fix
+#pragma GCC diagnostic ignored "-Wunused-parameter"		// TODO fix
 #if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic ignored "-Wunused-result"                // TODO fix
+#pragma GCC diagnostic ignored "-Wunused-result"		// TODO fix
 #endif
 #endif
 
@@ -246,7 +246,15 @@ extern "C" void  hb_free_impl(void *ptr);
  * Compiler attributes
  */
 
-#if (defined(__GNUC__) || defined(__clang__)) && defined(__OPTIMIZE__)
+// gcc 10 has __has_builtin but not earlier versions. Sanction any gcc >= 5
+// clang defines it so no need.
+#ifdef __has_builtin
+#define hb_has_builtin __has_builtin
+#else
+#define hb_has_builtin(x) ((defined(__GNUC__) && __GNUC__ >= 5))
+#endif
+
+#if defined(__OPTIMIZE__) && hb_has_builtin(__builtin_expect)
 #define likely(expr) (__builtin_expect (!!(expr), 1))
 #define unlikely(expr) (__builtin_expect (!!(expr), 0))
 #else
@@ -265,7 +273,7 @@ extern "C" void  hb_free_impl(void *ptr);
 #define HB_PRINTF_FUNC(format_idx, arg_idx)
 #endif
 #if defined(__GNUC__) && (__GNUC__ >= 4) || (__clang__)
-#define HB_UNUSED       __attribute__((unused))
+#define HB_UNUSED	__attribute__((unused))
 #elif defined(_MSC_VER) /* https://github.com/harfbuzz/harfbuzz/issues/635 */
 #define HB_UNUSED __pragma(warning(suppress: 4100 4101))
 #else
@@ -501,6 +509,12 @@ static_assert ((sizeof (hb_mask_t) == 4), "");
 static_assert ((sizeof (hb_var_int_t) == 4), "");
 
 
+/* Pie time. */
+// https://github.com/harfbuzz/harfbuzz/issues/4166
+#define HB_PI 3.14159265358979f
+#define HB_2_PI (2.f * HB_PI)
+
+
 /* Headers we include for everyone.  Keep topologically sorted by dependency.
  * They express dependency amongst themselves, but no other file should include
  * them directly.*/
@@ -508,13 +522,13 @@ static_assert ((sizeof (hb_var_int_t) == 4), "");
 #include "hb-meta.hh"
 #include "hb-mutex.hh"
 #include "hb-number.hh"
-#include "hb-atomic.hh" // Requires: hb-meta
-#include "hb-null.hh"   // Requires: hb-meta
-#include "hb-algs.hh"   // Requires: hb-meta hb-null hb-number
-#include "hb-iter.hh"   // Requires: hb-algs hb-meta
-#include "hb-debug.hh"  // Requires: hb-algs hb-atomic
-#include "hb-array.hh"  // Requires: hb-algs hb-iter hb-null
-#include "hb-vector.hh" // Requires: hb-array hb-null
-#include "hb-object.hh" // Requires: hb-atomic hb-mutex hb-vector
+#include "hb-atomic.hh"	// Requires: hb-meta
+#include "hb-null.hh"	// Requires: hb-meta
+#include "hb-algs.hh"	// Requires: hb-meta hb-null hb-number
+#include "hb-iter.hh"	// Requires: hb-algs hb-meta
+#include "hb-debug.hh"	// Requires: hb-algs hb-atomic
+#include "hb-array.hh"	// Requires: hb-algs hb-iter hb-null
+#include "hb-vector.hh"	// Requires: hb-array hb-null
+#include "hb-object.hh"	// Requires: hb-atomic hb-mutex hb-vector
 
 #endif /* HB_HH */
