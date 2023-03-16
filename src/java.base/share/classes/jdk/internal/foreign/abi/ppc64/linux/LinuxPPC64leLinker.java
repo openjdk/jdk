@@ -31,7 +31,6 @@ import jdk.internal.foreign.abi.ppc64.CallArranger;
 
 import java.lang.foreign.SegmentScope;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.function.Consumer;
@@ -52,7 +51,7 @@ public final class LinuxPPC64leLinker extends AbstractLinker {
     }
 
     @Override
-    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, SegmentScope scope) {
-        return CallArranger.ABIv2.arrangeUpcall(target, targetType, function, scope);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
+        return CallArranger.ABIv2.arrangeUpcall(targetType, function);
     }
 }
