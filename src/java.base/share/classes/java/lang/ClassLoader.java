@@ -406,6 +406,11 @@ public abstract class ClassLoader {
         return nid;
     }
 
+    // Returns nameAndId string for exception message printing
+    String nameAndId() {
+        return nameAndId;
+    }
+
     /**
      * Creates a new class loader of the specified name and using the
      * specified parent class loader for delegation.

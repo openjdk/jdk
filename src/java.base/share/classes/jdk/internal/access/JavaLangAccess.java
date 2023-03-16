@@ -410,4 +410,10 @@ public interface JavaLangAccess {
      * @param statusCode the status code
      */
     void exit(int statusCode);
+
+    /**
+     * Returns '<loader-name>' @<id> if classloader has a name
+     * explicitly set otherwise <qualified-class-name> @<id>
+     */
+    String getLoaderNameID(ClassLoader loader);
 }
