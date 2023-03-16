@@ -61,6 +61,11 @@ void G1FullCollector::update_from_compacting_to_skip_compacting(uint region_idx)
   _region_attr_table.set_skip_compacting(region_idx);
 }
 
+void G1FullCollector::update_from_skip_compacting_to_compacting(uint region_idx) {
+  DEBUG_ONLY(_region_attr_table.verify_is_skip_compacting(region_idx);)
+  _region_attr_table.set_compacting(region_idx);
+}
+
 void G1FullCollector::set_compaction_top(HeapRegion* r, HeapWord* value) {
   Atomic::store(&_compaction_tops[r->hrm_index()], value);
 }
@@ -77,6 +82,24 @@ void G1FullCollector::set_has_compaction_targets() {
 
 bool G1FullCollector::has_compaction_targets() const {
   return _has_compaction_targets;
+}
+
+void G1FullCollector::set_has_humongous() {
+  if (!_has_humongous) {
+    _has_humongous = true;
+  }
+}
+
+bool G1FullCollector::has_humongous() {
+  return _has_humongous;
+}
+
+void G1FullCollector::add_humongous_region(HeapRegion* hr) {
+  _humongous_compaction_regions.append(hr);
+}
+
+GrowableArrayCHeap<HeapRegion*, mtGC>& G1FullCollector::humongous_compaction_regions() {
+  return _humongous_compaction_regions;
 }
 
 #endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP

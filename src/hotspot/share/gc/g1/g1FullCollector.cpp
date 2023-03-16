@@ -40,7 +40,7 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -119,12 +119,15 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
     _has_compaction_targets(false),
+    _has_humongous(false),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
     _serial_compaction_point(this),
+    _humongous_compaction_point(this),
     _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
+    _humongous_compaction_regions(8),
     _always_subject_to_discovery(),
     _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
     _region_attr_table() {
@@ -155,6 +158,7 @@ G1FullCollector::~G1FullCollector() {
     delete _markers[i];
     delete _compaction_points[i];
   }
+
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
   FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
@@ -246,6 +250,8 @@ void G1FullCollector::complete_collection() {
   _heap->gc_epilogue(true);
 
   _heap->verify_after_full_collection();
+
+  _heap->print_heap_after_full_collection();
 }
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
@@ -343,6 +349,12 @@ void G1FullCollector::phase2_prepare_compaction() {
   // maximally compact the tail regions of the compaction queues serially.
   if (scope()->do_maximal_compaction() || !has_free_compaction_targets) {
     phase2c_prepare_serial_compaction();
+
+    if (scope()->do_maximal_compaction() &&
+        has_humongous() &&
+        serial_compaction_point()->has_regions()) {
+      phase2d_prepare_humongous_compaction();
+    }
   }
 }
 
@@ -418,6 +430,35 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   serial_cp->update();
 }
 
+void G1FullCollector::phase2d_prepare_humongous_compaction() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare humongous compaction", scope()->timer());
+  G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
+  assert(serial_cp->has_regions(), "Sanity!" );
+
+  uint last_serial_target = serial_cp->current_region()->hrm_index();
+  uint region_index = last_serial_target + 1;
+  uint max_reserved_regions = _heap->max_reserved_regions();
+
+  G1FullGCCompactionPoint* humongous_cp = humongous_compaction_point();
+
+  while (region_index < max_reserved_regions) {
+    HeapRegion* hr = _heap->region_at_or_null(region_index);
+
+    if (hr == nullptr) {
+      region_index++;
+      continue;
+    } else if (hr->is_starts_humongous()) {
+      uint num_regions = humongous_cp->forward_humongous(hr);
+      region_index += num_regions; // Skip over the continues humongous regions.
+      continue;
+    } else if (is_compaction_target(region_index)) {
+      // Add the region to the humongous compaction point.
+      humongous_cp->add(hr);
+    }
+    region_index++;
+  }
+}
+
 void G1FullCollector::phase3_adjust_pointers() {
   // Adjust the pointers to reflect the new locations
   GCTraceTime(Info, gc, phases) info("Phase 3: Adjust pointers", scope()->timer());
@@ -435,6 +476,11 @@ void G1FullCollector::phase4_do_compaction() {
   // Serial compact to avoid OOM when very few free regions.
   if (serial_compaction_point()->has_regions()) {
     task.serial_compaction();
+  }
+
+  if (!_humongous_compaction_regions.is_empty()) {
+    assert(scope()->do_maximal_compaction(), "Only compact humongous during maximal compaction");
+    task.humongous_compaction();
   }
 }
 
