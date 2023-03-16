@@ -157,7 +157,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 resource = predicate.test(path) ? resource: null;
                 if (resource != null &&
                     resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE) &&
-                    resource.path().endsWith(".class")) {
+                    path.endsWith(".class")) {
                     byte[] bytes = resource.contentBytes();
                     ClassReader cr = newClassReader(path, bytes);
                     if (Arrays.stream(cr.getInterfaces())
