@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,8 +192,8 @@ struct IdealHelper {
     const Type* type1 = phase->type(arg1);
     const Type* type2 = phase->type(arg2);
 
-    if (type1 == NULL || type2 == NULL) {
-      return NULL;
+    if (type1 == nullptr || type2 == nullptr) {
+      return nullptr;
     }
 
     if (type1 != Type::TOP && type1->singleton() &&
@@ -204,9 +204,9 @@ struct IdealHelper {
         Node* con_result = ConINode::make(0);
         return con_result;
       }
-      return NULL;
+      return nullptr;
     }
-    return NULL;
+    return nullptr;
   }
 
   static const Type* Value(const OverflowOp* node, PhaseTransform* phase) {
@@ -218,7 +218,7 @@ struct IdealHelper {
     const TypeClass* i1 = TypeClass::as_self(t1);
     const TypeClass* i2 = TypeClass::as_self(t2);
 
-    if (i1 == NULL || i2 == NULL) {
+    if (i1 == nullptr || i2 == nullptr) {
       return TypeInt::CC;
     }
 

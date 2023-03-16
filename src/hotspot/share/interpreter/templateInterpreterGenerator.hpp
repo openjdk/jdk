@@ -84,7 +84,10 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   void generate_all();
 
   // entry point generator
-  address generate_method_entry(AbstractInterpreter::MethodKind kind);
+  address generate_method_entry(AbstractInterpreter::MethodKind kind, bool native);
+
+  // generate intrinsic method entries
+  address generate_intrinsic_entry(AbstractInterpreter::MethodKind kind);
 
   address generate_normal_entry(bool synchronized);
   address generate_native_entry(bool synchronized);
@@ -94,15 +97,11 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
-#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   address generate_currentThread();
-#endif
-#ifdef IA32
   address generate_Float_intBitsToFloat_entry();
   address generate_Float_floatToRawIntBits_entry();
   address generate_Double_longBitsToDouble_entry();
   address generate_Double_doubleToRawLongBits_entry();
-#endif // IA32
   address generate_Float_float16ToFloat_entry();
   address generate_Float_floatToFloat16_entry();
 

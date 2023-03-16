@@ -46,7 +46,6 @@ import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
 import com.sun.tools.javac.comp.Check.CheckContext;
@@ -5231,7 +5230,7 @@ public class Attr extends JCTree.Visitor {
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
         Type underlyingType = attribType(tree.underlyingType, env);
-        Type annotatedType = underlyingType.annotatedType(Annotations.TO_BE_SET);
+        Type annotatedType = underlyingType.preannotatedType();
 
         if (!env.info.isNewClass)
             annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);

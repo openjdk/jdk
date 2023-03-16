@@ -34,9 +34,10 @@
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
 
-#define PRAGMA_DISABLE_GCC_WARNING_AUX(x) _Pragma(#x)
-#define PRAGMA_DISABLE_GCC_WARNING(option_string) \
-  PRAGMA_DISABLE_GCC_WARNING_AUX(GCC diagnostic ignored option_string)
+#define PRAGMA_DISABLE_GCC_WARNING(optstring) _Pragma(STR(GCC diagnostic ignored optstring))
+
+#define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
+#define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
@@ -56,18 +57,7 @@
 #define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
 #endif
 
-#define PRAGMA_NONNULL_IGNORED \
-  PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
-
-#if defined(__clang_major__) && \
-      (__clang_major__ >= 4 || \
-      (__clang_major__ >= 3 && __clang_minor__ >= 1)) || \
-    ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ > 4)
-// Tested to work with clang version 3.1 and better.
-#define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
-#define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
-
-#endif // clang/gcc version check
+#define PRAGMA_NONNULL_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
 #if (__GNUC__ >= 10)
 // TODO: Re-enable warning attribute for Clang once

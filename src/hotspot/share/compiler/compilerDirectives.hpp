@@ -126,7 +126,7 @@ public:
   bool is_exclusive_copy() { return _directive == nullptr; }
   bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
-  bool is_intrinsic_disabled(const methodHandle& method);
+  bool is_intrinsic_disabled(vmIntrinsicID id);
   static ccstrlist canonicalize_control_intrinsic(ccstrlist option_value);
   void finalize(outputStream* st);
   bool is_c1(CompilerDirectives* directive) const;

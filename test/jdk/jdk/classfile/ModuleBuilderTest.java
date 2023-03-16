@@ -85,8 +85,8 @@ class ModuleBuilderTest {
                         .uses(ClassDesc.of("another.Service"))
 
                         .provides(ClassDesc.of("some.nice.Feature"), ClassDesc.of("impl"), ClassDesc.of("another.impl"))),
-                List.of(PackageDesc.of("foo.bar.baz"), PackageDesc.of("quux"), PackageDesc.of("foo.bar.baz"), PackageDesc.of("quux")),
                 clb -> clb.with(ModuleMainClassAttribute.of(ClassDesc.of("main.Class")))
+                          .with(ModulePackagesAttribute.ofNames(PackageDesc.of("foo.bar.baz"), PackageDesc.of("quux")))
                           .with(ModuleMainClassAttribute.of(ClassDesc.of("overwritten.main.Class"))));
         moduleModel = Classfile.parse(modInfo);
         attr = ((ModuleAttribute) moduleModel.attributes().stream()
@@ -182,7 +182,7 @@ class ModuleBuilderTest {
     @Test
     void verifyPackages() {
         ModulePackagesAttribute a = moduleModel.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
-        assertEquals(a.packages().stream().map(pe -> pe.asSymbol().packageName()).toList(), List.of("0", "1", "2", "3", "4", "o0", "o1", "o2", "foo.bar.baz", "quux"));
+        assertEquals(a.packages().stream().map(pe -> pe.asSymbol().packageName()).toList(), List.of("foo.bar.baz", "quux"));
     }
 
     @Test

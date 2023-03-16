@@ -6412,10 +6412,10 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(decL3, arrangement, decL3, decH3);
 
     // check illegal inputs, value larger than 63 (maximum of 6 bits)
-    __ cmhi(decH0, arrangement, decL0, v27);
-    __ cmhi(decH1, arrangement, decL1, v27);
-    __ cmhi(decH2, arrangement, decL2, v27);
-    __ cmhi(decH3, arrangement, decL3, v27);
+    __ cm(Assembler::HI, decH0, arrangement, decL0, v27);
+    __ cm(Assembler::HI, decH1, arrangement, decL1, v27);
+    __ cm(Assembler::HI, decH2, arrangement, decL2, v27);
+    __ cm(Assembler::HI, decH3, arrangement, decL3, v27);
     __ orr(in0, arrangement, decH0, decH1);
     __ orr(in1, arrangement, decH2, decH3);
     __ orr(in2, arrangement, in0,   in1);

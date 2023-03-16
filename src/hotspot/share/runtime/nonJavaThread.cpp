@@ -270,8 +270,8 @@ void WatcherThread::run() {
           os::die();
         }
 
-        // Wait a second, then recheck for timeout.
-        os::naked_short_sleep(999);
+        // Wait a bit, then recheck for timeout.
+        os::naked_short_sleep(250);
       }
     }
 
