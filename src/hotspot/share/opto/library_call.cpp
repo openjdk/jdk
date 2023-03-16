@@ -50,6 +50,7 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -477,6 +478,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_scopedValueCache:          return inline_native_scopedValueCache();
   case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
+
+#if INCLUDE_JVMTI
+  case vmIntrinsics::_notifyJvmtiMount:         return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_mount()),
+                                                                                        "notifyJvmtiMount");
+  case vmIntrinsics::_notifyJvmtiUnmount:       return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_unmount()),
+                                                                                        "notifyJvmtiUnmount");
+  case vmIntrinsics::_notifyJvmtiHideFrames:    return inline_native_notify_jvmti_hide();
+#endif
 
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
@@ -2840,6 +2849,70 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
   set_result(value);
   return true;
 }
+
+
+#if INCLUDE_JVMTI
+bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName) {
+  if (!DoJVMTIVirtualThreadTransitions) {
+    return true;
+  }
+  IdealKit ideal(this);
+
+  Node* ONE = ideal.ConI(1);
+  const TypeFunc* tf = OptoRuntime::notify_jvmti_Type();
+  Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true));
+  Node* hide   = _gvn.transform(argument(1));
+  Node* cond   = _gvn.transform(argument(2));
+
+  Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events));
+  Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+
+  ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
+    // if notifyJvmti enabled then make a call to the given SharedRuntime function
+    sync_kit(ideal);
+    make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide, cond);
+    ideal.sync_kit(this);
+  } ideal.else_(); {
+    // set begin value to the VTMS transition bit in current JavaThread
+    Node* thread = ideal.thread();
+    Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
+    const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
+
+    sync_kit(ideal);
+    access_store_at(nullptr, addr, addr_type, hide, _gvn.type(cond), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    ideal.sync_kit(this);
+  } ideal.end_if();
+  final_sync(ideal);
+
+  return true;
+}
+
+bool LibraryCallKit::inline_native_notify_jvmti_hide() {
+  if (!DoJVMTIVirtualThreadTransitions) {
+    return true;
+  }
+  IdealKit ideal(this);
+
+  Node* ONE = ideal.ConI(1);
+  Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events));
+  Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+
+  ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
+    // set the VTMS temporary transition bit in current JavaThread
+    Node* thread = ideal.thread();
+    Node* hide = _gvn.transform(argument(1));
+    Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_tmp_VTMS_transition_offset()));
+    const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
+
+    sync_kit(ideal);
+    access_store_at(nullptr, addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    ideal.sync_kit(this);
+  } ideal.end_if();
+  final_sync(ideal);
+
+  return true;
+}
+#endif // INCLUDE_JVMTI
 
 #ifdef JFR_HAVE_INTRINSICS
 

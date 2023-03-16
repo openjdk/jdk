@@ -94,6 +94,9 @@ class JvmtiVTMSTransitionDisabler {
   void VTMS_transition_enable_for_all();
 
  public:
+  static bool VTMS_notify_jvmti_events;                  // enable notifications from VirtualThread about VTMS events  
+  static void set_VTMS_notify_jvmti_events(bool val) { VTMS_notify_jvmti_events = val; }
+
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);
   JvmtiVTMSTransitionDisabler(jthread thread);
@@ -101,6 +104,11 @@ class JvmtiVTMSTransitionDisabler {
 
   static void start_VTMS_transition(jthread vthread, bool is_mount);
   static void finish_VTMS_transition(jthread vthread, bool is_mount);
+
+  static void VTMS_mount_begin(jobject vthread, jboolean first_mount);
+  static void VTMS_mount_end(jobject vthread, jboolean first_mount);
+  static void VTMS_unmount_begin(jobject vthread, jboolean last_unmount);
+  static void VTMS_unmount_end(jobject vthread, jboolean last_unmount);
 };
 
 ///////////////////////////////////////////////////////////////

@@ -53,6 +53,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
@@ -622,6 +623,28 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
   Handle h_exception = Exceptions::new_exception(current, name, message);
   throw_and_post_jvmti_exception(current, h_exception);
 }
+
+#if INCLUDE_JVMTI
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+
+  if (hide) {
+    JvmtiVTMSTransitionDisabler::VTMS_mount_begin(vthread, first_mount);
+  } else {
+    JvmtiVTMSTransitionDisabler::VTMS_mount_end(vthread, first_mount);
+  }
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+
+  if (hide) {
+    JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(vthread, last_unmount);
+  } else {
+    JvmtiVTMSTransitionDisabler::VTMS_unmount_end(vthread, last_unmount);
+  }
+JRT_END
+#endif // INCLUDE_JVMTI
 
 // The interpreter code to call this tracing function is only
 // called/generated when UL is on for redefine, class and has the right level

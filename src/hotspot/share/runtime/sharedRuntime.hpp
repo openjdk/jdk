@@ -264,6 +264,12 @@ class SharedRuntime: AllStatic {
   static void throw_and_post_jvmti_exception(JavaThread* current, Handle h_exception);
   static void throw_and_post_jvmti_exception(JavaThread* current, Symbol* name, const char *message = nullptr);
 
+#if INCLUDE_JVMTI
+  // Functions for JVMTI notifications
+  static void notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* jt); 
+  static void notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* jt); 
+#endif
+
   // RedefineClasses() tracing support for obsolete method entry
   static int rc_trace_method_entry(JavaThread* thread, Method* m);
 
