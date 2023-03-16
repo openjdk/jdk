@@ -3059,7 +3059,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass_check_null(Register dst, Register src, Label* is_null) {
-  null_check(src, oopDesc::klass_offset_in_bytes(), is_null);
+  null_check(src, -1, is_null);
   load_klass(dst, src);
 }
 

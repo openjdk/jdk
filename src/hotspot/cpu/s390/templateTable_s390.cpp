@@ -772,9 +772,6 @@ void TemplateTable::wide_aload() {
 void TemplateTable::index_check(Register array, Register index, unsigned int shift) {
   assert_different_registers(Z_R1_scratch, array, index);
 
-  // Check array.
-  __ null_check(array, Z_R0_scratch, arrayOopDesc::length_offset_in_bytes());
-
   // Sign extend index for use by indexed load.
   __ z_lgfr(index, index);
 
@@ -3865,8 +3862,6 @@ void TemplateTable::arraylength() {
   transition(atos, itos);
 
   int offset = arrayOopDesc::length_offset_in_bytes();
-
-  __ null_check(Z_tos, Z_R0_scratch, offset);
   __ mem2reg_opt(Z_tos, Address(Z_tos, offset), false);
 }
 

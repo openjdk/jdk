@@ -4324,7 +4324,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass_check_null(Register dst, Register src) {
-  null_check(src, oopDesc::klass_offset_in_bytes());
+  null_check(src);
   load_klass(dst, src);
 }
 

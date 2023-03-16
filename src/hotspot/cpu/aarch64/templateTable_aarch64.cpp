@@ -730,8 +730,6 @@ void TemplateTable::wide_aload()
 void TemplateTable::index_check(Register array, Register index)
 {
   // destroys r1, rscratch1
-  // check array
-  __ null_check(array, arrayOopDesc::length_offset_in_bytes());
   // sign extend index for use by indexed load
   // __ movl2ptr(index, index);
   // check index
@@ -3581,7 +3579,6 @@ void TemplateTable::anewarray() {
 
 void TemplateTable::arraylength() {
   transition(atos, itos);
-  __ null_check(r0, arrayOopDesc::length_offset_in_bytes());
   __ ldrw(r0, Address(r0, arrayOopDesc::length_offset_in_bytes()));
 }
 

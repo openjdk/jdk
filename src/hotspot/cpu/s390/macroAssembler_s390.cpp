@@ -3652,7 +3652,7 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
 }
 
 void MacroAssembler::load_klass_check_null(Register klass, Register src_oop, Register tmp) {
-  null_check(src_oop, tmp, oopDesc::klass_offset_in_bytes());
+  null_check(src_oop, tmp);
   load_klass(klass, src_oop);
 }
 
