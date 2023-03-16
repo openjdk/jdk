@@ -59,6 +59,12 @@ class InvokeHangTarg implements Runnable {
 
         t1.start();
         t2.start();
+        try {
+            t1.join();
+            t2.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // This is called from the debugger via invokeMethod
@@ -145,9 +151,9 @@ public class InvokeHangTest extends TestScaffold {
         List methods = ref.referenceType().methodsByName(methodName);
         Method method = (Method) methods.get(0);
         try {
-            System.err.println("  Debugger: Invoking in thread" + thread);
+            System.out.println("  Debugger: Invoking in thread " + thread);
             ref.invokeMethod(thread, method, new ArrayList(), ref.INVOKE_NONVIRTUAL);
-            System.err.println("  Debugger: Invoke done");
+            System.out.println("  Debugger: Invoke done");
         } catch (Exception ex) {
             ex.printStackTrace();
             failure("failure: Exception");
@@ -191,7 +197,7 @@ public class InvokeHangTest extends TestScaffold {
         ThreadReference thread = event.thread();
         try {
             StackFrame sf = thread.frame(0);
-            System.err.println("  Debugger: Breakpoint hit at "+sf.location());
+            System.out.println("  Debugger: Breakpoint hit at "+sf.location());
             doInvoke(thread, sf.thisObject(), "invokeee");
         } catch (IncompatibleThreadStateException itsex) {
             itsex.printStackTrace();
@@ -214,7 +220,7 @@ public class InvokeHangTest extends TestScaffold {
         targetClass = bpe.location().declaringType();
         mainThread = bpe.thread();
         EventRequestManager erm = vm().eventRequestManager();
-        final Thread mainThread = Thread.currentThread();
+        final Thread mainTestThread = Thread.currentThread();
 
         /*
          * Set event requests
@@ -246,7 +252,7 @@ public class InvokeHangTest extends TestScaffold {
                                 vmDisconnected = true;
                                 // This awakens the main thread which is
                                 // waiting for a VMDisconnect.
-                                mainThread.interrupt();
+                                mainTestThread.interrupt();
                                 break;
                             }
                             myBkpts = bkpts;

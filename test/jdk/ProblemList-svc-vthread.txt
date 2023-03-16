@@ -54,8 +54,6 @@ com/sun/jdi/StepTest.java 8285422 generic-all
 com/sun/jdi/redefine/RedefineTest.java 8285422 generic-all
 com/sun/jdi/redefineMethod/RedefineTest.java 8285422 generic-all
 
-com/sun/jdi/InvokeHangTest.java 8290200 macosx-x64,windows-x64
-
 ####
 # JDI SDE Tests
 # Use custom classpath
