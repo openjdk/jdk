@@ -47,6 +47,9 @@ public class TestEditorPaneAccessibleChildCount {
     private static JEditorPane jep;
     private static AccessibleContext ac;
     private static JFrame frame;
+    private static int childCount1 = 0;
+    private static int childCount2 = 0;
+
 
     public TestEditorPaneAccessibleChildCount() {
         createAndShowUI();
@@ -97,8 +100,8 @@ public class TestEditorPaneAccessibleChildCount {
             addDelay(500);
             SwingUtilities.invokeAndWait(() -> {
                 ac = jep.getAccessibleContext();
+                childCount1 = ac.getAccessibleChildrenCount();
             });
-            int childCount1 = ac.getAccessibleChildrenCount();
 
             URL url = TestEditorPaneAccessibleChildCount.class.
                         getResource("test2.html");
@@ -106,7 +109,10 @@ public class TestEditorPaneAccessibleChildCount {
                 loadHtmlPage(url);
             });
             addDelay(500);
-            int childCount2 = ac.getAccessibleChildrenCount();
+
+            SwingUtilities.invokeAndWait(() -> {
+                childCount2 = ac.getAccessibleChildrenCount();
+            });
 
             if ((childCount1 != childCount2) &&
                     (childCount1 != 0 && childCount2 != 0)) {
