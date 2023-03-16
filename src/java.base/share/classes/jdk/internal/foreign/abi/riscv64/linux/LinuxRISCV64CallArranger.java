@@ -31,6 +31,7 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.ABIDescriptor;
+import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
@@ -120,15 +121,11 @@ public class LinuxRISCV64CallArranger {
         return handle;
     }
 
-    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope scope) {
-
+    public static UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc) {
         Bindings bindings = getBindings(mt, cDesc, true);
-
-        if (bindings.isInMemoryReturn) {
-            target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
-        }
-
-        return UpcallLinker.make(CLinux, target, bindings.callingSequence, scope);
+        final boolean dropReturn = true; /* drop return, since we don't have bindings for it */
+        return SharedUtils.arrangeUpcallHelper(mt, bindings.isInMemoryReturn, dropReturn, CLinux,
+                bindings.callingSequence);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -305,7 +302,7 @@ public class LinuxRISCV64CallArranger {
                         if (offset + copy < layout.byteSize()) {
                             bindings.dup();
                         }
-                        bindings.bufferLoad(offset, type)
+                        bindings.bufferLoad(offset, type, (int) copy)
                                 .vmStore(storage, type);
                         offset += copy;
                     }
@@ -415,7 +412,7 @@ public class LinuxRISCV64CallArranger {
                         VMStorage storage = locations[locIndex++];
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, false);
                         bindings.dup().vmLoad(storage, type)
-                                .bufferStore(offset, type);
+                                .bufferStore(offset, type, (int) copy);
                         offset += copy;
                     }
                 }

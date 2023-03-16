@@ -166,7 +166,7 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 }
 
 template<BitMap::bm_word_t flip, bool aligned_right>
-inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t beg, idx_t end) const {
+inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(beg, end);
   assert(!aligned_right || is_aligned(end, BitsPerWord), "end not aligned");
@@ -229,35 +229,61 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t beg, idx_t end) const {
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset(idx_t beg, idx_t end) const {
-  return get_next_bit_impl<find_ones_flip, false>(beg, end);
+BitMap::find_first_set_bit(idx_t beg, idx_t end) const {
+  return find_first_bit_impl<find_ones_flip, false>(beg, end);
 }
 
 inline BitMap::idx_t
-BitMap::get_next_zero_offset(idx_t beg, idx_t end) const {
-  return get_next_bit_impl<find_zeros_flip, false>(beg, end);
+BitMap::find_first_clear_bit(idx_t beg, idx_t end) const {
+  return find_first_bit_impl<find_zeros_flip, false>(beg, end);
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset_aligned_right(idx_t beg, idx_t end) const {
-  return get_next_bit_impl<find_ones_flip, true>(beg, end);
+BitMap::find_first_set_bit_aligned_right(idx_t beg, idx_t end) const {
+  return find_first_bit_impl<find_ones_flip, true>(beg, end);
 }
 
-template <typename BitMapClosureType>
-inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) {
+// IterateInvoker supports conditionally stopping iteration early.  The
+// invoker is called with the function to apply to each set index, along with
+// the current index.  If the function returns void then the invoker always
+// returns true, so no early stopping.  Otherwise, the result of the function
+// is returned by the invoker.  Iteration stops early if conversion of that
+// result to bool is false.
+
+template<typename ReturnType>
+struct BitMap::IterateInvoker {
+  template<typename Function>
+  bool operator()(Function function, idx_t index) const {
+    return function(index);     // Stop early if converting to bool is false.
+  }
+};
+
+template<>
+struct BitMap::IterateInvoker<void> {
+  template<typename Function>
+  bool operator()(Function function, idx_t index) const {
+    function(index);            // Result is void.
+    return true;                // Never stop early.
+  }
+};
+
+template <typename Function>
+inline bool BitMap::iterate(Function function, idx_t beg, idx_t end) const {
+  auto invoke = IterateInvoker<decltype(function(beg))>();
   for (idx_t index = beg; true; ++index) {
-    index = get_next_one_offset(index, end);
+    index = find_first_set_bit(index, end);
     if (index >= end) {
       return true;
-    } else if (!cl->do_bit(index)) {
+    } else if (!invoke(function, index)) {
       return false;
     }
   }
 }
 
 template <typename BitMapClosureType>
-inline bool BitMap::iterate(BitMapClosureType* cl) {
-  return iterate(cl, 0, size());
+inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const {
+  auto function = [&](idx_t index) { return cl->do_bit(index); };
+  return iterate(function, beg, end);
 }
 
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each

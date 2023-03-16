@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -181,7 +181,7 @@ static bool populate_lcpu_names(int ncpus, perfstat_id_t* lcpu_names) {
   perfstat_cpu_t* lcpu_stats;
   perfstat_id_t   name_holder;
 
-  assert(lcpu_names, "Names pointer NULL");
+  assert(lcpu_names, "Names pointer null");
 
   strncpy(name_holder.name, FIRST_CPU, IDENTIFIER_LENGTH);
 
@@ -209,7 +209,7 @@ static OSReturn perf_context_switch_rate(double* rate) {
   u_longlong_t ticks;
   perfstat_cpu_total_t cpu_stats;
 
-   if (libperfstat::perfstat_cpu_total(NULL, &cpu_stats, sizeof(perfstat_cpu_total_t), 1) < 0) {
+   if (libperfstat::perfstat_cpu_total(nullptr, &cpu_stats, sizeof(perfstat_cpu_total_t), 1) < 0) {
      return OS_ERR;
    }
 
@@ -238,13 +238,13 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
 
 CPUPerformanceInterface::CPUPerformance::CPUPerformance():
   _ncpus(0),
-  _lcpu_names(NULL),
-  _prev_ticks(NULL) {}
+  _lcpu_names(nullptr),
+  _prev_ticks(nullptr) {}
 
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
   perfstat_cpu_total_t cpu_stats;
 
-  if (libperfstat::perfstat_cpu_total(NULL, &cpu_stats, sizeof(perfstat_cpu_total_t), 1) < 0) {
+  if (libperfstat::perfstat_cpu_total(nullptr, &cpu_stats, sizeof(perfstat_cpu_total_t), 1) < 0) {
     return false;
   }
   if (cpu_stats.ncpus <= 0) {
@@ -280,7 +280,7 @@ CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
 int CPUPerformanceInterface::CPUPerformance::cpu_load(int lcpu_number, double* lcpu_load) {
   cpu_tick_store_t ticks;
 
-  assert(lcpu_load != NULL, "NULL pointer passed to cpu_load");
+  assert(lcpu_load != nullptr, "null pointer passed to cpu_load");
   assert(lcpu_number < _ncpus, "Invalid lcpu passed to cpu_load");
 
   if (get_lcpu_ticks(&_lcpu_names[lcpu_number], &ticks) == OS_ERR) {
@@ -301,7 +301,7 @@ int CPUPerformanceInterface::CPUPerformance::cpu_load_total_process(double* tota
   cpu_tick_store_t total_ticks;
   cpu_tick_store_t prev_total_ticks;
 
-  assert(total_load != NULL, "NULL pointer passed to cpu_load_total_process");
+  assert(total_load != nullptr, "null pointer passed to cpu_load_total_process");
 
   memset(&total_ticks, 0, sizeof(cpu_tick_store_t));
   memset(&prev_total_ticks, 0, sizeof(cpu_tick_store_t));
@@ -369,7 +369,7 @@ int CPUPerformanceInterface::CPUPerformance::context_switch_rate(double* rate) {
 }
 
 CPUPerformanceInterface::CPUPerformanceInterface() {
-  _impl = NULL;
+  _impl = nullptr;
 }
 
 bool CPUPerformanceInterface::initialize() {
@@ -378,7 +378,7 @@ bool CPUPerformanceInterface::initialize() {
 }
 
 CPUPerformanceInterface::~CPUPerformanceInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
   }
 }
@@ -421,10 +421,10 @@ SystemProcessInterface::SystemProcesses::~SystemProcesses() {
 }
 
 char* SystemProcessInterface::SystemProcesses::allocate_string(const char* str) const {
-  if (str != NULL) {
+  if (str != nullptr) {
     return os::strdup_check_oom(str, mtInternal);
   }
-  return NULL;
+  return nullptr;
 }
 
 int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** system_processes, int* nprocs) const {
@@ -434,14 +434,14 @@ int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** sy
   perfstat_id_t name_holder;
   int records_allocated = 0;
 
-  assert(nprocs != NULL, "system_processes counter pointers is NULL!");
+  assert(nprocs != nullptr, "system_processes counter pointers is null!");
 
-  head = NULL;
+  head = nullptr;
   *nprocs = 0;
   strncpy(name_holder.name, "", IDENTIFIER_LENGTH);
 
-  // calling perfstat_<subsystem>(NULL, NULL, _, 0) returns number of available records
-  *nprocs = libperfstat::perfstat_process(NULL, NULL, sizeof(perfstat_process_t), 0);
+  // calling perfstat_<subsystem>(null, null, _, 0) returns number of available records
+  *nprocs = libperfstat::perfstat_process(nullptr, nullptr, sizeof(perfstat_process_t), 0);
   if(*nprocs < 1) {
     // expect at least 1 process
     return OS_ERR;
@@ -487,7 +487,7 @@ int SystemProcessInterface::system_processes(SystemProcess** system_procs, int* 
 }
 
 SystemProcessInterface::SystemProcessInterface() {
-  _impl = NULL;
+  _impl = nullptr;
 }
 
 bool SystemProcessInterface::initialize() {
@@ -496,13 +496,13 @@ bool SystemProcessInterface::initialize() {
 }
 
 SystemProcessInterface::~SystemProcessInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
   }
 }
 
 CPUInformationInterface::CPUInformationInterface() {
-  _cpu_info = NULL;
+  _cpu_info = nullptr;
 }
 
 bool CPUInformationInterface::initialize() {
@@ -517,23 +517,23 @@ bool CPUInformationInterface::initialize() {
 }
 
 CPUInformationInterface::~CPUInformationInterface() {
-  if (_cpu_info != NULL) {
-    if (_cpu_info->cpu_name() != NULL) {
+  if (_cpu_info != nullptr) {
+    if (_cpu_info->cpu_name() != nullptr) {
       const char* cpu_name = _cpu_info->cpu_name();
       FREE_C_HEAP_ARRAY(char, cpu_name);
-      _cpu_info->set_cpu_name(NULL);
+      _cpu_info->set_cpu_name(nullptr);
     }
-    if (_cpu_info->cpu_description() != NULL) {
+    if (_cpu_info->cpu_description() != nullptr) {
        const char* cpu_desc = _cpu_info->cpu_description();
        FREE_C_HEAP_ARRAY(char, cpu_desc);
-      _cpu_info->set_cpu_description(NULL);
+      _cpu_info->set_cpu_description(nullptr);
     }
     delete _cpu_info;
   }
 }
 
 int CPUInformationInterface::cpu_information(CPUInformation& cpu_info) {
-  if (_cpu_info == NULL) {
+  if (_cpu_info == nullptr) {
     return OS_ERR;
   }
 
@@ -568,13 +568,13 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
   perfstat_id_t name_holder;
   int records_allocated = 0;
 
-  assert(network_interfaces != NULL, "network_interfaces is NULL");
+  assert(network_interfaces != nullptr, "network_interfaces is null");
 
-  *network_interfaces = NULL;
+  *network_interfaces = nullptr;
   strncpy(name_holder.name , FIRST_NETINTERFACE, IDENTIFIER_LENGTH);
 
-  // calling perfstat_<subsystem>(NULL, NULL, _, 0) returns number of available records
-  if ((n_records = libperfstat::perfstat_netinterface(NULL, NULL, sizeof(perfstat_netinterface_t), 0)) < 0) {
+  // calling perfstat_<subsystem>(null, null, _, 0) returns number of available records
+  if ((n_records = libperfstat::perfstat_netinterface(nullptr, nullptr, sizeof(perfstat_netinterface_t), 0)) < 0) {
     return OS_ERR;
   }
 
@@ -607,11 +607,11 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
 }
 
 NetworkPerformanceInterface::NetworkPerformanceInterface() {
-  _impl = NULL;
+  _impl = nullptr;
 }
 
 NetworkPerformanceInterface::~NetworkPerformanceInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
   }
 }

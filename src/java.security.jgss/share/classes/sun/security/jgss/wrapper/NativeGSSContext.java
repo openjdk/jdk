@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,8 +148,10 @@ class NativeGSSContext implements GSSContextSpi {
             String tgsStr = Krb5Util.getTGSName(targetName);
             String krbPrincPair = "\"" + targetStr + "\" \"" +
                     tgsStr + '\"';
-            SunNativeProvider.debug("Checking DelegationPermission (" +
-                                    krbPrincPair + ")");
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("Checking DelegationPermission (" +
+                        krbPrincPair + ")");
+            }
             DelegationPermission perm =
                 new DelegationPermission(krbPrincPair);
             sm.checkPermission(perm);
@@ -163,8 +165,10 @@ class NativeGSSContext implements GSSContextSpi {
             byte[] result;
             if (mechTokenLen != -1) {
                 // Need to add back the GSS header for a complete GSS token
-                SunNativeProvider.debug("Precomputed mechToken length: " +
-                                         mechTokenLen);
+                if (SunNativeProvider.DEBUG) {
+                    SunNativeProvider.debug("Precomputed mechToken length: " +
+                            mechTokenLen);
+                }
                 GSSHeader gssHeader = new GSSHeader
                     (ObjectIdentifier.of(cStub.getMech().toString()),
                      mechTokenLen);
@@ -182,8 +186,10 @@ class NativeGSSContext implements GSSContextSpi {
                 DerValue dv = new DerValue(is);
                 result = dv.toByteArray();
             }
-            SunNativeProvider.debug("Complete Token length: " +
-                                    result.length);
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("Complete Token length: " +
+                        result.length);
+            }
             return result;
         } catch (IOException ioe) {
             throw new GSSExceptionImpl(GSSException.FAILURE, ioe);
@@ -273,8 +279,10 @@ class NativeGSSContext implements GSSContextSpi {
             // Ignore the specified input stream on the first call
             if (pContext != 0) {
                 inToken = retrieveToken(is, mechTokenLen);
-                SunNativeProvider.debug("initSecContext=> inToken len=" +
-                    inToken.length);
+                if (SunNativeProvider.DEBUG) {
+                    SunNativeProvider.debug("initSecContext=> inToken len=" +
+                            inToken.length);
+                }
             }
 
             if (!getCredDelegState()) skipDelegPermCheck = true;
@@ -286,8 +294,10 @@ class NativeGSSContext implements GSSContextSpi {
             long pCred = (cred == null? 0 : cred.pCred);
             outToken = cStub.initContext(pCred, targetName.pName,
                                          cb, inToken, this);
-            SunNativeProvider.debug("initSecContext=> outToken len=" +
-                (outToken == null ? 0 : outToken.length));
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("initSecContext=> outToken len=" +
+                        (outToken == null ? 0 : outToken.length));
+            }
 
             // Only inspect the token when the permission check
             // has not been performed
@@ -321,13 +331,17 @@ class NativeGSSContext implements GSSContextSpi {
         byte[] outToken = null;
         if ((!isEstablished) && (!isInitiator)) {
             byte[] inToken = retrieveToken(is, mechTokenLen);
-            SunNativeProvider.debug("acceptSecContext=> inToken len=" +
-                                    inToken.length);
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("acceptSecContext=> inToken len=" +
+                        inToken.length);
+            }
             long pCred = (cred == null? 0 : cred.pCred);
             outToken = cStub.acceptContext(pCred, cb, inToken, this);
             disposeDelegatedCred = delegatedCred;
-            SunNativeProvider.debug("acceptSecContext=> outToken len=" +
-                                    (outToken == null? 0 : outToken.length));
+            if (SunNativeProvider.DEBUG) {
+                SunNativeProvider.debug("acceptSecContext=> outToken len=" +
+                        (outToken == null ? 0 : outToken.length));
+            }
 
             if (targetName == null) {
                 targetName = new GSSNameElement

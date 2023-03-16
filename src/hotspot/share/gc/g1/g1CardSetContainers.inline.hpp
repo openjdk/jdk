@@ -249,11 +249,7 @@ inline G1AddCardResult G1CardSetBitMap::add(uint card_idx, size_t threshold, siz
 template <class CardVisitor>
 inline void G1CardSetBitMap::iterate(CardVisitor& found, size_t size_in_bits, uint offset) {
   BitMapView bm(_bits, size_in_bits);
-  BitMap::idx_t idx = bm.get_next_one_offset(0);
-  while (idx != size_in_bits) {
-    found((offset | (uint)idx));
-    idx = bm.get_next_one_offset(idx + 1);
-  }
+  bm.iterate([&](BitMap::idx_t idx) { found(offset | (uint)idx); });
 }
 
 inline size_t G1CardSetBitMap::header_size_in_bytes() {
