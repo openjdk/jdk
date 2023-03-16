@@ -34,6 +34,8 @@
 
 size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
 
+GrowableArray<VirtualMemoryTracker::MemoryEvent> VirtualMemoryTracker::work_queue{256, mtNMT};
+
 void VirtualMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");
   // Use placement operator new to initialize static data area.
@@ -330,7 +332,7 @@ bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   return true;
 }
 
-bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
+bool VirtualMemoryTracker::add_reserved_region_impl(address base_addr, size_t size,
     const NativeCallStack& stack, MEMFLAGS flag) {
   assert(base_addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
@@ -410,6 +412,8 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MEMFLAGS flag)
   assert(addr != nullptr, "Invalid address");
   assert(_reserved_regions != nullptr, "Sanity check");
 
+  commit_events();
+
   ReservedMemoryRegion   rgn(addr, 1);
   ReservedMemoryRegion*  reserved_rgn = _reserved_regions->find(rgn);
   if (reserved_rgn != nullptr) {
@@ -422,7 +426,7 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MEMFLAGS flag)
   }
 }
 
-bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
+bool VirtualMemoryTracker::add_committed_region_impl(address addr, size_t size,
   const NativeCallStack& stack) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
@@ -443,7 +447,7 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   return result;
 }
 
-bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
+bool VirtualMemoryTracker::remove_uncommitted_region_impl(address addr, size_t size) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
@@ -459,7 +463,7 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
   return result;
 }
 
-bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
+bool VirtualMemoryTracker::remove_released_region_rgn(ReservedMemoryRegion* rgn) {
   assert(rgn != nullptr, "Sanity check");
   assert(_reserved_regions != nullptr, "Sanity check");
 
@@ -479,7 +483,7 @@ bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
   return result;
 }
 
-bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
+bool VirtualMemoryTracker::remove_released_region_impl(address addr, size_t size) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
@@ -493,7 +497,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   }
   assert(reserved_rgn != nullptr, "No reserved region");
   if (reserved_rgn->same_region(addr, size)) {
-    return remove_released_region(reserved_rgn);
+    return remove_released_region_rgn(reserved_rgn);
   }
 
   // uncommit regions within the released region
@@ -517,8 +521,8 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
       ReservedMemoryRegion* cls_rgn = _reserved_regions->find(class_rgn);
       assert(cls_rgn != nullptr, "Class space region  not recorded?");
       assert(cls_rgn->flag() == mtClass, "Must be class type");
-      remove_released_region(reserved_rgn);
-      remove_released_region(cls_rgn);
+      remove_released_region_rgn(reserved_rgn);
+      remove_released_region_rgn(cls_rgn);
       return true;
     }
   }
@@ -551,7 +555,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 // Given an existing memory mapping registered with NMT, split the mapping in
 //  two. The newly created two mappings will be registered under the call
 //  stack and the memory flags of the original section.
-bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split) {
+bool VirtualMemoryTracker::split_reserved_region_impl(address addr, size_t size, size_t split) {
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
@@ -563,12 +567,12 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
   MEMFLAGS original_flags = reserved_rgn->flag();
 
   const char* name = reserved_rgn->flag_name();
-  remove_released_region(reserved_rgn);
+  remove_released_region_rgn(reserved_rgn);
   log_debug(nmt)("Split region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ")  with size " SIZE_FORMAT,
                 name, p2i(rgn.base()), rgn.size(), split);
   // Now, create two new regions.
-  add_reserved_region(addr, split, original_stack, original_flags);
-  add_reserved_region(addr + split, size - split, original_stack, original_flags);
+  add_reserved_region_impl(addr, split, original_stack, original_flags);
+  add_reserved_region_impl(addr + split, size - split, original_stack, original_flags);
 
   return true;
 }
@@ -655,6 +659,7 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != nullptr, "Sanity check");
   ThreadCritical tc;
+  commit_events();
   // Check that the _reserved_regions haven't been deleted.
   if (_reserved_regions != nullptr) {
     LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();

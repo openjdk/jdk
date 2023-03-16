@@ -40,7 +40,7 @@ public:
 
     MemTracker::record_thread_stack(stack_end, stack_size);
 
-    VirtualMemoryTracker::add_reserved_region(stack_end, stack_size, CALLER_PC, mtThreadStack);
+    VirtualMemoryTracker::add_reserved_region_impl(stack_end, stack_size, CALLER_PC, mtThreadStack);
 
     // snapshot current stack usage
     VirtualMemoryTracker::snapshot_thread_stacks();
@@ -106,7 +106,7 @@ public:
 
     address frame = (address)0x1235;
     NativeCallStack stack(&frame, 1);
-    VirtualMemoryTracker::add_reserved_region((address)base, size, stack, mtThreadStack);
+    VirtualMemoryTracker::add_reserved_region_impl((address)base, size, stack, mtThreadStack);
 
     // trigger the test
     VirtualMemoryTracker::snapshot_thread_stacks();
@@ -136,7 +136,7 @@ public:
 
     // Cleanup
     os::free_memory(base, size, page_sz);
-    VirtualMemoryTracker::remove_released_region((address)base, size);
+    VirtualMemoryTracker::remove_released_region_impl((address)base, size);
 
     rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
     ASSERT_TRUE(rmr == NULL);

@@ -144,7 +144,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
+      VirtualMemoryTracker::add_reserved_region(addr, size, stack, flag);
     }
   }
 
@@ -154,8 +154,8 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::add_reserved_region(addr, size, stack, flag);
+      VirtualMemoryTracker::add_committed_region(addr, size, stack);
     }
   }
 
@@ -165,7 +165,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::add_committed_region(addr, size, stack);
     }
   }
 

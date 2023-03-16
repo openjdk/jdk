@@ -26,10 +26,13 @@
 #define SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
 #include "memory/metaspaceStats.hpp"
+#include "runtime/threadCritical.hpp"
 #include "services/allocationSite.hpp"
 #include "services/nmtCommon.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
@@ -371,24 +374,101 @@ class VirtualMemoryTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
   friend class CommittedVirtualMemoryTest;
 
- public:
+  enum class Tag {
+    AddCommitted, AddReserved, RemoveUncommitted, RemoveReleased, SplitReserved
+  };
+  struct MemoryEvent {
+    using StackFlag = struct {
+        NativeCallStack stack;
+        MEMFLAGS flag;
+    };
+    using Split = struct {
+      size_t split;
+    };
+    Tag tag;
+    void* addr; size_t size;
+    // Optional data
+    union {
+      StackFlag stack_flag; // AddReserved, AddCommitted (AddCommitted only uses the stack field)
+      Split split;          // SplitReserved
+      // Nothing: RemoveUncommitted, RemoveReleased
+    };
+    MemoryEvent() {
+    }
+    MemoryEvent(Tag tag, void* addr, size_t size, StackFlag opts)
+      : tag(tag), addr(addr), size(size), stack_flag(opts) {
+    }
+    MemoryEvent(Tag tag, void* addr, size_t size, Split opts)
+      : tag(tag), addr(addr), size(size), split(opts) {
+    }
+    MemoryEvent(Tag tag, void* addr, size_t size)
+      : tag(tag), addr(addr), size(size) {
+    }
+  };
+  static Arena work_queue_arena;
+  static GrowableArray<MemoryEvent> work_queue;
+public:
+  static void add_reserved_region(void* addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag) {
+    work_queue.append({Tag::AddReserved, addr, size, {stack, flag}});
+  }
+  static void add_committed_region(void* addr, size_t size, const NativeCallStack& stack) {
+    work_queue.append({Tag::AddCommitted, addr, size, {stack, mtNone}});
+  }
+  static void remove_uncommitted_region(void* addr, size_t size) {
+    work_queue.append({Tag::RemoveUncommitted, addr, size});
+  }
+  static void remove_released_region(void* addr, size_t size) {
+    work_queue.append({Tag::RemoveReleased, addr, size});
+  }
+  static void split_reserved_region(address addr, size_t size, size_t split) {
+    work_queue.append({Tag::SplitReserved, addr, size, {split}});
+  }
+  static void commit_events() {
+    int length = work_queue.length();
+    for (int i = 0; i < length; i++) {
+      MemoryEvent evt = work_queue.at(i);
+      if (evt.tag == Tag::AddReserved) {
+        add_reserved_region_impl((address)evt.addr, evt.size, evt.stack_flag.stack, evt.stack_flag.flag);
+      } else if(evt.tag == Tag::AddCommitted) {
+        add_committed_region_impl((address)evt.addr, evt.size, evt.stack_flag.stack);
+      } else if(evt.tag == Tag::RemoveUncommitted) {
+        remove_uncommitted_region_impl((address)evt.addr, evt.size);
+      } else if(evt.tag == Tag::RemoveReleased) {
+        remove_released_region_impl((address)evt.addr, evt.size);
+      } else if(evt.tag == Tag::SplitReserved) {
+        split_reserved_region_impl((address)evt.addr, evt.size, evt.split.split);
+      }
+    }
+    // Try not to keep too much unused memory around.
+    if (length > 1024) {
+      work_queue.clear_and_deallocate();
+    } else {
+      work_queue.clear();
+    }
+  }
+
   static bool initialize(NMT_TrackingLevel level);
 
-  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
-
-  static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
-  static bool remove_uncommitted_region (address base_addr, size_t size);
-  static bool remove_released_region    (address base_addr, size_t size);
-  static bool remove_released_region    (ReservedMemoryRegion* rgn);
-  static void set_reserved_region_type  (address addr, MEMFLAGS flag);
+private:
+  // Internal linked list work
+  static bool add_reserved_region_impl        (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
+  static bool add_committed_region_impl       (address base_addr, size_t size, const NativeCallStack& stack);
+  static bool remove_uncommitted_region_impl  (address base_addr, size_t size);
+  static bool remove_released_region_impl     (address base_addr, size_t size);
+  static bool remove_released_region_rgn (ReservedMemoryRegion* rgn);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
   //  stack and the memory flags of the original section.
-  static bool split_reserved_region(address addr, size_t size, size_t split);
+  static bool split_reserved_region_impl(address addr, size_t size, size_t split);
+
+public:
+  static void set_reserved_region_type   (address addr, MEMFLAGS flag);
 
   // Walk virtual memory data structure for creating baseline, etc.
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);
+
+  // Default walkers
 
   // If p is contained within a known memory region, print information about it to the
   // given stream and return true; false otherwise.

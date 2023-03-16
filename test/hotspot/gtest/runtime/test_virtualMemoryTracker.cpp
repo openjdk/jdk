@@ -177,7 +177,7 @@ public:
     NativeCallStack stack2(&frame2, 1);
 
     // Add the reserved memory
-    VirtualMemoryTracker::add_reserved_region(addr, size, stack, mtTest);
+    VirtualMemoryTracker::add_reserved_region_impl(addr, size, stack, mtTest);
 
     // Fetch the added RMR for the space
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(addr, size));
