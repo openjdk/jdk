@@ -225,7 +225,7 @@ volatile int JvmtiVTMSTransitionDisabler::_VTMS_transition_disable_for_all_count
 // There is an active suspender or resumer.
 volatile bool JvmtiVTMSTransitionDisabler::_SR_mode = false;
 
-// Notifications from VirtualThread about VTMS events are enabled.  
+// Notifications from VirtualThread about VTMS events are enabled.
 bool JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events = false;
 
 #ifdef ASSERT
@@ -576,19 +576,19 @@ JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(jobject vthread, jboolean last_u
         JvmtiExport::post_thread_end(thread);
       }
     }
-  } 
+  }
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   start_VTMS_transition(vthread, /* is_mount */ false);
-   
+
   if (last_unmount && thread->jvmti_thread_state() != nullptr) {
     JvmtiExport::cleanup_thread(thread);
     thread->set_jvmti_thread_state(nullptr);
     oop vt = JNIHandles::resolve(vthread);
     java_lang_Thread::set_jvmti_thread_state(vt, nullptr);
-  } 
+  }
   thread->rebind_to_jvmti_thread_state_of(ct());
-}     
+}
 
 void
 JvmtiVTMSTransitionDisabler::VTMS_unmount_end(jobject vthread, jboolean last_unmount) {
@@ -596,7 +596,7 @@ JvmtiVTMSTransitionDisabler::VTMS_unmount_end(jobject vthread, jboolean last_unm
   assert(thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   finish_VTMS_transition(vthread, /* is_mount */ false);
-}       
+}
 
 
 //
