@@ -203,6 +203,7 @@ module java.base {
         jdk.jshell;
     exports jdk.internal.org.objectweb.asm to
         jdk.jfr,
+        jdk.jshell,
         jdk.jlink;
     exports jdk.internal.org.objectweb.asm.tree to
         jdk.jfr,
