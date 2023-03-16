@@ -96,7 +96,8 @@ public final class StreamPumper implements Runnable {
     /**
      * Implements Thread.run(). Continuously read from {@code in} and write to
      * {@code out} until {@code in} has reached end of stream.
-     * Additionally this method also split data read from buffer into the lines and process each line using linePumps.
+     * Additionally this method also splits the data read from the buffer into lines,
+     * and processes each line using linePumps.
      * Abort on interruption. Abort on IOExceptions.
      */
     @Override
@@ -134,8 +135,10 @@ public final class StreamPumper implements Runnable {
 
                         i++;
                     }
-                    // The remaining after last '\n' (lastcrlf position) buffer data is written into lineBos.
-                    // The end of this line from next buffer is concatenated to this data in the next iteration.
+                    // If no crlf was found, or there was additional data after the last crlf was found, then write the leftover data
+                    // in lineBos. If there is more data to read it will be concatenated with the current data on the next iteration.
+                    // If there is no more data, or no more crlf found, all the remaining data will be processed after the loop, as the
+                    // final line.
                     if (lastcrlf == -1) {
                         lineBos.write(buf, 0, len);
                         linelen += len;
@@ -145,8 +148,9 @@ public final class StreamPumper implements Runnable {
                     }
                 }
             }
-            // Process data remaining after last '\n' in the last buffer.
-            // It is already written in the lineBos buffer but not processed because '\n' hasn't been met.
+
+            // If there was no terminating crlf the remaining data has been written to lineBos,
+            // but this final line of data now needs to be processed by the linePumper.
             final String line = lineBos.toString();
             if (!line.isEmpty()) {
                 linePumps.forEach((lp) -> lp.processLine(line));

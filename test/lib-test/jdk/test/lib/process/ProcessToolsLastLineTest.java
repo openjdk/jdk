@@ -47,16 +47,23 @@ public class ProcessToolsLastLineTest {
     public static void main(String[] args) throws Exception {
 
         // The line which exceeds internal StreamPumper buffer (256 bytes)
-        String VERY_LONG_LINE = "VERYLONGLINE".repeat(30);
+        String VERY_LONG_LINE = "X".repeat(257);
         if (args.length > 0) {
             System.out.print(args[0]);
         } else {
+            test("\n");
+            test("\nARG1");
+            test("\nARG1\n");
+            test("ARG1/n");
             test("ARG1");
             test("ARG1\nARG2");
             test("ARG1\nARG2\n");
             test("\nARG1\nARG2\n");
             test("\nARG1\n" + VERY_LONG_LINE + "\nARG2\n");
             test("\nARG1\n" + VERY_LONG_LINE);
+            test("\nARG1\n" + VERY_LONG_LINE + VERY_LONG_LINE + VERY_LONG_LINE + "\nARG2\n");
+            test("\nARG1\n" + VERY_LONG_LINE + VERY_LONG_LINE + VERY_LONG_LINE);
+
         }
 
     }
