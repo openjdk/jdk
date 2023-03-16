@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.internal.classfile;
 
+import java.lang.invoke.TypeDescriptor;
+
 /**
  * Describes the types that can be part of a field or method descriptor.
  */
@@ -49,8 +51,6 @@ public enum TypeKind {
     BooleanType("boolean", "Z", 4),
     /** void */
     VoidType("void", "V", -1);
-
-    private static TypeKind[] newarraycodeToTypeTag;
 
     private final String name;
     private final String descriptor;
@@ -102,13 +102,17 @@ public enum TypeKind {
      * @param newarraycode the operand of the {@code newarray} instruction
      */
     public static TypeKind fromNewArrayCode(int newarraycode) {
-        if (newarraycodeToTypeTag == null) {
-            newarraycodeToTypeTag = new TypeKind[12];
-            for (TypeKind tag : TypeKind.values()) {
-                if (tag.newarraycode > 0) newarraycodeToTypeTag[tag.newarraycode] = tag;
-            }
-        }
-        return newarraycodeToTypeTag[newarraycode];
+        return switch (newarraycode) {
+            case 4 -> TypeKind.BooleanType;
+            case 5 -> TypeKind.CharType;
+            case 6 -> TypeKind.FloatType;
+            case 7 -> TypeKind.DoubleType;
+            case 8 -> TypeKind.ByteType;
+            case 9 -> TypeKind.ShortType;
+            case 10 -> TypeKind.IntType;
+            case 11 -> TypeKind.LongType;
+            default -> throw new IllegalArgumentException("Bad new array code: " + newarraycode);
+        };
     }
 
     /**
@@ -127,7 +131,15 @@ public enum TypeKind {
             case 'J' -> TypeKind.LongType;
             case 'D' -> TypeKind.DoubleType;
             case 'V' -> TypeKind.VoidType;
-            default -> throw new IllegalStateException("Bad type: " + s);
+            default -> throw new IllegalArgumentException("Bad type: " + s);
         };
+    }
+
+    /**
+     * {@return the type kind associated with the specified field descriptor}
+     * @param descriptor the field descriptor
+     */
+    public static TypeKind from(TypeDescriptor.OfField<?> descriptor) {
+        return fromDescriptor(descriptor.descriptorString());
     }
 }

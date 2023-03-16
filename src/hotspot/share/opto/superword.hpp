@@ -476,6 +476,15 @@ class SuperWord : public ResourceObj {
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
   void print_loop(bool whole);
   #endif
+  // Check if we can create the pack pairs for mem_ref:
+  // If required, enforce strict alignment requirements of hardware.
+  // Else, only enforce alignment within a memory slice, so that there cannot be any
+  // memory-dependence between different vector "lanes".
+  bool can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                        MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                        Node_List &align_to_refs);
+  // Check if alignment of mem_ref is consistent with the other packs of the same memory slice.
+  bool is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.
@@ -512,6 +521,8 @@ class SuperWord : public ResourceObj {
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
+  // Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
+  Node* find_dependence(Node_List* p);
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
@@ -543,6 +554,8 @@ class SuperWord : public ResourceObj {
   void filter_packs();
   // Merge CMove into new vector-nodes
   void merge_packs_to_cmove();
+  // Verify that for every pack, all nodes are mutually independent
+  DEBUG_ONLY(void verify_packs();)
   // Adjust the memory graph for the packed operations
   void schedule();
   // Remove "current" from its current position in the memory graph and insert

@@ -654,6 +654,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   Management::record_vm_init_completed();
 #endif // INCLUDE_MANAGEMENT
 
+  log_info(os)("Initialized VM with process ID %d", os::current_process_id());
+
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::initialize_jdk_signal_support(CHECK_JNI_ERR);
 
