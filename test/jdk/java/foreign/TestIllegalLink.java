@@ -154,7 +154,25 @@ public class TestIllegalLink extends NativeTestHelper {
                             ))),
                     "Layout bit alignment must be natural alignment"
             },
+            {
+                    FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
+                    "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
+                    "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
+                    "Layout does not have the right byte order"
+            },
         };
+    }
+
+    private static ByteOrder nonNativeOrder() {
+        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+                ? ByteOrder.BIG_ENDIAN
+                : ByteOrder.LITTLE_ENDIAN;
     }
 
 }

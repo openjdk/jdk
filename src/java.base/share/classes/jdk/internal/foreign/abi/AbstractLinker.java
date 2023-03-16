@@ -41,8 +41,10 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.nio.ByteOrder;
 import java.util.Objects;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
@@ -62,7 +64,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     public MethodHandle downcallHandle(FunctionDescriptor function, Option... options) {
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
-        checkHasNaturalAlignment(function);
+        checkLayouts(function);
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
 
         return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
@@ -80,7 +82,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         Objects.requireNonNull(arena);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
-        checkHasNaturalAlignment(function);
+        checkLayouts(function);
         SharedUtils.checkExceptions(target);
         LinkerOptions optionSet = LinkerOptions.forUpcall(function, options);
 
@@ -101,28 +103,39 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         return SystemLookup.getInstance();
     }
 
+    /** {@return byte order used by this linker} */
+    protected abstract ByteOrder linkerByteOrder();
+
     // Current limitation of the implementation:
     // We don't support packed structs on some platforms,
     // so reject them here explicitly
-    private static void checkHasNaturalAlignment(FunctionDescriptor descriptor) {
-        descriptor.returnLayout().ifPresent(AbstractLinker::checkHasNaturalAlignmentRecursive);
-        descriptor.argumentLayouts().forEach(AbstractLinker::checkHasNaturalAlignmentRecursive);
+    private void checkLayouts(FunctionDescriptor descriptor) {
+        descriptor.returnLayout().ifPresent(this::checkLayoutsRecursive);
+        descriptor.argumentLayouts().forEach(this::checkLayoutsRecursive);
     }
 
-    private static void checkHasNaturalAlignmentRecursive(MemoryLayout layout) {
+    private void checkLayoutsRecursive(MemoryLayout layout) {
         checkHasNaturalAlignment(layout);
+        checkByteOrder(layout);
         if (layout instanceof GroupLayout gl) {
             for (MemoryLayout member : gl.memberLayouts()) {
-                checkHasNaturalAlignmentRecursive(member);
+                checkLayoutsRecursive(member);
             }
         } else if (layout instanceof SequenceLayout sl) {
-            checkHasNaturalAlignmentRecursive(sl.elementLayout());
+            checkLayoutsRecursive(sl.elementLayout());
         }
     }
 
     private static void checkHasNaturalAlignment(MemoryLayout layout) {
         if (!((AbstractLayout<?>) layout).hasNaturalAlignment()) {
             throw new IllegalArgumentException("Layout bit alignment must be natural alignment: " + layout);
+        }
+    }
+
+    private void checkByteOrder(MemoryLayout layout) {
+        if (layout instanceof ValueLayout vl
+                && vl.order() != linkerByteOrder()) {
+            throw new IllegalArgumentException("Layout does not have the right byte order: " + layout);
         }
     }
 }
