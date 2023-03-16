@@ -6217,7 +6217,7 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 // Registers:
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
-//  - t1, t2, t3: temporary registers, will be destroyed
+//  - t1, t2: temporary registers, will be destroyed
 void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(UseFastLocking, "only used with fast-locking");
   assert_different_registers(obj, hdr, t1, t2);

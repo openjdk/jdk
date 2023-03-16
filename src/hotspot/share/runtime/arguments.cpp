@@ -1993,7 +1993,9 @@ bool Arguments::check_vm_args_consistency() {
                 "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
     return false;
   }
-
+  if (UseHeavyMonitors) {
+    FLAG_SET_DEFAULT(UseFastLocking, false);
+  }
   return status;
 }
 

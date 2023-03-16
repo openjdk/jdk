@@ -511,6 +511,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
           }
         }
       }
+      // No room on the lock_stack so fall-through to inflate-enter.
     } else {
       markWord mark = obj->mark();
       if (mark.is_neutral()) {

@@ -30,12 +30,12 @@
 #include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
 
-int LockStack::end_offset() {
-  return in_bytes(JavaThread::lock_stack_base_offset()) + CAPACITY * oopSize;
-}
-
 LockStack::LockStack() :
   _offset(in_bytes(JavaThread::lock_stack_base_offset())) {
+}
+
+int LockStack::end_offset() {
+  return in_bytes(JavaThread::lock_stack_base_offset()) + CAPACITY * oopSize;
 }
 
 #ifndef PRODUCT
