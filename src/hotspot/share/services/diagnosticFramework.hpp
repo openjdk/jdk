@@ -437,6 +437,7 @@ public:
   }
 
 private:
+#ifdef ASSERT
   template <typename T, ENABLE_IF(!std::is_base_of<DCmdWithParser, T>::value)>
   static int get_parsed_num_arguments() {
     return T::num_arguments();
@@ -453,6 +454,7 @@ private:
       return 0;
     }
   }
+#endif
 
   template <typename T, ENABLE_IF(std::is_convertible<T, DCmd>::value)>
   static int get_num_arguments() {
