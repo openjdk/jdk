@@ -28,6 +28,9 @@
 #include "opto/type.hpp"
 #include "utilities/resourceHash.hpp"
 
+// forward declaration
+class GraphKit;
+
 class ObjectState {
   friend class PEAState;
 
@@ -55,25 +58,38 @@ class ObjectState {
 
   int ref_cnt() const { return _refcnt; }
 
+  virtual ObjectState& merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
+                             RegionNode* region, int pnum) = 0;
 };
 
 class VirtualState: public ObjectState {
   friend class PEAState;
   int _lockCount;
+  int _nfields;
   Node** _entries;
-  DEBUG_ONLY(uint _nfields);
 
  protected:
   VirtualState(const VirtualState& other);
+
  public:
-  VirtualState(uint nfields);
+  VirtualState(int nfields);
 
   bool is_virtual() const override { return true; }
   Node* get_materialized_value() override { return nullptr; }
   ObjectState* clone() const override {
     return new VirtualState(*this);
   }
-  void update_field(int idx, Node* val);
+
+  void set_field(int idx, Node* val);
+  Node* get_field(int idx) const {
+    assert(idx >= 0 && idx < _nfields, "sanity check");
+    return _entries[idx];
+  }
+  ObjectState& merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
+                     RegionNode* region, int pnum) override;
+#ifndef PRODUCT
+  void print_on(outputStream* os) const;
+#endif
 };
 
 class EscapedState: public ObjectState {
@@ -87,14 +103,15 @@ class EscapedState: public ObjectState {
   ObjectState* clone() const override {
     return new EscapedState(_materialized);
   }
+  ObjectState& merge(ObjectState& newin,GraphKit* kit, const TypeOopPtr* oop_type,
+                     RegionNode* region, int pnum) override {
+    return *this;
+  }
 };
 
 template<typename K, typename V>
 using PEAMap = ResourceHashtable<K, V, 17, /*table_size*/
                                  AnyObj::C_HEAP, mtCompiler>;
-// forward declaration
-class GraphKit;
-
 using ObjID = AllocateNode*;
 
 class PEAState {

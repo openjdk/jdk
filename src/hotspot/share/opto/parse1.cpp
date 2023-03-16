@@ -1512,7 +1512,8 @@ void Parse::Block::record_state(Parse* p, int pnum) {
 
   _from_block = p->block();
   _init_pnum = pnum;
-  // it looks like op->block() is null only when the current method is java.lang.Object.<init>
+
+  // it looks like p->block() is null only when the current method is java.lang.Object.<init>
   if (p->block() != nullptr) {
     JVMState* jvms = _start_map->jvms();
     PEAState& state = jvms->alloc_state();
@@ -1692,6 +1693,12 @@ void Parse::handle_missing_successor(int target_bci) {
 void Parse::merge_common(Parse::Block* target, int pnum) {
   if (TraceOptoParse) {
     tty->print("Merging state at block #%d bci:%d", target->rpo(), target->start());
+    if (!target->is_merged()) {
+      tty->print(" with empty state");
+    } else {
+      tty->print(" with previous state");
+    }
+    tty->print_cr(" on path %d", pnum);
   }
 
   // Zap extra stack slots to top
@@ -1699,8 +1706,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
   clean_stack(sp());
 
   if (!target->is_merged()) {   // No prior mapping at this bci
-    if (TraceOptoParse) { tty->print(" with empty state");  }
-
     // If this path is dead, do not bother capturing it as a merge.
     // It is "as if" we had 1 fewer predecessors from the beginning.
     if (stopped()) {
@@ -1748,7 +1753,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     target->state().validate();
 #endif
   } else {                      // Prior mapping at this bci
-    if (TraceOptoParse) {  tty->print(" with previous state"); }
+
 #ifdef ASSERT
     if (target->is_SEL_head()) {
       target->mark_merged_backedge(block());
@@ -1789,6 +1794,9 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     // Update all the non-control inputs to map:
     assert(TypeFunc::Parms == newin->jvms()->locoff(), "parser map should contain only youngest jvms");
     bool check_elide_phi = target->is_SEL_backedge(save_block);
+    PEAState& pred_as = newin->jvms()->alloc_state();
+    PEAState& as = block()->state();
+
     // from right to left, we update ctrl, I_O and memory til the last minute
     // because PEA materialization may change them.
     for (uint j = newin->req()-1; j >= 1; --j) {
@@ -1825,8 +1833,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
               // Part-1: only check 'm'. ensure_phi has replaced m with phi.
               if (DoPartialEscapeAnalysis && phi != nullptr) {
-                PEAState& as = block()->state();
-                const PEAState& pred_as = newin->jvms()->alloc_state();
                 ObjID id = as.is_alias(phi);
 
                 if (id != nullptr) {
@@ -1843,7 +1849,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
                       phi->replace_edge(m, mv);
                       as.update(id, new EscapedState(phi));
                     } else {
-                      // TODO: merge two virtuals
+                      assert(false, "should be the same oop if they are both virtual");
                     }
                   }
                 }
@@ -1852,7 +1858,28 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           }
           break;
         }
+      } else {
+        // even m and n are same, we sitll need to merge
+        if (DoPartialEscapeAnalysis) {
+          ObjID id = as.is_alias(m);
+
+          if (id != nullptr && as.get_object_state(id)->is_virtual()) {
+            ObjectState* pred_os = pred_as.get_object_state(id);
+            assert(pred_os->is_virtual(), "sanity check");
+
+            const TypeOopPtr* t = gvn().type(m)->isa_oopptr();
+            VirtualState* vs = static_cast<VirtualState*>(as.get_object_state(id));
+            vs->merge(*pred_os, this, t, r, pnum);
+#ifndef PRODUCT
+            if (Verbose) {
+              tty->print_cr("After merge:");
+              vs->print_on(tty);
+            }
+#endif
+          }
+        }
       }
+
       // At this point, n might be top if:
       //  - there is no phi (because TypeFlow detected a conflict), or
       //  - the corresponding control edges is top (a dead incoming path)
@@ -1864,8 +1891,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
         // Part-2: materialize 'n' if it needs
         if (DoPartialEscapeAnalysis) {
-          PEAState& as = block()->state();
-          PEAState& pred_as = newin->jvms()->alloc_state();
           ObjID id = as.is_alias(phi);
 
           if (as.contains(id)) {
@@ -1927,10 +1952,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     set_block(save_block);
 
     stop();                     // done with this guy, for now
-  }
-
-  if (TraceOptoParse) {
-    tty->print_cr(" on path %d", pnum);
   }
 
   // Done with this parser state.

@@ -247,7 +247,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
 
       for (int i=0; i < holder->nof_nonstatic_fields(); ++i) {
         if (field->offset() == holder->nonstatic_field_at(i)->offset()) {
-          virt->update_field(i, val);
+          virt->set_field(i, val);
           break;
         }
       }

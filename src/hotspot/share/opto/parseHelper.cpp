@@ -315,28 +315,91 @@ void Parse::dump_map_adr_mem() const {
 // Our adaption to C2.
 // https://gist.github.com/navyxliu/62a510a5c6b0245164569745d758935b
 //
-VirtualState::VirtualState(uint nfields): _lockCount(0) {
+VirtualState::VirtualState(int nfields): _lockCount(0), _nfields(nfields) {
   Compile* C = Compile::current();
   _entries = NEW_ARENA_ARRAY(C->parser_arena(), Node*, nfields);
   // only track explicit stores.
   // see IntializeNode semantics in memnode.cpp
-  for (uint i = 0; i < nfields; ++i) {
+  for (int i = 0; i < nfields; ++i) {
     _entries[i] = nullptr;
   }
-  DEBUG_ONLY(_nfields = nfields);
 }
 
 // do NOT call base's copy constructor. we would like to reset refcnt!
 VirtualState::VirtualState(const VirtualState& other) {
   _lockCount = other._lockCount;
-  _entries   = other._entries;
-  DEBUG_ONLY(_nfields = other._nfields);
+  _nfields   = other._nfields;
+  _entries = NEW_ARENA_ARRAY(Compile::current()->parser_arena(), Node*, _nfields);
+
+  Node** dst = _entries;
+  Node** src = other._entries;
+  int sz = _nfields;
+  while (sz-- > 0) {
+    *dst++ = *src++;
+  }
 }
 
-void VirtualState::update_field(int idx, Node* val) {
-  assert(idx >= 0 && (uint)idx < _nfields, "sanity check");
+void VirtualState::set_field(int idx, Node* val) {
+  assert(idx >= 0 && idx < _nfields, "sanity check");
   _entries[idx] = val;
 }
+
+ObjectState& VirtualState::merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
+                                 RegionNode* r, int pnum) {
+  assert(newin.is_virtual(), "only support VirtualState");
+  VirtualState* vs = static_cast<VirtualState*>(&newin);
+
+  if (this != vs) {
+    ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
+    assert(_nfields == ik->nof_nonstatic_fields(), "_nfields should be consistent with instanceKlass");
+
+    for (int i = 0; i < _nfields; ++i) {
+      Node* m = _entries[i];
+
+      if (m != vs->_entries[i]) {
+        ciField* field = ik->nonstatic_field_at(i);
+        BasicType bt = field->layout_type();
+        const Type* type = Type::get_const_basic_type(bt);
+
+        if (m == nullptr || !m->is_Phi()) {
+          if (m == nullptr) {
+            m = kit->zerocon(bt);
+          }
+          m = PhiNode::make(r, m, type);
+          kit->gvn().set_type(m, type);
+          _entries[i] = m;
+        }
+
+        Node* n = vs->_entries[i];
+        if (n == nullptr) {
+          n = kit->zerocon(bt);
+        }
+        m->set_req(pnum, n);
+        if (pnum == 1) {
+          _entries[i] = kit->gvn().transform(m);
+        }
+      }
+    }
+  }
+
+  return *this;
+}
+
+#ifndef PRODUCT
+void VirtualState::print_on(outputStream* os) const {
+  os->print_cr("Virt = %p", this);
+
+  for (int i = 0; i < _nfields; ++i) {
+    Node* val = _entries[i];
+    os->print("#%d: ", i);
+    if (val != nullptr) {
+      val->dump();
+    } else {
+      os->print_cr("_");
+    }
+  }
+}
+#endif
 
 void PEAState::add_new_allocation(Node* obj) {
   int nfields;
@@ -476,18 +539,14 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
 #endif
 
     for (int i = 0; i < ik->nof_nonstatic_fields(); ++i) {
-      Node* val = virt->_entries[i];
       ciField* field = ik->nonstatic_field_at(i);
+      BasicType bt = field->layout_type();
+      const Type* type = Type::get_const_basic_type(bt);
+      Node* val = virt->get_field(i);
 
 #ifndef PRODUCT
       if (Verbose) {
-        tty->print("flt#%2d = ", i);
-        if (val) {
-          val->dump();
-        } else {
-          tty->print("0");
-        }
-        tty->print(" // ");
+        tty->print("flt#%2d: ", i);
         field->print_name_on(tty);
         tty->cr();
       }
@@ -498,10 +557,8 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
       int offset = field->offset_in_bytes();
       Node* adr = kit->basic_plus_adr(objx, objx, offset);
       const TypePtr* adr_type = C->alias_type(field)->adr_type();
-
       DecoratorSet decorators = IN_HEAP;
 
-      BasicType bt = field->layout_type();
       bool is_obj = is_reference_type(bt);
       // Store the value.
       const Type* field_type;
@@ -515,6 +572,14 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
         }
       }
       decorators |= field->is_volatile() ? MO_SEQ_CST : MO_UNORDERED;
+
+
+      val = kit->gvn().transform(val);
+#ifndef PRODUCT
+      if (Verbose) {
+        val->dump();
+      }
+#endif
       kit->access_store_at(objx, adr, adr_type, val, field_type, bt, decorators);
     }
   } else {
@@ -546,7 +611,8 @@ void PEAState::print_on(outputStream* os) const {
   os->print_cr("PEAState:");
 
   _state.iterate([&](ObjID obj, ObjectState* state) {
-    os->print("Obj#%d(%s) ref = %d aliases = [", obj->_idx, state->is_virtual() ? "Virt" : "Mat", state->ref_cnt());
+    bool is_virt = state->is_virtual();
+    os->print("Obj#%d(%s) ref = %d aliases = [", obj->_idx, is_virt ? "Virt" : "Mat", state->ref_cnt());
 
     _alias.iterate([&](Node* node, ObjID obj2) {
       if (obj == obj2){
@@ -556,6 +622,11 @@ void PEAState::print_on(outputStream* os) const {
     });
 
     os->print_cr("]");
+
+    if (is_virt) {
+      VirtualState* vs = static_cast<VirtualState*>(state);
+      vs->print_on(os);
+    }
     return true;
   });
 }
