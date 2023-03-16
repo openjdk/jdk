@@ -43,6 +43,12 @@ package compiler.loopopts.superword;
 
 public class ReductionPerf {
     public static void main(String[] args) throws Exception {
+
+        // Increase the values to 10_000 and 100_000 for more serious benchmarking
+        // with lower variance.
+        int iterations_warmup = 2_000;
+        int iterations_perf = 5_000;
+
         int[] a1 = new int[8 * 1024];
         int[] a2 = new int[8 * 1024];
         int[] a3 = new int[8 * 1024];
@@ -79,7 +85,7 @@ public class ReductionPerf {
         System.out.println("Warmup ...");
         long start = System.currentTimeMillis();
 
-        for (int j = 0; j < 2000; j++) {
+        for (int j = 0; j < iterations_warmup; j++) {
             sumI = sumInt(a1, a2, a3);
             sumL = sumLong(b1, b2, b3);
             sumF = sumFloat(c1, c2, c3);
@@ -119,61 +125,60 @@ public class ReductionPerf {
         }
 
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
+        for (int j = 0; j < iterations_perf; j++) {
             sumI = sumInt(a1, a2, a3);
         }
         stop = System.currentTimeMillis();
         System.out.println("sum int:    " + (stop - start));
 
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
+        for (int j = 0; j < iterations_perf; j++) {
             sumL = sumLong(b1, b2, b3);
         }
         stop = System.currentTimeMillis();
         System.out.println("sum long:   " + (stop - start));
 
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
+        for (int j = 0; j < iterations_perf; j++) {
             sumF = sumFloat(c1, c2, c3);
         }
         stop = System.currentTimeMillis();
         System.out.println("sum float:  " + (stop - start));
 
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
+        for (int j = 0; j < iterations_perf; j++) {
             sumD = sumDouble(d1, d2, d3);
         }
         stop = System.currentTimeMillis();
         System.out.println("sum double: " + (stop - start));
 
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
+        for (int j = 0; j < iterations_perf; j++) {
             mulI = prodInt(a1, a2, a3);
         }
         stop = System.currentTimeMillis();
         System.out.println("prod int:    " + (stop - start));
 
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
+        for (int j = 0; j < iterations_perf; j++) {
             mulL = prodLong(b1, b2, b3);
         }
         stop = System.currentTimeMillis();
         System.out.println("prod long:   " + (stop - start));
 
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
+        for (int j = 0; j < iterations_perf; j++) {
             mulF = prodFloat(c1, c2, c3);
         }
         stop = System.currentTimeMillis();
         System.out.println("prod float:  " + (stop - start));
 
         start = System.currentTimeMillis();
-        for (int j = 0; j < 5000; j++) {
+        for (int j = 0; j < iterations_perf; j++) {
             mulD = prodDouble(d1, d2, d3);
         }
         stop = System.currentTimeMillis();
         System.out.println("prod double: " + (stop - start));
-
     }
 
     public static void ReductionInit(int[] a1, int[] a2, int[] a3,

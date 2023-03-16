@@ -1299,6 +1299,89 @@ Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+Node* UnorderedReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* n = ReductionNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
+  if (can_reshape) {
+    // Having a ReductionNode in the loop is expensive. It needs to recursively
+    // fold together the vector values, for every vectorized loop iteration. If
+    // we encounter the following pattern, we can move the UnorderedReduction
+    // outside the loop.
+    //
+    // CountedLoop     init
+    //          |        |
+    //          +------+ | +---------------+
+    //                 | | |               |
+    //                PhiNode (s)  Vector  |
+    //                  |            |     |
+    //               UnorderedReduction    |
+    //                       |             |
+    //                       +-------------+
+    //
+    // We patch the graph to look like this:
+    //
+    // CountedLoop   neutral_vector
+    //         |         |
+    //         +-------+ | +---------------+
+    //                 | | |               |
+    //                PhiNode (v)  Vector  |
+    //                   |           |     |
+    //      init       VectorAccumulator   |
+    //        |          |     |           |
+    //     UnorderedReduction  +-----------+
+    //
+    // We turned the scalar (s) Phi into a vectorized one (v). In the loop, we
+    // use a vector_accumulator, which does the same reduction, but only element
+    // wise. This is a single operation, rather than many for the ReductionNode.
+    // We can then reduce that vector_accumulator after the loop, and also reduce
+    // the init value into it.
+    // We can not do this with all reductions. Some reductions do not allow the
+    // reordering of operations (for example float addition).
+    Node* ctrl = in(0);
+    Node* in1 = in(1);
+    Node* in2 = in(2);
+    if (ctrl == nullptr &&
+        in1 != nullptr && in1->is_Phi() && in1->in(2) == this && in1->outcnt() == 1 &&
+        in1->in(0)->is_CountedLoop() &&
+        in2->is_Vector()) {
+      // Find the relevant old nodes
+      VectorNode* vector = in2->as_Vector();
+      PhiNode* phi = in1->as_Phi();
+      CountedLoopNode* loop = phi->in(0)->as_CountedLoop();
+      Node* init = phi->in(1);
+      // Determine types
+      BasicType bt = vect_type()->element_basic_type();
+      const Type* bt_t = Type::get_const_basic_type(bt);
+      // Create vector of neutral elements (zero for add, one for mul, etc)
+      Node* neutral_scalar = ReductionNode::make_reduction_input_from_vector_opc(*phase, Opcode(), bt);
+      neutral_scalar = phase->transform(neutral_scalar);
+      Node* neutral_vector = VectorNode::scalar2vector(neutral_scalar, vector->length(), bt_t);
+      const TypeVect* vec_t = neutral_vector->as_Vector()->vect_type();
+      neutral_vector = phase->transform(neutral_vector);
+      // Build vector Phi
+      Node* phi_vector = new PhiNode(loop, vec_t);
+      phase->set_type(phi_vector, vec_t);
+      // Start loop with neutral element
+      phi_vector->set_req(1, neutral_vector);
+      // In each iteration, do vector accumulation
+      Node* vector_accumulator = make_normal_vector_op(phi_vector, vector, vec_t);
+      phase->set_type(vector_accumulator, vec_t);
+      vector_accumulator = phase->transform(vector_accumulator);
+      // And feed that into the vector Phi for the next iteration
+      phi_vector->set_req(2, vector_accumulator);
+      phi_vector = phase->transform(phi_vector);
+      // After the loop, we can reduce the init and vector_accumulator
+      set_req_X(1, init, phase);
+      set_req_X(2, vector_accumulator, phase);
+      assert(phi->outcnt() == 0, "scalar phi is unused");
+      return this;
+    }
+  }
+  return nullptr;
+}
+
 Node* VectorLoadMaskNode::Identity(PhaseGVN* phase) {
   BasicType out_bt = type()->is_vect()->element_basic_type();
   if (!Matcher::has_predicated_vectors() && out_bt == T_BOOLEAN) {
@@ -1397,10 +1480,16 @@ Node* VectorCastNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) {
+// Input opc of pre-reduction operation, eg AddI for AddReductionVI
+Node* ReductionNode::make_reduction_input_from_scalar_opc(PhaseGVN& gvn, int opc, BasicType bt) {
   int vopc = opcode(opc, bt);
   guarantee(vopc != opc, "Vector reduction for '%s' is not implemented", NodeClassNames[opc]);
 
+  return make_reduction_input_from_scalar_opc(gvn, vopc, bt);
+}
+
+// Input opc of vector reduction, eg. AddReductionVI
+Node* ReductionNode::make_reduction_input_from_vector_opc(PhaseGVN& gvn, int vopc, BasicType bt) {
   switch (vopc) {
     case Op_AndReductionV:
       switch (bt) {

@@ -25,6 +25,8 @@
 #define SHARE_OPTO_VECTORNODE_HPP
 
 #include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
@@ -194,7 +196,10 @@ class ReductionNode : public Node {
   static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
-  static Node* make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt);
+  // Input opc of pre-reduction operation, eg. AddI for AddReductionVI
+  static Node* make_reduction_input_from_scalar_opc(PhaseGVN& gvn, int opc, BasicType bt);
+  // Input vopc of vector reduction, eg. AddReductionVI
+  static Node* make_reduction_input_from_vector_opc(PhaseGVN& gvn, int vopc, BasicType bt);
 
   virtual const Type* bottom_type() const {
     return _bottom_type;
@@ -214,20 +219,37 @@ class ReductionNode : public Node {
   virtual uint size_of() const { return sizeof(*this); }
 };
 
+//---------------------------UnorderedReductionNode-------------------------------------
+// Order of reduction does not matter. Example int add. Not true for float add.
+class UnorderedReductionNode : public ReductionNode {
+public:
+  UnorderedReductionNode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  // Reduction loops can move this more expensive node outside the loop.
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) = 0;
+};
+
 //------------------------------AddReductionVINode--------------------------------------
 // Vector add byte, short and int as a reduction
-class AddReductionVINode : public ReductionNode {
+class AddReductionVINode : public UnorderedReductionNode {
 public:
-  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new AddVINode(in1, in2, vt);
+  }
 };
 
 //------------------------------AddReductionVLNode--------------------------------------
 // Vector add long as a reduction
-class AddReductionVLNode : public ReductionNode {
+class AddReductionVLNode : public UnorderedReductionNode {
 public:
-  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new AddVLNode(in1, in2, vt);
+  }
 };
 
 //------------------------------AddReductionVFNode--------------------------------------
@@ -384,18 +406,24 @@ public:
 
 //------------------------------MulReductionVINode--------------------------------------
 // Vector multiply byte, short and int as a reduction
-class MulReductionVINode : public ReductionNode {
+class MulReductionVINode : public UnorderedReductionNode {
 public:
-  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new MulVINode(in1, in2, vt);
+  }
 };
 
 //------------------------------MulReductionVLNode--------------------------------------
 // Vector multiply int as a reduction
-class MulReductionVLNode : public ReductionNode {
+class MulReductionVLNode : public UnorderedReductionNode {
 public:
-  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new MulVLNode(in1, in2, vt);
+  }
 };
 
 //------------------------------MulReductionVFNode--------------------------------------

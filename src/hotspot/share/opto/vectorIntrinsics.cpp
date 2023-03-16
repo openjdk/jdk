@@ -1702,7 +1702,7 @@ bool LibraryCallKit::inline_vector_reduction() {
     }
   }
 
-  Node* init = ReductionNode::make_reduction_input(gvn(), opc, elem_bt);
+  Node* init = ReductionNode::make_reduction_input_from_scalar_opc(gvn(), opc, elem_bt);
   Node* value = nullptr;
   if (mask == nullptr) {
     assert(!is_masked_op, "Masked op needs the mask value never null");
