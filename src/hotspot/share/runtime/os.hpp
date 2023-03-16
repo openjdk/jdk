@@ -860,14 +860,22 @@ class os: AllStatic {
   // Return: number of stack frames captured.
   static int get_native_stack(address* stack, int size, int toSkip = 0);
 
-  // General allocation (must be MT-safe)
-  static void* malloc  (size_t size, MEMFLAGS flags, const NativeCallStack& stack);
-  static void* malloc  (size_t size, MEMFLAGS flags);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
+  // Memory allocation. If `actual_size` is not nullptr, the actual usable size of the underlying
+  // memory allocation is returned. This will be at least as large as `size`. This should only be
+  // specified in cases where extra usable memory is useful, for example in an arena allocator, as
+  // it may require more overhead to fetch the usable size. You *should* call os::free_sized instead
+  // of os::free if `actual_size` was specified. The size passed to os::free_sized *must* be the
+  // same as was returned in `actual_size`.
+  static void* malloc(size_t size, MEMFLAGS flags, const NativeCallStack& stack, size_t* actual_size = nullptr);
+  static void* malloc(size_t size, MEMFLAGS flags, size_t* actual_size = nullptr);
+
+  // Memory reallocation.
+  static void* realloc(void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
+  static void* realloc(void *memblock, size_t size, MEMFLAGS flag);
 
   // handles null pointers
-  static void  free    (void *memblock);
+  static void  free(void *memblock);
+  static void  free_sized(void *memblock, size_t size);
   static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
   // Like strdup, but exit VM when strdup() returns null
   static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);

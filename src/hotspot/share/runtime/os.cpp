@@ -74,8 +74,24 @@
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#if defined(ADDRESS_SANITIZER)
+#include <sanitizer/allocator_interface.h>
+#endif
+
 #ifndef _WINDOWS
 # include <poll.h>
+#endif
+
+#ifdef LINUX
+#include <malloc.h>
+#endif
+
+#ifdef __APPLE__
+#include <malloc/malloc.h>
+#endif
+
+#ifdef __FreeBSD__
+#include <malloc_np.h>
 #endif
 
 # include <signal.h>
@@ -618,15 +634,15 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-void* os::malloc(size_t size, MEMFLAGS flags) {
-  return os::malloc(size, flags, CALLER_PC);
+void* os::malloc(size_t size, MEMFLAGS flags, size_t* actual_size) {
+  return os::malloc(size, flags, CALLER_PC, actual_size);
 }
 
-void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack, size_t* actual_size) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
-  if (NMTPreInit::handle_malloc(&rc, size)) {
+  if (NMTPreInit::handle_malloc(&rc, size, actual_size)) {
     // No need to fill with 0 because DumpSharedSpaces doesn't use these
     // early allocations.
     return rc;
@@ -644,16 +660,42 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  const size_t outer_size = size + MemTracker::overhead_per_malloc();
+  const size_t inner_size = size;  // Original requested size, adjusted to not be 0.
+  const size_t overhead = MemTracker::overhead_per_malloc();  // Extra NMT overhead, if enabled.
+  const size_t outer_size = inner_size + overhead;  // Adjusted size.
 
   // Check for overflow.
-  if (outer_size < size) {
+  if (outer_size < inner_size) {
     return nullptr;
   }
 
   ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
   if (outer_ptr == nullptr) {
     return nullptr;
+  }
+
+  // Malloc size feedback, only when requested.
+  if (actual_size != nullptr) {
+    size_t usable_size;
+#if defined(ADDRESS_SANITIZER)
+    // ASan, TSan, and MSan are their own allocators, call them directly. They override `malloc()`
+    // and friends.
+    usable_size = __sanitizer_get_allocated_size(outer_ptr);
+#elif defined(LINUX) || defined(__FreeBSD__)
+    // Linux and FreeBSD provide `malloc_usable_size()` to query the usable size of the memory
+    // returned by `malloc()`.
+    usable_size = ::malloc_usable_size(outer_ptr);
+#elif defined(__APPLE__)
+    // Apple has `malloc_size()` which is exactly the same as `malloc_usable_size()`.
+    usable_size = ::malloc_size(outer_ptr);
+#else
+    // All other platforms either lack the ability to query the usable size or are known to always
+    // return the original size given to `malloc()` (e.g. Windows).
+    usable_size = outer_size;
+#endif
+    usable_size = MAX2(usable_size, outer_size);
+    size = *actual_size = usable_size - overhead;
+    assert(size >= inner_size, "malloc usable size cannot be less than requested");
   }
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
@@ -758,7 +800,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   return rc;
 }
 
-void  os::free(void *memblock) {
+void os::free(void *memblock) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {
@@ -774,6 +816,28 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
+  ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
+}
+
+void os::free_sized(void *memblock, size_t size) {
+
+  // Special handling for NMT preinit phase before arguments are parsed
+  if (NMTPreInit::handle_free_sized(memblock, size)) {
+    return;
+  }
+
+  if (memblock == nullptr) {
+    assert(size == 0, "size mismatch");
+    return;
+  }
+
+  DEBUG_ONLY(break_if_ptr_caught(memblock);)
+
+  // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
+
+  // C23 introduced free_sized, but no libc implementations have added it yet at the time of
+  // writing.
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
 

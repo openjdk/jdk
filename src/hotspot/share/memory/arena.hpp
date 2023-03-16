@@ -28,60 +28,141 @@
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#include <cstddef>
 #include <new>
 
 // The byte alignment to be used by Arena::Amalloc.
-#define ARENA_AMALLOC_ALIGNMENT BytesPerLong
-#define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
+#define ARENA_AMALLOC_ALIGNMENT ((size_t) BytesPerLong)
+#define ARENA_ALIGN(x) (align_up((size_t) (x), ARENA_AMALLOC_ALIGNMENT))
+
+enum class ChunkPoolSize : uintptr_t {
+  TINY = 0,
+  SMALL = 1,
+  MEDIUM = 2,
+  LARGE = 3,
+
+  NONE = 7,
+};
+
+constexpr uintptr_t chunk_pool_size_bits = uintptr_t{8} - 1;
+constexpr uintptr_t chunk_pool_size_mask = ~chunk_pool_size_bits;
+
+class ChunkPool;
 
 //------------------------------Chunk------------------------------------------
 // Linked list of raw memory chunks
-class Chunk: CHeapObj<mtChunk> {
-
+class Chunk final {
  private:
-  Chunk*       _next;     // Next Chunk in list
-  const size_t _len;      // Size of this Chunk
- public:
-  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length) throw();
-  void  operator delete(void* p);
-  Chunk(size_t length);
+  // Ensure natural malloc alignment has enough bits for us to use in _next.
+  STATIC_ASSERT(alignof(std::max_align_t) >= 8);
 
-  enum {
-    // default sizes; make them slightly smaller than 2**k to guard against
-    // buddy-system style malloc implementations
-    // Note: please keep these constants 64-bit aligned.
+  friend class ChunkPool;
+
+  uintptr_t _next;    // Next Chunk in list. The lower 3 bits encode ChunkPoolSize.
+  const size_t _len;  // Unaligned size of this Chunk, not including Chunk itself.
+
+  uintptr_t raw_pool_size() const {
+    return _next & chunk_pool_size_bits;
+  }
+
+  uintptr_t raw_next() const {
+    return _next & chunk_pool_size_mask;
+  }
+
+  size_t raw_length() const { return _len; }
+
+  static Chunk* allocate(size_t length, AllocFailType alloc_failmode);
+
+  void deallocate();
+
+  static constexpr size_t slack =
 #ifdef _LP64
-    slack      = 40,            // [RGV] Not sure if this is right, but make it
-                                //       a multiple of 8.
+    40  // [RGV] Not sure if this is right, but make it a multiple of 8.
 #else
-    slack      = 24,            // suspected sizeof(Chunk) + internal malloc headers
+    24  // suspected sizeof(Chunk) + internal malloc headers
 #endif
+    ;
 
-    tiny_size  =  256  - slack, // Size of first chunk (tiny)
-    init_size  =  1*K  - slack, // Size of first chunk (normal aka small)
-    medium_size= 10*K  - slack, // Size of medium-sized chunk
-    size       = 32*K  - slack, // Default size of an Arena chunk (following the first)
-    non_pool_size = init_size + 32 // An initial size which is not one of above
-  };
+  Chunk(size_t length, ChunkPoolSize pool_size);
 
-  void chop();                  // Chop this chunk
-  void next_chop();             // Chop next chunk
-  static size_t aligned_overhead_size(void) { return ARENA_ALIGN(sizeof(Chunk)); }
+  NONCOPYABLE(Chunk);
+
+ public:
+  static Chunk* acquire(size_t length, AllocFailType alloc_failmode);
+
+  void release();
+
+  // default sizes; make them slightly smaller than 2**k to guard against
+  // buddy-system style malloc implementations
+  // Note: please keep these constants 64-bit aligned.
+  static constexpr size_t tiny_size = 256 - slack;        // Size of first chunk (tiny)
+  static constexpr size_t small_size = 1*K - slack;       // Size of first chunk (normal aka small)
+  static constexpr size_t init_size = small_size;
+  static constexpr size_t medium_size = 10*K - slack;     // Size of medium-sized chunk
+  static constexpr size_t large_size = 32*K - slack;    // Large size of an Arena chunk (following the first)
+  static constexpr size_t size = large_size;
+  static constexpr size_t non_pool_size = init_size + 32; // An initial size which is not one of above
+
+  ChunkPoolSize pool_size() const {
+    return static_cast<ChunkPoolSize>(raw_pool_size());
+  }
+  static ChunkPoolSize pool_size(size_t length) {
+    switch (length) {
+      case tiny_size:
+        return ChunkPoolSize::TINY;
+      case small_size:
+        return ChunkPoolSize::SMALL;
+      case medium_size:
+        return ChunkPoolSize::MEDIUM;
+      case large_size:
+        return ChunkPoolSize::LARGE;
+      default:
+        return ChunkPoolSize::NONE;
+    }
+  }
+
+  // Release this chunk and all subsequent chunks.
+  void chop();
+
+  // Release all subsequent chunks.
+  void next_chop();
+
   static size_t aligned_overhead_size(size_t byte_size) { return ARENA_ALIGN(byte_size); }
+  static size_t aligned_overhead_size() { return aligned_overhead_size(sizeof(Chunk)); }
 
-  size_t length() const         { return _len;  }
-  Chunk* next() const           { return _next;  }
-  void set_next(Chunk* n)       { _next = n;  }
-  // Boundaries of data area (possibly unused)
-  char* bottom() const          { return ((char*) this) + aligned_overhead_size();  }
-  char* top()    const          { return bottom() + _len; }
-  bool contains(char* p) const  { return bottom() <= p && p <= top(); }
+  size_t length() const { return align_down(raw_length(), ARENA_AMALLOC_ALIGNMENT); }
 
-  // Start the chunk_pool cleaner task
+  Chunk* next() const { return reinterpret_cast<Chunk*>(raw_next()); }
+
+  void set_next(Chunk* next) {
+    assert(next == nullptr || is_aligned(next, alignof(std::max_align_t)), "chunk misaligned");
+    _next = reinterpret_cast<uintptr_t>(next) | raw_pool_size();
+  }
+
+  char* bottom() const {
+    return reinterpret_cast<char*>(reinterpret_cast<uintptr_t>(this) + aligned_overhead_size());
+  }
+
+  char* top() const { return bottom() + length(); }
+
+  bool contains(const void* p) const {
+    return bottom() <= static_cast<const char*>(p) && static_cast<const char*>(p) <= top();
+  }
+
+  // Start the chunk_pool cleaner task. Must only be called once.
   static void start_chunk_pool_cleaner_task();
+
+  // Chunks must be acquired and released using acquire() and release().
+  static void* operator new(size_t size) = delete;
+  static void* operator new[](size_t size) = delete;
+  static void operator delete(void* p) = delete;
+  static void operator delete[](void* p) = delete;
+  static void operator delete(void* p, size_t size) = delete;
+  static void operator delete[](void* p, size_t size) = delete;
 };
 
 //------------------------------Arena------------------------------------------
