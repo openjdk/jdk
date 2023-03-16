@@ -1634,7 +1634,7 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
   // out of stack space.  See bugs 6272980 & 6227033 for more info.
   LabelRootDepth++;
   if (LabelRootDepth > MaxLabelRootDepth) {
-    assert(false, "Out of stack space, increase MaxLabelRootDepth");
+    // Bailout. Can for example be hit with a deep chain of operations.
     C->record_method_not_compilable("Out of stack space, increase MaxLabelRootDepth");
     return nullptr;
   }
