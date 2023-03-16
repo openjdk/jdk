@@ -69,7 +69,7 @@ class InvokeHangTarg implements Runnable {
 
     // This is called from the debugger via invokeMethod
     public double invokeee() {
-        System.out.println("Debuggee: invokeee in thread "+Thread.currentThread().toString());
+        System.out.println("Debuggee: invokeee in thread " + Thread.currentThread().toString());
         Thread.yield();
         return longMethod(2);
     }
@@ -197,7 +197,7 @@ public class InvokeHangTest extends TestScaffold {
         ThreadReference thread = event.thread();
         try {
             StackFrame sf = thread.frame(0);
-            System.out.println("  Debugger: Breakpoint hit at "+sf.location());
+            System.out.println("  Debugger: Breakpoint hit at " + sf.location());
             doInvoke(thread, sf.thisObject(), "invokeee");
         } catch (IncompatibleThreadStateException itsex) {
             itsex.printStackTrace();
