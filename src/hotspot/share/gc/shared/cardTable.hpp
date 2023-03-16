@@ -156,7 +156,6 @@ public:
   }
 
   virtual void invalidate(MemRegion mr);
-  void clear(MemRegion mr);
 
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
