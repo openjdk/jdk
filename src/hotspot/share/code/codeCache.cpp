@@ -628,9 +628,6 @@ void CodeCache::commit(CodeBlob* cb) {
   if (cb->is_adapter_blob()) {
     heap->set_adapter_count(heap->adapter_count() + 1);
   }
-
-  // flush the hardware I-cache
-  ICache::invalidate_range(cb->content_begin(), cb->content_size());
 }
 
 bool CodeCache::contains(void *p) {
