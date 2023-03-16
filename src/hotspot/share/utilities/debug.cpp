@@ -142,11 +142,22 @@ void print128(u128 n) {
   printf("\"%016lx%016lx\", ", (u64)(n >> 64), (u64)(n << 64 >> 64));
 }
 
-void print52(u64 hi, u64 mid, u64 lo) {
-  u128 sum = lo + ((u128)mid << 52) + ((u128)hi << 104);
+void print52(u64 x2, u64 x1, u64 x0) {
+  u128 x_sum = 0;
+  x_sum = x_sum
+    + x0
+    + ((u128)x1 << 52);
+
+  u128 tmp = x_sum >> 64;
+  tmp += (u128)x2 << 40;
+
+  x_sum += (u128)x2 << 104;
+
+  u64 top = tmp >> 64;
+
   // u64 top = hi >> 24; if (top) printf("%lx", top);
-  u64 top = hi >> 24; printf("\"%lx\", ", top);
-  print128(sum);
+  printf("\"%lx\", ", (u64)top);
+  print128(x_sum);
   printf("\n");
 }
 

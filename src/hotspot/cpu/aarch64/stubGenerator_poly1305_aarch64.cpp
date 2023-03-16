@@ -110,8 +110,14 @@ address generate_poly1305_processBlocks2() {
     __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
   }
 
-    // KLUDGE
-    __ copy_3_to_5_regs(v_u0, u1[0]._lo, u1[1]._lo, u1[2]._lo);
+  // KLUDGE
+  for (int i = 0; i < 5; i++) {
+  __ movi(v_u0[i], __ T16B, 0);
+  }
+  __ copy_3_to_5_regs(v_u0, u1[0]._lo, u1[1]._lo, u1[2]._lo);
+
+  poo = __ pc();
+  __ nop();
 
   {
     Label DONE, LOOP;
@@ -133,8 +139,6 @@ address generate_poly1305_processBlocks2() {
 
     __ poly1305_multiply_foo(v_u0, vregs.remaining(), s_v, r_v, rr_v);
     __ poly1305_reduce_foo(v_u0, upper_bits, vregs.remaining());
-
-    poo = __ pc();
 
     __ incrementw(Address(&trips), 1);
 
