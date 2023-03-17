@@ -312,7 +312,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                          ResourcePoolBuilder out) {
         SystemModulesClassGenerator generator
             = new SystemModulesClassGenerator(className, moduleInfos);
-        byte[] bytes = generator.getClassBytes(cf);
+        byte[] bytes = generator.genClassBytes(cf);
         String rn = "/java.base/" + className + ".class";
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, bytes);
         out.add(e);
@@ -573,7 +573,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         /**
          * Generate SystemModules class
          */
-        public byte[] getClassBytes(Configuration cf) {
+        public byte[] genClassBytes(Configuration cf) {
             return Classfile.build(classDesc,
                     clb -> {
                         clb.withFlags(ACC_FINAL + ACC_SUPER)
