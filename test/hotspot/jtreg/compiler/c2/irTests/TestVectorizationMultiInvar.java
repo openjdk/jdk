@@ -70,12 +70,11 @@ public class TestVectorizationMultiInvar {
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testLoopNest1(byte[] dest, byte[] src,
-                                    long start1, long stop1,
-                                    long start2, long stop2,
-                                    long start3, long stop3,
-                                    long start4, long stop4,
-                                    long start5, long stop5
-                                    ) {
+                                     long start1, long stop1,
+                                     long start2, long stop2,
+                                     long start3, long stop3,
+                                     long start4, long stop4,
+                                     long start5, long stop5) {
         if (src == null || dest == null) {
         }
         for (long i = start1; i < stop1; i++) {
