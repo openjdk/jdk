@@ -790,7 +790,7 @@ class SWPointer : public ArenaObj {
 
   Node* maybe_negate_invar(bool negate, Node* invar);
 
-  void maybe_add_to_invar(Node* new_invar);
+  void maybe_add_to_invar(Node* new_invar, bool negate);
 
   Node* register_if_new(Node* n) const;
 };

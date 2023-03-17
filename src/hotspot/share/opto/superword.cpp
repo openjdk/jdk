@@ -4269,7 +4269,7 @@ bool SWPointer::scaled_iv(Node* n) {
         if (tmp._invar != nullptr) {
           BasicType bt = tmp._invar->bottom_type()->basic_type();
           assert(bt == T_INT || bt == T_LONG, "");
-          maybe_add_to_invar(register_if_new(LShiftNode::make(tmp._invar, n->in(2), bt)));
+          maybe_add_to_invar(register_if_new(LShiftNode::make(tmp._invar, n->in(2), bt)), false);
 #ifdef ASSERT
           _debug_invar_scale = n->in(2);
 #endif
@@ -4315,26 +4315,26 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
   }
   if (opc == Op_AddI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      maybe_add_to_invar(maybe_negate_invar(negate, n->in(1)));
+      maybe_add_to_invar(n->in(1), negate);
       _offset += negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
       NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      maybe_add_to_invar(maybe_negate_invar(negate, n->in(2)));
+      maybe_add_to_invar(n->in(2), negate);
       NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, negate, _offset);)
       return true;
     }
   }
   if (opc == Op_SubI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      maybe_add_to_invar(maybe_negate_invar(negate, n->in(1)));
+      maybe_add_to_invar(n->in(1), negate);
       _offset += !negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
       NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      maybe_add_to_invar(maybe_negate_invar(!negate, n->in(2)));
+      maybe_add_to_invar(n->in(2), !negate);
       NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, !negate, _offset);)
       return true;
     }
@@ -4352,7 +4352,7 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     }
     // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
     if (invariant(n)) {
-      maybe_add_to_invar(maybe_negate_invar(negate, n));
+      maybe_add_to_invar(n, negate);
       NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, negate, _offset);)
       return true;
     }
@@ -4391,7 +4391,8 @@ Node* SWPointer::register_if_new(Node* n) const {
   return n;
 }
 
-void SWPointer::maybe_add_to_invar(Node* new_invar) {
+void SWPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
+  new_invar = maybe_negate_invar(negate, new_invar);
   if (_invar == nullptr) {
     _invar = new_invar;
 #ifdef ASSERT
