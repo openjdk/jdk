@@ -52,7 +52,7 @@ class TypeConvertingMethodAdapter {
 
     private static final Wrapper[] FROM_WRAPPER_NAME = new Wrapper[16];
 
-    // Table of wrappers for primitives, indexed by ASM type sorts
+    // Map of TypeKind to Wrapper for primitives
     private static final Map<TypeKind, Wrapper> FROM_TYPE_SORT =
             Map.of(TypeKind.ByteType, Wrapper.BYTE,
                    TypeKind.ShortType, Wrapper.SHORT,

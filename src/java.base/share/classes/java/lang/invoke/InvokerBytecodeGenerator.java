@@ -430,7 +430,7 @@ class InvokerBytecodeGenerator {
      * @param wrapper primitive type class to box.
      */
     private void emitBoxing(CodeBuilder cob, Wrapper wrapper) {
-        ClassDesc owner = ClassDesc.ofInternalName("java/lang/" + wrapper.wrapperType().getSimpleName());
+        ClassDesc owner = ClassDesc.ofDescriptor(wrapper.wrapperType().descriptorString());
         String name  = "valueOf";
         MethodTypeDesc desc  = MethodTypeDesc.of(owner, ClassDesc.ofDescriptor(wrapper.basicTypeString()));
         cob.invokestatic(owner, name, desc);
@@ -442,7 +442,7 @@ class InvokerBytecodeGenerator {
      * @param wrapper wrapper type class to unbox.
      */
     private void emitUnboxing(CodeBuilder cob, Wrapper wrapper) {
-        ClassDesc owner = ClassDesc.ofInternalName("java/lang/" + wrapper.wrapperType().getSimpleName());
+        ClassDesc owner = ClassDesc.ofDescriptor(wrapper.wrapperType().descriptorString());
         String name  = wrapper.primitiveSimpleName() + "Value";
         MethodTypeDesc desc  = MethodTypeDesc.of(ClassDesc.ofDescriptor(wrapper.basicTypeString()));
         emitReferenceCast(cob, wrapper.wrapperType(), null);
