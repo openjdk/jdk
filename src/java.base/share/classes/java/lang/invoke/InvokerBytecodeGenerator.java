@@ -56,6 +56,9 @@ import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static jdk.internal.classfile.Classfile.*;
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 
 /**
  * Code generation backend for LambdaForm.
@@ -96,9 +99,9 @@ class InvokerBytecodeGenerator {
 
     private final List<ClassData> classData = new ArrayList<>();
 
-    /** Single element internal class name lookup cache. */
+    /** Single element class descriptor lookup cache. */
     private Class<?> lastClass;
-    private ClassDesc lastInternalName;
+    private ClassDesc lastClassDesc;
 
     private static final MemberName.Factory MEMBERNAME_FACTORY = MemberName.getFactory();
     private static final Class<?> HOST_CLASS = LambdaForm.class;
@@ -368,7 +371,7 @@ class InvokerBytecodeGenerator {
      * <clinit> to initialize the static final fields with the live class data
      * LambdaForms can't use condy due to bootstrapping issue.
      */
-    static void clinit(ClassBuilder clb, String className, List<ClassData> classData) {
+    static void clinit(ClassBuilder clb, ClassDesc classDesc, List<ClassData> classData) {
         if (classData.isEmpty())
             return;
 
@@ -380,7 +383,6 @@ class InvokerBytecodeGenerator {
         clb.withMethodBody("<clinit>", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
-                ClassDesc classDesc = ClassDesc.ofInternalName(className);
                 cob.constantInstruction(classDesc)
                    .invokestatic(CD_MethodHandles, "classData", MethodTypeDesc.of(CD_Object, CD_Class));
                 if (classData.size() == 1) {
@@ -534,10 +536,10 @@ class InvokerBytecodeGenerator {
         assert(VerifyAccess.isTypeVisible(c, Object.class)) : c.getName();
 
         if (c == lastClass) {
-            return lastInternalName;
+            return lastClassDesc;
         }
         lastClass = c;
-        return lastInternalName = ClassDesc.ofDescriptor(c.descriptorString());
+        return lastClassDesc = ClassDesc.ofDescriptor(c.descriptorString());
     }
 
     private static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {
@@ -620,30 +622,15 @@ class InvokerBytecodeGenerator {
         return true;
     }
 
-    static ClassDesc classDesc(String cn) {
-        assert checkClassName(cn): "Class not found: " + cn;
-        return ClassDesc.ofDescriptor(cn);
+    private static Annotation annotation(Class<?> cls) {
+        return Annotation.of(ClassDesc.ofDescriptor(cls.descriptorString()));
     }
 
-    static boolean checkClassName(String cn) {
-        // additional sanity so only valid "L;" descriptors work
-        if (!cn.startsWith("L") || !cn.endsWith(";")) {
-            return false;
-        }
-        try {
-            Class<?> c = Class.forName(cn.substring(1, cn.length() - 1).replace('/', '.'), false, null);
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    static final ClassDesc      DONTINLINE_SIG = classDesc("Ljdk/internal/vm/annotation/DontInline;");
-    static final ClassDesc     FORCEINLINE_SIG = classDesc("Ljdk/internal/vm/annotation/ForceInline;");
-    static final ClassDesc          HIDDEN_SIG = classDesc("Ljdk/internal/vm/annotation/Hidden;");
-    static final ClassDesc INJECTEDPROFILE_SIG = classDesc("Ljava/lang/invoke/InjectedProfile;");
-    static final ClassDesc     LF_COMPILED_SIG = classDesc("Ljava/lang/invoke/LambdaForm$Compiled;");
-
+    static final Annotation      DONTINLINE_SIG = annotation(DontInline.class);
+    static final Annotation     FORCEINLINE_SIG = annotation(ForceInline.class);
+    static final Annotation          HIDDEN_SIG = annotation(Hidden.class);
+    static final Annotation INJECTEDPROFILE_SIG = annotation(InjectedProfile.class);
+    static final Annotation     LF_COMPILED_SIG = annotation(LambdaForm.Compiled.class);
     /**
      * Generate an invoker method for the passed {@link LambdaForm}.
      */
@@ -652,7 +639,7 @@ class InvokerBytecodeGenerator {
             @Override
             public void accept(ClassBuilder clb) {
                 addMethod(clb);
-                clinit(clb, className, classData);
+                clinit(clb, classDesc, classData);
                 bogusMethod(clb, lambdaForm);
             }
         });
@@ -669,16 +656,16 @@ class InvokerBytecodeGenerator {
                 List<Annotation> annotations = new ArrayList<>(3);
 
                 // Suppress this method in backtraces displayed to the user.
-                annotations.add(Annotation.of(HIDDEN_SIG));
+                annotations.add(HIDDEN_SIG);
 
                 // Mark this method as a compiled LambdaForm
-                annotations.add(Annotation.of(LF_COMPILED_SIG));
+                annotations.add(LF_COMPILED_SIG);
 
                 if (lambdaForm.forceInline) {
                     // Force inlining of this invoker method.
-                    annotations.add(Annotation.of(FORCEINLINE_SIG));
+                    annotations.add(FORCEINLINE_SIG);
                 } else {
-                    annotations.add(Annotation.of(DONTINLINE_SIG));
+                    annotations.add(DONTINLINE_SIG);
                 }
                 mb.accept(RuntimeVisibleAnnotationsAttribute.of(annotations));
 
@@ -713,7 +700,7 @@ class InvokerBytecodeGenerator {
                                     if (PROFILE_GWT) {
                                         assert(name.arguments[0] instanceof Name &&
                                                 ((Name)name.arguments[0]).refersTo(MethodHandleImpl.class, "profileBoolean"));
-                                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(Annotation.of(INJECTEDPROFILE_SIG))));
+                                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(INJECTEDPROFILE_SIG)));
                                     }
                                     onStack = emitSelectAlternative(cob, name, lambdaForm.names[i+1]);
                                     i++;  // skip MH.invokeBasic of the selectAlternative result
@@ -959,12 +946,12 @@ class InvokerBytecodeGenerator {
 
         // invocation
         if (member.isMethod()) {
-            mtype = member.getMethodType().toMethodDescriptorString();
-            cob.invokeInstruction(refKindOpcode(refKind), cname, mname, MethodTypeDesc.ofDescriptor(mtype),
-                               member.getDeclaringClass().isInterface());
+            var methodTypeDesc = MethodTypeDesc.ofDescriptor(member.getMethodType().descriptorString());
+            cob.invokeInstruction(refKindOpcode(refKind), cname, mname, methodTypeDesc,
+                                  member.getDeclaringClass().isInterface());
         } else {
-            mtype = MethodType.toFieldDescriptorString(member.getFieldType());
-            cob.fieldInstruction(refKindOpcode(refKind), cname, mname, ClassDesc.ofDescriptor(mtype));
+            var fieldTypeDesc = ClassDesc.ofDescriptor(member.getFieldType().descriptorString());
+            cob.fieldInstruction(refKindOpcode(refKind), cname, mname, fieldTypeDesc);
         }
         // Issue a type assertion for the result, so we can avoid casts later.
         if (name.type == L_TYPE) {
@@ -1742,10 +1729,10 @@ class InvokerBytecodeGenerator {
                         mb.withFlags(ACC_STATIC);
 
                         // Suppress this method in backtraces displayed to the user.
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(Annotation.of(HIDDEN_SIG))));
+                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(HIDDEN_SIG)));
 
                         // Don't inline the interpreter entry.
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(Annotation.of(DONTINLINE_SIG))));
+                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(DONTINLINE_SIG)));
 
                         mb.withCode(new Consumer<CodeBuilder>() {
                             @Override
@@ -1784,7 +1771,7 @@ class InvokerBytecodeGenerator {
                         });
                     }
                 });
-                clinit(clb, className, classData);
+                clinit(clb, classDesc, classData);
                 bogusMethod(clb, invokerType);
             }
         });
@@ -1813,10 +1800,10 @@ class InvokerBytecodeGenerator {
                         mb.withFlags(ACC_STATIC);
 
                         // Suppress this method in backtraces displayed to the user.
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(Annotation.of(HIDDEN_SIG))));
+                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(HIDDEN_SIG)));
 
                         // Force inlining of this invoker method.
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(Annotation.of(FORCEINLINE_SIG))));
+                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(FORCEINLINE_SIG)));
 
                         mb.withCode(new Consumer<CodeBuilder>() {
                             @Override
@@ -1863,7 +1850,7 @@ class InvokerBytecodeGenerator {
                         });
                     }
                 });
-                clinit(clb, className, classData);
+                clinit(clb, classDesc, classData);
                 bogusMethod(clb, dstType);
             }
         });
