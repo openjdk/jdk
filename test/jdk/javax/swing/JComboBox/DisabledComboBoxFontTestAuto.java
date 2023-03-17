@@ -25,7 +25,7 @@
  * @test
  * @bug 7093691
  * @summary Tests if JComboBox has correct font when disabled/enabled
- * @run main DisabledComboBoxFontTestAuto
+ * @run main/othervm -Dsun.java2d.uiScale=1 DisabledComboBoxFontTestAuto
  */
 
 import java.awt.Color;
