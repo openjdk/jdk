@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public interface ClassHierarchyResolver {
                 public InputStream apply(ClassDesc classDesc) {
                     return ClassLoader.getSystemResourceAsStream(Util.toInternalName(classDesc) + ".class");
                 }
-            });
+            }).orElse(of(ClassLoader.getSystemClassLoader()));
 
     /**
      * {@return the {@link ClassHierarchyInfo} for a given class name, or null
@@ -125,10 +125,8 @@ public interface ClassHierarchyResolver {
         return new ClassHierarchyImpl.ReflectionClassHierarchyResolver() {
             @Override
             protected Class<?> resolve(ClassDesc cd) {
-                var desc = cd.descriptorString();
-                var binary = desc.substring(0, desc.length() - 1).replace('/', '.');
                 try {
-                    return Class.forName(binary, false, loader);
+                    return Class.forName(Util.toBinaryName(cd.descriptorString()), false, loader);
                 } catch (ClassNotFoundException ex) {
                     return null;
                 }
@@ -138,9 +136,10 @@ public interface ClassHierarchyResolver {
 
     /**
      * Returns a ClassHierarchyResolver that extracts class hierarchy information via
-     * the Reflection API with a {@linkplain MethodHandles.Lookup Lookup}.
+     * the Reflection API with a {@linkplain MethodHandles.Lookup Lookup}. The classes
+     * resolved must be accessible to this given lookup.
      *
-     * @param lookup the lookup
+     * @param lookup the lookup, must be able to access classes to resolve
      * @return the class hierarchy resolver
      */
     static ClassHierarchyResolver of(MethodHandles.Lookup lookup) {
@@ -150,6 +149,7 @@ public interface ClassHierarchyResolver {
                 try {
                     return (Class<?>) cd.resolveConstantDesc(lookup);
                 } catch (ReflectiveOperationException ex) {
+                    // Should we handle IllegalAccessException differently?
                     return null;
                 }
             }
