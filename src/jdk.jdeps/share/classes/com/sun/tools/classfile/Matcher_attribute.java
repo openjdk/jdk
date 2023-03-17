@@ -34,6 +34,9 @@ import java.io.IOException;
  *  deletion without notice.</b>
  */
 public class Matcher_attribute extends Attribute {
+    public static final int PAT_DECONSTRUCTOR   = 0x0001;
+    public static final int PAT_TOTAL           = 0x0002;
+
     Matcher_attribute(ClassReader cr, int name_index, int length) throws IOException {
         super(name_index, length);
         pattern_flags = cr.readUnsignedShort();

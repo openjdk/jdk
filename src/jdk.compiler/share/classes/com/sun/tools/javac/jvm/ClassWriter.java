@@ -867,11 +867,9 @@ public class ClassWriter extends ClassFile {
     int writeMatcherAttribute(MethodSymbol m) {
         final int attrIndex = writeAttr(names.Matcher);
 
-        int patternFlags = 0;
-        databuf.appendChar(patternFlags);
+        databuf.appendChar(MatcherFlags.value(m.matcherFlags));
 
-        Name patternName = m.name;
-        databuf.appendChar(poolWriter.putName(patternName));
+        databuf.appendChar(poolWriter.putName(m.name));
 
         Type patternDescriptor = m.type;
         databuf.appendChar(poolWriter.putDescriptor(patternDescriptor));

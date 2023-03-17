@@ -368,6 +368,15 @@ public class AttributeWriter extends BasicWriter
         println("Matcher:");
         indent(+1);
 
+        String nameString = attr.pattern_name_index != 0 ?
+                constantWriter.stringValue(attr.pattern_name_index) : "<no name>";
+        println("pattern_name: " + nameString);
+
+        String flagString =
+                (0 != (attr.pattern_flags & Matcher_attribute.PAT_DECONSTRUCTOR) ? "deconstructor " : "") +
+                        (0 != (attr.pattern_flags & Matcher_attribute.PAT_TOTAL) ? "total" : "");
+        println("flags: " + flagString);
+
         if (options.showDescriptors) {
             println("pattern_descriptor: " + getValue(attr.pattern_descriptor));
         }

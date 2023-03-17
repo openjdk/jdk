@@ -995,7 +995,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public Completer usesProvidesCompleter = Completer.NULL_COMPLETER;
         public final Set<ModuleFlags> flags = EnumSet.noneOf(ModuleFlags.class);
         public final Set<ModuleResolutionFlags> resolutionFlags = EnumSet.noneOf(ModuleResolutionFlags.class);
-
         /**
          * Create a ModuleSymbol with an associated module-info ClassSymbol.
          */
@@ -1138,6 +1137,24 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         private ModuleResolutionFlags(int value) {
+            this.value = value;
+        }
+
+        public final int value;
+    }
+
+    public enum MatcherFlags {
+        PAT_DECONSTRUCTOR(0x0001),
+        PAT_TOTAL(0x0002);
+
+        public static int value(Set<MatcherFlags> s) {
+            int v = 0;
+            for (MatcherFlags f: s)
+                v |= f.value;
+            return v;
+        }
+
+        private MatcherFlags(int value) {
             this.value = value;
         }
 
@@ -1925,6 +1942,9 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          *  declaration.
          */
         public Attribute defaultValue = null;
+
+        public final Set<MatcherFlags> matcherFlags = EnumSet.noneOf(MatcherFlags.class);
+
 
         /** Construct a method symbol, given its flags, name, type and owner.
          */

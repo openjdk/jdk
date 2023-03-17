@@ -557,6 +557,9 @@ public class Classfile {
     public static final int ACC_TRANSITIVE = 0x20;
     public static final int ACC_STATIC_PHASE = 0x40;
 
+    public static final int PAT_TOTAL           = 0x0001;
+    public static final int PAT_DECONSTRUCTOR   = 0x0002;
+
     public static final int CRT_STATEMENT       = 0x0001;
     public static final int CRT_BLOCK           = 0x0002;
     public static final int CRT_ASSIGNMENT      = 0x0004;

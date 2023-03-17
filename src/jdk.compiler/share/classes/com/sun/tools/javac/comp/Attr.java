@@ -1142,6 +1142,10 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
+            if ((m.flags() & MATCHER) != 0 && tree.name == owner.name) {
+                m.matcherFlags.add(MatcherFlags.PAT_DECONSTRUCTOR);
+            }
+
             // annotation method checks
             if ((owner.flags() & ANNOTATION) != 0) {
                 // annotation method cannot have throws clause
