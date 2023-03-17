@@ -598,7 +598,8 @@ public interface StringTemplate {
              * thereby has the opportunity to produce a specialized implementation.
              *
              * @param fragments  string template fragments
-             * @param type       method type
+             * @param type       method type, includes the StringTemplate receiver as
+             * well as the value types
              *
              * @return {@link MethodHandle} for the processor applied to template
              *

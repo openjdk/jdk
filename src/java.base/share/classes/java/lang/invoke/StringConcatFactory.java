@@ -1066,7 +1066,7 @@ public final class StringConcatFactory {
         ptypes = List.copyOf(ptypes);
 
         if (fragments.size() != ptypes.size() + 1) {
-            throw new StringConcatException("fragments size not equal ptypes size plus one");
+            throw new IllegalArgumentException("fragments size not equal ptypes size plus one");
         }
 
         if (ptypes.isEmpty()) {
@@ -1200,7 +1200,7 @@ public final class StringConcatFactory {
         }
 
         if (maxSlots < 1 || MAX_INDY_CONCAT_ARG_SLOTS < maxSlots) {
-            throw new StringConcatException("maxSlots must be between 1 and " +
+            throw new IllegalArgumentException("maxSlots must be between 1 and " +
                     MAX_INDY_CONCAT_ARG_SLOTS);
 
         }
@@ -1276,7 +1276,7 @@ public final class StringConcatFactory {
         }
 
         if (maxSlots < 1 || MAX_INDY_CONCAT_ARG_SLOTS < maxSlots) {
-            throw new StringConcatException("maxSlots must be between 1 and " +
+            throw new IllegalArgumentException("maxSlots must be between 1 and " +
                     MAX_INDY_CONCAT_ARG_SLOTS);
 
         }

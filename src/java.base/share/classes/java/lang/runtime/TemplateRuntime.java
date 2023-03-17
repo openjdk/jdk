@@ -100,6 +100,7 @@ public final class TemplateRuntime {
 
     /**
      * String template bootstrap method for creating large string templates.
+     * The non-static arguments are the fragments list and values list.
      *
      * @param lookup          method lookup
      * @param name            method name
@@ -122,6 +123,8 @@ public final class TemplateRuntime {
 
     /**
      * String template bootstrap method for creating string templates.
+     * The static arguments include the fragments list.
+     * The non-static arguments are the values.
      *
      * @param lookup          method lookup
      * @param name            method name
@@ -150,6 +153,9 @@ public final class TemplateRuntime {
 
     /**
      * String template bootstrap method for static final processors.
+     * The static arguments include the fragments list  and a {@link MethodHandle}
+     * to retrieve the value of the static final processor.
+     * The non-static arguments are the values.
      *
      * @param lookup          method lookup
      * @param name            method name
