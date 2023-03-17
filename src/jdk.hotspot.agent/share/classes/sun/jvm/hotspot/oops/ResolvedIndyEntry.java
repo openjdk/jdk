@@ -46,7 +46,7 @@ public class ResolvedIndyEntry extends VMObject {
     }
 
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-        Type type            = db.lookupType("ResolvedIndyEntry");
+        Type type = db.lookupType("ResolvedIndyEntry");
         size = type.getSize();
 
         cpIndex = type.getCIntegerField("_cpool_index");
