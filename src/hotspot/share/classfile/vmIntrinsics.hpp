@@ -1524,10 +1524,7 @@ public:
   // the corresponding coarse-grained control(2) disables it.
   static bool is_disabled_by_flags(vmIntrinsics::ID id);
 
-  static bool is_disabled_by_flags(const methodHandle& method);
-  static bool is_intrinsic_available(vmIntrinsics::ID id) {
-    return !is_disabled_by_flags(id);
-  }
+  static bool is_intrinsic_available(vmIntrinsics::ID id);
 };
 
 #undef VM_INTRINSIC_ENUM

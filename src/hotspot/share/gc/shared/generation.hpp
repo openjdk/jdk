@@ -85,10 +85,6 @@ class Generation: public CHeapObj<mtGC> {
   // Memory area reserved for generation
   VirtualSpace _virtual_space;
 
-  // ("Weak") Reference processing support
-  SpanSubjectToDiscoveryClosure _span_based_discoverer;
-  ReferenceProcessor* _ref_processor;
-
   // Performance Counters
   CollectorCounters* _gc_counters;
 
@@ -115,12 +111,6 @@ class Generation: public CHeapObj<mtGC> {
     GenGrain = 1 << LogOfGenGrain
   };
 
-  // allocate and initialize ("weak") refs processing support
-  void ref_processor_init();
-  void set_ref_processor(ReferenceProcessor* rp) {
-    assert(_ref_processor == nullptr, "clobbering existing _ref_processor");
-    _ref_processor = rp;
-  }
 
   virtual Generation::Name kind() { return Generation::Other; }
 
@@ -360,9 +350,6 @@ class Generation: public CHeapObj<mtGC> {
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Reference Processing accessor
-  ReferenceProcessor* const ref_processor() { return _ref_processor; }
 
   // Iteration.
 

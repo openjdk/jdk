@@ -454,9 +454,9 @@ class java_lang_Thread_FieldHolder : AllStatic {
   static jlong stackSize(oop holder);
 
   static bool is_daemon(oop holder);
-  static void set_daemon(oop holder);
+  static void set_daemon(oop holder, bool val);
 
-  static void set_thread_status(oop holder, JavaThreadStatus);
+  static void set_thread_status(oop holder, JavaThreadStatus status);
   static JavaThreadStatus get_thread_status(oop holder);
 
   friend class JavaClasses;
@@ -616,7 +616,7 @@ class java_lang_Throwable: AllStatic {
   static void get_stack_trace_elements(int depth, Handle backtrace, objArrayHandle stack_trace, TRAPS);
 
   // For recreating class initialization error exceptions.
-  static Handle get_cause_with_stack_trace(Handle throwable, TRAPS);
+  static Handle create_initialization_error(JavaThread* current, Handle throwable);
 
   // Printing
   static void print(oop throwable, outputStream* st);
