@@ -774,6 +774,9 @@
                                                                             \
   develop(bool, PrintLoopConditionalPropagation, false,                     \
           "Trace Loop Conditional Propagation pass")                        \
+                                                                            \
+  product(bool, UseLoopConditionalPropagation, true,                        \
+          "Perform Loop Conditional Propagation pass")                      \
 
 // end of C2_FLAGS
 

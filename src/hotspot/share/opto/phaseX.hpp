@@ -287,7 +287,7 @@ public:
     return t;
   }
 
-  virtual const Type* type(const Node* n, const Node* c) const {
+  virtual const Type* type(const Node* n, Node* c) const {
     return type(n);
   }
   // Get a previously recorded type for the node n,

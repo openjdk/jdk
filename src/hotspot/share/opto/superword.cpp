@@ -2607,7 +2607,7 @@ void SuperWord::print_loop(bool whole) {
   Node_List rpo_list;
   VectorSet visited(_arena);
   visited.set(lpt()->_head->_idx);
-  _phase->rpo(lpt()->_head, stack, visited, rpo_list);
+  _phase->rpo(lpt()->_head, stack, visited, rpo_list, false);
   _phase->dump(lpt(), rpo_list.size(), rpo_list );
   if(whole) {
     tty->print_cr("\n Whole loop tree");

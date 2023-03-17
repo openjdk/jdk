@@ -4580,15 +4580,19 @@ void PhaseIdealLoop::build_and_optimize() {
     visited.clear();
     split_if_with_blocks( visited, nstack);
     DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+//    if (C->major_progress()) {
+//      C->set_run_loop_conditional_propagation();
+//    }
   }
 
   if (!C->major_progress() && do_expensive_nodes && process_expensive_nodes()) {
     C->set_major_progress();
   }
 
-  if (!C->major_progress()) {
+  if (!C->major_progress() && UseLoopConditionalPropagation && C->run_loop_conditional_propagation()) {
     visited.clear();
     conditional_elimination(visited, nstack, worklist);
+    C->clear_run_loop_conditional_propagation();
   }
 
   // Perform loop predication before iteration splitting
@@ -6386,7 +6390,7 @@ void PhaseIdealLoop::dump() const {
   Node_List rpo_list;
   VectorSet visited;
   visited.set(C->top()->_idx);
-  rpo(C->root(), stack, visited, rpo_list);
+  rpo(C->root(), stack, visited, rpo_list, false);
   // Dump root loop indexed by last element in PO order
   dump(_ltree_root, rpo_list.size(), rpo_list);
 }
@@ -6484,7 +6488,7 @@ void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)
-void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const {
+void PhaseIdealLoop::rpo(Node* start, Node_Stack& stk, VectorSet& visited, Node_List& rpo_list, bool only_proj_regions) const {
   stk.push(start, 0);
   visited.set(start->_idx);
 
@@ -6498,7 +6502,9 @@ void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_
         stk.push(n, 0);
       }
     } else {
-      rpo_list.push(m);
+      if (!only_proj_regions || m->is_Region() || m->is_Proj()) {
+        rpo_list.push(m);
+      }
       stk.pop();
     }
   }

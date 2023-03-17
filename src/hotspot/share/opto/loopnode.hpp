@@ -1688,7 +1688,7 @@ public:
   bool verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verify) const;
 #endif
 
-  void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;
+  void rpo(Node* start, Node_Stack& stk, VectorSet& visited, Node_List& rpo_list, bool only_proj_regions) const;
 
   void check_counted_loop_shape(IdealLoopTree* loop, Node* x, BasicType bt) NOT_DEBUG_RETURN;
 

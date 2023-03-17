@@ -1697,6 +1697,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               Node* in = x->in(k);
               if (in != nullptr && n_loop->is_member(get_loop(get_ctrl(in)))) {
                 const Type* in_t = _igvn.type(in);
+                if (in_t->isa_int() || in_t->isa_long()) {
+                  C->set_run_loop_conditional_propagation();
+                }
                 cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t, ConstraintCastNode::UnconditionalDependency);
               }
               if (cast != nullptr) {

@@ -2110,7 +2110,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
   // compute memory state at regions, creating new phis if needed.
   Node_List rpo_list;
   visited.clear();
-  _phase->rpo(_phase->C->root(), stack, visited, rpo_list);
+  _phase->rpo(_phase->C->root(), stack, visited, rpo_list, false);
   Node* root = rpo_list.pop();
   assert(root == _phase->C->root(), "");
 

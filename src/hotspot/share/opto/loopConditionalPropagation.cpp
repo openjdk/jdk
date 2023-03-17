@@ -239,18 +239,34 @@ private:
       }
     } while (stack.is_nonempty());
     TreeNode* tree_root = nodes.adr_at(root);
-    _types_at_ctrl.Insert(C->root(), tree_root);
+    set_types_at_ctrl(C->root(), tree_root);
   }
 
-  bool valid_use(Node* u, Node* c) const {
-    if (u->is_Phi() || !_visited.test(u->_idx)) {
+  bool valid_use(Node* u, Node* c, const Node* n) {
+    if (!_visited.test(u->_idx)) {
       return false;
     }
+    if (u->is_Phi()) {
+      _control_dependent_node.set(u->in(0)->_idx);
+      _control_dependent_node.set(u->_idx);
+      return false;
+    }
+//    if (u->is_Phi()) {
+//      Node* r = u->in(0);
+//      for (uint i = 1; i < u->req(); ++i) {
+//        if (u->in(i) == n && _phase->is_dominator(c, r->in(i))) {
+//          return true;
+//        }
+//      }
+//      return false;
+//    }
     Node* u_c = _phase->ctrl_or_self(u);
     if (!_phase->is_dominator(c, u_c) && (u->is_CFG() || !_phase->is_dominator(u_c, c))) {
       return false;
     }
     if (!u->is_CFG() && u->in(0) != nullptr && u->in(0)->is_CFG() && !_phase->is_dominator(u->in(0), c)) {
+      _control_dependent_node.set(u->in(0)->_idx);
+      _control_dependent_node.set(u->_idx);
       return false;
     }
     return true;
@@ -260,12 +276,12 @@ private:
     assert(_visited.test(n->_idx), "");
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* u = n->fast_out(i);
-      if (valid_use(u, c)) {
+      if (valid_use(u, c, n)) {
         _wq.push(u);
         if (u->Opcode() == Op_AddI || u->Opcode() == Op_SubI) {
           for (DUIterator_Fast i2max, i2 = u->fast_outs(i2max); i2 < i2max; i2++) {
             Node* uu = u->fast_out(i2);
-            if (uu->Opcode() == Op_CmpU && valid_use(uu, c)) {
+            if (uu->Opcode() == Op_CmpU && valid_use(uu, c, u)) {
               _wq.push(uu);
             }
           }
@@ -295,9 +311,9 @@ private:
   }
 
   void sync_from_tree(Node* c) {
-    _current_types = (TreeNode*) _types_at_ctrl[c];
+    _current_types = types_at_ctrl(c);
     assert(_current_types != nullptr, "");
-    TreeNode::Iterator iter((TreeNode*)_types_at_ctrl[_current_ctrl], (TreeNode*) _current_types);
+    TreeNode::Iterator iter(types_at_ctrl(_current_ctrl), _current_types);
     while (iter.next()) {
       Node* node = iter.node();
       const Type* t = iter.type2();
@@ -308,7 +324,9 @@ private:
 
   PhaseIdealLoop* _phase;
   VectorSet _visited;
+  VectorSet _control_dependent_node;
   Dict _types_at_ctrl;
+  GrowableArray<TreeNode*> _types_at_ctrl2;
   Node_List _rpo_list;
   TreeNode* _current_types;
   Node* _current_ctrl;
@@ -324,12 +342,13 @@ public:
     _phase(phase),
     _visited(visited),
     _types_at_ctrl(cmpkey, hashptr),
+    _types_at_ctrl2(phase->C->unique()),
     _rpo_list(rpo_list),
     _current_types(nullptr),
     _current_ctrl(phase->C->root()) {
     assert(nstack.is_empty(), "");
     assert(_rpo_list.size() == 0, "");
-    phase->rpo(C->root(), nstack, _visited, _rpo_list);
+    phase->rpo(C->root(), nstack, _visited, _rpo_list, true);
     Node* root = _rpo_list.pop();
     assert(root == C->root(), "");
 
@@ -353,6 +372,9 @@ public:
       progress = false;
       bool extra = false;
       bool extra2 = false;
+
+      _control_dependent_node.clear();
+
       for (int i = _rpo_list.size() - 1; i >= 0; i--) {
         int rpo = _rpo_list.size() - 1 - i;
         Node* c = _rpo_list.at(i);
@@ -360,13 +382,19 @@ public:
         has_infinite_loop = has_infinite_loop || (c->Opcode() == Op_NeverBranch);
 
         Node* dom = _phase->idom(c);
+        TreeNode* types_at_dom = types_at_ctrl(dom);
 
-        TreeNode* types_at_dom = (TreeNode*) (_types_at_ctrl[dom]);
-        TreeNode* prev_types_at_c = (TreeNode*) (_types_at_ctrl[c]);
+//        if (!(c->is_Region() || c->is_Proj())) {
+//          ShouldNotReachHere();
+//          _types_at_ctrl.Insert(c, types_at_dom);
+//          continue;
+//        }
+
+        TreeNode* prev_types_at_c = types_at_ctrl(c);
         TreeNode* types_at_c = types_at_dom;
         if (c->is_Region()) {
           Node* in = c->in(1);
-          TreeNode* types_at_in1 = (TreeNode*) (_types_at_ctrl[in]);
+          TreeNode* types_at_in1 = types_at_ctrl(in);
           if (types_at_in1 != nullptr) {
             TreeNode::Iterator iter(types_at_dom, types_at_in1);
             while (iter.next()) {
@@ -376,7 +404,7 @@ public:
               const Type* current_type = types_at_dom->get_type(node);
               for (; j < c->req(); j++) {
                 in = c->in(j);
-                TreeNode* types_at_in = (TreeNode*) (_types_at_ctrl[in]);
+                TreeNode* types_at_in = types_at_ctrl(in);
                 if (types_at_in == nullptr) {
                   assert(!c->is_Loop() && (_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in)), "");
                   break;
@@ -417,7 +445,8 @@ public:
           Node* iff = c->in(0);
           assert(iff->is_If(), "");
           if (/*iff->as_If()->safe_for_optimizations() &&*/
-              !(iff->is_CountedLoopEnd() && iff->as_CountedLoopEnd()->loopnode() != nullptr && iff->as_CountedLoopEnd()->loopnode()->is_strip_mined())) {
+                  !(iff->is_CountedLoopEnd() && iff->as_CountedLoopEnd()->loopnode() != nullptr &&
+                    iff->as_CountedLoopEnd()->loopnode()->is_strip_mined())) {
             Node* bol = iff->in(1);
             if (iff->is_OuterStripMinedLoopEnd()) {
               assert(iff->in(0)->in(0)->in(0)->is_CountedLoopEnd(), "");
@@ -444,7 +473,8 @@ public:
               }
             }
           }
-        } else if (c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray() && c->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
+        } else if (c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray() &&
+                   c->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
           AllocateArrayNode* alloc = c->in(0)->in(0)->in(0)->as_AllocateArray();
           Node* length = alloc->in(AllocateArrayNode::ALength);
           Node* klass = alloc->in(AllocateNode::KlassNode);
@@ -463,17 +493,19 @@ public:
             }
           }
         }
-        for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
-          Node* u = c->fast_out(i);
+        if (_control_dependent_node.test(c->_idx)) {
+          for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
+            Node* u = c->fast_out(i);
 //          if (u->is_Phi() && _visited.test(u->_idx)) {
 //            _wq.push(u);
 //          }
-          if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _visited.test(u->_idx)) {
-            _wq.push(u);
+            if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _visited.test(u->_idx) && _control_dependent_node.test(u->_idx)) {
+              _wq.push(u);
+            }
           }
         }
 
-        _types_at_ctrl.Insert(c, types_at_c);
+        set_types_at_ctrl(c, types_at_c);
 
         sync_from_tree(c);
         while (_wq.size() > 0) {
@@ -483,7 +515,8 @@ public:
             const Type* prev_t = t;
             t = t->filter(prev_types_at_c->get_type(n));
             assert(t == prev_t, "");
-            if (!(n->in(0)->is_CountedLoop() && n->in(0)->as_CountedLoop()->phi() == n && n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
+            if (!(n->in(0)->is_CountedLoop() && n->in(0)->as_CountedLoop()->phi() == n &&
+                  n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
               t = saturate(t, prev_types_at_c->get_type(n), nullptr);
             }
             if (c->is_Loop() && t != prev_types_at_c->get_type(n)) {
@@ -500,9 +533,10 @@ public:
           }
         }
         if (types_at_c != _current_types) {
-          _types_at_ctrl.Insert(c, _current_types);
+          set_types_at_ctrl(c, _current_types);
           types_at_c = _current_types;
         }
+
         if (prev_types_at_c == nullptr && types_at_c != types_at_dom) {
           progress = true;
         } else if (prev_types_at_c != nullptr && TreeNode::Iterator(prev_types_at_c, types_at_c).next()) {
@@ -569,9 +603,42 @@ public:
       if (extra2) {
         extra_rounds2++;
       }
+      if (iterations == 1 + (C->has_loops() ? 1 : 0)) {
+        break;
+      }
     }
 
     sync_from_tree(C->root());
+  }
+
+  void set_types_at_ctrl(Node* c, TreeNode* types_at_c) {
+    if (UseNewCode2) {
+      _types_at_ctrl2.at_put_grow(c->_idx, types_at_c);
+    } else {
+      _types_at_ctrl.Insert(c, types_at_c);
+    }
+  }
+
+  TreeNode* types_at_ctrl(Node* c) const {
+    if (UseNewCode2) {
+      TreeNode* types;
+      for (;;) {
+        types = const_cast<GrowableArray<TreeNode*>&>(_types_at_ctrl2).at_grow(c->_idx);
+        if (types != nullptr) {
+          return types;
+        }
+        c = _phase->idom(c);
+      }
+    } else {
+      TreeNode* types;
+      for (;;) {
+        types = (TreeNode*) (_types_at_ctrl[c]);
+        if (types != nullptr) {
+          return types;
+        }
+        c = _phase->idom(c);
+      }
+    }
   }
 
   TreeNode* analyze_if(int rpo, Node* c, TreeNode* types_at_c, const Node* cmp, Node* n) {
@@ -651,7 +718,7 @@ public:
     for (uint i = 0; i < _wq.size(); i++) {
       Node* c = _wq.at(i);
 
-      TreeNode* types = (TreeNode*) _types_at_ctrl[c];
+      TreeNode* types = types_at_ctrl(c);
       if (types->get_type(c) == Type::TOP) {
         assert(c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray(), "");
         replace_node(c, _phase->C->top());
@@ -723,9 +790,9 @@ public:
 
   bool transform_helper(Node* c) {
     bool progress = false;
-    TreeNode* types = (TreeNode*) _types_at_ctrl[c];
+    TreeNode* types = types_at_ctrl(c);
     {
-      TreeNode::Iterator iter((TreeNode*) _types_at_ctrl[_phase->idom(c)], types);
+      TreeNode::Iterator iter(types_at_ctrl(_phase->idom(c)), types);
       while (iter.next()) {
         Node* node = iter.node();
         const Type* t = iter.type2();
@@ -793,7 +860,7 @@ public:
     }
 
     {
-      TreeNode::Iterator iter((TreeNode*) _types_at_ctrl[_phase->idom(c)], types);
+      TreeNode::Iterator iter(types_at_ctrl(_phase->idom(c)), types);
       while (iter.next()) {
         Node* node = iter.node();
         const Type* t = iter.type2();
@@ -824,7 +891,7 @@ public:
                         j == LoopNode::LoopBackControl &&
                         use == r->as_BaseCountedLoop()->phi() &&
                         node == r->as_BaseCountedLoop()->incr() &&
-                        !((TreeNode*) _types_at_ctrl[r->as_BaseCountedLoop()->loopexit()])->get_type(r->as_BaseCountedLoop()->loopexit()->cmp_node())->singleton())) {
+                        !types_at_ctrl(r->as_BaseCountedLoop()->loopexit())->get_type(r->as_BaseCountedLoop()->loopexit()->cmp_node())->singleton())) {
                     progress = true;
                     if (con == NULL) {
                       con = makecon(t);
@@ -966,7 +1033,7 @@ public:
         if (bol_t->is_con()) {
           if (iff->proj_out(bol_t->get_con()) == c) {
             _wq.push(c);
-            assert(((TreeNode*) _types_at_ctrl[iff])->get_type(c) != Type::TOP, "");
+            assert(types_at_ctrl(iff)->get_type(c) != Type::TOP, "");
           }
         } else {
           _wq.push(c);
@@ -1006,9 +1073,9 @@ public:
   }
 #endif
 
-  const Type* type(const Node* n, const Node* c) const {
+  const Type* type(const Node* n, Node* c) const {
     assert(c->is_CFG(), "");
-    TreeNode* types = (TreeNode*) _types_at_ctrl[c];
+    TreeNode* types = types_at_ctrl(c);
     if (types == nullptr) {
       return PhaseTransform::type(n);
     }
@@ -1020,10 +1087,17 @@ public:
 };
 
 void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list) {
+  TraceTime tt("loop conditional propagation", UseNewCode);
   C->print_method(PHASE_DEBUG, 2);
   PhaseConditionalPropagation pcp(this, visited, nstack, rpo_list);
-  pcp.analyze();
-  pcp.do_transform();
+  {
+    TraceTime tt("loop conditional propagation analyze", UseNewCode);
+    pcp.analyze();
+  }
+  {
+    TraceTime tt("loop conditional propagation transform", UseNewCode);
+    pcp.do_transform();
+  }
   _igvn = pcp;
   C->print_method(PHASE_DEBUG, 2);
 }
