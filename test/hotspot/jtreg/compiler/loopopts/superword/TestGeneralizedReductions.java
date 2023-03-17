@@ -61,7 +61,6 @@ public class TestGeneralizedReductions {
         initArray(array);
         result = testMapReductionOnGlobalAccumulator(array);
         if (result != 316) {
-            System.out.println("result: " + result);
             throw new RuntimeException("unexpected result");
         }
     }
