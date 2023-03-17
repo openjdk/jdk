@@ -606,6 +606,11 @@ public:
   // Register the given region to be part of the collection set.
   inline void register_humongous_candidate_region_with_region_attr(uint index);
 
+  void set_humongous_metadata(HeapRegion* first_hr,
+                              uint num_regions,
+                              size_t word_size,
+                              bool update_remsets);
+
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_young_region_with_region_attr(HeapRegion* r) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,8 +142,8 @@ public:
                              Node* length,
                              bool alloc_tightly_coupled,
                              bool has_negative_length_guard,
-                             Node* src_klass = NULL, Node* dest_klass = NULL,
-                             Node* src_length = NULL, Node* dest_length = NULL);
+                             Node* src_klass = nullptr, Node* dest_klass = nullptr,
+                             Node* src_length = nullptr, Node* dest_length = nullptr);
 
   void connect_outputs(GraphKit* kit, bool deoptimize_on_exception = false);
 

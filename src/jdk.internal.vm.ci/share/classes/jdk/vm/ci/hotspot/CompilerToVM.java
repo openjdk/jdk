@@ -249,6 +249,8 @@ final class CompilerToVM {
 
     native HotSpotResolvedJavaType lookupClass(Class<?> javaClass);
 
+    native HotSpotResolvedJavaType lookupJClass(long jclass);
+
     /**
      * Resolves the entry at index {@code cpi} in {@code constantPool} to an interned String object.
      *

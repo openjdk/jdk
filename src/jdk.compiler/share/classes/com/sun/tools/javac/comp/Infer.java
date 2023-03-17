@@ -656,7 +656,7 @@ public class Infer {
 
     /**
      * Infer record type for pattern matching. Given an expression type
-     * (@code expressionType}), and a given record ({@code patternTypeSymbol}),
+     * ({@code expressionType}), and a given record ({@code patternTypeSymbol}),
      * a parameterized type of {@code patternTypeSymbol} is inferred
      * according to JLS 18.5.5.
      *

@@ -149,7 +149,8 @@ void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit)
 
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   initialize_misc();
-
+  assert((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr) ||
+         (cs->locs_start() == nullptr) && (cs->locs_end() == nullptr), "valid start and end pointer");
   _current = cs->locs_start()-1;
   _end     = cs->locs_end();
   _addr    = cs->start();
