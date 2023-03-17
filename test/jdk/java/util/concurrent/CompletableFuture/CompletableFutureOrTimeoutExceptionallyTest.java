@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,18 @@ class CompletableFutureOrTimeoutExceptionallyTest {
         var count = 0L;
         while(count < 2_000_000) {
             new CompletableFuture<>().orTimeout(12, TimeUnit.HOURS).completeExceptionally(new RuntimeException("This is fine"));
+            ++count;
+        }
+    }
+
+    /**
+     * Test that the completeOnTimeout task is cancelled if the CompletableFuture is completed Exceptionally
+     */
+    @Test
+    void testCompleteOnTimeoutWithCompleteExceptionallyDoesNotLeak() {
+        var count = 0L;
+        while(count < 2_000_000) {
+            new CompletableFuture<>().completeOnTimeout(null, 12, TimeUnit.HOURS).completeExceptionally(new RuntimeException("This is fine"));
             ++count;
         }
     }
