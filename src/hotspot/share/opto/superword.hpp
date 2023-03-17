@@ -515,10 +515,10 @@ private:
   // Reference to the i'th input node of n, commuting the inputs of binary nodes
   // whose edges have been swapped. Assumes n is a commutative, binary operation.
   static Node* original_input(const Node* n, uint i);
-  // Find and mark reductions in a loop.
-  // Running mark_reductions(loop) is similar to querying is_reduction(n) for
-  // every n in loop, but stricter in that it additionally requires that
-  // reduction nodes are not used within the loop by other nodes.
+  // Find and mark reductions in a loop. Running mark_reductions(loop) is
+  // similar to querying is_reduction(n) for every n in loop, but stricter in
+  // that it additionally requires that reduction nodes are not used within the
+  // loop except by their reduction cycle predecessors.
   void mark_reductions(IdealLoopTree* loop);
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }

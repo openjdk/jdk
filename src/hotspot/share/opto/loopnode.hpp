@@ -315,7 +315,7 @@ public:
   }
 
   void double_unrolled_count() { _unrolled_count_log2++; }
-  int  unrolled_count()        { return 1 << MIN2(_unrolled_count_log2, BitsPerInt-3); }
+  int  unrolled_count() const { return 1 << MIN2(_unrolled_count_log2, BitsPerInt-3); }
 
   void set_node_count_before_unroll(int ct)  { _node_count_before_unroll = ct; }
   int  node_count_before_unroll()            { return _node_count_before_unroll; }

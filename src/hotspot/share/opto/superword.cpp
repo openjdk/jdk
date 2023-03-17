@@ -457,8 +457,8 @@ bool SuperWord::in_reduction_cycle(const Node* n, uint input) {
   }
   // If there is an input reduction path from the the phi's loop-back to n, then
   // n is part of a reduction cycle.
-  const Node* last = phi->in(LoopNode::LoopBackControl);
-  PathEnd path_from_phi = find_in_path(last, input, LoopMaxUnroll, has_my_opcode,
+  const Node* first = phi->in(LoopNode::LoopBackControl);
+  PathEnd path_from_phi = find_in_path(first, input, LoopMaxUnroll, has_my_opcode,
                                        [&](const Node* m) { return m == n; });
   return n == path_from_phi.first;
 }
@@ -475,16 +475,16 @@ Node* SuperWord::original_input(const Node* n, uint i) {
   return n->in(i);
 }
 
-void SuperWord::mark_reductions(IdealLoopTree *loop) {
+void SuperWord::mark_reductions(IdealLoopTree* loop) {
 
   _loop_reductions.clear();
-  CountedLoopNode* loop_head = loop->_head->as_CountedLoop();
-  Node* trip_phi = loop_head->phi();
+  const CountedLoopNode* loop_head = loop->_head->as_CountedLoop();
+  const Node* trip_phi = loop_head->phi();
 
   // Iterate through all phi nodes associated to the loop and search for
   // reduction cycles of at most 'loop_head->unrolled_count()' nodes.
   for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
-    Node* phi = loop_head->fast_out(i);
+    const Node* phi = loop_head->fast_out(i);
     if (!phi->is_Phi()) {
       continue;
     }
@@ -494,48 +494,36 @@ void SuperWord::mark_reductions(IdealLoopTree *loop) {
     if (phi == trip_phi) {
       continue;
     }
-    // For definitions which are loop inclusive and not tripcounts.
-    Node* last = phi->in(LoopNode::LoopBackControl);
-    if (last == nullptr) {
+    // The phi's loop-back is considered the first node in the reduction cycle.
+    const Node* first = phi->in(LoopNode::LoopBackControl);
+    if (first == nullptr) {
       continue;
     }
     // Test that the node fits the standard pattern for a reduction operator.
-    if (!is_reduction_operator(last)) {
+    if (!is_reduction_operator(first)) {
       continue;
     }
-    // Test that the node is not used within the loop by non-phi nodes.
-    bool used_in_loop = false;
-    for (DUIterator_Fast imax, i = last->fast_outs(imax); i < imax; i++) {
-      Node* u = last->fast_out(i);
-      const IdealLoopTree* u_loop = _phase->get_loop(_phase->ctrl_or_self(u));
-      if (u != phi && loop->is_member(u_loop)) {
-        used_in_loop = true;
-        break;
-      }
-    }
-    if (used_in_loop) {
-      continue;
-    }
-    // Test that 'last' is the bottom of a reduction cycle. To contain the
-    // number of searched paths, assume that all nodes in a reduction cycle are
-    // connected via the same edge index (accounting for swapped inputs). This
-    // assumption is realistic because non-trivial reduction cycles are usually
-    // formed by nodes cloned by loop unrolling. To further bound the search,
+    // Test that 'first' is the beginning of a reduction cycle ending in 'phi'.
+    // To contain the number of searched paths, assume that all nodes in a
+    // reduction cycle are connected via the same edge index, modulo swapped
+    // inputs. This assumption is realistic because reduction cycles usually
+    // consist of nodes cloned by loop unrolling. To further bound the search,
     // constrain the size of reduction cycles to the loop's unrolled count.
     int reduction_input = -1;
     int path_nodes = -1;
-    for (uint input = 1; input < last->req(); input++) {
+    for (uint input = 1; input < first->req(); input++) {
       // Test whether there is a reduction path of at most
-      // 'loop_head->unrolled_count()' nodes from 'last' to the phi node
+      // 'loop_head->unrolled_count()' nodes from 'first' to the phi node
       // following edge index 'input' (typically 1 or 2).
-      PathEnd path = find_in_path(
-          last, input, loop_head->unrolled_count(),
-          [&](const Node *n) {
-            Node *ctrl = _phase->get_ctrl(n);
-            return (n->Opcode() == last->Opcode() && ctrl != nullptr &&
+      PathEnd path =
+        find_in_path(
+          first, input, loop_head->unrolled_count(),
+          [&](const Node* n) {
+            Node* ctrl = _phase->get_ctrl(n);
+            return (n->Opcode() == first->Opcode() && ctrl != nullptr &&
                     loop->is_member(_phase->get_loop(ctrl)));
           },
-          [&](const Node *n) { return n == phi; });
+          [&](const Node* n) { return n == phi; });
       if (path.first != nullptr) {
         reduction_input = input;
         path_nodes = path.second;
@@ -545,8 +533,34 @@ void SuperWord::mark_reductions(IdealLoopTree *loop) {
     if (reduction_input == -1) {
       continue;
     }
-    // Mark all nodes in the found path as reductions.
-    Node* current = last;
+    // Test that reduction nodes do not have any other users in the loop than
+    // their reduction cycle predecessors.
+    const Node* current = first;
+    const Node* pred = phi; // current's predecessor in the reduction cycle.
+    bool used_in_loop = false;
+    for (int i = 0; i < path_nodes; i++) {
+      for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
+        Node* u = current->fast_out(j);
+        if (!loop->is_member(_phase->get_loop(_phase->ctrl_or_self(u)))) {
+          continue;
+        }
+        if (u == pred) {
+          continue;
+        }
+        used_in_loop = true;
+        break;
+      }
+      if (used_in_loop) {
+        break;
+      }
+      pred = current;
+      current = original_input(current, reduction_input);
+    }
+    if (used_in_loop) {
+      continue;
+    }
+    // Reduction cycle found. Mark all nodes in the found path as reductions.
+    current = first;
     for (int i = 0; i < path_nodes; i++) {
       _loop_reductions.set(current->_idx);
       current = original_input(current, reduction_input);
