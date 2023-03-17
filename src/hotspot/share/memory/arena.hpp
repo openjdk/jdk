@@ -103,7 +103,7 @@ class Chunk final {
   static constexpr size_t small_size = 1*K - slack;       // Size of first chunk (normal aka small)
   static constexpr size_t init_size = small_size;
   static constexpr size_t medium_size = 10*K - slack;     // Size of medium-sized chunk
-  static constexpr size_t large_size = 32*K - slack;    // Large size of an Arena chunk (following the first)
+  static constexpr size_t large_size = 32*K - slack;      // Large size of an Arena chunk (following the first)
   static constexpr size_t size = large_size;
   static constexpr size_t non_pool_size = init_size + 32; // An initial size which is not one of above
 
