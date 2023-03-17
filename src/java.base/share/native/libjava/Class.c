@@ -38,10 +38,6 @@
 #include "check_classname.h"
 #include "java_lang_Class.h"
 
-/* defined in libverify.so/verify.dll (src file common/check_format.c) */
-extern jboolean VerifyClassname(char *utf_name, jboolean arrayAllowed);
-extern jboolean VerifyFixClassname(char *utf_name);
-
 #define OBJ "Ljava/lang/Object;"
 #define CLS "Ljava/lang/Class;"
 #define CPL "Ljdk/internal/reflect/ConstantPool;"
