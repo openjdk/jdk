@@ -2854,7 +2854,7 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
 #if INCLUDE_JVMTI
 
 // When notifications are disabled then just update the VTMS transition bit and return.
-// Otherwise, the bit is updated in the given jvmtiVTMSTransitionDisabler function call.
+// Otherwise, the bit is updated in the given function call implementing JVMTI notification protocol.
 bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName) {
   if (!DoJVMTIVirtualThreadTransitions) {
     return true;
