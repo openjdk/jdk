@@ -42,7 +42,7 @@ public class PlabGCStatistics {
     /**
      * Checks if the statistics contains the requested type.
      * @param reportType
-     * @returns true, if contains, false otherwise
+     * @return true, if contains, false otherwise
      */
     public boolean containsKey(ReportType reportType) {
         return plabGCStatistics.containsKey(reportType);

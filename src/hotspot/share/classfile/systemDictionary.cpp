@@ -70,6 +70,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -899,12 +900,9 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
     k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
   }
 
-  {
-    MutexLocker mu_r(THREAD, Compile_lock);
-    // Add to class hierarchy, and do possible deoptimizations.
-    add_to_hierarchy(k);
-    // But, do not add to dictionary.
-  }
+  // Add to class hierarchy, and do possible deoptimizations.
+  add_to_hierarchy(THREAD, k);
+  // But, do not add to dictionary.
 
   k->link_class(CHECK_NULL);
 
@@ -1489,13 +1487,11 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
     JavaCalls::call(&result, m, &args, CHECK);
   }
 
-  // Add the new class. We need recompile lock during update of CHA.
+  // Add to class hierarchy, and do possible deoptimizations.
+  add_to_hierarchy(THREAD, k);
+
   {
     MutexLocker mu_r(THREAD, Compile_lock);
-
-    // Add to class hierarchy, and do possible deoptimizations.
-    add_to_hierarchy(k);
-
     // Add to systemDictionary - so other classes can see it.
     // Grabs and releases SystemDictionary_lock
     update_dictionary(THREAD, k, loader_data);
@@ -1612,28 +1608,44 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
 
 // ----------------------------------------------------------------------------
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
-// is held, to ensure that the compiler is not using the class hierarchy, and that deoptimization will kick in
-// before a new class is used.
+// is grabbed, to ensure that the compiler is not using the class hierarchy.
 
-void SystemDictionary::add_to_hierarchy(InstanceKlass* k) {
+void SystemDictionary::add_to_hierarchy(JavaThread* current, InstanceKlass* k) {
   assert(k != nullptr, "just checking");
-  if (Universe::is_fully_initialized()) {
-    assert_locked_or_safepoint(Compile_lock);
+  assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
+
+  // In case we are not using CHA based vtables we need to make sure the loaded
+  // deopt is completed before anyone links this class.
+  // Linking is done with _init_monitor held, by loading and deopting with it
+  // held we make sure the deopt is completed before linking.
+  if (!UseVtableBasedCHA) {
+    k->init_monitor()->lock();
   }
 
-  k->set_init_state(InstanceKlass::loaded);
-  // make sure init_state store is already done.
-  // The compiler reads the hierarchy outside of the Compile_lock.
-  // Access ordering is used to add to hierarchy.
+  DeoptimizationScope deopt_scope;
+  {
+    MutexLocker ml(current, Compile_lock);
 
-  // Link into hierarchy.
-  k->append_to_sibling_list();                    // add to superklass/sibling list
-  k->process_interfaces();                        // handle all "implements" declarations
+    k->set_init_state(InstanceKlass::loaded);
+    // make sure init_state store is already done.
+    // The compiler reads the hierarchy outside of the Compile_lock.
+    // Access ordering is used to add to hierarchy.
 
-  // Now flush all code that depended on old class hierarchy.
-  // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
-  if (Universe::is_fully_initialized()) {
-    CodeCache::flush_dependents_on(k);
+    // Link into hierarchy.
+    k->append_to_sibling_list();                    // add to superklass/sibling list
+    k->process_interfaces();                        // handle all "implements" declarations
+
+    // Now mark all code that depended on old class hierarchy.
+    // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
+    if (Universe::is_fully_initialized()) {
+      CodeCache::mark_dependents_on(&deopt_scope, k);
+    }
+  }
+  // Perform the deopt handshake outside Compile_lock.
+  deopt_scope.deoptimize_marked();
+
+  if (!UseVtableBasedCHA) {
+    k->init_monitor()->unlock();
   }
 }
 

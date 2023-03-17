@@ -80,10 +80,10 @@ TenuredSpace::block_start_const(const void* p) const {
 class DeadSpacer : StackObj {
   size_t _allowed_deadspace_words;
   bool _active;
-  CompactibleSpace* _space;
+  ContiguousSpace* _space;
 
 public:
-  DeadSpacer(CompactibleSpace* space) : _allowed_deadspace_words(0), _space(space) {
+  DeadSpacer(ContiguousSpace* space) : _allowed_deadspace_words(0), _space(space) {
     size_t ratio = _space->allowed_dead_ratio();
     _active = ratio > 0;
 
@@ -101,7 +101,6 @@ public:
       }
     }
   }
-
 
   bool insert_deadspace(HeapWord* dead_start, HeapWord* dead_end) {
     if (!_active) {
@@ -125,12 +124,10 @@ public:
       return false;
     }
   }
-
 };
 
 #ifdef ASSERT
-template <class SpaceType>
-inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
+inline void ContiguousSpace::verify_up_to_first_dead(ContiguousSpace* space) {
   HeapWord* cur_obj = space->bottom();
 
   if (cur_obj < space->_end_of_live && space->_first_dead > cur_obj && !cast_to_oop(cur_obj)->is_gc_marked()) {
@@ -149,8 +146,7 @@ inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
 }
 #endif
 
-template <class SpaceType>
-inline void CompactibleSpace::clear_empty_region(SpaceType* space) {
+inline void ContiguousSpace::clear_empty_region(ContiguousSpace* space) {
   // Let's remember if we were empty before we did the compaction.
   bool was_empty = space->used_region().is_empty();
   // Reset space after compaction is complete
