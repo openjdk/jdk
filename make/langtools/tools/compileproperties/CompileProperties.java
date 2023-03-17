@@ -201,9 +201,10 @@ public class CompileProperties {
         boolean ok = true;
         log.verbose("parsing: " + propertiesPath);
         Properties p = new Properties();
-        try {
-            FileInputStream input = new FileInputStream(propertiesPath);
-            p.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+        try (FileInputStream input = new FileInputStream(propertiesPath);
+             InputStreamReader streamReader = new InputStreamReader(input, StandardCharsets.UTF_8)
+        ) {
+            p.load(streamReader);
         } catch ( FileNotFoundException e ) {
             ok = false;
             log.error("Cannot find file " + propertiesPath, e);

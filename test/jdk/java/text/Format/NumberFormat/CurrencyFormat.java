@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,12 @@ public class CurrencyFormat {
             return;
         }
 
-        FileInputStream stream = new FileInputStream(new File(System.getProperty("test.src", "."), "CurrencySymbols.properties"));
         Properties props = new Properties();
-        props.load(new InputStreamReader(stream, StandardCharsets.UTF_8));
+        try (FileInputStream input = new FileInputStream(new File(System.getProperty("test.src", "."), "CurrencySymbols.properties"));
+             InputStreamReader streamReader = new InputStreamReader(input, StandardCharsets.UTF_8)
+        ) {
+            props.load(streamReader);
+        }
         SimpleDateFormat format = null;
 
         Locale[] locales = NumberFormat.getAvailableLocales();
