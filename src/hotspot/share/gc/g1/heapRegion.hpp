@@ -433,9 +433,6 @@ public:
     return _humongous_start_region;
   }
 
-  template <typename Functor>
-  void iterate_humongous_regions(Functor& functor);
-
   // Makes the current region be a "starts humongous" region, i.e.,
   // the first region in a series of one or more contiguous regions
   // that will contain a single "humongous" object.

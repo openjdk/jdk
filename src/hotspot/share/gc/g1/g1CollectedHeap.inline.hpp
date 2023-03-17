@@ -111,6 +111,17 @@ inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) con
   return _hrm.next_region_in_humongous(hr);
 }
 
+template <typename Functor>
+inline void G1CollectedHeap::humongous_obj_regions_iterate(HeapRegion* start, Functor&& f) {
+  assert(start->is_starts_humongous(), "must be");
+
+  do {
+    HeapRegion* next = next_region_in_humongous(start);
+    f(start);
+    start = next;
+  } while (start != nullptr);
+}
+
 inline uint G1CollectedHeap::addr_to_region(const void* addr) const {
   assert(is_in_reserved(addr),
          "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",

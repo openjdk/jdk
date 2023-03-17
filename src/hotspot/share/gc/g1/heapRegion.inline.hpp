@@ -332,16 +332,6 @@ inline void HeapRegion::reset_top_at_mark_start() {
   set_top_at_mark_start(bottom());
 }
 
-template <typename Functor&>
-inline void HeapRegion::iterate_humongous_regions(Functor& functor) {
-  assert(is_starts_humongous(), "must be");
-
-  HeapRegion* cur = this;
-  do {
-  } while ((cur = next()) != nullptr);
-  }
-}
-
 inline bool HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
 }
