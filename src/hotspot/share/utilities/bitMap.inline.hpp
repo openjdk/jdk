@@ -166,7 +166,7 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 }
 
 template<BitMap::bm_word_t flip, bool aligned_right>
-inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t beg, idx_t end) const {
+inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(beg, end);
   assert(!aligned_right || is_aligned(end, BitsPerWord), "end not aligned");
@@ -229,18 +229,18 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t beg, idx_t end) const {
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset(idx_t beg, idx_t end) const {
-  return get_next_bit_impl<find_ones_flip, false>(beg, end);
+BitMap::find_first_set_bit(idx_t beg, idx_t end) const {
+  return find_first_bit_impl<find_ones_flip, false>(beg, end);
 }
 
 inline BitMap::idx_t
-BitMap::get_next_zero_offset(idx_t beg, idx_t end) const {
-  return get_next_bit_impl<find_zeros_flip, false>(beg, end);
+BitMap::find_first_clear_bit(idx_t beg, idx_t end) const {
+  return find_first_bit_impl<find_zeros_flip, false>(beg, end);
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset_aligned_right(idx_t beg, idx_t end) const {
-  return get_next_bit_impl<find_ones_flip, true>(beg, end);
+BitMap::find_first_set_bit_aligned_right(idx_t beg, idx_t end) const {
+  return find_first_bit_impl<find_ones_flip, true>(beg, end);
 }
 
 // IterateInvoker supports conditionally stopping iteration early.  The
@@ -271,7 +271,7 @@ template <typename Function>
 inline bool BitMap::iterate(Function function, idx_t beg, idx_t end) const {
   auto invoke = IterateInvoker<decltype(function(beg))>();
   for (idx_t index = beg; true; ++index) {
-    index = get_next_one_offset(index, end);
+    index = find_first_set_bit(index, end);
     if (index >= end) {
       return true;
     } else if (!invoke(function, index)) {
