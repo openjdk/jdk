@@ -54,7 +54,7 @@ public class ProcessToolsLastLineTest {
             test("\n");
             test("\nARG1");
             test("\nARG1\n");
-            test("ARG1/n");
+            test("ARG1\n");
             test("ARG1");
             test("ARG1\nARG2");
             test("ARG1\nARG2\n");
