@@ -26,10 +26,10 @@
 package java.lang.invoke;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.classfile.Classfile;
 import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -58,15 +58,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
-import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
 
 /**
  * Trusted implementation code for MethodHandle.
@@ -1276,7 +1272,7 @@ abstract class MethodHandleImpl {
                         Classfile.ACC_STATIC,
                         cob -> cob.aload(0)
                                   .aload(1)
-                                  .invokevirtual(ConstantDescs.CD_MethodHandle, "invokeExact",
+                                  .invokevirtual(CD_MethodHandle, "invokeExact",
                                        MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/lang/Object;"))
                                   .areturn())
                     .withMethodBody(
@@ -1287,7 +1283,7 @@ abstract class MethodHandleImpl {
                         cob -> cob.aload(0)
                                   .aload(1)
                                   .aload(2)
-                                  .invokevirtual(ConstantDescs.CD_MethodHandle, "invokeExact",
+                                  .invokevirtual(CD_MethodHandle, "invokeExact",
                                        MethodTypeDesc.ofDescriptor(
                                                "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"))
                                   .areturn()));

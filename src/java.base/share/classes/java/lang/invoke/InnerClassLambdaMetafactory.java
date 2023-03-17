@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.classfile.attribute.ExceptionsAttribute;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import sun.invoke.util.BytecodeDescriptor;
@@ -36,7 +35,6 @@ import sun.security.action.GetBooleanAction;
 import java.io.FilePermission;
 import java.io.Serializable;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
@@ -57,14 +55,12 @@ import static java.lang.invoke.MethodType.methodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import jdk.internal.classfile.AccessFlags;
 import jdk.internal.classfile.ClassBuilder;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
 import static jdk.internal.classfile.Classfile.*;
 import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.FieldBuilder;
 import jdk.internal.classfile.MethodBuilder;
 
 /**

@@ -29,9 +29,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import jdk.internal.classfile.*;
-import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.attribute.ExceptionsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.internal.classfile.attribute.SourceFileAttribute;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.loader.BootLoader;
@@ -634,10 +632,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 clb.with(SourceFileAttribute.of(sourceFile));
 
                 // emit static types and BMH_SPECIES fields
-                clb.withField(sdFieldName, SPECIES_DATA_DESC, fb -> {
-                    fb.withFlags(NOT_ACC_PUBLIC + ACC_STATIC);
-                    fb.with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(STABLE)));
-                });
+                clb.withField(sdFieldName, SPECIES_DATA_DESC, NOT_ACC_PUBLIC + ACC_STATIC);
 
                 // handy holder for dealing with groups of typed values (ctor arguments and fields)
                 class Var {
