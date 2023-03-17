@@ -1009,11 +1009,12 @@ void CodeBuffer::log_section_sizes(const char* name) {
   }
 }
 
-void CodeBuffer::finalize_stubs() {
+bool CodeBuffer::finalize_stubs() {
   if (!pd_finalize_stubs()) {
-    return;
+    return false;
   }
   _finalize_stubs = false;
+  return true;
 }
 
 void CodeBuffer::shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset) {
