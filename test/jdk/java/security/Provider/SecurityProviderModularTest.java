@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Builder;
-import jdk.internal.module.ModuleInfoWriter;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
-
+import jdk.test.lib.util.ModuleInfoWriter;
 
 /*
  * @test
@@ -49,8 +48,14 @@ import jdk.test.lib.util.JarUtils;
  * @summary Test security provider in different combination of modular option
  *          defined with(out) service description.
  * @library /test/lib
- * @modules java.base/jdk.internal.module
- * @build jdk.test.lib.util.JarUtils TestProvider TestClient
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.java.lang.constant
+ *          java.base/jdk.internal.module
+ * @build jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.util.ModuleInfoWriter
+ *        TestProvider TestClient
  * @run main SecurityProviderModularTest CL true
  * @run main SecurityProviderModularTest CL false
  * @run main SecurityProviderModularTest SL true
