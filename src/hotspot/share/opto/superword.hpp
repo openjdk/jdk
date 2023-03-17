@@ -341,10 +341,6 @@ class SuperWord : public ResourceObj {
 
   bool early_return() const        { return _early_return; }
 
-  // An arithmetic node which accumulates a data in a loop.
-  // It must be part of a reduction cycle within the loop.
-  static bool is_reduction(const Node* n);
-
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
   bool     is_trace_alignment()    { return (_vector_loop_debug & 2) > 0; }
@@ -473,41 +469,57 @@ class SuperWord : public ResourceObj {
 
   // methods
 
-  // Search for a 'input'-indexed, swapped-edge-adjusted path P from a node b to
-  // a node e such that: path(n) for all n in P, end(e), and |P| <= 'max'.
-  // Return <e, |P|>, if P is found, or <nullptr, -1> otherwise.
+  typedef const Pair<const Node*, int> PathEnd;
+
+  // Search for a path P = (n_1, n_2, ..., n_k) such that:
+  // - original_input(n_i, input) = n_i+1 for all 0 <= i < k,
+  // - path(n) for all n in P,
+  // - k <= max, and
+  // - there exists a node e such that original_input(n_k, input) = e and end(e).
+  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
+  // Note that original_input(n, i) has the same behavior as n->in(i) except
+  // that it commutes the inputs of binary nodes whose edges have been swapped.
   template <typename NodePredicate1, typename NodePredicate2>
-  static const Pair<const Node*, int>
-  find_in_path(const Node* b, uint input, int max,
-               NodePredicate1 path, NodePredicate2 end) {
-    const Node* current = b;
-    const Pair<const Node*, int> no_path(nullptr, -1);
-    int no_nodes = 0;
+  static PathEnd find_in_path(const Node *n1, uint input, int max,
+                              NodePredicate1 path, NodePredicate2 end) {
+    const PathEnd no_path(nullptr, -1);
+    const Node* current = n1;
+    int k = 0;
     for (int i = 0; i <= max; i++) {
       if (current == nullptr) {
         return no_path;
       }
       if (end(current)) {
-        return Pair<const Node*, int>(current, no_nodes);
+        return PathEnd(current, k);
       }
       if (!path(current)) {
         return no_path;
       }
       current = original_input(current, input);
-      no_nodes++;
+      k++;
     }
     return no_path;
   }
 
+public:
+  // Whether n is a reduction operator and part of a reduction cycle.
+  // This function can be used for individual queries outside the SLP analysis,
+  // e.g. to inform matching in target-specific code. Otherwise, the
+  // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
+  static bool is_reduction(const Node* n);
+private:
   // Whether n is a standard reduction operator.
   static bool is_reduction_operator(const Node* n);
   // Whether n is part of a reduction cycle via the 'input' edge index.
   static bool in_reduction_cycle(const Node* n, uint input);
-  // Reference to the i'th input node of n before any swap operation. Assumes n
-  // is a commutative, binary operation.
+  // Reference to the i'th input node of n, commuting the inputs of binary nodes
+  // whose edges have been swapped. Assumes n is a commutative, binary operation.
   static Node* original_input(const Node* n, uint i);
   // Find and mark reductions in a loop.
-  void mark_reductions(IdealLoopTree* lpt);
+  // Running mark_reductions(loop) is similar to querying is_reduction(n) for
+  // every n in loop, but stricter in that it additionally requires that
+  // reduction nodes are not used within the loop by other nodes.
+  void mark_reductions(IdealLoopTree* loop);
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
   // Whether the current loop has any reduction node.

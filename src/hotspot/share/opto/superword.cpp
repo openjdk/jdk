@@ -449,22 +449,19 @@ bool SuperWord::is_reduction_operator(const Node* n) {
 bool SuperWord::in_reduction_cycle(const Node* n, uint input) {
   // First find input reduction path to phi node.
   auto has_my_opcode = [&](const Node* m){ return m->Opcode() == n->Opcode(); };
-  const Pair<const Node*, int> path_to_phi =
-    find_in_path(n, input, LoopMaxUnroll, has_my_opcode,
-                 [&](const Node* m) { return m->is_Phi(); });
+  PathEnd path_to_phi = find_in_path(n, input, LoopMaxUnroll, has_my_opcode,
+                                     [&](const Node* m) { return m->is_Phi(); });
   const Node* phi = path_to_phi.first;
   if (phi == nullptr) {
     return false;
   }
-  // If there is an input reduction path from the the phi's loop-back to me,
-  // then I am part of a reduction cycle.
+  // If there is an input reduction path from the the phi's loop-back to n, then
+  // n is part of a reduction cycle.
   const Node* last = phi->in(LoopNode::LoopBackControl);
-  const Pair<const Node*, int> path_from_phi =
-    find_in_path(last, input, LoopMaxUnroll, has_my_opcode,
-                 [&](const Node* m) { return m == n; });
+  PathEnd path_from_phi = find_in_path(last, input, LoopMaxUnroll, has_my_opcode,
+                                       [&](const Node* m) { return m == n; });
   return n == path_from_phi.first;
 }
-
 
 Node* SuperWord::original_input(const Node* n, uint i) {
   if (n->has_swapped_edges()) {
@@ -478,10 +475,10 @@ Node* SuperWord::original_input(const Node* n, uint i) {
   return n->in(i);
 }
 
-void SuperWord::mark_reductions(IdealLoopTree* lpt) {
+void SuperWord::mark_reductions(IdealLoopTree *loop) {
 
   _loop_reductions.clear();
-  CountedLoopNode* loop_head = lpt->_head->as_CountedLoop();
+  CountedLoopNode* loop_head = loop->_head->as_CountedLoop();
   Node* trip_phi = loop_head->phi();
 
   // Iterate through all phi nodes associated to the loop and search for
@@ -510,8 +507,8 @@ void SuperWord::mark_reductions(IdealLoopTree* lpt) {
     bool used_in_loop = false;
     for (DUIterator_Fast imax, i = last->fast_outs(imax); i < imax; i++) {
       Node* u = last->fast_out(i);
-      if (u != phi &&
-          lpt->is_member(_phase->get_loop(_phase->ctrl_or_self(u)))) {
+      const IdealLoopTree* u_loop = _phase->get_loop(_phase->ctrl_or_self(u));
+      if (u != phi && loop->is_member(u_loop)) {
         used_in_loop = true;
         break;
       }
@@ -531,16 +528,14 @@ void SuperWord::mark_reductions(IdealLoopTree* lpt) {
       // Test whether there is a reduction path of at most
       // 'loop_head->unrolled_count()' nodes from 'last' to the phi node
       // following edge index 'input' (typically 1 or 2).
-      Pair<const Node*, int> path =
-        find_in_path(last, input,
-                     loop_head->unrolled_count(),
-                     [&](const Node* n) {
-                       Node* ctrl = _phase->get_ctrl(n);
-                       return (n->Opcode() == last->Opcode() &&
-                               ctrl != nullptr &&
-                               lpt->is_member(_phase->get_loop(ctrl)));
-                     },
-                     [&](const Node* n) {return n == phi;});
+      PathEnd path = find_in_path(
+          last, input, loop_head->unrolled_count(),
+          [&](const Node *n) {
+            Node *ctrl = _phase->get_ctrl(n);
+            return (n->Opcode() == last->Opcode() && ctrl != nullptr &&
+                    loop->is_member(_phase->get_loop(ctrl)));
+          },
+          [&](const Node *n) { return n == phi; });
       if (path.first != nullptr) {
         reduction_input = input;
         path_nodes = path.second;
@@ -1524,7 +1519,6 @@ bool SuperWord::independent(Node* s1, Node* s2) {
 // those nodes, and have not found another node from the pack, we know
 // that all nodes in the pack are independent.
 Node* SuperWord::find_dependence(Node_List* p) {
-  // FIXME: Node::is_reduction() or SuperWord::is_marked_reduction(Node*) ?
   if (is_marked_reduction(p->at(0))) {
     return nullptr; // ignore reductions
   }
