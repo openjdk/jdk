@@ -482,7 +482,7 @@ void SuperWord::mark_reductions(IdealLoopTree* loop) {
   const Node* trip_phi = loop_head->phi();
 
   // Iterate through all phi nodes associated to the loop and search for
-  // reduction cycles of at most 'loop_head->unrolled_count()' nodes.
+  // reduction cycles of at most LoopMaxUnroll nodes.
   for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
     const Node* phi = loop_head->fast_out(i);
     if (!phi->is_Phi()) {
@@ -508,16 +508,15 @@ void SuperWord::mark_reductions(IdealLoopTree* loop) {
     // reduction cycle are connected via the same edge index, modulo swapped
     // inputs. This assumption is realistic because reduction cycles usually
     // consist of nodes cloned by loop unrolling. To further bound the search,
-    // constrain the size of reduction cycles to the loop's unrolled count.
+    // constrain the size of reduction cycles to LoopMaxUnroll.
     int reduction_input = -1;
     int path_nodes = -1;
     for (uint input = 1; input < first->req(); input++) {
-      // Test whether there is a reduction path of at most
-      // 'loop_head->unrolled_count()' nodes from 'first' to the phi node
-      // following edge index 'input' (typically 1 or 2).
+      // Test whether there is a reduction path of at most LoopMaxUnroll nodes
+      // from 'first' to the phi node following edge index 'input'.
       PathEnd path =
         find_in_path(
-          first, input, loop_head->unrolled_count(),
+          first, input, LoopMaxUnroll,
           [&](const Node* n) {
             Node* ctrl = _phase->get_ctrl(n);
             return (n->Opcode() == first->Opcode() && ctrl != nullptr &&
