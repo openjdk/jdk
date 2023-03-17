@@ -140,8 +140,6 @@ address generate_poly1305_processBlocks2() {
     __ poly1305_multiply_foo(v_u0, vregs.remaining(), s_v, r_v, rr_v);
     __ poly1305_reduce_foo(v_u0, upper_bits, vregs.remaining());
 
-    __ incrementw(Address(&trips), 1);
-
     __ subw(length, length, BLOCK_LENGTH * 2);
     __ b(LOOP);
 
