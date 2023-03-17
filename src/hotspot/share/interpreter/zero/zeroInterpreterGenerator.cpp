@@ -66,10 +66,8 @@ void ZeroInterpreterGenerator::generate_all() {
 
     AbstractInterpreter::initialize_method_handle_entries();
 
-    Interpreter::_native_entry_begin = Interpreter::code()->code_end();
     method_entry(native);
     method_entry(native_synchronized);
-    Interpreter::_native_entry_end = Interpreter::code()->code_end();
   }
 
 #undef method_entry

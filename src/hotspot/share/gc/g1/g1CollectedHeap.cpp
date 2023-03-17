@@ -1065,12 +1065,10 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // Currently, there is no facility in the do_full_collection(bool) API to notify
   // the caller that the collection did not succeed (e.g., because it was locked
   // out by the GC locker). So, right now, we'll ignore the return value.
-  // When clear_all_soft_refs is set we want to do a maximal compaction
-  // not leaving any dead wood.
-  bool do_maximal_compaction = clear_all_soft_refs;
-  bool dummy = do_full_collection(true,                /* explicit_gc */
-                                  clear_all_soft_refs,
-                                  do_maximal_compaction);
+
+  do_full_collection(false,                /* explicit_gc */
+                     clear_all_soft_refs,
+                     false /* do_maximal_compaction */);
 }
 
 bool G1CollectedHeap::upgrade_to_full_collection() {
