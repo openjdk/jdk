@@ -79,7 +79,7 @@ public:
   u2 constant_pool_index()       const { return _cpool_index;                   }
   u2 num_parameters()            const { return _number_of_parameters;          }
   u1 return_type()               const { return _return_type;                   }
-  bool is_resolved()             const { return _method != nullptr;             }
+  bool is_resolved()             const { return method() != nullptr;            }
   bool has_appendix()            const { return (_flags & (1 << has_appendix_shift)) != 0; }
   bool resolution_failed()       const { return (_flags & 1) != 0; }
   bool is_vfinal()               const { return false; }
