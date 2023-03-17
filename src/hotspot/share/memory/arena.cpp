@@ -113,7 +113,7 @@ class ChunkPool {
   static ChunkPool* get_pool_for_chunk(Chunk* c) {
     ChunkPool* pool;
     const ChunkPoolSize pool_size = c->pool_size();
-    const size_t pool_index = static_cast<size_t>(pool_size);
+    const size_t pool_index = static_cast<size_t>(pool_size) - 1;  // Underflow is fine.
     if (pool_index < ARRAY_SIZE(_pools)) {
       pool = &_pools[pool_index];
       assert(pool_size == Chunk::pool_size(pool->_size), "unexpected chunk pool");
@@ -129,7 +129,7 @@ class ChunkPool {
 
 };
 
-// Must be in the same order as ChunkPoolSize.
+// Must be in the same order as ChunkPoolSize. The index is ChunkPoolSize minus 1.
 ChunkPool ChunkPool::_pools[] = { Chunk::tiny_size, Chunk::small_size, Chunk::medium_size, Chunk::large_size };
 
 //--------------------------------------------------------------------------------------

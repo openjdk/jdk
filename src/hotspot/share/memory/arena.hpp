@@ -40,12 +40,12 @@
 #define ARENA_ALIGN(x) (align_up((size_t) (x), ARENA_AMALLOC_ALIGNMENT))
 
 enum class ChunkPoolSize : uintptr_t {
-  TINY = 0,
-  SMALL = 1,
-  MEDIUM = 2,
-  LARGE = 3,
+  NONE = 0,
 
-  NONE = 7,
+  TINY = 1,
+  SMALL = 2,
+  MEDIUM = 3,
+  LARGE = 4,
 };
 
 constexpr uintptr_t chunk_pool_size_bits = uintptr_t{8} - 1;
