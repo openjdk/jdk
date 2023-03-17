@@ -26,10 +26,12 @@
 name: 'OpenJDK GHA Sanity Checks'
 
 on:
+  pull_request:
+    branches:
+      - rivos/main
   push:
-    branches-ignore:
-      - master
-      - pr/*
+    branches:
+      - rivos/main
   workflow_dispatch:
     inputs:
       platforms:
@@ -80,7 +82,7 @@ jobs:
           function check_platform() {
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
-            elif [[ $GITHUB_EVENT_NAME == push ]]; then
+            elif [[ $GITHUB_EVENT_NAME == push || $GITHUB_EVENT_NAME == pull_request ]]; then
               if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
                 # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
                 >&2 echo 'JDK_SUBMIT_FILTER is set and not a "submit/" branch'
@@ -89,6 +91,10 @@ jobs:
               else
                 input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
               fi
+            else
+              >&2 echo 'Internal error in GHA'
+              echo 'false'
+              return
             fi
 
             normalized_input="$(echo ,$input, | tr -d ' ')"
@@ -215,13 +221,72 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
-  build-linux-cross-compile:
-    name: linux-cross-compile
+  build-linux-aarch64:
+    name: linux-aarch64
     needs:
       - select
       - build-linux-x64
     uses: ./.github/workflows/build-cross-compile.yml
     with:
+      platform: linux-aarch64
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.linux-cross-compile == 'true'
+
+  build-linux-arm:
+    name: linux-arm
+    needs:
+      - select
+      - build-linux-x64
+    uses: ./.github/workflows/build-cross-compile.yml
+    with:
+      platform: linux-arm
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.linux-cross-compile == 'true'
+
+  build-linux-ppc64le:
+    name: linux-ppc64le
+    needs:
+      - select
+      - build-linux-x64
+    uses: ./.github/workflows/build-cross-compile.yml
+    with:
+      platform: linux-ppc64le
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+    if: needs.select.outputs.linux-cross-compile == 'true'
+
+  build-linux-riscv64:
+    name: linux-riscv64
+    needs:
+      - select
+      - build-linux-x64
+    uses: ./.github/workflows/build-cross-compile.yml
+    with:
+      platform: linux-riscv64
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.linux-cross-compile == 'true'
+
+  build-linux-s390x:
+    name: linux-s390x
+    needs:
+      - select
+      - build-linux-x64
+    uses: ./.github/workflows/build-cross-compile.yml
+    with:
+      platform: linux-s390x
       gcc-major-version: '10'
       apt-gcc-version: '10.4.0-4ubuntu1~22.04'
       apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
@@ -319,6 +384,57 @@ jobs:
       bootjdk-platform: linux-x64
       runs-on: ubuntu-22.04
 
+  # test-linux-aarch64:
+  #   name: linux-aarch64
+  #   needs:
+  #     - build-linux-aarch64
+  #   uses: ./.github/workflows/test-cross-compile.yml
+  #   with:
+  #     platform: linux-aarch64
+  #     bootjdk-platform: linux-x64
+  #     runs-on: ubuntu-22.04
+
+  # test-linux-arm:
+  #   name: linux-arm
+  #   needs:
+  #     - build-linux-arm
+  #   uses: ./.github/workflows/test-cross-compile.yml
+  #   with:
+  #     platform: linux-arm
+  #     bootjdk-platform: linux-x64
+  #     runs-on: ubuntu-22.04
+  #   if: EXTRA_TEST_PLATFORMS == 'true'
+
+  # test-linux-ppc64le:
+  #   name: linux-ppc64le
+  #   needs:
+  #     - build-linux-ppc64le
+  #   uses: ./.github/workflows/test-cross-compile.yml
+  #   with:
+  #     platform: linux-ppc64le
+  #     bootjdk-platform: linux-x64
+  #     runs-on: ubuntu-22.04
+
+  test-linux-riscv64:
+    name: linux-riscv64
+    needs:
+      - build-linux-riscv64
+    uses: ./.github/workflows/test-cross-compile.yml
+    with:
+      platform: linux-riscv64
+      bootjdk-platform: linux-x64
+      runs-on: ubuntu-22.04
+
+  # test-linux-s390x:
+  #   name: linux-s390x
+  #   needs:
+  #     - build-linux-s390x
+  #   uses: ./.github/workflows/test-cross-compile.yml
+  #   with:
+  #     platform: linux-s390x
+  #     bootjdk-platform: linux-x64
+  #     runs-on: ubuntu-22.04
+
   test-macos-x64:
     name: macos-x64
     needs:
@@ -351,13 +467,22 @@ jobs:
       - build-linux-x64-hs-zero
       - build-linux-x64-hs-minimal
       - build-linux-x64-hs-optimized
-      - build-linux-cross-compile
+      - build-linux-aarch64
+      - build-linux-arm
+      - build-linux-s390x
+      - build-linux-ppc64le
+      - build-linux-riscv64
       - build-macos-x64
       - build-macos-aarch64
       - build-windows-x64
       - build-windows-aarch64
       - test-linux-x64
       - test-linux-x86
+      # - test-linux-aarch64
+      # - test-linux-arm
+      # - test-linux-ppc64le
+      - test-linux-riscv64
+      # - test-linux-s390x
       - test-macos-x64
       - test-windows-x64
 
