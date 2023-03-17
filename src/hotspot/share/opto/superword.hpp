@@ -692,7 +692,7 @@ class SWPointer : public ArenaObj {
            (_invar == q._invar) == (_debug_invar == q._debug_invar &&
                                     _debug_invar_scale == q._debug_invar_scale &&
                                     _debug_negate_invar == q._debug_negate_invar), "");
-    return _invar        == q._invar;
+    return _invar == q._invar;
   }
 
   int cmp(SWPointer& q) {
