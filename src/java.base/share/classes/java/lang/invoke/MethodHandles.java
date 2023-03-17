@@ -2275,7 +2275,6 @@ public class MethodHandles {
                     name = cm.thisClass().name().stringValue().replace('/', '.');
                     accessFlags = cm.flags().flagsMask();
                 } catch (RuntimeException e) {
-                    // ASM exceptions are poorly specified
                     ClassFormatError cfe = new ClassFormatError();
                     cfe.initCause(e);
                     throw cfe;
