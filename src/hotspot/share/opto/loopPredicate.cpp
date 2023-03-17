@@ -1703,6 +1703,10 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
 
   head->verify_strip_mined(1);
 
+  if (hoisted) {
+    C->set_run_loop_conditional_propagation();
+  }
+
   return hoisted;
 }
 

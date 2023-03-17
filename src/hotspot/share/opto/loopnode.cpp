@@ -4580,9 +4580,10 @@ void PhaseIdealLoop::build_and_optimize() {
     visited.clear();
     split_if_with_blocks( visited, nstack);
     DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
-//    if (C->major_progress()) {
-//      C->set_run_loop_conditional_propagation();
-//    }
+    NOT_PRODUCT( if( VerifyLoopOptimizations ) verify(); );
+    if (C->major_progress()) {
+      C->set_run_loop_conditional_propagation();
+    }
   }
 
   if (!C->major_progress() && do_expensive_nodes && process_expensive_nodes()) {

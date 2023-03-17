@@ -3851,6 +3851,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 #endif
+  C->set_run_loop_conditional_propagation();
   return true;
 }
 

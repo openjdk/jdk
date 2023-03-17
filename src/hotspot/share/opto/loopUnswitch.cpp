@@ -221,6 +221,7 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
 #endif
 
   C->set_major_progress();
+  C->set_run_loop_conditional_propagation();
 }
 
 //-------------------------create_slow_version_of_loop------------------------
