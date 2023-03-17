@@ -76,7 +76,6 @@ import jdk.internal.module.ModuleTarget;
 import jdk.internal.classfile.attribute.ModulePackagesAttribute;
 import jdk.internal.classfile.ClassBuilder;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
 import static jdk.internal.classfile.Classfile.*;
 import jdk.internal.classfile.CodeBuilder;
@@ -313,7 +312,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                          ResourcePoolBuilder out) {
         SystemModulesClassGenerator generator
             = new SystemModulesClassGenerator(className, moduleInfos);
-        byte[] bytes = generator.getClassWriter(cf);
+        byte[] bytes = generator.getClassBytes(cf);
         String rn = "/java.base/" + className + ".class";
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, bytes);
         out.add(e);
@@ -574,7 +573,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         /**
          * Generate SystemModules class
          */
-        public byte[] getClassWriter(Configuration cf) {
+        public byte[] getClassBytes(Configuration cf) {
             return Classfile.build(classDesc,
                     clb -> {
                         clb.withFlags(ACC_FINAL + ACC_SUPER)
