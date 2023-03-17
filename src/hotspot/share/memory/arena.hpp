@@ -37,7 +37,7 @@
 
 // The byte alignment to be used by Arena::Amalloc.
 #define ARENA_AMALLOC_ALIGNMENT ((size_t) BytesPerLong)
-#define ARENA_ALIGN(x) (align_up((size_t) (x), ARENA_AMALLOC_ALIGNMENT))
+#define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
 enum class ChunkPoolSize : uintptr_t {
   NONE = 0,
