@@ -36,11 +36,11 @@
 #include "utilities/ostream.hpp"
 
 // Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
-STATIC_ASSERT(is_aligned(Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
-STATIC_ASSERT(is_aligned(Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
-STATIC_ASSERT(is_aligned(Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
-STATIC_ASSERT(is_aligned(Chunk::size, ARENA_AMALLOC_ALIGNMENT));
-STATIC_ASSERT(is_aligned(Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
+STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
 
 //--------------------------------------------------------------------------------------
 // ChunkPool implementation
