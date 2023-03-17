@@ -110,6 +110,10 @@ public final class ClassHierarchyImpl {
 
     public static final class CachedClassHierarchyResolver implements ClassHierarchyResolver {
 
+        //this instance should never appear in the cache nor leak out
+        private static final ClassHierarchyResolver.ClassHierarchyInfo NOPE =
+                new ClassHierarchyResolver.ClassHierarchyInfo(null, false, null);
+
         private final Function<ClassDesc, InputStream> streamProvider;
         private final Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> resolvedCache;
 
@@ -124,9 +128,11 @@ public final class ClassHierarchyImpl {
         // empty ClInfo is stored in case of an exception to avoid repeated scanning failures
         @Override
         public ClassHierarchyResolver.ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
-            var res = resolvedCache.get(classDesc);
-            //additional test for null value is important to avoid repeated resolution attempts
-            if (res == null && !resolvedCache.containsKey(classDesc)) {
+            //using NOPE to distinguish between null value and non-existent record in the cache
+            //this code is on JDK bootstrap critical path, so cannot use lambdas here
+            var res = resolvedCache.getOrDefault(classDesc, NOPE);
+            if (res == NOPE) {
+                res = null;
                 var ci = streamProvider.apply(classDesc);
                 if (ci != null) {
                     try (var in = new DataInputStream(new BufferedInputStream(ci))) {
