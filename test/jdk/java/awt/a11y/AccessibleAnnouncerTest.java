@@ -124,7 +124,7 @@ public class AccessibleAnnouncerTest extends AccessibleComponentTest {
         super.createUI(frame, "Accessible Anouncer test");
     }
 
-    public static void main(String[] args)  throws Exception {
+    public static void main(String[] args) throws Exception {
         AccessibleAnnouncerTest test = new AccessibleAnnouncerTest();
 
         countDownLatch = test.createCountDownLatch();
