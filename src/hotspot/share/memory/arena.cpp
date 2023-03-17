@@ -155,6 +155,13 @@ Chunk* Chunk::allocate(size_t length, AllocFailType alloc_failmode) {
          "chunk payload length misaligned: " SIZE_FORMAT, length);
   const size_t overhead = aligned_overhead_size();
   size_t bytes = length + overhead;
+  if (bytes < length) {
+    // Overflow.
+    if (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+      vm_exit_out_of_memory(length, OOM_MALLOC_ERROR, "Chunk::allocate");
+    }
+    return nullptr;
+  }
   size_t actual_bytes;
   void* p = os::malloc(bytes, mtChunk, CALLER_PC, &actual_bytes);
   if (p == nullptr) {
