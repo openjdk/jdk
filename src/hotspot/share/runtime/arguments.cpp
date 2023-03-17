@@ -70,7 +70,9 @@
 
 #include <limits>
 
-#define DEFAULT_JAVA_LAUNCHER  "generic"
+static const char _default_java_launcher[] = "generic";
+
+#define DEFAULT_JAVA_LAUNCHER _default_java_launcher
 
 char*  Arguments::_jvm_flags_file               = nullptr;
 char** Arguments::_jvm_flags_array              = nullptr;
@@ -323,15 +325,15 @@ bool needs_module_property_warning = false;
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
 
-void Arguments::add_init_library(const char* name, char* options) {
+void Arguments::add_init_library(const char* name, const char* options) {
   _libraryList.add(new AgentLibrary(name, options, false, nullptr));
 }
 
-void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
+void Arguments::add_init_agent(const char* name, const char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
 }
 
-void Arguments::add_instrument_agent(const char* name, char* options, bool absolute_path) {
+void Arguments::add_instrument_agent(const char* name, const char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
 }
 
@@ -1908,6 +1910,9 @@ void Arguments::process_java_compiler_argument(const char* arg) {
 }
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
+  if (_sun_java_launcher != _default_java_launcher) {
+    os::free(const_cast<char*>(_sun_java_launcher));
+  }
   _sun_java_launcher = os::strdup_check_oom(launcher);
 }
 
@@ -2368,6 +2373,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         add_init_library(name, options);
+        FREE_C_HEAP_ARRAY(char, name);
+        FREE_C_HEAP_ARRAY(char, options);
       }
     } else if (match_option(option, "--add-reads=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addreads", tail, addreads_count++)) {
@@ -2438,6 +2445,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         add_init_agent(name, options, is_absolute_path);
+        os::free(name);
+        os::free(options);
       }
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
@@ -2451,6 +2460,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
         add_instrument_agent("instrument", options, false);
+        FREE_C_HEAP_ARRAY(char, options);
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;

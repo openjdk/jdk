@@ -28,6 +28,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
+import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
@@ -137,7 +138,7 @@ public final class SharedUtils {
      * @param target the target handle to adapt
      * @return the adapted handle
      */
-    public static MethodHandle adaptUpcallForIMR(MethodHandle target, boolean dropReturn) {
+    private static MethodHandle adaptUpcallForIMR(MethodHandle target, boolean dropReturn) {
         if (target.type().returnType() != MemorySegment.class)
             throw new IllegalArgumentException("Must return MemorySegment for IMR");
 
@@ -152,6 +153,27 @@ public final class SharedUtils {
         }
 
         return target;
+    }
+
+    public static UpcallStubFactory arrangeUpcallHelper(MethodType targetType, boolean isInMemoryReturn, boolean dropReturn,
+                                                        ABIDescriptor abi, CallingSequence callingSequence) {
+        if (isInMemoryReturn) {
+            // simulate the adaptation to get the type
+            MethodHandle fakeTarget = MethodHandles.empty(targetType);
+            targetType = adaptUpcallForIMR(fakeTarget, dropReturn).type();
+        }
+
+        UpcallStubFactory factory = UpcallLinker.makeFactory(targetType, abi, callingSequence);
+
+        if (isInMemoryReturn) {
+            final UpcallStubFactory finalFactory = factory;
+            factory = (target, scope) -> {
+                target = adaptUpcallForIMR(target, dropReturn);
+                return finalFactory.makeStub(target, scope);
+            };
+        }
+
+        return factory;
     }
 
     private static MemorySegment bufferCopy(MemorySegment dest, MemorySegment buffer) {
