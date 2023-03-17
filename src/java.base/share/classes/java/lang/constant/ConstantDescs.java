@@ -284,8 +284,8 @@ public final class ConstantDescs {
                                           "FALSE", CD_Boolean, CD_Boolean);
 
     /**
-     * The special name of instance initialization methods, {@value}. They
-     * typically correspond to constructors.
+     * The special name of instance initialization methods, {@value}.   An instance
+     *  initialization method has this special name and is {@code void}.
      *
      * @jvms 2.9.1 Instance Initialization Methods
      * @since 21
@@ -293,8 +293,9 @@ public final class ConstantDescs {
     public static final String INIT_NAME = "<init>";
 
     /**
-     * The special name of class initialization methods, {@value}. They
-     * typically correspond to static initializers.
+     * The special name of class initialization methods, {@value}.  A class 
+     * initialization method has this special name, {@link AccessFlag#STATIC 
+     * ACC_STATIC} flag set and is {@link #MTD_void void} taking no arguments.
      *
      * @jvms 2.9.2 Class Initialization Methods
      * @since 21
