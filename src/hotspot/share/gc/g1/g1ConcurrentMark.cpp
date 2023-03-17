@@ -496,9 +496,10 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   }
 
   // Clear any statistics about the region gathered so far.
-  _g1h->humongous_obj_regions_iterate(r, [&] (HeapRegion* r) {
-    clear_statistics_in_region(r);
-  });
+  _g1h->humongous_obj_regions_iterate(r,
+                                      [&] (HeapRegion* r) {
+                                        clear_statistics_in_region(r);
+                                      });
 }
 
 void G1ConcurrentMark::reset_marking_for_restart() {
@@ -1123,14 +1124,16 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
              "Marked bytes should either be 0 or the same as humongous object (%zu) but is %zu",
              obj_size_in_words * HeapWordSize, marked_bytes);
 
-      _g1h->humongous_obj_regions_iterate(hr, [&] (HeapRegion* r) {
+      auto distribute_bytes = [&] (HeapRegion* r) {
         size_t const bytes_to_add = MIN2(HeapRegion::GrainBytes, marked_bytes);
 
         log_trace(gc, marking)("Adding %zu bytes to humongous region %u (%s)",
                                bytes_to_add, r->hrm_index(), r->get_type_str());
         add_marked_bytes_and_note_end(r, bytes_to_add);
         marked_bytes -= bytes_to_add;
-      });
+      };
+      _g1h->humongous_obj_regions_iterate(hr, distribute_bytes);
+
       assert(marked_bytes == 0,
              "%zu bytes left after distributing space across %zu regions",
              marked_bytes, G1CollectedHeap::humongous_obj_size_in_regions(obj_size_in_words));

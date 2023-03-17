@@ -148,11 +148,12 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
     // cycle as e.g. remembered set entries will always be added.
     if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
       // Handle HC regions with the HS region.
-      g1h->humongous_obj_regions_iterate(r, [&] (HeapRegion* r) {
-        assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
-               "Continues humongous region %u remset should be empty", r->hrm_index());
-        r->rem_set()->clear_locked(true /* only_cardset */);
-      });
+      g1h->humongous_obj_regions_iterate(r,
+                                         [&] (HeapRegion* r) {
+                                           assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
+                                                  "Continues humongous region %u remset should be empty", r->hrm_index());
+                                           r->rem_set()->clear_locked(true /* only_cardset */);
+                                         });
     }
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     log_trace(gc, remset, tracking)("After rebuild region %u "
