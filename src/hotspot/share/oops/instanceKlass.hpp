@@ -39,6 +39,7 @@
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+class DeoptimizationScope;
 class klassItable;
 class RecordComponent;
 
@@ -861,7 +862,7 @@ public:
 
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
-  int  mark_dependent_nmethods(KlassDepChange& changes);
+  void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
 
@@ -870,7 +871,7 @@ public:
   void set_osr_nmethods_head(nmethod* h)     { _osr_nmethods_head = h; };
   void add_osr_nmethod(nmethod* n);
   bool remove_osr_nmethod(nmethod* n);
-  int mark_osr_nmethods(const Method* m);
+  int mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m);
   nmethod* lookup_osr_nmethod(const Method* m, int bci, int level, bool match_level) const;
 
 #if INCLUDE_JVMTI
@@ -1144,6 +1145,7 @@ public:
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
+  bool methods_contain_jsr_bytecode() const;
 #endif
 
   jint compute_modifier_flags() const;

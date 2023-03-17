@@ -328,7 +328,8 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_all() {
     }
     if (_is_SR) {
       _SR_mode = true;
-      while (_VTMS_transition_disable_for_all_count > 0) {
+      while (_VTMS_transition_disable_for_all_count > 0 ||
+             _VTMS_transition_disable_for_one_count > 0) {
         ml.wait(10);   // Wait while there is any active jvmtiVTMSTransitionDisabler.
       }
     }
@@ -369,7 +370,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_enable_for_one() {
   MonitorLocker ml(JvmtiVTMSTransition_lock);
   java_lang_Thread::dec_VTMS_transition_disable_count(vth());
   Atomic::dec(&_VTMS_transition_disable_for_one_count);
-  if (_VTMS_transition_disable_for_one_count == 0 || _is_SR) {
+  if (_VTMS_transition_disable_for_one_count == 0) {
     ml.notify_all();
   }
 #ifdef ASSERT

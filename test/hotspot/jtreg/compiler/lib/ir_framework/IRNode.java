@@ -166,6 +166,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_VI, "AddVI");
     }
 
+    public static final String ADD_VF = PREFIX + "ADD_VF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_VF, "AddVF");
+    }
+
     public static final String ADD_REDUCTION_V = PREFIX + "ADD_REDUCTION_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(ADD_REDUCTION_V, "AddReductionV(B|S|I|L|F|D)");
@@ -179,6 +184,16 @@ public class IRNode {
     public static final String ADD_REDUCTION_VF = PREFIX + "ADD_REDUCTION_VF" + POSTFIX;
     static {
         superWordNodes(ADD_REDUCTION_VF, "AddReductionVF");
+    }
+
+    public static final String ADD_REDUCTION_VI = PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
+    static {
+        superWordNodes(ADD_REDUCTION_VI, "AddReductionVI");
+    }
+
+    public static final String ADD_REDUCTION_VL = PREFIX + "ADD_REDUCTION_VL" + POSTFIX;
+    static {
+        superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
@@ -228,6 +243,11 @@ public class IRNode {
     public static final String AND_V_MASK = PREFIX + "AND_V_MASK" + POSTFIX;
     static {
         beforeMatchingNameRegex(AND_V_MASK, "AndVMask");
+    }
+
+    public static final String AND_REDUCTION_V = PREFIX + "AND_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(AND_REDUCTION_V, "AndReductionV");
     }
 
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
@@ -699,6 +719,11 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_VL, "MulVL");
     }
 
+    public static final String MUL_VI = PREFIX + "MUL_VI" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_VI, "MulVI");
+    }
+
     public static final String MUL_REDUCTION_VD = PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
     static {
         superWordNodes(MUL_REDUCTION_VD, "MulReductionVD");
@@ -707,6 +732,16 @@ public class IRNode {
     public static final String MUL_REDUCTION_VF = PREFIX + "MUL_REDUCTION_VF" + POSTFIX;
     static {
         superWordNodes(MUL_REDUCTION_VF, "MulReductionVF");
+    }
+
+    public static final String MUL_REDUCTION_VI = PREFIX + "MUL_REDUCTION_VI" + POSTFIX;
+    static {
+        superWordNodes(MUL_REDUCTION_VI, "MulReductionVI");
+    }
+
+    public static final String MUL_REDUCTION_VL = PREFIX + "MUL_REDUCTION_VL" + POSTFIX;
+    static {
+        superWordNodes(MUL_REDUCTION_VL, "MulReductionVL");
     }
 
     public static final String NEG_V = PREFIX + "NEG_V" + POSTFIX;
@@ -732,6 +767,11 @@ public class IRNode {
     public static final String OR_V_MASK = PREFIX + "OR_V_MASK" + POSTFIX;
     static {
         beforeMatchingNameRegex(OR_V_MASK, "OrVMask");
+    }
+
+    public static final String OR_REDUCTION_V = PREFIX + "OR_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(OR_REDUCTION_V, "OrReductionV");
     }
 
     public static final String OUTER_STRIP_MINED_LOOP = PREFIX + "OUTER_STRIP_MINED_LOOP" + POSTFIX;
@@ -1351,6 +1391,11 @@ public class IRNode {
     public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;
     static {
         beforeMatchingNameRegex(XOR_V_MASK, "XorVMask");
+    }
+
+    public static final String XOR_REDUCTION_V = PREFIX + "XOR_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(XOR_REDUCTION_V, "XorReductionV");
     }
 
     public static final String XOR3_NEON = PREFIX + "XOR3_NEON" + POSTFIX;
