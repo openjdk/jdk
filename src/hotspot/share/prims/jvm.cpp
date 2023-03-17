@@ -3917,6 +3917,8 @@ JVM_LEAF(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
 
+// If notifications are disabled then just update the VTMS transition bit and return.
+// Otherwise, the bit is updated in the given jvmtiVTMSTransitionDisabler function call.
 JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide, jboolean first_mount))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
@@ -3937,6 +3939,8 @@ JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hi
 #endif
 JVM_END
 
+// If notifications are disabled then just update the VTMS transition bit and return.
+// Otherwise, the bit is updated in the given jvmtiVTMSTransitionDisabler function call below.
 JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide, jboolean last_unmount))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
@@ -3957,6 +3961,7 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
 #endif
 JVM_END
 
+// If notifications are enabled then just update the temporary VTMS transition bit.
 JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
