@@ -55,7 +55,7 @@ class ChunkPool {
   static ChunkPool _pools[4];
 
  public:
-  constexpr ChunkPool(size_t size) : _first(nullptr), _size(size) {}
+  ChunkPool(size_t size) : _first(nullptr), _size(size) {}
 
   // Allocate a chunk from the pool; returns null if pool is empty.
   Chunk* allocate() {
@@ -141,8 +141,7 @@ class ChunkPoolCleaner : public PeriodicTask {
 
  public:
    ChunkPoolCleaner() : PeriodicTask(cleaning_interval) {}
-
-   void task() override {
+   void task() {
      ChunkPool::clean();
    }
 };
@@ -232,13 +231,13 @@ Chunk::Chunk(size_t length, ChunkPoolSize pool_size)
 }
 
 void Chunk::chop() {
-  Chunk* c = this;
-  while (c != nullptr) {
-    Chunk* next = c->next();
+  Chunk *k = this;
+  while( k ) {
+    Chunk *tmp = k->next();
     // clear out this chunk (to detect allocation bugs)
-    if (ZapResourceArea) memset(c->bottom(), badResourceValue, c->length());
-    c->release();
-    c = next;
+    if (ZapResourceArea) memset(k->bottom(), badResourceValue, k->length());
+    k->release();
+    k = tmp;
   }
 }
 

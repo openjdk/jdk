@@ -125,33 +125,21 @@ class Chunk final {
     }
   }
 
-  // Release this chunk and all subsequent chunks.
-  void chop();
-
-  // Release all subsequent chunks.
-  void next_chop();
-
+  void chop();                  // Chop this chunk
+  void next_chop();             // Chop next chunk
+  static size_t aligned_overhead_size(void) { return ARENA_ALIGN(sizeof(Chunk)); }
   static size_t aligned_overhead_size(size_t byte_size) { return ARENA_ALIGN(byte_size); }
-  static size_t aligned_overhead_size() { return aligned_overhead_size(sizeof(Chunk)); }
 
   size_t length() const { return align_down(raw_length(), ARENA_AMALLOC_ALIGNMENT); }
-
   Chunk* next() const { return reinterpret_cast<Chunk*>(raw_next()); }
-
   void set_next(Chunk* next) {
     assert(next == nullptr || is_aligned(next, alignof(std::max_align_t)), "chunk misaligned");
     _next = reinterpret_cast<uintptr_t>(next) | raw_pool_size();
   }
-
-  char* bottom() const {
-    return reinterpret_cast<char*>(reinterpret_cast<uintptr_t>(this) + aligned_overhead_size());
-  }
-
+  // Boundaries of data area (possibly unused)
+  char* bottom() const { return ((char*) this) + aligned_overhead_size(); }
   char* top() const { return bottom() + length(); }
-
-  bool contains(const void* p) const {
-    return bottom() <= static_cast<const char*>(p) && static_cast<const char*>(p) <= top();
-  }
+  bool contains(char* p) const { return bottom() <= p && p <= top(); }
 
   // Start the chunk_pool cleaner task. Must only be called once.
   static void start_chunk_pool_cleaner_task();
