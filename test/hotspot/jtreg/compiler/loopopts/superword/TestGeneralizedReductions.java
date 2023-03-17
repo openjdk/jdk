@@ -43,7 +43,8 @@ public class TestGeneralizedReductions {
     }
 
     @Run(test = {"testReductionOnGlobalAccumulator",
-                 "testReductionOnPartiallyUnrolledLoop"})
+                 "testReductionOnPartiallyUnrolledLoop",
+                 "testMapReductionOnGlobalAccumulator"})
     void run() {
         long[] array = new long[100];
         long result;
@@ -55,6 +56,12 @@ public class TestGeneralizedReductions {
         initArray(array);
         result = testReductionOnPartiallyUnrolledLoop(array);
         if (result != 4950) {
+            throw new RuntimeException("unexpected result");
+        }
+        initArray(array);
+        result = testMapReductionOnGlobalAccumulator(array);
+        if (result != 316) {
+            System.out.println("result: " + result);
             throw new RuntimeException("unexpected result");
         }
     }
@@ -88,5 +95,20 @@ public class TestGeneralizedReductions {
             sum += array[2*i + 1];
         }
         return sum;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true",
+                      "UsePopCountInstruction", "true",
+                      "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
+                  IRNode.POPCOUNT_VL, ">= 1"})
+        private static long testMapReductionOnGlobalAccumulator(long[] array) {
+        acc = 0;
+        for (int i = 0; i < array.length; i++) {
+            acc += Long.bitCount(array[i]);
+        }
+        return acc;
     }
 }
