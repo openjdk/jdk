@@ -41,7 +41,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
     @Test
     void testOrTimeoutWithCompleteExceptionallyDoesNotLeak() {
         var count = 0L;
-        while(count < 2_000_000) {
+        while (count < 2_000_000) {
             new CompletableFuture<>().orTimeout(12, TimeUnit.HOURS).completeExceptionally(new RuntimeException("This is fine"));
             ++count;
         }
@@ -53,7 +53,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
     @Test
     void testCompleteOnTimeoutWithCompleteExceptionallyDoesNotLeak() {
         var count = 0L;
-        while(count < 2_000_000) {
+        while (count < 2_000_000) {
             new CompletableFuture<>().completeOnTimeout(null, 12, TimeUnit.HOURS).completeExceptionally(new RuntimeException("This is fine"));
             ++count;
         }
