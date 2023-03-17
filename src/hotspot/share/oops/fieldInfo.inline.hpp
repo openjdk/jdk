@@ -167,12 +167,12 @@ inline void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
     old_flags = flags;
     new_flags = old_flags & ~mask;
     witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while(witness != old_flags);
+  } while (witness != old_flags);
 }
 
 inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {
-  if (z)    atomic_set_bits(  _flags, flag_mask(pos));
-  else      atomic_clear_bits(_flags, flag_mask(pos));
+  if (z) atomic_set_bits(_flags, flag_mask(pos));
+  else atomic_clear_bits(_flags, flag_mask(pos));
 }
 
 inline void FieldStatus::update_access_watched(bool z) { update_flag(_fs_access_watched, z); }
