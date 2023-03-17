@@ -91,13 +91,6 @@ public class EditableComboBoxPopupPos {
                     cb4 = new JComboBox(comboStrings);
                     cb4.setEditable(false);
 
-                    if (lafName.contains("Mac")) {
-                        // By default, non-editable ComboBoxes don't appear
-                        // underneath unless this is explicitly set
-                        cb3.putClientProperty("JComboBox.isPopDown", Boolean.TRUE);
-                        cb4.putClientProperty("JComboBox.isPopDown", Boolean.TRUE);
-                    }
-
                     panel.add(cb1);
                     panel.add(cb2);
                     panel.add(cb3);
@@ -166,17 +159,36 @@ public class EditableComboBoxPopupPos {
         }
     }
 
-    private static void runTestOnComboBox(Point p, int width, int height) {
+    private static void runTestOnComboBox(Point p, int width, int height)
+            throws InterruptedException, InvocationTargetException {
         if (lafName.equals("Mac OS X")) {
-            robot.mouseMove(p.x + width - BUTTON_OFFSET,
-                    p.y + (height / 2) + POPUP_OFFSET);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            if (p == cb3Point || p == cb4Point) {
+                // Set isPopDown property to ensure popup matches native MacOS
+                SwingUtilities.invokeAndWait(() -> {
+                    cb3.putClientProperty("JComboBox.isPopDown", Boolean.FALSE);
+                    cb4.putClientProperty("JComboBox.isPopDown", Boolean.FALSE);
+                });
 
-            robot.mouseMove(p.x + (width / 2) - BUTTON_OFFSET,
-                    p.y + height + POPUP_OFFSET - 8);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseMove(p.x + width - BUTTON_OFFSET,
+                        p.y + (height / 2) + POPUP_OFFSET);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+                robot.mouseMove(p.x + (width / 2) - BUTTON_OFFSET,
+                        p.y + POPUP_OFFSET);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            } else {
+                robot.mouseMove(p.x + width - BUTTON_OFFSET,
+                        p.y + (height / 2) + POPUP_OFFSET);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+                robot.mouseMove(p.x + (width / 2) - BUTTON_OFFSET,
+                        p.y + height + POPUP_OFFSET - 8);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            }
         } else {
             robot.mouseMove(p.x + width - BUTTON_OFFSET,
                     p.y + (height / 2) + POPUP_OFFSET);
