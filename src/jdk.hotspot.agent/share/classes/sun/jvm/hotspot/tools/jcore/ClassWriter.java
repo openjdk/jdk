@@ -377,7 +377,7 @@ public class ClassWriter implements /* imports */ ClassConstants
             short accessFlags    = klass.getFieldAccessFlags(index);
             dos.writeShort(accessFlags & (short) JVM_RECOGNIZED_FIELD_MODIFIERS);
 
-            int nameIndex    = klass.getFieldNameIndex(index);
+            int nameIndex = klass.getFieldNameIndex(index);
             dos.writeShort(nameIndex);
 
             int signatureIndex = klass.getFieldSignatureIndex(index);

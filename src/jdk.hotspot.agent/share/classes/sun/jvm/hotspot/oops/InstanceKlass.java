@@ -265,7 +265,7 @@ public class InstanceKlass extends Klass {
   private static Map<Address, Field[]> fieldsCache;
 
   Field getField(int index) {
-    synchronized(this) {
+    synchronized (this) {
       fields = fieldsCache.get(this.getAddress());
       if (fields == null) {
         fields = Field.getFields(this);
