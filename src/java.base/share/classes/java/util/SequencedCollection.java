@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,18 @@
 package java.util;
 
 /**
- * A collection that has a well-defined encounter order, that supports
- * operations at both ends, and that is reversible. The model of a sequenced collection
- * is that the elements are arranged in <i>encounter order</i>. A non-empty sequenced
- * collection has a first element and a last element (which are the same element,
- * if the collection has a single element). All elements except the first have a
- * predecessor, and all elements except the last have a successor. If some element has
- * a successor, the predecessor of the element's successor is the element. If some
- * element has a predecessor, the successor of the element's predecessor is the element.
+ * A collection that has a well-defined encounter order, that supports operations at
+ * both ends, and that is reversible. The elements of a sequenced collection have an
+ * <i>encounter order</i>, where conceptually the elements have a linear arrangement
+ * from the first element to the last element. Given any two elements, one element is
+ * either before (closer to the first element) or after (closer to the last element)
+ * the other element.
  * <p>
- * Several methods inherited from the {@link Collection} interface are required to operate on
- * elements according to this collection's encounter order. For instance, the
+ * (Note that this definition does not imply anything about physical positioning
+ * of elements, such as their locations in a computer's memory.)
+ * <p>
+ * Several methods inherited from the {@link Collection} interface are required to operate
+ * on elements according to this collection's encounter order. For instance, the
  * {@link Collection#iterator iterator} method provides elements starting from the first element,
  * proceeding through successive elements, until the last element. Other methods that are
  * required to operate on elements in encounter order include the following:
@@ -47,11 +48,11 @@ package java.util;
  * This interface provides methods to add elements, to retrieve elements, and to remove
  * elements at either end of the collection.
  * <p>
- * {@code SequencedCollection} also defines the {@link #reversed reversed} method, which provides
+ * This interface also defines the {@link #reversed reversed} method, which provides
  * a reverse-ordered <a href="Collection.html#view">view</a> of this collection.
- * In the reverse-ordered view, the concepts of first and last are inverted, as
- * are the concepts of successor and predecessor. The first element of this collection
- * is the last element of the reverse-ordered view, and vice-versa. The successor of some
+ * In the reverse-ordered view, the concepts of first and last are inverted, as are
+ * the concepts of successor and predecessor. The first element of this collection is
+ * the last element of the reverse-ordered view, and vice-versa. The successor of some
  * element in this collection is its predecessor in the reversed view, and vice-versa. All
  * methods that respect the encounter order of the collection operate as if the encounter order
  * is inverted. For instance, the {@link #iterator} method of the reversed view reports the
@@ -74,12 +75,14 @@ package java.util;
  * {@link Collection#equals Collection.equals} and {@link Collection#hashCode Collection.hashCode}
  * for further information.
  * <p>
- * The {@code add}, {@code get}, and {@code remove} methods were promoted from existing
- * methods of the {@link Deque} interface.
+ * The positioned {@code add}, {@code get}, and {@code remove} methods were promoted from
+ * existing methods of the {@link Deque} interface.
  * <p>
- * Covariant overrides of the {@link #reversed reversed} method are provided on sub-interfaces.
- * This preserves the same set of operations on the reverse-ordered view as on the forward-ordered
- * collection.
+ * Overrides of the {@link #reversed reversed} method are specified on several subtypes to
+ * have a covariant return type that is that subtype. For example, the
+ * {@link List#reversed List.reversed} method returns a {@code List} instead of a
+ * {@code SequencedCollection}. This allows those subtypes to have the same repertoire
+ * of operations on the reverse-ordered view as on the original.
  *
  * @param <E> the type of elements in this collection
  * @since 21
@@ -102,13 +105,15 @@ public interface SequencedCollection<E> extends Collection<E> {
      * Adds an element as the first element of this collection (optional operation).
      * After this operation completes normally, the given element will be a member of
      * this collection, and it will be the first element in encounter order.
+     *
+     * @implSpec
+     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     *
      * @param e the element to be added
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
      * @throws UnsupportedOperationException if this collection implementation
      *         does not support this operation
-     * @implSpec
-     * The implementation in this class always throws {@code UnsupportedOperationException}.
      */
     default void addFirst(E e) {
         throw new UnsupportedOperationException();
@@ -118,13 +123,15 @@ public interface SequencedCollection<E> extends Collection<E> {
      * Adds an element as the last element of this collection (optional operation).
      * After this operation completes normally, the given element will be a member of
      * this collection, and it will be the last element in encounter order.
+     *
+     * @implSpec
+     * The implementation in this class always throws {@code UnsupportedOperationException}.
+     *
      * @param e the element to be added.
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
      * @throws UnsupportedOperationException if this collection implementation
      *         does not support this operation
-     * @implSpec
-     * The implementation in this class always throws {@code UnsupportedOperationException}.
      */
     default void addLast(E e) {
         throw new UnsupportedOperationException();
@@ -132,13 +139,15 @@ public interface SequencedCollection<E> extends Collection<E> {
 
     /**
      * Gets the first element of this collection.
+     *
+     * @implSpec
+     * The implementation in this class obtains an iterator of this collection, and
+     * then it obtains an element by calling the iterator's {@code next} method. Any
+     * {@code NoSuchElementException} thrown is propagated. Otherwise, it returns
+     * the element.
+     *
      * @return the retrieved element
      * @throws NoSuchElementException if this collection is empty
-     * @implSpec
-     * The implementation in this class behaves as if:
-     * <pre>{@code
-     *     return this.iterator().next();
-     * }</pre>
      */
     default E getFirst() {
         return this.iterator().next();
@@ -146,13 +155,15 @@ public interface SequencedCollection<E> extends Collection<E> {
 
     /**
      * Gets the last element of this collection.
+     *
+     * @implSpec
+     * The implementation in this class obtains an iterator of the reversed view
+     * of this collection, and then it obtains an element by calling the iterator's
+     * {@code next} method. Any {@code NoSuchElementException} thrown is propagated.
+     * Otherwise, it returns the element.
+     *
      * @return the retrieved element
      * @throws NoSuchElementException if this collection is empty
-     * @implSpec
-     * The implementation in this class behaves as if:
-     * <pre>{@code
-     *     return this.reversed().iterator().next();
-     * }</pre>
      */
     default E getLast() {
         return this.reversed().iterator().next();
@@ -160,17 +171,18 @@ public interface SequencedCollection<E> extends Collection<E> {
 
     /**
      * Removes and returns the first element of this collection (optional operation).
+     *
+     * @implSpec
+     * The implementation in this class obtains an iterator of this collection, and then
+     * it obtains an element by calling the iterator's {@code next} method. Any
+     * {@code NoSuchElementException} thrown is propagated. It then calls the iterator's
+     * {@code remove} method. Any {@code UnsupportedOperationException} thrown is propagated.
+     * Then, it returns the element.
+     *
      * @return the removed element
      * @throws NoSuchElementException if this collection is empty
-     * @throws UnsupportedOperationException if this collection does not support this operation
-     * @implSpec
-     * The implementation in this class behaves as if:
-     * <pre>{@code
-     *     var it = this.iterator();
-     *     E e = it.next();
-     *     it.remove();
-     *     return e;
-     * }</pre>
+     * @throws UnsupportedOperationException if this collection implementation
+     *         does not support this operation
      */
     default E removeFirst() {
         var it = this.iterator();
@@ -181,17 +193,18 @@ public interface SequencedCollection<E> extends Collection<E> {
 
     /**
      * Removes and returns the last element of this collection (optional operation).
+     *
+     * @implSpec
+     * The implementation in this class obtains an iterator of the reversed view of this
+     * collection, and then it obtains an element by calling the iterator's {@code next} method.
+     * Any {@code NoSuchElementException} thrown is propagated. It then calls the iterator's
+     * {@code remove} method. Any {@code UnsupportedOperationException} thrown is propagated.
+     * Then, it returns the element.
+     *
      * @return the removed element
      * @throws NoSuchElementException if this collection is empty
-     * @throws UnsupportedOperationException if this collection does not support this operation
-     * @implSpec
-     * The implementation in this class behaves as if:
-     * <pre>{@code
-     *     var it = this.reversed().iterator();
-     *     E e = it.next();
-     *     it.remove();
-     *     return e;
-     * }</pre>
+     * @throws UnsupportedOperationException if this collection implementation
+     *         does not support this operation
      */
     default E removeLast() {
         var it = this.reversed().iterator();

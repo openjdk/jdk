@@ -283,10 +283,13 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
     Set<Map.Entry<K, V>> entrySet();
 
     /**
-     * Not supported. The position of a mapping is determined by the order induced by
-     * the comparison method, so explicit positioning is not supported.
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * map's comparison method determines the position of mappings, so explicit positioning
+     * is not supported.
+     *
      * @implSpec
      * The implementation in this class always throws {@code UnsupportedOperationException}.
+     *
      * @throws UnsupportedOperationException always
      * @since 21
      */
@@ -295,10 +298,13 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
     }
 
     /**
-     * Not supported. The position of a mapping is determined by the order induced by
-     * the comparison method, so explicit positioning is not supported.
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * map's comparison method determines the position of mappings, so explicit positioning
+     * is not supported.
+     *
      * @implSpec
      * The implementation in this class always throws {@code UnsupportedOperationException}.
+     *
      * @throws UnsupportedOperationException always
      * @since 21
      */

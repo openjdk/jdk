@@ -277,14 +277,12 @@ public class LinkedHashSet<E>
     }
 
     /**
-     * Returns a reverse-ordered <a href="Collection.html#view">view</a> of this set.
-     * The encounter order of elements in the returned view is the inverse of the encounter
-     * order of elements in this set. The reverse ordering affects all order-sensitive
-     * operations, including those on the view collections of the returned view.
-     * Modifications to the returned view are permitted and will "write through" to this set.
-     * Modifications to this set are visible in the returned view.
+     * {@inheritDoc}
+     * <p>
+     * Modifications to the reversed view are permitted and will be propagated to this set.
+     * In addition, modifications to this set will be visible in the reversed view.
      *
-     * @return a reverse-ordered view of this set
+     * @return {@inheritDoc}
      * @since 21
      */
     public SequencedSet<E> reversed() {

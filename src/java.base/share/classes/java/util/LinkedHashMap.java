@@ -613,11 +613,12 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link SequencedSet} view of the keys contained in this map.
-     * Other than the return type, the returned view has the same characteristics
-     * as specified in the {@link #keySet keySet} method.
+     * {@inheritDoc}
+     * <p>
+     * The returned view has the same characteristics as specified for the view
+     * returned by the {@link #keySet keySet} method.
      *
-     * @return a SequencedSet view of the keys contained in this map
+     * @return {@inheritDoc}
      * @since 21
      */
     public SequencedSet<K> sequencedKeySet() {
@@ -761,11 +762,12 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link SequencedCollection} view of the values contained in this map.
-     * Other than the return type, the returned view has the same characteristics
-     * as specified in the {@link #values values} method.
+     * {@inheritDoc}
+     * <p>
+     * The returned view has the same characteristics as specified for the view
+     * returned by the {@link #values values} method.
      *
-     * @return a SequencedCollection view of the values contained in this map
+     * @return {@inheritDoc}
      * @since 21
      */
     public SequencedCollection<V> sequencedValues() {
@@ -865,11 +867,12 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Returns a {@link SequencedSet} view of the mappings contained in this map.
-     * Other than the return type, the returned view has the same characteristics
-     * as specified in the {@link #entrySet entrySet} method.
+     * {@inheritDoc}
+     * <p>
+     * The returned view has the same characteristics as specified for the view
+     * returned by the {@link #entrySet entrySet} method.
      *
-     * @return a SequencedSet view of the mappings contained in this map
+     * @return {@inheritDoc}
      * @since 21
      */
     public SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
@@ -1062,14 +1065,13 @@ public class LinkedHashMap<K,V>
     // Reversed View
 
     /**
-     * Returns a reverse-ordered <a href="Collection.html#view">view</a> of this map.
-     * The encounter order of elements in the returned view is the inverse of the encounter
-     * order of elements in this map. The reverse ordering affects all order-sensitive operations,
-     * including those on the view collections of the returned view. Modifications to the
-     * returned view are permitted and will "write through" to this map. Modifications to
-     * this map are visible in the returned view.
+     * {@inheritDoc}
+     * <p>
+     * Modifications to the reversed view and its map views are permitted and will be
+     * propagated to this map. In addition, modifications to this map will be visible
+     * in the reversed view and its map views.
      *
-     * @return a reverse-ordered view of this map
+     * @return {@inheritDoc}
      * @since 21
      */
     public SequencedMap<K, V> reversed() {

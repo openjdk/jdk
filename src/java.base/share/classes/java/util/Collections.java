@@ -1137,13 +1137,13 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
-     * specified SequencedCollection. Query operations on the returned collection "read through"
-     * to the specified collection, and attempts to modify the returned
+     * specified {@code SequencedCollection}. Query operations on the returned collection
+     * "read through" to the specified collection, and attempts to modify the returned
      * collection, whether direct or via its iterator, result in an
      * {@code UnsupportedOperationException}.<p>
      *
-     * The returned collection does <i>not</i> pass the hashCode and equals
-     * operations through to the backing collection, but relies on
+     * The returned collection does <i>not</i> pass the {@code hashCode} and
+     * {@code equals} operations through to the backing collection, but relies on
      * {@code Object}'s {@code equals} and {@code hashCode} methods.  This
      * is necessary to preserve the contracts of these operations in the case
      * that the backing collection is a set or a list.<p>
@@ -1254,9 +1254,10 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
-     * specified sequenced set. Query operations on the returned set "read through" to the specified
-     * set, and attempts to modify the returned set, whether direct or via its
-     * iterator, result in an {@code UnsupportedOperationException}.<p>
+     * specified {@code SequencedSet}. Query operations on the returned set
+     * "read through" to the specified set, and attempts to modify the returned
+     * set, whether direct or via its iterator, result in an
+     * {@code UnsupportedOperationException}.<p>
      *
      * The returned set will be serializable if the specified set
      * is serializable.
@@ -1965,8 +1966,8 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
-     * specified sequenced map. Query operations on the returned map "read through"
-     * to the specified map, and attempts to modify the returned
+     * specified {@code SequencedMap}. Query operations on the returned map
+     * "read through" to the specified map, and attempts to modify the returned
      * map, whether direct or via its collection views, result in an
      * {@code UnsupportedOperationException}.<p>
      *
@@ -5969,6 +5970,12 @@ public class Collections {
      * and should not be accessed directly after this method returns.  These
      * conditions are ensured if the map is created empty, passed directly
      * to this method, and no reference to the map is retained.
+     *
+     * @apiNote
+     * The following example code creates a {@code SequencedSet} from a
+     * {@code LinkedHashMap}. This differs from a {@code LinkedHashSet}
+     * in that the map's {@code removeEldestEntry} is overridden to provide
+     * an eviction policy, which is not possible with a {@code LinkedHashSet}.
      *
      * <pre>{@code
      *     SequencedSet<String> set = Collections.newSequencedSetFromMap(

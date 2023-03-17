@@ -1275,7 +1275,11 @@ public class LinkedList<E>
 
     /**
      * {@inheritDoc}
-     * @return a reverse-ordered view of this LinkedList
+     * <p>
+     * Modifications to the reversed view are permitted and will be propagated to this list.
+     * In addition, modifications to this list will be visible in the reversed view.
+     *
+     * @return {@inheritDoc}
      * @since 21
      */
     public LinkedList<E> reversed() {

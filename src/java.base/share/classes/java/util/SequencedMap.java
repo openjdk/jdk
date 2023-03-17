@@ -25,16 +25,11 @@
 
 package java.util;
 
-import java.util.function.Consumer;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-
 /**
- * A Map that has a well-defined encounter order and that is reversible.
- * The <i>encounter order</i> of a {@code SequencedMap} is similar to that of the
- * elements of a {@link SequencedCollection}, but the ordering applies to
- * mappings instead of individual elements.
+ * A Map that has a well-defined encounter order, that supports operations at both
+ * ends, and that is reversible. The <i>encounter order</i> of a {@code SequencedMap}
+ * is similar to that of the elements of a {@link SequencedCollection}, but the ordering
+ * applies to mappings instead of individual elements.
  * <p>
  * The bulk operations on this map, including the {@link #forEach forEach} and the
  * {@link #replaceAll replaceAll} methods, operate on this map's mappings in
@@ -60,7 +55,10 @@ import java.util.stream.Stream;
  * }</pre>
  * both provide the mappings of {@code sequencedMap} in that map's encounter order.
  * <p>
- * {@code SequencedMap} also defines the {@link #reversed} method, which provides a
+ * This interface provides methods to add mappings, to retrieve mappings, and to remove
+ * mappings at either end of the map's encounter order.
+ * <p>
+ * This interface also defines the {@link #reversed} method, which provides a
  * reverse-ordered <a href="Collection.html#view">view</a> of this map.
  * In the reverse-ordered view, the concepts of first and last are inverted, as
  * are the concepts of successor and predecessor. The first mapping of this map
@@ -84,12 +82,12 @@ import java.util.stream.Stream;
  * map is serializable.
  * <p>
  * The {@link Map.Entry} instances obtained by iterating the {@link #entrySet} view, the
- * {@link #sequencedEntrySet} view, and its reverse-ordered view, maintain a connection
- * to the underlying map. If the underlying map permits it, calling the
- * {@link Map.Entry#setValue setValue} method on such an {@code Entry} will
- * modify the value of the underlying mapping. It is, however, unspecified whether
- * modifications to the value in the underlying mapping are visible in the
- * {@code Entry} instance.
+ * {@link #sequencedEntrySet} view, and its reverse-ordered view, maintain a connection to the
+ * underlying map. This connection is guaranteed only during the iteration. It is unspecified
+ * whether the connection is maintained outside of the iteration. If the underlying map permits
+ * it, calling an Entry's {@link Map.Entry#setValue setValue} method will modify the value of the
+ * underlying mapping. It is, however, unspecified whether modifications to the value in the
+ * underlying mapping are visible in the {@code Entry} instance.
  * <p>
  * The methods
  * {@link #firstEntry},
@@ -100,12 +98,16 @@ import java.util.stream.Stream;
  * of the time of the call. They do <em>not</em> support mutation of the
  * underlying map via the optional {@link Map.Entry#setValue setValue} method.
  * <p>
- * Depending upon the underlying implementation, the {@code Entry} instances
- * returned by other methods in this interface might or might not be connected
- * to the underlying map entries. For example, it is not specified by this interface
- * whether the {@code setValue} method of an {@code Entry} obtained from the
- * {@link #firstEntry firstEntry} method will update a mapping in the underlying map, or whether
- * changes to the underlying map are visible in the returned {@code Entry}.
+ * Depending upon the implementation, the {@code Entry} instances returned by other
+ * means might or might not be connected to the underlying map. For example, consider
+ * an {@code Entry} obtained in the following manner:
+ * <pre>{@code
+ *     var entry = sequencedMap.sequencedEntrySet().getFirst();
+ * }</pre>
+ * It is not specified by this interface whether the {@code setValue} method of the
+ * {@code Entry} thus obtained will update a mapping in the underlying map, or whether
+ * it will throw an exception, or whether changes to the underlying map are visible in
+ * that {@code Entry}.
  * <p>
  * This interface has the same requirements on the {@code equals} and {@code hashCode}
  * methods as defined by {@link Map#equals Map.equals} and {@link Map#hashCode Map.hashCode}.
@@ -139,11 +141,9 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * or {@code null} if the map is empty.
      *
      * @implSpec
-     * The default implementation in this class is implemented as if:
-     * <pre>{@code
-     *     var it = entrySet().iterator();
-     *     return it.hasNext() ? it.next() : null;
-     * }</pre>
+     * The implementation in this class obtains the iterator of this map's entrySet.
+     * If the iterator has an element, it returns an unmodifiable copy of that element.
+     * Otherwise, it returns null.
      *
      * @return the first key-value mapping,
      *         or {@code null} if this map is empty
@@ -158,11 +158,9 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * or {@code null} if the map is empty.
      *
      * @implSpec
-     * The default implementation in this class is implemented as if:
-     * <pre>{@code
-     *     var it = reversed().entrySet().iterator();
-     *     return it.hasNext() ? it.next() : null;
-     * }</pre>
+     * The implementation in this class obtains the iterator of the entrySet of this map's
+     * reversed view. If the iterator has an element, it returns an unmodifiable copy of
+     * that element. Otherwise, it returns null.
      *
      * @return the last key-value mapping,
      *         or {@code null} if this map is empty
@@ -177,20 +175,14 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * or {@code null} if the map is empty (optional operation).
      *
      * @implSpec
-     * The default implementation in this class is implemented as if:
-     * <pre>{@code
-     *     var it = entrySet().iterator();
-     *     if (it.hasNext()) {
-     *         var entry = it.next();
-     *         it.remove();
-     *         return entry;
-     *     } else {
-     *         return null;
-     *     }
-     * }</pre>
+     * The implementation in this class obtains the iterator of this map's entrySet.
+     * If the iterator has an element, it calls {@code remove} on the iterator and
+     * then returns an unmodifiable copy of that element. Otherwise, it returns null.
      *
      * @return the removed first entry of this map,
      *         or {@code null} if this map is empty
+     * @throws UnsupportedOperationException if this collection implementation does not
+     *         support this operation
      */
     default Map.Entry<K,V> pollFirstEntry() {
         var it = entrySet().iterator();
@@ -208,20 +200,14 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * or {@code null} if the map is empty (optional operation).
      *
      * @implSpec
-     * The default implementation in this class is implemented as if:
-     * <pre>{@code
-     *     var it = reversed().entrySet().iterator();
-     *     if (it.hasNext()) {
-     *         var entry = it.next();
-     *         it.remove();
-     *         return entry;
-     *     } else {
-     *         return null;
-     *     }
-     * }</pre>
+     * The implementation in this class obtains the iterator of the entrySet of this map's
+     * reversed view. If the iterator has an element, it calls {@code remove} on the iterator
+     * and then returns an unmodifiable copy of that element. Otherwise, it returns null.
      *
      * @return the removed last entry of this map,
      *         or {@code null} if this map is empty
+     * @throws UnsupportedOperationException if this collection implementation does not
+     *         support this operation
      */
     default Map.Entry<K,V> pollLastEntry() {
         var it = reversed().entrySet().iterator();
@@ -238,14 +224,16 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Inserts this mapping into the map if it is not already present, or replaces the value
      * of a mapping if it is already present (optional operation).
      * After this operation completes normally, the given mapping will present in this map,
-     * and it will be the first mapping in this map's in encounter order.
+     * and it will be the first mapping in this map's encounter order.
      *
-     * @implSpec The implementation of this method in this class always throws
+     * @implSpec The implementation in this class always throws
      * {@code UnsupportedOperationException}.
      *
      * @param k the key
      * @param v the value
      * @return the value previously associated with k, or null if none
+     * @throws UnsupportedOperationException if this collection implementation does not
+     *         support this operation
      */
     default V putFirst(K k, V v) {
         throw new UnsupportedOperationException();
@@ -255,14 +243,16 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Inserts this mapping into the map if it is not already present, or replaces the value
      * of a mapping if it is already present (optional operation).
      * After this operation completes normally, the given mapping will present in this map,
-     * and it will be the last mapping in this map's in encounter order.
+     * and it will be the last mapping in this map's encounter order.
      *
-     * @implSpec The implementation of this method in this class always throws
+     * @implSpec The implementation in this class always throws
      * {@code UnsupportedOperationException}.
      *
      * @param k the key
      * @param v the value
      * @return the value previously associated with k, or null if none
+     * @throws UnsupportedOperationException if this collection implementation does not
+     *         support this operation
      */
     default V putLast(K k, V v) {
         throw new UnsupportedOperationException();

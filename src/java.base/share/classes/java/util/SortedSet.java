@@ -265,20 +265,26 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
     // ========== SequencedCollection ==========
 
     /**
-     * Not supported. The position of an element is determined by the order induced by
-     * the comparison method, so explicit positioning is not supported.
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * set's comparison method determines the position of elements, so explicit positioning
+     * is not supported.
+     *
      * @implSpec
      * The implementation in this class always throws {@code UnsupportedOperationException}.
+     *
      * @throws UnsupportedOperationException always
      * @since 21
      */
     default void addFirst(E e) { throw new UnsupportedOperationException(); }
 
     /**
-     * Not supported. The position of an element is determined by the order induced by
-     * the comparison method, so explicit positioning is not supported.
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * set's comparison method determines the position of elements, so explicit positioning
+     * is not supported.
+     *
      * @implSpec
      * The implementation in this class always throws {@code UnsupportedOperationException}.
+     *
      * @throws UnsupportedOperationException always
      * @since 21
      */
