@@ -486,7 +486,7 @@ void G1ConcurrentMark::clear_statistics_in_region(HeapRegion* r) {
 
 void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   assert_at_safepoint();
- assert(r->is_starts_humongous(), "Got humongous continues region here");
+  assert(r->is_starts_humongous(), "Got humongous continues region here");
 
   // Need to clear mark bit of the humongous object. Doing this unconditionally is fine.
   mark_bitmap()->clear(r->bottom());
