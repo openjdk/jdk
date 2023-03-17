@@ -266,7 +266,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     // The Http1ResponseBodySubscriber is registered with the HttpClient
     // to ensure that it gets completed if the SelectorManager aborts due
     // to unexpected exceptions.
-    private void registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+    private boolean registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
         Throwable failed = null;
         synchronized (lock) {
             failed = this.failed;
@@ -276,13 +276,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
         if (failed != null) {
             subscriber.onError(failed);
+            return false;
         } else {
-            client.registerSubscriber(subscriber);
+            return client.registerSubscriber(subscriber);
         }
     }
 
-    private void unregisterResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
-        client.unregisterSubscriber(subscriber);
+    private boolean unregisterResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+        return client.unregisterSubscriber(subscriber);
     }
 
     @Override

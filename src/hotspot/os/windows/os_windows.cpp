@@ -1897,7 +1897,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   }
 
   size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)proc_count;
-  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, NULL, 0, buf, (ULONG) buflen);
+  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, nullptr, 0, buf, (ULONG) buflen);
   int max_mhz = -1, current_mhz = -1, mhz_limit = -1;
   bool same_vals_for_all_cpus = true;
 
@@ -5531,10 +5531,6 @@ static jint initSock() {
     return JNI_ERR;
   }
   return JNI_OK;
-}
-
-struct hostent* os::get_host_by_name(char* name) {
-  return (struct hostent*)gethostbyname(name);
 }
 
 int os::socket_close(int fd) {

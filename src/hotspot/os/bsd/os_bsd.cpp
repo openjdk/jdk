@@ -1301,7 +1301,7 @@ void os::print_os_info(outputStream* st) {
 
 #ifdef __APPLE__
 static void print_sysctl_info_string(const char* sysctlkey, outputStream* st, char* buf, size_t size) {
-  if (sysctlbyname(sysctlkey, buf, &size, NULL, 0) >= 0) {
+  if (sysctlbyname(sysctlkey, buf, &size, nullptr, 0) >= 0) {
     st->print_cr("%s:%s", sysctlkey, buf);
   }
 }
@@ -1309,7 +1309,7 @@ static void print_sysctl_info_string(const char* sysctlkey, outputStream* st, ch
 static void print_sysctl_info_uint64(const char* sysctlkey, outputStream* st) {
   uint64_t val;
   size_t size=sizeof(uint64_t);
-  if (sysctlbyname(sysctlkey, &val, &size, NULL, 0) >= 0) {
+  if (sysctlbyname(sysctlkey, &val, &size, nullptr, 0) >= 0) {
     st->print_cr("%s:%llu", sysctlkey, val);
   }
 }
@@ -1768,9 +1768,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   // we can either pass an alignment to this method or verify alignment
   // in one of the methods further up the call chain.  See bug 5044738.
   assert(bytes % os::vm_page_size() == 0, "reserving unexpected size block");
-
-  // Repeatedly allocate blocks until the block is allocated at the
-  // right spot.
 
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.

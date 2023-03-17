@@ -877,6 +877,8 @@ class DwarfFile : public ElfFile {
       : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _offset_in_library(offset_in_library),
         _debug_line_offset(debug_line_offset), _is_pc_after_call(is_pc_after_call) {}
 
+    ~LineNumberProgram() { delete _state; }
+
     bool find_filename_and_line_number(char* filename, size_t filename_len, int* line);
   };
 

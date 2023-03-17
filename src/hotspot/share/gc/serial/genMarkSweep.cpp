@@ -32,9 +32,9 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
-#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -63,7 +63,7 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs) {
+void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
@@ -72,11 +72,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
     assert(clear_all_softrefs, "Policy should have been checked earlier");
   }
 #endif
-
-  // hook up weak ref data so it can be used during Mark-Sweep
-  assert(ref_processor() == nullptr, "no stomping");
-  assert(rp != nullptr, "should be non-null");
-  set_ref_processor(rp);
 
   gch->trace_heap_before_gc(_gc_tracer);
 
@@ -133,9 +128,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   gch->prune_scavengable_nmethods();
 
-  // refs processing: clean slate
-  set_ref_processor(nullptr);
-
   // Update heap occupancy information which is used as
   // input to soft ref clearing policy at the next gc.
   Universe::heap()->update_capacity_and_used_at_gc();
@@ -181,6 +173,8 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
+
+  ref_processor()->start_discovery(clear_all_softrefs);
 
   {
     StrongRootsScope srs(0);

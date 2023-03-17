@@ -63,7 +63,6 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
 
   // Marking closures
   G1MarkAndPushClosure  _mark_closure;
-  G1VerifyLiveClosure   _verify_closure;
   G1FollowStackClosure  _stack_closure;
   CLDToOopClosure       _cld_closure;
   StringDedup::Requests _string_dedup_requests;

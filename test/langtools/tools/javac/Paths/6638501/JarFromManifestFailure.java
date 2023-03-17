@@ -106,10 +106,9 @@ public class JarFromManifestFailure {
             mainAttrs.put(Attributes.Name.MANIFEST_VERSION, "1.0");
             mainAttrs.put(Attributes.Name.CLASS_PATH, join(classPath, " "));
         }
-        OutputStream out = new BufferedOutputStream(new FileOutputStream(jar));
-        JarOutputStream j = new JarOutputStream(out, m);
-        add(j, base, files);
-        j.close();
+        try (JarOutputStream j = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(jar)), m)) {
+            add(j, base, files);
+        }
     }
 
     static void add(JarOutputStream j, File base, File... files) throws IOException {
@@ -144,15 +143,16 @@ public class JarFromManifestFailure {
 
     static byte[] read(File f) throws IOException {
         byte[] buf = new byte[(int) f.length()];
-        BufferedInputStream in = new BufferedInputStream(new FileInputStream(f));
-        int offset = 0;
-        while (offset < buf.length) {
-            int n = in.read(buf, offset, buf.length - offset);
-            if (n < 0)
-                throw new EOFException();
-            offset += n;
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(f))) {
+            int offset = 0;
+            while (offset < buf.length) {
+                int n = in.read(buf, offset, buf.length - offset);
+                if (n < 0)
+                    throw new EOFException();
+                offset += n;
+            }
+            return buf;
         }
-        return buf;
     }
 
     static <T> Iterable<T> iterable(T single) {
