@@ -29,7 +29,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -1208,12 +1208,12 @@ public class FileChannelImpl
 
     @Override
     public MemorySegment map(MapMode mode, long offset, long size,
-                             SegmentScope session)
+                             Arena arena)
             throws IOException
     {
         Objects.requireNonNull(mode,"Mode is null");
-        Objects.requireNonNull(session, "Session is null");
-        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
+        Objects.requireNonNull(arena, "Arena is null");
+        MemorySessionImpl sessionImpl = MemorySessionImpl.toMemorySession(arena);
         sessionImpl.checkValidState();
         if (offset < 0)
             throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
@@ -1230,7 +1230,7 @@ public class FileChannelImpl
         if (unmapper != null) {
             AbstractMemorySegmentImpl segment =
                 new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
-                                            readOnly, session);
+                                            readOnly, sessionImpl);
             MemorySessionImpl.ResourceList.ResourceCleanup resource =
                 new MemorySessionImpl.ResourceList.ResourceCleanup() {
                     @Override
@@ -1241,7 +1241,7 @@ public class FileChannelImpl
             sessionImpl.addOrCleanupIfFail(resource);
             return segment;
         } else {
-            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(readOnly, sessionImpl);
+            return new MappedMemorySegmentImpl(0, null, 0, readOnly, sessionImpl);
         }
     }
 

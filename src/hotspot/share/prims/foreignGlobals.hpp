@@ -76,6 +76,8 @@ private:
   static void parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int));
 
 public:
+  static bool has_port();
+
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
   static const CallRegs parse_call_regs(jobject jconv);
   static VMStorage parse_vmstorage(oop storage);

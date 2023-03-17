@@ -57,7 +57,7 @@ public class TestUpcallStack extends TestUpcallBase {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
         List<Consumer<Object>> argChecks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow("s" + fName);
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             FunctionDescriptor descriptor = functionStack(ret, paramTypes, fields);
             MethodHandle mh = downcallHandle(LINKER, addr, arena, descriptor);
             AtomicReference<Object[]> capturedArgs = new AtomicReference<>();

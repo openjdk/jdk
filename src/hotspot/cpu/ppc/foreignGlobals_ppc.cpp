@@ -29,6 +29,10 @@
 
 class MacroAssembler;
 
+bool ForeignGlobals::has_port() {
+  return false;
+}
+
 // Stubbed out, implement later
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   Unimplemented();

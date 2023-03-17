@@ -23,12 +23,8 @@
 
 import org.testng.annotations.Test;
 
+import java.lang.foreign.*;
 import java.lang.foreign.Arena;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
@@ -51,12 +47,12 @@ public class LibraryLookupTest {
 
     @Test
     void testLoadLibraryConfined() {
-        try (Arena arena0 = Arena.openConfined()) {
-            callFunc(loadLibrary(arena0.scope()));
-            try (Arena arena1 = Arena.openConfined()) {
-                callFunc(loadLibrary(arena1.scope()));
-                try (Arena arena2 = Arena.openConfined()) {
-                    callFunc(loadLibrary(arena2.scope()));
+        try (Arena arena0 = Arena.ofConfined()) {
+            callFunc(loadLibrary(arena0));
+            try (Arena arena1 = Arena.ofConfined()) {
+                callFunc(loadLibrary(arena1));
+                try (Arena arena2 = Arena.ofConfined()) {
+                    callFunc(loadLibrary(arena2));
                 }
             }
         }
@@ -65,16 +61,16 @@ public class LibraryLookupTest {
     @Test(expectedExceptions = IllegalStateException.class)
     void testLoadLibraryConfinedClosed() {
         MemorySegment addr;
-        try (Arena arena = Arena.openConfined()) {
-            addr = loadLibrary(arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            addr = loadLibrary(arena);
         }
         callFunc(addr);
     }
 
-    private static MemorySegment loadLibrary(SegmentScope session) {
+    private static MemorySegment loadLibrary(Arena session) {
         SymbolLookup lib = SymbolLookup.libraryLookup(LIB_PATH, session);
         MemorySegment addr = lib.find("inc").get();
-        assertEquals(addr.scope(), session);
+        assertEquals(addr.scope(), session.scope());
         return addr;
     }
 
@@ -94,12 +90,12 @@ public class LibraryLookupTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     void testBadLibraryLookupName() {
-        SymbolLookup.libraryLookup("nonExistent", SegmentScope.global());
+        SymbolLookup.libraryLookup("nonExistent", Arena.global());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     void testBadLibraryLookupPath() {
-        SymbolLookup.libraryLookup(Path.of("nonExistent"), SegmentScope.global());
+        SymbolLookup.libraryLookup(Path.of("nonExistent"), Arena.global());
     }
 
     @Test
@@ -116,8 +112,8 @@ public class LibraryLookupTest {
         @Override
         public void run() {
             for (int i = 0 ; i < ITERATIONS ; i++) {
-                try (Arena arena = Arena.openConfined()) {
-                    callFunc(loadLibrary(arena.scope()));
+                try (Arena arena = Arena.ofConfined()) {
+                    callFunc(loadLibrary(arena));
                 }
             }
         }
@@ -125,8 +121,8 @@ public class LibraryLookupTest {
 
     @Test
     void testLoadLibrarySharedClosed() throws Throwable {
-        Arena arena = Arena.openShared();
-        MemorySegment addr = loadLibrary(arena.scope());
+        Arena arena = Arena.ofShared();
+        MemorySegment addr = loadLibrary(arena);
         ExecutorService accessExecutor = Executors.newCachedThreadPool();
         for (int i = 0; i < NUM_ACCESSORS ; i++) {
             accessExecutor.execute(new LibraryAccess(addr));

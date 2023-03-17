@@ -31,7 +31,8 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 const GrowableArray<VMStorage>& input_registers,
                                                 const GrowableArray<VMStorage>& output_registers,
                                                 bool needs_return_buffer,
-                                                int captured_state_mask) {
+                                                int captured_state_mask,
+                                                bool needs_transition) {
   Unimplemented();
   return nullptr;
 }

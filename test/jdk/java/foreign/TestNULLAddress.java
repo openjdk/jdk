@@ -64,9 +64,9 @@ public class TestNULLAddress {
     }
 
     @Test
-    public void testNULLReturn_unbounded() throws Throwable {
+    public void testNULLReturn_target() throws Throwable {
         MethodHandle mh = LINKER.downcallHandle(SymbolLookup.loaderLookup().find("get_null").get(),
-                FunctionDescriptor.of(ValueLayout.ADDRESS.asUnbounded()));
+                FunctionDescriptor.of(ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT)));
         MemorySegment ret = (MemorySegment)mh.invokeExact();
         assertTrue(ret.equals(MemorySegment.NULL));
     }

@@ -36,11 +36,7 @@
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -115,10 +111,10 @@ public class TestNormalize extends NativeTestHelper {
         MethodHandle downcallHandle = LINKER.downcallHandle(target, downcallDesc);
         downcallHandle = MethodHandles.filterReturnValue(downcallHandle, toInt);
 
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             int[] box = new int[1];
             saver = MethodHandles.insertArguments(saver, 1, box);
-            MemorySegment upcallStub = LINKER.upcallStub(saver, upcallDesc, arena.scope());
+            MemorySegment upcallStub = LINKER.upcallStub(saver, upcallDesc, arena);
             int dirtyValue = testValue | hobMask; // set all bits that should not be set
 
             // test after JIT as well
@@ -185,8 +181,8 @@ public class TestNormalize extends NativeTestHelper {
         boolean[] box = new boolean[1];
         MethodHandle upcallTarget = MethodHandles.insertArguments(SAVE_BOOLEAN, 1, box);
 
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment callback = LINKER.upcallStub(upcallTarget, FunctionDescriptor.ofVoid(JAVA_BOOLEAN), arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment callback = LINKER.upcallStub(upcallTarget, FunctionDescriptor.ofVoid(JAVA_BOOLEAN), arena);
             boolean result = (boolean) target.invokeExact(callback, testValue);
             assertEquals(box[0], expected);
             assertEquals(result, expected);

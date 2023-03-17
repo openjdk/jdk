@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,21 +23,12 @@
  * questions.
  */
 
-#include <stdarg.h>
+#include "jni.h"
+#include "jvm.h"
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
+#include "jdk_internal_vm_ForeignLinkerSupport.h"
 
-EXPORT void vaList(int argCount, va_list list) {
-    //...
-}
-
-EXPORT void ellipsis(int argCount, ...) {
-    va_list list;
-    va_start(list, argCount);
-    vaList(argCount, list);
-    va_end(list);
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_vm_ForeignLinkerSupport_isSupported0(JNIEnv *env, jclass cls) {
+    return JVM_IsForeignLinkerSupported();
 }

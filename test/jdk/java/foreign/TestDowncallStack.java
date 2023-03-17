@@ -55,7 +55,7 @@ public class TestDowncallStack extends TestDowncallBase {
         List<Consumer<Object>> checks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow("s" + fName);
         FunctionDescriptor descriptor = functionStack(ret, paramTypes, fields);
-        try (Arena arena = Arena.openShared()) {
+        try (Arena arena = Arena.ofShared()) {
             Object[] args = makeArgsStack(arena, descriptor, checks);
             boolean needsScope = descriptor.returnLayout().map(GroupLayout.class::isInstance).orElse(false);
             SegmentAllocator allocator = needsScope ?

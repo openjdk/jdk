@@ -115,8 +115,8 @@ public class TestAsyncStackWalk extends NativeTestHelper {
     static boolean didStackWalk;
 
     public static void main(String[] args) throws Throwable {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), arena);
             invocations = 0;
             didStackWalk = false;
             payload(stub);

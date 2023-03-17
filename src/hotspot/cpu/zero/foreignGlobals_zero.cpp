@@ -28,6 +28,10 @@
 
 class MacroAssembler;
 
+bool ForeignGlobals::has_port() {
+  return false;
+}
+
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   ShouldNotCallThis();
   return {};

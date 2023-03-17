@@ -23,7 +23,7 @@
 
 package handle.lookup;
 
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 
 import java.lang.invoke.MethodHandle;
@@ -34,6 +34,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 import org.testng.annotations.*;
 
@@ -50,20 +51,20 @@ public class MethodHandleLookup {
             return new Object[][]{
                     { MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
                             MethodType.methodType(Linker.class)), "Linker::nativeLinker" },
-                    { MethodHandles.lookup().findStatic(MemorySegment.class, "ofAddress",
-                            MethodType.methodType(MemorySegment.class, long.class, long.class)),
-                            "MemorySegment::ofAddress/2" },
-                    { MethodHandles.lookup().findStatic(MemorySegment.class, "ofAddress",
-                            MethodType.methodType(MemorySegment.class, long.class, long.class, SegmentScope.class)),
-                            "MemorySegment::ofAddress/3" },
-                    { MethodHandles.lookup().findStatic(MemorySegment.class, "ofAddress",
-                            MethodType.methodType(MemorySegment.class, long.class, long.class, SegmentScope.class, Runnable.class)),
-                            "MemorySegment::ofAddress/4" },
+                    { MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret",
+                            MethodType.methodType(MemorySegment.class, long.class)),
+                            "MemorySegment::reinterpret/1" },
+                    { MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret",
+                            MethodType.methodType(MemorySegment.class, Arena.class, Consumer.class)),
+                            "MemorySegment::reinterpret/2" },
+                    { MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret",
+                            MethodType.methodType(MemorySegment.class, long.class, Arena.class, Consumer.class)),
+                            "MemorySegment::reinterpret/3" },
                     { MethodHandles.lookup().findStatic(SymbolLookup.class, "libraryLookup",
-                            MethodType.methodType(SymbolLookup.class, String.class, SegmentScope.class)),
+                            MethodType.methodType(SymbolLookup.class, String.class, Arena.class)),
                             "SymbolLookup::libraryLookup(String)" },
                     { MethodHandles.lookup().findStatic(SymbolLookup.class, "libraryLookup",
-                            MethodType.methodType(SymbolLookup.class, Path.class, SegmentScope.class)),
+                            MethodType.methodType(SymbolLookup.class, Path.class, Arena.class)),
                             "SymbolLookup::libraryLookup(Path)" },
             };
         } catch (Throwable ex) {

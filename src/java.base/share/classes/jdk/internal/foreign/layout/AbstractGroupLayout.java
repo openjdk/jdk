@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -88,15 +88,11 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
      */
     @Override
     public final boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!super.equals(other)) {
-            return false;
-        }
-        return other instanceof AbstractGroupLayout<?> otherGroup &&
-                kind == otherGroup.kind &&
-                elements.equals(otherGroup.elements);
+        return this == other ||
+                other instanceof AbstractGroupLayout<?> otherGroup &&
+                        super.equals(other) &&
+                        kind == otherGroup.kind &&
+                        elements.equals(otherGroup.elements);
     }
 
     /**
@@ -145,7 +141,7 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
             return elems.stream()
                     .mapToLong(MemoryLayout::bitAlignment)
                     .max() // max alignment in case we have member layouts
-                    .orElse(1); // or minimal alignment if no member layout is given
+                    .orElse(8); // or minimal alignment if no member layout is given
         }
     }
 }

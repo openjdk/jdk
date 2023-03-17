@@ -33,6 +33,10 @@
 #include "prims/vmstorage.hpp"
 #include "utilities/formatBuffer.hpp"
 
+bool ForeignGlobals::has_port() {
+  return true;
+}
+
 bool ABIDescriptor::is_volatile_reg(Register reg) const {
   return _integer_argument_registers.contains(reg)
     || _integer_additional_volatile_registers.contains(reg);

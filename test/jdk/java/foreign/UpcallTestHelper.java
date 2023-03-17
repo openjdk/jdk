@@ -37,13 +37,19 @@ import static org.testng.Assert.assertTrue;
 
 public class UpcallTestHelper extends NativeTestHelper {
     public record Output(List<String> stdout, List<String> stderr) {
-        private static void assertContains(List<String> lines, String shouldInclude) {
+        private static void assertContains(List<String> lines, String shouldInclude, String name) {
             assertTrue(lines.stream().anyMatch(line -> line.contains(shouldInclude)),
-                "Did not find '" + shouldInclude + "' in stderr");
+                "Did not find '" + shouldInclude + "' in " + name);
         }
 
-        public void assertStdErrContains(String shouldInclude) {
-            assertContains(stderr, shouldInclude);
+        public Output assertStdErrContains(String shouldInclude) {
+            assertContains(stderr, shouldInclude, "stderr");
+            return this;
+        }
+
+        public Output assertStdOutContains(String shouldInclude) {
+            assertContains(stdout, shouldInclude, "stdout");
+            return this;
         }
     }
 
@@ -59,7 +65,7 @@ public class UpcallTestHelper extends NativeTestHelper {
             "--enable-preview",
             "--enable-native-access=ALL-UNNAMED",
             "-Djava.library.path=" + System.getProperty("java.library.path"),
-            "-Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=" + useSpec,
+            "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec,
             "-cp", Utils.TEST_CLASS_PATH,
             target.getName()
         ));

@@ -39,9 +39,21 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface StructLayout extends GroupLayout permits StructLayoutImpl {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     StructLayout withName(String name);
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    StructLayout withoutName();
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     StructLayout withBitAlignment(long bitAlignment);
 }

@@ -30,5 +30,6 @@ jio_vsnprintf
 JNI_CreateJavaVM
 JNI_GetCreatedJavaVMs
 JNI_GetDefaultJavaVMInitArgs
+JVM_IsForeignLinkerSupported
 JVM_FindClassFromBootLoader
 JVM_InitAgentProperties

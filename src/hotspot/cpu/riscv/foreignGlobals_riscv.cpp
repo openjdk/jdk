@@ -44,6 +44,10 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
          || _float_additional_volatile_registers.contains(reg);
 }
 
+bool ForeignGlobals::has_port() {
+  return false;
+}
+
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;

@@ -587,11 +587,12 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64-zero": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "libffi"],
             configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
-                "--enable-libffi-bundling"
+                "--with-libffi=" + input.get("libffi", "home_path"),
+                "--enable-libffi-bundling",
             ])
         },
 
@@ -742,6 +743,40 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.debug_suffix;
         profiles[debugName] = concatObjects(profiles[debugName],
             common.debug_profile_artifacts(artifactData[name]));
+    });
+
+    // Define artifact just for linux-x64-zero, which is the only one we test on
+    ["linux-x64"].forEach(function (name) {
+        var o = artifactData[name]
+        var pf = o.platform
+        var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+        var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
+        var zeroName = name + "-zero";
+        profiles[zeroName].artifacts = {
+            jdk: {
+                local: "bundles/\\(jdk.*bin." + jdk_suffix + "\\)",
+                remote: [
+                    "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-zero." + jdk_suffix,
+                ],
+                subdir: jdk_subdir,
+                exploded: "images/jdk",
+            },
+            test: {
+                    local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-zero-tests.tar.gz",
+                    ],
+                    exploded: "images/test"
+            },
+            jdk_symbols: {
+                    local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-zero-symbols.tar.gz",
+                    ],
+                    subdir: jdk_subdir,
+                    exploded: "images/jdk"
+                },
+            };
     });
 
     buildJdkDep = input.build_os + "-" + input.build_cpu + ".jdk";
@@ -1233,6 +1268,13 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             revision: "1.13.0+1.0"
+        },
+
+        libffi: {
+            organization: common.organization,
+            module: "libffi-" + input.build_platform,
+            ext: "tar.gz",
+            revision: "3.4.2+1.0"
         },
     };
 

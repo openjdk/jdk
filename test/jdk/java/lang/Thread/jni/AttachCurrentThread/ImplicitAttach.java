@@ -32,7 +32,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ImplicitAttach {
     private static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT.withBitAlignment(32);
-    private static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
+    private static final AddressLayout C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
 
     private static volatile CountDownLatch latch;
 
@@ -58,7 +58,7 @@ public class ImplicitAttach {
                 .findStatic(ImplicitAttach.class, "callback", MethodType.methodType(void.class));
         MemorySegment upcallStub = abi.upcallStub(callback,
                 FunctionDescriptor.ofVoid(),
-                SegmentScope.global());
+                Arena.global());
 
         // void start_threads(int count, void *(*f)(void *))
         SymbolLookup symbolLookup = SymbolLookup.loaderLookup();

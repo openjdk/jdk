@@ -45,8 +45,8 @@ public class TestLargeSegmentCopy {
         final int longArrayLength = Integer.MAX_VALUE / Long.BYTES + 100;
         final long[] array = new long[longArrayLength];
 
-        try (var arena = Arena.openConfined()) {
-            var segment = MemorySegment.allocateNative((long) longArrayLength * Long.BYTES, Long.SIZE, arena.scope());
+        try (var arena = Arena.ofConfined()) {
+            var segment = arena.allocate((long) longArrayLength * Long.BYTES, Long.SIZE);
             // Should not throw an exception or error
             MemorySegment.copy(segment, JAVA_LONG, 0, array, 0, longArrayLength);
             // Should not throw an exception or error

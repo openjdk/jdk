@@ -222,6 +222,10 @@ JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER
 # LeakSanitizer
 JDKOPT_SETUP_LEAK_SANITIZER
 
+# Fallback linker
+# This needs to go before 'LIB_DETERMINE_DEPENDENCIES'
+JDKOPT_SETUP_FALLBACK_LINKER
+
 ###############################################################################
 #
 # Check dependencies for external and internal libraries.

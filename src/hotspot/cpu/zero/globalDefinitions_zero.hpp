@@ -32,7 +32,7 @@
 
 #define SUPPORT_MONITOR_COUNT
 
-#ifndef FFI_GO_CLOSURES
+#ifdef __APPLE__
 #define FFI_GO_CLOSURES 0
 #endif
 

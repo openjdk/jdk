@@ -29,9 +29,10 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHeapAlignment
  */
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,7 +91,7 @@ public class TestHeapAlignment {
     static final ValueLayout.OfFloat JAVA_FLOAT_ALIGNED = ValueLayout.JAVA_FLOAT.withBitAlignment(32);
     static final ValueLayout.OfLong JAVA_LONG_ALIGNED = ValueLayout.JAVA_LONG.withBitAlignment(64);
     static final ValueLayout.OfDouble JAVA_DOUBLE_ALIGNED = ValueLayout.JAVA_DOUBLE.withBitAlignment(64);
-    static final ValueLayout.OfAddress ADDRESS_ALIGNED = ValueLayout.ADDRESS.withBitAlignment(ValueLayout.ADDRESS.bitSize());
+    static final AddressLayout ADDRESS_ALIGNED = ValueLayout.ADDRESS.withBitAlignment(ValueLayout.ADDRESS.bitSize());
 
     enum SegmentAndAlignment {
         HEAP_BYTE(MemorySegment.ofArray(new byte[8]), 1),
@@ -100,7 +101,7 @@ public class TestHeapAlignment {
         HEAP_FLOAT(MemorySegment.ofArray(new float[2]), 4),
         HEAP_LONG(MemorySegment.ofArray(new long[1]), 8),
         HEAP_DOUBLE(MemorySegment.ofArray(new double[1]), 8),
-        NATIVE(MemorySegment.allocateNative(8, SegmentScope.auto()), -1);
+        NATIVE(Arena.ofAuto().allocate(8, 1), -1);
 
         final MemorySegment segment;
         final int align;

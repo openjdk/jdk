@@ -128,9 +128,21 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      */
     SequenceLayout flatten();
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     SequenceLayout withName(String name);
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    MemoryLayout withoutName();
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     SequenceLayout withBitAlignment(long bitAlignment);
 }

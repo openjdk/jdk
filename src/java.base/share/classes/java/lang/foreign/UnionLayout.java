@@ -49,5 +49,11 @@ public sealed interface UnionLayout extends GroupLayout permits UnionLayoutImpl 
      * {@inheritDoc}
      */
     @Override
+    UnionLayout withoutName();
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     UnionLayout withBitAlignment(long bitAlignment);
 }

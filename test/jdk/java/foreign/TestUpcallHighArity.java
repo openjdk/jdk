@@ -74,7 +74,7 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
     public void testUpcall(MethodHandle downcall, MethodType upcallType,
                            FunctionDescriptor upcallDescriptor) throws Throwable {
         AtomicReference<Object[]> capturedArgs = new AtomicReference<>();
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             Object[] args = new Object[upcallType.parameterCount() + 1];
             args[0] = makeArgSaverCB(upcallDescriptor, arena, capturedArgs, -1);
             List<MemoryLayout> argLayouts = upcallDescriptor.argumentLayouts();
