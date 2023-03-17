@@ -1214,6 +1214,7 @@ public class JavaTokenizer extends UnicodeReader {
         /**
          * Constructor.
          *
+         * @param cs     comment style
          * @param reader existing reader
          * @param pos    start of meaningful content in buffer.
          * @param endPos end of meaningful content in buffer.

@@ -105,7 +105,7 @@ public class JavadocTokenizer extends JavaTokenizer {
         OffsetMap offsetMap = new OffsetMap();
 
         JavadocComment(CommentStyle cs, UnicodeReader reader, int pos, int endPos) {
-            super(cs,  reader, pos, endPos);
+            super(cs, reader, pos, endPos);
             this.sb = new StringBuilder();
         }
 

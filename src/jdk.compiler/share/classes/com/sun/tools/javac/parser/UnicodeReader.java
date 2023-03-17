@@ -113,7 +113,7 @@ public class UnicodeReader {
      * @param array   array containing contents of source.
      * @param length  length of meaningful content in buffer.
      */
-    protected  UnicodeReader(Log log, char[] array,  int length) {
+    protected  UnicodeReader(Log log, char[] array, int length) {
         this(log, array, 0, length);
     }
 
@@ -125,7 +125,7 @@ public class UnicodeReader {
       * @param pos     start of meaningful content in buffer.
       * @param endPos  end of meaningful content in buffer.
       */
-    protected  UnicodeReader(Log log, char[] array, int pos, int endPos) {
+    protected UnicodeReader(Log log, char[] array, int pos, int endPos) {
         this.buffer = array;
         this.length = endPos;
         this.position = pos;
