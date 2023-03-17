@@ -800,13 +800,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   return rc;
 }
 
-void os::free(void *memblock) {
-
-  // Special handling for NMT preinit phase before arguments are parsed
-  if (NMTPreInit::handle_free(memblock)) {
-    return;
-  }
-
+static void free_common(void *memblock) {
   if (memblock == nullptr) {
     return;
   }
@@ -819,6 +813,16 @@ void os::free(void *memblock) {
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
 
+void os::free(void *memblock) {
+
+  // Special handling for NMT preinit phase before arguments are parsed
+  if (NMTPreInit::handle_free(memblock)) {
+    return;
+  }
+
+  free_common(memblock);
+}
+
 void os::free_sized(void *memblock, size_t size) {
 
   // Special handling for NMT preinit phase before arguments are parsed
@@ -826,19 +830,7 @@ void os::free_sized(void *memblock, size_t size) {
     return;
   }
 
-  if (memblock == nullptr) {
-    assert(size == 0, "size mismatch");
-    return;
-  }
-
-  DEBUG_ONLY(break_if_ptr_caught(memblock);)
-
-  // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock);
-
-  // C23 introduced free_sized, but no libc implementations have added it yet at the time of
-  // writing.
-  ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
+  free_common(memblock);
 }
 
 void os::init_random(unsigned int initval) {

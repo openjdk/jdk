@@ -254,6 +254,48 @@ class NMTPreInit : public AllStatic {
   // Just a wrapper for os::malloc to avoid including os.hpp here.
   static void* do_os_malloc(size_t size, MEMFLAGS memflags);
 
+  static bool handle_free_common(void* p, size_t* size) {
+    if (p == nullptr) { // free(null)
+      assert(size == nullptr || *size == 0, "size mismatch");
+      return true;
+    }
+    switch (MemTracker::tracking_level()) {
+      case NMT_unknown: {
+        // pre-NMT-init:
+        // - the allocation must be in the hash map, since all allocations went through
+        //   NMTPreInit::handle_malloc()
+        // - find the old entry, unhang from map, free it
+        NMTPreInitAllocation* a = find_and_remove_in_map(p);
+        assert(size == nullptr || a->size == *size, "size mismatch");
+        NMTPreInitAllocation::do_free(a);
+        _num_frees_pre++;
+        return true;
+      }
+      break;
+      case NMT_off: {
+        // post-NMT-init, NMT *disabled*:
+        // Neither pre- nor post-init-allocation use malloc headers, therefore we can just
+        // relegate the realloc to os::realloc.
+        return false;
+      }
+      break;
+      default: {
+        // post-NMT-init, NMT *enabled*:
+        // - look up (but don't remove! lu table is read-only here.) the entry
+        // - if found, we do nothing: the lu table is readonly, so we keep the old address
+        //   in the table. We leave the block allocated to prevent the libc from returning
+        //   the same address and confusing us.
+        // - if not found, we let regular os::free() handle this pointer
+        const NMTPreInitAllocation* a = find_in_map(p);
+        if (a != nullptr) {
+          assert(size == nullptr || a->size == *size, "size mismatch");
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
 public:
 
   // Switches from NMT pre-init state to NMT post-init state;
@@ -335,83 +377,11 @@ public:
   // Called from os::free.
   // Returns true if free was handled here.
   static bool handle_free(void* p) {
-    if (p == nullptr) { // free(null)
-      return true;
-    }
-    switch (MemTracker::tracking_level()) {
-      case NMT_unknown: {
-        // pre-NMT-init:
-        // - the allocation must be in the hash map, since all allocations went through
-        //   NMTPreInit::handle_malloc()
-        // - find the old entry, unhang from map, free it
-        NMTPreInitAllocation* a = find_and_remove_in_map(p);
-        NMTPreInitAllocation::do_free(a);
-        _num_frees_pre++;
-        return true;
-      }
-      break;
-      case NMT_off: {
-        // post-NMT-init, NMT *disabled*:
-        // Neither pre- nor post-init-allocation use malloc headers, therefore we can just
-        // relegate the realloc to os::realloc.
-        return false;
-      }
-      break;
-      default: {
-        // post-NMT-init, NMT *enabled*:
-        // - look up (but don't remove! lu table is read-only here.) the entry
-        // - if found, we do nothing: the lu table is readonly, so we keep the old address
-        //   in the table. We leave the block allocated to prevent the libc from returning
-        //   the same address and confusing us.
-        // - if not found, we let regular os::free() handle this pointer
-        if (find_in_map(p) != nullptr) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return handle_free_common(p, nullptr);
   }
 
   static bool handle_free_sized(void* p, size_t size) {
-    if (p == nullptr) { // free(null)
-      assert(size == 0, "size mismatch");
-      return true;
-    }
-    switch (MemTracker::tracking_level()) {
-      case NMT_unknown: {
-        // pre-NMT-init:
-        // - the allocation must be in the hash map, since all allocations went through
-        //   NMTPreInit::handle_malloc()
-        // - find the old entry, unhang from map, free it
-        NMTPreInitAllocation* a = find_and_remove_in_map(p);
-        assert(a->size == size, "size mismatch");
-        NMTPreInitAllocation::do_free(a);
-        _num_frees_pre++;
-        return true;
-      }
-      break;
-      case NMT_off: {
-        // post-NMT-init, NMT *disabled*:
-        // Neither pre- nor post-init-allocation use malloc headers, therefore we can just
-        // relegate the realloc to os::realloc.
-        return false;
-      }
-      break;
-      default: {
-        // post-NMT-init, NMT *enabled*:
-        // - look up (but don't remove! lu table is read-only here.) the entry
-        // - if found, we do nothing: the lu table is readonly, so we keep the old address
-        //   in the table. We leave the block allocated to prevent the libc from returning
-        //   the same address and confusing us.
-        // - if not found, we let regular os::free() handle this pointer
-        const NMTPreInitAllocation* a = find_in_map(p);
-        if (a != nullptr) {
-          assert(a->size == size, "size mismatch");
-          return true;
-        }
-      }
-    }
-    return false;
+    return handle_free_common(p, &size);
   }
 
   static void print_state(outputStream* st);
