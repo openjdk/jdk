@@ -97,7 +97,7 @@ public class HsErrFileUtils {
             if (positivePatterns != null) {
                 Collections.addAll(positivePatternStack, positivePatterns);
             }
-            Pattern currentPositivePattern = positivePatternStack.peekFirst();
+            Pattern currentPositivePattern = positivePatternStack.pollFirst();
 
             while ((line = br.readLine()) != null) {
                 if (verbose) {
@@ -109,8 +109,7 @@ public class HsErrFileUtils {
                             System.out.println(line);
                         }
                         System.out.println("^^^ Matches " + currentPositivePattern + " at line " + lineNo + "^^^");
-                        positivePatternStack.remove(currentPositivePattern);
-                        currentPositivePattern = positivePatternStack.peekFirst();
+                        currentPositivePattern = positivePatternStack.pollFirst();
                         if (currentPositivePattern == null && negativePatterns == null && checkEndMarker == false) {
                             System.out.println("Lazily skipping the rest of the hs-err file...");
                             break; // Shortcut. Nothing to do.
@@ -131,8 +130,8 @@ public class HsErrFileUtils {
                 lastLine = line;
                 lineNo++;
             }
-            // Found all positive pattern?
-            if (!positivePatternStack.isEmpty()) {
+            // check if current pattern is NULL then pattern matches else throw RuntimeException
+            if (currentPositivePattern != null) {
                 throw new RuntimeException("hs-err file incomplete (first missing pattern: " + currentPositivePattern.pattern() + ")");
             }
             if (checkEndMarker && !lastLine.equals("END.")) {
