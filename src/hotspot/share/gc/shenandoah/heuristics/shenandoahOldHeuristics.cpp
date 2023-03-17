@@ -36,9 +36,6 @@ uint ShenandoahOldHeuristics::NOT_FOUND = -1U;
 
 ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* generation, ShenandoahHeuristics* trigger_heuristic) :
   ShenandoahHeuristics(generation),
-#ifdef ASSERT
-  _start_candidate(0),
-#endif
   _first_pinned_candidate(NOT_FOUND),
   _last_old_collection_candidate(0),
   _next_old_collection_candidate(0),
@@ -122,12 +119,15 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
 }
 
 void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
-  // Find the leftmost unpinned region. The region in this slot will have been
-  // added to the cset, so we can use it to hold pointers to regions that were
-  // pinned when the cset was chosen.
-  // [ r p r p p p r ]
-  //          ^
-  //          | first r to the left should be in the collection set now.
+  // Find the first unpinned region to the left of the next region that
+  // will be added to the collection set. These regions will have been
+  // added to the cset, so we can use them to hold pointers to regions
+  // that were pinned when the cset was chosen.
+  // [ r p r p p p r r ]
+  //     ^         ^ ^
+  //     |         | | pointer to next region to add to a mixed collection is here.
+  //     |         | first r to the left should be in the collection set now.
+  //     | first pinned region, we don't need to look past this
   uint write_index = NOT_FOUND;
   for (uint search = _next_old_collection_candidate - 1; search > _first_pinned_candidate; --search) {
     ShenandoahHeapRegion* region = _region_data[search]._region;
@@ -138,45 +138,40 @@ void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
     }
   }
 
+  // If we could not find an unpinned region, it means there are no slots available
+  // to move up the pinned regions. In this case, we just reset our next index in the
+  // hopes that some of these regions will become unpinned before the next mixed
+  // collection. We may want to bailout of here instead, as it should be quite
+  // rare to have so many pinned regions and may indicate something is wrong.
   if (write_index == NOT_FOUND) {
-    if (_first_pinned_candidate > 0) {
-      _next_old_collection_candidate = _first_pinned_candidate;
-    }
+    assert(_first_pinned_candidate != NOT_FOUND, "Should only be here if there are pinned regions.");
+    _next_old_collection_candidate = _first_pinned_candidate;
     return;
   }
 
   // Find pinned regions to the left and move their pointer into a slot
-  // that was pointing at a region that has been added to the cset.
-  // [ r p r p p p r ]
-  //       ^
-  //       | Write pointer is here. We know this region is already in the cset
-  //       | so we can clobber it with the next pinned region we find.
-  for (size_t search = write_index - 1; search > _first_pinned_candidate; --search) {
+  // that was pointing at a region that has been added to the cset (or was pointing
+  // to a pinned region that we've already moved up). We are done when the leftmost
+  // pinned region has been slid up.
+  // [ r p r x p p p r ]
+  //         ^       ^
+  //         |       | next region for mixed collections
+  //         | Write pointer is here. We know this region is already in the cset
+  //         | so we can clobber it with the next pinned region we find.
+  for (int32_t search = write_index - 1; search >= (int32_t)_first_pinned_candidate; --search) {
     RegionData& skipped = _region_data[search];
     if (skipped._region->is_pinned()) {
-      RegionData& added_to_cset = _region_data[write_index];
-      assert(added_to_cset._region->is_cset(), "Can only overwrite slots used by regions added to the collection set.");
-      added_to_cset._region = skipped._region;
-      added_to_cset._garbage = skipped._garbage;
+      RegionData& available_slot = _region_data[write_index];
+      available_slot._region = skipped._region;
+      available_slot._garbage = skipped._garbage;
       --write_index;
     }
   }
 
-  // Everything left should already be in the cset
-  // [ r x p p p p r ]
-  //       ^
-  //       | next pointer points at the first region which was not added
-  //       | to the collection set.
-#ifdef ASSERT
-  for (size_t check = write_index - 1; check > _start_candidate; --check) {
-    ShenandoahHeapRegion* region = _region_data[check]._region;
-    assert(region->is_cset(), "All regions here should be in the collection set.");
-  }
-  _start_candidate = write_index;
-#endif
-
-  // Update to read from the leftmost pinned region.
-  _next_old_collection_candidate = write_index;
+  // Update to read from the leftmost pinned region. Plus one here because we decremented
+  // the write index to hold the next found pinned region. We are just moving it back now
+  // to point to the first pinned region.
+  _next_old_collection_candidate = write_index + 1;
 }
 
 // Both arguments are don't cares for old-gen collections

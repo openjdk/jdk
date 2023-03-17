@@ -48,10 +48,6 @@ private:
   // have yet to be added to a mixed collection. There is also some special
   // handling for pinned regions, described further below.
 
-  // This points to the first candidate of the current mixed collection. This
-  // is only used for an assertion when handling pinned regions.
-  debug_only(uint _start_candidate);
-
   // Pinned regions may not be included in the collection set. Any old regions
   // which were pinned at the time when old regions were added to the mixed
   // collection will have been skipped. These regions are still contain garbage,
