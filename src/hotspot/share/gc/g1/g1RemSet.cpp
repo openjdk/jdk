@@ -480,107 +480,6 @@ void G1RemSet::initialize(uint max_reserved_regions) {
   _scan_state->initialize(max_reserved_regions);
 }
 
-// Helper class to scan and detect ranges of cards that need to be scanned on the
-// card table.
-class G1CardTableScanner : public StackObj {
-public:
-  typedef CardTable::CardValue CardValue;
-
-private:
-  CardValue* const _base_addr;
-
-  CardValue* _cur_addr;
-  CardValue* const _end_addr;
-
-  static const size_t ToScanMask = G1CardTable::g1_card_already_scanned;
-  static const size_t ExpandedToScanMask = G1CardTable::WordAlreadyScanned;
-
-  bool cur_addr_aligned() const {
-    return ((uintptr_t)_cur_addr) % sizeof(size_t) == 0;
-  }
-
-  bool cur_card_is_dirty() const {
-    CardValue value = *_cur_addr;
-    return (value & ToScanMask) == 0;
-  }
-
-  bool cur_word_of_cards_contains_any_dirty_card() const {
-    assert(cur_addr_aligned(), "Current address should be aligned");
-    size_t const value = *(size_t*)_cur_addr;
-    return (~value & ExpandedToScanMask) != 0;
-  }
-
-  bool cur_word_of_cards_all_dirty_cards() const {
-    size_t const value = *(size_t*)_cur_addr;
-    return value == G1CardTable::WordAllDirty;
-  }
-
-  size_t get_and_advance_pos() {
-    _cur_addr++;
-    return pointer_delta(_cur_addr, _base_addr, sizeof(CardValue)) - 1;
-  }
-
-public:
-  G1CardTableScanner(CardValue* start_card, size_t size) :
-    _base_addr(start_card),
-    _cur_addr(start_card),
-    _end_addr(start_card + size) {
-
-    assert(is_aligned(start_card, sizeof(size_t)), "Unaligned start addr " PTR_FORMAT, p2i(start_card));
-    assert(is_aligned(size, sizeof(size_t)), "Unaligned size " SIZE_FORMAT, size);
-  }
-
-  size_t find_next_dirty() {
-    while (!cur_addr_aligned()) {
-      if (cur_card_is_dirty()) {
-        return get_and_advance_pos();
-      }
-      _cur_addr++;
-    }
-
-    assert(cur_addr_aligned(), "Current address should be aligned now.");
-    while (_cur_addr != _end_addr) {
-      if (cur_word_of_cards_contains_any_dirty_card()) {
-        for (size_t i = 0; i < sizeof(size_t); i++) {
-          if (cur_card_is_dirty()) {
-            return get_and_advance_pos();
-          }
-          _cur_addr++;
-        }
-        assert(false, "Should not reach here given we detected a dirty card in the word.");
-      }
-      _cur_addr += sizeof(size_t);
-    }
-    return get_and_advance_pos();
-  }
-
-  size_t find_next_non_dirty() {
-    assert(_cur_addr <= _end_addr, "Not allowed to search for marks after area.");
-
-    while (!cur_addr_aligned()) {
-      if (!cur_card_is_dirty()) {
-        return get_and_advance_pos();
-      }
-      _cur_addr++;
-    }
-
-    assert(cur_addr_aligned(), "Current address should be aligned now.");
-    while (_cur_addr != _end_addr) {
-      if (!cur_word_of_cards_all_dirty_cards()) {
-        for (size_t i = 0; i < sizeof(size_t); i++) {
-          if (!cur_card_is_dirty()) {
-            return get_and_advance_pos();
-          }
-          _cur_addr++;
-        }
-        assert(false, "Should not reach here given we detected a non-dirty card in the word.");
-      }
-      _cur_addr += sizeof(size_t);
-    }
-    return get_and_advance_pos();
-  }
-};
-
 // Helper class to claim dirty chunks within the card table.
 class G1CardTableChunkClaimer {
   G1RemSetScanState* _scan_state;
@@ -613,9 +512,10 @@ public:
 
 // Scans a heap region for dirty cards.
 class G1ScanHRForRegionClosure : public HeapRegionClosure {
+  using CardValue = CardTable::CardValue;
+
   G1CollectedHeap* _g1h;
   G1CardTable* _ct;
-  G1BlockOffsetTable* _bot;
 
   G1ParScanThreadState* _pss;
 
@@ -636,7 +536,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
   // The address to which this thread already scanned (walked the heap) up to during
   // card scanning (exclusive).
   HeapWord* _scanned_to;
-  G1CardTable::CardValue _scanned_card_value;
+  CardValue _scanned_card_value;
 
   HeapWord* scan_memregion(uint region_idx_for_card, MemRegion mr) {
     HeapRegion* const card_region = _g1h->region_at(region_idx_for_card);
@@ -650,8 +550,8 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     return scanned_to;
   }
 
-  void do_claimed_block(uint const region_idx_for_card, size_t const first_card, size_t const num_cards) {
-    HeapWord* const card_start = _bot->address_for_index_raw(first_card);
+  void do_claimed_block(uint const region_idx_for_card, CardValue* first_card, size_t const num_cards) {
+    HeapWord* const card_start = _ct->addr_for(first_card);
 #ifdef ASSERT
     HeapRegion* hr = _g1h->region_at_or_null(region_idx_for_card);
     assert(hr == NULL || hr->is_in_reserved(card_start),
@@ -672,11 +572,101 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     _cards_scanned += num_cards;
   }
 
-  ALWAYSINLINE void do_card_block(uint const region_idx, size_t const first_card, size_t const num_cards) {
-    _ct->change_dirty_cards_to(first_card, num_cards, _scanned_card_value);
-    do_claimed_block(region_idx, first_card, num_cards);
-    _blocks_scanned++;
-  }
+  class ClaimedChunk {
+    using Word = size_t;
+
+    CardValue* const _start_card;
+    CardValue* const _end_card;
+
+    static const size_t ExpandedToScanMask = G1CardTable::WordAlreadyScanned;
+    static const size_t ToScanMask = G1CardTable::g1_card_already_scanned;
+
+    static bool is_card_dirty(const CardValue* const card) {
+      return (*card & ToScanMask) == 0;
+    }
+
+    static bool is_word_aligned(const void* const addr) {
+      return ((uintptr_t)addr) % sizeof(Word) == 0;
+    }
+
+    CardValue* find_first_dirty_card(CardValue* i_card) const {
+      while (!is_word_aligned(i_card)) {
+        if (is_card_dirty(i_card)) {
+          return i_card;
+        }
+        i_card++;
+      }
+
+      for (/* empty */; i_card < _end_card; i_card += sizeof(Word)) {
+        Word word_value = *reinterpret_cast<Word*>(i_card);
+        bool has_dirty_cards_in_word = (~word_value & ExpandedToScanMask) != 0;
+
+        if (has_dirty_cards_in_word) {
+          for (uint i = 0; i < sizeof(Word); ++i) {
+            if (is_card_dirty(i_card)) {
+              return i_card;
+            }
+            i_card++;
+          }
+          assert(false, "should have early-returned");
+        }
+      }
+
+      return _end_card;
+    }
+
+    CardValue* find_first_non_dirty_card(CardValue* i_card) const {
+      while (!is_word_aligned(i_card)) {
+        if (!is_card_dirty(i_card)) {
+          return i_card;
+        }
+        i_card++;
+      }
+
+      for (/* empty */; i_card < _end_card; i_card += sizeof(Word)) {
+        Word word_value = *reinterpret_cast<Word*>(i_card);
+        bool all_cards_dirty = (word_value == G1CardTable::WordAllDirty);
+
+        if (!all_cards_dirty) {
+          for (uint i = 0; i < sizeof(Word); ++i) {
+            if (!is_card_dirty(i_card)) {
+              return i_card;
+            }
+            i_card++;
+          }
+          assert(false, "should have early-returned");
+        }
+      }
+
+      return _end_card;
+    }
+  public:
+    ClaimedChunk(CardValue* const start_card, CardValue* const end_card) :
+      _start_card(start_card),
+      _end_card(end_card) {
+        assert(is_word_aligned(start_card), "precondition");
+        assert(is_word_aligned(end_card), "precondition");
+      }
+
+    template<typename Func>
+    void on_dirty_cards(Func&& f) {
+      for (CardValue* cur_card = _start_card; cur_card < _end_card; /* empty */) {
+        CardValue* dirty_l = find_first_dirty_card(cur_card);
+        CardValue* dirty_r = find_first_non_dirty_card(dirty_l);
+
+        assert(dirty_l <= dirty_r, "inv");
+
+        if (dirty_l == dirty_r) {
+          assert(dirty_r == _end_card, "finished the entire chunk");
+          return;
+        }
+
+        f(dirty_l, dirty_r);
+
+        cur_card = dirty_r + 1;
+      }
+    }
+  };
 
   void scan_heap_roots(HeapRegion* r) {
     uint const region_idx = r->hrm_index();
@@ -692,32 +682,20 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     _scanned_to = NULL;
 
     while (claim.has_next()) {
-      size_t const region_card_base_idx = ((size_t)region_idx << HeapRegion::LogCardsPerRegion) + claim.value();
-      CardTable::CardValue* const base_addr = _ct->byte_for_index(region_card_base_idx);
-
-      G1CardTableScanner scan(base_addr, claim.size());
-
-      size_t first_scan_idx = scan.find_next_dirty();
-      while (first_scan_idx != claim.size()) {
-#ifdef ASSERT
-        {
-          CardTable::CardValue value = *_ct->byte_for_index(region_card_base_idx + first_scan_idx);
-          assert(value == CardTable::dirty_card_val(), "is %d at region %u idx " SIZE_FORMAT, value, region_idx, first_scan_idx);
-        }
-#endif
-
-        size_t const last_scan_idx = scan.find_next_non_dirty();
-        size_t const len = last_scan_idx - first_scan_idx;
-
-        do_card_block(region_idx, region_card_base_idx + first_scan_idx, len);
-
-        if (last_scan_idx == claim.size()) {
-          break;
-        }
-
-        first_scan_idx = scan.find_next_dirty();
-      }
       _chunks_claimed++;
+
+      size_t const region_card_base_idx = ((size_t)region_idx << HeapRegion::LogCardsPerRegion) + claim.value();
+
+      CardValue* const start_card = _ct->byte_for_index(region_card_base_idx);
+      CardValue* const end_card = start_card + claim.size();
+
+      ClaimedChunk chunk{start_card, end_card};
+      chunk.on_dirty_cards([&] (CardValue* dirty_l, CardValue* dirty_r) {
+                             _ct->change_dirty_cards_to(dirty_l, dirty_r, _scanned_card_value);
+                             size_t num_cards = dirty_r - dirty_l;
+                             do_claimed_block(region_idx, dirty_l, num_cards);
+                             _blocks_scanned++;
+                           });
     }
   }
 
@@ -729,7 +707,6 @@ public:
                            bool remember_already_scanned_cards) :
     _g1h(G1CollectedHeap::heap()),
     _ct(_g1h->card_table()),
-    _bot(_g1h->bot()),
     _pss(pss),
     _scan_state(scan_state),
     _phase(phase),
