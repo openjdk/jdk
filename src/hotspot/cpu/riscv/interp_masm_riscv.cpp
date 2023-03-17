@@ -177,7 +177,14 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
 void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  lhu(reg, Address(xbcp, bcp_offset));
+  if (AvoidUnalignedAccesses && (bcp_offset % 2)) { //-7k misalligned accesses on java -version
+    lbu(t1, Address(xbcp, bcp_offset));
+    lbu(reg, Address(xbcp, bcp_offset + 1));
+    slli(reg, reg, 8);
+    add(reg, t1, reg);
+  } else {
+    lhu(reg, Address(xbcp, bcp_offset));
+  }
   revb_h(reg, reg);
 }
 
@@ -195,9 +202,33 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
                                                        size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    load_unsigned_short(index, Address(xbcp, bcp_offset));
+    if (AvoidUnalignedAccesses)       // -87k misalligned accesses on java -version
+    {
+      assert(index != t1, "must use different register");
+      load_unsigned_byte(t1, Address(xbcp, bcp_offset));
+      load_unsigned_byte(index, Address(xbcp, bcp_offset+1));
+      slli(index, index, 8);
+      add(index, t1, index);
+    } else {
+      load_unsigned_short(index, Address(xbcp, bcp_offset));
+    }
   } else if (index_size == sizeof(u4)) {
-    lwu(index, Address(xbcp, bcp_offset));
+    if (AvoidUnalignedAccesses)
+    {
+      assert(index != t1, "must use different register");
+      load_unsigned_byte(index, Address(xbcp, bcp_offset));
+      load_unsigned_byte(t1, Address(xbcp, bcp_offset+1));
+      slli(t1, t1, 8);
+      add(index, index, t1);
+      load_unsigned_byte(t1, Address(xbcp, bcp_offset+2));
+      slli(t1, t1, 16);
+      add(index, index, t1);
+      load_unsigned_byte(t1, Address(xbcp, bcp_offset+3));
+      slli(t1, t1, 24);
+      add(index, index, t1);
+    } else {
+      lwu(index, Address(xbcp, bcp_offset));
+    }
     // Check if the secondary index definition is still ~x, otherwise
     // we have to change the following assembler code to calculate the
     // plain index.

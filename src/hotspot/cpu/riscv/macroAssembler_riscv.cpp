@@ -1415,7 +1415,7 @@ int MacroAssembler::patch_imm_in_li32(address branch, int32_t target) {
 static long get_offset_of_jal(address insn_addr) {
   assert_cond(insn_addr != NULL);
   long offset = 0;
-  unsigned insn = *(unsigned*)insn_addr;
+  unsigned insn = Assembler::ld_instr(insn_addr);
   long val = (long)Assembler::sextract(insn, 31, 12);
   offset |= ((val >> 19) & 0x1) << 20;
   offset |= (val & 0xff) << 12;
@@ -1428,7 +1428,7 @@ static long get_offset_of_jal(address insn_addr) {
 static long get_offset_of_conditional_branch(address insn_addr) {
   long offset = 0;
   assert_cond(insn_addr != NULL);
-  unsigned insn = *(unsigned*)insn_addr;
+  unsigned insn = Assembler::ld_instr(insn_addr);
   offset = (long)Assembler::sextract(insn, 31, 31);
   offset = (offset << 12) | (((long)(Assembler::sextract(insn, 7, 7) & 0x1)) << 11);
   offset = offset | (((long)(Assembler::sextract(insn, 30, 25) & 0x3f)) << 5);
@@ -1440,35 +1440,35 @@ static long get_offset_of_conditional_branch(address insn_addr) {
 static long get_offset_of_pc_relative(address insn_addr) {
   long offset = 0;
   assert_cond(insn_addr != NULL);
-  offset = ((long)(Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12))) << 12;                                  // Auipc.
-  offset += ((long)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20));                                         // Addi/Jalr/Load.
+  offset = ((long)(Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12))) << 12;                               // Auipc.
+  offset += ((long)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20));                                  // Addi/Jalr/Load.
   offset = (offset << 32) >> 32;
   return offset;
 }
 
 static address get_target_of_movptr(address insn_addr) {
   assert_cond(insn_addr != NULL);
-  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 29;    // Lui.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20)) << 17;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[3], 31, 20)) << 6;                         // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[5], 31, 20));                              // Addi/Jalr/Load.
+  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 29; // Lui.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 17;                 // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 12), 31, 20)) << 6;                 // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 20), 31, 20));                      // Addi/Jalr/Load.
   return (address) target_address;
 }
 
 static address get_target_of_li64(address insn_addr) {
   assert_cond(insn_addr != NULL);
-  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 44;    // Lui.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20)) << 32;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[3], 31, 20)) << 20;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[5], 31, 20)) << 8;                         // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[7], 31, 20));                              // Addi.
+  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 44; // Lui.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 32;                 // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 12), 31, 20)) << 20;                // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 20), 31, 20)) << 8;                 // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 28), 31, 20));                      // Addi.
   return (address)target_address;
 }
 
 address MacroAssembler::get_target_of_li32(address insn_addr) {
   assert_cond(insn_addr != NULL);
-  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 12;    // Lui.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20));                              // Addiw.
+  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12; // Lui.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20));                       // Addiw.
   return (address)target_address;
 }
 
@@ -1493,7 +1493,7 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
   } else {
 #ifdef ASSERT
     tty->print_cr("pd_patch_instruction_size: instruction 0x%x at " INTPTR_FORMAT " could not be patched!\n",
-                  *(unsigned*)branch, p2i(branch));
+                  Assembler::ld_instr(branch), p2i(branch));
     Disassembler::decode(branch - 16, branch + 16);
 #endif
     ShouldNotReachHere();
