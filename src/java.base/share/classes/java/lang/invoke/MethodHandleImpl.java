@@ -1266,25 +1266,31 @@ abstract class MethodHandleImpl {
             //     }
             // }
             // }
-            return Classfile.build(ClassDesc.of("InjectedInvoker"), clb -> {
-                clb.withFlags(Classfile.ACC_PRIVATE | Classfile.ACC_SUPER);
-                clb.withVersion(CLASSFILE_VERSION, 0);
-                clb.withMethod("invoke_V",  MethodTypeDesc.ofDescriptor("(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;"), Classfile.ACC_STATIC, mb -> mb.withFlags(AccessFlag.STATIC).withCode(cob -> {
-                    cob.loadInstruction(TypeKind.ReferenceType, 0);
-                    cob.loadInstruction(TypeKind.ReferenceType, 1);
-                    cob.invokeInstruction(Opcode.INVOKEVIRTUAL, ConstantDescs.CD_MethodHandle, "invokeExact",
-                                       MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/lang/Object;"), false);
-                    cob.returnInstruction(TypeKind.ReferenceType);
-                }));
-                clb.withMethod("reflect_invoke_V",  MethodTypeDesc.ofDescriptor("(Ljava/lang/invoke/MethodHandle;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"), Classfile.ACC_STATIC, mb -> mb.withFlags(AccessFlag.STATIC).withCode(cob -> {
-                    cob.loadInstruction(TypeKind.ReferenceType, 0);
-                    cob.loadInstruction(TypeKind.ReferenceType, 1);
-                    cob.loadInstruction(TypeKind.ReferenceType, 2);
-                    cob.invokeInstruction(Opcode.INVOKEVIRTUAL, ConstantDescs.CD_MethodHandle, "invokeExact",
-                                       MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"), false);
-                    cob.returnInstruction(TypeKind.ReferenceType);
-                }));
-            });
+            return Classfile.build(ClassDesc.of("InjectedInvoker"), clb -> clb
+                    .withFlags(Classfile.ACC_PRIVATE | Classfile.ACC_SUPER)
+                    .withVersion(CLASSFILE_VERSION, 0)
+                    .withMethodBody(
+                        "invoke_V",
+                        MethodTypeDesc.ofDescriptor(
+                                "(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;"),
+                        Classfile.ACC_STATIC,
+                        cob -> cob.aload(0)
+                                  .aload(1)
+                                  .invokevirtual(ConstantDescs.CD_MethodHandle, "invokeExact",
+                                       MethodTypeDesc.ofDescriptor("([Ljava/lang/Object;)Ljava/lang/Object;"))
+                                  .areturn())
+                    .withMethodBody(
+                        "reflect_invoke_V",
+                        MethodTypeDesc.ofDescriptor(
+                                "(Ljava/lang/invoke/MethodHandle;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"),
+                        Classfile.ACC_STATIC,
+                        cob -> cob.aload(0)
+                                  .aload(1)
+                                  .aload(2)
+                                  .invokevirtual(ConstantDescs.CD_MethodHandle, "invokeExact",
+                                       MethodTypeDesc.ofDescriptor(
+                                               "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"))
+                                  .areturn()));
         }
     }
 

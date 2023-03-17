@@ -374,46 +374,34 @@ class InvokerBytecodeGenerator {
 
         for (ClassData p : classData) {
             // add the static field
-            clb.withField(p.name, p.desc, new Consumer<FieldBuilder>() {
-                @Override
-                public void accept(FieldBuilder fb) {
-                    fb.withFlags(ACC_STATIC|ACC_FINAL);
-                }
-            });
+            clb.withField(p.name, p.desc, ACC_STATIC|ACC_FINAL);
         }
 
-        clb.withMethod("<clinit>", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<MethodBuilder>() {
+        clb.withMethodBody("<clinit>", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<CodeBuilder>() {
             @Override
-            public void accept(MethodBuilder mb) {
-                mb.withFlags(ACC_STATIC);
-                mb.withCode(new Consumer<CodeBuilder>() {
-                    @Override
-                    public void accept(CodeBuilder cob) {
-                        ClassDesc classDesc = ClassDesc.ofInternalName(className);
-                        cob.constantInstruction(classDesc);
-                        cob.invokeInstruction(Opcode.INVOKESTATIC, CD_MethodHandles,
-                                "classData", MethodTypeDesc.of(CD_Object, CD_Class), false);
-                        if (classData.size() == 1) {
-                            ClassData p = classData.get(0);
-                            cob.typeCheckInstruction(Opcode.CHECKCAST, p.desc);
-                            cob.fieldInstruction(Opcode.PUTSTATIC, classDesc, p.name, p.desc);
-                        } else {
-                            cob.typeCheckInstruction(Opcode.CHECKCAST, CD_List);
-                            cob.storeInstruction(TypeKind.ReferenceType, 0);
-                            int index = 0;
-                            for (ClassData p : classData) {
-                                // initialize the static field
-                                cob.loadInstruction(TypeKind.ReferenceType, 0);
-                                cob.constantInstruction(index++);
-                                cob.invokeInstruction(Opcode.INVOKEINTERFACE, CD_List,
-                                        "get", MethodTypeDesc.of(CD_Object, CD_int), true);
-                                cob.typeCheckInstruction(Opcode.CHECKCAST, p.desc);
-                                cob.fieldInstruction(Opcode.PUTSTATIC, classDesc, p.name, p.desc);
-                            }
-                        }
-                        cob.returnInstruction(TypeKind.VoidType);
+            public void accept(CodeBuilder cob) {
+                ClassDesc classDesc = ClassDesc.ofInternalName(className);
+                cob.constantInstruction(classDesc)
+                   .invokestatic(CD_MethodHandles, "classData", MethodTypeDesc.of(CD_Object, CD_Class));
+                if (classData.size() == 1) {
+                    ClassData p = classData.get(0);
+                    cob.checkcast(p.desc)
+                       .putstatic(classDesc, p.name, p.desc);
+                } else {
+                    cob.checkcast(CD_List)
+                       .astore(0);
+                    int index = 0;
+                    for (ClassData p : classData) {
+                        // initialize the static field
+                        cob.aload(0)
+                           .constantInstruction(index++)
+                           .invokeinterface(CD_List, "get", MethodTypeDesc.of(CD_Object, CD_int))
+                           .checkcast(p.desc)
+                           .putstatic(classDesc, p.name, p.desc);
                     }
-                }); }
+                }
+                cob.return_();
+            }
         });
     }
 
@@ -445,7 +433,7 @@ class InvokerBytecodeGenerator {
         ClassDesc owner = ClassDesc.ofInternalName("java/lang/" + wrapper.wrapperType().getSimpleName());
         String name  = "valueOf";
         MethodTypeDesc desc  = MethodTypeDesc.of(owner, ClassDesc.ofDescriptor(wrapper.basicTypeString()));
-        cob.invokeInstruction(Opcode.INVOKESTATIC, owner, name, desc, false);
+        cob.invokestatic(owner, name, desc);
     }
 
     /**
@@ -458,7 +446,7 @@ class InvokerBytecodeGenerator {
         String name  = wrapper.primitiveSimpleName() + "Value";
         MethodTypeDesc desc  = MethodTypeDesc.of(ClassDesc.ofDescriptor(wrapper.basicTypeString()));
         emitReferenceCast(cob, wrapper.wrapperType(), null);
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, owner, name, desc, false);
+        cob.invokevirtual(owner, name, desc);
     }
 
     /**
@@ -515,18 +503,18 @@ class InvokerBytecodeGenerator {
         }
         if (isStaticallyNameable(cls)) {
             ClassDesc sig = getInternalName(cls);
-            cob.typeCheckInstruction(Opcode.CHECKCAST, sig);
+            cob.checkcast(sig);
         } else {
-            cob.fieldInstruction(Opcode.GETSTATIC, classDesc, classData(cls), CD_Class);
-            cob.stackInstruction(Opcode.SWAP);
-            cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_Class, "cast", LL_SIG, false);
+            cob.getstatic(classDesc, classData(cls), CD_Class)
+               .swap()
+               .invokevirtual(CD_Class, "cast", LL_SIG);
             if (Object[].class.isAssignableFrom(cls))
-                cob.typeCheckInstruction(Opcode.CHECKCAST, OBJARY);
+                cob.checkcast(OBJARY);
             else if (PROFILE_LEVEL > 0)
-                cob.typeCheckInstruction(Opcode.CHECKCAST, CD_Object);
+                cob.checkcast(CD_Object);
         }
         if (writeBack != null) {
-            cob.stackInstruction(Opcode.DUP);
+            cob.dup();
             emitAstoreInsn(cob, writeBack.index());
         }
     }
@@ -626,9 +614,9 @@ class InvokerBytecodeGenerator {
     /** Generates code to check that actual receiver and LambdaForm matches */
     private boolean checkActualReceiver(CodeBuilder cob) {
         // Expects MethodHandle on the stack and actual receiver MethodHandle in slot #0
-        cob.stackInstruction(Opcode.DUP);
-        cob.loadInstruction(TypeKind.ReferenceType, localsMap[0]);
-        cob.invokeInstruction(Opcode.INVOKESTATIC, MHI, "assertSame", LLV_SIG, false);
+        cob.dup()
+           .aload(localsMap[0])
+           .invokestatic(MHI, "assertSame", LLV_SIG);
         return true;
     }
 
@@ -704,10 +692,10 @@ class InvokerBytecodeGenerator {
                             // receiver MethodHandle (at slot #0) with an embedded constant and use it instead.
                             // It enables more efficient code generation in some situations, since embedded constants
                             // are compile-time constants for JIT compiler.
-                            cob.fieldInstruction(Opcode.GETSTATIC, classDesc, classData(lambdaForm.customized), CD_MethodHandle);
-                            cob.typeCheckInstruction(Opcode.CHECKCAST, CD_MethodHandle);
+                            cob.getstatic(classDesc, classData(lambdaForm.customized), CD_MethodHandle)
+                               .checkcast(CD_MethodHandle);
                             assert(checkActualReceiver(cob)); // expects MethodHandle on top of the stack
-                            cob.storeInstruction(TypeKind.ReferenceType, localsMap[0]);
+                            cob.astore(localsMap[0]);
                         }
 
                         // iterate over the form's names, generating bytecode instructions for each
@@ -809,7 +797,7 @@ class InvokerBytecodeGenerator {
             Wrapper w = Wrapper.forPrimitiveType(elementType);
             cob.arrayLoadInstruction(TypeKind.fromDescriptor(w.basicTypeString()));
         } else {
-            cob.arrayLoadInstruction(TypeKind.ReferenceType);
+            cob.aaload();
         }
     }
 
@@ -821,7 +809,7 @@ class InvokerBytecodeGenerator {
             Wrapper w = Wrapper.forPrimitiveType(elementType);
             cob.arrayStoreInstruction(TypeKind.fromDescriptor(w.basicTypeString()));
         } else {
-            cob.arrayStoreInstruction(TypeKind.ReferenceType);
+            cob.aastore();
         }
     }
 
@@ -829,7 +817,7 @@ class InvokerBytecodeGenerator {
         Class<?> elementType = name.function.methodType().parameterType(0).getComponentType();
         assert elementType != null;
         emitPushArguments(cob, name, 0);
-        cob.operatorInstruction(Opcode.ARRAYLENGTH);
+        cob.arraylength();
     }
 
     /**
@@ -841,14 +829,14 @@ class InvokerBytecodeGenerator {
             // push receiver
             MethodHandle target = name.function.resolvedHandle();
             assert(target != null) : name.exprString();
-            cob.fieldInstruction(Opcode.GETSTATIC, classDesc, classData(target), CD_MethodHandle);
+            cob.getstatic(classDesc, classData(target), CD_MethodHandle);
             emitReferenceCast(cob, MethodHandle.class, target);
         } else {
             // load receiver
             emitAloadInsn(cob, 0);
             emitReferenceCast(cob, MethodHandle.class, null);
-            cob.fieldInstruction(Opcode.GETFIELD, CD_MethodHandle, "form", LF);
-            cob.fieldInstruction(Opcode.GETFIELD, LF, "names", LFN);
+            cob.getfield(CD_MethodHandle, "form", LF)
+               .getfield(LF, "names", LFN);
             // TODO more to come
         }
 
@@ -857,7 +845,7 @@ class InvokerBytecodeGenerator {
 
         // invocation
         MethodType type = name.function.methodType();
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(type.basicType().toMethodDescriptorString()), false);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(type.basicType().toMethodDescriptorString()));
     }
 
     private static final Class<?>[] STATICALLY_INVOCABLE_PACKAGES = {
@@ -1025,7 +1013,7 @@ class InvokerBytecodeGenerator {
         emitPushArgument(cob, selectAlternativeName, 0);
 
         // if_icmpne L_fallback
-        cob.branchInstruction(Opcode.IFEQ, L_fallback);
+        cob.ifeq(L_fallback);
 
         // invoke selectAlternativeName.arguments[1]
         Class<?>[] preForkClasses = localClasses.clone();
@@ -1034,7 +1022,7 @@ class InvokerBytecodeGenerator {
         emitStaticInvoke(cob, invokeBasicName);
 
         // goto L_done
-        cob.branchInstruction(Opcode.GOTO_W, L_done);
+        cob.goto_w(L_done);
 
         // L_fallback:
         cob.labelBinding(L_fallback);
@@ -1095,30 +1083,30 @@ class InvokerBytecodeGenerator {
         // load target
         emitPushArgument(cob, invoker, 0);
         emitPushArguments(cob, args, 1); // skip 1st argument: method handle
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(type.basicType().toMethodDescriptorString()), false);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(type.basicType().toMethodDescriptorString()));
         cob.labelBinding(L_endBlock);
-        cob.branchInstruction(Opcode.GOTO_W, L_done);
+        cob.goto_w(L_done);
 
         // Exceptional case
         cob.labelBinding(L_handler);
 
         // Check exception's type
-        cob.stackInstruction(Opcode.DUP);
+        cob.dup();
         // load exception class
         emitPushArgument(cob, invoker, 1);
-        cob.stackInstruction(Opcode.SWAP);
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_Class, "isInstance", MethodTypeDesc.of(CD_boolean, CD_Object), false);
+        cob.swap();
+        cob.invokevirtual(CD_Class, "isInstance", MethodTypeDesc.of(CD_boolean, CD_Object));
         Label L_rethrow = cob.newLabel();
         cob.branchInstruction(Opcode.IFEQ, L_rethrow);
 
         // Invoke catcher
         // load catcher
         emitPushArgument(cob, invoker, 2);
-        cob.stackInstruction(Opcode.SWAP);
+        cob.swap();
         emitPushArguments(cob, args, 1); // skip 1st argument: method handle
         MethodType catcherType = type.insertParameterTypes(0, Throwable.class);
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(catcherType.basicType().toMethodDescriptorString()), false);
-        cob.branchInstruction(Opcode.GOTO_W, L_done);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(catcherType.basicType().toMethodDescriptorString()));
+        cob.goto_w(L_done);
 
         cob.labelBinding(L_rethrow);
         cob.throwInstruction();
@@ -1218,7 +1206,7 @@ class InvokerBytecodeGenerator {
         cob.labelBinding(lFrom);
         emitPushArgument(cob, invoker, 0); // load target
         emitPushArguments(cob, args, 1); // load args (skip 0: method handle)
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(type.basicType().toMethodDescriptorString()), false);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(type.basicType().toMethodDescriptorString()));
         cob.labelBinding(lTo);
 
         // FINALLY_NORMAL:
@@ -1232,21 +1220,21 @@ class InvokerBytecodeGenerator {
             emitLoadInsn(cob, basicReturnType, index);
         }
         emitPushArguments(cob, args, 1); // load args (skip 0: method handle)
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", cleanupDesc, false);
-        cob.branchInstruction(Opcode.GOTO_W, lDone);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", cleanupDesc);
+        cob.goto_w(lDone);
 
         // CATCH:
         cob.labelBinding(lCatch);
-        cob.stackInstruction(Opcode.DUP);
+        cob.dup();
 
         // FINALLY_EXCEPTIONAL:
         emitPushArgument(cob, invoker, 1); // load cleanup
-        cob.stackInstruction(Opcode.SWAP);
+        cob.swap();
         if (isNonVoid) {
             emitZero(cob, BasicType.basicType(returnType)); // load default for result
         }
         emitPushArguments(cob, args, 1); // load args (skip 0: method handle)
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", cleanupDesc, false);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", cleanupDesc);
         if (isNonVoid) {
             emitPopInsn(cob, basicReturnType);
         }
@@ -1288,7 +1276,7 @@ class InvokerBytecodeGenerator {
         MethodTypeDesc caseDescriptor = MethodTypeDesc.ofDescriptor(caseType.basicType().toMethodDescriptorString());
 
         emitPushArgument(cob, invoker, 2); // push cases
-        cob.fieldInstruction(Opcode.GETFIELD, ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl$CasesHolder"), "cases",
+        cob.getfield(ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl$CasesHolder"), "cases",
                 CD_MethodHandle.arrayType());
         int casesLocal = extendLocalsMap(new Class<?>[] { MethodHandle[].class });
         emitStoreInsn(cob, L_TYPE, casesLocal);
@@ -1306,8 +1294,8 @@ class InvokerBytecodeGenerator {
         cob.labelBinding(defaultLabel);
         emitPushArgument(cob, invoker, 1); // push default handle
         emitPushArguments(cob, args, 1); // again, skip collector
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", caseDescriptor, false);
-        cob.branchInstruction(Opcode.GOTO, endLabel);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", caseDescriptor);
+        cob.goto_(endLabel);
 
         for (int i = 0; i < numCases; i++) {
             cob.labelBinding(cases.get(i).target());
@@ -1318,9 +1306,9 @@ class InvokerBytecodeGenerator {
 
             // invoke it:
             emitPushArguments(cob, args, 1); // again, skip collector
-            cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", caseDescriptor, false);
+            cob.invokevirtual(CD_MethodHandle, "invokeBasic", caseDescriptor);
 
-            cob.branchInstruction(Opcode.GOTO, endLabel);
+            cob.goto_(endLabel);
         }
 
         cob.labelBinding(endLabel);
@@ -1454,7 +1442,7 @@ class InvokerBytecodeGenerator {
 
         // PREINIT:
         emitPushArgument(cob, MethodHandleImpl.LoopClauses.class, invoker.arguments[1]);
-        cob.fieldInstruction(Opcode.GETFIELD, LOOP_CLAUSES, "clauses", MHARY2);
+        cob.getfield(LOOP_CLAUSES, "clauses", MHARY2);
         emitAstoreInsn(cob, clauseDataIndex);
 
         // INIT:
@@ -1488,18 +1476,18 @@ class InvokerBytecodeGenerator {
             // invoke loop predicate
             emitLoopHandleInvoke(cob, invoker, preds, c, args, true, predType, loopLocalStateTypes, clauseDataIndex,
                     firstLoopStateIndex);
-            cob.branchInstruction(Opcode.IFNE, lNext);
+            cob.ifne(lNext);
 
             // invoke fini
             emitLoopHandleInvoke(cob, invoker, finis, c, args, true, finiType, loopLocalStateTypes, clauseDataIndex,
                     firstLoopStateIndex);
-            cob.branchInstruction(Opcode.GOTO_W, lDone);
+            cob.goto_w(lDone);
 
             // this is the beginning of the next loop clause
             cob.labelBinding(lNext);
         }
 
-        cob.branchInstruction(Opcode.GOTO_W, lLoop);
+        cob.goto_w(lLoop);
 
         // DONE:
         cob.labelBinding(lDone);
@@ -1529,7 +1517,7 @@ class InvokerBytecodeGenerator {
         // load handle for clause
         emitPushClauseArray(cob, clauseDataSlot, handles);
         cob.constantInstruction(clause);
-        cob.arrayLoadInstruction(TypeKind.ReferenceType);
+        cob.aaload();
         // load loop state (preceding the other arguments)
         if (pushLocalState) {
             for (int s = 0; s < loopLocalStateTypes.length; ++s) {
@@ -1538,13 +1526,13 @@ class InvokerBytecodeGenerator {
         }
         // load loop args (skip 0: method handle)
         emitPushArguments(cob, args, 1);
-        cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(type.toMethodDescriptorString()), false);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", MethodTypeDesc.ofDescriptor(type.toMethodDescriptorString()));
     }
 
     private void emitPushClauseArray(CodeBuilder cob, int clauseDataSlot, int which) {
         emitAloadInsn(cob, clauseDataSlot);
         cob.constantInstruction(which - 1);
-        cob.arrayLoadInstruction(TypeKind.ReferenceType);
+        cob.aaload();
     }
 
     private void emitZero(CodeBuilder cob, BasicType type) {
@@ -1583,7 +1571,7 @@ class InvokerBytecodeGenerator {
             if (Wrapper.isWrapperType(arg.getClass()) && bptype != L_TYPE) {
                 cob.constantInstruction((ConstantDesc)arg);
             } else {
-                cob.fieldInstruction(Opcode.GETSTATIC, classDesc, classData(arg), CD_Object);
+                cob.getstatic(classDesc, classData(arg), CD_Object);
                 emitImplicitConversion(cob, L_TYPE, ptype, arg);
             }
         }
@@ -1609,7 +1597,7 @@ class InvokerBytecodeGenerator {
         assert(rtype == basicType(rclass));  // must agree
         if (rtype == V_TYPE) {
             // void
-            cob.returnInstruction(TypeKind.VoidType);
+            cob.return_();
             // it doesn't matter what rclass is; the JVM will discard any value
         } else {
             LambdaForm.Name rn = lambdaForm.names[lambdaForm.result];
@@ -1712,7 +1700,7 @@ class InvokerBytecodeGenerator {
             case BOOLEAN -> {
                 // For compatibility with ValueConversions and explicitCastArguments:
                 cob.constantInstruction(1);
-                cob.operatorInstruction(Opcode.IAND);
+                cob.iand();
             }
             default ->
                 throw new InternalError("unknown type: " + type);
@@ -1769,20 +1757,20 @@ class InvokerBytecodeGenerator {
                                 // fill parameter array
                                 for (int i = 0; i < invokerType.parameterCount(); i++) {
                                     Class<?> ptype = invokerType.parameterType(i);
-                                    cob.stackInstruction(Opcode.DUP);
+                                    cob.dup();
                                     cob.constantInstruction(i);
                                     emitLoadInsn(cob, basicType(ptype), i);
                                     // box if primitive type
                                     if (ptype.isPrimitive()) {
                                         emitBoxing(cob, Wrapper.forPrimitiveType(ptype));
                                     }
-                                    cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                                    cob.aastore();
                                 }
                                 // invoke
                                 emitAloadInsn(cob, 0);
-                                cob.fieldInstruction(Opcode.GETFIELD, CD_MethodHandle, "form", LF);
-                                cob.stackInstruction(Opcode.SWAP);  // swap form and array; avoid local variable
-                                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()), false);
+                                cob.getfield(CD_MethodHandle, "form", LF);
+                                cob.swap();  // swap form and array; avoid local variable
+                                cob.invokevirtual(LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()));
 
                                 // maybe unbox
                                 Class<?> rtype = invokerType.returnType();
@@ -1840,7 +1828,7 @@ class InvokerBytecodeGenerator {
                                 for (int i = 0; i < dstType.parameterCount(); i++) {
                                     emitAloadInsn(cob, 1);
                                     cob.constantInstruction(i);
-                                    cob.arrayLoadInstruction(TypeKind.ReferenceType);
+                                    cob.aaload();
 
                                     // Maybe unbox
                                     Class<?> dptype = dstType.parameterType(i);
@@ -1854,7 +1842,7 @@ class InvokerBytecodeGenerator {
 
                                 // Invoke
                                 MethodTypeDesc targetDesc = MethodTypeDesc.ofDescriptor(dstType.basicType().toMethodDescriptorString());
-                                cob.invokeInstruction(Opcode.INVOKEVIRTUAL, CD_MethodHandle, "invokeBasic", targetDesc, false);
+                                cob.invokevirtual(CD_MethodHandle, "invokeBasic", targetDesc);
 
                                 // Box primitive types
                                 Class<?> rtype = dstType.returnType();
@@ -1897,8 +1885,8 @@ class InvokerBytecodeGenerator {
                         @Override
                         public void accept(CodeBuilder cob) {
                             cob.constantInstruction(os.toString());
-                            cob.stackInstruction(Opcode.POP);
-                            cob.returnInstruction(TypeKind.VoidType);
+                            cob.pop();
+                            cob.return_();
                         }
                     }); }
             });

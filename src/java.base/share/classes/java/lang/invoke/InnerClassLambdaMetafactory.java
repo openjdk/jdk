@@ -351,12 +351,7 @@ import jdk.internal.classfile.MethodBuilder;
                 // Generate final fields to be filled in by constructor
                 for (int i = 0; i < argDescs.length; i++) {
                     clb.withVersion(CLASSFILE_VERSION, 0);
-                    clb.withField(argNames[i], ClassDesc.ofDescriptor(argDescs[i]), new Consumer<FieldBuilder>() {
-                        @Override
-                        public void accept(FieldBuilder fb) {
-                            fb.withFlags(ACC_PRIVATE + ACC_FINAL);
-                        }
-                    });
+                    clb.withField(argNames[i], ClassDesc.ofDescriptor(argDescs[i]), ACC_PRIVATE + ACC_FINAL);
                 }
 
                 generateConstructor(clb);
@@ -456,31 +451,19 @@ import jdk.internal.classfile.MethodBuilder;
         ClassDesc lambdaTypeDescriptor = ClassDesc.ofDescriptor(factoryType.returnType().descriptorString());
 
         // Generate the static final field that holds the lambda singleton
-        clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor,
-                new Consumer<FieldBuilder>() {
-            @Override
-            public void accept(FieldBuilder fb) {
-                fb.withFlags(ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
-            }
-        });
+        clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
 
         // Instantiate the lambda and store it to the static final field
-        clb.withMethod("<clinit>", MethodTypeDesc.of(ConstantDescs.CD_void), ACC_STATIC, new Consumer<MethodBuilder>() {
+        clb.withMethodBody("<clinit>", MethodTypeDesc.of(ConstantDescs.CD_void), ACC_STATIC, new Consumer<CodeBuilder>() {
             @Override
-            public void accept(MethodBuilder mb) {
-                mb.withFlags(ACC_STATIC);
-                mb.withCode(new Consumer<CodeBuilder>() {
-                    @Override
-                    public void accept(CodeBuilder cob) {
-                        cob.new_(lambdaClassDesc);
-                        cob.stackInstruction(Opcode.DUP);
-                        assert factoryType.parameterCount() == 0;
-                        cob.invokeInstruction(Opcode.INVOKESPECIAL, lambdaClassDesc, NAME_CTOR, MethodTypeDesc.ofDescriptor(constructorType.toMethodDescriptorString()), false);
-                        cob.fieldInstruction(Opcode.PUTSTATIC, lambdaClassDesc, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor);
-
-                        cob.returnInstruction(TypeKind.VoidType);
-                    }
-                }); }
+            public void accept(CodeBuilder cob) {
+                cob.new_(lambdaClassDesc)
+                   .dup();
+                assert factoryType.parameterCount() == 0;
+                cob.invokespecial(lambdaClassDesc, NAME_CTOR, MethodTypeDesc.ofDescriptor(constructorType.toMethodDescriptorString()))
+                   .putstatic(lambdaClassDesc, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor)
+                   .return_();
+            }
         });
     }
 
@@ -489,115 +472,91 @@ import jdk.internal.classfile.MethodBuilder;
      */
     private void generateConstructor(ClassBuilder clb) {
         // Generate constructor
-        clb.withMethod(NAME_CTOR, MethodTypeDesc.ofDescriptor(constructorType.toMethodDescriptorString()), ACC_PRIVATE,
-                new Consumer<MethodBuilder>() {
-            @Override
-            public void accept(MethodBuilder mb) {
-                mb.withFlags(ACC_PRIVATE);
-                mb.withCode(new Consumer<CodeBuilder>() {
+        clb.withMethodBody(NAME_CTOR, MethodTypeDesc.ofDescriptor(constructorType.toMethodDescriptorString()), ACC_PRIVATE,
+                new Consumer<CodeBuilder>() {
                     @Override
                     public void accept(CodeBuilder cob) {
-                        cob.loadInstruction(TypeKind.ReferenceType, 0);
-                        cob.invokeInstruction(Opcode.INVOKESPECIAL, ConstantDescs.CD_Object, NAME_CTOR,
-                                MethodTypeDesc.of(ConstantDescs.CD_void), false);
+                        cob.aload(0);
+                        cob.invokespecial(ConstantDescs.CD_Object, NAME_CTOR,
+                                MethodTypeDesc.of(ConstantDescs.CD_void));
                         int parameterCount = factoryType.parameterCount();
                         for (int i = 0, lvIndex = 0; i < parameterCount; i++) {
-                            cob.loadInstruction(TypeKind.ReferenceType, 0);
+                            cob.aload(0);
                             Class<?> argType = factoryType.parameterType(i);
                             cob.loadInstruction(getLoadType(argType), lvIndex + 1);
                             lvIndex += getParameterSize(argType);
-                            cob.fieldInstruction(Opcode.PUTFIELD, lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
+                            cob.putfield(lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
                         }
-                        cob.returnInstruction(TypeKind.VoidType);
+                        cob.return_();
                     }
-                }); }
-        });
+                });
     }
 
     /**
      * Generate a writeReplace method that supports serialization
      */
     private void generateSerializationFriendlyMethods(ClassBuilder clb) {
-        clb.withMethod(NAME_METHOD_WRITE_REPLACE, DESCR_METHOD_WRITE_REPLACE, ACC_PRIVATE + ACC_FINAL,
-                new Consumer<MethodBuilder>() {
-            @Override
-            public void accept(MethodBuilder mb) {
-                mb.withFlags(ACC_PRIVATE + ACC_FINAL);
-                mb.withCode(new Consumer<CodeBuilder>() {
+        clb.withMethodBody(NAME_METHOD_WRITE_REPLACE, DESCR_METHOD_WRITE_REPLACE, ACC_PRIVATE + ACC_FINAL,
+                new Consumer<CodeBuilder>() {
                     @Override
                     public void accept(CodeBuilder cob) {
-                        cob.new_(NAME_SERIALIZED_LAMBDA);
-                        cob.stackInstruction(Opcode.DUP);
-                        cob.constantInstruction(Opcode.LDC, targetClass.describeConstable().get());
-                        cob.constantInstruction(Opcode.LDC, factoryType.returnType().getName().replace('.', '/'));
-                        cob.constantInstruction(Opcode.LDC, interfaceMethodName);
-                        cob.constantInstruction(Opcode.LDC, interfaceMethodType.toMethodDescriptorString());
-                        cob.constantInstruction(Opcode.LDC, implInfo.getReferenceKind());
-                        cob.constantInstruction(Opcode.LDC, implInfo.getDeclaringClass().getName().replace('.', '/'));
-                        cob.constantInstruction(Opcode.LDC, implInfo.getName());
-                        cob.constantInstruction(Opcode.LDC, implInfo.getMethodType().toMethodDescriptorString());
-                        cob.constantInstruction(Opcode.LDC, dynamicMethodType.toMethodDescriptorString());
-                        cob.constantInstruction(argDescs.length);
+                        cob.new_(NAME_SERIALIZED_LAMBDA)
+                           .dup()
+                           .constantInstruction(Opcode.LDC, targetClass.describeConstable().get())
+                           .constantInstruction(Opcode.LDC, factoryType.returnType().getName().replace('.', '/'))
+                           .constantInstruction(Opcode.LDC, interfaceMethodName)
+                           .constantInstruction(Opcode.LDC, interfaceMethodType.toMethodDescriptorString())
+                           .constantInstruction(Opcode.LDC, implInfo.getReferenceKind())
+                           .constantInstruction(Opcode.LDC, implInfo.getDeclaringClass().getName().replace('.', '/'))
+                           .constantInstruction(Opcode.LDC, implInfo.getName())
+                           .constantInstruction(Opcode.LDC, implInfo.getMethodType().toMethodDescriptorString())
+                           .constantInstruction(Opcode.LDC, dynamicMethodType.toMethodDescriptorString())
+                           .constantInstruction(argDescs.length);
 
                         cob.anewarray(ConstantDescs.CD_Object);
                         for (int i = 0; i < argDescs.length; i++) {
-                            cob.stackInstruction(Opcode.DUP);
+                            cob.dup();
                             cob.constantInstruction(i);
-                            cob.loadInstruction(TypeKind.ReferenceType, 0);
-                            cob.fieldInstruction(Opcode.GETFIELD, lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
+                            cob.aload(0);
+                            cob.getfield(lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
                             TypeConvertingMethodAdapter.boxIfTypePrimitive(cob, TypeKind.fromDescriptor(argDescs[i]));
-                            cob.arrayStoreInstruction(TypeKind.ReferenceType);
+                            cob.aastore();
                         }
-                        cob.invokeInstruction(Opcode.INVOKESPECIAL, NAME_SERIALIZED_LAMBDA, NAME_CTOR,
+                        cob.invokespecial(NAME_SERIALIZED_LAMBDA, NAME_CTOR,
                                 DESCR_CTOR_SERIALIZED_LAMBDA, false);
-                        cob.returnInstruction(TypeKind.ReferenceType);
+                        cob.areturn();
                     }
-                }); }
-        });
+                });
     }
 
     /**
      * Generate a readObject/writeObject method that is hostile to serialization
      */
     private void generateSerializationHostileMethods(ClassBuilder clb) {
-        clb.withMethod(NAME_METHOD_WRITE_OBJECT, DESCR_METHOD_WRITE_OBJECT, ACC_PRIVATE + ACC_FINAL,
-            new Consumer<MethodBuilder>() {
-            @Override
-            public void accept(MethodBuilder mb) {
-                mb.withFlags(ACC_PRIVATE + ACC_FINAL);
-                mb.with(ExceptionsAttribute.of(mb.constantPool().classEntry(SER_HOSTILE_EXCEPTIONS)));
-                mb.withCode(new Consumer<CodeBuilder>() {
-                    @Override
-                    public void accept(CodeBuilder cob) {
-                        cob.new_(NAME_NOT_SERIALIZABLE_EXCEPTION);
-                        cob.stackInstruction(Opcode.DUP);
-                        cob.constantInstruction(Opcode.LDC, "Non-serializable lambda");
-                        cob.invokeInstruction(Opcode.INVOKESPECIAL, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
-                                DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, false);
-                        cob.throwInstruction();
-                    }
-                });
-            }
-        });
-        clb.withMethod(NAME_METHOD_READ_OBJECT, DESCR_METHOD_READ_OBJECT, ACC_PRIVATE + ACC_FINAL,
-            new Consumer<MethodBuilder>() {
-            @Override
-            public void accept(MethodBuilder mb) {
-                mb.withFlags(ACC_PRIVATE + ACC_FINAL);
-                mb.with(ExceptionsAttribute.of(mb.constantPool().classEntry(SER_HOSTILE_EXCEPTIONS)));
-                mb.withCode(new Consumer<CodeBuilder>() {
-                    @Override
-                    public void accept(CodeBuilder cob) {
-                        cob.new_(NAME_NOT_SERIALIZABLE_EXCEPTION);
-                        cob.stackInstruction(Opcode.DUP);
-                        cob.constantInstruction(Opcode.LDC, "Non-serializable lambda");
-                        cob.invokeInstruction(Opcode.INVOKESPECIAL, NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
-                                DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, false);
-                        cob.throwInstruction();
-                    }
-                });
-            }
-        });
+        clb.withMethodBody(NAME_METHOD_WRITE_OBJECT, DESCR_METHOD_WRITE_OBJECT, ACC_PRIVATE + ACC_FINAL,
+            new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cob) {
+                    cob.new_(NAME_NOT_SERIALIZABLE_EXCEPTION)
+                       .dup()
+                       .constantInstruction(Opcode.LDC, "Non-serializable lambda")
+                       .invokespecial(NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
+                            DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, false)
+                       .throwInstruction();
+                }
+            });
+        clb.withMethodBody(NAME_METHOD_READ_OBJECT, DESCR_METHOD_READ_OBJECT, ACC_PRIVATE + ACC_FINAL,
+            new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cob) {
+                    cob.new_(NAME_NOT_SERIALIZABLE_EXCEPTION)
+                       .dup()
+                       .constantInstruction(Opcode.LDC, "Non-serializable lambda")
+                       .invokespecial(NAME_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
+                            DESCR_CTOR_NOT_SERIALIZABLE_EXCEPTION, false)
+                       .throwInstruction();
+                }
+            });
     }
 
     /**
@@ -609,15 +568,15 @@ import jdk.internal.classfile.MethodBuilder;
             @Override
             public void accept(CodeBuilder cob) {
                 if (implKind == MethodHandleInfo.REF_newInvokeSpecial) {
-                    cob.new_(implMethodClassDesc);
-                    cob.stackInstruction(Opcode.DUP);
+                    cob.new_(implMethodClassDesc)
+                       .dup();
                 }
                 if (useImplMethodHandle) {
                     cob.constantInstruction(Opcode.LDC, implMethodCondy);
                 }
                 for (int i = 0; i < argNames.length; i++) {
-                    cob.loadInstruction(TypeKind.ReferenceType, 0);
-                    cob.fieldInstruction(Opcode.GETFIELD, lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
+                    cob.aload(0)
+                       .getfield(lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
                 }
 
                 convertArgumentTypes(cob, methodType);

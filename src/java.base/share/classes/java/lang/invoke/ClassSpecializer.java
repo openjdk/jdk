@@ -727,20 +727,17 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 }
 
                 // emit implementation of speciesData()
-                clb.withMethod(SPECIES_DATA_NAME, MethodTypeDesc.of(SPECIES_DATA_DESC), (SPECIES_DATA_MODS & ACC_PPP) + ACC_FINAL,
-                        mb -> mb.withFlags((SPECIES_DATA_MODS & ACC_PPP) + ACC_FINAL)
-                                .withCode(cob -> {
-                            cob.fieldInstruction(Opcode.GETSTATIC, classDesc, sdFieldName, SPECIES_DATA_DESC);
-                            cob.returnInstruction(TypeKind.ReferenceType);
-                        }));
+                clb.withMethodBody(SPECIES_DATA_NAME, MethodTypeDesc.of(SPECIES_DATA_DESC), (SPECIES_DATA_MODS & ACC_PPP) + ACC_FINAL,
+                        cob -> cob.getstatic(classDesc, sdFieldName, SPECIES_DATA_DESC)
+                                  .areturn());
 
                 // figure out the constructor arguments
                 MethodType superCtorType = ClassSpecializer.this.baseConstructorType();
                 MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
 
                 // emit constructor
-                clb.withMethod("<init>", methodSig(thisCtorType), ACC_PRIVATE, mb -> mb.withFlags(AccessFlag.PRIVATE).withCode(cob -> {
-                    cob.loadInstruction(TypeKind.ReferenceType, 0); // this
+                clb.withMethodBody("<init>", methodSig(thisCtorType), ACC_PRIVATE, cob -> {
+                    cob.aload(0); // this
 
                     final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
                     for (Var ca : ctorArgs) {
@@ -748,38 +745,36 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     }
 
                     // super(ca...)
-                    cob.invokeInstruction(Opcode.INVOKESPECIAL, superClassDesc,
-                            "<init>", methodSig(superCtorType), false);
+                    cob.invokespecial(superClassDesc, "<init>", methodSig(superCtorType));
 
                     // store down fields
                     Var lastFV = AFTER_THIS.lastOf(ctorArgs);
                     for (Var f : fields) {
                         // this.argL1 = argL1
-                        cob.loadInstruction(TypeKind.ReferenceType, 0);  // this
+                        cob.aload(0);  // this
                         lastFV = new Var(f.name, f.type, lastFV);
                         lastFV.emitVarInstruction(cob);
-                        cob.fieldInstruction(Opcode.PUTFIELD, classDesc, f.name, ClassDesc.ofDescriptor(f.desc));
+                        cob.putfield(classDesc, f.name, ClassDesc.ofDescriptor(f.desc));
                     }
 
-                    cob.returnInstruction(TypeKind.VoidType);
-                }));
+                    cob.return_();
+                });
 
                 // emit make()  ...factory method wrapping constructor
                 MethodType ftryType = thisCtorType.changeReturnType(topClass());
-                clb.withMethod("make", methodSig(ftryType), NOT_ACC_PUBLIC + ACC_STATIC, mb -> mb.withFlags(NOT_ACC_PUBLIC + ACC_STATIC).withCode(cob -> {
+                clb.withMethodBody("make", methodSig(ftryType), NOT_ACC_PUBLIC + ACC_STATIC, cob -> {
                     // make instance
-                    cob.new_(classDesc);
-                    cob.stackInstruction(Opcode.DUP);
+                    cob.new_(classDesc)
+                       .dup();
                     // load factory method arguments:  ctarg... and arg...
                     for (Var v : NO_THIS.fromTypes(ftryType.parameterList())) {
                         v.emitVarInstruction(cob);
                     }
 
                     // finally, invoke the constructor and return
-                    cob.invokeInstruction(Opcode.INVOKESPECIAL, classDesc,
-                            "<init>", methodSig(thisCtorType), false);
-                    cob.returnInstruction(TypeKind.ReferenceType);
-                }));
+                    cob.invokespecial(classDesc, "<init>", methodSig(thisCtorType))
+                       .areturn();
+                });
 
                 // For each transform, emit the customized override of the transform method.
                 // This method mixes together some incoming arguments (from the transform's
@@ -793,16 +788,14 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     final MethodType TTYPE = TRANSFORM_TYPES.get(whichtm);
                     final int        TMODS = TRANSFORM_MODS.get(whichtm);
                     clb.withMethod(TNAME, MethodTypeDesc.ofDescriptor(TTYPE.toMethodDescriptorString()), (TMODS & ACC_PPP) | ACC_FINAL, mb -> {
-                        mb.withFlags((TMODS & ACC_PPP) | ACC_FINAL);
-                        mb.with(ExceptionsAttribute.of(mb.constantPool().classEntry(ConstantDescs.CD_Throwable)));
-                        mb.withCode(cob -> {
+                        mb.withFlags((TMODS & ACC_PPP) | ACC_FINAL)
+                          .with(ExceptionsAttribute.of(mb.constantPool().classEntry(ConstantDescs.CD_Throwable)))
+                          .withCode(cob -> {
                             // return a call to the corresponding "transform helper", something like this:
                             //   MY_SPECIES.transformHelper(whichtm).invokeBasic(ctarg, ..., argL0, ..., xarg)
-                            cob.fieldInstruction(Opcode.GETSTATIC, classDesc,
-                                    sdFieldName, SPECIES_DATA_DESC);
-                            cob.constantInstruction(whichtm);
-                            cob.invokeInstruction(Opcode.INVOKEVIRTUAL, SPECIES_DATA_DESC,
-                                    "transformHelper", MethodTypeDesc.ofDescriptor("(I)" + MH_SIG), false);
+                            cob.getstatic(classDesc, sdFieldName, SPECIES_DATA_DESC)
+                               .constantInstruction(whichtm)
+                               .invokevirtual(SPECIES_DATA_DESC, "transformHelper", MethodTypeDesc.ofDescriptor("(I)" + MH_SIG));
 
                             List<Var> targs = AFTER_THIS.fromTypes(TTYPE.parameterList());
                             List<Var> tfields = new ArrayList<>(fields);
@@ -813,8 +806,8 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                                 helperTypes.add(ha.basicType.basicTypeClass());
                                 if (ha.isInHeap()) {
                                     assert(tfields.contains(ha));
-                                    cob.loadInstruction(TypeKind.ReferenceType, 0);
-                                    cob.fieldInstruction(Opcode.GETFIELD, classDesc, ha.name, ClassDesc.ofDescriptor(ha.desc));
+                                    cob.aload(0);
+                                    cob.getfield(classDesc, ha.name, ClassDesc.ofDescriptor(ha.desc));
                                 } else {
                                     assert(targs.contains(ha));
                                     ha.emitVarInstruction(cob);
@@ -825,11 +818,12 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                             final Class<?> rtype = TTYPE.returnType();
                             final BasicType rbt = BasicType.basicType(rtype);
                             MethodType invokeBasicType = MethodType.methodType(rbt.basicTypeClass(), helperTypes);
-                            cob.invokeInstruction(Opcode.INVOKEVIRTUAL, ConstantDescs.CD_MethodHandle,
-                                    "invokeBasic", MethodTypeDesc.ofDescriptor(invokeBasicType.toMethodDescriptorString()), false);
+                            cob.invokevirtual(ConstantDescs.CD_MethodHandle,
+                                              "invokeBasic",
+                                              MethodTypeDesc.ofDescriptor(invokeBasicType.toMethodDescriptorString()));
                             if (rbt == BasicType.L_TYPE) {
-                                cob.typeCheckInstruction(Opcode.CHECKCAST, ClassDesc.ofDescriptor(rtype.descriptorString()));
-                                cob.returnInstruction(TypeKind.ReferenceType);
+                                cob.checkcast(ClassDesc.ofDescriptor(rtype.descriptorString()))
+                                   .areturn();
                             } else {
                                 throw newInternalError("NYI: transform of type "+rtype);
                             }
