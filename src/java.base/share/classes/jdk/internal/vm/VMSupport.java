@@ -234,7 +234,7 @@ public class VMSupport {
     public static byte[] encodeAnnotations(Collection<Annotation> annotations) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
-            try(DataOutputStream dos = new DataOutputStream(baos)) {
+            try (DataOutputStream dos = new DataOutputStream(baos)) {
                 writeLength(dos, annotations.size());
                 for (Annotation a : annotations) {
                     encodeAnnotation(dos, a);
@@ -561,7 +561,7 @@ public class VMSupport {
             throw new NegativeArraySizeException();
         } else if (length <= 127) {
             dos.writeByte((byte) (0x80 | length));
-        } else  {
+        } else {
             dos.writeInt(length);
         }
     }
