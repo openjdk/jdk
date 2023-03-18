@@ -472,7 +472,7 @@ class SuperWord : public ResourceObj {
   typedef const Pair<const Node*, int> PathEnd;
 
   // Search for a path P = (n_1, n_2, ..., n_k) such that:
-  // - original_input(n_i, input) = n_i+1 for all 0 <= i < k,
+  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
   // - path(n) for all n in P,
   // - k <= max, and
   // - there exists a node e such that original_input(n_k, input) = e and end(e).
@@ -513,12 +513,12 @@ private:
   // Whether n is part of a reduction cycle via the 'input' edge index.
   static bool in_reduction_cycle(const Node* n, uint input);
   // Reference to the i'th input node of n, commuting the inputs of binary nodes
-  // whose edges have been swapped. Assumes n is a commutative, binary operation.
+  // whose edges have been swapped. Assumes n is a commutative operation.
   static Node* original_input(const Node* n, uint i);
   // Find and mark reductions in a loop. Running mark_reductions(loop) is
   // similar to querying is_reduction(n) for every n in loop, but stricter in
-  // that it additionally requires that reduction nodes are not used within the
-  // loop except by their reduction cycle predecessors.
+  // that it assumes counted loops and requires that reduction nodes are not
+  // used within the loop except by their reduction cycle predecessors.
   void mark_reductions(IdealLoopTree* loop);
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }

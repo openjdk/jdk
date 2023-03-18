@@ -455,17 +455,17 @@ bool SuperWord::in_reduction_cycle(const Node* n, uint input) {
   if (phi == nullptr) {
     return false;
   }
-  // If there is an input reduction path from the the phi's loop-back to n, then
-  // n is part of a reduction cycle.
+  // If there is an input reduction path from the phi's loop-back to n, then n
+  // is part of a reduction cycle.
   const Node* first = phi->in(LoopNode::LoopBackControl);
   PathEnd path_from_phi = find_in_path(first, input, LoopMaxUnroll, has_my_opcode,
                                        [&](const Node* m) { return m == n; });
-  return n == path_from_phi.first;
+  return path_from_phi.first != nullptr;
 }
 
 Node* SuperWord::original_input(const Node* n, uint i) {
   if (n->has_swapped_edges()) {
-    assert(n->is_Add() || n->is_Mul(), "n should be commutative and binary");
+    assert(n->is_Add() || n->is_Mul(), "n should be commutative");
     if (i == 1) {
       return n->in(2);
     } else if (i == 2) {
@@ -532,8 +532,8 @@ void SuperWord::mark_reductions(IdealLoopTree* loop) {
     if (reduction_input == -1) {
       continue;
     }
-    // Test that reduction nodes do not have any other users in the loop than
-    // their reduction cycle predecessors.
+    // Test that reduction nodes do not have any users in the loop besides their
+    // reduction cycle predecessors.
     const Node* current = first;
     const Node* pred = phi; // current's predecessor in the reduction cycle.
     bool used_in_loop = false;
