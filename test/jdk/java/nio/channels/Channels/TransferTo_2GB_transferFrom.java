@@ -22,21 +22,15 @@
  */
 
 import java.io.BufferedInputStream;
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
+import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
-import org.testng.annotations.Test;
-
-import static java.lang.String.format;
 import static java.nio.file.StandardOpenOption.*;
 
-import static org.testng.Assert.assertEquals;
+import org.testng.annotations.Test;
 
 /*
  * @test
@@ -59,61 +53,30 @@ public class TransferTo_2GB_transferFrom extends TransferToBase {
      */
     @Test
     public void testMoreThanTwoGB() throws IOException {
-        // prepare two temporary files to be compared at the end of the test
-        // set the source file name
-        String sourceName = String.format("test3GBSource_transferFrom%s.tmp",
-            RND.nextInt(Integer.MAX_VALUE));
-        Path sourceFile = CWD.resolve(sourceName);
-
-        try {
-            // set the target file name
-            String targetName = String.format("test3GBTarget_transferFrom%s.tmp",
-                RND.nextInt(Integer.MAX_VALUE));
-            Path targetFile = CWD.resolve(targetName);
-
-            try {
-                // calculate initial position to be just short of 2GB
-                final long initPos = 2047*BYTES_PER_WRITE;
-
-                // create the source file with a hint to be sparse
-                try (FileChannel fc = FileChannel.open(sourceFile, CREATE_NEW, SPARSE, WRITE, APPEND)) {
-                    // set initial position to avoid writing nearly 2GB
-                    fc.position(initPos);
-
-                    // Add random bytes to the remainder of the file
-                    int nw = (int)(NUM_WRITES - initPos/BYTES_PER_WRITE);
-                    for (int i = 0; i < nw; i++) {
-                        byte[] rndBytes = createRandomBytes(BYTES_PER_WRITE, 0);
-                        ByteBuffer src = ByteBuffer.wrap(rndBytes);
-                        fc.write(src);
+        testMoreThanTwoGB("From",
+                (sourceFile, targetFile) -> {
+                    try {
+                        return Channels.newInputStream(
+                            Channels.newChannel(new BufferedInputStream(Files.newInputStream(sourceFile))));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                },
+                (sourceFile, targetFile) -> {
+                    try {
+                        return Channels.newOutputStream(FileChannel.open(targetFile, WRITE));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                },
+                (inputStream, outputStream) -> {
+                    try {
+                        return inputStream.transferTo(outputStream);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
                     }
                 }
-
-                // create the target file with a hint to be sparse
-                try (FileChannel fc = FileChannel.open(targetFile, CREATE_NEW, WRITE, SPARSE)) {
-                }
-
-                // performing actual transfer, effectively by multiple invocations of
-                // FileChannel.transferFrom(ReadableByteChannel)
-                try (InputStream inputStream = Channels.newInputStream(Channels.newChannel(
-                        new BufferedInputStream(Files.newInputStream(sourceFile))));
-                     OutputStream outputStream = Channels.newOutputStream(FileChannel.open(targetFile, WRITE))) {
-                    long count = inputStream.transferTo(outputStream);
-
-                    // compare reported transferred bytes, must be 3 GB
-                    // less the value of the initial position
-                    assertEquals(count, BYTES_WRITTEN - initPos);
-                }
-
-                // compare content of both files, failing if different
-                assertEquals(Files.mismatch(sourceFile, targetFile), -1);
-
-            } finally {
-                 Files.delete(targetFile);
-            }
-        } finally {
-            Files.delete(sourceFile);
-        }
+        );
     }
 
 }
