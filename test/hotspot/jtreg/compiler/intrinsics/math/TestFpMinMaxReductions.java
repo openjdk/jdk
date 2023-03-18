@@ -29,7 +29,7 @@
  *          tests complement those in TestFpMinMaxIntrinsics, which focus more
  *          on correctness aspects.
  * @library /test/lib /
- * @requires os.simpleArch == "x64"
+ * @requires os.simpleArch == "x64"& (vm.opt.UseAVX == "null" | vm.opt.UseAVX > 0)
  * @run driver compiler.intrinsics.math.TestFpMinMaxReductions
  */
 
