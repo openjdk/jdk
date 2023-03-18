@@ -524,6 +524,10 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         return pending;
     }
 
+    final void initPending(int count) {
+        U.putInt(this, PENDING, count);
+    }
+
     /**
      * Sets the pending count to the given value.
      *
@@ -732,18 +736,37 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         if (q != null && maxTasks > 0)
             q.helpComplete(this, internal, maxTasks);
     }
+
     // ForkJoinTask overrides
+
+    @Override
+    final boolean canHelpCompleteFJT(ForkJoinTask<?> t) {
+        CountedCompleter<?> f = null;
+        if (t instanceof CountedCompleter) {
+            f = (CountedCompleter<?>)t;
+            do {} while (f != this && (f = f.completer) != null);
+        }
+        return f != null;
+    }
 
     /**
      * Supports ForkJoinTask exception propagation.
      */
     @Override
-    final int trySetException(Throwable ex) {
+    final void onFJTExceptionSet(Throwable ex) {
         CountedCompleter<?> a = this, p = a;
-        do {} while (isExceptionalStatus(a.trySetThrown(ex)) &&
-                     a.onExceptionalCompletion(ex, p) &&
-                     (a = (p = a).completer) != null && a.status >= 0);
-        return status;
+        do {} while (a.onExceptionalCompletion(ex, p) &&
+                     (a = (p = a).completer) != null &&
+                     a.trySetThrown(ex));
+    }
+
+    /**
+     * Helps complete subtasks while joining
+     */
+    @Override
+    final int tryHelpJoinFJT(ForkJoinPool p, ForkJoinPool.WorkQueue q,
+                             boolean internal) {
+        return (p == null) ? 0 : p.helpComplete(this, q, internal);
     }
 
     /**
@@ -776,17 +799,6 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      */
     @Override
     protected void setRawResult(T t) { }
-
-    /**
-     * Overrride default recursive helping to instead help along
-     * completion chains.
-     */
-    @Override
-    final int tryHelpJoin(ForkJoinPool p, ForkJoinPool.WorkQueue q,
-                          boolean internal, int how) {
-        return ((q == null || p == null) ? 0 :
-                p.helpComplete(this, q, internal, (how & TIMED) != 0));
-    }
 
     /*
      * This class uses jdk-internal Unsafe for atomics and special
