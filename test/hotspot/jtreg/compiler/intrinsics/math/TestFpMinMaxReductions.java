@@ -53,13 +53,15 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_F_REG, "1"})
+    @IR(counts = {IRNode.MIN_F_REG, "1"},
+        failOn = {IRNode.MIN_F_REDUCTION_REG})
     private static float testFloatMin() {
         return Math.min(floatInput1, floatInput2);
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_F_REG, "1"})
+    @IR(counts = {IRNode.MAX_F_REG, "1"},
+        failOn = {IRNode.MAX_F_REDUCTION_REG})
     private static float testFloatMax() {
         return Math.max(floatInput1, floatInput2);
     }
@@ -117,13 +119,15 @@ public class TestFpMinMaxReductions {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_D_REG, "1"})
+    @IR(counts = {IRNode.MIN_D_REG, "1"},
+        failOn = {IRNode.MIN_D_REDUCTION_REG})
     private static double testDoubleMin() {
         return Math.min(doubleInput1, doubleInput2);
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_D_REG, "1"})
+    @IR(counts = {IRNode.MAX_D_REG, "1"},
+        failOn = {IRNode.MAX_D_REDUCTION_REG})
     private static double testDoubleMax() {
         return Math.max(doubleInput1, doubleInput2);
     }
