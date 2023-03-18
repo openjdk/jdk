@@ -73,7 +73,7 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+    @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnGlobalAccumulator(long[] array) {
@@ -85,7 +85,7 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+    @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
         private static long testReductionOnPartiallyUnrolledLoop(long[] array) {
@@ -98,7 +98,7 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sse4.1", "true"},
+    @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true",
                       "UsePopCountInstruction", "true",
                       "LoopMaxUnroll", ">= 8"},
