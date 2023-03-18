@@ -95,14 +95,7 @@ public class TransferTo extends TransferToBase {
      */
     @Test(dataProvider = "inputStreamProviders")
     public void testNullPointerException(InputStreamProvider inputStreamProvider) {
-        // tests empty input stream
-        assertThrows(NullPointerException.class, () -> inputStreamProvider.input().transferTo(null));
-
-        // tests single-byte input stream
-        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1).transferTo(null));
-
-        // tests dual-byte input stream
-        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null));
+        assertNullPointerException(inputStreamProvider);
     }
 
     /*

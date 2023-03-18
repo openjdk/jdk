@@ -41,6 +41,7 @@ import static java.lang.String.format;
 import static java.nio.file.StandardOpenOption.*;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 class TransferToBase {
@@ -134,6 +135,21 @@ class TransferToBase {
             });
             return Channels.newOutputStream(fileChannel);
         };
+    }
+
+    /*
+     * Testing API compliance: input stream must throw NullPointerException
+     * when parameter "out" is null.
+     */
+    static void assertNullPointerException(InputStreamProvider inputStreamProvider) {
+        // tests empty input stream
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input().transferTo(null));
+
+        // tests single-byte input stream
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1).transferTo(null));
+
+        // tests dual-byte input stream
+        assertThrows(NullPointerException.class, () -> inputStreamProvider.input((byte) 1, (byte) 2).transferTo(null));
     }
 
 }
