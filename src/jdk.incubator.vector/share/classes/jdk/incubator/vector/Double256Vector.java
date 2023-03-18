@@ -823,7 +823,7 @@ final class Double256Vector extends DoubleVector {
         @ForceInline
         Long256Vector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Double256Shuffle.class, double.class, VLENGTH,
+                    Double256Shuffle.class, long.class, VLENGTH,
                     Long256Vector.class, long.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

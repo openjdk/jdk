@@ -819,7 +819,7 @@ final class Float64Vector extends FloatVector {
         @ForceInline
         Int64Vector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Float64Shuffle.class, float.class, VLENGTH,
+                    Float64Shuffle.class, int.class, VLENGTH,
                     Int64Vector.class, int.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

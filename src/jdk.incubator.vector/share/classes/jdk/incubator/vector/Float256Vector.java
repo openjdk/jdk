@@ -831,7 +831,7 @@ final class Float256Vector extends FloatVector {
         @ForceInline
         Int256Vector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Float256Shuffle.class, float.class, VLENGTH,
+                    Float256Shuffle.class, int.class, VLENGTH,
                     Int256Vector.class, int.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

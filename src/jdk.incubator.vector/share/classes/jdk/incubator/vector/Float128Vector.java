@@ -823,7 +823,7 @@ final class Float128Vector extends FloatVector {
         @ForceInline
         Int128Vector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Float128Shuffle.class, float.class, VLENGTH,
+                    Float128Shuffle.class, int.class, VLENGTH,
                     Int128Vector.class, int.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

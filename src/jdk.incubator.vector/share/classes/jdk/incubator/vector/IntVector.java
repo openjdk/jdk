@@ -2504,7 +2504,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     VectorShuffle<Float> toFPShuffleTemplate(Class<?> shuffleType, FloatVector.FloatSpecies dsp) {
         return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), int.class, length(),
-                                     shuffleType, float.class, length(),
+                                     shuffleType, int.class, length(),
                                      this, dsp,
                                      IntVector::toFPShuffle0);
     }

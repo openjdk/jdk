@@ -831,7 +831,7 @@ final class Double512Vector extends DoubleVector {
         @ForceInline
         Long512Vector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Double512Shuffle.class, double.class, VLENGTH,
+                    Double512Shuffle.class, long.class, VLENGTH,
                     Long512Vector.class, long.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

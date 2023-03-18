@@ -1989,15 +1989,22 @@ bool LibraryCallKit::inline_vector_rearrange() {
     }
     return false; // should be primitive type
   }
+
   BasicType elem_bt = elem_type->basic_type();
   BasicType shuffle_bt = elem_bt;
+  if (shuffle_bt == T_FLOAT) {
+    shuffle_bt = T_INT;
+  } else if (shuffle_bt == T_DOUBLE) {
+    shuffle_bt = T_LONG;
+  }
+
   int num_elem = vlen->get_con();
   bool need_load_shuffle = Matcher::vector_needs_load_shuffle(shuffle_bt, num_elem);
 
-  if (need_load_shuffle && !arch_supports_vector(Op_VectorLoadShuffle, num_elem, elem_bt, VecMaskNotUsed)) {
+  if (need_load_shuffle && !arch_supports_vector(Op_VectorLoadShuffle, num_elem, shuffle_bt, VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=0 op=load/shuffle vlen=%d etype=%s ismask=no",
-                    num_elem, type2name(elem_bt));
+                    num_elem, type2name(shuffle_bt));
     }
     return false; // not supported
   }
@@ -2035,6 +2042,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
   Node* v1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   Node* shuffle = unbox_vector(argument(6), shbox_type, shuffle_bt, num_elem);
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  const TypeVect* st = TypeVect::make(shuffle_bt, num_elem);
 
   if (v1 == NULL || shuffle == NULL) {
     return false; // operand unboxing failed
@@ -2055,7 +2063,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
   }
 
   if (need_load_shuffle) {
-    shuffle = gvn().transform(new VectorLoadShuffleNode(shuffle, vt));
+    shuffle = gvn().transform(new VectorLoadShuffleNode(shuffle, st));
   }
 
   Node* rearrange = new VectorRearrangeNode(v1, shuffle);

@@ -2899,7 +2899,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     VectorShuffle<$Boxfptype$> toFPShuffleTemplate(Class<?> shuffleType, $Fptype$Vector.$Fptype$Species dsp) {
         return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), $type$.class, length(),
-                                     shuffleType, $fptype$.class, length(),
+                                     shuffleType, $type$.class, length(),
                                      this, dsp,
                                      $Type$Vector::toFPShuffle0);
     }

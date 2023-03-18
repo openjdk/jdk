@@ -2370,7 +2370,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     VectorShuffle<Double> toFPShuffleTemplate(Class<?> shuffleType, DoubleVector.DoubleSpecies dsp) {
         return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), long.class, length(),
-                                     shuffleType, double.class, length(),
+                                     shuffleType, long.class, length(),
                                      this, dsp,
                                      LongVector::toFPShuffle0);
     }

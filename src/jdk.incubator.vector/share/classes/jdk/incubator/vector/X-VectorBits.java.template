@@ -1137,7 +1137,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @ForceInline
         $bitsvectortype$ toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    $shuffletype$.class, $type$.class, VLENGTH,
+                    $shuffletype$.class, $bitstype$.class, VLENGTH,
                     $bitsvectortype$.class, $bitstype$.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

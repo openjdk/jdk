@@ -817,7 +817,7 @@ final class Double64Vector extends DoubleVector {
         @ForceInline
         Long64Vector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Double64Shuffle.class, double.class, VLENGTH,
+                    Double64Shuffle.class, long.class, VLENGTH,
                     Long64Vector.class, long.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

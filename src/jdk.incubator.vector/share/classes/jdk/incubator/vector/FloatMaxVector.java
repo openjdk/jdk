@@ -816,7 +816,7 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         IntMaxVector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    FloatMaxShuffle.class, float.class, VLENGTH,
+                    FloatMaxShuffle.class, int.class, VLENGTH,
                     IntMaxVector.class, int.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

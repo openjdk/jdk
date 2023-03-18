@@ -816,7 +816,7 @@ final class DoubleMaxVector extends DoubleVector {
         @ForceInline
         LongMaxVector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    DoubleMaxShuffle.class, double.class, VLENGTH,
+                    DoubleMaxShuffle.class, long.class, VLENGTH,
                     LongMaxVector.class, long.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));

@@ -847,7 +847,7 @@ final class Float512Vector extends FloatVector {
         @ForceInline
         Int512Vector toBitsVector() {
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Float512Shuffle.class, float.class, VLENGTH,
+                    Float512Shuffle.class, int.class, VLENGTH,
                     Int512Vector.class, int.class, VLENGTH,
                     this, vspecies().asIntegral(),
                     (v, s) -> toBitsVectorHelper(v));
