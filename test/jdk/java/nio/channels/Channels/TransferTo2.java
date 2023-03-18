@@ -84,30 +84,7 @@ public class TransferTo2 extends TransferToBase {
     @Test(dataProvider = "streamCombinations")
     public void testStreamContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider) throws Exception {
-        // tests empty input stream
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
-
-        // tests input stream with a length between 1k and 4k
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(1024, 4096));
-
-        // tests input stream with several data chunks, as 16k is more than a
-        // single chunk can hold
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(16384, 16384));
-
-        // tests randomly chosen starting positions within source and
-        // target stream
-        for (int i = 0; i < ITERATIONS; i++) {
-            byte[] inBytes = createRandomBytes(MIN_SIZE, MAX_SIZE_INCR);
-            int posIn = RND.nextInt(inBytes.length);
-            int posOut = RND.nextInt(MIN_SIZE);
-            checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, posIn, posOut);
-        }
-
-        // tests reading beyond source EOF (must not transfer any bytes)
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 4096, 0);
-
-        // tests writing beyond target EOF (must extend output stream)
-        checkTransferredContents(inputStreamProvider, outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
+        assertStreamContents(inputStreamProvider, outputStreamProvider);
     }
 
     /*
