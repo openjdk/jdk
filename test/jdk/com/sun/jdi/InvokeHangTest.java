@@ -62,7 +62,7 @@ class InvokeHangTarg implements Runnable {
 
         try {
             // The join ensures that the test completes before we exit main(). If we are using
-            // virtual threads, they are always daemon threads, and therefor the JVM will exit
+            // virtual threads, they are always daemon threads, and therefore the JVM will exit
             // while they are still running (and the test has not yet completed). The join
             // isn't really needed for platform threads, since by default they are not
             // daemon threads, but it doesn't hurt any either.
