@@ -67,6 +67,8 @@ compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
+compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
+
 #############################################################################
 
 # :hotspot_gc
@@ -97,6 +99,7 @@ runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/vthread/RedefineClass.java 8297286 generic-all
 runtime/vthread/TestObjectAllocationSampleEvent.java 8297286 generic-all
+runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -120,7 +123,6 @@ serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
-serviceability/sa/UniqueVtableTest.java 8303921 linux-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 

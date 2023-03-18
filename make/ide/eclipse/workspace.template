@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+    <name>jdk</name>
+    <comment>The HotSpot Virtual Machine, Runtime Environment, and Development Kit</comment>
+    <projects>
+    </projects>
+    <buildSpec>
+        @@BUILD_MANAGERS@@
+    </buildSpec>
+    <natures>
+        @@NATURES@@
+    </natures>
+    <linkedResources>
+        @@LINKED_RESOURCES@@
+    </linkedResources>
+</projectDescription>
