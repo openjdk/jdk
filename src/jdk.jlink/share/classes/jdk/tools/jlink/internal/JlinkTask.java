@@ -844,7 +844,7 @@ public class JlinkTask {
                         throw new IOException(
                                 taskHelper.getMessage("err.cannot.determine.target.platform"));
                     }
-                    ByteOrder targetByteOrder = getNativeEndianOfTargetPlatform(targetPlatform);
+                    ByteOrder targetByteOrder = Platform.getNativeByteOrder(targetPlatform);
                     if (targetByteOrder == null) {
                         // unsupported target platform
                         throw new IOException(
@@ -945,27 +945,6 @@ public class JlinkTask {
                 throw new IllegalArgumentException(taskHelper.getMessage(
                     "err.cannot.read.module.info", modInfoPath), exp);
             }
-        }
-
-        // returns the endianness of the target platform, if the target platform is known
-        // and supported for creating an image through jlink. Else returns null.
-        private static ByteOrder getNativeEndianOfTargetPlatform(String targetPlatform) {
-            int index = targetPlatform.indexOf("-"); // of the form <operating system>-<arch>
-            if (index < 0) {
-                // unknown arch
-                return null;
-            }
-            String archName = targetPlatform.substring(index + 1);
-            return switch (archName) {
-                case "x86", "x86_64",
-                        "amd64", "arm", "aarch64",
-                        "loongarch64", "ppc64le",
-                        "riscv32", "riscv64" -> ByteOrder.LITTLE_ENDIAN;
-                case "ppc", "ppc64",
-                        "s390", "s390x",
-                        "sparc", "sparcv9" -> ByteOrder.BIG_ENDIAN;
-                default -> null;
-            };
         }
 
         @Override
