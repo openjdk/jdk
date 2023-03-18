@@ -30,7 +30,6 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -135,25 +134,9 @@ public record Platform(OperatingSystem os, Architecture arch) {
     }
 
     /**
-     * Returns the native {@link ByteOrder} of the {@code targetPlatform}. The
-     * {@code targetPlatform} string is of the form <operating system>-<arch>.
-     *
-     * @param targetPlatform The target platform
-     * @throws NullPointerException if {@code targetPlatform} is null
-     * @return the native ByteOrder or null if it is not known
+     * {@return the native {@link ByteOrder} of this {@code Platform} or null if not known}
      */
-    public static ByteOrder getNativeByteOrder(String targetPlatform) {
-        Objects.requireNonNull(targetPlatform);
-        int index = targetPlatform.indexOf("-"); // of the form <operating system>-<arch>
-        if (index < 0) {
-            // unknown arch
-            return null;
-        }
-        String archName = targetPlatform.substring(index + 1);
-        Architecture arch = toArch(archName);
-        if (arch == Architecture.UNKNOWN) {
-            return null;
-        }
+    public ByteOrder getNativeByteOrder() {
         return endianness.get(arch);
     }
 

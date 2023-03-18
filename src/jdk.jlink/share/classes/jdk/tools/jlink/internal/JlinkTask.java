@@ -387,7 +387,7 @@ public class JlinkTask {
     }
 
     private void postProcessOnly(Path existingImage) throws Exception {
-        PluginsConfiguration config = taskHelper.getPluginsConfig(null, null);
+        PluginsConfiguration config = taskHelper.getPluginsConfig(null, null, null);
         ExecutableImage img = DefaultImageBuilder.getExecutableImage(existingImage);
         if (img == null) {
             throw taskHelper.newBadArgs("err.existing.image.invalid");
@@ -438,7 +438,7 @@ public class JlinkTask {
         }
 
         // First create the image provider
-        ImageProvider imageProvider = createImageProvider(config,
+        ImageHelper imageProvider = createImageProvider(config,
                                                           options.packagedModulesPath,
                                                           options.ignoreSigning,
                                                           options.bindServices,
@@ -447,7 +447,8 @@ public class JlinkTask {
 
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(
-            taskHelper.getPluginsConfig(options.output, options.launchers));
+            taskHelper.getPluginsConfig(options.output, options.launchers,
+                    imageProvider.targetPlatform));
 
         //Ask the stack to proceed
         stack.operate(imageProvider);
@@ -541,7 +542,7 @@ public class JlinkTask {
     }
 
 
-    private static ImageProvider createImageProvider(JlinkConfiguration config,
+    private static ImageHelper createImageProvider(JlinkConfiguration config,
                                                      Path retainModulesPath,
                                                      boolean ignoreSigning,
                                                      boolean bindService,
@@ -808,6 +809,7 @@ public class JlinkTask {
         final boolean ignoreSigning;
         final Runtime.Version version;
         final Set<Archive> archives;
+        final Platform targetPlatform;
 
         ImageHelper(Configuration cf,
                     Map<String, Path> modsPaths,
@@ -817,6 +819,7 @@ public class JlinkTask {
                     boolean verbose,
                     PrintWriter log) throws IOException {
             if (order != null) {
+                this.targetPlatform = Platform.runtime();
                 this.order = order;
             } else {
                 Path javaBasePath = modsPaths.get("java.base");
@@ -826,6 +829,7 @@ public class JlinkTask {
                     // will correspond to the current platform. So this isn't an attempt to
                     // build a cross-platform image. We use the current platform's endianness
                     // in this case
+                    this.targetPlatform = Platform.runtime();
                     this.order = ByteOrder.nativeOrder();
                 } else {
                     // this is an attempt to build a cross-platform image. We now attempt to
@@ -834,27 +838,27 @@ public class JlinkTask {
                     Optional<ResolvedModule> javaBase = cf.findModule("java.base");
                     assert javaBase.isPresent() : "java.base module is missing";
                     ModuleReference ref = javaBase.get().reference();
-                    String targetPlatform = null;
+                    String targetPlatformVal = null;
                     if (ref instanceof ModuleReferenceImpl modRefImpl
                             && modRefImpl.moduleTarget() != null) {
-                        targetPlatform = modRefImpl.moduleTarget().targetPlatform();
+                        targetPlatformVal = modRefImpl.moduleTarget().targetPlatform();
                     }
-                    if (targetPlatform == null) {
+                    if (targetPlatformVal == null) {
                         // could not determine target platform
                         throw new IOException(
                                 taskHelper.getMessage("err.cannot.determine.target.platform"));
                     }
-                    ByteOrder targetByteOrder = Platform.getNativeByteOrder(targetPlatform);
-                    if (targetByteOrder == null) {
+                    this.targetPlatform = Platform.parsePlatform(targetPlatformVal);
+                    this.order = this.targetPlatform.getNativeByteOrder();
+                    if (this.order == null) {
                         // unsupported target platform
                         throw new IOException(
                                 taskHelper.getMessage("err.unsupported.target.platform",
-                                        targetPlatform));
+                                        targetPlatformVal));
                     }
-                    this.order = targetByteOrder;
                     if (verbose && log != null) {
                         log.format("Cross-platform image generation, using %s for target platform" +
-                                        " %s%n", this.order, targetPlatform);
+                                        " %s%n", this.order, targetPlatformVal);
                     }
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,8 +417,9 @@ public final class TaskHelper {
             return null;
         }
 
-        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers
-                    ) throws IOException, BadArgs {
+        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
+                                                      Platform targetPlatform)
+                throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
                     throw new IllegalArgumentException(PluginsResourceBundle.
@@ -465,7 +466,7 @@ public final class TaskHelper {
             // recreate or postprocessing don't require an output directory.
             ImageBuilder builder = null;
             if (output != null) {
-                builder = new DefaultImageBuilder(output, launchers);
+                builder = new DefaultImageBuilder(output, launchers, targetPlatform);
             }
 
             return new Jlink.PluginsConfiguration(pluginsList,
@@ -716,9 +717,10 @@ public final class TaskHelper {
                 + bundleHelper.getMessage(key, args));
     }
 
-    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers)
+    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
+                                                 Platform targetPlatform)
             throws IOException, BadArgs {
-        return pluginOptions.getPluginsConfig(output, launchers);
+        return pluginOptions.getPluginsConfig(output, launchers, targetPlatform);
     }
 
     public Path getExistingImage() {
