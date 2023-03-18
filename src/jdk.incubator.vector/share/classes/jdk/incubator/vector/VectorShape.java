@@ -124,6 +124,7 @@ public enum VectorShape {
      * @throws IllegalArgumentException if no such vector shape exists
      * @see #vectorBitSize()
      */
+    @ForceInline
     public static VectorShape forBitSize(int bitSize) {
         switch (bitSize) {
             case 64:

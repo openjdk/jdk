@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1071,7 +1071,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,short,short,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,short,VectorMask)
@@ -2493,15 +2493,15 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<Short> toShuffleTemplate(Class<?> shuffleType) {
+    final VectorShuffle<Short> toShuffleTemplate(Class<?> shuffleType) {
         ShortSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), short.class, length(),
-                                     shuffleType, byte.class, length(),
+                                     shuffleType, short.class, length(),
                                      this, vsp,
                                      ShortVector::toShuffle0);
     }
+
 
     /**
      * {@inheritDoc} <!--workaround-->

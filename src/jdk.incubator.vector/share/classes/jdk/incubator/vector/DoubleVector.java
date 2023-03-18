@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -953,7 +953,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,double,double,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,double,VectorMask)
@@ -2321,28 +2321,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r1.blend(r0, valid);
     }
 
-    @ForceInline
-    private final
-    VectorShuffle<Double> toShuffle0(DoubleSpecies dsp) {
-        double[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(dsp, sa, 0);
-    }
 
-    /*package-private*/
-    @ForceInline
-    final
-    VectorShuffle<Double> toShuffleTemplate(Class<?> shuffleType) {
-        DoubleSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), double.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     DoubleVector::toShuffle0);
-    }
 
     /**
      * {@inheritDoc} <!--workaround-->

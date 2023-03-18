@@ -143,22 +143,28 @@ final class DoubleMaxVector extends DoubleVector {
 
     @ForceInline
     DoubleMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (DoubleMaxShuffle)VectorSupport.shuffleIota(ETYPE, DoubleMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (DoubleMaxShuffle)VectorSupport.shuffleIota(ETYPE, DoubleMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+        if ((VLENGTH & (VLENGTH - 1)) != 0) {
+            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, VLENGTH)))
+                        : shuffleFromOp(i -> i * step + start);
+        }
+
+        LongMaxVector iota = DoubleMaxShuffle.IOTA.toBitsVector();
+        LongVector.LongSpecies species = LongMaxVector.VSPECIES;
+        iota = iota.lanewise(VectorOperators.MUL, species.broadcast(step))
+                .lanewise(VectorOperators.ADD, species.broadcast(start));
+        LongMaxVector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
+
+        if (!wrap) {
+            LongMaxVector wrappedLower = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
+            VectorMask<Long> mask = iota.compare(VectorOperators.EQ, iota);
+            wrapped = wrappedLower.blend(wrapped, mask);
+        }
+        return wrapped.toFPShuffle();
     }
 
     @Override
     @ForceInline
-    DoubleMaxShuffle shuffleFromBytes(byte[] reorder) { return new DoubleMaxShuffle(reorder); }
-
-    @Override
-    @ForceInline
-    DoubleMaxShuffle shuffleFromArray(int[] indexes, int i) { return new DoubleMaxShuffle(indexes, i); }
+    DoubleMaxShuffle shuffleFromArray(int[] indices, int i) { return new DoubleMaxShuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -344,9 +350,12 @@ final class DoubleMaxVector extends DoubleVector {
         return (long) super.reduceLanesTemplate(op, DoubleMaxMask.class, (DoubleMaxMask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Double> toShuffle() {
-        return super.toShuffleTemplate(DoubleMaxShuffle.class); // specialize
+    public DoubleMaxShuffle toShuffle() {
+        return (DoubleMaxShuffle) castShape(LongMaxVector.VSPECIES, 0)
+                .reinterpretAsLongs()
+                .toFPShuffle();
     }
 
     // Specialized unary testing
@@ -767,26 +776,30 @@ final class DoubleMaxVector extends DoubleVector {
     // Shuffle
 
     static final class DoubleMaxShuffle extends AbstractShuffle<Double> {
+        static final IntUnaryOperator IDENTITY = i -> i;
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Double> ETYPE = double.class; // used by the JVM
 
-        DoubleMaxShuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        DoubleMaxShuffle(long[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public DoubleMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        DoubleMaxShuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public DoubleMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        DoubleMaxShuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public DoubleMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        long[] indices() {
+            return (long[])getPayload();
         }
 
         @Override
+        @ForceInline
         public DoubleSpecies vspecies() {
             return VSPECIES;
         }
@@ -794,40 +807,103 @@ final class DoubleMaxVector extends DoubleVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Long.MAX_VALUE);
+            assert(Long.MIN_VALUE <= -VLENGTH);
         }
         static final DoubleMaxShuffle IOTA = new DoubleMaxShuffle(IDENTITY);
 
         @Override
         @ForceInline
-        public DoubleMaxVector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, DoubleMaxShuffle.class, this, VLENGTH,
-                                                    (s) -> ((DoubleMaxVector)(((AbstractShuffle<Double>)(s)).toVectorTemplate())));
+        LongMaxVector toBitsVector() {
+            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                    DoubleMaxShuffle.class, double.class, VLENGTH,
+                    LongMaxVector.class, long.class, VLENGTH,
+                    this, vspecies().asIntegral(),
+                    (v, s) -> toBitsVectorHelper(v));
+        }
+
+        private static LongMaxVector toBitsVectorHelper(DoubleMaxShuffle s) {
+            return (LongMaxVector) LongMaxVector.VSPECIES.dummyVector()
+                    .vectorFactory(s.indices());
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            VectorSpecies<Integer> species = VectorSpecies.of(
+                    int.class,
+                    VectorShape.forBitSize(length() * Integer.SIZE));
+            Vector<Long> v = toBitsVector();
+            v.convertShape(VectorOperators.L2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset);
         }
 
         @ForceInline
         @Override
         public DoubleMaxShuffle rearrange(VectorShuffle<Double> shuffle) {
-            DoubleMaxShuffle s = (DoubleMaxShuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+            return toBitsVector()
+                    .rearrange(shuffle.cast(LongMaxVector.VSPECIES))
+                    .toFPShuffle();
+        }
+
+        @ForceInline
+        @Override
+        @SuppressWarnings("unchecked")
+        public DoubleMaxShuffle wrapIndexes() {
+            LongMaxVector v = toBitsVector();
+            LongVector.LongSpecies species = LongMaxVector.VSPECIES;
+            if ((VLENGTH & (VLENGTH - 1)) == 0) {
+                v = v.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
+            } else {
+                VectorMask<Long> neg = v.compare(VectorOperators.LT, 0);
+                Vector<Long> adjusted = v.lanewise(VectorOperators.ADD, VLENGTH);
+                v = v.blend(adjusted, neg);
             }
-            return new DoubleMaxShuffle(r);
+            return v.toFPShuffle();
+        }
+
+        private static long[] prepare(int[] indices, int offset) {
+            long[] a = new long[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (long)si;
+            }
+            return a;
+        }
+
+        private static long[] prepare(IntUnaryOperator f) {
+            long[] a = new long[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (long)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(long[] indices) {
+            int length = indices.length;
+            for (long si : indices) {
+                if (si >= (long)length || si < (long)(-length)) {
+                    boolean assertsEnabled = false;
+                    assert(assertsEnabled = true);
+                    if (assertsEnabled) {
+                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                        throw new AssertionError(msg);
+                    }
+                    return false;
+                }
+            }
+            return true;
         }
     }
 

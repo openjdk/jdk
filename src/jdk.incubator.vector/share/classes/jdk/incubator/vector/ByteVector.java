@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1071,7 +1071,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,byte,byte,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,byte,VectorMask)
@@ -2492,15 +2492,15 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<Byte> toShuffleTemplate(Class<?> shuffleType) {
+    final VectorShuffle<Byte> toShuffleTemplate(Class<?> shuffleType) {
         ByteSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), byte.class, length(),
                                      shuffleType, byte.class, length(),
                                      this, vsp,
                                      ByteVector::toShuffle0);
     }
+
 
     /**
      * {@inheritDoc} <!--workaround-->

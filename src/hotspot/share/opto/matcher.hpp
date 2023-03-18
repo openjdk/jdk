@@ -338,6 +338,8 @@ public:
 
   static const bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
+  static const bool vector_needs_load_shuffle(BasicType elem_bt, int vlen);
+
   static const RegMask* predicate_reg_mask(void);
   static const TypeVectMask* predicate_reg_type(const Type* elemTy, int length);
 

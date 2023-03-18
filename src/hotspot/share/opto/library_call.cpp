@@ -689,8 +689,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_shuffle_iota();
   case vmIntrinsics::_VectorMaskOp:
     return inline_vector_mask_operation();
-  case vmIntrinsics::_VectorShuffleToVector:
-    return inline_vector_shuffle_to_vector();
   case vmIntrinsics::_VectorLoadOp:
     return inline_vector_mem_operation(/*is_store=*/false);
   case vmIntrinsics::_VectorLoadMaskedOp:
