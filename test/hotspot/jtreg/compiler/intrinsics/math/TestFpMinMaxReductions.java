@@ -48,6 +48,8 @@ public class TestFpMinMaxReductions {
     private static double doubleInput2;
     private static double[] doubleArray = new double[1000];
 
+    private static int stride = 1;
+
     public static void main(String[] args) throws Exception {
         TestFramework.run();
     }
@@ -91,9 +93,8 @@ public class TestFpMinMaxReductions {
     @IR(counts = {IRNode.MIN_F_REDUCTION_REG, ">= 1"})
     private static float testFloatMinReductionNonCounted() {
         float fmin = Float.POSITIVE_INFINITY;
-        for (int i = 0; i < floatArray.length; i++) {
+        for (int i = 0; i < floatArray.length; i += stride) {
             fmin = Math.min(fmin, floatArray[i]);
-            System.out.println(fmin);
         }
         return fmin;
     }
@@ -106,6 +107,20 @@ public class TestFpMinMaxReductions {
             acc = Math.min(acc, floatArray[i]);
         }
         return acc;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MIN_F_REDUCTION_REG, ">= 1"})
+    private static float testFloatMinReductionInOuterLoop() {
+        float fmin = Float.POSITIVE_INFINITY;
+        int count = 0;
+        for (int i = 0; i < floatArray.length; i++) {
+            fmin = Math.min(fmin, floatArray[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return fmin + count;
     }
 
     @Test
