@@ -102,6 +102,8 @@ public:
     NativeCallStack stack(&frame1, 1);
     NativeCallStack stack2(&frame2, 1);
 
+    VirtualMemoryTracker::commit_events();
+
     // Fetch the added RMR for the space
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(addr, size));
 
@@ -176,6 +178,7 @@ public:
     NativeCallStack stack(&frame1, 1);
     NativeCallStack stack2(&frame2, 1);
 
+    VirtualMemoryTracker::commit_events();
     // Add the reserved memory
     VirtualMemoryTracker::add_reserved_region_impl(addr, size, stack, mtTest);
 
@@ -252,7 +255,6 @@ public:
   }
 
   static void test_add_committed_region_overlapping() {
-
     size_t size  = 0x01000000;
     ReservedSpace rs(size);
     address addr = (address)rs.base();
@@ -262,6 +264,8 @@ public:
 
     NativeCallStack stack(&frame1, 1);
     NativeCallStack stack2(&frame2, 1);
+
+    VirtualMemoryTracker::commit_events();
 
     // Fetch the added RMR for the space
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(addr, size));
@@ -434,6 +438,7 @@ public:
     NativeCallStack stack(&frame1, 1);
     NativeCallStack stack2(&frame2, 1);
 
+    VirtualMemoryTracker::commit_events();
     // Fetch the added RMR for the space
     ReservedMemoryRegion* rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion(addr, size));
 

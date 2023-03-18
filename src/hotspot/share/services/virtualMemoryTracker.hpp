@@ -438,6 +438,11 @@ public:
       } else if(evt.tag == Tag::SplitReserved) {
         split_reserved_region_impl((address)evt.addr, evt.size, evt.split.split);
       }
+#ifdef ASSERT
+      else {
+        ShouldNotReachHere();
+      }
+#endif
     }
     // Try not to keep too much unused memory around.
     if (length > 1024) {

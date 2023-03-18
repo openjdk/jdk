@@ -34,7 +34,7 @@
 
 size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
 
-GrowableArray<VirtualMemoryTracker::MemoryEvent> VirtualMemoryTracker::work_queue{256, mtNMT};
+GrowableArray<VirtualMemoryTracker::MemoryEvent> VirtualMemoryTracker::work_queue{0, mtNMT};
 
 void VirtualMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");
@@ -327,6 +327,7 @@ bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
     VirtualMemorySummary::initialize();
     _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
+    work_queue.reserve(256);
     return (_reserved_regions != nullptr);
   }
   return true;
