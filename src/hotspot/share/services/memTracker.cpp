@@ -80,7 +80,7 @@ void MemTracker::initialize() {
     }
   }
 
-  NMTPreInit::pre_to_post();
+  NMTPreInit::pre_to_post(level == NMT_off);
 
   _tracking_level = level;
 

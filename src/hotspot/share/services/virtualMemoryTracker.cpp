@@ -581,10 +581,9 @@ private:
   const size_t  _size;
 
   address _current_start;
-  size_t  _current_size;
 public:
   RegionIterator(address start, size_t size) :
-    _start(start), _size(size), _current_start(start), _current_size(size) {
+    _start(start), _size(size), _current_start(start) {
   }
 
   // return true if committed region is found
@@ -597,14 +596,12 @@ bool RegionIterator::next_committed(address& committed_start, size_t& committed_
   if (end() <= _current_start) return false;
 
   const size_t page_sz = os::vm_page_size();
-  assert(_current_start + _current_size == end(), "Must be");
-  if (os::committed_in_range(_current_start, _current_size, committed_start, committed_size)) {
+  const size_t current_size = end() - _current_start;
+  if (os::committed_in_range(_current_start, current_size, committed_start, committed_size)) {
     assert(committed_start != nullptr, "Must be");
     assert(committed_size > 0 && is_aligned(committed_size, os::vm_page_size()), "Must be");
 
-    size_t remaining_size = (_current_start + _current_size) - (committed_start + committed_size);
     _current_start = committed_start + committed_size;
-    _current_size = remaining_size;
     return true;
   } else {
     return false;

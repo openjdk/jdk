@@ -39,7 +39,7 @@ final class FlushTask extends PeriodicTask {
     private volatile long flushInterval = Long.MAX_VALUE;
 
     public FlushTask() {
-        super(new LookupKey(new Object()), "JFR: Flush Task");
+        super(new LookupKey(new Object()), "flush task");
     }
 
     @Override

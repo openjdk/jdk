@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,20 +112,20 @@ static void test_search_ranges(BitMap& test_ones,
                                BitMap& test_zeros,
                                idx_t left,
                                idx_t right) {
-  // Test get_next_one_offset with full range of map.
-  EXPECT_EQ(left, test_ones.get_next_one_offset(0));
-  EXPECT_EQ(right, test_ones.get_next_one_offset(left + 1));
-  EXPECT_EQ(BITMAP_SIZE, test_ones.get_next_one_offset(right + 1));
+  // Test find_first_set_bit with full range of map.
+  EXPECT_EQ(left, test_ones.find_first_set_bit(0));
+  EXPECT_EQ(right, test_ones.find_first_set_bit(left + 1));
+  EXPECT_EQ(BITMAP_SIZE, test_ones.find_first_set_bit(right + 1));
 
-  // Test get_next_one_offset_aligned_right with full range of map.
-  EXPECT_EQ(left, test_ones.get_next_one_offset_aligned_right(0, BITMAP_SIZE));
-  EXPECT_EQ(right, test_ones.get_next_one_offset_aligned_right(left + 1, BITMAP_SIZE));
-  EXPECT_EQ(BITMAP_SIZE, test_ones.get_next_one_offset_aligned_right(right + 1, BITMAP_SIZE));
+  // Test find_first_set_bit_aligned_right with full range of map.
+  EXPECT_EQ(left, test_ones.find_first_set_bit_aligned_right(0, BITMAP_SIZE));
+  EXPECT_EQ(right, test_ones.find_first_set_bit_aligned_right(left + 1, BITMAP_SIZE));
+  EXPECT_EQ(BITMAP_SIZE, test_ones.find_first_set_bit_aligned_right(right + 1, BITMAP_SIZE));
 
-  // Test get_next_zero_offset with full range of map.
-  EXPECT_EQ(left, test_zeros.get_next_zero_offset(0));
-  EXPECT_EQ(right, test_zeros.get_next_zero_offset(left + 1));
-  EXPECT_EQ(BITMAP_SIZE, test_zeros.get_next_zero_offset(right + 1));
+  // Test find_first_clear_bit with full range of map.
+  EXPECT_EQ(left, test_zeros.find_first_clear_bit(0));
+  EXPECT_EQ(right, test_zeros.find_first_clear_bit(left + 1));
+  EXPECT_EQ(BITMAP_SIZE, test_zeros.find_first_clear_bit(right + 1));
 
   // Check that iterate invokes the closure function on left and right values.
   TestIteratorFn test_iteration(0, BITMAP_SIZE, left, right);
@@ -170,23 +170,23 @@ static void test_search_ranges(BitMap& test_ones,
 
           idx_t expected = compute_expected(start, end, left, right);
 
-          EXPECT_EQ(expected, test_ones.get_next_one_offset(start, end));
-          EXPECT_EQ(expected, test_zeros.get_next_zero_offset(start, end));
+          EXPECT_EQ(expected, test_ones.find_first_set_bit(start, end));
+          EXPECT_EQ(expected, test_zeros.find_first_clear_bit(start, end));
           if (aligned_right) {
             EXPECT_EQ(
               expected,
-              test_ones.get_next_one_offset_aligned_right(start, end));
+              test_ones.find_first_set_bit_aligned_right(start, end));
           }
 
           idx_t start2 = MIN2(expected + 1, end);
           idx_t expected2 = compute_expected(start2, end, left, right);
 
-          EXPECT_EQ(expected2, test_ones.get_next_one_offset(start2, end));
-          EXPECT_EQ(expected2, test_zeros.get_next_zero_offset(start2, end));
+          EXPECT_EQ(expected2, test_ones.find_first_set_bit(start2, end));
+          EXPECT_EQ(expected2, test_zeros.find_first_clear_bit(start2, end));
           if (aligned_right) {
             EXPECT_EQ(
               expected2,
-              test_ones.get_next_one_offset_aligned_right(start2, end));
+              test_ones.find_first_set_bit_aligned_right(start2, end));
           }
         }
       }
@@ -204,8 +204,8 @@ TEST(BitMap, search) {
   test_zeros.set_range(0, test_zeros.size());
 
   // Searching "empty" sequence should return size.
-  EXPECT_EQ(BITMAP_SIZE, test_ones.get_next_one_offset(0));
-  EXPECT_EQ(BITMAP_SIZE, test_zeros.get_next_zero_offset(0));
+  EXPECT_EQ(BITMAP_SIZE, test_ones.find_first_set_bit(0));
+  EXPECT_EQ(BITMAP_SIZE, test_zeros.find_first_clear_bit(0));
 
   // With left being in the first or second chunk...
   for (size_t c_left = 0; c_left < 2; ++c_left) {
