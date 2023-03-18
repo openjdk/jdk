@@ -28,7 +28,6 @@
  * @bug 8174718
  * @bug 8189671
  * @author Andrei Eremeev
- * @library /test/lib ../lib
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
@@ -40,6 +39,7 @@
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
+ * @library /test/lib ../lib
  * @build tests.* jdk.test.lib.util.ModuleInfoWriter
  * @run testng JLinkNegativeTest
  */

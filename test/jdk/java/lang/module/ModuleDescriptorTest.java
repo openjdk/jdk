@@ -24,13 +24,13 @@
 /**
  * @test
  * @bug 8142968 8158456 8298875
- * @library /test/lib
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.classfile.java.lang.constant
  *          java.base/jdk.internal.module
+ * @library /test/lib
  * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleDescriptorTest
  * @summary Basic test for java.lang.module.ModuleDescriptor and its builder

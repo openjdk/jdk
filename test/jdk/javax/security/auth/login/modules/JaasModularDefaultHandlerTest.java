@@ -42,12 +42,12 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @test
  * @bug 8151654 8183310
  * @summary Test default callback handler with all possible modular option.
- * @library /test/lib
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.classfile.java.lang.constant
  *          java.base/jdk.internal.module
+ * @library /test/lib
  * @build jdk.test.lib.util.JarUtils jdk.test.lib.util.ModuleInfoWriter
  * @build TestCallbackHandler TestLoginModule JaasClientWithDefaultHandler
  * @run main JaasModularDefaultHandlerTest

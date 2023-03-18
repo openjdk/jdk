@@ -35,8 +35,6 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8221730
  * @summary Test of diagnostic command VM.version (tests all DCMD executors)
- * @library /test/lib
- *          /vmTestbase
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
@@ -46,6 +44,8 @@ import org.testng.annotations.Test;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @library /test/lib
+ *          /vmTestbase
  * @run testng/othervm -XX:+UsePerfData VMVersionTest
  */
 public class VMVersionTest {
