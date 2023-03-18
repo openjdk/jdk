@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,7 +290,16 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
   return &unextended_sp()[index];
 }
 
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  ptr_at_put(interpreter_frame_locals_offset, (intptr_t) (locs - fp()));
+}
+
 // sender_sp
+
 intptr_t* frame::interpreter_frame_sender_sp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   return (intptr_t*) at(interpreter_frame_sender_sp_offset);
@@ -346,18 +355,35 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
 }
 
 UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
-  ShouldNotCallThis();
-  return nullptr;
+  assert(frame.is_upcall_stub_frame(), "wrong frame");
+  // need unextended_sp here, since normal sp is wrong for interpreter callees
+  return reinterpret_cast<UpcallStub::FrameData*>(
+          reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
 }
 
 bool frame::upcall_stub_frame_is_first() const {
-  ShouldNotCallThis();
-  return false;
+  assert(is_upcall_stub_frame(), "must be optimzed entry frame");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  return jfa->last_Java_sp() == NULL;
 }
 
 frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
-  ShouldNotCallThis();
-  return {};
+  assert(map != NULL, "map must be set");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  // Java frame called from C; skip all C frames and return top C
+  // frame of that chunk as the sender
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(!upcall_stub_frame_is_first(), "must have a frame anchor to go back to");
+  assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
+  // Since we are walking the stack now this nested anchor is obviously walkable
+  // even if it wasn't when it was stacked.
+  jfa->make_walkable();
+  map->clear();
+  assert(map->include_argument_oops(), "should be set by clear");
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+
+  return fr;
 }
 
 //------------------------------------------------------------------------------
@@ -481,7 +507,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
   if (m->max_locals() > 0) {
-    address locals = (address) *interpreter_frame_locals_addr();
+    address locals = (address)interpreter_frame_locals();
     if (!thread->is_in_stack_range_incl(locals, (address)fp())) {
       return false;
     }

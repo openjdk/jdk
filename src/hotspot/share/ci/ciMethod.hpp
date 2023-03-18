@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ class ciMethod : public ciMetadata {
   int _handler_count;
   int _interpreter_invocation_count;
   int _interpreter_throwout_count;
-  int _instructions_size;
+  int _inline_instructions_size;
   int _size_of_parameters;
 
   bool _uses_monitors;
@@ -175,12 +175,12 @@ class ciMethod : public ciMetadata {
 
   Method* get_Method() const {
     Method* m = (Method*)_metadata;
-    assert(m != NULL, "illegal use of unloaded method");
+    assert(m != nullptr, "illegal use of unloaded method");
     return m;
   }
 
   // Method code and related information.
-  address code()                                 { if (_code == NULL) load_code(); return _code; }
+  address code()                                 { if (_code == nullptr) load_code(); return _code; }
   int code_size() const                          { check_is_loaded(); return _code_size; }
   int max_stack() const                          { check_is_loaded(); return _max_stack; }
   int max_locals() const                         { check_is_loaded(); return _max_locals; }
@@ -214,11 +214,11 @@ class ciMethod : public ciMetadata {
 
   Bytecodes::Code java_code_at_bci(int bci) {
     address bcp = code() + bci;
-    return Bytecodes::java_code_at(NULL, bcp);
+    return Bytecodes::java_code_at(nullptr, bcp);
   }
   Bytecodes::Code raw_code_at_bci(int bci) {
     address bcp = code() + bci;
-    return Bytecodes::code_at(NULL, bcp);
+    return Bytecodes::code_at(nullptr, bcp);
   }
   BCEscapeAnalyzer  *get_bcea();
   ciMethodBlocks    *get_method_blocks();
@@ -283,12 +283,12 @@ class ciMethod : public ciMetadata {
     bool ignored_will_link;
     ciSignature* declared_signature;
     get_method_at_bci(bci, ignored_will_link, &declared_signature);
-    assert(declared_signature != NULL, "cannot be null");
+    assert(declared_signature != nullptr, "cannot be null");
     return declared_signature;
   }
 
   // Given a certain calling environment, find the monomorphic target
-  // for the call.  Return NULL if the call is not monomorphic in
+  // for the call.  Return null if the call is not monomorphic in
   // its calling environment.
   ciMethod* find_monomorphic_target(ciInstanceKlass* caller,
                                     ciInstanceKlass* callee_holder,
@@ -296,7 +296,7 @@ class ciMethod : public ciMetadata {
                                     bool check_access = true);
 
   // Given a known receiver klass, find the target for the call.
-  // Return NULL if the call has no target or is abstract.
+  // Return null if the call has no target or is abstract.
   ciMethod* resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access = true, bool allow_abstract = false);
 
   // Find the proper vtable index to invoke this method.
@@ -315,7 +315,8 @@ class ciMethod : public ciMetadata {
   bool check_call(int refinfo_index, bool is_static) const;
   bool ensure_method_data();  // make sure it exists in the VM also
   MethodCounters* ensure_method_counters();
-  int instructions_size();
+
+  int inline_instructions_size();
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
 
   // Stack walking support

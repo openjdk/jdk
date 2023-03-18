@@ -29,6 +29,7 @@
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -130,6 +131,22 @@ public class TestMemoryAccessInstance {
         } else {
             throw new SkipException("Skipping");
         }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    public void badHeapSegmentSet() {
+        MemorySegment targetSegment = MemorySegment.allocateNative(ValueLayout.ADDRESS.byteSize(), SegmentScope.auto());
+        MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
+        targetSegment.set(ValueLayout.ADDRESS, 0, segment); // should throw
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    public void badHeapSegmentSetAtIndex() {
+        MemorySegment targetSegment = MemorySegment.allocateNative(ValueLayout.ADDRESS.byteSize(), SegmentScope.auto());
+        MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
+        targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment); // should throw
     }
 
     static final ByteOrder NE = ByteOrder.nativeOrder();

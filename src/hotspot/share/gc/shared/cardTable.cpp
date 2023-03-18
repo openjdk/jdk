@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ CardTable::CardTable(MemRegion whole_heap) :
   _whole_heap(whole_heap),
   _page_size(os::vm_page_size()),
   _byte_map_size(0),
-  _byte_map(NULL),
-  _byte_map_base(NULL),
+  _byte_map(nullptr),
+  _byte_map_base(nullptr),
   _cur_covered_regions(0),
   _covered(MemRegion::create_array(_max_covered_regions, mtGC)),
   _committed(MemRegion::create_array(_max_covered_regions, mtGC)),
@@ -99,8 +99,8 @@ void CardTable::initialize() {
 
   _cur_covered_regions = 0;
 
-  const size_t rs_align = _page_size == (size_t) os::vm_page_size() ? 0 :
-    MAX2(_page_size, (size_t) os::vm_allocation_granularity());
+  const size_t rs_align = _page_size == os::vm_page_size() ? 0 :
+    MAX2(_page_size, os::vm_allocation_granularity());
   ReservedSpace heap_rs(_byte_map_size, rs_align, _page_size);
 
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
@@ -157,7 +157,7 @@ int CardTable::find_covering_region_by_base(HeapWord* base) {
 }
 
 HeapWord* CardTable::largest_prev_committed_end(int ind) const {
-  HeapWord* max_end = NULL;
+  HeapWord* max_end = nullptr;
   for (int j = 0; j < ind; j++) {
     HeapWord* this_end = _committed[j].end();
     if (this_end > max_end) max_end = this_end;

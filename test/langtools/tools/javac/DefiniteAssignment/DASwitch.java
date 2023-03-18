@@ -8,7 +8,7 @@
  */
 
 public class DASwitch {
-    public static void main(final String[] args) {
+    public static void meth() {
         int t = 1;
         {
             final int x;

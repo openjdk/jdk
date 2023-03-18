@@ -67,6 +67,7 @@ public class TestLayoutEquality {
         addLayoutConstants(testValues, PlatformLayouts.SysV.class);
         addLayoutConstants(testValues, PlatformLayouts.Win64.class);
         addLayoutConstants(testValues, PlatformLayouts.AArch64.class);
+        addLayoutConstants(testValues, PlatformLayouts.RISCV64.class);
 
         return testValues.stream().map(e -> new Object[]{ e }).toArray(Object[][]::new);
     }

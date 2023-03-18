@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,8 +127,8 @@ class SharedClassLoadingMark {
  public:
   SharedClassLoadingMark(Thread* current, InstanceKlass* ik) : THREAD(current), _klass(ik) {}
   ~SharedClassLoadingMark() {
-    assert(THREAD != NULL, "Current thread is NULL");
-    assert(_klass != NULL, "InstanceKlass is NULL");
+    assert(THREAD != nullptr, "Current thread is nullptr");
+    assert(_klass != nullptr, "InstanceKlass is nullptr");
     if (HAS_PENDING_EXCEPTION) {
       if (_klass->is_shared()) {
         _klass->set_shared_loading_failed();
@@ -186,7 +186,7 @@ private:
                                  const ClassFileStream* cfs,
                                  TRAPS);
 
-  // Guaranteed to return non-NULL value for non-shared classes.
+  // Guaranteed to return non-null value for non-shared classes.
   // k must not be a shared class.
   static DumpTimeClassInfo* get_info(InstanceKlass* k);
   static DumpTimeClassInfo* get_info_locked(InstanceKlass* k);
@@ -278,10 +278,10 @@ public:
                                                       Symbol* invoked_type,
                                                       Symbol* method_type,
                                                       Method* member_method,
-                                                      Symbol* instantiated_method_type) NOT_CDS_RETURN_(NULL);
-  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(NULL);
+                                                      Symbol* instantiated_method_type) NOT_CDS_RETURN_(nullptr);
+  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(nullptr);
   static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(NULL);
+                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(nullptr);
   static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2) NOT_CDS_RETURN;

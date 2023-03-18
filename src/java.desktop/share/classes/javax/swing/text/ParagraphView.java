@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package javax.swing.text;
 
-import java.util.Arrays;
 import java.awt.*;
 import java.awt.font.TextAttribute;
 import java.awt.geom.Rectangle2D;
@@ -1046,7 +1045,6 @@ public class ParagraphView extends FlowView implements TabExpander {
             int rowStartOffset = getStartOffset();
             int rowEndOffset = getEndOffset();
             int[] spaceMap = new int[rowEndOffset - rowStartOffset];
-            Arrays.fill(spaceMap, 0);
             for (int i = getViewCount() - 1; i >= 0 ; i--) {
                 View view = getView(i);
                 if (view instanceof GlyphView) {

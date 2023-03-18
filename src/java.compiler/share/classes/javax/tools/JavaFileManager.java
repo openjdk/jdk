@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,8 +388,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Returns a {@linkplain FileObject file object} for input
-     * representing the specified <a href="JavaFileManager.html#relative_name">relative
-     * name</a> in the specified package in the given package-oriented location.
+     * representing the specified {@linkplain JavaFileManager##relative_name relative
+     * name} in the specified package in the given package-oriented location.
      *
      * <p>If the returned object represents a {@linkplain
      * JavaFileObject.Kind#SOURCE source} or {@linkplain
@@ -435,8 +435,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Returns a {@linkplain FileObject file object} for output
-     * representing the specified <a href="JavaFileManager.html#relative_name">relative
-     * name</a> in the specified package in the given location.
+     * representing the specified {@linkplain JavaFileManager##relative_name relative
+     * name} in the specified package in the given location.
      *
      * <p>Optionally, this file manager might consider the sibling as
      * a hint for where to place the output.  The exact semantics of
@@ -482,8 +482,8 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Returns a {@linkplain FileObject file object} for output
-     * representing the specified <a href="JavaFileManager.html#relative_name">relative
-     * name</a> in the specified package in the given location.
+     * representing the specified {@linkplain JavaFileManager##relative_name relative
+     * name} in the specified package in the given location.
      *
      * <p>The provided {@code originatingFiles} represent files that
      * were, in an unspecified way, used to create the content of

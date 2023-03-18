@@ -327,6 +327,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   WorkerThreadsBarrierSync     _first_overflow_barrier_sync;
   WorkerThreadsBarrierSync     _second_overflow_barrier_sync;
 
+  // Number of completed mark cycles.
+  volatile uint           _completed_mark_cycles;
+
   // This is set by any task, when an overflow on the global data
   // structures is detected
   volatile bool           _has_overflown;
@@ -465,11 +468,11 @@ public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
-  // Live words in the given region as determined by concurrent marking, i.e. the amount of
-  // live words between bottom and TAMS.
-  size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }
-  // Returns the liveness value in bytes.
-  size_t live_bytes(uint region) const { return live_words(region) * HeapWordSize; }
+  // Did the last marking find a live object between bottom and TAMS?
+  bool contains_live_object(uint region) const { return _region_mark_stats[region]._live_words != 0; }
+  // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
+  // live bytes between bottom and TAMS.
+  size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -501,7 +504,7 @@ public:
   void concurrent_cycle_start();
   // Abandon current marking iteration due to a Full GC.
   bool concurrent_cycle_abort();
-  void concurrent_cycle_end();
+  void concurrent_cycle_end(bool mark_cycle_completed);
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not
   // guarantee or update any state after the call. Root region scan must not be
@@ -592,6 +595,8 @@ public:
   void verify_no_collection_set_oops() PRODUCT_RETURN;
 
   inline bool do_yield_check();
+
+  uint completed_mark_cycles() const;
 
   bool has_aborted()      { return _has_aborted; }
 

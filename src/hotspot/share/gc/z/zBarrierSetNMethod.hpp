@@ -34,8 +34,8 @@ protected:
   virtual bool nmethod_entry_barrier(nmethod* nm);
 
 public:
-  virtual ByteSize thread_disarmed_offset() const;
-  virtual int* disarmed_value_address() const;
+  virtual ByteSize thread_disarmed_guard_value_offset() const;
+  virtual int* disarmed_guard_value_address() const;
 };
 
 #endif // SHARE_GC_Z_ZBARRIERSETNMETHOD_HPP

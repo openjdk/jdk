@@ -71,7 +71,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         public Object getElementAt(int index) { return null; }
         public void addListDataListener(ListDataListener l) {}
         public void removeListDataListener(ListDataListener l) {}
-    };
+    }
 
     static final ListModel<Object> EmptyListModel = new EmptyListModelClass();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public final class CRC32C implements Checksum {
         if (b == null) {
             throw new NullPointerException();
         }
-        Preconditions.checkFromIndexSize(len, off, b.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, b.length, Preconditions.AIOOBE_FORMATTER);
         crc = updateBytes(crc, b, off, (off + len));
     }
 

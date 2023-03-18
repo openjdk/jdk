@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ import com.sun.management.GcInfo;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.lang.reflect.Field;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.gc.GC;
-import gc.testlibrary.g1.MixedGCProvoker;
 
 public class GarbageCollectionNotificationTest {
     private static HashMap<String,Boolean> listenerInvoked = new HashMap<String,Boolean>();
@@ -107,7 +107,7 @@ public class GarbageCollectionNotificationTest {
         }
         // Trigger G1's concurrent mark
         if (GC.G1.isSelected()) {
-            MixedGCProvoker.provokeConcMarkCycle();
+            WhiteBox.getWhiteBox().g1RunConcurrentGC();
         }
         int wakeup = 0;
         synchronized(synchronizer) {

@@ -275,10 +275,15 @@ public class PackageGenerator {
                     }
                     break;
                 case "import":
-                    imports.append(
-                        make.Import(
-                            make.Ident(names.fromString(element.getTextContent())),
-                            false));
+                    String[] idents = element.getTextContent().split("\\.");
+                    if (idents.length < 2)
+                        throw new IllegalStateException("Invalid import: " + element.getTextContent());
+                    JCFieldAccess select = make.Select(
+                        make.Ident(names.fromString(idents[0])), names.fromString(idents[1]));
+                    for (int j = 2; j < idents.length; j++)
+                        select = make.Select(select, names.fromString(idents[j]));
+                    imports.append(make.Import(select, false));
+                    break;
             }
         }
 
