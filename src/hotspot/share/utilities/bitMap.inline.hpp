@@ -29,7 +29,6 @@
 
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
-#include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -202,19 +201,17 @@ inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
   assert(!aligned_right || is_aligned(end, BitsPerWord), "end not aligned");
 
   if (beg < end) {
-    // Get the word containing beg.
+    // Get the word containing beg, and shift out low bits.
     idx_t word_index = to_words_align_down(beg);
-    bm_word_t cword = flipped_word(word_index, flip);
-    // Shift out low bits so beg bit is bit 0 of cword.
-    cword >>= bit_in_word(beg);
+    bm_word_t cword = flipped_word(word_index, flip) >> bit_in_word(beg);
     if ((cword & 1) != 0) {     // Test the beg bit.
       return beg;
-    } else if (cword != 0) {    // Test for other bits in the first word.
+    } else if (cword != 0) {    // Test other bits in the first word.
       idx_t result = beg + count_trailing_zeros(cword);
       if (aligned_right || (result < end)) return result;
       // Result is beyond range bound; return end.
     } else {
-      // Flipped and shifted first word is zero.  Word search through
+      // First word had no interesting bits.  Word search through
       // aligned up end for a non-zero flipped word.
       idx_t word_limit = aligned_right
         ? to_words_align_down(end) // Minuscule savings when aligned.
@@ -246,29 +243,30 @@ inline BitMap::idx_t BitMap::find_last_bit_impl(idx_t beg, idx_t end) const {
     idx_t last_bit_index = end - 1;
     idx_t word_index = to_words_align_down(last_bit_index);
     bm_word_t cword = flipped_word(word_index, flip);
-    // Shift out high bits so last bit of range is in the sign position of cword.
-    cword <<= (bit_index(word_index + 1) - end);
-    if ((cword & bit_mask(BitsPerWord - 1)) != 0) { // Test the last bit.
+    // Mask for extracting and testing bits of last word.
+    bm_word_t last_bit_mask = bm_word_t(1) << bit_in_word(last_bit_index);
+    if ((cword & last_bit_mask) != 0) { // Test last bit.
       return last_bit_index;
-    } else if (cword != 0) {    // Test for other bits in the last word.
-      idx_t result = last_bit_index - count_leading_zeros(cword);
-      if (aligned_left || (result >= beg)) return result;
-      // Result is below range bound; return end.
-    } else {
-      // Flipped and shifted last word is zero.  Word search through
+    }
+    // Extract prior bits, clearing those above last_bit_index.
+    cword &= (last_bit_mask - 1);
+    if (cword == 0) {           // Test other bits in the last word.
+      // Last word had no interesting bits.  Word search through
       // aligned down beg for a non-zero flipped word.
       idx_t word_limit = to_words_align_down(beg);
       while (word_index-- > word_limit) {
         cword = flipped_word(word_index, flip);
-        if (cword != 0) {
-          idx_t result = bit_index(word_index) + log2i(cword);
-          if (aligned_left || (result >= beg)) return result;
-          // Result is below range bound; return end.
-          assert(word_index == word_limit, "invariant");
-          break;
-        }
+        if (cword != 0) break;
       }
-      // No bits in range; return end.
+    }
+    // For all paths reaching here, (cword != 0) is already known, so we
+    // expect the compiler to not generate any code for it.  Either last word
+    // was non-zero, or found a non-zero word in range, or fully scanned range
+    // (so cword is zero).
+    if (cword != 0) {
+      idx_t result = bit_index(word_index) + log2i(cword);
+      if (aligned_left || (result >= beg)) return result;
+      // Result is below range bound; return end.
     }
   }
   return end;
