@@ -195,14 +195,14 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * should be used and the size and CRC-32 values should be set to 0:
      *
      * {@snippet lang="java" :
-     *     ZipEntry e = ...;
+     *     ZipEntry e = new ZipEntry(entryName);
      *     if (e.isDirectory()) {
      *         e.setMethod(ZipEntry.STORED);
      *         e.setSize(0);
      *         e.setCrc(0);
      *     }
      *     stream.putNextEntry(e);
-     * }
+     *}
      *
      * This ensures strict compliance with the ZIP specification and
      * allows optimal performance when processing directory entries.
