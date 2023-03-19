@@ -129,7 +129,6 @@ HeapWord* NoopHeap::allocate_work(size_t size, bool verbose) {
         if (res != NULL) {
             break;
         }
-
         // Allocation failed, attempt expansion, and retry:
         {
             MutexLocker ml(Heap_lock);
@@ -282,6 +281,37 @@ class ScanOopClosure: public BasicOopIterateClosure {
 		}
 };
 
+class SweepOopClosure: public BasicOopIterateClosure {
+    private:
+        MarkBitMap* const _bitmap;
+
+        template<class T>
+		void do_oop_work(T* p) {
+			  // p is the pointer to memory location where oop is, load the value
+			  // from it, unpack the compressed reference, if needed:
+			T o = RawAccess<>::oop_load(p);
+			if (!CompressedOops::is_null(o)) {
+				oop obj = CompressedOops::decode_not_null(o);
+
+				if (_bitmap->is_marked(obj)) {
+					obj->release
+				}
+			}
+		}
+
+    public:
+        ScanOopClosure(MarkBitMap* bitmap) :
+			_bitmap(bitmap) {
+		}
+
+        virtual void do_oop(oop* p) {
+			do_oop_work(p);
+		}
+		virtual void do_oop(narrowOop* p) {
+			do_oop_work(p);
+		}
+};
+
 void NoopHeap::prologue() {
     //Commiting memory for bitmap
     if (!os::commit_memory((char*)_bitmap_region.start(), _bitmap_region.byte_size(), false)) { return; }
@@ -308,6 +338,10 @@ void NoopHeap::mark() {
         oop obj = stack.pop();
         obj->oop_iterate(&cl);
     }
+}
+
+void NoopHeap::sweep() {
+
 }
 
 void NoopHeap::collect(GCCause::Cause cause) {
