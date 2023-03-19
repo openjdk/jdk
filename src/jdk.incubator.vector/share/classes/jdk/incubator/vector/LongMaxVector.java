@@ -150,9 +150,9 @@ final class LongMaxVector extends LongVector {
         LongMaxVector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
 
         if (!wrap) {
-            LongMaxVector wrappedLower = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Long> mask = iota.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedLower.blend(wrapped, mask);
+            LongMaxVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
+            VectorMask<Long> mask = wrapped.compare(VectorOperators.EQ, iota);
+            wrapped = wrappedEx.blend(wrapped, mask);
         }
         return wrapped.toShuffle();
     }
@@ -781,7 +781,6 @@ final class LongMaxVector extends LongVector {
     // Shuffle
 
     static final class LongMaxShuffle extends AbstractShuffle<Long> {
-        static final IntUnaryOperator IDENTITY = i -> i;
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Long> ETYPE = long.class; // used by the JVM
 

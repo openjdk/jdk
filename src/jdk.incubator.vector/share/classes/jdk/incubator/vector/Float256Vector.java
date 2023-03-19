@@ -155,9 +155,9 @@ final class Float256Vector extends FloatVector {
         Int256Vector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
 
         if (!wrap) {
-            Int256Vector wrappedLower = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Integer> mask = iota.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedLower.blend(wrapped, mask);
+            Int256Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
+            VectorMask<Integer> mask = wrapped.compare(VectorOperators.EQ, iota);
+            wrapped = wrappedEx.blend(wrapped, mask);
         }
         return wrapped.toFPShuffle();
     }
@@ -791,9 +791,8 @@ final class Float256Vector extends FloatVector {
     // Shuffle
 
     static final class Float256Shuffle extends AbstractShuffle<Float> {
-        static final IntUnaryOperator IDENTITY = i -> i;
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+        static final Class<Integer> ETYPE = int.class; // used by the JVM
 
         Float256Shuffle(int[] indices) {
             super(indices);

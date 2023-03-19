@@ -157,9 +157,9 @@ final class $vectortype$ extends $abstractvectortype$ {
         $bitsvectortype$ wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
 
         if (!wrap) {
-            $bitsvectortype$ wrappedLower = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<$Boxbitstype$> mask = iota.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedLower.blend(wrapped, mask);
+            $bitsvectortype$ wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
+            VectorMask<$Boxbitstype$> mask = wrapped.compare(VectorOperators.EQ, iota);
+            wrapped = wrappedEx.blend(wrapped, mask);
         }
 #if[!FP]
         return wrapped.toShuffle();
@@ -1097,9 +1097,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     // Shuffle
 
     static final class $shuffletype$ extends AbstractShuffle<$Boxtype$> {
-        static final IntUnaryOperator IDENTITY = i -> i;
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<$Boxtype$> ETYPE = $type$.class; // used by the JVM
+        static final Class<$Boxbitstype$> ETYPE = $bitstype$.class; // used by the JVM
 
         $shuffletype$($bitstype$[] indices) {
             super(indices);

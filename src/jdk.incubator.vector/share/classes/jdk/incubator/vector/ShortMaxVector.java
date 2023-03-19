@@ -155,9 +155,9 @@ final class ShortMaxVector extends ShortVector {
         ShortMaxVector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
 
         if (!wrap) {
-            ShortMaxVector wrappedLower = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Short> mask = iota.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedLower.blend(wrapped, mask);
+            ShortMaxVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
+            VectorMask<Short> mask = wrapped.compare(VectorOperators.EQ, iota);
+            wrapped = wrappedEx.blend(wrapped, mask);
         }
         return wrapped.toShuffle();
     }
@@ -786,7 +786,6 @@ final class ShortMaxVector extends ShortVector {
     // Shuffle
 
     static final class ShortMaxShuffle extends AbstractShuffle<Short> {
-        static final IntUnaryOperator IDENTITY = i -> i;
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Short> ETYPE = short.class; // used by the JVM
 

@@ -150,9 +150,9 @@ final class Long256Vector extends LongVector {
         Long256Vector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
 
         if (!wrap) {
-            Long256Vector wrappedLower = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Long> mask = iota.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedLower.blend(wrapped, mask);
+            Long256Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
+            VectorMask<Long> mask = wrapped.compare(VectorOperators.EQ, iota);
+            wrapped = wrappedEx.blend(wrapped, mask);
         }
         return wrapped.toShuffle();
     }
@@ -787,7 +787,6 @@ final class Long256Vector extends LongVector {
     // Shuffle
 
     static final class Long256Shuffle extends AbstractShuffle<Long> {
-        static final IntUnaryOperator IDENTITY = i -> i;
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Long> ETYPE = long.class; // used by the JVM
 

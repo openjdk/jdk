@@ -24,10 +24,13 @@
  */
 package jdk.incubator.vector;
 
+import java.util.function.IntUnaryOperator;
 import jdk.internal.vm.annotation.ForceInline;
 
 abstract class AbstractShuffle<E> extends VectorShuffle<E> {
-    // Internal representation allows for a maximum index of 256
+    static final IntUnaryOperator IDENTITY = i -> i;
+
+    // Internal representation allows for a maximum index of E.MAX_VALUE - 1
     // Values are clipped to [-VLENGTH..VLENGTH-1].
 
     AbstractShuffle(Object indices) {
