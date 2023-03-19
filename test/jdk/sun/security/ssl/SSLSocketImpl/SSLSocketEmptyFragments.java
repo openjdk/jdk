@@ -35,7 +35,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class SSLSocketEmptyFragments extends SSLContextTemplate {
@@ -57,73 +56,27 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
         this.protocol = protocol;
     }
 
-    /**
-     * Creates a socket connection between an SSLSocket (server-side) and
-     * a plain Socket on the client. Then runs the given executor to execute
-     * the test.
-     *
-     * @param consumer runs the test-specific code. The SSLSocket argument is the
-     *                 server-side of the connection. The Socket is the client-side.
-     */
-    private void executeSingleThreadedTest(BiConsumer<SSLSocket, Socket> consumer)
-            throws Exception {
-        SSLContext ctx = createServerSSLContext();
-        SSLServerSocketFactory factory = ctx.getServerSocketFactory();
 
-        try(ExecutorService executors = Executors.newFixedThreadPool(1);
-            SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket()) {
-            serverSocket.bind(null);
-            int port = serverSocket.getLocalPort();
-            InetAddress address = serverSocket.getInetAddress();
-
-            Future<SSLSocket> serverThread = executors.submit(
-                    () -> (SSLSocket)serverSocket.accept());
-
-            try (Socket client = new Socket(address, port);
-                SSLSocket sslSocket = serverThread.get(SERVER_WAIT_SEC, TimeUnit.SECONDS)) {
-                consumer.accept(sslSocket, client);
-            }
-        }
-    }
-
-    private static void testEmptyHandshakeRecord(SSLSocket server, Socket client) {
+    private void testEmptyHandshakeRecord(Socket client) {
         log("Sending bad handshake packet to server...");
 
         try {
             OutputStream os = client.getOutputStream();
             os.write(INVALID_HANDSHAKE);
             os.flush();
-            log("Reading data from client.");
-            // try to read some data to start the SSL handshake
-            server.getInputStream().read();
-            throw new RuntimeException(
-                    "Reading bad packet did not throw expected exception.");
-        } catch (SSLProtocolException exc) {
-            log("Caught expected SSLProtocolException.");
         } catch (IOException exc) {
             throw new RuntimeException("Unexpected IOException thrown by socket operations", exc);
         }
     }
 
 
-    private static void testEmptyAlertNotHandshaking(SSLSocket server, Socket client) {
+    private void testEmptyAlertNotHandshaking(Socket client) {
         log("Sending empty alert packet before handshaking starts.");
 
         try {
             OutputStream os = client.getOutputStream();
             os.write(INVALID_ALERT);
             os.flush();
-            log("Reading data from client.");
-            // try to read some data to start the SSL handshake
-            server.getInputStream().read();
-            throw new RuntimeException(
-                    "Reading bad packet did not throw expected exception.");
-        } catch (SSLHandshakeException exc) {
-            log("Caught expected SSLHandshakeException.");
-            if (!server.isClosed()) {
-                throw new RuntimeException("Server socket was not closed after exception.");
-            }
-
         } catch (IOException exc) {
             throw new RuntimeException("Unexpected IOException thrown by socket operations.", exc);
         }
@@ -137,8 +90,8 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
      * @param clientConsumer Client-side test code that injects bad packets into the TLS handshake.
      * @param expectedException The exception that should be thrown by the server
      */
-    private void executeMultiThreadedTest(Consumer<Socket> clientConsumer,
-                              final Class<?> expectedException) throws Exception {
+    private void executeTest(Consumer<Socket> clientConsumer,
+                             final Class<?> expectedException) throws Exception {
         SSLContext serverContext = createServerSSLContext();
         SSLServerSocketFactory factory = serverContext.getServerSocketFactory();
 
@@ -157,7 +110,7 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
 
                 } catch (Exception exc) {
                     if (expectedException.isAssignableFrom(exc.getClass())) {
-                        log("Server thread received expected SSLProtocolException");
+                        log("Server thread received expected exception: " + expectedException.getName());
                         return true;
                     } else {
                         log("Server thread threw an unexpected exception: " + exc);
@@ -198,7 +151,6 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
 
             ByteBuffer clientIn = ByteBuffer.allocate(appBufferMax + 50);
             ByteBuffer clientToServer = ByteBuffer.allocate(appBufferMax + 50);
-            ByteBuffer serverToClient = ByteBuffer.allocate(netBufferMax + 50);
             ByteBuffer clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
 
             wrap(engine, clientOut, clientToServer);
@@ -312,14 +264,14 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
     }
 
     private static SSLEngineResult wrap(SSLEngine engine, ByteBuffer src, ByteBuffer dst) throws SSLException {
-        log("Wrapping...");
+        debug("Wrapping...");
         SSLEngineResult result = engine.wrap(src, dst);
         logEngineStatus(engine, result);
         return result;
     }
 
     private static SSLEngineResult unwrap(SSLEngine engine, ByteBuffer src, ByteBuffer dst) throws SSLException {
-        log("Unwrapping");
+        debug("Unwrapping");
         SSLEngineResult result = engine.unwrap(src, dst);
         logEngineStatus(engine, result);
         return result;
@@ -329,7 +281,7 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
         if (engine.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_TASK) {
             Runnable runnable;
             while ((runnable = engine.getDelegatedTask()) != null) {
-                log("    running delegated task...");
+                debug("    running delegated task...");
                 runnable.run();
             }
             SSLEngineResult.HandshakeStatus hsStatus = engine.getHandshakeStatus();
@@ -396,17 +348,19 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
     public static void main(String [] args) throws Exception {
         SSLSocketEmptyFragments tests = new SSLSocketEmptyFragments(TLSv12);
 
-        tests.executeSingleThreadedTest(
-                SSLSocketEmptyFragments::testEmptyHandshakeRecord);
-        tests.executeSingleThreadedTest(
-                SSLSocketEmptyFragments::testEmptyAlertNotHandshaking);
-        tests.executeMultiThreadedTest(tests::testEmptyAlertDuringHandshake, SSLHandshakeException.class);
-        tests.executeMultiThreadedTest(tests::testEmptyChangeCipherSpecMessage, SSLProtocolException.class);
+        tests.executeTest(
+                tests::testEmptyHandshakeRecord, SSLProtocolException.class);
+        tests.executeTest(
+                tests::testEmptyAlertNotHandshaking, SSLHandshakeException.class);
+        tests.executeTest(
+                tests::testEmptyAlertDuringHandshake, SSLHandshakeException.class);
+        tests.executeTest(
+                tests::testEmptyChangeCipherSpecMessage, SSLProtocolException.class);
 
         tests = new SSLSocketEmptyFragments(TLSv13);
-        tests.executeSingleThreadedTest(
-                SSLSocketEmptyFragments::testEmptyHandshakeRecord);
-        tests.executeSingleThreadedTest(
-                SSLSocketEmptyFragments::testEmptyAlertNotHandshaking);
+        tests.executeTest(
+                tests::testEmptyHandshakeRecord, SSLProtocolException.class);
+        tests.executeTest(
+                tests::testEmptyAlertNotHandshaking, SSLHandshakeException.class);
     }
 }
