@@ -100,7 +100,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     @Override
     @ForceInline
     public final VectorMask<E> laneIsValid() {
-        Vector<?> shufvec = this.toVector();
+        Vector<?> shufvec = this.toBitsVector();
         return shufvec.compare(VectorOperators.GE, 0)
                 .cast(vspecies());
     }
