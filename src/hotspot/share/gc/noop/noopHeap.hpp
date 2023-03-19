@@ -49,6 +49,10 @@ private:
     MarkBitMap _mark_bitmap;
     MemRegion _bitmap_region;
 
+    void prologue();
+    void mark();
+    void sweep();
+
 public:
     static NoopHeap* heap();
 
@@ -113,6 +117,8 @@ public:
     virtual void collect(GCCause::Cause cause);
     virtual void do_full_collection(bool clear_all_soft_refs);
 
+    virtual void do_roots(OopClosure* cl, bool everything);
+
     // Heap walking support
     virtual void object_iterate(ObjectClosure* cl) { _space->object_iterate(cl); };
 
@@ -124,7 +130,7 @@ public:
     // No support for block parsing.
     HeapWord* block_start(const void* addr) const { return NULL;  }
     bool block_is_obj(const HeapWord* addr) const { return false; }
-
+    
     // No GC threads
     virtual void gc_threads_do(ThreadClosure* tc) const {}
 

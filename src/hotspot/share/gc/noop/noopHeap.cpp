@@ -38,7 +38,27 @@
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "gc/shared/markBitMap.hpp"
+#include "compiler/oopMap.hpp"
+#include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/strongRootsScope.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/stringTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/weakProcessor.hpp"
+#include "memory/iterator.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "runtime/objectMonitor.inline.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
+#include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/stack.inline.hpp"
+#include "services/management.hpp"
 
 NoopHeap* NoopHeap::heap() {
     return named_heap<NoopHeap>(CollectedHeap::Noop);
@@ -195,6 +215,101 @@ size_t NoopHeap::unsafe_max_tlab_alloc(Thread* thr) const {
     return _max_tlab_size * HeapWordSize;
 }
 
+//GC
+//
+//
+//
+//
+
+typedef Stack<oop, mtGC> NoopMarkStack;
+
+void NoopHeap::do_roots(OopClosure* cl, bool everything) {
+	// Need to tell runtime we are about to walk the roots with 1 thread
+	StrongRootsScope scope(1);
+
+	// Need to adapt oop closure for some special root types.
+	CLDToOopClosure clds(cl, ClassLoaderData::_claim_none);
+	MarkingCodeBlobClosure blobs(cl, CodeBlobToOopClosure::FixRelocations, false);
+
+	// Walk all these different parts of runtime roots. Some roots require
+	// holding the lock when walking them.
+	{
+		MutexLocker lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+		CodeCache::blobs_do(&blobs);
+	}
+	{
+		MutexLocker lock(ClassLoaderDataGraph_lock);
+		ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
+	}
+
+    OopStorageSet::strong_oops_do(cl);
+	Threads::oops_do(cl, &blobs);
+}
+
+class ScanOopClosure: public BasicOopIterateClosure {
+    private:
+        NoopMarkStack* const _stack;
+        MarkBitMap* const _bitmap;
+
+        template<class T>
+		void do_oop_work(T* p) {
+			  // p is the pointer to memory location where oop is, load the value
+			  // from it, unpack the compressed reference, if needed:
+			T o = RawAccess<>::oop_load(p);
+			if (!CompressedOops::is_null(o)) {
+				oop obj = CompressedOops::decode_not_null(o);
+
+				// Object is discovered. See if it is marked already. If not,
+				// mark and push it on mark stack for further traversal. Non-atomic
+				// check and set would do, as this closure is called by single thread.
+				if (!_bitmap->is_marked(obj)) {
+					_bitmap->mark(obj);
+					_stack->push(obj);
+				}
+			}
+		}
+
+    public:
+        ScanOopClosure(NoopMarkStack* stack, MarkBitMap* bitmap) :
+			_stack(stack), _bitmap(bitmap) {
+		}
+
+        virtual void do_oop(oop* p) {
+			do_oop_work(p);
+		}
+		virtual void do_oop(narrowOop* p) {
+			do_oop_work(p);
+		}
+};
+
+void NoopHeap::prologue() {
+    //Commiting memory for bitmap
+    if (!os::commit_memory((char*)_bitmap_region.start(), _bitmap_region.byte_size(), false)) { return; }
+
+    //Retire all TLABS
+    ensure_parsability(true);
+
+    DerivedPointerTable::clear();
+}
+
+void NoopHeap::mark() {
+    // Marking stack and the closure that does most of the work. The closure
+    // would scan the outgoing references, mark them, and push newly-marked
+    // objects to stack for further processing.
+    NoopMarkStack stack;
+    ScanOopClosure cl(&stack, &_mark_bitmap);
+
+    //Not all roots
+    do_roots(&cl, false);
+
+    // Scan the rest of the heap until we run out of objects. Termination is
+    // guaranteed, because all reachable objects would be marked eventually.
+    while (!stack.is_empty()) {
+        oop obj = stack.pop();
+        obj->oop_iterate(&cl);
+    }
+}
+
 void NoopHeap::collect(GCCause::Cause cause) {
     switch (cause) {
         case GCCause::_metadata_GC_threshold:
@@ -215,3 +330,4 @@ void NoopHeap::collect(GCCause::Cause cause) {
 void NoopHeap::do_full_collection(bool clear_all_soft_refs) {
     collect(gc_cause());
 }
+
