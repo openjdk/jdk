@@ -879,12 +879,11 @@ final class Byte64Vector extends ByteVector {
         @ForceInline
         @Override
         public Byte64Shuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (Byte64Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Byte64Shuffle wrapIndexes() {
             Byte64Vector v = toBitsVector();
             ByteVector.ByteSpecies species = Byte64Vector.VSPECIES;

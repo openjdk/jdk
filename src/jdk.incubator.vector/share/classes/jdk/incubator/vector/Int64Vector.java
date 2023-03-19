@@ -859,12 +859,11 @@ final class Int64Vector extends IntVector {
         @ForceInline
         @Override
         public Int64Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (Int64Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Int64Shuffle wrapIndexes() {
             Int64Vector v = toBitsVector();
             IntVector.IntSpecies species = Int64Vector.VSPECIES;

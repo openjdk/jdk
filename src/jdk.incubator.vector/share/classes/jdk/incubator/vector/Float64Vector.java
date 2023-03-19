@@ -852,7 +852,6 @@ final class Float64Vector extends FloatVector {
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Float64Shuffle wrapIndexes() {
             Int64Vector v = toBitsVector();
             IntVector.IntSpecies species = Int64Vector.VSPECIES;

@@ -847,12 +847,11 @@ final class Long64Vector extends LongVector {
         @ForceInline
         @Override
         public Long64Shuffle rearrange(VectorShuffle<Long> shuffle) {
-            return (Long64Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Long64Shuffle wrapIndexes() {
             Long64Vector v = toBitsVector();
             LongVector.LongSpecies species = Long64Vector.VSPECIES;

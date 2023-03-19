@@ -895,12 +895,11 @@ final class Byte128Vector extends ByteVector {
         @ForceInline
         @Override
         public Byte128Shuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (Byte128Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Byte128Shuffle wrapIndexes() {
             Byte128Vector v = toBitsVector();
             ByteVector.ByteSpecies species = Byte128Vector.VSPECIES;

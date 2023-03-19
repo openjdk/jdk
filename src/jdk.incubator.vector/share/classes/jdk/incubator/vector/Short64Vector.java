@@ -865,12 +865,11 @@ final class Short64Vector extends ShortVector {
         @ForceInline
         @Override
         public Short64Shuffle rearrange(VectorShuffle<Short> shuffle) {
-            return (Short64Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Short64Shuffle wrapIndexes() {
             Short64Vector v = toBitsVector();
             ShortVector.ShortSpecies species = Short64Vector.VSPECIES;

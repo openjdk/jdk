@@ -863,12 +863,11 @@ final class Int128Vector extends IntVector {
         @ForceInline
         @Override
         public Int128Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (Int128Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Int128Shuffle wrapIndexes() {
             Int128Vector v = toBitsVector();
             IntVector.IntSpecies species = Int128Vector.VSPECIES;

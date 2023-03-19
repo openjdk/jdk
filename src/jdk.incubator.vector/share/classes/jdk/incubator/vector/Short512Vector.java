@@ -921,12 +921,11 @@ final class Short512Vector extends ShortVector {
         @ForceInline
         @Override
         public Short512Shuffle rearrange(VectorShuffle<Short> shuffle) {
-            return (Short512Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Short512Shuffle wrapIndexes() {
             Short512Vector v = toBitsVector();
             ShortVector.ShortSpecies species = Short512Vector.VSPECIES;

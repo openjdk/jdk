@@ -870,7 +870,6 @@ final class Double512Vector extends DoubleVector {
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Double512Shuffle wrapIndexes() {
             Long512Vector v = toBitsVector();
             LongVector.LongSpecies species = Long512Vector.VSPECIES;

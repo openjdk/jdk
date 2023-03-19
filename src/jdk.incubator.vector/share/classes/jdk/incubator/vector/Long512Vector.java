@@ -867,12 +867,11 @@ final class Long512Vector extends LongVector {
         @ForceInline
         @Override
         public Long512Shuffle rearrange(VectorShuffle<Long> shuffle) {
-            return (Long512Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Long512Shuffle wrapIndexes() {
             Long512Vector v = toBitsVector();
             LongVector.LongSpecies species = Long512Vector.VSPECIES;

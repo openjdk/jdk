@@ -856,7 +856,6 @@ final class Float128Vector extends FloatVector {
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Float128Shuffle wrapIndexes() {
             Int128Vector v = toBitsVector();
             IntVector.IntSpecies species = Int128Vector.VSPECIES;

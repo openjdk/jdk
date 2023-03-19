@@ -868,12 +868,11 @@ final class IntMaxVector extends IntVector {
         @ForceInline
         @Override
         public IntMaxShuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (IntMaxShuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public IntMaxShuffle wrapIndexes() {
             IntMaxVector v = toBitsVector();
             IntVector.IntSpecies species = IntMaxVector.VSPECIES;

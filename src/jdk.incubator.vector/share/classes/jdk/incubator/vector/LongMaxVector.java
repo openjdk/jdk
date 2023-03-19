@@ -853,12 +853,11 @@ final class LongMaxVector extends LongVector {
         @ForceInline
         @Override
         public LongMaxShuffle rearrange(VectorShuffle<Long> shuffle) {
-            return (LongMaxShuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public LongMaxShuffle wrapIndexes() {
             LongMaxVector v = toBitsVector();
             LongVector.LongSpecies species = LongMaxVector.VSPECIES;

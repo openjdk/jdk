@@ -927,12 +927,11 @@ final class Byte256Vector extends ByteVector {
         @ForceInline
         @Override
         public Byte256Shuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (Byte256Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Byte256Shuffle wrapIndexes() {
             Byte256Vector v = toBitsVector();
             ByteVector.ByteSpecies species = Byte256Vector.VSPECIES;

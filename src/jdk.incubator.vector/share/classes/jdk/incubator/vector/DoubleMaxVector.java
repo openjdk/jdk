@@ -855,7 +855,6 @@ final class DoubleMaxVector extends DoubleVector {
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public DoubleMaxShuffle wrapIndexes() {
             LongMaxVector v = toBitsVector();
             LongVector.LongSpecies species = LongMaxVector.VSPECIES;

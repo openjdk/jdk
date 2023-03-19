@@ -871,12 +871,11 @@ final class Int256Vector extends IntVector {
         @ForceInline
         @Override
         public Int256Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (Int256Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Int256Shuffle wrapIndexes() {
             Int256Vector v = toBitsVector();
             IntVector.IntSpecies species = Int256Vector.VSPECIES;

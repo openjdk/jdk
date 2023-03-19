@@ -855,12 +855,11 @@ final class Long128Vector extends LongVector {
         @ForceInline
         @Override
         public Long128Shuffle rearrange(VectorShuffle<Long> shuffle) {
-            return (Long128Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Long128Shuffle wrapIndexes() {
             Long128Vector v = toBitsVector();
             LongVector.LongSpecies species = Long128Vector.VSPECIES;

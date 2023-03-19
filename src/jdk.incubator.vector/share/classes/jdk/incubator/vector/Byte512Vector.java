@@ -991,12 +991,11 @@ final class Byte512Vector extends ByteVector {
         @ForceInline
         @Override
         public Byte512Shuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (Byte512Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Byte512Shuffle wrapIndexes() {
             Byte512Vector v = toBitsVector();
             ByteVector.ByteSpecies species = Byte512Vector.VSPECIES;

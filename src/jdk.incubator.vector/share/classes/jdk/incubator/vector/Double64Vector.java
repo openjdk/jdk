@@ -850,7 +850,6 @@ final class Double64Vector extends DoubleVector {
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Double64Shuffle wrapIndexes() {
             Long64Vector v = toBitsVector();
             LongVector.LongSpecies species = Long64Vector.VSPECIES;

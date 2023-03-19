@@ -858,7 +858,6 @@ final class Double128Vector extends DoubleVector {
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Double128Shuffle wrapIndexes() {
             Long128Vector v = toBitsVector();
             LongVector.LongSpecies species = Long128Vector.VSPECIES;

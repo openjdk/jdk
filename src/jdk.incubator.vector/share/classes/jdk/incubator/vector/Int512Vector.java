@@ -887,12 +887,11 @@ final class Int512Vector extends IntVector {
         @ForceInline
         @Override
         public Int512Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (Int512Shuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Int512Shuffle wrapIndexes() {
             Int512Vector v = toBitsVector();
             IntVector.IntSpecies species = Int512Vector.VSPECIES;

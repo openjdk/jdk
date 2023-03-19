@@ -849,7 +849,6 @@ final class FloatMaxVector extends FloatVector {
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public FloatMaxShuffle wrapIndexes() {
             IntMaxVector v = toBitsVector();
             IntVector.IntSpecies species = IntMaxVector.VSPECIES;

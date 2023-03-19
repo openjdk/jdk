@@ -865,12 +865,11 @@ final class ByteMaxVector extends ByteVector {
         @ForceInline
         @Override
         public ByteMaxShuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (ByteMaxShuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public ByteMaxShuffle wrapIndexes() {
             ByteMaxVector v = toBitsVector();
             ByteVector.ByteSpecies species = ByteMaxVector.VSPECIES;

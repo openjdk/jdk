@@ -859,12 +859,11 @@ final class ShortMaxVector extends ShortVector {
         @ForceInline
         @Override
         public ShortMaxShuffle rearrange(VectorShuffle<Short> shuffle) {
-            return (ShortMaxShuffle)toVector().rearrange(shuffle).toShuffle();
+            return toBitsVector().rearrange(shuffle).toShuffle();
         }
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public ShortMaxShuffle wrapIndexes() {
             ShortMaxVector v = toBitsVector();
             ShortVector.ShortSpecies species = ShortMaxVector.VSPECIES;

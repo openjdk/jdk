@@ -880,7 +880,6 @@ final class Float512Vector extends FloatVector {
 
         @ForceInline
         @Override
-        @SuppressWarnings("unchecked")
         public Float512Shuffle wrapIndexes() {
             Int512Vector v = toBitsVector();
             IntVector.IntSpecies species = Int512Vector.VSPECIES;
