@@ -206,11 +206,10 @@ inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
     bm_word_t cword = flipped_word(word_index, flip) >> bit_in_word(beg);
     if ((cword & 1) != 0) {     // Test the beg bit.
       return beg;
-    } else if (cword != 0) {    // Test other bits in the first word.
-      idx_t result = beg + count_trailing_zeros(cword);
-      if (aligned_right || (result < end)) return result;
-      // Result is beyond range bound; return end.
-    } else {
+    }
+    // Position of bit0 of cword in the bitmap.  Initially for shifted first word.
+    idx_t cword_pos = beg;
+    if (cword == 0) {           // Test other bits in the first word.
       // First word had no interesting bits.  Word search through
       // aligned up end for a non-zero flipped word.
       idx_t word_limit = aligned_right
@@ -219,14 +218,21 @@ inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
       while (++word_index < word_limit) {
         cword = flipped_word(word_index, flip);
         if (cword != 0) {
-          idx_t result = bit_index(word_index) + count_trailing_zeros(cword);
-          if (aligned_right || (result < end)) return result;
-          // Result is beyond range bound; return end.
-          assert((word_index + 1) == word_limit, "invariant");
+          // Update for found non-zero word, and join common tail to compute
+          // result from cword_pos and non-zero cword.
+          cword_pos = bit_index(word_index);
           break;
         }
       }
-      // No bits in range; return end.
+    }
+    // For all paths reaching here, (cword != 0) is already known, so we
+    // expect the compiler to not generate any code for it.  Either first word
+    // was non-zero, or found a non-zero word in range, or fully scanned range
+    // (so cword is zero).
+    if (cword != 0) {
+      idx_t result = cword_pos + count_trailing_zeros(cword);
+      if (aligned_right || (result < end)) return result;
+      // Result is beyond range bound; return end.
     }
   }
   return end;
