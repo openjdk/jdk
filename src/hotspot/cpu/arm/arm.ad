@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1022,6 +1022,10 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
 }
 
 const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  return false;
+}
+
+const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
   return false;
 }
 
