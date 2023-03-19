@@ -214,7 +214,8 @@
           range(1, 100)                                                     \
                                                                             \
   develop(size_t, G1MaxVerifyFailures, SIZE_MAX,                            \
-          "The maximum number of verification failures to print.")          \
+          "The maximum number of liveness and remembered set verification " \
+          "failures to print per thread.")                                  \
           range(1, SIZE_MAX)                                                \
                                                                             \
   product(uintx, G1ReservePercent, 10,                                      \

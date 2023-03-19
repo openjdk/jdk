@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,15 @@ class STWGCTimer;
 class DefNewGeneration: public Generation {
   friend class VMStructs;
 
-protected:
   Generation* _old_gen;
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
   size_t      _pretenure_size_threshold_words;
+
+  // ("Weak") Reference processing support
+  SpanSubjectToDiscoveryClosure _span_based_discoverer;
+  ReferenceProcessor* _ref_processor;
 
   AgeTable*   age_table() { return &_age_table; }
 
@@ -162,12 +165,16 @@ protected:
 
   virtual Generation::Name kind() { return Generation::DefNew; }
 
+  // allocate and initialize ("weak") refs processing support
+  void ref_processor_init();
+  ReferenceProcessor* const ref_processor() { return _ref_processor; }
+
   // Accessing spaces
   ContiguousSpace* eden() const           { return _eden_space; }
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
-  virtual CompactibleSpace* first_compaction_space() const;
+  virtual ContiguousSpace* first_compaction_space() const;
 
   // Space enquiries
   size_t capacity() const;

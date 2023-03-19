@@ -468,11 +468,11 @@ public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
-  // Live words in the given region as determined by concurrent marking, i.e. the amount of
-  // live words between bottom and TAMS.
-  size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }
-  // Returns the liveness value in bytes.
-  size_t live_bytes(uint region) const { return live_words(region) * HeapWordSize; }
+  // Did the last marking find a live object between bottom and TAMS?
+  bool contains_live_object(uint region) const { return _region_mark_stats[region]._live_words != 0; }
+  // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
+  // live bytes between bottom and TAMS.
+  size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "code/compressedStream.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/moveBits.hpp"
+#include "utilities/reverse_bits.hpp"
 
 jint CompressedReadStream::read_signed_int() {
   return UNSIGNED5::decode_sign(read_int());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,17 +103,13 @@ JNIEXPORT void JNICALL
 JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                              const char *defaultDetail)
 {
-    char buf[256];
-    size_t n = getLastErrorString(buf, sizeof(buf));
+    jstring s = getLastErrorString(env);
 
-    if (n > 0) {
-        jstring s = JNU_NewStringPlatform(env, buf);
-        if (s != NULL) {
-            jobject x = JNU_NewObjectByName(env, name,
-                                            "(Ljava/lang/String;)V", s);
-            if (x != NULL) {
-                (*env)->Throw(env, x);
-            }
+    if (s != NULL) {
+        jobject x = JNU_NewObjectByName(env, name,
+                                        "(Ljava/lang/String;)V", s);
+        if (x != NULL) {
+            (*env)->Throw(env, x);
         }
     }
     if (!(*env)->ExceptionOccurred(env)) {
@@ -129,48 +125,44 @@ JNIEXPORT void JNICALL
 JNU_ThrowByNameWithMessageAndLastError
   (JNIEnv *env, const char *name, const char *message)
 {
-    char buf[256];
-    size_t n = getLastErrorString(buf, sizeof(buf));
     size_t messagelen = message == NULL ? 0 : strlen(message);
 
-    if (n > 0) {
-        jstring s = JNU_NewStringPlatform(env, buf);
-        if (s != NULL) {
-            jobject x = NULL;
-            if (messagelen) {
-                jstring s2 = NULL;
-                size_t messageextlen = messagelen + 4;
-                char *str1 = (char *)malloc((messageextlen) * sizeof(char));
-                if (str1 == 0) {
-                    JNU_ThrowOutOfMemoryError(env, 0);
-                    return;
-                }
-                jio_snprintf(str1, messageextlen, " (%s)", message);
-                s2 = (*env)->NewStringUTF(env, str1);
-                free(str1);
+    jstring s = getLastErrorString(env);
+    if (s != NULL) {
+        jobject x = NULL;
+        if (messagelen > 0) {
+            jstring s2 = NULL;
+            size_t messageextlen = messagelen + 4;
+            char *str1 = (char *)malloc((messageextlen) * sizeof(char));
+            if (str1 == NULL) {
+                JNU_ThrowOutOfMemoryError(env, 0);
+                return;
+            }
+            jio_snprintf(str1, messageextlen, " (%s)", message);
+            s2 = (*env)->NewStringUTF(env, str1);
+            free(str1);
+            JNU_CHECK_EXCEPTION(env);
+            if (s2 != NULL) {
+                jstring s3 = JNU_CallMethodByName(
+                                 env, NULL, s, "concat",
+                                 "(Ljava/lang/String;)Ljava/lang/String;",
+                                 s2).l;
+                (*env)->DeleteLocalRef(env, s2);
                 JNU_CHECK_EXCEPTION(env);
-                if (s2 != NULL) {
-                    jstring s3 = JNU_CallMethodByName(
-                                     env, NULL, s, "concat",
-                                     "(Ljava/lang/String;)Ljava/lang/String;",
-                                     s2).l;
-                    (*env)->DeleteLocalRef(env, s2);
-                    JNU_CHECK_EXCEPTION(env);
-                    if (s3 != NULL) {
-                        (*env)->DeleteLocalRef(env, s);
-                        s = s3;
-                    }
+                if (s3 != NULL) {
+                    (*env)->DeleteLocalRef(env, s);
+                    s = s3;
                 }
             }
-            x = JNU_NewObjectByName(env, name, "(Ljava/lang/String;)V", s);
-            if (x != NULL) {
-                (*env)->Throw(env, x);
-            }
+        }
+        x = JNU_NewObjectByName(env, name, "(Ljava/lang/String;)V", s);
+        if (x != NULL) {
+            (*env)->Throw(env, x);
         }
     }
 
     if (!(*env)->ExceptionOccurred(env)) {
-        if (messagelen) {
+        if (messagelen > 0) {
             JNU_ThrowByName(env, name, message);
         } else {
             JNU_ThrowByName(env, name, "no further information");
