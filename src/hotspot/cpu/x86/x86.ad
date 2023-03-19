@@ -2173,14 +2173,15 @@ const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* 
 
 // Do Vector::rearrange needs preparation of the shuffle argument
 const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
-  if (elem_bt == T_BYTE || elem_bt == T_INT || elem_bt == T_FLOAT) {
+  if (elem_bt == T_BYTE) {
     return false;
   } else if (elem_bt == T_SHORT) {
     return !VM_Version::supports_avx512bw();
+  } else if (elem_bt == T_INT || elem_bt == T_FLOAT) {
+    return !VM_Version::supports_avx2();
+  } else { // T_LONG || T_DOUBLE
+    return vlen < 8 && !VM_Version::supports_avx512vl();
   }
-
-  // T_LONG || T_DOUBLE
-  return !VM_Version::supports_evex();
 }
 
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
@@ -8475,7 +8476,7 @@ instruct rearrangeB_evex_vbmi(vec dst, vec src, vec shuffle) %{
 
 instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
-            Matcher::vector_length(n) <= 16 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
+            !VM_Version::supports_avx512bw());
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp as TEMP" %}
