@@ -194,7 +194,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * @apiNote When writing a directory entry, the STORED compression method
      * should be used and the size and CRC-32 values should be set to 0:
      *
-     * {@snippet lang="java" :
+     * {@snippet lang = "java":
      *     ZipEntry e = new ZipEntry(entryName);
      *     if (e.isDirectory()) {
      *         e.setMethod(ZipEntry.STORED);
@@ -204,8 +204,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      *     stream.putNextEntry(e);
      *}
      *
-     * This ensures strict compliance with the ZIP specification and
-     * allows optimal performance when processing directory entries.
+     * This allows optimal performance when processing directory entries.
      *
      * @param     e the ZIP entry to be written
      * @throws    ZipException if a ZIP format error has occurred
