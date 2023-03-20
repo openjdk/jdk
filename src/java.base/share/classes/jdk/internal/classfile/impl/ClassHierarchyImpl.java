@@ -168,7 +168,7 @@ public final class ClassHierarchyImpl {
         private final Map<ClassDesc, ClassHierarchyInfo> map;
 
         public StaticClassHierarchyResolver(Collection<ClassDesc> interfaceNames, Map<ClassDesc, ClassDesc> classToSuperClass) {
-            map = new HashMap<>(interfaceNames.size() + classToSuperClass.size() + 1);
+            map = HashMap.newHashMap(interfaceNames.size() + classToSuperClass.size() + 1);
             map.put(ConstantDescs.CD_Object, new ClassHierarchyInfo(ConstantDescs.CD_Object, false, null));
             for (var e : classToSuperClass.entrySet())
                 map.put(e.getKey(), new ClassHierarchyInfo(e.getKey(), false, e.getValue()));
