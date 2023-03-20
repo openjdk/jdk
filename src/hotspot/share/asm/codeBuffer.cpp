@@ -1010,7 +1010,8 @@ void CodeBuffer::log_section_sizes(const char* name) {
 }
 
 bool CodeBuffer::finalize_stubs() {
-  if (!pd_finalize_stubs()) {
+  if (_finalize_stubs && !pd_finalize_stubs()) {
+    // stub allocation failure
     return false;
   }
   _finalize_stubs = false;
