@@ -56,7 +56,7 @@ public final class PremultipliedAlpha {
         TYPE_4BYTE_ABGR_PRE,
         TYPE_CUSTOM_4BYTE_ABGR_PRE,
         TYPE_CUSTOM_4BYTE_GABR_PRE,
-        TYPE_CUSTOM_4INT_8bit_GABR_PRE,
+        TYPE_CUSTOM_4INT_8bit_ARGB_PRE,
     }
 
     private static final ColorSpace[] CSs = {
@@ -123,7 +123,7 @@ public final class PremultipliedAlpha {
             case TYPE_4BYTE_ABGR_PRE -> new BufferedImage(SIZE, SIZE, TYPE_4BYTE_ABGR_PRE);
             case TYPE_CUSTOM_4BYTE_ABGR_PRE -> TYPE_4BYTE_ARGB_PRE();
             case TYPE_CUSTOM_4BYTE_GABR_PRE -> TYPE_4BYTE_GABR_PRE();
-            case TYPE_CUSTOM_4INT_8bit_GABR_PRE -> TYPE_4INT_GABR_8bit_PRE();
+            case TYPE_CUSTOM_4INT_8bit_ARGB_PRE -> TYPE_4INT_ARGB_8bit_PRE();
         };
         fill(bi);
         return bi;
@@ -172,7 +172,7 @@ public final class PremultipliedAlpha {
         return new BufferedImage(colorModel, raster, true, null);
     }
 
-    private static BufferedImage TYPE_4INT_GABR_8bit_PRE() {
+    private static BufferedImage TYPE_4INT_ARGB_8bit_PRE() {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] nBits = {8, 8, 8, 8};
         ColorModel colorModel = new ComponentColorModel(cs, nBits, true, true,
