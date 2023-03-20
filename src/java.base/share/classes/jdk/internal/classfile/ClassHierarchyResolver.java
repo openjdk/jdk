@@ -87,7 +87,7 @@ public interface ClassHierarchyResolver {
      * @param isInterface whether this class is an interface
      * @param superClass descriptor of the superclass (not relevant for interfaces)
      */
-    public record ClassHierarchyInfo(ClassDesc thisClass, boolean isInterface, ClassDesc superClass) {
+    record ClassHierarchyInfo(ClassDesc thisClass, boolean isInterface, ClassDesc superClass) {
     }
 
     /**
@@ -97,7 +97,7 @@ public interface ClassHierarchyResolver {
      * @param classStreamResolver maps class descriptors to classfile input streams
      * @return the {@linkplain ClassHierarchyResolver}
      */
-    public static ClassHierarchyResolver ofCached(Function<ClassDesc, InputStream> classStreamResolver) {
+    static ClassHierarchyResolver ofCached(Function<ClassDesc, InputStream> classStreamResolver) {
         return new ClassHierarchyImpl.CachedClassHierarchyResolver(classStreamResolver);
     }
 
@@ -109,7 +109,7 @@ public interface ClassHierarchyResolver {
      * @param classToSuperClass a map from classes to their super classes
      * @return the {@linkplain ClassHierarchyResolver}
      */
-    public static ClassHierarchyResolver of(Collection<ClassDesc> interfaces,
+    static ClassHierarchyResolver of(Collection<ClassDesc> interfaces,
                                             Map<ClassDesc, ClassDesc> classToSuperClass) {
         return new ClassHierarchyImpl.StaticClassHierarchyResolver(interfaces, classToSuperClass);
     }
@@ -136,8 +136,9 @@ public interface ClassHierarchyResolver {
 
     /**
      * Returns a ClassHierarchyResolver that extracts class hierarchy information via
-     * the Reflection API with a {@linkplain MethodHandles.Lookup Lookup}. The classes
-     * resolved must be accessible to this given lookup.
+     * the Reflection API with a {@linkplain MethodHandles.Lookup Lookup}. If the class
+     * resolved is inaccessible to the given lookup, it throws {@link
+     * IllegalArgumentException} instead of returning {@code null}.
      *
      * @param lookup the lookup, must be able to access classes to resolve
      * @return the class hierarchy resolver
@@ -148,8 +149,9 @@ public interface ClassHierarchyResolver {
             protected Class<?> resolve(ClassDesc cd) {
                 try {
                     return (Class<?>) cd.resolveConstantDesc(lookup);
+                } catch (IllegalAccessException ex) {
+                    throw new IllegalArgumentException(ex);
                 } catch (ReflectiveOperationException ex) {
-                    // Should we handle IllegalAccessException differently?
                     return null;
                 }
             }

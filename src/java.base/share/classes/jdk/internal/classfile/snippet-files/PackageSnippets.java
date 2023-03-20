@@ -33,6 +33,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jdk.internal.classfile.ClassElement;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
@@ -107,7 +109,7 @@ class PackageSnippets {
         ClassModel cm = Classfile.parse(bytes);
         Set<ClassDesc> dependencies =
               cm.elementStream()
-                .flatMap(ce -> ce instanceof MethodMethod mm ? mm.elementStream() : Stream.empty())
+                .flatMap(ce -> ce instanceof MethodModel mm ? mm.elementStream() : Stream.empty())
                 .flatMap(me -> me instanceof CodeModel com ? com.elementStream() : Stream.empty())
                 .<ClassDesc>mapMulti((xe, c) -> {
                     switch (xe) {

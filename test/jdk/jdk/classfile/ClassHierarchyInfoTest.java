@@ -110,6 +110,13 @@ class ClassHierarchyInfoTest {
         transformAndVerify(ClassHierarchyResolver.of(privilegedLookup));
     }
 
+    @Test
+    void testLookupResolver_IllegalAccess() throws Exception {
+        // A lookup from this test class, cannot access nested classes in HashMap
+        var lookup = MethodHandles.lookup();
+        assertThrows(IllegalArgumentException.class, () -> transformAndVerify(ClassHierarchyResolver.of(lookup)));
+    }
+
     void transformAndVerify(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
         var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(res));
