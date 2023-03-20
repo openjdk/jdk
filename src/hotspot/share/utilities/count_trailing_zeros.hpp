@@ -48,6 +48,14 @@ inline unsigned count_trailing_zeros(T x) {
   return CountTrailingZerosImpl<U>{}(static_cast<P>(static_cast<U>(x)));
 }
 
+template <typename T>
+struct CountTrailingZerosImpl {
+  inline unsigned operator()(T x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+    return CountTrailingZerosImpl<unsigned int>{}(x);
+  }
+};
+
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
