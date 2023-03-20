@@ -106,12 +106,12 @@ struct CountTrailingZerosImpl<unsigned long> {
 template <>
 struct CountTrailingZerosImpl<unsigned long long> {
   inline unsigned operator()(unsigned long long x) const {
-  #ifdef _LP64
+#ifdef _LP64
     unsigned long index;
     unsigned char result = _BitScanForward64(&index, x);
     postcond(result != 0);
     return static_cast<unsigned>(index);
-  #else
+#else
     unsigned long index;
     unsigned long low = static_cast<unsigned long>(x);
     if (low != 0ul) {
@@ -123,6 +123,7 @@ struct CountTrailingZerosImpl<unsigned long long> {
       index += 32ul;
     }
     return static_cast<unsigned>(index);
+#endif
   }
 };
 
