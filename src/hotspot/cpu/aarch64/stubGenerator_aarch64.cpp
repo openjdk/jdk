@@ -8089,9 +8089,6 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    // countPositives stub for large arrays.
-    StubRoutines::aarch64::_count_positives = generate_count_positives(StubRoutines::aarch64::_count_positives_long);
-
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != NULL) {
       StubRoutines::aarch64::_method_entry_barrier = generate_method_entry_barrier();
@@ -8122,6 +8119,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // byte_array_inflate stub for large arrays.
     StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
+
+    // countPositives stub for large arrays.
+    StubRoutines::aarch64::_count_positives = generate_count_positives(StubRoutines::aarch64::_count_positives_long);
 
     generate_compare_long_strings();
 

@@ -410,7 +410,7 @@ void final_stubs_init()        { StubRoutines::initialize_final_stubs(); }
 
 void compiler_stubs_init(bool in_compiler_thread) {
   if (in_compiler_thread && MoveIntrinsicStubsGen) {
-    // Temporare revert state of stubs generation because
+    // Temporarily revert state of stubs generation because
     // it is called after final_stubs_init() finished
     // during compiler runtime initialization.
     // It is fine because these stubs are only used by
