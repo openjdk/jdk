@@ -133,6 +133,7 @@ public class DocTreeMaker implements DocTreeFactory {
 
     /** Create a tree maker with NOPOS as initial position.
      */
+    @SuppressWarnings("this-escape")
     protected DocTreeMaker(Context context) {
         context.put(treeMakerKey, this);
         this.pos = Position.NOPOS;
