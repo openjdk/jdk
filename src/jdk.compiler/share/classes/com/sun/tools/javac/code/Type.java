@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import javax.lang.model.type.*;
@@ -182,8 +183,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * @return the constant value attribute of this type
      */
     public Object constValue() {
-        return getMetadata(TypeMetadata.ConstantValue.class)
-                .map(ConstantValue::value).orElse(null);
+        return getMetadata(TypeMetadata.ConstantValue.class, ConstantValue::value, null);
     }
 
     /** Is this a constant type whose value is false?
@@ -361,11 +361,23 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     /**
      * Get the type metadata of the given kind associated with this type (if any).
      */
-    public <M extends TypeMetadata> Optional<M> getMetadata(Class<M> metadataClass) {
-        return metadata.stream()
-                .filter(m -> metadataClass.isAssignableFrom(m.getClass()))
-                .map(metadataClass::cast)
-                .findFirst();
+    @SuppressWarnings("unchecked")
+    public <M extends TypeMetadata> M getMetadata(Class<M> metadataClass) {
+        return getMetadata(metadataClass, Function.identity(), null);
+    }
+
+    /**
+     * Get the type metadata of the given kind associated with this type (if any),
+     * and apply the provided mapping function.
+     */
+    @SuppressWarnings("unchecked")
+    public <M extends TypeMetadata, Z> Z getMetadata(Class<M> metadataClass, Function<M, Z> metadataFunc, Z defaultValue) {
+        for (TypeMetadata m : metadata) {
+            if (m.getClass() == metadataClass) {
+                return metadataFunc.apply((M)m);
+            }
+        }
+        return defaultValue;
     }
 
     /**
@@ -374,17 +386,20 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * an exception is thrown.
      */
     public Type addMetadata(TypeMetadata md) {
-        Assert.check(getMetadata(md.getClass()).isEmpty());
-        return cloneWithMetadata(metadata.append(md));
+        Assert.check(getMetadata(md.getClass()) == null);
+        return cloneWithMetadata(metadata.prepend(md));
     }
 
     /**
      * Create a new copy of this type but without the specified type metadata.
      */
     public Type dropMetadata(Class<? extends TypeMetadata> metadataClass) {
-        List<TypeMetadata> newMetadata = metadata.stream()
-                .filter(m -> !metadataClass.isAssignableFrom(m.getClass()))
-                .collect(List.collector());
+        List<TypeMetadata> newMetadata = List.nil();
+        for (TypeMetadata m : metadata) {
+            if (m.getClass() != metadataClass) {
+                newMetadata = newMetadata.prepend(m);
+            }
+        }
         return cloneWithMetadata(newMetadata);
     }
 
@@ -442,13 +457,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     }
 
     public boolean isAnnotated() {
-        return getMetadata(TypeMetadata.Annotations.class).isPresent();
+        return getMetadata(TypeMetadata.Annotations.class) != null;
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
-        return getMetadata(TypeMetadata.Annotations.class)
-                .map(Annotations::annotations).orElse(List.nil());
+        return getMetadata(TypeMetadata.Annotations.class, Annotations::annotations, List.nil());
     }
 
 

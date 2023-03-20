@@ -45,7 +45,28 @@ import com.sun.tools.javac.util.ListBuffer;
  * If clients wish to store multiple metadata values that are logically related, they should
  * define a metadata type that collects such values in e.g. a list.
  */
-public sealed interface TypeMetadata {
+public interface TypeMetadata {
+
+//    static final TypeMetadata NONE = new TypeMetadata() {
+//        @Override
+//        public String toString() {
+//            return "NONE";
+//        }
+//    };
+//    static final List<TypeMetadata> EMPTY = List.of(NONE, NONE);
+//
+//    static final ClassValue<Integer> metadataPos = new ClassValue<Integer>() {
+//        @Override
+//        protected Integer computeValue(Class<?> type) {
+//            if (type.equals(Annotations.class)) {
+//                return 0;
+//            } else if (type.equals(ConstantValue.class)) {
+//                return 1;
+//            } else {
+//                throw new AssertionError("Invalid type: " + type.getSimpleName());
+//            }
+//        }
+//    };
 
     /**
      * A type metadata object holding type annotations. This metadata needs to be mutable,
