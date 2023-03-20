@@ -2363,7 +2363,7 @@ public:
   PacksetGraph(Arena* a,
                 GrowableArray<Node*> &block,
                 GrowableArray<Node_List*> &packset,
-                DepGraph dg)
+                DepGraph &dg)
   : _pid(a, 8, 0, /* default */ 0), _block(block), _packset(packset), _dg(dg) {
   }
   // Get pid, if there is a packset node that n belongs to. Else return 0.
