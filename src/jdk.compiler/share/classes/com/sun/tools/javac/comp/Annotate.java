@@ -1051,7 +1051,8 @@ public class Annotate {
             List<Attribute.TypeCompound> compounds = fromAnnotations(annotations);
             Assert.check(annotations.size() == compounds.size());
             // the type already has annotation metadata, but it's empty
-            Annotations metadata = storeAt.getMetadata(Annotations.class).orElseThrow(AssertionError::new);
+            Annotations metadata = storeAt.getMetadata(Annotations.class);
+            Assert.checkNonNull(metadata);
             Assert.check(metadata.annotationBuffer().isEmpty());
             metadata.annotationBuffer().appendList(compounds);
         });
