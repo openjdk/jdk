@@ -2496,6 +2496,7 @@ public:
         tty->print("%d ", out(pid).at(j));
       }
       tty->print_cr("]");
+#ifndef PRODUCT
       if (print_nodes) {
         for (int i = 0; i < _block.length(); i++) {
           Node* n = _block.at(i);
@@ -2505,6 +2506,7 @@ public:
           }
         }
       }
+#endif
     }
   }
 };
