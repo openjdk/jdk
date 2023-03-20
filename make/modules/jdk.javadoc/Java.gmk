@@ -23,4 +23,6 @@
 # questions.
 #
 
+DISABLED_WARNINGS_java += this-escape
+
 COPY += .xml .css .svg .js .js.template .png .txt
