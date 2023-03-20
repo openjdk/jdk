@@ -28,6 +28,11 @@ package com.sun.tools.javac.util;
 /**
  * Exception thrown when invalid Modified UTF-8 is encountered.
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
  * @see Convert#utf2chars
  * @see Convert#utfValidate
  */
