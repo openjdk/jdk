@@ -270,7 +270,7 @@ void StubRoutines::initialize_compiler_stubs() {
     _compiler_stubs_code = initialize_stubs(StubCodeGenerator::Compiler_stubs,
                                            _compiler_stubs_code_size, 100,
                                            "StubRoutines generation compiler stubs",
-                                           "StubRoutines (compiler stubs)", 
+                                           "StubRoutines (compiler stubs)",
                                            "_compiler_stubs_code_size");
   }
 }
@@ -317,7 +317,7 @@ void StubRoutines::initialize_final_stubs() {
     _final_stubs_code = initialize_stubs(StubCodeGenerator::Final_stubs,
                                          _final_stubs_code_size, 10,
                                          "StubRoutines generation final stubs",
-                                         "StubRoutines (final stubs)", 
+                                         "StubRoutines (final stubs)",
                                          "_final_stubs_code_size");
   }
 
