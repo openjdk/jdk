@@ -615,7 +615,7 @@ public:
   }
 
   int selector_idx(JVMState* jvms) const {
-    assert(jvms != nullptr, "JVMS reference is nullptr.");
+    assert(jvms != nullptr, "JVMS reference is null.");
     return jvms->scloff() + _merge_pointer_idx + 1;
   }
 

@@ -300,19 +300,31 @@ static void print_objects(JavaThread* deoptee_thread,
 
   for (int i = 0; i < objects->length(); i++) {
     ObjectValue* sv = nullptr;
+    Klass* k = nullptr;
 
     if (objects->at(i)->is_object()) {
       sv = objects->at(i)->as_ObjectValue();
+      // This object is only a candidate inside an ObjectMergeValue
+      if (sv->is_merge_candidate()) {
+        continue;
+      }
+      k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     } else if (objects->at(i)->is_object_merge()) {
       ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
       sv = merged->select(frame, reg_map);
+      // Klass may be null if the object was actually a NSR input of a merge.
+      k = sv->klass() != nullptr ? java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()) : nullptr;
     }
 
-    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
 
-    st.print("     object <" INTPTR_FORMAT "> of type ", p2i(sv->value()()));
-    k->print_value_on(&st);
+    st.print("     object <" INTPTR_FORMAT ">", p2i(sv->value()()));
+    if (k == nullptr) {
+      st.print(" from an allocation merge.");
+    } else {
+      st.print(" of type ");
+      k->print_value_on(&st);
+    }
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
     if (obj.is_null()) {
       st.print(" allocation failed");
@@ -321,7 +333,7 @@ static void print_objects(JavaThread* deoptee_thread,
     }
     st.cr();
 
-    if (Verbose && !obj.is_null()) {
+    if (Verbose && !obj.is_null() && k != nullptr) {
       k->oop_print_on(obj(), &st);
     }
   }

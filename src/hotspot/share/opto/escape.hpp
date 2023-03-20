@@ -594,6 +594,7 @@ private:
   bool can_reduce_this_phi_check_users(PhiNode* ophi) const;
   bool can_reduce_this_phi_check_inputs(PhiNode* ophi) const;
 
+  void reduce_this_phi_on_field_access(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist);
   void reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* safepoints);
   void reduce_this_phi(PhiNode* ophi);
 

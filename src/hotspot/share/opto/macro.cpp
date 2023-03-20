@@ -629,7 +629,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         } else if (safepoints != nullptr) {
           safepoints->append_if_missing(sfpt);
         }
-      } else if (ignore_merges && use->is_Phi()) {
+      } else if (ignore_merges && (use->is_Phi() || use->is_EncodeP() || use->Opcode() == Op_MemBarRelease)) {
         // Nothing to do
       } else if (use->Opcode() != Op_CastP2X) { // CastP2X is used by card mark
         if (use->is_Phi()) {
@@ -642,7 +642,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
         } else {
           if (use->Opcode() == Op_Return) {
             NOT_PRODUCT(fail_eliminate = "Object is return value";)
-          }else {
+          } else {
             NOT_PRODUCT(fail_eliminate = "Object is referenced by node";)
           }
           DEBUG_ONLY(disq_node = use;)

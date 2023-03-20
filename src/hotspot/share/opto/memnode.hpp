@@ -244,8 +244,11 @@ public:
   // try to hook me up to the exact initializing store.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
+  // Return true if it's possible to split the Load through a Phi merging the bases
+  bool can_split_through_phi_base(PhaseGVN *phase);
+
   // Split instance field load through Phi.
-  Node* split_through_phi(PhaseGVN *phase);
+  Node* split_through_phi(PhaseGVN *phase, bool ignore_missing_instance_id = false);
 
   // Recover original value from boxed values
   Node *eliminate_autobox(PhaseIterGVN *igvn);
