@@ -2265,7 +2265,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param d the dimension specifying the new size
      *          of this component
      * @throws NullPointerException if {@code d} is {@code null}
-     * @see #setSize
+     * @see #setSize(int, int)
+     * @see #getSize
      * @see #setBounds
      * @see #invalidate
      * @since 1.1
@@ -8562,7 +8563,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @see #addPropertyChangeListener
      * @see #getPropertyChangeListeners
-     * @see #removePropertyChangeListener(java.lang.String,java.beans.PropertyChangeListener)
+     * @see #removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
      */
     public void removePropertyChangeListener(
                                                           PropertyChangeListener listener) {
@@ -8626,7 +8627,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @see #removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
      * @see #getPropertyChangeListeners(java.lang.String)
-     * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
+     * @see #addPropertyChangeListener(java.beans.PropertyChangeListener)
      */
     public void addPropertyChangeListener(
                                                        String propertyName,

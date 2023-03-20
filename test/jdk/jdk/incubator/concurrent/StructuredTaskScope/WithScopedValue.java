@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Basic tests for StructuredTaskScope with scoped values
  * @enablePreview
  * @modules jdk.incubator.concurrent
- * @run testng WithScopedValue
+ * @run junit WithScopedValue
  */
 
 import jdk.incubator.concurrent.ScopedValue;
@@ -35,27 +35,25 @@ import jdk.incubator.concurrent.StructureViolationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Test
-public class WithScopedValue {
+class WithScopedValue {
 
-    @DataProvider
-    public Object[][] factories() {
-        return new Object[][] {
-                { Thread.ofPlatform().factory() },
-                { Thread.ofVirtual().factory() },
-        };
+    private static Stream<ThreadFactory> factories() {
+        return Stream.of(Thread.ofPlatform().factory(), Thread.ofVirtual().factory());
     }
 
     /**
      * Test that fork inherits a scoped value into a child thread.
      */
-    @Test(dataProvider = "factories")
-    public void testForkInheritsScopedValue1(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testForkInheritsScopedValue1(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         String value = ScopedValue.where(name, "x", () -> {
             try (var scope = new StructuredTaskScope<String>(null, factory)) {
@@ -72,8 +70,9 @@ public class WithScopedValue {
     /**
      * Test that fork inherits a scoped value into a grandchild thread.
      */
-    @Test(dataProvider = "factories")
-    public void testForkInheritsScopedValue2(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testForkInheritsScopedValue2(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         String value = ScopedValue.where(name, "x", () -> {
             try (var scope1 = new StructuredTaskScope<String>(null, factory)) {
@@ -96,8 +95,9 @@ public class WithScopedValue {
     /**
      * Test that fork inherits a rebound scoped value into a grandchild thread.
      */
-    @Test(dataProvider = "factories")
-    public void testForkInheritsScopedValue3(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testForkInheritsScopedValue3(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         String value = ScopedValue.where(name, "x", () -> {
             try (var scope1 = new StructuredTaskScope<String>(null, factory)) {
@@ -128,7 +128,8 @@ public class WithScopedValue {
     /**
      * Test exiting a dynamic scope with an open task scope.
      */
-    public void testStructureViolation1() throws Exception {
+    @Test
+    void testStructureViolation1() throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         class Box {
             StructuredTaskScope<Object> scope;
@@ -164,7 +165,8 @@ public class WithScopedValue {
     /**
      * Test closing a StructuredTaskScope while executing in a dynamic scope.
      */
-    public void testStructureViolation2() throws Exception {
+    @Test
+    void testStructureViolation2() throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var scope = new StructuredTaskScope<String>()) {
             ScopedValue.where(name, "x", () -> {
@@ -176,7 +178,8 @@ public class WithScopedValue {
     /**
      * Test fork when a scoped value is bound after a StructuredTaskScope is created.
      */
-    public void testStructureViolation3() throws Exception {
+    @Test
+    void testStructureViolation3() throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var scope = new StructuredTaskScope<String>()) {
             ScopedValue.where(name, "x", () -> {
@@ -189,7 +192,8 @@ public class WithScopedValue {
     /**
      * Test fork when a scoped value is re-bound after a StructuredTaskScope is created.
      */
-    public void testStructureViolation4() throws Exception {
+    @Test
+    void testStructureViolation4() throws Exception {
         ScopedValue<String> name1 = ScopedValue.newInstance();
         ScopedValue<String> name2 = ScopedValue.newInstance();
 

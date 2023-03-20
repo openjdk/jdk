@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -225,8 +226,7 @@
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _local_interfaces,                             Array<InstanceKlass*>*)                \
   nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<InstanceKlass*>*)                \
-  nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
-  nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
+  nonstatic_field(InstanceKlass,               _fieldinfo_stream,                             Array<u1>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       const char*)                           \
   nonstatic_field(InstanceKlass,               _inner_classes,                                Array<jushort>*)                       \
@@ -235,8 +235,8 @@
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
-  nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
-  nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
+  volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
+  volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
   nonstatic_field(InstanceKlass,               _reference_type,                               u1)                                    \
   volatile_nonstatic_field(InstanceKlass,      _oop_map_cache,                                OopMapCache*)                          \
@@ -379,12 +379,6 @@
                                                                                                                                      \
      static_field(CompressedKlassPointers,     _narrow_klass._base,                           address)                               \
      static_field(CompressedKlassPointers,     _narrow_klass._shift,                          int)                                   \
-                                                                                                                                     \
-  /******/                                                                                                                           \
-  /* os */                                                                                                                           \
-  /******/                                                                                                                           \
-                                                                                                                                     \
-     static_field(os,                          _polling_page,                                 address)                               \
                                                                                                                                      \
   /**********/                                                                                                                       \
   /* Memory */                                                                                                                       \
@@ -2098,11 +2092,6 @@
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
-  declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
-  declare_constant(JVM_ACC_FIELD_MODIFICATION_WATCHED)                    \
-  declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
-  declare_constant(JVM_ACC_FIELD_STABLE)                                  \
-  declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \
@@ -2234,24 +2223,6 @@
   /*************************************/                                 \
                                                                           \
                                                                           \
-  /*************************************/                                 \
-  /* FieldInfo FieldOffset enum        */                                 \
-  /*************************************/                                 \
-                                                                          \
-  declare_constant(FieldInfo::access_flags_offset)                        \
-  declare_constant(FieldInfo::name_index_offset)                          \
-  declare_constant(FieldInfo::signature_index_offset)                     \
-  declare_constant(FieldInfo::initval_index_offset)                       \
-  declare_constant(FieldInfo::low_packed_offset)                          \
-  declare_constant(FieldInfo::high_packed_offset)                         \
-  declare_constant(FieldInfo::field_slots)                                \
-                                                                          \
-  /*************************************/                                 \
-  /* FieldInfo tag constants           */                                 \
-  /*************************************/                                 \
-                                                                          \
-  declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
-  declare_preprocessor_constant("FIELDINFO_TAG_OFFSET", FIELDINFO_TAG_OFFSET) \
                                                                           \
   /************************************************/                      \
   /* InstanceKlass InnerClassAttributeOffset enum */                      \
@@ -2320,6 +2291,17 @@
   declare_constant(JavaThreadStatus::PARKED_TIMED)                        \
   declare_constant(JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)            \
   declare_constant(JavaThreadStatus::TERMINATED)                          \
+                                                                          \
+                                                                          \
+  /******************************/                                        \
+  /* FieldFlags enum            */                                        \
+  /******************************/                                        \
+                                                                          \
+  declare_constant(FieldInfo::FieldFlags::_ff_initialized)                \
+  declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
+  declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
+  declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
+  declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
                                                                           \
   /******************************/                                        \
   /* Debug info                 */                                        \
@@ -3076,7 +3058,7 @@ void VMStructs::init() {
 static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool isRecurse) {
   {
     VMTypeEntry* types = origtypes;
-    while (types->typeName != NULL) {
+    while (types->typeName != nullptr) {
       if (strcmp(typeName, types->typeName) == 0) {
         // Found it
         return 1;
@@ -3097,13 +3079,13 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     }
     FREE_C_HEAP_ARRAY(char, s);
   }
-  const char* start = NULL;
+  const char* start = nullptr;
   if (strstr(typeName, "GrowableArray<") == typeName) {
     start = typeName + strlen("GrowableArray<");
   } else if (strstr(typeName, "Array<") == typeName) {
     start = typeName + strlen("Array<");
   }
-  if (start != NULL) {
+  if (start != nullptr) {
     const char * end = strrchr(typeName, '>');
     int len = end - start + 1;
     char * s = NEW_C_HEAP_ARRAY(char, len, mtInternal);

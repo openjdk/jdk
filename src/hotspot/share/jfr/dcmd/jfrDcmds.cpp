@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -445,16 +445,6 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr(" $ jcmd <pid> JFR.configure stackdepth=256");
   out->print_cr(" $ jcmd <pid> JFR.configure memorysize=100M");
   out->print_cr("");
-}
-
-int JfrConfigureFlightRecorderDCmd::num_arguments() {
-  ResourceMark rm;
-  JfrConfigureFlightRecorderDCmd* dcmd = new JfrConfigureFlightRecorderDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  }
-  return 0;
 }
 
 void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {

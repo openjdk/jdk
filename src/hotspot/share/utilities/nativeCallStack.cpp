@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ NativeCallStack::NativeCallStack(address* pc, int frameCount) {
     _stack[index] = pc[index];
   }
   for (; index < NMT_TrackingStackDepth; index ++) {
-    _stack[index] = NULL;
+    _stack[index] = nullptr;
   }
 }
 
@@ -64,7 +64,7 @@ NativeCallStack::NativeCallStack(address* pc, int frameCount) {
 int NativeCallStack::frames() const {
   int index;
   for (index = 0; index < NMT_TrackingStackDepth; index ++) {
-    if (_stack[index] == NULL) {
+    if (_stack[index] == nullptr) {
       break;
     }
   }
@@ -87,7 +87,7 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
   } else {
     for (int frame = 0; frame < NMT_TrackingStackDepth; frame ++) {
       pc = get_frame(frame);
-      if (pc == NULL) break;
+      if (pc == nullptr) break;
       // Print indent
       for (int index = 0; index < indent; index ++) out->print(" ");
       if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {

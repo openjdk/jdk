@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,10 +274,14 @@ public:
   // precondition: at safepoint.
   void abandon_logs_and_stats();
 
-  // Collect and reset all the per-thread refinement stats.  If any threads
-  // have partial logs then add them to the global list.
+  // Update global refinement statistics with the ones given and the ones from
+  // detached threads.
   // precondition: at safepoint.
-  void concatenate_logs_and_stats();
+  void update_refinement_stats(G1ConcurrentRefineStats& stats);
+  // Add the given thread's partial logs to the global list and return and reset
+  // its refinement stats.
+  // precondition: at safepoint.
+  G1ConcurrentRefineStats concatenate_log_and_stats(Thread* thread);
 
   // Return the total of mutator refinement stats for all threads.
   // precondition: at safepoint.

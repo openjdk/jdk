@@ -51,10 +51,10 @@ class CgroupV2Controller: public CgroupController {
 class CgroupV2Subsystem: public CgroupSubsystem {
   private:
     /* One unified controller */
-    CgroupController* _unified = NULL;
+    CgroupController* _unified = nullptr;
     /* Caching wrappers for cpu/memory metrics */
-    CachingCgroupController* _memory = NULL;
-    CachingCgroupController* _cpu = NULL;
+    CachingCgroupController* _memory = nullptr;
+    CachingCgroupController* _cpu = nullptr;
 
     char *mem_limit_val();
     char *mem_swp_limit_val();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -667,6 +667,15 @@ final class Byte64Vector extends ByteVector {
             Objects.requireNonNull(mask);
             Byte64Mask m = (Byte64Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Byte64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Byte64Mask) VectorSupport.indexPartiallyInUpperRange(
+                Byte64Mask.class, byte.class, VLENGTH, offset, limit,
+                (o, l) -> (Byte64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

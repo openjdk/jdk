@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (value >= (intx)os::vm_page_size()) {
     JVMFlag::printError(verbose,
                         "ObjectAlignmentInBytes (%d) must be "
-                        "less than page size (%d)\n",
+                        "less than page size (" SIZE_FORMAT ")\n",
                         value, os::vm_page_size());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
