@@ -612,7 +612,8 @@ public abstract class HttpClient implements AutoCloseable {
      * @param request the request
      * @param responseBodyHandler the response body handler
      * @return the response
-     * @throws IOException if an I/O error occurs when sending or receiving
+     * @throws IOException if an I/O error occurs when sending or receiving, or
+     *         the client {@linkplain #isTerminated() is terminated}
      * @throws InterruptedException if the operation is interrupted
      * @throws IllegalArgumentException if the {@code request} argument is not
      *         a request that could have been validly built as specified by {@link
@@ -659,7 +660,8 @@ public abstract class HttpClient implements AutoCloseable {
      *
      * <p> The returned completable future completes exceptionally with:
      * <ul>
-     * <li>{@link IOException} - if an I/O error occurs when sending or receiving</li>
+     * <li>{@link IOException} - if an I/O error occurs when sending or receiving,
+     *      or the client is terminated.</li>
      * <li>{@link SecurityException} - If a security manager has been installed
      *          and it denies {@link java.net.URLPermission access} to the
      *          URL in the given request, or proxy if one is configured.
