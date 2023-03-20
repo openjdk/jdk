@@ -24,4 +24,4 @@
 #
 
 DISABLED_WARNINGS_java += this-escape
-COPY += endianness.properties
+COPY += target.properties

@@ -37,21 +37,21 @@ import java.util.Properties;
  */
 public record Platform(OperatingSystem os, Architecture arch) {
 
-    private static final Map<Architecture, ByteOrder> endianness;
+    private static final Map<Platform, ByteOrder> endianness;
 
     static {
         Properties p;
-        try (InputStream is = Platform.class.getResourceAsStream("endianness.properties")) {
+        try (InputStream is = Platform.class.getResourceAsStream("target.properties")) {
             p = new Properties();
             p.load(is);
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
         }
-        Map<Architecture, ByteOrder> byteOrders = new HashMap<>();
+        Map<Platform, ByteOrder> byteOrders = new HashMap<>();
         for (String k : p.stringPropertyNames()) {
-            Architecture arch = toArch(k);
-            if (arch == Architecture.UNKNOWN) {
-                // skip unknown arch
+            Platform platform = parsePlatform(k);
+            if (platform.os == OperatingSystem.UNKNOWN || platform.arch == Architecture.UNKNOWN) {
+                // skip unknown platform
                 continue;
             }
             String v = p.getProperty(k);
@@ -61,7 +61,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
                 default -> throw new ExceptionInInitializerError("Unrecognized endian value '"
                         + v + "' for arch '" + k + "'");
             };
-            byteOrders.put(arch, endian);
+            byteOrders.put(platform, endian);
         }
         endianness = byteOrders;
     }
@@ -137,7 +137,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
      * {@return the native {@link ByteOrder} of this {@code Platform} or null if not known}
      */
     public ByteOrder getNativeByteOrder() {
-        return endianness.get(arch);
+        return endianness.get(this);
     }
 
     /**
