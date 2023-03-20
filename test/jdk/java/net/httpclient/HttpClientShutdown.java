@@ -157,7 +157,7 @@ public class HttpClientShutdown implements HttpServerAdapters {
         Throwable accepted = null;
         while (t != null) {
             out.println(now() + what + ": checking " + t);
-            if (t instanceof  IOException io && hasExpectedMessage(io)) {
+            if (t instanceof IOException io && hasExpectedMessage(io)) {
                 out.println(now() + what + ": Got expected message in cause: " + io);
                 return;
             } else if (t instanceof ClosedChannelException) {
