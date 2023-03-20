@@ -48,14 +48,6 @@ inline unsigned count_trailing_zeros(T x) {
   return CountTrailingZerosImpl<U>{}(static_cast<P>(static_cast<U>(x)));
 }
 
-template <typename T>
-struct CountTrailingZerosImpl {
-  inline unsigned operator()(T x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
-    return CountTrailingZerosImpl<unsigned int>{}(x);
-  }
-};
-
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
@@ -95,19 +87,19 @@ struct CountTrailingZerosImpl<unsigned long long> {
 #endif
 
 template <>
-struct CountTrailingZerosImpl<unsigned int> {
-  inline unsigned operator()(unsigned int x) const {
-    return CountTrailingZerosImpl<unsigned long>{}(x);
-  }
-};
-
-template <>
 struct CountTrailingZerosImpl<unsigned long> {
   inline unsigned operator()(unsigned long x) const {
     unsigned long index;
     unsigned char result = _BitScanForward(&index, x);
     postcond(result != 0);
     return static_cast<unsigned>(index);
+  }
+};
+
+template <>
+struct CountTrailingZerosImpl<unsigned int> {
+  inline unsigned operator()(unsigned int x) const {
+    return CountTrailingZerosImpl<unsigned long>{}(x);
   }
 };
 
@@ -143,5 +135,13 @@ struct CountTrailingZerosImpl<unsigned long long> {
 #error Unknown toolchain.
 
 #endif
+
+template <typename T>
+struct CountTrailingZerosImpl {
+  inline unsigned operator()(T x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+    return CountTrailingZerosImpl<unsigned int>{}(x);
+  }
+};
 
 #endif // SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP
