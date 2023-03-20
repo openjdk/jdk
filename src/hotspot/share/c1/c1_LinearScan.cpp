@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6731,6 +6731,8 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_rem:
         case lir_sqrt:
         case lir_abs:
+        case lir_f2hf:
+        case lir_hf2f:
         case lir_log10:
         case lir_logic_and:
         case lir_logic_or:
