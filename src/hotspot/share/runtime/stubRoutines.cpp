@@ -405,7 +405,6 @@ void StubRoutines::initialize_final_stubs() {
 
 
 void initial_stubs_init()      { StubRoutines::initialize_initial_stubs(); }
-void compiler_stubs_init()     { StubRoutines::initialize_compiler_stubs(); }
 void continuation_stubs_init() { StubRoutines::initialize_continuation_stubs(); }
 void final_stubs_init()        { StubRoutines::initialize_final_stubs(); }
 
