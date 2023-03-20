@@ -165,7 +165,12 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(Utf8Entry name,
                                    Utf8Entry descriptor,
                                    int flags) {
-        return withField(name, descriptor, fb -> fb.withFlags(flags));
+        return withField(name, descriptor, new Consumer<FieldBuilder>() {
+            @Override
+            public void accept(FieldBuilder fb) {
+                fb.withFlags(flags);
+            }
+        });
     }
 
     /**

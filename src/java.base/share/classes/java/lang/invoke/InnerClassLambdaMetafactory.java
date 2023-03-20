@@ -27,7 +27,6 @@ package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
-import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
@@ -48,7 +47,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.PropertyPermission;
 import java.util.Set;
 
-import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
@@ -103,6 +101,8 @@ import jdk.internal.classfile.MethodBuilder;
     private static final ClassDesc SER_HOSTILE_EXCEPTIONS = NAME_NOT_SERIALIZABLE_EXCEPTION;
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = new ClassDesc[0];
+
 
     // Used to ensure that dumped class files for failed definitions have a unique class name
     private static final AtomicInteger counter = new AtomicInteger();
@@ -124,10 +124,6 @@ import jdk.internal.classfile.MethodBuilder;
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
 
         // condy to load implMethod from class data
-//        MethodType classDataMType = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
-//        Handle classDataBsm = new Handle(H_INVOKESTATIC, Type.getInternalName(MethodHandles.class), "classData",
-//                                         classDataMType.descriptorString(), false);
-//        ConstantDynamic implMethodCondy = new ConstantDynamic(ConstantDescs.DEFAULT_NAME, MethodHandle.class.descriptorString(), classDataBsm);
         DirectMethodHandleDesc classDataBsm = ConstantDescs.ofConstantBootstrap(ConstantDescs.CD_MethodHandles, "classData", ConstantDescs.CD_Object);
         implMethodCondy = DynamicConstantDesc.ofNamed(classDataBsm, ConstantDescs.DEFAULT_NAME, ConstantDescs.CD_MethodHandle);
     }
@@ -135,12 +131,13 @@ import jdk.internal.classfile.MethodBuilder;
     // See context values in AbstractValidatingLambdaMetafactory
     private final ClassDesc implMethodClassDesc;     // Name of type containing implementation "CC"
     private final String implMethodName;             // Name of implementation method "impl"
-    private final MethodTypeDesc implMethodDesc;             // Type descriptor for implementation methods "(I)Ljava/lang/String;"
+    private final MethodTypeDesc implMethodDesc;     // Type descriptor for implementation methods "(I)Ljava/lang/String;"
     private final MethodType constructorType;        // Generated class constructor type "(CC)void"
+    private final MethodTypeDesc constructorTypeDesc;// Type descriptor for the generated class constructor type "(CC)void"
     private final String[] argNames;                 // Generated names for the constructor arguments
-    private final String[] argDescs;                 // Type descriptors for the constructor arguments
+    private final ClassDesc[] argDescs;              // Type descriptors for the constructor arguments
     private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda$1"
-    private final ClassDesc lambdaClassDesc;
+    private final ClassDesc lambdaClassDesc;         // Type descriptor for the generated class "X$$Lambda$1"
     private final boolean useImplMethodHandle;       // use MethodHandle invocation instead of symbolic bytecode invocation
 
     /**
@@ -198,8 +195,9 @@ import jdk.internal.classfile.MethodBuilder;
               isSerializable, altInterfaces, altMethods);
         implMethodClassDesc = ClassDesc.ofDescriptor(implClass.descriptorString());
         implMethodName = implInfo.getName();
-        implMethodDesc = MethodTypeDesc.ofDescriptor(implInfo.getMethodType().toMethodDescriptorString());
+        implMethodDesc = MethodTypeDesc.ofDescriptor(implInfo.getMethodType().descriptorString());
         constructorType = factoryType.changeReturnType(Void.TYPE);
+        constructorTypeDesc = MethodTypeDesc.ofDescriptor(constructorType.descriptorString());
         lambdaClassName = lambdaClassName(targetClass);
         lambdaClassDesc = ClassDesc.ofInternalName(lambdaClassName);
         // If the target class invokes a protected method inherited from a
@@ -214,13 +212,14 @@ import jdk.internal.classfile.MethodBuilder;
         int parameterCount = factoryType.parameterCount();
         if (parameterCount > 0) {
             argNames = new String[parameterCount];
-            argDescs = new String[parameterCount];
+            argDescs = new ClassDesc[parameterCount];
             for (int i = 0; i < parameterCount; i++) {
                 argNames[i] = "arg$" + (i + 1);
-                argDescs[i] = BytecodeDescriptor.unparse(factoryType.parameterType(i));
+                argDescs[i] = factoryType.parameterType(i).describeConstable().orElseThrow();
             }
         } else {
-            argNames = argDescs = EMPTY_STRING_ARRAY;
+            argNames = EMPTY_STRING_ARRAY;
+            argDescs = EMPTY_CLASSDESC_ARRAY;
         }
     }
 
@@ -344,10 +343,10 @@ import jdk.internal.classfile.MethodBuilder;
             public void accept(ClassBuilder clb) {
                 clb.withFlags(ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC);
                 clb.withInterfaceSymbols(interfaces);
+                clb.withVersion(CLASSFILE_VERSION, 0);
                 // Generate final fields to be filled in by constructor
                 for (int i = 0; i < argDescs.length; i++) {
-                    clb.withVersion(CLASSFILE_VERSION, 0);
-                    clb.withField(argNames[i], ClassDesc.ofDescriptor(argDescs[i]), ACC_PRIVATE + ACC_FINAL);
+                    clb.withField(argNames[i], argDescs[i], ACC_PRIVATE + ACC_FINAL);
                 }
 
                 generateConstructor(clb);
@@ -456,7 +455,7 @@ import jdk.internal.classfile.MethodBuilder;
                 cob.new_(lambdaClassDesc)
                    .dup();
                 assert factoryType.parameterCount() == 0;
-                cob.invokespecial(lambdaClassDesc, NAME_CTOR, MethodTypeDesc.ofDescriptor(constructorType.toMethodDescriptorString()))
+                cob.invokespecial(lambdaClassDesc, NAME_CTOR, constructorTypeDesc)
                    .putstatic(lambdaClassDesc, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor)
                    .return_();
             }
@@ -468,7 +467,7 @@ import jdk.internal.classfile.MethodBuilder;
      */
     private void generateConstructor(ClassBuilder clb) {
         // Generate constructor
-        clb.withMethodBody(NAME_CTOR, MethodTypeDesc.ofDescriptor(constructorType.toMethodDescriptorString()), ACC_PRIVATE,
+        clb.withMethodBody(NAME_CTOR, constructorTypeDesc, ACC_PRIVATE,
                 new Consumer<CodeBuilder>() {
                     @Override
                     public void accept(CodeBuilder cob) {
@@ -481,7 +480,7 @@ import jdk.internal.classfile.MethodBuilder;
                             Class<?> argType = factoryType.parameterType(i);
                             cob.loadInstruction(getLoadType(argType), lvIndex + 1);
                             lvIndex += getParameterSize(argType);
-                            cob.putfield(lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
+                            cob.fieldInstruction(Opcode.PUTFIELD, lambdaClassDesc, argNames[i], argDescs[i]);
                         }
                         cob.return_();
                     }
@@ -514,8 +513,8 @@ import jdk.internal.classfile.MethodBuilder;
                             cob.dup();
                             cob.constantInstruction(i);
                             cob.aload(0);
-                            cob.getfield(lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
-                            TypeConvertingMethodAdapter.boxIfTypePrimitive(cob, TypeKind.fromDescriptor(argDescs[i]));
+                            cob.getfield(lambdaClassDesc, argNames[i], argDescs[i]);
+                            TypeConvertingMethodAdapter.boxIfTypePrimitive(cob, TypeKind.from(argDescs[i]));
                             cob.aastore();
                         }
                         cob.invokespecial(NAME_SERIALIZED_LAMBDA, NAME_CTOR,
@@ -572,7 +571,7 @@ import jdk.internal.classfile.MethodBuilder;
                 }
                 for (int i = 0; i < argNames.length; i++) {
                     cob.aload(0)
-                       .getfield(lambdaClassDesc, argNames[i], ClassDesc.ofDescriptor(argDescs[i]));
+                       .getfield(lambdaClassDesc, argNames[i], argDescs[i]);
                 }
 
                 convertArgumentTypes(cob, methodType);
@@ -595,7 +594,7 @@ import jdk.internal.classfile.MethodBuilder;
                 // instruction will pop the unneeded result
                 Class<?> implReturnClass = implMethodType.returnType();
                 Class<?> samReturnClass = methodType.returnType();
-                TypeConvertingMethodAdapter.convertType(cob,implReturnClass, samReturnClass, samReturnClass);
+                TypeConvertingMethodAdapter.convertType(cob, implReturnClass, samReturnClass, samReturnClass);
                 cob.returnInstruction(getReturnOpcode(samReturnClass));
             }
         });
@@ -640,14 +639,14 @@ import jdk.internal.classfile.MethodBuilder;
     }
 
     static TypeKind getLoadType(Class<?> c) {
-        if(c == Void.TYPE) {
+        if (c == Void.TYPE) {
             throw new InternalError("Unexpected void type of load opcode");
         }
         return getClassTypeKind(c);
     }
 
     static TypeKind getReturnOpcode(Class<?> c) {
-        if(c == Void.TYPE) {
+        if (c == Void.TYPE) {
             return TypeKind.VoidType;
         }
         return getClassTypeKind(c);
