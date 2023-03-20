@@ -56,7 +56,7 @@ import java.util.Optional;
  * @since 19
  */
 @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
-sealed public interface AddressLayout extends ValueLayout permits ValueLayouts.OfAddressImpl {
+public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.OfAddressImpl {
 
     /**
      * {@inheritDoc}
