@@ -58,6 +58,7 @@ public final class ColCvtAlphaDifferentSrcDst {
         differentToTransparentDst(TYPE_INT_ARGB);
         differentToTransparentDst(TYPE_4BYTE_ABGR);
         differentToTransparentDst(TYPE_INT_ARGB_PRE);
+        differentToTransparentDst(TYPE_4BYTE_ABGR_PRE);
         differentToNullDst();
     }
 

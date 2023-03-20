@@ -127,15 +127,11 @@ final class LCMSTransform implements ColorTransform {
     }
 
     /**
-     * Returns {@code true} if lcms may supports this format directly.
+     * Returns {@code true} if lcms may support this format directly.
      */
     private static boolean isLCMSSupport(BufferedImage src, BufferedImage dst) {
         if (!dst.getColorModel().hasAlpha()) {
             return true;
-        }
-        // lcms as of now does not support pre-alpha
-        if (src.isAlphaPremultiplied() || dst.isAlphaPremultiplied()) {
-            return false;
         }
         // lcms does not set correct alpha for transparent dst if src is opaque
         // is it feature or bug?
@@ -424,9 +420,9 @@ final class LCMSTransform implements ColorTransform {
     public void colorConvert(Raster src, WritableRaster dst) {
 
         LCMSImageLayout srcIL, dstIL;
-        dstIL = LCMSImageLayout.createImageLayout(dst, false);
+        dstIL = LCMSImageLayout.createImageLayout(dst, null);
         if (dstIL != null) {
-            srcIL = LCMSImageLayout.createImageLayout(src, false);
+            srcIL = LCMSImageLayout.createImageLayout(src, null);
             if (srcIL != null) {
                 doTransform(srcIL, dstIL);
                 return;
