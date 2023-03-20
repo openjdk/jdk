@@ -754,7 +754,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     if (failing())  return;
     if (cg == nullptr) {
       const char* reason = InlineTree::check_can_parse(method());
-      assert(reason != nullptr, "cannot parse method: why?");
+      assert(reason != nullptr, "expect reason for parse failure");
       stringStream ss;
       ss.print("cannot parse method: %s", reason);
       record_method_not_compilable(ss.as_string());
@@ -766,7 +766,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == nullptr) {
       if (!failure_reason_is(C2Compiler::retry_class_loading_during_parsing())) {
-        assert(failure_reason() != nullptr, "method parse failed: why?");
+        assert(failure_reason() != nullptr, "expect reason for parse failure");
         stringStream ss;
         ss.print("method parse failed: %s", failure_reason());
         record_method_not_compilable(ss.as_string());
@@ -3996,8 +3996,10 @@ bool Compile::final_graph_reshaping() {
           }
         }
       }
+
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
+        DEBUG_ONLY( n->dump_bfs(1, 0, "-"); );
         assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
@@ -4017,6 +4019,8 @@ bool Compile::final_graph_reshaping() {
     // must be infinite loops.
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++)
       if (!frc._visited.test(n->fast_out(j)->_idx)) {
+        DEBUG_ONLY( n->fast_out(j)->dump(); );
+        DEBUG_ONLY( n->dump_bfs(1, 0, "-"); );
         assert(false, "infinite loop");
         record_method_not_compilable("infinite loop");
         return true;            // Found unvisited kid; must be unreach
