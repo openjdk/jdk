@@ -413,6 +413,8 @@ public final class ExtendedSocketOptions {
                 return newInstance("jdk.net.MacOSXSocketOptions");
             } else if (osname.startsWith("Windows")) {
                 return newInstance("jdk.net.WindowsSocketOptions");
+            } else if (osname.startsWith("AIX")) {
+                return newInstance("jdk.net.AIXSocketOptions");
             } else {
                 return new PlatformSocketOptions();
             }
