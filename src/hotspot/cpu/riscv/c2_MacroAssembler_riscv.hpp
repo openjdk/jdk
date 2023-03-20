@@ -185,15 +185,17 @@
 
  void minmax_FD_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min);
+                  bool is_double, bool is_min, int length_in_bytes);
 
  void reduce_minmax_FD_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,
                          VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min);
+                         bool is_double, bool is_min, int length_in_bytes);
 
  void rvv_reduce_integral(Register dst, VectorRegister tmp,
                           Register src1, VectorRegister src2,
-                          BasicType bt, int opc);
+                          BasicType bt, int opc, int length_in_bytes);
+
+ void rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp = t0);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

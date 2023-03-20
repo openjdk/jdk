@@ -23,6 +23,7 @@
 
 import com.sun.tools.classfile.*;
 
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
@@ -66,7 +67,10 @@ public class LineNumberTestBase extends TestBase {
                 writeToFileIfEnabled(Paths.get(testCase.getName() + ".java"), testCase.src);
                 Set<Integer> coveredLines = new HashSet<>();
                 for (JavaFileObject file : compile(testCase.extraCompilerOptions, testCase.src).getClasses().values()) {
-                    ClassFile classFile = ClassFile.read(file.openInputStream());
+                    ClassFile classFile;
+                    try (InputStream input = file.openInputStream()) {
+                        classFile = ClassFile.read(input);
+                    }
                     for (Method m : classFile.methods) {
                         Code_attribute code_attribute = (Code_attribute) m.attributes.get(Code);
 

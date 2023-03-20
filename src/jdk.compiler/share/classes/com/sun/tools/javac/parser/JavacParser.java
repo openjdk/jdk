@@ -166,6 +166,7 @@ public class JavacParser implements Parser {
     }
     /** Construct a parser from a given scanner, tree factory and log.
      */
+    @SuppressWarnings("this-escape")
     protected JavacParser(ParserFactory fac,
                      Lexer S,
                      boolean keepDocComments,
@@ -4020,7 +4021,7 @@ public class JavacParser implements Parser {
             }
         } while (token.kind == DOT);
         accept(SEMI);
-        return toP(F.at(pos).Import(pid, importStatic));
+        return toP(F.at(pos).Import((JCFieldAccess)pid, importStatic));
     }
 
     /** TypeDeclaration = ClassOrInterfaceOrEnumDeclaration

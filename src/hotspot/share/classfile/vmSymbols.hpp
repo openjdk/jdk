@@ -67,6 +67,7 @@
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
   template(java_lang_BaseVirtualThread,               "java/lang/BaseVirtualThread")              \
   template(java_lang_VirtualThread,                   "java/lang/VirtualThread")                  \
+  template(java_lang_BoundVirtualThread,              "java/lang/ThreadBuilders$BoundVirtualThread") \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
   template(java_lang_Throwable,                       "java/lang/Throwable")                      \
   template(java_lang_ClassLoader,                     "java/lang/ClassLoader")                    \
@@ -751,6 +752,7 @@
   template(encodeThrowable_name,                       "encodeThrowable")                                         \
   template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
+  template(decodeAndThrowThrowable_signature,          "(JZ)V")                                                   \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \

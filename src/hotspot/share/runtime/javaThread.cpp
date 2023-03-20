@@ -157,7 +157,7 @@ void JavaThread::set_threadOopHandles(oop p) {
   assert(_thread_oop_storage != nullptr, "not yet initialized");
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
-  _jvmti_vthread = OopHandle(_thread_oop_storage, nullptr);
+  _jvmti_vthread = OopHandle(_thread_oop_storage, p->is_a(vmClasses::BoundVirtualThread_klass()) ? p : nullptr);
   _scopedValueCache = OopHandle(_thread_oop_storage, nullptr);
 }
 
@@ -235,7 +235,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_string_void_signature(),
                             thread_group,
                             name,
-                            THREAD);
+                            CHECK);
   } else {
     // Thread gets assigned name "Thread-nnn" and null target
     // (java.lang.Thread doesn't have a constructor taking only a ThreadGroup argument)
@@ -246,7 +246,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_runnable_void_signature(),
                             thread_group,
                             Handle(),
-                            THREAD);
+                            CHECK);
   }
   os::set_priority(this, NormPriority);
 

@@ -103,7 +103,7 @@ final class DCmdStop extends AbstractDCmd {
     public Argument[] getArgumentInfos() {
         return new Argument[] {
             new Argument("name",
-                "Recording text,.e.g \\\"My Recording\\\"",
+                "Recording name, e.g. \\\"My Recording\\\"",
                 "STRING", true, null, false),
             new Argument("filename",
                 "Copy recording data to file, e.g. \\\"" + exampleFilename() +  "\\\"",

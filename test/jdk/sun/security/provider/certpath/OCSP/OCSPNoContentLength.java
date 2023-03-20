@@ -56,7 +56,7 @@ public class OCSPNoContentLength {
     static String EE_ALIAS = "endentity";
 
     // Enable debugging for additional output
-    static final boolean debug = false;
+    static final boolean debug = true;
 
     // PKI components we will need for this test
     static X509Certificate rootCert;        // The root CA certificate
@@ -66,7 +66,6 @@ public class OCSPNoContentLength {
     static KeyStore trustStore;             // SSL Client trust store
     static SimpleOCSPServer rootOcsp;       // Root CA OCSP Responder
     static int rootOcspPort;                // Port number for root OCSP
-
 
     public static void main(String[] args) throws Exception {
 

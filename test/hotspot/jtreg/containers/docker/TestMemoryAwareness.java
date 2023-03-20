@@ -77,6 +77,8 @@ public class TestMemoryAwareness {
             testMemorySoftLimit("1g", "1073741824");
             testMemorySwapLimitSanity();
 
+            testMemorySwapNotSupported("500m", "520m", "512000 k", "532480 k");
+
             // Add extra 10 Mb to allocator limit, to be sure to cause OOM
             testOOM("256m", 256 + 10);
 
@@ -152,6 +154,29 @@ public class TestMemoryAwareness {
 
         Common.run(opts)
             .shouldMatch("Memory Soft Limit.*" + expectedTraceValue);
+    }
+
+    /*
+     * Verifies that PrintContainerInfo prints the memory
+     * limit - without swap - iff swap is disabled (e.g. via swapaccount=0). It must
+     * not print 'not supported' for that value in that case. It'll always pass
+     * on systems with swap accounting enabled.
+     */
+    private static void testMemorySwapNotSupported(String valueToSet, String swapToSet, String expectedMem, String expectedSwap)
+            throws Exception {
+        Common.logNewTestCase("memory swap not supported: " + valueToSet);
+
+        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo");
+        Common.addWhiteBoxOpts(opts);
+        opts.addDockerOpts("--memory=" + valueToSet);
+        opts.addDockerOpts("--memory-swap=" + swapToSet);
+
+        Common.run(opts)
+            .shouldMatch("memory_limit_in_bytes:.*" + expectedMem)
+            .shouldNotMatch("memory_and_swap_limit_in_bytes:.*not supported")
+            // On systems with swapaccount=0 this returns the memory limit.
+            // On systems with swapaccount=1 this returns the set memory+swap value.
+            .shouldMatch("memory_and_swap_limit_in_bytes:.*(" + expectedMem + "|" + expectedSwap + ")");
     }
 
     /*

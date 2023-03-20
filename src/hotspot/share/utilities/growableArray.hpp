@@ -254,10 +254,18 @@ public:
 
   // Remove all elements up to the index (exclusive). The order is preserved.
   void remove_till(int idx) {
-    for (int i = 0, j = idx; j < length(); i++, j++) {
+    remove_range(0, idx);
+  }
+
+  // Remove all elements in the range [start - end). The order is preserved.
+  void remove_range(int start, int end) {
+    assert(0 <= start, "illegal index");
+    assert(start < end && end <= _len, "erase called with invalid range");
+
+    for (int i = start, j = end; j < length(); i++, j++) {
       at_put(i, at(j));
     }
-    trunc_to(length() - idx);
+    trunc_to(length() - (end - start));
   }
 
   // The order is changed.

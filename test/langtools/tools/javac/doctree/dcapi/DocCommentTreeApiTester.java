@@ -203,7 +203,7 @@ public class DocCommentTreeApiTester {
                     t.getElements().getPackageOf(klass).getQualifiedName().toString(),
                     fileName + ".out");
 
-            String expected = getExpected(htmlFo.openReader(true));
+            String expected = getExpectedAndClose(htmlFo.openReader(true));
             astcheck(fileName, expected, found);
         }
     }
@@ -239,7 +239,7 @@ public class DocCommentTreeApiTester {
                             throw new Exception("invalid input: " + jfo);
                         break;
                     default:
-                        expected = getExpected(jfo.openReader(true));
+                        expected = getExpectedAndClose(jfo.openReader(true));
                 }
             }
 
@@ -297,7 +297,7 @@ public class DocCommentTreeApiTester {
             String found = sw.toString();
             Iterable<? extends JavaFileObject> oos = fm.getJavaFileObjectsFromFiles(otherFiles);
             JavaFileObject otherFo = oos.iterator().next();
-            String expected = getExpected(otherFo.openReader(true));
+            String expected = getExpectedAndClose(otherFo.openReader(true));
 
             astcheck(pkgFileName, expected, found);
         }
@@ -323,13 +323,14 @@ public class DocCommentTreeApiTester {
         }
     }
 
-    String getExpected(Reader inrdr) throws IOException {
-        BufferedReader rdr = new BufferedReader(inrdr);
+    String getExpectedAndClose(Reader inrdr) throws IOException {
         List<String> lines = new ArrayList<>();
-        String line = rdr.readLine();
-        while (line != null) {
-            lines.add(line);
-            line = rdr.readLine();
+        try (BufferedReader rdr = new BufferedReader(inrdr)) {
+            String line = rdr.readLine();
+            while (line != null) {
+                lines.add(line);
+                line = rdr.readLine();
+            }
         }
         return getExpected(lines);
     }
