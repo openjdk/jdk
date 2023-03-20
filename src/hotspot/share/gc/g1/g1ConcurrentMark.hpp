@@ -477,7 +477,7 @@ public:
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
-  void clear_statistics_in_region(HeapRegion* r);
+  void clear_statistics(HeapRegion* r);
   // Notification for eagerly reclaimed regions to clean up.
   void humongous_object_eagerly_reclaimed(HeapRegion* r);
   // Manipulation of the global mark stack.

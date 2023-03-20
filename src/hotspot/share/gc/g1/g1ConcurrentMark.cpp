@@ -475,7 +475,7 @@ void G1ConcurrentMark::reset() {
   _root_regions.reset();
 }
 
-void G1ConcurrentMark::clear_statistics_in_region(HeapRegion* r) {
+void G1ConcurrentMark::clear_statistics(HeapRegion* r) {
   uint region_idx = r->hrm_index();
   for (uint j = 0; j < _max_num_tasks; ++j) {
     _tasks[j]->clear_mark_stats_cache(region_idx);
@@ -498,7 +498,7 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   // Clear any statistics about the region gathered so far.
   _g1h->humongous_obj_regions_iterate(r,
                                       [&] (HeapRegion* r) {
-                                        clear_statistics_in_region(r);
+                                        clear_statistics(r);
                                       });
 }
 
@@ -1359,7 +1359,7 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
           _g1h->free_region(hr, _local_cleanup_list);
         }
         hr->clear_cardtable();
-        _g1h->concurrent_mark()->clear_statistics_in_region(hr);
+        _g1h->concurrent_mark()->clear_statistics(hr);
       }
 
       return false;
