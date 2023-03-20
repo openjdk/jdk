@@ -564,4 +564,9 @@ public interface JavaLangAccess {
     StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
                                        ContinuationScope contScope,
                                        Continuation continuation);
+    /**
+     * Returns '<loader-name>' @<id> if classloader has a name
+     * explicitly set otherwise <qualified-class-name> @<id>
+     */
+    String getLoaderNameID(ClassLoader loader);
 }

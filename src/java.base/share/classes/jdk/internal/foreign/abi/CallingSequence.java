@@ -162,7 +162,7 @@ public class CallingSequence {
     /**
      * The size of the return buffer, if one is needed.
      *
-     * {@see #needsReturnBuffer}
+     * @see #needsReturnBuffer
      *
      * @return the return buffer size
      */

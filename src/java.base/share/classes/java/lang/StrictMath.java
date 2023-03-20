@@ -127,7 +127,9 @@ public final class StrictMath {
      * @param   a   an angle, in radians.
      * @return  the sine of the argument.
      */
-    public static native double sin(double a);
+    public static double sin(double a) {
+        return FdLibm.Sin.compute(a);
+    }
 
     /**
      * Returns the trigonometric cosine of an angle. Special cases:
@@ -139,7 +141,9 @@ public final class StrictMath {
      * @param   a   an angle, in radians.
      * @return  the cosine of the argument.
      */
-    public static native double cos(double a);
+    public static double cos(double a) {
+        return FdLibm.Cos.compute(a);
+    }
 
     /**
      * Returns the trigonometric tangent of an angle. Special cases:
@@ -151,7 +155,9 @@ public final class StrictMath {
      * @param   a   an angle, in radians.
      * @return  the tangent of the argument.
      */
-    public static native double tan(double a);
+    public static double tan(double a) {
+        return FdLibm.Tan.compute(a);
+    }
 
     /**
      * Returns the arc sine of a value; the returned angle is in the
@@ -310,7 +316,9 @@ public final class StrictMath {
      * @return  the positive square root of {@code a}.
      */
     @IntrinsicCandidate
-    public static native double sqrt(double a);
+    public static double sqrt(double a) {
+        return FdLibm.Sqrt.compute(a);
+    }
 
     /**
      * Returns the cube root of a {@code double} value.  For

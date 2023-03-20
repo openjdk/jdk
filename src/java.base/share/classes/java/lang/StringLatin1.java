@@ -192,18 +192,16 @@ final class StringLatin1 {
         };
     }
 
-    public static int indexOf(byte[] value, int ch, int fromIndex) {
+    public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
         if (!canEncode(ch)) {
             return -1;
         }
-        int max = value.length;
-        if (fromIndex < 0) {
-            fromIndex = 0;
-        } else if (fromIndex >= max) {
-            // Note: fromIndex might be near -1>>>1.
+        fromIndex = Math.max(fromIndex, 0);
+        toIndex = Math.min(toIndex, value.length);
+        if (fromIndex >= toIndex) {
             return -1;
         }
-        return indexOfChar(value, ch, fromIndex, max);
+        return indexOfChar(value, ch, fromIndex, toIndex);
     }
 
     @IntrinsicCandidate
