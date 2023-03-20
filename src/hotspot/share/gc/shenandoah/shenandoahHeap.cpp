@@ -1801,6 +1801,10 @@ void ShenandoahHeap::prepare_for_verify() {
 }
 
 void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
+  if (_shenandoah_policy->is_at_shutdown()) {
+    return;
+  }
+
   tcl->do_thread(_control_thread);
   tcl->do_thread(_regulator_thread);
   workers()->threads_do(tcl);
