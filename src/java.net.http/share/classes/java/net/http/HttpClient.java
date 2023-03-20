@@ -132,14 +132,18 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * AccessController#doPrivileged(PrivilegedAction) privileged context}.
  *
  * @apiNote
- * Resources allocated by the {@code HttpClient} may be reclaimed early
- * by {@linkplain #close() closing} the client.
+ * <p id="closing"> Resources allocated by the {@code HttpClient} may be
+ * reclaimed early by {@linkplain #close() closing} the client.
  * An {@code HttpClient} instance typically manages its own pools of
  * connections, which it can typically reuse when another request is made to
  * the same origin server using the same protocol version and security,
  * through the same client. In the JDK implementation, connection pools
  * are not shared between {@code HttpClient} instances. Creating a new client
  * for each operation, though possible, will prevent reusing such connections.
+ * The JDK built-in implementation of the {@code HttpClient} overrides
+ * {@link #close()}, {@link #shutdown()}, {@link #shutdownNow()},
+ * {@link #awaitTermination(Duration)}, and {@link #isTerminated()} to
+ * provide a best effort implementation.
  *
  * @since 11
  */
@@ -754,6 +758,7 @@ public abstract class HttpClient implements AutoCloseable {
      * @implSpec
      * The default implementation of this method does nothing. Subclasses should
      * override this method to implement the appropriate behavior.
+     * See the API Note on {@linkplain ##closing closing}.
      *
      * @since 21
      */
@@ -767,6 +772,7 @@ public abstract class HttpClient implements AutoCloseable {
      * @implSpec
      * The default implementation of this method does nothing and returns true.
      * Subclasses should override this method to implement the proper behavior.
+     * See the API Note on {@linkplain ##closing closing}.
      *
      * @param duration the maximum time to wait
      * @return {@code true} if this client terminated and
@@ -788,6 +794,7 @@ public abstract class HttpClient implements AutoCloseable {
      * @implSpec
      * The default implementation of this method does nothing and returns false.
      * Subclasses should override this method to implement the proper behavior.
+     * See the API Note on {@linkplain ##closing closing}.
      *
      * @return {@code true} if all tasks have completed following shut down
      *
@@ -798,7 +805,8 @@ public abstract class HttpClient implements AutoCloseable {
     }
 
     /**
-     * This method is called if the thread waiting on {@link #close()} is
+     * This method attempts to initiate an immediate shutdown.
+     * It is called if the thread waiting on {@link #close()} is
      * interrupted. An implementation of this method may attempt to
      * interrupt operations that are actively running.
      * The behavior of actively running operations when interrupted
@@ -809,7 +817,7 @@ public abstract class HttpClient implements AutoCloseable {
      * @implSpec
      * The default implementation of this method simply calls {@link #shutdown()}.
      * Subclasses should override this method to implement the appropriate
-     * behavior.
+     * behavior. See the API Note on {@linkplain ##closing closing}.
      *
      * @since 21
      */
@@ -831,7 +839,8 @@ public abstract class HttpClient implements AutoCloseable {
      *
      * @implSpec
      * The default implementation invokes {@code shutdown()} and waits for tasks
-     * to complete execution with {@code awaitTermination}.
+     * to complete execution with {@code awaitTermination}. See the API Note on
+     * {@linkplain ##closing closing}.
      *
      * @since 21
      */
