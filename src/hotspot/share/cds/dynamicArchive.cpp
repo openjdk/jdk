@@ -380,6 +380,7 @@ void DynamicArchive::check_for_dynamic_dump() {
 void DynamicArchive::prepare_for_dump_at_exit() {
   EXCEPTION_MARK;
   ResourceMark rm(THREAD);
+  log_debug(cds,dynamic)("Preparing for dynamic dump in thread %s", THREAD->name());
   MetaspaceShared::link_shared_classes(false/*not from jcmd*/, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     log_error(cds)("Dynamic dump has failed");
