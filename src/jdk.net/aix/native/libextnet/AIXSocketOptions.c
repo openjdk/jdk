@@ -263,4 +263,3 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_getIpDontFragment0
     handleError(env, rv, "get option IP_DONTFRAGMENT failed");
     return optval > 0 ? JNI_TRUE : JNI_FALSE;
 }
-
