@@ -140,17 +140,19 @@ public:
 
 class CompiledMethod : public CodeBlob {
   friend class VMStructs;
-
+  friend class DeoptimizationScope;
   void init_defaults();
 protected:
-  enum MarkForDeoptimizationStatus : u1 {
+  enum DeoptimizationStatus : u1 {
     not_marked,
     deoptimize,
     deoptimize_noupdate,
     deoptimize_done
   };
 
-  MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
+  volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
+  // Used to track in which deoptimize handshake this method will be deoptimized.
+  uint64_t                      _deoptimization_generation;
 
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
@@ -173,6 +175,11 @@ protected:
   void* _gc_data;
 
   virtual void flush() = 0;
+
+private:
+  DeoptimizationStatus deoptimization_status() const {
+    return Atomic::load(&_deoptimization_status);
+  }
 
 protected:
   CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled);
@@ -236,11 +243,9 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  bool  is_marked_for_deoptimization() const { return _mark_for_deoptimization_status != not_marked; }
-  void  mark_for_deoptimization(bool inc_recompile_counts = true);
-
-  bool  has_been_deoptimized() const { return _mark_for_deoptimization_status == deoptimize_done; }
-  void  mark_deoptimized() { _mark_for_deoptimization_status = deoptimize_done; }
+  bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
+  bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
+  void  set_deoptimized_done();
 
   virtual void  make_deoptimized() { assert(false, "not supported"); };
 
@@ -248,8 +253,8 @@ public:
     // Update recompile counts when either the update is explicitly requested (deoptimize)
     // or the nmethod is not marked for deoptimization at all (not_marked).
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
-    return _mark_for_deoptimization_status != deoptimize_noupdate &&
-           _mark_for_deoptimization_status != deoptimize_done;
+    DeoptimizationStatus status = deoptimization_status();
+    return status != deoptimize_noupdate && status != deoptimize_done;
   }
 
   // tells whether frames described by this nmethod can be deoptimized

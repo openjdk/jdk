@@ -29,6 +29,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -262,7 +263,11 @@ public final class MetadataDescriptor {
         m.locale = Locale.getDefault().toString();
         TimeZone tz = TimeZone.getDefault();
         m.gmtOffset = tz.getRawOffset();
-        m.dst = tz.getDSTSavings();
+        if (tz.inDaylightTime(new Date())) {
+            m.dst = tz.getDSTSavings();
+        } else {
+            m.dst = 0;
+        }
         m.types.addAll(types);
         MetadataWriter w = new MetadataWriter(m);
         w.writeBinary(output);

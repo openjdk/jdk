@@ -231,7 +231,6 @@ public:
 // SpaceClosure is used for iterating over spaces
 
 class Space;
-class CompactibleSpace;
 
 class SpaceClosure : public StackObj {
  public:

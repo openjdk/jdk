@@ -28,6 +28,8 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
@@ -57,6 +59,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * Defines an adaptation layers so that a test server handlers and filters
@@ -548,6 +552,90 @@ public interface HttpServerAdapters {
 
         public static HttpTestServer of(Http2TestServer server) {
             return new Http2TestServerImpl(server);
+        }
+
+        /**
+         * Creates a {@link HttpTestServer} which supports the {@code serverVersion}. The server
+         * will only be available on {@code http} protocol. {@code https} will not be supported
+         * by the returned server
+         *
+         * @param serverVersion The HTTP version of the server
+         * @return The newly created server
+         * @throws IllegalArgumentException if {@code serverVersion} is not supported by this method
+         * @throws IOException if any exception occurs during the server creation
+         */
+        public static HttpTestServer create(Version serverVersion) throws IOException {
+            Objects.requireNonNull(serverVersion);
+            return create(serverVersion, null);
+        }
+
+        /**
+         * Creates a {@link HttpTestServer} which supports the {@code serverVersion}. If the
+         * {@code sslContext} is null, then only {@code http} protocol will be supported by the
+         * server. Else, the server will be configured with the {@code sslContext} and will support
+         * {@code https} protocol.
+         *
+         * @param serverVersion The HTTP version of the server
+         * @param sslContext    The SSLContext to use. Can be null
+         * @return The newly created server
+         * @throws IllegalArgumentException if {@code serverVersion} is not supported by this method
+         * @throws IOException if any exception occurs during the server creation
+         */
+        public static HttpTestServer create(Version serverVersion, SSLContext sslContext)
+                throws IOException {
+            Objects.requireNonNull(serverVersion);
+            return create(serverVersion, sslContext, null);
+        }
+
+        /**
+         * Creates a {@link HttpTestServer} which supports the {@code serverVersion}. If the
+         * {@code sslContext} is null, then only {@code http} protocol will be supported by the
+         * server. Else, the server will be configured with the {@code sslContext} and will support
+         * {@code https} protocol.
+         *
+         * @param serverVersion The HTTP version of the server
+         * @param sslContext    The SSLContext to use. Can be null
+         * @param executor      The executor to be used by the server. Can be null
+         * @return The newly created server
+         * @throws IllegalArgumentException if {@code serverVersion} is not supported by this method
+         * @throws IOException if any exception occurs during the server creation
+         */
+        public static HttpTestServer create(Version serverVersion, SSLContext sslContext,
+                                            ExecutorService executor) throws IOException {
+            Objects.requireNonNull(serverVersion);
+            switch (serverVersion) {
+                case HTTP_2 -> {
+                    Http2TestServer underlying;
+                    try {
+                        underlying = sslContext == null
+                                ? new Http2TestServer("localhost", false, 0, executor, null) // HTTP
+                                : new Http2TestServer("localhost", true, 0, executor, sslContext); // HTTPS
+                    } catch (IOException ioe) {
+                        throw ioe;
+                    } catch (Exception e) {
+                        throw new IOException(e);
+                    }
+                    return HttpTestServer.of(underlying);
+                }
+                case HTTP_1_1 ->  {
+                    InetSocketAddress sa = new InetSocketAddress(
+                            InetAddress.getLoopbackAddress(), 0);
+                    HttpServer underlying;
+                    if (sslContext == null) {
+                        underlying = HttpServer.create(sa, 0); // HTTP
+                    } else {
+                        HttpsServer https = HttpsServer.create(sa, 0); // HTTPS
+                        https.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+                        underlying = https;
+                    }
+                    if (executor != null) {
+                        underlying.setExecutor(executor);
+                    }
+                    return HttpTestServer.of(underlying);
+                }
+                default -> throw new IllegalArgumentException("Unsupported HTTP version "
+                        + serverVersion);
+            }
         }
 
         private static class Http1TestServer extends  HttpTestServer {

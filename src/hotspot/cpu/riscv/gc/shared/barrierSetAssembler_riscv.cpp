@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,57 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     default: Unimplemented();
   }
 
+}
+
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       Register dst,
+                                       Address src,
+                                       Register tmp) {
+  if (bytes == 1) {
+    __ lbu(dst, src);
+  } else if (bytes == 2) {
+    __ lhu(dst, src);
+  } else if (bytes == 4) {
+    __ lwu(dst, src);
+  } else if (bytes == 8) {
+    __ ld(dst, src);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ decode_heap_oop(dst);
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        Register src,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        Register tmp3) {
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ encode_heap_oop(src);
+  }
+
+  if (bytes == 1) {
+    __ sb(src, dst);
+  } else if (bytes == 2) {
+    __ sh(src, dst);
+  } else if (bytes == 4) {
+    __ sw(src, dst);
+  } else if (bytes == 8) {
+    __ sd(src, dst);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
 }
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
