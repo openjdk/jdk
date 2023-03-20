@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include "precompiled.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "immediate_aarch64.hpp"
 
@@ -431,11 +432,7 @@ uint32_t encoding_for_fp_immediate(float immediate)
   // return the imm8 result [s:r:f]
   //
 
-  union {
-    float fpval;
-    uint32_t val;
-  };
-  fpval = immediate;
+  uint32_t val = PrimitiveConversions::cast<uint32_t>(immediate);
   uint32_t s, r, f, res;
   // sign bit is 31
   s = (val >> 31) & 0x1;

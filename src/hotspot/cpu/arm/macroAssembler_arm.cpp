@@ -673,15 +673,11 @@ void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) 
 
 void MacroAssembler::mov_float(FloatRegister fd, jfloat c, AsmCondition cond) {
   Label skip_constant;
-  union {
-    jfloat f;
-    jint i;
-  } accessor;
-  accessor.f = c;
+  jint accessor_i = PrimitiveConversions::cast<jint>(c);
 
   flds(fd, Address(PC), cond);
   b(skip_constant);
-  emit_int32(accessor.i);
+  emit_int32(accessor_i);
   bind(skip_constant);
 }
 

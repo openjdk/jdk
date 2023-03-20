@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/compiledICHolder.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
@@ -237,12 +238,11 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
-  union { jfloat f; juint i; } xbits, ybits;
-  xbits.f = x;
-  ybits.f = y;
+  juint xbits_i = PrimitiveConversions::cast<juint>(x);
+  juint ybits_i = PrimitiveConversions::cast<juint>(y);
   // x Mod Infinity == x unless x is infinity
-  if (((xbits.i & float_sign_mask) != float_infinity) &&
-       ((ybits.i & float_sign_mask) == float_infinity) ) {
+  if (((xbits_i & float_sign_mask) != float_infinity) &&
+       ((ybits_i & float_sign_mask) == float_infinity) ) {
     return x;
   }
   return ((jfloat)fmod_winx64((double)x, (double)y));
@@ -447,9 +447,7 @@ JRT_END
 
 // Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
 JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
-  union {jfloat f; jint i;} bits;
-  bits.f = x;
-  jint doppel = bits.i;
+  jint doppel = PrimitiveConversions::cast<jint>(x);
   jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
   if (g_isnan(x))
     return (jshort)(sign_bit | 0x7c00 | (doppel & 0x007fe000) >> 13 | (doppel & 0x00001ff0) >> 4 | (doppel & 0x0000000f));
@@ -500,7 +498,7 @@ JRT_END
 JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   // Halffloat format has 1 signbit, 5 exponent bits and
   // 10 significand bits
-  union {jfloat f; jint i;} bits;
+  jint bits_i;
   jint hf_arg = (jint)x;
   jint hf_sign_bit = 0x8000 & hf_arg;
   jint hf_exp_bits = 0x7c00 & hf_arg;
@@ -518,12 +516,12 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
     return (sign * (pow(2,-24)) * hf_significand_bits);
   } else if (hf_exp == 16) {
     if (hf_significand_bits == 0) {
-      bits.i = 0x7f800000;
-      return sign * bits.f;
+      bits_i = 0x7f800000;
+      return sign * PrimitiveConversions::cast<float>(bits_i);
     } else {
-      bits.i = (hf_sign_bit << 16) | 0x7f800000 |
+      bits_i = (hf_sign_bit << 16) | 0x7f800000 |
                (hf_significand_bits << significand_shift);
-      return bits.f;
+      return PrimitiveConversions::cast<float>(bits_i);
     }
   }
 
@@ -531,10 +529,10 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   jint float_exp_bits = (hf_exp + 127) << (24 - 1);
 
   // Combine sign, exponent and significand bits
-  bits.i = (hf_sign_bit << 16) | float_exp_bits |
+  bits_i = (hf_sign_bit << 16) | float_exp_bits |
            (hf_significand_bits << significand_shift);
 
-  return bits.f;
+  return PrimitiveConversions::cast<float>(bits_i);
 JRT_END
 
 // Exception handling across interpreter/compiler boundaries
