@@ -64,22 +64,23 @@ static void z_verify_old_oop(zpointer* p) {
   const zpointer o = *p;
   assert(o != zpointer::null, "Old should not contain raw null");
   if (!z_is_null_relaxed(o)) {
-    if (!ZPointer::is_mark_good(o)) {
-      // Old to old pointers are allowed to have bad young bits
-      guarantee(ZPointer::is_marked_old(o),  BAD_OOP_ARG(o, p));
-      guarantee(ZHeap::heap()->is_old(p), BAD_OOP_ARG(o, p));
-    } else {
+    if (ZPointer::is_mark_good(o)) {
+      // Even though the pointer is mark good, we can't verify that it should
+      // be in the remembered set in old mark end. We have to wait to the verify
+      // safepoint after reference processing, where we hold the driver lock and
+      // know there is no concurrent remembered set processing in the young generation.
       const zaddress addr = ZPointer::uncolor(o);
-      if (ZHeap::heap()->is_young(addr)) {
-        // If young collection was aborted, the GC does not guarantee
-        // that all old-to-young pointers have remembered set entry.
-        guarantee(ZAbort::should_abort() ||
-                  ZGeneration::young()->is_remembered(p) ||
-                  ZStoreBarrierBuffer::is_in(p), "Must be remembered");
-      } else {
-        guarantee(ZPointer::is_store_good(o) || (uintptr_t(o) & ZPointerRememberedMask) == ZPointerRememberedMask, "Must be remembered");
-      }
       guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
+    } else {
+      const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
+      // Old to young pointers might not be mark good if the young
+      // marking has not finished, which is responsible for coloring
+      // these pointers.
+      if (ZHeap::heap()->is_old(addr) || !ZGeneration::young()->is_phase_mark()) {
+        // Old to old pointers are allowed to have bad young bits
+        guarantee(ZPointer::is_marked_old(o),  BAD_OOP_ARG(o, p));
+        guarantee(ZHeap::heap()->is_old(p), BAD_OOP_ARG(o, p));
+      }
     }
   }
 }
@@ -111,12 +112,22 @@ static void z_verify_uncolored_root_oop(zaddress* p) {
 static void z_verify_possibly_weak_oop(zpointer* p) {
   const zpointer o = *p;
   if (!z_is_null_relaxed(o)) {
-    //guarantee(ZPointer::is_store_good(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
     guarantee(ZPointer::is_marked_old(o) || ZPointer::is_marked_finalizable(o), BAD_OOP_ARG(o, p));
 
     const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
+    guarantee(ZHeap::heap()->is_old(addr) || ZPointer::is_marked_young(o), BAD_OOP_ARG(o, p));
     guarantee(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), BAD_OOP_ARG(o, p));
     guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
+
+    // Verify no missing remset entries. We are holding the driver lock here and that
+    // allows us to more precisely verify the remembered set, as there is no concurrent
+    // young generation collection going on at this point.
+    const uintptr_t remset_bits = untype(o) & ZPointerRememberedMask;
+    const uintptr_t prev_remembered = ZPointerRemembered ^ ZPointerRememberedMask;
+    guarantee(remset_bits != prev_remembered, BAD_OOP_ARG(o, p));
+    guarantee(remset_bits == ZPointerRememberedMask ||
+              ZGeneration::young()->is_remembered(p) ||
+              ZStoreBarrierBuffer::is_in(p), BAD_OOP_ARG(o, p));
   }
 }
 
@@ -396,6 +407,11 @@ void ZVerify::threads_start_processing() {
 }
 
 void ZVerify::objects(bool verify_weaks) {
+  if (ZAbort::should_abort()) {
+    // Invariants might be a bit mushy if the young generation
+    // collection was forced to shut down. So let's be a bit forgiving here.
+    return;
+  }
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(ZGeneration::young()->is_phase_mark_complete() ||
          ZGeneration::old()->is_phase_mark_complete(), "Invalid phase");
