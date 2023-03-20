@@ -62,7 +62,11 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * and can be used to send multiple requests.
  *
  * <p> An {@code HttpClient} provides configuration information, and resource
- * sharing, for all requests sent through it.
+ * sharing, for all requests sent through it. An {@code HttpClient} instance
+ * typically manages its own pools of connections, which it may then reuse
+ * as and when necessary. Connection pools are  typically not shared between
+ * {@code HttpClient} instances. Creating a new client for each operation,
+ * though possible, will usually prevent reusing such connections.
  *
  * <p> A {@link BodyHandler BodyHandler} must be supplied for each {@link
  * HttpRequest} sent. The {@code BodyHandler} determines how to handle the
@@ -134,12 +138,6 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * @apiNote
  * <p id="closing"> Resources allocated by the {@code HttpClient} may be
  * reclaimed early by {@linkplain #close() closing} the client.
- * An {@code HttpClient} instance typically manages its own pools of
- * connections, which it can typically reuse when another request is made to
- * the same origin server using the same protocol version and security,
- * through the same client. In the JDK implementation, connection pools
- * are not shared between {@code HttpClient} instances. Creating a new client
- * for each operation, though possible, will prevent reusing such connections.
  * The JDK built-in implementation of the {@code HttpClient} overrides
  * {@link #close()}, {@link #shutdown()}, {@link #shutdownNow()},
  * {@link #awaitTermination(Duration)}, and {@link #isTerminated()} to
@@ -748,7 +746,8 @@ public abstract class HttpClient implements AutoCloseable {
 
     /**
      * Initiates an orderly shutdown in which previously submitted
-     * operations are completed, but no new request will be accepted.
+     * operations are run to completion, but no new request will be
+     * accepted.
      * Invocation has no additional effect if already shut down.
      *
      * <p>This method does not wait for previously submitted request
@@ -766,8 +765,12 @@ public abstract class HttpClient implements AutoCloseable {
 
     /**
      * Blocks until all operations have completed execution after a shutdown
-     * request, or the timeout occurs, or the current thread is
-     * interrupted, whichever happens first.
+     * request, or the {@code duration} elapses, or the current thread is
+     * {@linkplain Thread#interrupt() interrupted}, whichever happens first.
+     *
+     * <p> This method does not wait if the duration to wait is less than or
+     * equal to zero. In this case, the method just tests if the thread has
+     * terminated.
      *
      * @implSpec
      * The default implementation of this method does nothing and returns true.
@@ -787,7 +790,8 @@ public abstract class HttpClient implements AutoCloseable {
     }
 
     /**
-     * Returns {@code true} if all operations have completed following shut down.
+     * Returns {@code true} if all operations have completed following
+     * a shutdown.
      * Note that {@code isTerminated} is never {@code true} unless
      * either {@code shutdown} or {@code shutdownNow} was called first.
      *
@@ -796,7 +800,7 @@ public abstract class HttpClient implements AutoCloseable {
      * Subclasses should override this method to implement the proper behavior.
      * See the API Note on {@linkplain ##closing closing}.
      *
-     * @return {@code true} if all tasks have completed following shut down
+     * @return {@code true} if all tasks have completed following a shutdown
      *
      * @since 21
      */
@@ -806,8 +810,7 @@ public abstract class HttpClient implements AutoCloseable {
 
     /**
      * This method attempts to initiate an immediate shutdown.
-     * It is called if the thread waiting on {@link #close()} is
-     * interrupted. An implementation of this method may attempt to
+     * An implementation of this method may attempt to
      * interrupt operations that are actively running.
      * The behavior of actively running operations when interrupted
      * is undefined. In particular, there is no guarantee that
