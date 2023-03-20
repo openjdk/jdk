@@ -130,7 +130,7 @@ public class HsErrFileUtils {
                 lastLine = line;
                 lineNo++;
             }
-            // check if current pattern is NULL then pattern matches else throw RuntimeException
+            // If the current pattern is not null then it didn't match
             if (currentPositivePattern != null) {
                 throw new RuntimeException("hs-err file incomplete (first missing pattern: " + currentPositivePattern.pattern() + ")");
             }
