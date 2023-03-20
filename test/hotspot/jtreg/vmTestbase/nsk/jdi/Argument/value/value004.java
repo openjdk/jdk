@@ -122,8 +122,7 @@ public class value004 {
                 }
                 flg = true;
                 ovl = argHandler.getLaunchExecPath() + " "
-                     + "-Xdebug -Xnoagent -Djava.compiler=NONE "
-                     + "-Xrunjdwp:transport=" + c.transport().name() + ",suspend=y,"
+                     +"-agentlib:jdwp=transport=" + c.transport().name() +",server=n,suspend=y,"
                      + "address=" + address + " nsk.jdi.Argument.value.value004a";
                 if (argval.isValid(ovl)) {
                     argval.setValue(ovl);
