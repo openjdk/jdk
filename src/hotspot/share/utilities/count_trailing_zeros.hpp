@@ -31,11 +31,8 @@
 
 #include <type_traits>
 
-struct CountTrailingZerosImpl {
-  static inline unsigned call(unsigned int x);
-  static inline unsigned call(unsigned long x);
-  static inline unsigned call(unsigned long long x);
-};
+template <typename T>
+struct CountTrailingZerosImpl;
 
 // unsigned count_trailing_zeros<T>(T)
 //
@@ -48,7 +45,7 @@ inline unsigned count_trailing_zeros(T x) {
   precond(x != 0);
   using U = std::make_unsigned_t<T>;
   using P = std::conditional_t<(sizeof(U) < sizeof(unsigned int)), unsigned int, U>;
-  return CountTrailingZerosImpl::call(static_cast<P>(static_cast<U>(x)));
+  return CountTrailingZerosImpl<U>{}(static_cast<P>(static_cast<U>(x)));
 }
 
 /*****************************************************************************
@@ -56,17 +53,26 @@ inline unsigned count_trailing_zeros(T x) {
  *****************************************************************************/
 #if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
 
-inline unsigned CountTrailingZerosImpl::call(unsigned int x) {
-  return __builtin_ctz(x);
-}
+template <>
+struct CountTrailingZerosImpl<unsigned int> {
+  inline unsigned operator()(unsigned int x) const {
+    return __builtin_ctz(x);
+  }
+};
 
-inline unsigned CountTrailingZerosImpl::call(unsigned long x) {
-  return __builtin_ctzl(x);
-}
+template <>
+struct CountTrailingZerosImpl<unsigned long> {
+  inline unsigned operator()(unsigned long x) const {
+    return __builtin_ctzl(x);
+  }
+};
 
-inline unsigned CountTrailingZerosImpl::call(unsigned long long x) {
-  return __builtin_ctzll(x);
-}
+template <>
+struct CountTrailingZerosImpl<unsigned long long> {
+  inline unsigned operator()(unsigned long long x) const {
+    return __builtin_ctzll(x);
+  }
+};
 
 /*****************************************************************************
  * Microsoft Visual Studio
@@ -80,37 +86,45 @@ inline unsigned CountTrailingZerosImpl::call(unsigned long long x) {
 #pragma intrinsic(_BitScanForward64)
 #endif
 
-inline unsigned CountTrailingZerosImpl::call(unsigned int x) {
-  return call(static_cast<unsigned long>(x));
-}
-
-inline unsigned CountTrailingZerosImpl::call(unsigned long x) {
-  unsigned long index;
-  unsigned char result = _BitScanForward(&index, x);
-  postcond(result != 0);
-  return static_cast<unsigned>(index);
-}
-
-inline unsigned CountTrailingZerosImpl::call(unsigned long long x) {
-#ifdef _LP64
-  unsigned long index;
-  unsigned char result = _BitScanForward64(&index, x);
-  postcond(result != 0);
-  return static_cast<unsigned>(index);
-#else
-  unsigned long index;
-  unsigned long low = static_cast<unsigned long>(x);
-  if (low != 0ul) {
-    unsigned char result = _BitScanForward(&index, low);
-    postcond(result != 0);
-  } else {
-    unsigned char result = _BitScanForward(&index, static_cast<unsigned long>(x >> 32));
-    postcond(result != 0);
-    index += 32ul;
+template <>
+struct CountTrailingZerosImpl<unsigned int> {
+  inline unsigned operator()(unsigned int x) const {
+    return CountTrailingZerosImpl<unsigned long>{}(x);
   }
-  return static_cast<unsigned>(index);
-#endif
-}
+};
+
+template <>
+struct CountTrailingZerosImpl<unsigned long> {
+  inline unsigned operator()(unsigned long x) const {
+    unsigned long index;
+    unsigned char result = _BitScanForward(&index, x);
+    postcond(result != 0);
+    return static_cast<unsigned>(index);
+  }
+};
+
+template <>
+struct CountTrailingZerosImpl<unsigned long long> {
+  inline unsigned operator()(unsigned long long x) const {
+  #ifdef _LP64
+    unsigned long index;
+    unsigned char result = _BitScanForward64(&index, x);
+    postcond(result != 0);
+    return static_cast<unsigned>(index);
+  #else
+    unsigned long index;
+    unsigned long low = static_cast<unsigned long>(x);
+    if (low != 0ul) {
+      unsigned char result = _BitScanForward(&index, low);
+      postcond(result != 0);
+    } else {
+      unsigned char result = _BitScanForward(&index, static_cast<unsigned long>(x >> 32));
+      postcond(result != 0);
+      index += 32ul;
+    }
+    return static_cast<unsigned>(index);
+  }
+};
 
 /*****************************************************************************
  * Unknown toolchain
