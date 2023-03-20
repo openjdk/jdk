@@ -25,7 +25,6 @@
 
 package java.lang.reflect;
 
-import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -55,7 +54,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * "generateProxyClass" method.
  */
 final class ProxyGenerator extends ClassWriter {
-    private static final int CLASSFILE_VERSION = VM.classFileVersion();
+    private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
     private static final String JL_CLASS = "java/lang/Class";
     private static final String JL_OBJECT = "java/lang/Object";
     private static final String JL_THROWABLE = "java/lang/Throwable";
