@@ -357,7 +357,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \
-  product(bool, UseVectorizedHashCodeIntrinsic, false, DIAGNOSTIC,           \
+  product(bool, UseVectorizedHashCodeIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedHashCode()") \
                                                                             \
   product(bool, UseCopySignIntrinsic, false, DIAGNOSTIC,                    \
@@ -365,6 +365,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseSignumIntrinsic, false, DIAGNOSTIC,                      \
           "Enables intrinsification of Math.signum")                        \
+                                                                            \
+  product_pd(bool, MoveIntrinsicStubsGen, DIAGNOSTIC,                       \
+          "Move Compiler Intrinsics stubs generation to compiler thread")   \
                                                                             \
   product(ccstrlist, DisableIntrinsic, "", DIAGNOSTIC,                      \
          "do not expand intrinsics whose (internal) names appear here")     \
@@ -1701,7 +1704,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* Flags used for temporary code during development  */                   \
                                                                             \
-  product(bool, UseNewCode, false, DIAGNOSTIC,                              \
+  product(bool, UseNewCode, true, DIAGNOSTIC,                              \
           "Testing Only: Use the new version while testing")                \
                                                                             \
   product(bool, UseNewCode2, false, DIAGNOSTIC,                             \

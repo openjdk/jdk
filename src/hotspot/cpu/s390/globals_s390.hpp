@@ -36,6 +36,12 @@ define_pd_global(bool,  ImplicitNullChecks,          true);  // Generate code fo
 define_pd_global(bool,  TrapBasedNullChecks,         true);
 define_pd_global(bool,  UncommonNullCast,            true);  // Uncommon-trap NULLs passed to check cast.
 
+#if COMPILER2_OR_JVMCI
+define_pd_global(bool,  MoveIntrinsicStubsGen,       true);
+#else
+define_pd_global(bool,  MoveIntrinsicStubsGen,      false);
+#endif
+
 define_pd_global(uintx, CodeCacheSegmentSize,        256);
 // This shall be at least 32 for proper branch target alignment.
 // Ideally, this is 256 (cache line size). This keeps code end data

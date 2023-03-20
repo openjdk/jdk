@@ -7203,7 +7203,7 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   }
   if (state == nullptr) return false;
 
-  assert(stubAddr != nullptr, "Stub is generated");
+  assert(stubAddr != nullptr, "Stub is generated %s", stubName);
   if (stubAddr == nullptr) return false;
 
   // Call the stub.
