@@ -40,7 +40,8 @@ struct PopulationCountImpl;
 template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline unsigned population_count(T x) {
   using U = std::make_unsigned_t<T>;
-  return PopulationCountImpl<U>{}(static_cast<U>(x));
+  using P = std::conditional_t<(sizeof(U) < sizeof(unsigned int)), unsigned int, U>;
+  return PopulationCountImpl<U>{}(static_cast<P>(static_cast<U>(x)));
 }
 
 /*****************************************************************************
@@ -51,7 +52,8 @@ template <typename T>
 struct PopulationCountFallbackImpl {
   // Adapted from Hacker's Delight, 2nd Edition, Figure 5-2 and the text that
   // follows.
-  inline unsigned operator()(T x) const {
+  template <typename U>
+  inline unsigned operator()(U x) const {
     // We need to take care with implicit integer promotion when dealing with
     // integers < 32-bit. We chose to do this by explicitly widening constants
     // to unsigned
@@ -87,8 +89,6 @@ struct PopulationCountFallbackImpl {
 
 template <typename T>
 struct PopulationCountImpl {
-  // Smaller integer types will be handled via integer promotion to unsigned int.
-
   inline unsigned operator()(unsigned int x) const {
     return __builtin_popcount(x);
   }
@@ -132,7 +132,9 @@ struct PopulationCountImpl : public PopulationCountFallbackImpl<T> {};
 
 template <typename T>
 struct PopulationCountImpl {
-  // Smaller integer types will be handled via integer promotion to unsigned long.
+  inline unsigned operator()(unsigned int x) const {
+    return (*this)(static_cast<unsigned long>(x));
+  }
 
   inline unsigned operator()(unsigned long x) const {
     return _CountOneBits(x);

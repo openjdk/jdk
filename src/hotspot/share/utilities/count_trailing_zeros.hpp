@@ -44,7 +44,8 @@ template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline unsigned count_trailing_zeros(T x) {
   precond(x != 0);
   using U = std::make_unsigned_t<T>;
-  return CountTrailingZerosImpl<U>{}(static_cast<U>(x));
+  using P = std::conditional_t<(sizeof(U) < sizeof(unsigned int)), unsigned int, U>;
+  return CountTrailingZerosImpl<U>{}(static_cast<P>(static_cast<U>(x)));
 }
 
 /*****************************************************************************
@@ -54,8 +55,6 @@ inline unsigned count_trailing_zeros(T x) {
 
 template <typename T>
 struct CountTrailingZerosImpl {
-  // Smaller integer types will be handled via integer promotion to unsigned int.
-
   inline unsigned operator()(unsigned int x) const {
     return __builtin_ctz(x);
   }
@@ -83,7 +82,9 @@ struct CountTrailingZerosImpl {
 
 template <typename T>
 struct CountTrailingZerosImpl {
-  // Smaller integer types will be handled via integer promotion to unsigned long.
+  inline unsigned operator()(unsigned int x) const {
+    return (*this)(static_cast<unsigned long>(x));
+  }
 
   inline unsigned operator()(unsigned long x) const {
     unsigned long index;
