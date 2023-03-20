@@ -52,10 +52,12 @@ public final class PremultipliedAlpha {
 
     private enum Type {
         TYPE_ARGB_PRE,
-        TYPE_CUSTOM_ARGB_PRE,
         TYPE_4BYTE_ABGR_PRE,
+        TYPE_CUSTOM_ARGB_PRE,
+        TYPE_CUSTOM_GABR_PRE,
         TYPE_CUSTOM_4BYTE_ABGR_PRE,
         TYPE_CUSTOM_4BYTE_GABR_PRE,
+        TYPE_CUSTOM_4USHORT_8bit_ARGB_PRE,
         TYPE_CUSTOM_4INT_8bit_ARGB_PRE,
     }
 
@@ -120,14 +122,17 @@ public final class PremultipliedAlpha {
         BufferedImage bi = switch (type) {
             case TYPE_ARGB_PRE -> new BufferedImage(SIZE, SIZE, TYPE_INT_ARGB_PRE);
             case TYPE_CUSTOM_ARGB_PRE -> TYPE_ARGB_PRE();
+            case TYPE_CUSTOM_GABR_PRE -> TYPE_GABR_PRE();
             case TYPE_4BYTE_ABGR_PRE -> new BufferedImage(SIZE, SIZE, TYPE_4BYTE_ABGR_PRE);
             case TYPE_CUSTOM_4BYTE_ABGR_PRE -> TYPE_4BYTE_ARGB_PRE();
             case TYPE_CUSTOM_4BYTE_GABR_PRE -> TYPE_4BYTE_GABR_PRE();
             case TYPE_CUSTOM_4INT_8bit_ARGB_PRE -> TYPE_4INT_ARGB_8bit_PRE();
+            case TYPE_CUSTOM_4USHORT_8bit_ARGB_PRE -> TYPE_4USHORT_ARGB_8bit_PRE();
         };
         fill(bi);
         return bi;
     }
+
     private static BufferedImage TYPE_ARGB_PRE() {
         ColorModel colorModel = new DirectColorModel(
                 ColorSpace.getInstance(ColorSpace.CS_sRGB),
@@ -136,6 +141,22 @@ public final class PremultipliedAlpha {
                 0xff000000, // Green
                 0x00ff0000, // Blue
                 0x0000ff00, // Alpha
+                true,       // Alpha Premultiplied
+                DataBuffer.TYPE_INT
+        );
+        WritableRaster raster = colorModel.createCompatibleWritableRaster(SIZE,
+                                                                          SIZE);
+        return new BufferedImage(colorModel, raster, true, null);
+    }
+
+    private static BufferedImage TYPE_GABR_PRE() {
+        ColorModel colorModel = new DirectColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                32,
+                0xff000000, // Green
+                0x0000ff00, // Alpha
+                0x00ff0000, // Blue
+                0x000000ff, // Red
                 true,       // Alpha Premultiplied
                 DataBuffer.TYPE_INT
         );
@@ -178,6 +199,17 @@ public final class PremultipliedAlpha {
         ColorModel colorModel = new ComponentColorModel(cs, nBits, true, true,
                                                         Transparency.TRANSLUCENT,
                                                         DataBuffer.TYPE_INT);
+        WritableRaster raster = colorModel.createCompatibleWritableRaster(SIZE,
+                                                                          SIZE);
+        return new BufferedImage(colorModel, raster, true, null);
+    }
+
+    private static BufferedImage TYPE_4USHORT_ARGB_8bit_PRE() {
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        int[] nBits = {8, 8, 8, 8};
+        ColorModel colorModel = new ComponentColorModel(cs, nBits, true, true,
+                                                        Transparency.TRANSLUCENT,
+                                                        DataBuffer.TYPE_USHORT);
         WritableRaster raster = colorModel.createCompatibleWritableRaster(SIZE,
                                                                           SIZE);
         return new BufferedImage(colorModel, raster, true, null);
