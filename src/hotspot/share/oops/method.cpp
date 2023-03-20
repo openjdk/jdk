@@ -2008,7 +2008,7 @@ void BreakpointInfo::set(Method* method) {
     // Deoptimize all dependents on this method
     HandleMark hm(thread);
     methodHandle mh(thread, method);
-    CodeCache::flush_dependents_on_method(mh);
+    CodeCache::mark_dependents_on_method_for_breakpoint(mh);
   }
 }
 

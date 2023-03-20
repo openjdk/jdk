@@ -116,9 +116,7 @@ void HeapRegion::unlink_from_list() {
 }
 
 void HeapRegion::hr_clear(bool clear_space) {
-  assert(_humongous_start_region == NULL,
-         "we should have already filtered out humongous regions");
-
+  set_top(bottom());
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
@@ -618,6 +616,10 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
   void do_oop_work(T* p) {
     assert(_containing_obj != nullptr, "must be");
     assert(!G1CollectedHeap::heap()->is_obj_dead_cond(_containing_obj, _vo), "Precondition");
+
+    if (num_failures() >= G1MaxVerifyFailures) {
+      return;
+    }
 
     T heap_oop = RawAccess<>::oop_load(p);
     if (CompressedOops::is_null(heap_oop)) {

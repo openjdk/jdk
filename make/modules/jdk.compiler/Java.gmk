@@ -23,6 +23,8 @@
 # questions.
 #
 
+DISABLED_WARNINGS_java += this-escape
+
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*'
 JAVAC_FLAGS += -XDstringConcat=inline

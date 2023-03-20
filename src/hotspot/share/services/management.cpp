@@ -1913,7 +1913,7 @@ JVM_ENTRY(void, jmm_GetLastGCStat(JNIEnv *env, jobject obj, jmmGCStat *gc_stat))
     if (u.max_size() == 0 && u.used() > 0) {
       // If max size == 0, this pool is a survivor space.
       // Set max size = -1 since the pools will be swapped after GC.
-      MemoryUsage usage(u.init_size(), u.used(), u.committed(), (size_t)-1);
+      MemoryUsage usage(u.init_size(), u.used(), u.committed(), MemoryUsage::undefined_size());
       after_usage = MemoryService::create_MemoryUsage_obj(usage, CHECK);
     } else {
       after_usage = MemoryService::create_MemoryUsage_obj(stat.after_gc_usage_for_pool(i), CHECK);
