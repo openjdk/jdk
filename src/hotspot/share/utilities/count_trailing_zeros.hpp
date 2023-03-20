@@ -28,9 +28,11 @@
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
 #include <type_traits>
+
+template <typename T>
+struct CountTrailingZerosImpl;
 
 // unsigned count_trailing_zeros<T>(T)
 //
@@ -38,44 +40,31 @@
 //
 // Count the number of trailing (starting from the LSB) zero bits in an unsigned integer. Also known
 // as the zero-based index of the first set least significant bit.
-
-template <typename T>
-using CanCountTrailingZerosImpl = std::integral_constant<bool, (std::is_integral<T>::value &&
-                                                                std::is_unsigned<T>::value &&
-                                                                sizeof(T) <= 8)>;
-
-template <typename T>
-struct CountTrailingZerosImpl;
-
-template <typename T, ENABLE_IF(CanCountTrailingZerosImpl<T>::value)>
-ALWAYSINLINE unsigned count_trailing_zeros(T v) {
-  precond(v != 0);
-  return CountTrailingZerosImpl<T>{}(v);
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline unsigned count_trailing_zeros(T x) {
+  precond(x != 0);
+  using U = std::make_unsigned_t<T>;
+  return CountTrailingZerosImpl<U>{}(static_cast<U>(x));
 }
 
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc)
+#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
 
 template <typename T>
-struct CountTrailingZerosImpl final {
-  STATIC_ASSERT(CanCountTrailingZerosImpl<T>::value);
-
+struct CountTrailingZerosImpl {
   // Smaller integer types will be handled via integer promotion to unsigned int.
 
-  ALWAYSINLINE unsigned operator()(unsigned int x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+  inline unsigned operator()(unsigned int x) const {
     return __builtin_ctz(x);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
+  inline unsigned operator()(unsigned long x) const {
     return __builtin_ctzl(x);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
+  inline unsigned operator()(unsigned long long x) const {
     return __builtin_ctzll(x);
   }
 };
@@ -93,21 +82,17 @@ struct CountTrailingZerosImpl final {
 #endif
 
 template <typename T>
-struct CountTrailingZerosImpl final {
-  STATIC_ASSERT(CanCountTrailingZerosImpl<T>::value);
-
+struct CountTrailingZerosImpl {
   // Smaller integer types will be handled via integer promotion to unsigned long.
 
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned long));
+  inline unsigned operator()(unsigned long x) const {
     unsigned long index;
     unsigned char result = _BitScanForward(&index, x);
     postcond(result != 0);
     return static_cast<unsigned>(index);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned __int64 x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
+  inline unsigned operator()(unsigned __int64 x) const {
 #ifdef _LP64
     unsigned long index;
     unsigned char result = _BitScanForward64(&index, x);
@@ -126,36 +111,6 @@ struct CountTrailingZerosImpl final {
     }
     return static_cast<unsigned>(index);
 #endif
-  }
-};
-
-/*****************************************************************************
- * IBM XL C/C++
- *****************************************************************************/
-#elif defined(TARGET_COMPILER_xlc)
-
-#include <builtins.h>
-
-template <typename T>
-struct CountTrailingZerosImpl final {
-  STATIC_ASSERT(CanCountTrailingZerosImpl<T>::value);
-
-  // Smaller integer types will be handled via integer promotion to unsigned int.
-
-  ALWAYSINLINE unsigned operator()(unsigned int x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
-    return __cnttz4(x);
-  }
-
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned int) || sizeof(T) == sizeof(unsigned long long));
-    return sizeof(unsigned long) == sizeof(unsigned int) ? __cnttz4(static_cast<unsigned int>(x))
-                                                         : __cnttz8(x);
-  }
-
-  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
-    return __cnttz8(x);
   }
 };
 

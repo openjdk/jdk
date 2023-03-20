@@ -28,9 +28,11 @@
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
 #include <type_traits>
+
+template <typename T>
+struct CountLeadingZerosImpl;
 
 // unsigned count_leading_zeros<T>(T)
 //
@@ -38,44 +40,31 @@
 //
 // Count the number of leading (starting from the MSB) zero bits in an unsigned integer. Also known
 // as the zero-based index of the first set most significant bit.
-
-template <typename T>
-using CanCountLeadingZerosImpl = std::integral_constant<bool, (std::is_integral<T>::value &&
-                                                               std::is_unsigned<T>::value &&
-                                                               sizeof(T) <= 8)>;
-
-template <typename T>
-struct CountLeadingZerosImpl;
-
-template <typename T, ENABLE_IF(CanCountLeadingZerosImpl<T>::value)>
-ALWAYSINLINE unsigned count_leading_zeros(T v) {
-  precond(v != 0);
-  return CountLeadingZerosImpl<T>{}(v);
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline unsigned count_leading_zeros(T x) {
+  precond(x != 0);
+  using U = std::make_unsigned_t<T>;
+  return CountLeadingZerosImpl<U>{}(static_cast<U>(x));
 }
 
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc)
+#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
 
 template <typename T>
-struct CountLeadingZerosImpl final {
-  STATIC_ASSERT(CanCountLeadingZerosImpl<T>::value);
-
+struct CountLeadingZerosImpl {
   // Smaller integer types will be handled via integer promotion to unsigned int.
 
-  ALWAYSINLINE unsigned operator()(unsigned int x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+  inline unsigned operator()(unsigned int x) const {
     return __builtin_clz(x) - ((sizeof(unsigned int) - sizeof(T)) * 8);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
+  inline unsigned operator()(unsigned long x) const {
     return __builtin_clzl(x);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
+  inline unsigned operator()(unsigned long long x) const {
     return __builtin_clzll(x);
   }
 };
@@ -93,18 +82,14 @@ struct CountLeadingZerosImpl final {
 #pragma intrinsic(_CountLeadingZeros64)
 
 template <typename T>
-struct CountLeadingZerosImpl final {
-  STATIC_ASSERT(CanCountLeadingZerosImpl<T>::value);
-
+struct CountLeadingZerosImpl {
   // Smaller integer types will be handled via integer promotion to unsigned long.
 
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned long));
+  inline unsigned operator()(unsigned long x) const {
     return _CountLeadingZeros(x) - ((sizeof(unsigned long) - sizeof(T)) * 8);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned __int64 x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
+  inline unsigned operator()(unsigned __int64 x) const {
     return _CountLeadingZeros64(x);
   }
 };
@@ -117,21 +102,17 @@ struct CountLeadingZerosImpl final {
 #endif
 
 template <typename T>
-struct CountLeadingZerosImpl final {
-  STATIC_ASSERT(CanCountLeadingZerosImpl<T>::value);
-
+struct CountLeadingZerosImpl {
   // Smaller integer types will be handled via integer promotion to unsigned long.
 
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned long));
+  inline unsigned operator()(unsigned long x) const {
     unsigned long index;
     unsigned char result = _BitScanReverse(&index, x);
     postcond(result != 0);
     return static_cast<unsigned>((sizeof(T) * 8 - 1) - index);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned __int64 x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
+  inline unsigned operator()(unsigned __int64 x) const {
 #ifdef _LP64
     unsigned long index;
     unsigned char result = _BitScanReverse64(&index, x);
@@ -154,35 +135,6 @@ struct CountLeadingZerosImpl final {
 };
 
 #endif
-/*****************************************************************************
- * IBM XL C/C++
- *****************************************************************************/
-#elif defined(TARGET_COMPILER_xlc)
-
-#include <builtins.h>
-
-template <typename T>
-struct CountLeadingZerosImpl final {
-  STATIC_ASSERT(CanCountLeadingZerosImpl<T>::value);
-
-  // Smaller integer types will be handled via integer promotion to unsigned int.
-
-  ALWAYSINLINE unsigned operator()(unsigned int x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
-    return __cntlz4(x) - ((sizeof(unsigned int) - sizeof(T)) * 8);
-  }
-
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned int) || sizeof(T) == sizeof(unsigned long long));
-    return sizeof(unsigned long) == sizeof(unsigned int) ? __cntlz4(static_cast<unsigned int>(x))
-                                                         : __cntlz8(x) - 32u;
-  }
-
-  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
-    return __cntlz8(x);
-  }
-};
 
 /*****************************************************************************
  * Unknown toolchain

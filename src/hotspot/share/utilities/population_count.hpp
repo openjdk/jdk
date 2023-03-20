@@ -25,31 +25,22 @@
 #ifndef SHARE_UTILITIES_POPULATION_COUNT_HPP
 #define SHARE_UTILITIES_POPULATION_COUNT_HPP
 
-// Population counting for 8-bit, 16-bit, 32-bit, and 64-bit unsigned integers. Population counting
-// is the number of set bits in an integer.
-
-// unsigned population_count<T>(T)
-//
-// Counts the number of set bits in the value of unsigned integer type T.
-
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
 #include <type_traits>
 
 template <typename T>
-using CanPopulationCountImpl = std::integral_constant<bool, (std::is_integral<T>::value &&
-                                                             std::is_unsigned<T>::value &&
-                                                             sizeof(T) <= 8)>;
-
-template <typename T>
 struct PopulationCountImpl;
 
-template <typename T, ENABLE_IF(CanPopulationCountImpl<T>::value)>
-ALWAYSINLINE unsigned population_count(T x) {
-  return PopulationCountImpl<T>{}(x);
+// unsigned population_count<T>(T)
+//
+// Counts the number of set bits in the value of unsigned integer type T.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline unsigned population_count(T x) {
+  using U = std::make_unsigned_t<T>;
+  return PopulationCountImpl<U>{}(static_cast<U>(x));
 }
 
 /*****************************************************************************
@@ -58,20 +49,18 @@ ALWAYSINLINE unsigned population_count(T x) {
 
 template <typename T>
 struct PopulationCountFallbackImpl {
-  STATIC_ASSERT(CanPopulationCountImpl<T>::value);
-
   // Adapted from Hacker's Delight, 2nd Edition, Figure 5-2 and the text that
   // follows.
-  ALWAYSINLINE unsigned operator()(T x) const {
+  inline unsigned operator()(T x) const {
     // We need to take care with implicit integer promotion when dealing with
     // integers < 32-bit. We chose to do this by explicitly widening constants
     // to unsigned
     using P = std::conditional_t<(sizeof(T) < sizeof(unsigned)), unsigned, T>;
-    const T all = ~T(0);           // 0xFF..FF
-    const P fives = all/3;         // 0x55..55
-    const P threes = (all/15) * 3; // 0x33..33
-    const P z_ones = all/255;      // 0x0101..01
-    const P z_effs = z_ones * 15;  // 0x0F0F..0F
+    constexpr T all = ~T(0);           // 0xFF..FF
+    constexpr P fives = all/3;         // 0x55..55
+    constexpr P threes = (all/15) * 3; // 0x33..33
+    constexpr P z_ones = all/255;      // 0x0101..01
+    constexpr P z_effs = z_ones * 15;  // 0x0F0F..0F
     P r = x;
     r -= ((r >> 1) & fives);
     r = (r & threes) + ((r >> 2) & threes);
@@ -79,14 +68,14 @@ struct PopulationCountFallbackImpl {
     // The preceding multiply by z_ones is the only place where the intermediate
     // calculations can exceed the range of T. We need to discard any such excess
     // before the right-shift, hence the conversion back to T.
-    return static_cast<T>(r) >> (((sizeof(T) - 1) * BitsPerByte));
+    return static_cast<T>(r) >> (((sizeof(T) - 1) * 8));
   }
 };
 
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc)
+#if defined(TARGET_COMPILER_gcc) || defined(TARGET_TOOLCHAIN_xlc)
 
 #if defined(__clang__) || defined(ASSERT)
 
@@ -97,23 +86,18 @@ struct PopulationCountFallbackImpl {
 // is architecture agnostic, while for Clang it is not.
 
 template <typename T>
-struct PopulationCountImpl final {
-  STATIC_ASSERT(CanPopulationCountImpl<T>::value);
-
+struct PopulationCountImpl {
   // Smaller integer types will be handled via integer promotion to unsigned int.
 
-  ALWAYSINLINE unsigned operator()(unsigned int x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+  inline unsigned operator()(unsigned int x) const {
     return __builtin_popcount(x);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
+  inline unsigned operator()(unsigned long x) const {
     return __builtin_popcountl(x);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
+  inline unsigned operator()(unsigned long long x) const {
     return __builtin_popcountll(x);
   }
 };
@@ -130,7 +114,7 @@ struct PopulationCountImpl final {
 // one way to implement it, as we have in fallback.
 
 template <typename T>
-struct PopulationCountImpl final : public PopulationCountFallbackImpl<T> {};
+struct PopulationCountImpl : public PopulationCountFallbackImpl<T> {};
 
 #endif
 
@@ -147,18 +131,14 @@ struct PopulationCountImpl final : public PopulationCountFallbackImpl<T> {};
 #pragma intrinsic(_CountOneBits64)
 
 template <typename T>
-struct PopulationCountImpl final {
-  STATIC_ASSERT(CanPopulationCountImpl<T>::value);
-
+struct PopulationCountImpl {
   // Smaller integer types will be handled via integer promotion to unsigned long.
 
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned long));
+  inline unsigned operator()(unsigned long x) const {
     return _CountOneBits(x);
   }
 
-  ALWAYSINLINE unsigned operator()(unsigned __int64 x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
+  inline unsigned operator()(unsigned __int64 x) const {
     return _CountOneBits64(x);
   }
 };
@@ -166,39 +146,9 @@ struct PopulationCountImpl final {
 #else
 
 template <typename T>
-struct PopulationCountImpl final : public PopulationCountFallbackImpl<T> {};
+struct PopulationCountImpl : public PopulationCountFallbackImpl<T> {};
 
 #endif
-
-/*****************************************************************************
- * IBM XL C/C++
- *****************************************************************************/
-#elif defined(TARGET_TOOLCHAIN_xlc)
-
-#include <builtins.h>
-
-template <typename T>
-struct PopulationCountImpl final {
-  STATIC_ASSERT(CanPopulationCountImpl<T>::value);
-
-  // Smaller integer types will be handled via integer promotion to unsigned int.
-
-  ALWAYSINLINE unsigned operator()(unsigned int x) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
-    return __popcnt4(x);
-  }
-
-  ALWAYSINLINE unsigned operator()(unsigned long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
-    return sizeof(unsigned long) == sizeof(unsigned int) ? __popcnt4(static_cast<unsigned int>(x)) :
-                                                           __popcnt8(x);
-  }
-
-  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
-    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
-    return __popcnt8(x);
-  }
-};
 
 /*****************************************************************************
  * Unknown toolchain
