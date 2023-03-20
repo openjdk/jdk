@@ -31,7 +31,6 @@
 
 #include <type_traits>
 
-template <typename T>
 struct CountTrailingZerosImpl;
 
 // unsigned count_trailing_zeros<T>(T)
@@ -45,7 +44,7 @@ inline unsigned count_trailing_zeros(T x) {
   precond(x != 0);
   using U = std::make_unsigned_t<T>;
   using P = std::conditional_t<(sizeof(U) < sizeof(unsigned int)), unsigned int, U>;
-  return CountTrailingZerosImpl<U>{}(static_cast<P>(static_cast<U>(x)));
+  return CountTrailingZerosImpl::call(static_cast<P>(static_cast<U>(x)));
 }
 
 /*****************************************************************************
@@ -53,17 +52,16 @@ inline unsigned count_trailing_zeros(T x) {
  *****************************************************************************/
 #if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
 
-template <typename T>
 struct CountTrailingZerosImpl {
-  inline unsigned operator()(unsigned int x) const {
+  static inline unsigned call(unsigned int x) {
     return __builtin_ctz(x);
   }
 
-  inline unsigned operator()(unsigned long x) const {
+  static inline unsigned call(unsigned long x) {
     return __builtin_ctzl(x);
   }
 
-  inline unsigned operator()(unsigned long long x) const {
+  static inline unsigned call(unsigned long long x) {
     return __builtin_ctzll(x);
   }
 };
@@ -80,20 +78,19 @@ struct CountTrailingZerosImpl {
 #pragma intrinsic(_BitScanForward64)
 #endif
 
-template <typename T>
 struct CountTrailingZerosImpl {
-  inline unsigned operator()(unsigned int x) const {
-    return (*this)(static_cast<unsigned long>(x));
+  static inline unsigned call(unsigned int x) {
+    return call(static_cast<unsigned long>(x));
   }
 
-  inline unsigned operator()(unsigned long x) const {
+  static inline unsigned call(unsigned long x) {
     unsigned long index;
     unsigned char result = _BitScanForward(&index, x);
     postcond(result != 0);
     return static_cast<unsigned>(index);
   }
 
-  inline unsigned operator()(unsigned __int64 x) const {
+  static inline unsigned call(unsigned __int64 x) {
 #ifdef _LP64
     unsigned long index;
     unsigned char result = _BitScanForward64(&index, x);
