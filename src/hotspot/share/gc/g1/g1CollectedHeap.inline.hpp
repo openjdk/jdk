@@ -112,7 +112,7 @@ inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) con
 }
 
 template <typename Functor>
-inline void G1CollectedHeap::humongous_obj_regions_iterate(HeapRegion* start, Functor&& f) {
+inline void G1CollectedHeap::humongous_obj_regions_iterate(HeapRegion* start, const Functor& f) {
   assert(start->is_starts_humongous(), "must be");
 
   do {

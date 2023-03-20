@@ -1093,7 +1093,7 @@ public:
   // Iterate over the regions that the humongous object starting at the given
   // region and apply the given method with the signature f(HeapRegion*) on them.
   template <typename Functor>
-  void humongous_obj_regions_iterate(HeapRegion* start, Functor&& f);
+  void humongous_obj_regions_iterate(HeapRegion* start, const Functor& f);
 
   // Calculate the region index of the given address. Given address must be
   // within the heap.
