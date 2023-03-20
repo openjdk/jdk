@@ -380,78 +380,80 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     private int awaitDone(ForkJoinPool pool, int how, long deadline) {
         int s = 0;
-        try {
-            if (pool != null && pool.stopping()) // recheck below on interrupt
-                cancelIgnoringExceptions(this);
-            boolean queued = false;
-            Aux node = null;
-            for (Aux a;;) {                   // install node
-                if ((s = status) < 0)
-                    break;
-                else if (node == null)
-                    node = new Aux(Thread.currentThread(), null);
-                else if (((a = aux) == null || a.ex == null) &&
-                         (queued = casAux(node.next = a, node)))
-                    break;
-            }
-            if (queued) {                     // await signal or interrupt
-                int interruptStatus = 0;      // < 0 : throw, > 0 : re-interrupt
-                LockSupport.setCurrentBlocker(this);
-                for (;;) {
+        if ((how & UNCOMPENSATE) != 0 || (s = status) >= 0) {
+            try {
+                if (pool != null && pool.stopping())
+                    cancelIgnoringExceptions(this); // recheck below on interrupt
+                boolean queued = false;
+                Aux node = null;
+                for (Aux a;;) {                   // install node
                     if ((s = status) < 0)
                         break;
-                    else if (interruptStatus < 0) {
-                        s = ABNORMAL;         // interrupted and not done
+                    else if (node == null)
+                        node = new Aux(Thread.currentThread(), null);
+                    else if (((a = aux) == null || a.ex == null) &&
+                             (queued = casAux(node.next = a, node)))
                         break;
-                    }
-                    else if (Thread.interrupted()) {
-                        if (pool == null || !pool.stopping())
-                            interruptStatus =
-                                (how & INTERRUPTIBLE) != 0 ? -1 : 1;
-                        else {
-                            interruptStatus = 1;  // re-assert if cleared
-                            cancelIgnoringExceptions(this);
-                        }
-                    }
-                    else if ((how & TIMED) != 0) {
-                        long ns = deadline - System.nanoTime();
-                        if (ns <= 0L) {
-                            s = 0;
+                }
+                if (queued) {                     // await signal or interrupt
+                    int interruptStatus = 0; // < 0 : throw, > 0 : re-interrupt
+                    LockSupport.setCurrentBlocker(this);
+                    for (;;) {
+                        if ((s = status) < 0)
+                            break;
+                        else if (interruptStatus < 0) {
+                            s = ABNORMAL;         // interrupted and not done
                             break;
                         }
-                        LockSupport.parkNanos(ns);
+                        else if (Thread.interrupted()) {
+                            if (pool == null || !pool.stopping())
+                                interruptStatus =
+                                    (how & INTERRUPTIBLE) != 0 ? -1 : 1;
+                            else {
+                                interruptStatus = 1;  // re-assert if cleared
+                                cancelIgnoringExceptions(this);
+                            }
+                        }
+                        else if ((how & TIMED) != 0) {
+                            long ns = deadline - System.nanoTime();
+                            if (ns <= 0L) {
+                                s = 0;
+                                break;
+                            }
+                            LockSupport.parkNanos(ns);
+                        }
+                        else
+                            LockSupport.park();
                     }
-                    else
-                        LockSupport.park();
-                }
-                if (s >= 0) {
-                    // cancellation similar to AbstractQueuedSynchronizer
-                    outer: for (Aux a; (a = aux) != null && a.ex == null; ) {
-                        for (Aux trail = null;;) {
-                            Aux next = a.next;
-                            if (a == node) {
-                                if (trail != null)
-                                    trail.casNext(trail, next);
-                                else if (casAux(a, next))
-                                    break outer; // cannot be re-encountered
-                                break;           // restart
-                            } else {
-                                trail = a;
-                                if ((a = next) == null)
-                                    break outer;
+                    if (s >= 0) {
+                        // cancellation similar to AbstractQueuedSynchronizer
+                        outer: for (Aux a; (a = aux) != null && a.ex == null; ) {
+                            for (Aux trail = null;;) {
+                                Aux next = a.next;
+                                if (a == node) {
+                                    if (trail != null)
+                                        trail.casNext(trail, next);
+                                    else if (casAux(a, next))
+                                        break outer; // cannot be re-encountered
+                                    break;           // restart
+                                } else {
+                                    trail = a;
+                                    if ((a = next) == null)
+                                        break outer;
+                                }
                             }
                         }
                     }
+                    else
+                        signalWaiters();             // help clean or signal
+                    LockSupport.setCurrentBlocker(null);
+                    if (interruptStatus > 0)
+                        Thread.currentThread().interrupt();
                 }
-                else
-                    signalWaiters();             // help clean or signal
-                LockSupport.setCurrentBlocker(null);
-                if (interruptStatus > 0)
-                    Thread.currentThread().interrupt();
+            } finally {
+                if ((how & UNCOMPENSATE) != 0 && pool != null)
+                    pool.uncompensate();
             }
-        } finally {
-            if ((how & UNCOMPENSATE) != 0 && pool != null)
-                pool.uncompensate();
         }
         return s;
     }
@@ -461,12 +463,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * otherwise invokes awaitDone
      *
      * @param interruptible true if wait interruptible
-     * @param how flags for TIMED, INTERRUPTIBLE
+     * @param how flags for RAN, TIMED, INTERRUPTIBLE
      * @return ABNORMAL if interrupted, else status on exit
      */
     private int awaitJoin(int how, long deadline) {
         ForkJoinWorkerThread wt; ForkJoinPool p; ForkJoinPool.WorkQueue q;
-        int s; boolean internal; Thread t;
+        boolean internal; Thread t; int s;
         if (internal =
             (t = Thread.currentThread()) instanceof ForkJoinWorkerThread) {
             q = (wt = (ForkJoinWorkerThread)t).workQueue;
@@ -474,12 +476,18 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         else
             q = ForkJoinPool.externalQueue(p = ForkJoinPool.common);
-        if ((s = tryHelpJoinFJT(p, q, internal)) < 0)
-            return s;
-        else if (s == UNCOMPENSATE)
-            how |= s;
-        else if ((s = status) < 0)
-            return s;
+        if (q != null && p != null) {
+            if (this instanceof CountedCompleter)
+                s = p.helpComplete((CountedCompleter<?>)this, q, internal);
+            else if (!(this instanceof ExternalTask) || internal)
+                s = p.helpJoin(this, q, internal);
+            else
+                s = 0;
+            if (s < 0)
+                return s;
+            if (s == UNCOMPENSATE)
+                how |= s;
+        }
         return awaitDone(p, how, deadline);
     }
 
@@ -644,23 +652,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     // Methods overridden only in jdk subclasses
 
     /**
-     * Default helping strategy, suitable for most possibly-recursive
-     * tasks/subtasks.
-     */
-    int tryHelpJoinFJT(ForkJoinPool p, ForkJoinPool.WorkQueue q,
-                       boolean internal) {
-        return (p == null || q == null) ? 0 : p.helpJoin(this, q, internal);
-    }
-
-    /**
-     * Returns true if the given task is in this tasks completion scope.
-     * (Overridden in class CountedCompleter.)
-     */
-    boolean canHelpCompleteFJT(ForkJoinTask<?> t) {
-        return t == this;
-    }
-
-    /**
      * Overridable action on setting exception
      */
     void onFJTExceptionSet(Throwable ex) {
@@ -699,6 +690,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     public final ForkJoinTask<V> fork() {
         Thread t; ForkJoinWorkerThread wt;
         ForkJoinPool p; ForkJoinPool.WorkQueue q;
+        U.storeStoreFence(); // ensure safe publication
         if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) {
             p = (wt = (ForkJoinWorkerThread)t).pool;
             q = wt.workQueue;
@@ -1246,7 +1238,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public boolean tryUnfork() {
         Thread t; ForkJoinPool.WorkQueue q; boolean internal;
-        if (internal = (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
+        if (internal =
+            (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             q = ((ForkJoinWorkerThread)t).workQueue;
         else
             q = ForkJoinPool.commonQueue();
@@ -1667,10 +1660,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final void run() { invoke(); }
         final Throwable wrapFJTCancellationException(CancellationException cx) {
             return new ExecutionException(cx);
-        }
-        final int tryHelpJoinFJT(ForkJoinPool p, ForkJoinPool.WorkQueue q,
-                                 boolean internal) {
-            return internal ? super.tryHelpJoinFJT(p, q, true) : 0;
         }
         private static final long serialVersionUID = 2838392045355241008L;
     }

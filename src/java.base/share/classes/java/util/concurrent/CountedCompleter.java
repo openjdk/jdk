@@ -729,7 +729,8 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      */
     public final void helpComplete(int maxTasks) {
         ForkJoinPool.WorkQueue q; Thread t; boolean internal;
-        if (internal = (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
+        if (internal =
+            (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             q = ((ForkJoinWorkerThread)t).workQueue;
         else
             q = ForkJoinPool.commonQueue();
@@ -738,16 +739,6 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     }
 
     // ForkJoinTask overrides
-
-    @Override
-    final boolean canHelpCompleteFJT(ForkJoinTask<?> t) {
-        CountedCompleter<?> f = null;
-        if (t instanceof CountedCompleter) {
-            f = (CountedCompleter<?>)t;
-            do {} while (f != this && (f = f.completer) != null);
-        }
-        return f != null;
-    }
 
     /**
      * Supports ForkJoinTask exception propagation.
@@ -758,15 +749,6 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         do {} while (a.onExceptionalCompletion(ex, p) &&
                      (a = (p = a).completer) != null &&
                      a.trySetThrown(ex));
-    }
-
-    /**
-     * Helps complete subtasks while joining
-     */
-    @Override
-    final int tryHelpJoinFJT(ForkJoinPool p, ForkJoinPool.WorkQueue q,
-                             boolean internal) {
-        return (p == null) ? 0 : p.helpComplete(this, q, internal);
     }
 
     /**
