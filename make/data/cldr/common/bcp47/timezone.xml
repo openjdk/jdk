@@ -102,14 +102,14 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="cahal" description="Halifax, Canada" alias="America/Halifax Canada/Atlantic"/>
             <type name="caiql" description="Iqaluit, Canada" alias="America/Iqaluit"/>
             <type name="camon" description="Moncton, Canada" alias="America/Moncton"/>
-            <type name="camtr" description="Montreal, Canada" deprecated="true" alias="America/Montreal"/>
+            <type name="camtr" description="Montreal, Canada" deprecated="true" preferred="cator"/>
             <type name="capnt" description="Pangnirtung, Canada" alias="America/Pangnirtung"/>
             <type name="careb" description="Resolute, Canada" alias="America/Resolute"/>
             <type name="careg" description="Regina, Canada" alias="America/Regina Canada/East-Saskatchewan Canada/Saskatchewan"/>
             <type name="casjf" description="St. John's, Canada" alias="America/St_Johns Canada/Newfoundland"/>
             <type name="canpg" description="Nipigon, Canada" alias="America/Nipigon"/>
             <type name="cathu" description="Thunder Bay, Canada" alias="America/Thunder_Bay"/>
-            <type name="cator" description="Toronto, Canada" alias="America/Toronto Canada/Eastern"/>
+            <type name="cator" description="Toronto, Canada" alias="America/Toronto America/Montreal Canada/Eastern"/>
             <type name="cavan" description="Vancouver, Canada" alias="America/Vancouver Canada/Pacific"/>
             <type name="cawnp" description="Winnipeg, Canada" alias="America/Winnipeg Canada/Central"/>
             <type name="caybx" description="Blanc-Sablon, Canada" alias="America/Blanc-Sablon"/>
