@@ -142,7 +142,7 @@ public class ShutdownNow implements HttpServerAdapters {
         Throwable accepted = null;
         while (t != null) {
             out.println(what + ": checking " + t);
-            if (t instanceof  IOException io && hasExpectedMessage(io)) {
+            if (t instanceof IOException io && hasExpectedMessage(io)) {
                 out.println(what + ": Got expected message in cause: " + io);
                 return;
             } else if (t instanceof ClosedChannelException) {
