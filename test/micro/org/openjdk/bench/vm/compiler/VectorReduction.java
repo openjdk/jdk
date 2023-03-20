@@ -51,6 +51,8 @@ public abstract class VectorReduction {
     private int seed;
     private Random r = new Random(seed);
 
+    private static int globalResI;
+
     @Setup
     public void init() {
         intsA = new int[COUNT];
@@ -130,6 +132,29 @@ public abstract class VectorReduction {
             resL ^= longsD[i];
         }
         bh.consume(resL);
+    }
+
+    @Benchmark
+    public void andRedIPartiallyUnrolled(Blackhole bh) {
+        int resI = 0xFFFF;
+        for (int i = 0; i < COUNT / 2; i++) {
+            int j = 2*i;
+            intsD[j] = (intsA[j] * intsB[j]) + (intsA[j] * intsC[j]) + (intsB[j] * intsC[j]);
+            resI &= intsD[j];
+            j = 2*i + 1;
+            intsD[j] = (intsA[j] * intsB[j]) + (intsA[j] * intsC[j]) + (intsB[j] * intsC[j]);
+            resI &= intsD[j];
+        }
+        bh.consume(resI);
+    }
+
+    @Benchmark
+    public void andRedIOnGlobalAccumulator() {
+        globalResI = 0xFFFF;
+        for (int i = 0; i < COUNT; i++) {
+            intsD[i] = (intsA[i] * intsB[i]) + (intsA[i] * intsC[i]) + (intsB[i] * intsC[i]);
+            globalResI &= intsD[i];
+        }
     }
 
     @Fork(value = 2, jvmArgsPrepend = {
