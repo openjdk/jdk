@@ -448,7 +448,7 @@ public class HttpClientShutdown implements HttpServerAdapters {
                 out.println(now() + "Start sending body for: " + t.getRequestURI());
                 for (int i=0; i<bytes.length; i++) {
                     long now = System.nanoTime();
-                    long sincePrevious =  Duration.ofNanos(now - previous).toMillis();
+                    long sincePrevious = Duration.ofNanos(now - previous).toMillis();
                     long sinceBegin = Duration.ofNanos(now - begin).toMillis();
                     if (i > 0 && (sincePrevious > 25)) {
                         previous = now;
