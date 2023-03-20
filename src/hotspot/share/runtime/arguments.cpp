@@ -2139,6 +2139,11 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
     return result;
   }
 
+  // Disable CDS for exploded image
+  if (!has_jimage()) {
+    no_shared_spaces("CDS disabled on exploded JDK");
+  }
+
   // We need to ensure processor and memory resources have been properly
   // configured - which may rely on arguments we just processed - before
   // doing the final argument processing. Any argument processing that
