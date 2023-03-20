@@ -42,12 +42,10 @@ public abstract class VectorReduction {
     private int[] intsB;
     private int[] intsC;
     private int[] intsD;
-    private int resI;
     private long[] longsA;
     private long[] longsB;
     private long[] longsC;
     private long[] longsD;
-    private long resL;
 
     @Param("0")
     private int seed;
@@ -75,51 +73,63 @@ public abstract class VectorReduction {
     }
 
     @Benchmark
-    public void andRedI() {
+    public void andRedI(Blackhole bh) {
+        int resI = 0xFFFF;
         for (int i = 0; i < COUNT; i++) {
             intsD[i] = (intsA[i] * intsB[i]) + (intsA[i] * intsC[i]) + (intsB[i] * intsC[i]);
             resI &= intsD[i];
         }
+        bh.consume(resI);
     }
 
     @Benchmark
-    public void orRedI() {
+    public void orRedI(Blackhole bh) {
+        int resI = 0x0000;
         for (int i = 0; i < COUNT; i++) {
             intsD[i] = (intsA[i] * intsB[i]) + (intsA[i] * intsC[i]) + (intsB[i] * intsC[i]);
             resI |= intsD[i];
         }
+        bh.consume(resI);
     }
 
     @Benchmark
-    public void xorRedI() {
+    public void xorRedI(Blackhole bh) {
+        int resI = 0x0000;
         for (int i = 0; i < COUNT; i++) {
             intsD[i] = (intsA[i] * intsB[i]) + (intsA[i] * intsC[i]) + (intsB[i] * intsC[i]);
             resI ^= intsD[i];
         }
+        bh.consume(resI);
     }
 
     @Benchmark
-    public void andRedL() {
+    public void andRedL(Blackhole bh) {
+        long resL = 0xFFFFFFFF;
         for (int i = 0; i < COUNT; i++) {
             longsD[i] = (longsA[i] + longsB[i]) + (longsA[i] + longsC[i]) + (longsB[i] + longsC[i]);
             resL &= longsD[i];
         }
+        bh.consume(resL);
     }
 
     @Benchmark
-    public void orRedL() {
+    public void orRedL(Blackhole bh) {
+        long resL = 0x00000000;
         for (int i = 0; i < COUNT; i++) {
             longsD[i] = (longsA[i] + longsB[i]) + (longsA[i] + longsC[i]) + (longsB[i] + longsC[i]);
             resL |= longsD[i];
         }
+        bh.consume(resL);
     }
 
     @Benchmark
-    public void xorRedL() {
+    public void xorRedL(Blackhole bh) {
+        long resL = 0x00000000;
         for (int i = 0; i < COUNT; i++) {
             longsD[i] = (longsA[i] + longsB[i]) + (longsA[i] + longsC[i]) + (longsB[i] + longsC[i]);
             resL ^= longsD[i];
         }
+        bh.consume(resL);
     }
 
     @Fork(value = 2, jvmArgsPrepend = {
