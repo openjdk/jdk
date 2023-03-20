@@ -537,6 +537,8 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
+java/net/SocketOption/OptionsTest.java                          8304286 windows-all
+
 ############################################################################
 
 # jdk_nio
@@ -608,7 +610,6 @@ sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
 
-sun/security/provider/certpath/OCSP/OCSPNoContentLength.java    8300939 generic-all
 
 ############################################################################
 
@@ -735,7 +736,6 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
-javax/script/Test7.java                                         8239361 generic-all
 
 jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
 

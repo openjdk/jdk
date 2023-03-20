@@ -107,15 +107,10 @@ public:
   // How big is this field in memory?
   int size_in_bytes() { return type2aelembytes(layout_type()); }
 
-  // What is the offset of this field?
-  int offset() const {
+  // What is the offset of this field? (Fields are aligned to the byte level.)
+  int offset_in_bytes() const {
     assert(_offset >= 1, "illegal call to offset()");
     return _offset;
-  }
-
-  // Same question, explicit units.  (Fields are aligned to the byte level.)
-  int offset_in_bytes() const {
-    return offset();
   }
 
   // Is this field shared?

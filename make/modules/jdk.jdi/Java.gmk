@@ -23,6 +23,8 @@
 # questions.
 #
 
+DISABLED_WARNINGS_java += this-escape
+
 EXCLUDES += \
     com/sun/tools/example/debug/bdi \
     com/sun/tools/example/debug/event \
