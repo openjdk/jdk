@@ -2274,6 +2274,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       }
     }
 
+    task->clear_directive();
     DirectivesStack::release(directive);
 
     if (!ci_env.failing() && !task->is_success()) {

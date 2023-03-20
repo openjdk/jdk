@@ -66,6 +66,10 @@ void CompileTask::free(CompileTask* task) {
   MutexLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
     assert(!task->lock()->is_locked(), "Should not be locked when freed");
+    if (task->_directive != nullptr) {
+      DirectivesStack::release(task->_directive);
+      task->clear_directive();
+    }
     if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
         (task->_hot_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
       JNIHandles::destroy_weak_global(task->_method_holder);
