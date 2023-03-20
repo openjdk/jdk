@@ -556,6 +556,8 @@ class SuperWord : public ResourceObj {
   void merge_packs_to_cmove();
   // Verify that for every pack, all nodes are mutually independent
   DEBUG_ONLY(void verify_packs();)
+  // Remove cycles in packset.
+  void remove_cycles();
   // Adjust the memory graph for the packed operations
   void schedule();
   // Remove "current" from its current position in the memory graph and insert

@@ -541,6 +541,8 @@ bool SuperWord::SLP_extract() {
 
     DEBUG_ONLY(verify_packs();)
 
+    remove_cycles();
+
     schedule();
 
     // Record eventual count of vector packs for checks in post loop vectorization
@@ -2345,6 +2347,199 @@ void SuperWord::verify_packs() {
   }
 }
 #endif
+
+class PacksetGraph {
+private:
+  // pid: packset graph node id.
+  GrowableArray<int> _pid; // Node.idx -> pid
+  GrowableArray<int> _incnt;
+  GrowableArray<GrowableArray<int>> _out;
+  int _max_pid = 0;
+
+  GrowableArray<Node*> &_block;
+  GrowableArray<Node_List*> &_packset;
+  DepGraph &_dg;
+public:
+  PacksetGraph(Arena* a,
+                GrowableArray<Node*> &block,
+                GrowableArray<Node_List*> &packset,
+                DepGraph dg)
+  : _pid(a, 8, 0, /* default */ 0), _block(block), _packset(packset), _dg(dg) {
+  }
+  // Get pid, if there is a packset node that n belongs to. Else return 0.
+  int get_pid_or_zero(const Node* n) const {
+    if ((int)n->_idx >= _pid.length()) {
+      return 0;
+    } else {
+      return _pid.at(n->_idx);
+    }
+  }
+  int get_pid(const Node* n) {
+    int poz = get_pid_or_zero(n);
+    assert(poz != 0, "pid should not be zero");
+    return poz;
+  }
+  void set_pid(const Node* n, int pid) {
+    assert(n != nullptr && pid > 0, "sane inputs");
+    _pid.at_put_grow(n->_idx, pid);
+  }
+  int new_pid() {
+    _incnt.push(0);
+    _out.push(GrowableArray<int>());
+    return ++_max_pid;
+  }
+  int incnt(int pid) { return _incnt.at(pid - 1); }
+  void incnt_set(int pid, int cnt) { return _incnt.at_put(pid - 1, cnt); }
+  GrowableArray<int>& out(int pid) { return _out.at(pid - 1); }
+
+  // Create nodes (from packs and scalar-nodes), and add edges, based on DepPreds.
+  void build() {
+    // Map nodes in packsets
+    for (int i = 0; i < _packset.length(); i++) {
+      Node_List* p = _packset.at(i);
+      int pid = new_pid();
+      for (uint k = 0; k < p->size(); k++) {
+        Node* n = p->at(k);
+        set_pid(n, pid);
+      }
+    }
+
+    int max_pid_packset = _max_pid;
+
+    // Map nodes not in packset
+    for (int i = 0; i < _block.length(); i++) {
+      Node* n = _block.at(i);
+      if (n->is_Phi() || n->is_CFG()) {
+        continue; // ignore control flow
+      }
+      int pid = get_pid_or_zero(n);
+      if (pid == 0) {
+        pid = new_pid();
+        set_pid(n, pid);
+      }
+    }
+
+    // Map edges for packset nodes
+    VectorSet set;
+    for (int i = 0; i < _packset.length(); i++) {
+      Node_List* p = _packset.at(i);
+      set.clear();
+      for (uint k = 0; k < p->size(); k++) {
+        Node* n = p->at(k);
+        int pid = get_pid(n);
+        for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+          Node* pred = preds.current();
+          int pred_pid = get_pid_or_zero(pred);
+          // Only add edges once, and only for mapped nodes (in _block)
+          if (pred_pid > 0 && !set.test_set(pred_pid)) {
+            incnt_set(pid, incnt(pid) + 1); // increment
+            out(pred_pid).push(pid);
+          }
+        }
+      }
+    }
+
+    // Map edges for nodes not in packset
+    for (int i = 0; i < _block.length(); i++) {
+      Node* n = _block.at(i);
+      int pid = get_pid_or_zero(n);
+      if (pid == 0 || pid <= max_pid_packset) {
+        continue; // Only scalar-nodes
+      }
+      for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+        Node* pred = preds.current();
+        int pred_pid = get_pid_or_zero(pred);
+        // Only add edges for mapped nodes (in _block)
+        if (pred_pid > 0) {
+          incnt_set(pid, incnt(pid) + 1); // increment
+          out(pred_pid).push(pid);
+        }
+      }
+    }
+  }
+  // Schedule the graph to worklist. Returns true iff all nodes were scheduled.
+  // This implies that we return true iff the PacksetGraph is acyclic.
+  // We schedule with topological sort: schedule any node that has zero incnt.
+  // Then remove that node, which decrements the incnt of all its uses (outputs).
+  bool schedule() {
+    GrowableArray<int> worklist;
+    // Directly schedule all nodes without precedence
+    for (int pid = 1; pid <= _max_pid; pid++) {
+      if (incnt(pid) == 0) {
+        worklist.push(pid);
+      }
+    }
+    // Continue scheduling via topological sort
+    for (int i = 0; i < worklist.length(); i++) {
+      int pid = worklist.at(i);
+      for (int j = 0; j < out(pid).length(); j++){
+        int pid_use = out(pid).at(j);
+        int incnt_use = incnt(pid_use) - 1;
+        incnt_set(pid_use, incnt_use);
+        // Did use lose its last input?
+        if (incnt_use == 0) {
+          worklist.push(pid_use);
+        }
+      }
+    }
+    // Was every pid scheduled?
+    return worklist.length() == _max_pid;
+  }
+  void print(bool print_nodes, bool print_zero_incnt) {
+    tty->print_cr("PacksetGraph");
+    for (int pid = 1; pid <= _max_pid; pid++) {
+      if (incnt(pid) == 0 && !print_zero_incnt) {
+        continue;
+      }
+      tty->print("Node %d. incnt %d [", pid, incnt(pid));
+      for (int j = 0; j < out(pid).length(); j++) {
+        tty->print("%d ", out(pid).at(j));
+      }
+      tty->print_cr("]");
+      if (print_nodes) {
+        for (int i = 0; i < _block.length(); i++) {
+          Node* n = _block.at(i);
+          if (get_pid_or_zero(n) == pid) {
+            tty->print("    ");
+            n->dump();
+          }
+        }
+      }
+    }
+  }
+};
+
+//------------------------------remove_cycles---------------------------
+// We now know that we only have independent packs, see verify_packs.
+// This is a necessary but not a sufficient condition for an acyclic
+// graph (DAG) after scheduling. Thus, we must check if the packs have
+// introduced a cycle. The SuperWord paper mentions the need for this
+// in "3.7 Scheduling".
+// Approach: given all nodes from the _block, we create a new graph.
+// The nodes that are not in a pack are their own nodes (scalar-node)
+// in that new graph. Every pack is also a node (pack-node). We then
+// add the edges according to DepPreds: a scalar-node has all edges
+// to its node's DepPreds. A pack-node has all edges from every pack
+// member to all their DepPreds.
+void SuperWord::remove_cycles() {
+  if (_packset.length() == 0) {
+    return; // empty packset
+  }
+  ResourceMark rm;
+
+  PacksetGraph graph(arena(), _block, _packset, _dg);
+
+  graph.build();
+
+  if (!graph.schedule()) {
+    if (TraceSuperWord) {
+      tty->print_cr("remove_cycles found cycle in PacksetGraph:");
+      graph.print(true, false);
+      tty->print_cr("removing all packs from packset.");
+    }
+    _packset.clear();
+  }
+}
 
 //------------------------------schedule---------------------------
 // Adjust the memory graph for the packed operations

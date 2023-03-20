@@ -103,7 +103,7 @@ public class TestIndependentPacksWithCyclicDependency {
         init(goldI9, goldF9, goldL9);
         test9(goldI9, goldI9, goldF9, goldF9, goldL9, goldL9);
         init(goldI10, goldF10, goldL10);
-        test9(goldI10, goldI10, goldF10, goldF10, goldL10, goldL10);
+        test10(goldI10, goldI10, goldF10, goldF10, goldL10, goldL10);
     }
 
     @Run(test = "test0")
