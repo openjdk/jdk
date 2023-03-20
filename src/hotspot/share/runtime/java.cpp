@@ -115,7 +115,7 @@ void collect_profiled_methods(Method* m) {
 }
 
 void print_method_profiling_data() {
-  if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData) &&
+  if ((ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) &&
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);

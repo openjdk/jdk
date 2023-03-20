@@ -382,10 +382,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // After reclaiming empty regions, update heap sizes.
   void compute_new_sizes();
 
-  // Clear statistics gathered during the concurrent cycle for the given region after
-  // it has been reclaimed.
-  void clear_statistics(HeapRegion* r);
-
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
   void reset_marking_for_restart();
@@ -468,11 +464,11 @@ public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
-  // Live words in the given region as determined by concurrent marking, i.e. the amount of
-  // live words between bottom and TAMS.
-  size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }
-  // Returns the liveness value in bytes.
-  size_t live_bytes(uint region) const { return live_words(region) * HeapWordSize; }
+  // Did the last marking find a live object between bottom and TAMS?
+  bool contains_live_object(uint region) const { return _region_mark_stats[region]._live_words != 0; }
+  // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
+  // live bytes between bottom and TAMS.
+  size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -481,7 +477,7 @@ public:
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
-  void clear_statistics_in_region(uint region_idx);
+  void clear_statistics(HeapRegion* r);
   // Notification for eagerly reclaimed regions to clean up.
   void humongous_object_eagerly_reclaimed(HeapRegion* r);
   // Manipulation of the global mark stack.

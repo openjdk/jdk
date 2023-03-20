@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
@@ -411,9 +410,8 @@ void Continuations::init() {
   Continuation::init();
 }
 
-// While virtual threads are in Preview, there are some VM mechanisms we disable if continuations aren't used
 bool Continuations::enabled() {
-  return VMContinuations && Arguments::enable_preview();
+  return VMContinuations;
 }
 
 #define CC (char*)  /*cast a literal from (const char*)*/

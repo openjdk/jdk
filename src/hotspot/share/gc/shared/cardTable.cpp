@@ -71,8 +71,8 @@ CardTable::CardTable(MemRegion whole_heap) :
   _whole_heap(whole_heap),
   _page_size(os::vm_page_size()),
   _byte_map_size(0),
-  _byte_map(NULL),
-  _byte_map_base(NULL),
+  _byte_map(nullptr),
+  _byte_map_base(nullptr),
   _cur_covered_regions(0),
   _covered(MemRegion::create_array(_max_covered_regions, mtGC)),
   _committed(MemRegion::create_array(_max_covered_regions, mtGC)),
@@ -157,7 +157,7 @@ int CardTable::find_covering_region_by_base(HeapWord* base) {
 }
 
 HeapWord* CardTable::largest_prev_committed_end(int ind) const {
-  HeapWord* max_end = NULL;
+  HeapWord* max_end = nullptr;
   for (int j = 0; j < ind; j++) {
     HeapWord* this_end = _committed[j].end();
     if (this_end > max_end) max_end = this_end;
@@ -361,13 +361,6 @@ void CardTable::clear_MemRegion(MemRegion mr) {
   }
   CardValue* last = byte_after(mr.last());
   memset(cur, clean_card, pointer_delta(last, cur, sizeof(CardValue)));
-}
-
-void CardTable::clear(MemRegion mr) {
-  for (int i = 0; i < _cur_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) clear_MemRegion(mri);
-  }
 }
 
 uintx CardTable::ct_max_alignment_constraint() {

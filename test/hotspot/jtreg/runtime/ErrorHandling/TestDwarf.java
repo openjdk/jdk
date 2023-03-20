@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,9 +171,9 @@ public class TestDwarf {
      * There are some valid cases where we cannot find source information. Check these.
      */
     private static void checkNoSourceLine(String crashOutputString, String line) {
-        Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+]");
+        Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.-]+)\\+0x.+]");
         Matcher matcher = pattern.matcher(line);
-        Asserts.assertTrue(matcher.find(), "Must find library in \"" + line + "\"");
+        Asserts.assertTrue(matcher.find(), "Must find library name in \"" + line + "\"");
         // Check if there are symbols available for library. If not, then we cannot find any source information for this library.
         // This can happen if this test is run without any JDK debug symbols at all but also for some libraries like libpthread.so
         // which usually has no symbols available.

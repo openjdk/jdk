@@ -35,7 +35,7 @@
 #include "runtime/globals.hpp"
 
 // For UseCompressedOops.
-NarrowPtrStruct CompressedOops::_narrow_oop = { NULL, 0, true };
+NarrowPtrStruct CompressedOops::_narrow_oop = { nullptr, 0, true };
 MemRegion       CompressedOops::_heap_address_range;
 
 // Choose the heap base address and oop encoding mode
@@ -80,7 +80,7 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
 
   // base() is one page below the heap.
   assert((intptr_t)base() <= ((intptr_t)_heap_address_range.start() - (intptr_t)os::vm_page_size()) ||
-         base() == NULL, "invalid value");
+         base() == nullptr, "invalid value");
   assert(shift() == LogMinObjAlignmentInBytes ||
          shift() == 0, "invalid value");
 #endif
@@ -148,14 +148,14 @@ bool CompressedOops::is_disjoint_heap_base_address(address addr) {
 
 // Check for disjoint base compressed oops.
 bool CompressedOops::base_disjoint() {
-  return _narrow_oop._base != NULL && is_disjoint_heap_base_address(_narrow_oop._base);
+  return _narrow_oop._base != nullptr && is_disjoint_heap_base_address(_narrow_oop._base);
 }
 
 // Check for real heapbased compressed oops.
 // We must subtract the base as the bits overlap.
 // If we negate above function, we also get unscaled and zerobased.
 bool CompressedOops::base_overlaps() {
-  return _narrow_oop._base != NULL && !is_disjoint_heap_base_address(_narrow_oop._base);
+  return _narrow_oop._base != nullptr && !is_disjoint_heap_base_address(_narrow_oop._base);
 }
 
 void CompressedOops::print_mode(outputStream* st) {
@@ -179,7 +179,7 @@ void CompressedOops::print_mode(outputStream* st) {
 }
 
 // For UseCompressedClassPointers.
-NarrowPtrStruct CompressedKlassPointers::_narrow_klass = { NULL, 0, true };
+NarrowPtrStruct CompressedKlassPointers::_narrow_klass = { nullptr, 0, true };
 
 // CompressedClassSpaceSize set to 1GB, but appear 3GB away from _narrow_ptrs_base during CDS dump.
 // (Todo: we should #ifdef out CompressedKlassPointers for 32bit completely and fix all call sites which

@@ -71,6 +71,8 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -310,29 +312,22 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
         zipFsPath = zipFsFile(zipFs);
         defaultFsPath = defaultFsFile();
 
-        InetSocketAddress sa =
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-
-        httpTestServer = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(
                 new FilePublisherPermsTest.HttpEchoHandler(), "/http1/echo");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpServerAdapters.HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(
                 new FilePublisherPermsTest.HttpEchoHandler(), "/https1/echo");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/echo";
 
-        http2TestServer = HttpServerAdapters.HttpTestServer.of(
-                new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(
                 new FilePublisherPermsTest.HttpEchoHandler(), "/http2/echo");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = HttpServerAdapters.HttpTestServer.of(
-                new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(
                 new FilePublisherPermsTest.HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
