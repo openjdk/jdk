@@ -31,7 +31,11 @@
 
 #include <type_traits>
 
-struct CountTrailingZerosImpl;
+struct CountTrailingZerosImpl {
+  static inline unsigned call(unsigned int x);
+  static inline unsigned call(unsigned long x);
+  static inline unsigned call(unsigned long long x);
+};
 
 // unsigned count_trailing_zeros<T>(T)
 //
@@ -52,19 +56,17 @@ inline unsigned count_trailing_zeros(T x) {
  *****************************************************************************/
 #if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
 
-struct CountTrailingZerosImpl {
-  static inline unsigned call(unsigned int x) {
-    return __builtin_ctz(x);
-  }
+inline unsigned CountTrailingZerosImpl::call(unsigned int x) {
+  return __builtin_ctz(x);
+}
 
-  static inline unsigned call(unsigned long x) {
-    return __builtin_ctzl(x);
-  }
+inline unsigned CountTrailingZerosImpl::call(unsigned long x) {
+  return __builtin_ctzl(x);
+}
 
-  static inline unsigned call(unsigned long long x) {
-    return __builtin_ctzll(x);
-  }
-};
+inline unsigned CountTrailingZerosImpl::call(unsigned long long x) {
+  return __builtin_ctzll(x);
+}
 
 /*****************************************************************************
  * Microsoft Visual Studio
@@ -78,39 +80,37 @@ struct CountTrailingZerosImpl {
 #pragma intrinsic(_BitScanForward64)
 #endif
 
-struct CountTrailingZerosImpl {
-  static inline unsigned call(unsigned int x) {
-    return call(static_cast<unsigned long>(x));
-  }
+inline unsigned CountTrailingZerosImpl::call(unsigned int x) {
+  return call(static_cast<unsigned long>(x));
+}
 
-  static inline unsigned call(unsigned long x) {
-    unsigned long index;
-    unsigned char result = _BitScanForward(&index, x);
-    postcond(result != 0);
-    return static_cast<unsigned>(index);
-  }
+inline unsigned CountTrailingZerosImpl::call(unsigned long x) {
+  unsigned long index;
+  unsigned char result = _BitScanForward(&index, x);
+  postcond(result != 0);
+  return static_cast<unsigned>(index);
+}
 
-  static inline unsigned call(unsigned __int64 x) {
+inline unsigned CountTrailingZerosImpl::call(unsigned long long x) {
 #ifdef _LP64
-    unsigned long index;
-    unsigned char result = _BitScanForward64(&index, x);
-    postcond(result != 0);
-    return static_cast<unsigned>(index);
+  unsigned long index;
+  unsigned char result = _BitScanForward64(&index, x);
+  postcond(result != 0);
+  return static_cast<unsigned>(index);
 #else
-    unsigned long index;
-    unsigned long low = static_cast<unsigned long>(x);
-    if (low != 0ul) {
-      unsigned char result = _BitScanForward(&index, low);
-      postcond(result != 0);
-    } else {
-      unsigned char result = _BitScanForward(&index, static_cast<unsigned long>(x >> 32));
-      postcond(result != 0);
-      index += 32ul;
-    }
-    return static_cast<unsigned>(index);
-#endif
+  unsigned long index;
+  unsigned long low = static_cast<unsigned long>(x);
+  if (low != 0ul) {
+    unsigned char result = _BitScanForward(&index, low);
+    postcond(result != 0);
+  } else {
+    unsigned char result = _BitScanForward(&index, static_cast<unsigned long>(x >> 32));
+    postcond(result != 0);
+    index += 32ul;
   }
-};
+  return static_cast<unsigned>(index);
+#endif
+}
 
 /*****************************************************************************
  * Unknown toolchain
