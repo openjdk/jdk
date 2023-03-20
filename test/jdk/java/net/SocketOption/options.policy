@@ -22,7 +22,7 @@
 //
 
 grant {
-    permission java.net.SocketPermission "localhost:*", "connect, accept, listen, resolve";
+    permission java.net.SocketPermission "*:*", "connect, accept, listen, resolve";
     permission java.util.PropertyPermission "java.net.preferIPv4Stack", "read";
     permission java.util.PropertyPermission "java.net.preferIPv6Addresses", "read";
 };

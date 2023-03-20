@@ -106,13 +106,8 @@ public class OptionsTest {
             Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
             while (nifs.hasMoreElements()) {
                 NetworkInterface ni = nifs.nextElement();
-                if (ni.supportsMulticast()) {
-                    try (MulticastSocket ms = new MulticastSocket()) {
-                        ms.setNetworkInterface(ni);
-                        return ni;
-                    } catch (SocketException ex) {
-                        // continue
-                    }
+                if (ni.supportsMulticast() && !ni.getInterfaceAddresses().isEmpty()) {
+                    return ni;
                 }
             }
         } catch (Exception e) {
