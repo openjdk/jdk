@@ -1351,16 +1351,20 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
   return true;
 }
 
-class SearchOopClosure : public OopClosure {
+class Search2OopsClosure : public OopClosure {
     bool _found;
-    oop _o;
+    const oop _o1;
+    const oop _o2;
 
 public:
-  SearchOopClosure(oop obj) : _found(false), _o(obj) { }
+  Search2OopsClosure(oop obj1, oop obj2) : _found(false), _o1(obj1), _o2(obj2) { }
 
   virtual void do_oop(oop* p) {
-    if (!_found && _o == NMethodAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p)) {
-      _found = true;
+    if (!_found) {
+      oop obj = NMethodAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
+      if (obj != nullptr && (obj == _o1 || obj == _o2)) {
+        _found = true;
+      }
     }
   }
 
@@ -1382,6 +1386,7 @@ public:
 static void check_path_to_callee(bool is_virtual,
                                  bool is_optimized,
                                  CompiledMethod* from_cm,
+                                 Handle receiver,
                                  methodHandle to_method,
                                  Bytecodes::Code invoke_code,
                                  JavaThread* thread) {
@@ -1412,7 +1417,10 @@ static void check_path_to_callee(bool is_virtual,
       }
     }
 
-    SearchOopClosure f(to_holder);
+    // Search for to_holder in the oops. to_holder has to be reachable from the
+    // receiver. If it is a constant among the oops, then there is also a path
+    // from the caller to to_holder.
+    Search2OopsClosure f(to_holder, receiver());
     from_nm->oops_do(&f);
     if (f.found()) {
       return;
@@ -1485,7 +1493,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 
   if (!is_virtual || is_optimized) {
     // The holder of the callee_method must be reachable from caller_nm
-    check_path_to_callee(is_virtual, is_optimized, caller_nm, callee_method, invoke_code, current /* thread */);
+    check_path_to_callee(is_virtual, is_optimized, caller_nm, receiver, callee_method, invoke_code, current /* thread */);
   }
 
   if (invoke_code == Bytecodes::_invokestatic) {
