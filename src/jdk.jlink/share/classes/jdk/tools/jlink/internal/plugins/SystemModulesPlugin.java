@@ -523,7 +523,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         // name of class to generate
         private final ClassDesc classDesc;
 
-        // list of all ModuleDescriptorBuilders, invoked in turn when building.
+        // list of all ModuleInfos
         private final List<ModuleInfo> moduleInfos;
 
         // A builder to create one single Set instance for a given set of
