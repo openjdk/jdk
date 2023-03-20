@@ -1351,6 +1351,28 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
   return true;
 }
 
+class SearchOopClosure : public OopClosure {
+    bool _found;
+    oop _o;
+
+public:
+  SearchOopClosure(oop obj) : _found(false), _o(obj) { }
+
+  virtual void do_oop(oop* p) {
+    if (!_found && _o == NMethodAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p)) {
+      _found = true;
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+
+  bool found() const {
+    return _found;
+  }
+};
+
 // Check if the holder of the target method is reachable from the caller nmethod if
 // the call is statically bound.
 // Without that path the target method could get unloaded even if the caller
@@ -1390,13 +1412,10 @@ static void check_path_to_callee(bool is_virtual,
       }
     }
 
-    oop* const begin = from_nm->oops_begin();
-    oop* const end = from_nm->oops_end();
-    for (oop* p = begin; p < end; p++) {
-      oop obj = NMethodAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
-      if (obj == to_holder) {
-        return;
-      }
+    SearchOopClosure f(to_holder);
+    from_nm->oops_do(&f);
+    if (f.found()) {
+      return;
     }
 
     // The callers loader will keep the callee alive if a dependency has been recorded with
