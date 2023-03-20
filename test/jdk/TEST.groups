@@ -641,18 +641,12 @@ jdk_core_manual_no_input_security = \
     sun/security/tools/jarsigner/compatibility/Compatibility.java
 
 jdk_core_manual_human = \
-    :jdk_core_manual_requires_human_input \
-    :jdk_core_manual_requires_root_privilege
-
-jdk_core_manual_requires_human_input = \
     com/sun/jndi/dns/Test6991580.java \
     java/util/TimeZone/DefaultTimeZoneTest.java \
     sun/security/tools/keytool/i18n.java \
     java/nio/MappedByteBuffer/PmemTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
-    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java
-
-jdk_core_manual_requires_root_privilege = \
+    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java \
     java/security/Policy/Root/Root.java \
     sun/security/krb5/config/native/TestDynamicStore.java
 
