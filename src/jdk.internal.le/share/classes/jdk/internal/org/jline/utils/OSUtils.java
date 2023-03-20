@@ -93,7 +93,8 @@ public class OSUtils {
             stty = IS_OSX ? "/bin/stty" : "stty";
             sttyfopt = IS_OSX ? "-f" : "-F";
             infocmp = "infocmp";
-            test = "/bin/test";
+            test = isTestCommandValid("/usr/bin/test") ? "/usr/bin/test"
+                                                       : "/bin/test";
         }
         TTY_COMMAND = tty;
         STTY_COMMAND = stty;
@@ -102,4 +103,13 @@ public class OSUtils {
         TEST_COMMAND = test;
     }
 
+    private static boolean isTestCommandValid(String command) {
+        try {
+            Process p = new ProcessBuilder(command, "-z", "").inheritIO().start();
+            return p.waitFor() == 0;
+        } catch (Throwable unused) {
+            //ignore
+        }
+        return false;
+    }
 }
