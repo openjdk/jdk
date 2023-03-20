@@ -23,12 +23,14 @@
  * questions.
  */
 
-// This library is client-side only, and only supports the default credentials.
-// It speaks krb5 and SPNEGO. NTLM is excluded from SPNEGO negotiation.
-//
-// This library can be built directly with the following command:
-//   cl -I %OPENJDK%\src\java.security.jgss\share\native\libj2gss\ sspi.cpp \
-//      -link -dll -out:sspi_bridge.dll
+/*
+ * This library is client-side only, and only supports the default credentials.
+ * It speaks krb5 and SPNEGO. NTLM is excluded from SPNEGO negotiation.
+ *
+ * This library can be built directly with the following command:
+ *   cl -I %OPENJDK%\src\java.security.jgss\share\native\libj2gss\ sspi.cpp \
+ *      -link -dll -out:sspi_bridge.dll
+ */
 
 #define UNICODE
 #define _UNICODE

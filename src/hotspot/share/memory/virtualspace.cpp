@@ -58,7 +58,7 @@ ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size) : _fd_for_
   // and normal pages. If the size is not a multiple of the
   // page size it will be aligned up to achieve this.
   size_t alignment = os::vm_allocation_granularity();;
-  if (preferred_page_size != (size_t)os::vm_page_size()) {
+  if (preferred_page_size != os::vm_page_size()) {
     alignment = MAX2(preferred_page_size, alignment);
     size = align_up(size, alignment);
   }
@@ -131,7 +131,7 @@ static bool failed_to_reserve_as_requested(char* base, char* requested_address) 
 
 static bool use_explicit_large_pages(size_t page_size) {
   return !os::can_commit_large_page_memory() &&
-         page_size != (size_t) os::vm_page_size();
+         page_size != os::vm_page_size();
 }
 
 static bool large_pages_requested() {
@@ -256,12 +256,12 @@ void ReservedSpace::reserve(size_t size,
         return;
       }
       page_size = os::page_sizes().next_smaller(page_size);
-    } while (page_size > (size_t) os::vm_page_size());
+    } while (page_size > os::vm_page_size());
 
     // Failed to reserve explicit large pages, do proper logging.
     log_on_large_pages_failure(requested_address, size);
     // Now fall back to normal reservation.
-    assert(page_size == (size_t) os::vm_page_size(), "inv");
+    assert(page_size == os::vm_page_size(), "inv");
   }
 
   // == Case 3 ==
@@ -284,7 +284,7 @@ void ReservedSpace::initialize(size_t size,
          "alignment not aligned to os::vm_allocation_granularity()");
   assert(alignment == 0 || is_power_of_2((intptr_t)alignment),
          "not a power of 2");
-  assert(page_size >= (size_t) os::vm_page_size(), "Invalid page size");
+  assert(page_size >= os::vm_page_size(), "Invalid page size");
   assert(is_power_of_2(page_size), "Invalid page size");
 
   clear_members();
@@ -294,7 +294,7 @@ void ReservedSpace::initialize(size_t size,
   }
 
   // Adjust alignment to not be 0.
-  alignment = MAX2(alignment, (size_t)os::vm_page_size());
+  alignment = MAX2(alignment, os::vm_page_size());
 
   // Reserve the memory.
   reserve(size, alignment, page_size, requested_address, executable);
@@ -359,7 +359,7 @@ static size_t noaccess_prefix_size(size_t alignment) {
 }
 
 void ReservedHeapSpace::establish_noaccess_prefix() {
-  assert(_alignment >= (size_t)os::vm_page_size(), "must be at least page size big");
+  assert(_alignment >= os::vm_page_size(), "must be at least page size big");
   _noaccess_prefix = noaccess_prefix_size(_alignment);
 
   if (base() && base() + _size > (char *)OopEncodingHeapMax) {
@@ -492,7 +492,7 @@ static char** get_attach_addresses_for_disjoint_mode() {
 void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t alignment, size_t page_size) {
   guarantee(size + noaccess_prefix_size(alignment) <= OopEncodingHeapMax,
             "can not allocate compressed oop heap for this size");
-  guarantee(alignment == MAX2(alignment, (size_t)os::vm_page_size()), "alignment too small");
+  guarantee(alignment == MAX2(alignment, os::vm_page_size()), "alignment too small");
 
   const size_t granularity = os::vm_allocation_granularity();
   assert((size & (granularity - 1)) == 0,

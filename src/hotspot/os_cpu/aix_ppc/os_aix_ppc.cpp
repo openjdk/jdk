@@ -141,7 +141,7 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
-  if (*fr->sp() == nullptr) {
+  if (*fr->sp() == (intptr_t) nullptr) {
     // fr is the last C frame
     return frame(nullptr, nullptr);
   }

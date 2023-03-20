@@ -102,7 +102,6 @@ public class TestLargePageUseForAuxMemory {
 
     static void checkSmallTables(OutputAnalyzer output, long expectedPageSize) throws Exception {
         checkSize(output, expectedPageSize, "Block Offset Table: .*page_size=([^ ]+)");
-        checkSize(output, expectedPageSize, "Card Counts Table: .*page_size=([^ ]+)");
     }
 
     static void checkBitmap(OutputAnalyzer output, long expectedPageSize) throws Exception {

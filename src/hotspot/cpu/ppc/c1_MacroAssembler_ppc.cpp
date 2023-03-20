@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,8 +45,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   Label Lmiss;
 
   verify_oop(receiver, FILE_AND_LINE);
-  MacroAssembler::null_check(receiver, oopDesc::klass_offset_in_bytes(), &Lmiss);
-  load_klass(temp_reg, receiver);
+  load_klass_check_null(temp_reg, receiver, &Lmiss);
 
   if (TrapBasedICMissChecks && TrapBasedNullChecks) {
     trap_ic_miss_check(temp_reg, iCache);

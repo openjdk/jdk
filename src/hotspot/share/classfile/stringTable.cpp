@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/altHashing.hpp"
@@ -770,14 +771,14 @@ public:
   EncodeSharedStringsAsOffsets(CompactHashtableWriter* writer) : _writer(writer) {}
   bool do_entry(oop s, bool value_ignored) {
     assert(s != nullptr, "sanity");
-    oop new_s = HeapShared::find_archived_heap_object(s);
-    if (new_s != nullptr) { // could be null if the string is too big
-      unsigned int hash = java_lang_String::hash_code(s);
-      if (UseCompressedOops) {
-        _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
-      } else {
-        _writer->add(hash, compute_delta(new_s));
-      }
+    assert(!ArchiveHeapWriter::is_string_too_large_to_archive(s), "must be");
+    oop req_s = ArchiveHeapWriter::source_obj_to_requested_obj(s);
+    assert(req_s != nullptr, "must have been archived");
+    unsigned int hash = java_lang_String::hash_code(s);
+    if (UseCompressedOops) {
+      _writer->add(hash, CompressedOops::narrow_oop_value(req_s));
+    } else {
+      _writer->add(hash, compute_delta(req_s));
     }
     return true; // keep iterating
   }

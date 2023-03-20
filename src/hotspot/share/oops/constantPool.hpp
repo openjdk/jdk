@@ -186,7 +186,7 @@ class ConstantPool : public Metadata {
   // generics support
   Symbol* generic_signature() const {
     return (_generic_signature_index == 0) ?
-      (Symbol*)NULL : symbol_at(_generic_signature_index);
+      nullptr : symbol_at(_generic_signature_index);
   }
   u2 generic_signature_index() const                   { return _generic_signature_index; }
   void set_generic_signature_index(u2 sig_index)       { _generic_signature_index = sig_index; }
@@ -194,7 +194,7 @@ class ConstantPool : public Metadata {
   // source file name
   Symbol* source_file_name() const {
     return (_source_file_name_index == 0) ?
-      (Symbol*)NULL : symbol_at(_source_file_name_index);
+      nullptr : symbol_at(_source_file_name_index);
   }
   u2 source_file_name_index() const                    { return _source_file_name_index; }
   void set_source_file_name_index(u2 sourcefile_index) { _source_file_name_index = sourcefile_index; }
@@ -565,7 +565,7 @@ class ConstantPool : public Metadata {
     operands->at_put(n+1, extract_high_short_from_int(offset));
   }
   static int operand_array_length(Array<u2>* operands) {
-    if (operands == NULL || operands->length() == 0)  return 0;
+    if (operands == nullptr || operands->length() == 0)  return 0;
     int second_part = operand_offset_at(operands, 0);
     return (second_part / 2);
   }
@@ -716,17 +716,17 @@ class ConstantPool : public Metadata {
   // Resolve late bound constants.
   oop resolve_constant_at(int index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, nullptr, THREAD);
   }
 
   oop resolve_cached_constant_at(int cache_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, _no_index_sentinel, cache_index, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, _no_index_sentinel, cache_index, nullptr, THREAD);
   }
 
   oop resolve_possibly_cached_constant_at(int pool_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, pool_index, _possible_index_sentinel, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, pool_index, _possible_index_sentinel, nullptr, THREAD);
   }
 
   oop find_cached_constant_at(int pool_index, bool& found_it, TRAPS) {
@@ -811,7 +811,7 @@ class ConstantPool : public Metadata {
  private:
 
   void set_resolved_references(OopHandle s) { _cache->set_resolved_references(s); }
-  Array<u2>* reference_map() const        {  return (_cache == NULL) ? NULL :  _cache->reference_map(); }
+  Array<u2>* reference_map() const        {  return (_cache == nullptr) ? nullptr :  _cache->reference_map(); }
   void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
 
   Symbol* impl_name_ref_at(int which, bool uncached);

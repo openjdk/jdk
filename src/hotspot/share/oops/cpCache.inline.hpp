@@ -57,16 +57,16 @@ inline Method* ConstantPoolCacheEntry::f2_as_interface_method() const {
 inline Metadata* ConstantPoolCacheEntry::f1_ord() const { return (Metadata *)Atomic::load_acquire(&_f1); }
 
 inline Method* ConstantPoolCacheEntry::f1_as_method() const {
-  Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_method(), "");
+  Metadata* f1 = f1_ord(); assert(f1 == nullptr || f1->is_method(), "");
   return (Method*)f1;
 }
 
 inline Klass* ConstantPoolCacheEntry::f1_as_klass() const {
-  Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_klass(), "");
+  Metadata* f1 = f1_ord(); assert(f1 == nullptr || f1->is_klass(), "");
   return (Klass*)f1;
 }
 
-inline bool ConstantPoolCacheEntry::is_f1_null() const { Metadata* f1 = f1_ord(); return f1 == NULL; }
+inline bool ConstantPoolCacheEntry::is_f1_null() const { Metadata* f1 = f1_ord(); return f1 == nullptr; }
 
 inline bool ConstantPoolCacheEntry::has_appendix() const {
   return (!is_f1_null()) && (_flags & (1 << has_appendix_shift)) != 0;
@@ -89,7 +89,7 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
                                             const intStack& invokedynamic_inverse_index_map,
                                             const intStack& invokedynamic_references_map) :
                                                   _length(length),
-                                                  _constant_pool(NULL),
+                                                  _constant_pool(nullptr),
                                                   _gc_epoch(0) {
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
   initialize(inverse_index_map, invokedynamic_inverse_index_map,

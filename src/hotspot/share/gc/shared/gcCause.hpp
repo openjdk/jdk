@@ -53,7 +53,6 @@ class GCCause : public AllStatic {
     _wb_young_gc,
     _wb_full_gc,
     _wb_breakpoint,
-    _archive_time_gc,
 
     /* implementation independent, but reserved for GC use */
     _no_gc,

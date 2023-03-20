@@ -1,4 +1,4 @@
-File-Date: 2022-08-08
+File-Date: 2023-02-14
 %%
 Type: language
 Subtag: aa
@@ -26378,6 +26378,7 @@ Type: language
 Subtag: nrf
 Description: Jèrriais
 Description: Guernésiais
+Description: Sercquiais
 Added: 2015-02-12
 %%
 Type: language
@@ -46011,6 +46012,11 @@ Type: region
 Subtag: CP
 Description: Clipperton Island
 Added: 2009-07-29
+%%
+Type: region
+Subtag: CQ
+Description: Sark
+Added: 2023-02-07
 %%
 Type: region
 Subtag: CR

@@ -69,6 +69,8 @@ public:
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Register tmp);
   virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);
+
+  virtual void check_oop(MacroAssembler *masm, Register oop, const char* msg);
 };
 
 #endif // CPU_PPC_GC_SHARED_BARRIERSETASSEMBLER_PPC_HPP

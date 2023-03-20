@@ -266,7 +266,7 @@ extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
 #ifdef DEBUG
         DTrace_DisableMutex();
         DMem_DisableMutex();
-#endif DEBUG
+#endif // DEBUG
         break;
     }
     return TRUE;
@@ -628,7 +628,7 @@ BOOL AwtToolkit::Initialize(BOOL localPump) {
     // Set up operator new/malloc out of memory handler.
     NewHandler::init();
 
-        //\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        //*************************************************************************
         // Bugs 4032109, 4047966, and 4071991 to fix AWT
         //      crash in 16 color display mode.  16 color mode is supported.  Less
         //      than 16 color is not.
@@ -2154,8 +2154,8 @@ void AwtToolkit::PreloadAction::Clean(bool reInit) {
 // PreloadThread implementation
 AwtToolkit::PreloadThread::PreloadThread()
     : status(None), wrongThread(false), threadId(0),
-    pActionChain(NULL), pLastProcessedAction(NULL),
-    execFunc(NULL), execParam(NULL)
+    execFunc(NULL), execParam(NULL),
+    pActionChain(NULL), pLastProcessedAction(NULL)
 {
     hFinished = ::CreateEvent(NULL, TRUE, FALSE, NULL);
     hAwake = ::CreateEvent(NULL, FALSE, FALSE, NULL);

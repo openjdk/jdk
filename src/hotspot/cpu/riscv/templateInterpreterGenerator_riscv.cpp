@@ -143,10 +143,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   // x19_sender_sp: sender sp
   // esp: args
 
-  if (!InlineIntrinsics) {
-    return NULL; // Generate a vanilla entry
-  }
-
   // These don't need a safepoint check because they aren't virtually
   // callable. We won't enter these intrinsics from compiled code.
   // If in the future we added an intrinsic which was virtually callable
@@ -602,7 +598,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const int overhead_size =
     -(frame::interpreter_frame_initial_sp_offset * wordSize) + entry_size;
 
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
 
   Label after_frame_check;
 
@@ -860,7 +856,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
  */
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   // TODO: Unimplemented generate_CRC32_update_entry
-  return 0;
+  return nullptr;
 }
 
 /**
@@ -870,7 +866,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   // TODO: Unimplemented generate_CRC32_updateBytes_entry
-  return 0;
+  return nullptr;
 }
 
 /**
@@ -882,14 +878,22 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
  */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   // TODO: Unimplemented generate_CRC32C_updateBytes_entry
-  return 0;
+  return nullptr;
 }
+
+// Not supported
+address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.
 
   const int shadow_zone_size = checked_cast<int>(StackOverflow::stack_shadow_zone_size());
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   const int n_shadow_pages = shadow_zone_size / page_size;
 
 #ifdef ASSERT

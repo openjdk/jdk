@@ -99,11 +99,15 @@ public:
 
   DEBUG_ONLY(void verify() const;)
 
-  // This only exists for JFR and jcmd VM.classloader_stats. We may want to
-  //  change this. Capacity as a stat is of questionable use since it may
-  //  contain committed and uncommitted areas. For now we do this to maintain
-  //  backward compatibility with JFR.
-  void calculate_jfr_stats(size_t* p_used_bytes, size_t* p_capacity_bytes) const;
+  // Convenience method to get the most important usage statistics for either class
+  // or non-class space. For more detailed statistics, use add_to_statistics().
+  void usage_numbers(Metaspace::MetadataType mdType, size_t* p_used_words,
+                     size_t* p_committed_words, size_t* p_capacity_words) const;
+
+  // Convenience method to get the most important usage statistics (totals; both class- and non-class spaces)
+  // For more detailed statistics, use add_to_statistics().
+  void usage_numbers(size_t* p_used_words, size_t* p_committed_words,
+                     size_t* p_capacity_words) const;
 
 }; // end: ClassLoaderMetaspace
 
