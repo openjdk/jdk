@@ -393,7 +393,10 @@ public class NetworkConfiguration {
             List<Inet6Address> ip6Addresses = new LinkedList<>();
             ip4Interfaces.put(nif, ip4Addresses);
             ip6Interfaces.put(nif, ip6Addresses);
-            for (InetAddress addr : list(nif.getInetAddresses())) {
+            @SuppressWarnings("removal")
+            List<InetAddress> addrList = AccessController.doPrivileged(
+                    (PrivilegedAction<List<InetAddress>>) () -> list(nif.getInetAddresses()));
+            for (InetAddress addr : addrList) {
                 if (addr instanceof Inet4Address) {
                     ip4Addresses.add((Inet4Address) addr);
                 } else if (addr instanceof Inet6Address) {

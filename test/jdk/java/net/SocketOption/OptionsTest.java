@@ -25,6 +25,7 @@
  * @test
  * @bug 8036979 8072384 8044773 8225214 8233296 8234083
  * @library /test/lib
+ * @build jdk.test.lib.Platform jdk.test.lib.NetworkConfiguration
  * @requires !vm.graal.enabled
  * @run main/othervm -Xcheck:jni OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
@@ -35,6 +36,8 @@
 import java.lang.reflect.Method;
 import java.net.*;
 import java.util.*;
+
+import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
 
 public class OptionsTest {
@@ -103,13 +106,8 @@ public class OptionsTest {
 
     static NetworkInterface getNetworkInterface() {
         try {
-            Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
-            while (nifs.hasMoreElements()) {
-                NetworkInterface ni = nifs.nextElement();
-                if (ni.supportsMulticast() && !ni.getInterfaceAddresses().isEmpty()) {
-                    return ni;
-                }
-            }
+            NetworkConfiguration nc = NetworkConfiguration.probe();
+            return nc.multicastInterfaces(true).findAny().orElse(null);
         } catch (Exception e) {
         }
         return null;

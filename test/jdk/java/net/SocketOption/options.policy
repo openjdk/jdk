@@ -22,7 +22,15 @@
 //
 
 grant {
-    permission java.net.SocketPermission "*:*", "connect, accept, listen, resolve";
+    permission java.net.SocketPermission "localhost:*", "connect, accept, listen, resolve";
     permission java.util.PropertyPermission "java.net.preferIPv4Stack", "read";
     permission java.util.PropertyPermission "java.net.preferIPv6Addresses", "read";
+};
+// for JTwork/classes/test/lib/jdk/test/lib/Platform.class
+grant codeBase "file:${test.classes}/../../../../test/lib/-" {
+    permission java.util.PropertyPermission "*", "read";
+};
+// for JTwork/classes/test/lib/jdk/test/lib/NetworkConfiguration.class
+grant codeBase "file:${test.classes}/../../../../test/lib/-" {
+    permission java.net.SocketPermission "*:*", "connect";
 };
