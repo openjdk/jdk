@@ -52,6 +52,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class TransferFromExtend {
     private static final Random RND = RandomFactory.getRandom();
 
@@ -80,7 +82,7 @@ public class TransferFromExtend {
         return paramProvider(16*1024 + 1, 500*1024);
     }
 
-    private static Stream<Arguments> slowParamProvider() {
+    private static Stream<Arguments> readingByteChannelParamProvider() {
         return paramProvider(1, 64*1024);
     }
 
@@ -94,14 +96,19 @@ public class TransferFromExtend {
     //
     @ParameterizedTest
     @MethodSource("fastParamProvider")
-    void fromFast(long initialPosition, int bufSize, long offset)
-        throws IOException {
+    void fromFast(long initialPosition, int bufSize, long offset) throws IOException {
         Path file = Files.createTempFile(DIR, "foo", "bar");
         try (FileChannel src = FileChannel.open(file, DELETE_ON_CLOSE,
                                                 READ, WRITE)) {
             byte[] bytes = new byte[bufSize];
             RND.nextBytes(bytes);
-            src.write(ByteBuffer.wrap(bytes), 0);
+            ByteBuffer buf = ByteBuffer.wrap(bytes);
+            int total = 0;
+            while (total < bufSize) {
+                int n = src.write(ByteBuffer.wrap(bytes), 0);
+                assertTrue(n >= 0, n + " < " + 0);
+                total += n;
+            }
             transferFrom(src, src.size(), initialPosition, offset, bytes);
         }
     }
@@ -111,8 +118,8 @@ public class TransferFromExtend {
     // generic path on all platforms.
     //
     @ParameterizedTest
-    @MethodSource("slowParamProvider")
-    void fromSlow(long initialPosition, int bufSize, long offset)
+    @MethodSource("readingByteChannelParamProvider")
+    void fromReadingByteChannel(long initialPosition, int bufSize, long offset)
         throws IOException {
         byte[] bytes = new byte[bufSize];
         RND.nextBytes(bytes);
@@ -130,9 +137,6 @@ public class TransferFromExtend {
      * @param initialPos the position of the target channel before the transfer
      * @param offset     the offset beyong the end of the target channel
      * @param bytes      the bytes expected to be transferred
-     *
-     * @throws RuntimeException if an unexpected number of bytes is transferred
-     *                          or the transferred values are not as expected
      */
     private static void transferFrom(ReadableByteChannel src, long count,
                                      long initialPos, long offset, byte[] bytes)
@@ -141,16 +145,16 @@ public class TransferFromExtend {
         try (FileChannel target = FileChannel.open(file, DELETE_ON_CLOSE,
                                                    READ, WRITE)) {
             target.position(initialPos);
-            target.write(ByteBuffer.wrap(new byte[] {(byte)42}));
+            assertEquals(1, target.write(ByteBuffer.wrap(new byte[] {(byte)42})));
 
             long position = target.size() + offset;
             long transferred = target.transferFrom(src, position, count);
-            if (transferred != count)
-                throw new RuntimeException(transferred + " != " + count);
-            ByteBuffer buf = ByteBuffer.allocate((int)count);
+            assertTrue(transferred >= 0, "transferFrom returned negative");
+            assertFalse(transferred > count, transferred + " > " + count);
+            ByteBuffer buf = ByteBuffer.allocate((int)transferred);
             target.read(buf, position);
-            if (!Arrays.equals(buf.array(), bytes))
-                throw new RuntimeException("arrays unequal");
+            assertArrayEquals(Arrays.copyOf(bytes, (int)transferred),
+                              buf.array(), "arrays unequal");
         }
     }
 }
