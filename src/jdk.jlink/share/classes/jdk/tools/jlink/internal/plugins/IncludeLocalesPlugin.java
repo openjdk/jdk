@@ -307,6 +307,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                      TAG_INVOKEDYNAMIC -> offset += 5;
                 case TAG_LONG,
                      TAG_DOUBLE -> {offset += 9; cpSlot++;} //additional slot for double and long entries
+                default -> throw new IllegalArgumentException("Unknown CP entry tag " + bytes[offset]);
             }
         }
         return modified;
