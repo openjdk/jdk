@@ -127,9 +127,6 @@ struct PopulationCountImpl : public PopulationCountFallbackImpl<T> {};
 
 #include <intrin.h>
 
-#pragma intrinsic(_CountOneBits)
-#pragma intrinsic(_CountOneBits64)
-
 template <typename T>
 struct PopulationCountImpl {
   inline unsigned operator()(unsigned int x) const {
