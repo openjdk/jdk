@@ -2226,8 +2226,10 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
 
   Label resolved;
 
-  __ load_resolved_indy_entry(cache, index, appendix);
+  __ load_resolved_indy_entry(cache, index);
+  __ membar(MacroAssembler::AnyAny);
   __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
   // Compare the method to zero
   __ andr(t0, method, method);
@@ -2240,8 +2242,10 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ mv(method, code); // this is essentially Bytecodes::_invokedynamic
   __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
   // Update registers with resolved info
-  __ load_resolved_indy_entry(cache, index, appendix);
+  __ load_resolved_indy_entry(cache, index);
+  __ membar(MacroAssembler::AnyAny);
   __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
 #ifdef ASSERT
   __ andr(t0, method, method);

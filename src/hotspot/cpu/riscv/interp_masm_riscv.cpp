@@ -1916,19 +1916,13 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
   }
 }
 
-void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index, Register tmp) {
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
   get_cache_index_at_bcp(index, 1, sizeof(u4));
   // Get address of invokedynamic array
   ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  if (is_power_of_2(sizeof(ResolvedIndyEntry))) {
-    // Scale index by power of 2
-    slli(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
-  } else {
-    // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-    mv(tmp, sizeof(ResolvedIndyEntry));
-    mul(index, index, tmp);
-  }
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  slli(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
   la(cache, Address(cache, 0));
