@@ -184,7 +184,7 @@ public final class ClassHierarchyImpl {
         }
     }
 
-    public static abstract class ReflectionClassHierarchyResolver implements ClassHierarchyResolver {
+    public abstract static class ReflectionClassHierarchyResolver implements ClassHierarchyResolver {
         private final Map<ClassDesc, Optional<ClassHierarchyInfo>> cache = new HashMap<>();
 
         @Override
