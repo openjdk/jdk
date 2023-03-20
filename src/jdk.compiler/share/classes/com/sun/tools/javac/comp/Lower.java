@@ -2263,14 +2263,15 @@ public class Lower extends TreeTranslator {
             tree.defs = tree.defs.prepend(otdef);
             enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
 
-            tree.defs.stream()
-              .filter(TreeInfo::isConstructor)
-              .map(JCMethodDecl.class::cast)
-              .filter(mdef -> TreeInfo.hasConstructorCall(mdef, names._super))
-              .forEach(mdef -> {
-                List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym));
-                TreeInfo.mapSuperCalls(mdef.body, supercall -> make.Block(0, initializer.append(supercall)));
-            });
+            for (JCTree def : tree.defs) {
+                if (TreeInfo.isConstructor(def)) {
+                    JCMethodDecl mdef = (JCMethodDecl)def;
+                    if (TreeInfo.hasConstructorCall(mdef, names._super)) {
+                        List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym));
+                        TreeInfo.mapSuperCalls(mdef.body, supercall -> make.Block(0, initializer.append(supercall)));
+                    }
+                }
+            }
         }
 
         proxies = prevProxies;
