@@ -429,6 +429,29 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public E getFirst() {
+        if (size == 0) {
+            throw new NoSuchElementException();
+        } else {
+            return elementData(0);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public E getLast() {
+        int sz = size;
+        if (sz == 0) {
+            throw new NoSuchElementException();
+        } else {
+            return elementData(sz - 1);
+        }
+    }
+
+    /**
      * Replaces the element at the specified position in this list with
      * the specified element.
      *
@@ -492,6 +515,20 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public void addFirst(E element) {
+        add(0, element);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addLast(E element) {
+        add(element);
+    }
+
+    /**
      * Removes the element at the specified position in this list.
      * Shifts any subsequent elements to the left (subtracts one from their
      * indices).
@@ -508,6 +545,36 @@ public class ArrayList<E> extends AbstractList<E>
         fastRemove(es, index);
 
         return oldValue;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public E removeFirst() {
+        if (size == 0) {
+            throw new NoSuchElementException();
+        } else {
+            Object[] es = elementData;
+            @SuppressWarnings("unchecked") E oldValue = (E) es[0];
+            fastRemove(es, 0);
+            return oldValue;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public E removeLast() {
+        int sz = size;
+        if (sz == 0) {
+            throw new NoSuchElementException();
+        } else {
+            Object[] es = elementData;
+            sz--;
+            @SuppressWarnings("unchecked") E oldValue = (E) es[sz];
+            fastRemove(es, sz);
+            return oldValue;
+        }
     }
 
     /**
