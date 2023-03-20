@@ -2030,15 +2030,6 @@ void JavaThread::invoke_shutdown_hooks() {
     this->clear_pending_exception();
   }
 
-#if INCLUDE_CDS
-  // Link all classes for dynamic CDS dumping before vm exit.
-  // Same operation is being done in JVM_BeforeHalt for handling the
-  // case where the application calls System.exit().
-  if (DynamicArchive::should_dump_at_vm_exit()) {
-    DynamicArchive::prepare_for_dump_at_exit();
-  }
-#endif
-
   EXCEPTION_MARK;
   Klass* shutdown_klass =
     SystemDictionary::resolve_or_null(vmSymbols::java_lang_Shutdown(),

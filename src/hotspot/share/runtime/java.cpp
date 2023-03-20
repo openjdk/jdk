@@ -439,6 +439,15 @@ void before_exit(JavaThread* thread, bool halt) {
   }
 #endif
 
+#if INCLUDE_CDS
+  // Link all classes for dynamic CDS dumping whilst we can still reliably
+  // run Java code.
+  if (DynamicArchive::should_dump_at_vm_exit()) {
+    HandleMark hm(thread);
+    DynamicArchive::prepare_for_dump_at_exit();
+  }
+#endif
+
   // Actual shutdown logic begins here.
 
 #if INCLUDE_JVMCI
