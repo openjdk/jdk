@@ -193,7 +193,7 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public JdkConsole format(String fmt, Object ...args) {
+        public JdkConsole format(String fmt, Object ... args) {
             writer().format(fmt, args).flush();
             return this;
         }
