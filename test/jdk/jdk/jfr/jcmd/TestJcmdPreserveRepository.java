@@ -44,7 +44,6 @@ public class TestJcmdPreserveRepository {
      
     public static class TestProcess {
         public static void main(String... args) {
-            System.out.println(System.getProperty("test.jdk"));
             OutputAnalyzer output = JcmdHelper.jcmd("JFR.configure", "preserve-repository=true");
             System.exit(output.getExitValue());
         }
@@ -53,7 +52,6 @@ public class TestJcmdPreserveRepository {
     public static void main(String[] args) throws Throwable {
         Path path = Path.of("./preserved");
         String[] arguments = {
-            "-Xlog:jfr=info",
             "-XX:StartFlightRecording",
             "-XX:FlightRecorderOptions:repository=" + path,
             "-Dtest.jdk=" + System.getProperty("test.jdk"),
