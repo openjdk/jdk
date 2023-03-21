@@ -225,9 +225,10 @@ class oopDesc {
   void release_address_field_put(int offset, address contents);
 
   // printing functions for VM debugging
-  void print_on(outputStream* st) const;        // First level print
-  void print_value_on(outputStream* st) const;  // Second level print.
+  void print_on(outputStream* st) const;         // First level print
+  void print_value_on(outputStream* st) const;   // Second level print.
   void print_address_on(outputStream* st) const; // Address printing
+  void print_name_on(outputStream* st) const;    // External name printing.
 
   // printing on default output stream
   void print();

@@ -853,6 +853,7 @@ public:
     // klass oop manipulations if compressed
 
   void load_klass(Register dst_klass, Register src_oop, AsmCondition cond = al);
+  void load_klass_check_null(Register dst_klass, Register src_oop, Register tmp, AsmCondition cond = al);
 
   void store_klass(Register src_klass, Register dst_oop);
 

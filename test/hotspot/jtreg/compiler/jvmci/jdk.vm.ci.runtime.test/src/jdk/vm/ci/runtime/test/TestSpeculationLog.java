@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/**
+ * @test
+ * @requires vm.jvmci
+ * @library ../../../../../
+ * @modules java.base/jdk.internal.reflect
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          java.base/jdk.internal.misc
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestSpeculationLog
+ */
 package jdk.vm.ci.runtime.test;
 
 import java.util.ArrayList;
@@ -31,7 +44,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.meta.EncodedSpeculationReason;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.SpeculationLog;
@@ -127,5 +142,29 @@ public class TestSpeculationLog extends MethodUniverse {
         JavaConstant e1 = metaAccess.encodeSpeculation(s1);
         JavaConstant e2 = metaAccess.encodeSpeculation(s2);
         Assert.assertTrue("speculation encoding should maintain identity", e1.equals(e2));
+    }
+
+    @Test
+    public void testEncodedSpeculationReasonIncludesGroupName() {
+        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        CodeCacheProvider codeCache = JVMCI.getRuntime().getHostJVMCIBackend().getCodeCache();
+        SpeculationLog log = codeCache.createSpeculationLog();
+        Object[] context = {"context"};
+        SpeculationLog.SpeculationReason sr1 = new EncodedSpeculationReason(0, "group0", context);
+        SpeculationLog.SpeculationReason sr2 = new EncodedSpeculationReason(0, "group1", context);
+        SpeculationLog.Speculation s1 = log.speculate(sr1);
+        SpeculationLog.Speculation s2 = log.speculate(sr2);
+        JavaConstant es1 = metaAccess.encodeSpeculation(s1);
+        JavaConstant es2 = metaAccess.encodeSpeculation(s2);
+        if (es1.equals(es2)) {
+            Assert.fail(
+                String.format("EncodedSpeculationReasons with different groupName should produce unique encoded speculations:%n" +
+                "  Reason 1: %s%n" +
+                "  Reason 2: %s%n" +
+                "  Speculation 1: %s%n" +
+                "  Speculation 2: %s%n" +
+                "  Encoded speculation 1: %s%n" +
+                "  Encoded speculation 2: %s%n", sr1, sr2, s1, s2, es1, es2));
+        }
     }
 }

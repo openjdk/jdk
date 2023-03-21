@@ -403,6 +403,7 @@ public:
   JVMCIObject new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, JVMCI_TRAPS);
   JVMCIObject new_HotSpotStackFrameReference(JVMCI_TRAPS);
   JVMCIObject new_JVMCIError(JVMCI_TRAPS);
+  JVMCIObject new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS);
 
   // Makes a handle to a HotSpot heap object. These handles are
   // individually reclaimed by JVMCIRuntime::destroy_oop_handle and

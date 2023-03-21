@@ -27,7 +27,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
@@ -168,7 +167,10 @@ void Space::clear(bool mangle_space) {
   }
 }
 
-ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(nullptr) {
+ContiguousSpace::ContiguousSpace(): Space(),
+  _compaction_top(nullptr),
+  _next_compaction_space(nullptr),
+  _top(nullptr) {
   _mangler = new GenSpaceMangler(this);
 }
 
@@ -180,13 +182,16 @@ void ContiguousSpace::initialize(MemRegion mr,
                                  bool clear_space,
                                  bool mangle_space)
 {
-  CompactibleSpace::initialize(mr, clear_space, mangle_space);
+  Space::initialize(mr, clear_space, mangle_space);
+  set_compaction_top(bottom());
+  _next_compaction_space = nullptr;
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
   set_saved_mark();
-  CompactibleSpace::clear(mangle_space);
+  Space::clear(mangle_space);
+  _compaction_top = bottom();
 }
 
 bool ContiguousSpace::is_free_block(const HeapWord* p) const {
@@ -239,20 +244,8 @@ void ContiguousSpace::mangle_unused_area_complete() {
 }
 #endif  // NOT_PRODUCT
 
-void CompactibleSpace::initialize(MemRegion mr,
-                                  bool clear_space,
-                                  bool mangle_space) {
-  Space::initialize(mr, clear_space, mangle_space);
-  set_compaction_top(bottom());
-  _next_compaction_space = nullptr;
-}
 
-void CompactibleSpace::clear(bool mangle_space) {
-  Space::clear(mangle_space);
-  _compaction_top = bottom();
-}
-
-HeapWord* CompactibleSpace::forward(oop q, size_t size,
+HeapWord* ContiguousSpace::forward(oop q, size_t size,
                                     CompactPoint* cp, HeapWord* compact_top) {
   // q is alive
   // First check if we should switch compaction space
@@ -376,7 +369,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
   cp->space->set_compaction_top(compact_top);
 }
 
-void CompactibleSpace::adjust_pointers() {
+void ContiguousSpace::adjust_pointers() {
   // Check first is there is any work to do.
   if (used() == 0) {
     return;   // Nothing to do.
@@ -413,7 +406,7 @@ void CompactibleSpace::adjust_pointers() {
   assert(cur_obj == end_of_live, "just checking");
 }
 
-void CompactibleSpace::compact() {
+void ContiguousSpace::compact() {
   // Copy all live objects to their new location
   // Used by MarkSweep::mark_sweep_phase4()
 

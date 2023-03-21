@@ -631,7 +631,8 @@ public final class CPrinterJob extends RasterPrinterJob {
         } catch (Exception e) {
             return null;
         }
-        return page;
+
+        return FlipPageFormat.flipPage(page);
     }
 
     private Printable getPrintable(int pageIndex) {
@@ -731,7 +732,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                 Graphics2D pathGraphics = new CPrinterGraphics(delegate, printerJob); // Just stores delegate into an ivar
                 Rectangle2D pageFormatArea = getPageFormatArea(page);
                 initPrinterGraphics(pathGraphics, pageFormatArea);
-                painter.print(pathGraphics, page, pageIndex);
+                painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
                 delegate.dispose();
                 delegate = null;
         } catch (PrinterException pe) { throw new java.lang.reflect.UndeclaredThrowableException(pe); }
@@ -758,7 +759,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         Runnable r = new Runnable() { public void run() { synchronized(ret) {
             try {
                 Pageable pageable = getPageable();
-                PageFormat pageFormat = pageable.getPageFormat(pageIndex);
+                PageFormat pageFormat = getPageFormat(pageIndex);
                 if (pageFormat != null) {
                     Printable printable = pageable.getPrintable(pageIndex);
                     if (printable != null) {
@@ -870,5 +871,76 @@ public final class CPrinterJob extends RasterPrinterJob {
                 (float) (paper.getImageableWidth() / dpi),
                 (float) (paper.getImageableHeight() / dpi),
                 MediaPrintableArea.INCH);
+    }
+
+    // MacOS NSPrintInfo class has one to one correspondence
+    // between a paper size and its orientation.
+    // NSPrintInfo with paper width less than height
+    // has portrait orientation.
+    // NSPrintInfo with paper width greater than height
+    // has landscape orientation.
+    // (w < h) <-> portrait
+    // (w > h) <-> landscape
+    //
+    // Java PageFormat class has the following relation with NSPrintInfo:
+    // 1. PageFormat:
+    //      page size: width < height
+    //      orientation: portrait
+    //    NSPrintInfo: width < height (portrait orientation)
+    // 2. PageFormat:
+    //      page size: width < height
+    //      orientation: landscape
+    //    NSPrintInfo: width > height (landscape orientation)
+    //
+    // FlipPageFormat class establishes correspondence between
+    // Java PageFormat class which page width is greater than height
+    // with NSPrintInfo in the following way:
+    // 3. PageFormat:
+    //      page size: width > height
+    //      orientation: portrait
+    //    FlipPageFormat
+    //      page size: width < height
+    //      orientation: landscape
+    //    NSPrintInfo: width > height (landscape orientation)
+    // 4. PageFormat:
+    //      page size: width > height
+    //      orientation: landscape
+    //    FlipPageFormat
+    //      page size: width < height
+    //      orientation: portrait
+    //    NSPrintInfo: width < height (portrait orientation)
+    //
+    // FlipPageFormat preserves the original PageFormat class
+    // to pass it to Printable.print(Graphics, PageFormat, int)
+    // method overridden by a user.
+    private static class FlipPageFormat extends PageFormat {
+
+        private final PageFormat original;
+
+        private FlipPageFormat(PageFormat original) {
+            this.original = original;
+            Paper paper = original.getPaper();
+            Paper copyPaper = this.getPaper();
+            copyPaper.setSize(paper.getHeight(), paper.getWidth());
+            copyPaper.setImageableArea(
+                    paper.getImageableY(), paper.getImageableX(),
+                    paper.getImageableHeight(), paper.getImageableWidth());
+            this.setPaper(copyPaper);
+            this.setOrientation((original.getOrientation() == PageFormat.PORTRAIT)
+                    ? PageFormat.LANDSCAPE
+                    : PageFormat.PORTRAIT);
+        }
+
+        private static PageFormat getOriginal(PageFormat page) {
+            return (page instanceof FlipPageFormat) ? ((FlipPageFormat) page).original : page;
+        }
+
+        private static PageFormat flipPage(PageFormat page) {
+            if (page == null) {
+                return null;
+            }
+            Paper paper = page.getPaper();
+            return (paper.getWidth() > paper.getHeight()) ? new FlipPageFormat(page) : page;
+        }
     }
 }

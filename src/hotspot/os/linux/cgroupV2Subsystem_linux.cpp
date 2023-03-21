@@ -152,6 +152,12 @@ char* CgroupV2Subsystem::mem_soft_limit_val() {
 // without also setting a memory limit is not allowed.
 jlong CgroupV2Subsystem::memory_and_swap_limit_in_bytes() {
   char* mem_swp_limit_str = mem_swp_limit_val();
+  if (mem_swp_limit_str == nullptr) {
+    // Some container tests rely on this trace logging to happen.
+    log_trace(os, container)("Memory and Swap Limit is: %d", OSCONTAINER_ERROR);
+    // swap disabled at kernel level, treat it as no swap
+    return read_memory_limit_in_bytes();
+  }
   jlong swap_limit = limit_from_str(mem_swp_limit_str);
   if (swap_limit >= 0) {
     jlong memory_limit = read_memory_limit_in_bytes();

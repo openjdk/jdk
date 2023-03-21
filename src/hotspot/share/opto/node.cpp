@@ -67,7 +67,7 @@ extern int nodes_created;
 //-------------------------- construct_node------------------------------------
 // Set a breakpoint here to identify where a particular node index is built.
 void Node::verify_construction() {
-  _debug_orig = NULL;
+  _debug_orig = nullptr;
   int old_debug_idx = Compile::debug_idx();
   int new_debug_idx = old_debug_idx + 1;
   if (new_debug_idx > 0) {
@@ -95,7 +95,7 @@ void Node::verify_construction() {
     BREAKPOINT;
   }
 #if OPTO_DU_ITERATOR_ASSERT
-  _last_del = NULL;
+  _last_del = nullptr;
   _del_tick = 0;
 #endif
   _hash_lock = 0;
@@ -110,7 +110,7 @@ void DUIterator_Common::sample(const Node* node) {
   _node     = node;
   _outcnt   = node->_outcnt;
   _del_tick = node->_del_tick;
-  _last     = NULL;
+  _last     = nullptr;
 }
 
 void DUIterator_Common::verify(const Node* node, bool at_end_ok) {
@@ -291,7 +291,7 @@ void DUIterator_Last::verify_step(uint num_edges) {
 
 
 // This constant used to initialize _out may be any non-null value.
-// The value NULL is reserved for the top node only.
+// The value null is reserved for the top node only.
 #define NO_OUT_ARRAY ((Node**)-1)
 
 // Out-of-line code from node constructors.
@@ -313,7 +313,7 @@ inline int Node::Init(int req) {
   }
   // If there are default notes floating around, capture them:
   Node_Notes* nn = C->default_node_notes();
-  if (nn != NULL)  init_node_notes(C, idx, nn);
+  if (nn != nullptr)  init_node_notes(C, idx, nn);
 
   // Note:  At this point, C is dead,
   // and we begin to initialize the new Node.
@@ -338,11 +338,11 @@ Node::Node(uint req)
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   if (req == 0) {
-    _in = NULL;
+    _in = nullptr;
   } else {
     Node** to = _in;
     for(uint i = 0; i < req; i++) {
-      to[i] = NULL;
+      to[i] = nullptr;
     }
   }
 }
@@ -357,7 +357,7 @@ Node::Node(Node *n0)
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
-  _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
+  _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
 }
 
 //------------------------------Node-------------------------------------------
@@ -371,8 +371,8 @@ Node::Node(Node *n0, Node *n1)
   NOT_PRODUCT(nodes_created++);
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
-  _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
-  _in[1] = n1; if (n1 != NULL) n1->add_out((Node *)this);
+  _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
+  _in[1] = n1; if (n1 != nullptr) n1->add_out((Node *)this);
 }
 
 //------------------------------Node-------------------------------------------
@@ -387,9 +387,9 @@ Node::Node(Node *n0, Node *n1, Node *n2)
   assert( is_not_dead(n0), "can not use dead node");
   assert( is_not_dead(n1), "can not use dead node");
   assert( is_not_dead(n2), "can not use dead node");
-  _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
-  _in[1] = n1; if (n1 != NULL) n1->add_out((Node *)this);
-  _in[2] = n2; if (n2 != NULL) n2->add_out((Node *)this);
+  _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
+  _in[1] = n1; if (n1 != nullptr) n1->add_out((Node *)this);
+  _in[2] = n2; if (n2 != nullptr) n2->add_out((Node *)this);
 }
 
 //------------------------------Node-------------------------------------------
@@ -405,10 +405,10 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
   assert( is_not_dead(n1), "can not use dead node");
   assert( is_not_dead(n2), "can not use dead node");
   assert( is_not_dead(n3), "can not use dead node");
-  _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
-  _in[1] = n1; if (n1 != NULL) n1->add_out((Node *)this);
-  _in[2] = n2; if (n2 != NULL) n2->add_out((Node *)this);
-  _in[3] = n3; if (n3 != NULL) n3->add_out((Node *)this);
+  _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
+  _in[1] = n1; if (n1 != nullptr) n1->add_out((Node *)this);
+  _in[2] = n2; if (n2 != nullptr) n2->add_out((Node *)this);
+  _in[3] = n3; if (n3 != nullptr) n3->add_out((Node *)this);
 }
 
 //------------------------------Node-------------------------------------------
@@ -425,11 +425,11 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
   assert( is_not_dead(n2), "can not use dead node");
   assert( is_not_dead(n3), "can not use dead node");
   assert( is_not_dead(n4), "can not use dead node");
-  _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
-  _in[1] = n1; if (n1 != NULL) n1->add_out((Node *)this);
-  _in[2] = n2; if (n2 != NULL) n2->add_out((Node *)this);
-  _in[3] = n3; if (n3 != NULL) n3->add_out((Node *)this);
-  _in[4] = n4; if (n4 != NULL) n4->add_out((Node *)this);
+  _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
+  _in[1] = n1; if (n1 != nullptr) n1->add_out((Node *)this);
+  _in[2] = n2; if (n2 != nullptr) n2->add_out((Node *)this);
+  _in[3] = n3; if (n3 != nullptr) n3->add_out((Node *)this);
+  _in[4] = n4; if (n4 != nullptr) n4->add_out((Node *)this);
 }
 
 //------------------------------Node-------------------------------------------
@@ -448,12 +448,12 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   assert( is_not_dead(n3), "can not use dead node");
   assert( is_not_dead(n4), "can not use dead node");
   assert( is_not_dead(n5), "can not use dead node");
-  _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
-  _in[1] = n1; if (n1 != NULL) n1->add_out((Node *)this);
-  _in[2] = n2; if (n2 != NULL) n2->add_out((Node *)this);
-  _in[3] = n3; if (n3 != NULL) n3->add_out((Node *)this);
-  _in[4] = n4; if (n4 != NULL) n4->add_out((Node *)this);
-  _in[5] = n5; if (n5 != NULL) n5->add_out((Node *)this);
+  _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
+  _in[1] = n1; if (n1 != nullptr) n1->add_out((Node *)this);
+  _in[2] = n2; if (n2 != nullptr) n2->add_out((Node *)this);
+  _in[3] = n3; if (n3 != nullptr) n3->add_out((Node *)this);
+  _in[4] = n4; if (n4 != nullptr) n4->add_out((Node *)this);
+  _in[5] = n5; if (n5 != nullptr) n5->add_out((Node *)this);
 }
 
 //------------------------------Node-------------------------------------------
@@ -473,13 +473,13 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   assert( is_not_dead(n4), "can not use dead node");
   assert( is_not_dead(n5), "can not use dead node");
   assert( is_not_dead(n6), "can not use dead node");
-  _in[0] = n0; if (n0 != NULL) n0->add_out((Node *)this);
-  _in[1] = n1; if (n1 != NULL) n1->add_out((Node *)this);
-  _in[2] = n2; if (n2 != NULL) n2->add_out((Node *)this);
-  _in[3] = n3; if (n3 != NULL) n3->add_out((Node *)this);
-  _in[4] = n4; if (n4 != NULL) n4->add_out((Node *)this);
-  _in[5] = n5; if (n5 != NULL) n5->add_out((Node *)this);
-  _in[6] = n6; if (n6 != NULL) n6->add_out((Node *)this);
+  _in[0] = n0; if (n0 != nullptr) n0->add_out((Node *)this);
+  _in[1] = n1; if (n1 != nullptr) n1->add_out((Node *)this);
+  _in[2] = n2; if (n2 != nullptr) n2->add_out((Node *)this);
+  _in[3] = n3; if (n3 != nullptr) n3->add_out((Node *)this);
+  _in[4] = n4; if (n4 != nullptr) n4->add_out((Node *)this);
+  _in[5] = n5; if (n5 != nullptr) n5->add_out((Node *)this);
+  _in[6] = n6; if (n6 != nullptr) n6->add_out((Node *)this);
 }
 
 #ifdef __clang__
@@ -508,7 +508,7 @@ Node *Node::clone() const {
   for( i = 0; i < len(); i++ ) {
     Node *x = in(i);
     n->_in[i] = x;
-    if (x != NULL) x->add_out(n);
+    if (x != nullptr) x->add_out(n);
   }
   if (is_macro()) {
     C->add_macro_node(n);
@@ -557,7 +557,7 @@ Node *Node::clone() const {
   if (n->is_Call()) {
     // CallGenerator is linked to the original node.
     CallGenerator* cg = n->as_Call()->generator();
-    if (cg != NULL) {
+    if (cg != nullptr) {
       CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
       n->as_Call()->set_generator(cloned_cg);
 
@@ -583,10 +583,10 @@ void Node::setup_is_top() {
   if (this == (Node*)Compile::current()->top()) {
     // This node has just become top.  Kill its out array.
     _outcnt = _outmax = 0;
-    _out = NULL;                           // marker value for top
+    _out = nullptr;                           // marker value for top
     assert(is_top(), "must be top");
   } else {
-    if (_out == NULL)  _out = NO_OUT_ARRAY;
+    if (_out == nullptr)  _out = NO_OUT_ARRAY;
     assert(!is_top(), "must not be top");
   }
 }
@@ -594,8 +594,8 @@ void Node::setup_is_top() {
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
 void Node::destruct(PhaseValues* phase) {
-  Compile* compile = (phase != NULL) ? phase->C : Compile::current();
-  if (phase != NULL && phase->is_IterGVN()) {
+  Compile* compile = (phase != nullptr) ? phase->C : Compile::current();
+  if (phase != nullptr && phase->is_IterGVN()) {
     phase->is_IterGVN()->_worklist.remove(this);
   }
   // If this is the most recently created node, reclaim its index. Otherwise,
@@ -607,12 +607,12 @@ void Node::destruct(PhaseValues* phase) {
   }
   // Clear debug info:
   Node_Notes* nn = compile->node_notes_at(_idx);
-  if (nn != NULL)  nn->clear();
+  if (nn != nullptr)  nn->clear();
   // Walk the input array, freeing the corresponding output edges
   _cnt = _max;  // forget req/prec distinction
   uint i;
   for( i = 0; i < _max; i++ ) {
-    set_req(i, NULL);
+    set_req(i, nullptr);
     //assert(def->out(def->outcnt()-1) == (Node *)this,"bad def-use hacking in reclaim");
   }
   assert(outcnt() == 0, "deleting a node must not leave a dangling use");
@@ -645,7 +645,7 @@ void Node::destruct(PhaseValues* phase) {
   int out_edge_size = _outmax*sizeof(void*);
   char *in_array = ((char*)_in);
   char *edge_end = in_array + edge_size;
-  char *out_array = (char*)(_out == NO_OUT_ARRAY? NULL: _out);
+  char *out_array = (char*)(_out == NO_OUT_ARRAY? nullptr: _out);
   int node_size = size_of();
 
 #ifdef ASSERT
@@ -687,10 +687,10 @@ void Node::grow(uint len) {
     _max = 4;
     _in = (Node**)arena->Amalloc(4*sizeof(Node*));
     Node** to = _in;
-    to[0] = NULL;
-    to[1] = NULL;
-    to[2] = NULL;
-    to[3] = NULL;
+    to[0] = nullptr;
+    to[1] = nullptr;
+    to[2] = nullptr;
+    to[3] = nullptr;
     return;
   }
   new_max = next_power_of_2(len);
@@ -698,7 +698,7 @@ void Node::grow(uint len) {
   // Previously I was using only powers-of-2 which peaked at 128 edges.
   //if( new_max >= limit ) new_max = limit-1;
   _in = (Node**)arena->Arealloc(_in, _max*sizeof(Node*), new_max*sizeof(Node*));
-  Copy::zero_to_bytes(&_in[_max], (new_max-_max)*sizeof(Node*)); // NULL all new space
+  Copy::zero_to_bytes(&_in[_max], (new_max-_max)*sizeof(Node*)); // null all new space
   _max = new_max;               // Record new max length
   // This assertion makes sure that Node::_max is wide enough to
   // represent the numerical value of new_max.
@@ -720,9 +720,9 @@ void Node::out_grow( uint len ) {
   // Trimming to limit allows a uint8 to handle up to 255 edges.
   // Previously I was using only powers-of-2 which peaked at 128 edges.
   //if( new_max >= limit ) new_max = limit-1;
-  assert(_out != NULL && _out != NO_OUT_ARRAY, "out must have sensible value");
+  assert(_out != nullptr && _out != NO_OUT_ARRAY, "out must have sensible value");
   _out = (Node**)arena->Arealloc(_out,_outmax*sizeof(Node*),new_max*sizeof(Node*));
-  //Copy::zero_to_bytes(&_out[_outmax], (new_max-_outmax)*sizeof(Node*)); // NULL all new space
+  //Copy::zero_to_bytes(&_out[_outmax], (new_max-_outmax)*sizeof(Node*)); // null all new space
   _outmax = new_max;               // Record new max length
   // This assertion makes sure that Node::_max is wide enough to
   // represent the numerical value of new_max.
@@ -736,7 +736,7 @@ bool Node::is_dead() const {
   if( is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) )
     return false;
   for( uint i = 0; i < _max; i++ )
-    if( _in[i] != NULL )
+    if( _in[i] != nullptr )
       return false;
   return true;
 }
@@ -767,7 +767,7 @@ bool Node::is_reachable_from_root() const {
 //------------------------------is_unreachable---------------------------------
 bool Node::is_unreachable(PhaseIterGVN &igvn) const {
   assert(!is_Mach(), "doesn't work with MachNodes");
-  return outcnt() == 0 || igvn.type(this) == Type::TOP || (in(0) != NULL && in(0)->is_top());
+  return outcnt() == 0 || igvn.type(this) == Type::TOP || (in(0) != nullptr && in(0)->is_top());
 }
 
 //------------------------------add_req----------------------------------------
@@ -776,19 +776,19 @@ void Node::add_req( Node *n ) {
   assert( is_not_dead(n), "can not use dead node");
 
   // Look to see if I can move precedence down one without reallocating
-  if( (_cnt >= _max) || (in(_max-1) != NULL) )
+  if( (_cnt >= _max) || (in(_max-1) != nullptr) )
     grow( _max+1 );
 
   // Find a precedence edge to move
-  if( in(_cnt) != NULL ) {       // Next precedence edge is busy?
+  if( in(_cnt) != nullptr ) {   // Next precedence edge is busy?
     uint i;
     for( i=_cnt; i<_max; i++ )
-      if( in(i) == NULL )       // Find the NULL at end of prec edge list
+      if( in(i) == nullptr )    // Find the null at end of prec edge list
         break;                  // There must be one, since we grew the array
     _in[i] = in(_cnt);          // Move prec over, making space for req edge
   }
   _in[_cnt++] = n;            // Stuff over old prec edge
-  if (n != NULL) n->add_out((Node *)this);
+  if (n != nullptr) n->add_out((Node *)this);
   Compile::current()->record_modified_node(this);
 }
 
@@ -808,10 +808,10 @@ void Node::add_req_batch( Node *n, uint m ) {
     grow( _max+m );
 
   // Find a precedence edge to move
-  if( _in[_cnt] != NULL ) {     // Next precedence edge is busy?
+  if( _in[_cnt] != nullptr ) {  // Next precedence edge is busy?
     uint i;
     for( i=_cnt; i<_max; i++ )
-      if( _in[i] == NULL )      // Find the NULL at end of prec edge list
+      if( _in[i] == nullptr )   // Find the null at end of prec edge list
         break;                  // There must be one, since we grew the array
     // Slide all the precs over by m positions (assume #prec << m).
     Copy::conjoint_words_to_higher((HeapWord*)&_in[_cnt], (HeapWord*)&_in[_cnt+m], ((i-_cnt)*sizeof(Node*)));
@@ -823,7 +823,7 @@ void Node::add_req_batch( Node *n, uint m ) {
   }
 
   // Insert multiple out edges on the node.
-  if (n != NULL && !n->is_top()) {
+  if (n != nullptr && !n->is_top()) {
     for(uint i=0; i<m; i++ ) {
       n->add_out((Node *)this);
     }
@@ -839,7 +839,7 @@ void Node::del_req( uint idx ) {
           "remove node from hash table before modifying it");
   // First remove corresponding def-use edge
   Node *n = in(idx);
-  if (n != NULL) n->del_out((Node *)this);
+  if (n != nullptr) n->del_out((Node *)this);
   _in[idx] = in(--_cnt); // Compact the array
   // Avoid spec violation: Gap in prec edges.
   close_prec_gap_at(_cnt);
@@ -854,7 +854,7 @@ void Node::del_req_ordered( uint idx ) {
           "remove node from hash table before modifying it");
   // First remove corresponding def-use edge
   Node *n = in(idx);
-  if (n != NULL) n->del_out((Node *)this);
+  if (n != nullptr) n->del_out((Node *)this);
   if (idx < --_cnt) {    // Not last edge ?
     Copy::conjoint_words_to_lower((HeapWord*)&_in[idx+1], (HeapWord*)&_in[idx], ((_cnt-idx)*sizeof(Node*)));
   }
@@ -867,14 +867,14 @@ void Node::del_req_ordered( uint idx ) {
 // Insert a new required input at the end
 void Node::ins_req( uint idx, Node *n ) {
   assert( is_not_dead(n), "can not use dead node");
-  add_req(NULL);                // Make space
+  add_req(nullptr);                // Make space
   assert( idx < _max, "Must have allocated enough space");
   // Slide over
   if(_cnt-idx-1 > 0) {
     Copy::conjoint_words_to_higher((HeapWord*)&_in[idx], (HeapWord*)&_in[idx+1], ((_cnt-idx-1)*sizeof(Node*)));
   }
   _in[idx] = n;                            // Stuff over old required edge
-  if (n != NULL) n->add_out((Node *)this); // Add reciprocal def-use edge
+  if (n != nullptr) n->add_out((Node *)this); // Add reciprocal def-use edge
   Compile::current()->record_modified_node(this);
 }
 
@@ -893,13 +893,13 @@ int Node::replace_edge(Node* old, Node* neww, PhaseGVN* gvn) {
   for (uint i = 0; i < len(); i++) {
     if (in(i) == old) {
       if (i < req()) {
-        if (gvn != NULL) {
+        if (gvn != nullptr) {
           set_req_X(i, neww, gvn);
         } else {
           set_req(i, neww);
         }
       } else {
-        assert(gvn == NULL || gvn->is_IterGVN() == NULL, "no support for igvn here");
+        assert(gvn == nullptr || gvn->is_IterGVN() == nullptr, "no support for igvn here");
         assert(find_prec_edge(neww) == -1, "spec violation: duplicated prec edge (node %d -> %d)", _idx, neww->_idx);
         set_prec(i, neww);
       }
@@ -925,7 +925,7 @@ int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end, Phas
 }
 
 //-------------------------disconnect_inputs-----------------------------------
-// NULL out all inputs to eliminate incoming Def-Use edges.
+// null out all inputs to eliminate incoming Def-Use edges.
 void Node::disconnect_inputs(Compile* C) {
   // the layout of Node::_in
   // r: a required input, null is allowed
@@ -944,7 +944,7 @@ void Node::disconnect_inputs(Compile* C) {
   // Remove precedence edges if any exist
   // Note: Safepoints may have precedence edges, even during parsing
   for (uint i = len(); i > req(); ) {
-    rm_prec(--i);  // no-op if _in[i] is nullptr
+    rm_prec(--i);  // no-op if _in[i] is null
   }
 
 #ifdef ASSERT
@@ -981,12 +981,12 @@ Node* Node::find_out_with(int opcode) {
       return use;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 // Return true if the current node has an out that matches opcode.
 bool Node::has_out_with(int opcode) {
-  return (find_out_with(opcode) != NULL);
+  return (find_out_with(opcode) != nullptr);
 }
 
 // Return true if the current node has an out that matches any of the opcodes.
@@ -1017,7 +1017,7 @@ Node* Node::uncast_helper(const Node* p, bool keep_deps) {
     }
     assert(depth_count++ < K, "infinite loop in Node::uncast_helper");
 #endif
-    if (p == NULL || p->req() != 2) {
+    if (p == nullptr || p->req() != 2) {
       break;
     } else if (p->is_ConstraintCast()) {
       if (keep_deps && p->as_ConstraintCast()->carry_dependency()) {
@@ -1033,36 +1033,36 @@ Node* Node::uncast_helper(const Node* p, bool keep_deps) {
 
 //------------------------------add_prec---------------------------------------
 // Add a new precedence input.  Precedence inputs are unordered, with
-// duplicates removed and NULLs packed down at the end.
+// duplicates removed and nulls packed down at the end.
 void Node::add_prec( Node *n ) {
   assert( is_not_dead(n), "can not use dead node");
 
-  // Check for NULL at end
+  // Check for null at end
   if( _cnt >= _max || in(_max-1) )
     grow( _max+1 );
 
   // Find a precedence edge to move
   uint i = _cnt;
-  while( in(i) != NULL ) {
+  while( in(i) != nullptr ) {
     if (in(i) == n) return; // Avoid spec violation: duplicated prec edge.
     i++;
   }
-  _in[i] = n;                                // Stuff prec edge over NULL
-  if ( n != NULL) n->add_out((Node *)this);  // Add mirror edge
+  _in[i] = n;                                   // Stuff prec edge over null
+  if ( n != nullptr) n->add_out((Node *)this);  // Add mirror edge
 
 #ifdef ASSERT
-  while ((++i)<_max) { assert(_in[i] == NULL, "spec violation: Gap in prec edges (node %d)", _idx); }
+  while ((++i)<_max) { assert(_in[i] == nullptr, "spec violation: Gap in prec edges (node %d)", _idx); }
 #endif
   Compile::current()->record_modified_node(this);
 }
 
 //------------------------------rm_prec----------------------------------------
 // Remove a precedence input.  Precedence inputs are unordered, with
-// duplicates removed and NULLs packed down at the end.
+// duplicates removed and nulls packed down at the end.
 void Node::rm_prec( uint j ) {
   assert(j < _max, "oob: i=%d, _max=%d", j, _max);
   assert(j >= _cnt, "not a precedence edge");
-  if (_in[j] == NULL) return;   // Avoid spec violation: Gap in prec edges.
+  if (_in[j] == nullptr) return;   // Avoid spec violation: Gap in prec edges.
   _in[j]->del_out((Node *)this);
   close_prec_gap_at(j);
   Compile::current()->record_modified_node(this);
@@ -1075,12 +1075,12 @@ uint Node::size_of() const { return sizeof(*this); }
 uint Node::ideal_reg() const { return 0; }
 
 //------------------------------jvms-------------------------------------------
-JVMState* Node::jvms() const { return NULL; }
+JVMState* Node::jvms() const { return nullptr; }
 
 #ifdef ASSERT
 //------------------------------jvms-------------------------------------------
 bool Node::verify_jvms(const JVMState* using_jvms) const {
-  for (JVMState* jvms = this->jvms(); jvms != NULL; jvms = jvms->caller()) {
+  for (JVMState* jvms = this->jvms(); jvms != nullptr; jvms = jvms->caller()) {
     if (jvms == using_jvms)  return true;
   }
   return false;
@@ -1160,13 +1160,13 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // pointer.  If ANY change is made, it must return the root of the reshaped
 // graph - even if the root is the same Node.  Example: swapping the inputs
 // to an AddINode gives the same answer and same root, but you still have to
-// return the 'this' pointer instead of NULL.
+// return the 'this' pointer instead of null.
 //
 // You cannot return an OLD Node, except for the 'this' pointer.  Use the
 // Identity call to return an old Node; basically if Identity can find
-// another Node have the Ideal call make no change and return NULL.
+// another Node have the Ideal call make no change and return null.
 // Example: AddINode::Ideal must check for add of zero; in this case it
-// returns NULL instead of doing any graph reshaping.
+// returns null instead of doing any graph reshaping.
 //
 // You cannot modify any old Nodes except for the 'this' pointer.  Due to
 // sharing there may be other users of the old Nodes relying on their current
@@ -1201,7 +1201,7 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // the same Opcode as the 'this' pointer use 'clone'.
 //
 Node *Node::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return NULL;                  // Default to being Ideal already
+  return nullptr;                  // Default to being Ideal already
 }
 
 // Some nodes have specific Ideal subgraph transformations only if they are
@@ -1237,17 +1237,17 @@ bool Node::has_special_unique_user() const {
 //--------------------------find_exact_control---------------------------------
 // Skip Proj and CatchProj nodes chains. Check for Null and Top.
 Node* Node::find_exact_control(Node* ctrl) {
-  if (ctrl == NULL && this->is_Region())
+  if (ctrl == nullptr && this->is_Region())
     ctrl = this->as_Region()->is_copy();
 
-  if (ctrl != NULL && ctrl->is_CatchProj()) {
+  if (ctrl != nullptr && ctrl->is_CatchProj()) {
     if (ctrl->as_CatchProj()->_con == CatchProjNode::fall_through_index)
       ctrl = ctrl->in(0);
-    if (ctrl != NULL && !ctrl->is_top())
+    if (ctrl != nullptr && !ctrl->is_top())
       ctrl = ctrl->in(0);
   }
 
-  if (ctrl != NULL && ctrl->is_Proj())
+  if (ctrl != nullptr && ctrl->is_Proj())
     ctrl = ctrl->in(0);
 
   return ctrl;
@@ -1261,7 +1261,7 @@ Node* Node::find_exact_control(Node* ctrl) {
 // not an exhaustive search for a counterexample.
 bool Node::dominates(Node* sub, Node_List &nlist) {
   assert(this->is_CFG(), "expecting control");
-  assert(sub != NULL && sub->is_CFG(), "expecting control");
+  assert(sub != nullptr && sub->is_CFG(), "expecting control");
 
   // detect dead cycle without regions
   int iterations_without_region_limit = DominatorSearchLimit;
@@ -1278,7 +1278,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   // same region again, go through a different input.  Eventually we
   // will either exit through the loop head, or give up.
   // (If we get confused, break out and return a conservative 'false'.)
-  while (sub != NULL) {
+  while (sub != nullptr) {
     if (sub->is_top())  break; // Conservative answer for dead code.
     if (sub == dom) {
       if (nlist.size() == 0) {
@@ -1345,7 +1345,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
       uint skip = region_was_visited_before ? 1 : 0;
       for (uint i = 1; i < sub->req(); i++) {
         Node* in = sub->in(i);
-        if (in != NULL && !in->is_top() && in != sub) {
+        if (in != nullptr && !in->is_top() && in != sub) {
           if (skip == 0) {
             up = in;
             break;
@@ -1426,7 +1426,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             Node* in = use->in(j);
             if (in == dead) {         // Turn all dead inputs into TOP
               use->set_req(j, top);
-            } else if (in != NULL && !in->is_top()) {
+            } else if (in != nullptr && !in->is_top()) {
               dead_use = false;
             }
           }
@@ -1450,7 +1450,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       // Kill all inputs to the dead guy
       for (uint i=0; i < dead->req(); i++) {
         Node *n = dead->in(i);      // Get input to dead guy
-        if (n != NULL && !n->is_top()) { // Input is valid?
+        if (n != nullptr && !n->is_top()) { // Input is valid?
           dead->set_req(i, top);    // Smash input away
           if (n->outcnt() == 0) {   // Input also goes dead?
             if (!n->is_Con())
@@ -1499,7 +1499,7 @@ bool Node::remove_dead_region(PhaseGVN *phase, bool can_reshape) {
 uint Node::hash() const {
   uint sum = 0;
   for( uint i=0; i<_cnt; i++ )  // Add in all inputs
-    sum = (sum<<1)-(uintptr_t)in(i);        // Ignore embedded NULLs
+    sum = (sum<<1)-(uintptr_t)in(i);        // Ignore embedded nulls
   return (sum>>2) + _cnt + Opcode();
 }
 
@@ -1536,7 +1536,7 @@ const TypeInt* Node::find_int_type() const {
     assert(is_Mach(), "should be ConNode(TypeNode) or else a MachNode");
     return this->bottom_type()->isa_int();
   }
-  return NULL;
+  return nullptr;
 }
 
 const TypeInteger* Node::find_integer_type(BasicType bt) const {
@@ -1546,7 +1546,7 @@ const TypeInteger* Node::find_integer_type(BasicType bt) const {
     assert(is_Mach(), "should be ConNode(TypeNode) or else a MachNode");
     return this->bottom_type()->isa_integer(bt);
   }
-  return NULL;
+  return nullptr;
 }
 
 // Get a pointer constant from a ConstNode.
@@ -1571,7 +1571,7 @@ const TypeLong* Node::find_long_type() const {
     assert(is_Mach(), "should be ConNode(TypeNode) or else a MachNode");
     return this->bottom_type()->isa_long();
   }
-  return NULL;
+  return nullptr;
 }
 
 
@@ -1581,9 +1581,9 @@ const TypeLong* Node::find_long_type() const {
 const TypePtr* Node::get_ptr_type() const {
   const TypePtr* tp = this->bottom_type()->make_ptr();
 #ifdef ASSERT
-  if (tp == NULL) {
+  if (tp == nullptr) {
     this->dump(1);
-    assert((tp != NULL), "unexpected node type");
+    assert((tp != nullptr), "unexpected node type");
   }
 #endif
   return tp;
@@ -1766,8 +1766,8 @@ Node* Node::find_ctrl(int idx) {
 
 //------------------------------find-------------------------------------------
 // Tries to find the node with the index |idx| starting from this node. If idx is negative,
-// the search also includes forward (out) edges. Returns NULL if not found.
-// If only_ctrl is set, the search will only be done on control nodes. Returns NULL if
+// the search also includes forward (out) edges. Returns null if not found.
+// If only_ctrl is set, the search will only be done on control nodes. Returns null if
 // not found or if the node to be found is not a control node (search will not find it).
 Node* Node::find(const int idx, bool only_ctrl) {
   ResourceMark rm;
@@ -2070,10 +2070,10 @@ void PrintBFS::print_options_help(bool print_examples) {
   tty->print("Arguments:\n");
   tty->print("  this/start: staring point of BFS\n");
   tty->print("  target:\n");
-  tty->print("    if nullptr: simple BFS\n");
+  tty->print("    if null: simple BFS\n");
   tty->print("    else: shortest path or all paths between this/start and target\n");
   tty->print("  options:\n");
-  tty->print("    if nullptr: same as \"cdmox@B\"\n");
+  tty->print("    if null: same as \"cdmox@B\"\n");
   tty->print("    else: use combination of following characters\n");
   tty->print("      h: display this help info\n");
   tty->print("      H: display this help info, with examples\n");
@@ -2447,7 +2447,7 @@ const char *Node::Name() const { return NodeClassNames[Opcode()]; }
 
 static bool is_disconnected(const Node* n) {
   for (uint i = 0; i < n->req(); i++) {
-    if (n->in(i) != NULL)  return false;
+    if (n->in(i) != nullptr)  return false;
   }
   return true;
 }
@@ -2456,15 +2456,15 @@ static bool is_disconnected(const Node* n) {
 void Node::dump_orig(outputStream *st, bool print_key) const {
   Compile* C = Compile::current();
   Node* orig = _debug_orig;
-  if (not_a_node(orig)) orig = NULL;
-  if (orig != NULL && !C->node_arena()->contains(orig)) orig = NULL;
-  if (orig == NULL) return;
+  if (not_a_node(orig)) orig = nullptr;
+  if (orig != nullptr && !C->node_arena()->contains(orig)) orig = nullptr;
+  if (orig == nullptr) return;
   if (print_key) {
     st->print(" !orig=");
   }
   Node* fast = orig->debug_orig(); // tortoise & hare algorithm to detect loops
-  if (not_a_node(fast)) fast = NULL;
-  while (orig != NULL) {
+  if (not_a_node(fast)) fast = nullptr;
+  while (orig != nullptr) {
     bool discon = is_disconnected(orig);  // if discon, print [123] else 123
     if (discon) st->print("[");
     if (!Compile::current()->node_arena()->contains(orig))
@@ -2472,16 +2472,16 @@ void Node::dump_orig(outputStream *st, bool print_key) const {
     st->print("%d", orig->_idx);
     if (discon) st->print("]");
     orig = orig->debug_orig();
-    if (not_a_node(orig)) orig = NULL;
-    if (orig != NULL && !C->node_arena()->contains(orig)) orig = NULL;
-    if (orig != NULL) st->print(",");
-    if (fast != NULL) {
+    if (not_a_node(orig)) orig = nullptr;
+    if (orig != nullptr && !C->node_arena()->contains(orig)) orig = nullptr;
+    if (orig != nullptr) st->print(",");
+    if (fast != nullptr) {
       // Step fast twice for each single step of orig:
       fast = fast->debug_orig();
-      if (not_a_node(fast)) fast = NULL;
-      if (fast != NULL && fast != orig) {
+      if (not_a_node(fast)) fast = nullptr;
+      if (fast != nullptr && fast != orig) {
         fast = fast->debug_orig();
-        if (not_a_node(fast)) fast = NULL;
+        if (not_a_node(fast)) fast = nullptr;
       }
       if (fast == orig) {
         st->print("...");
@@ -2494,16 +2494,16 @@ void Node::dump_orig(outputStream *st, bool print_key) const {
 void Node::set_debug_orig(Node* orig) {
   _debug_orig = orig;
   if (BreakAtNode == 0)  return;
-  if (not_a_node(orig))  orig = NULL;
+  if (not_a_node(orig))  orig = nullptr;
   int trip = 10;
-  while (orig != NULL) {
+  while (orig != nullptr) {
     if (orig->debug_idx() == BreakAtNode || (int)orig->_idx == BreakAtNode) {
       tty->print_cr("BreakAtNode: _idx=%d _debug_idx=%d orig._idx=%d orig._debug_idx=%d",
                     this->_idx, this->debug_idx(), orig->_idx, orig->debug_idx());
       BREAKPOINT;
     }
     orig = orig->debug_orig();
-    if (not_a_node(orig))  orig = NULL;
+    if (not_a_node(orig))  orig = nullptr;
     if (trip-- <= 0)  break;
   }
 }
@@ -2552,7 +2552,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
 
   const Type *t = bottom_type();
 
-  if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
+  if (t != nullptr && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
     const TypeInstKlassPtr *tkls = t->isa_instklassptr();
     if (toop) {
@@ -2578,8 +2578,8 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   if (is_new) {
     DEBUG_ONLY(dump_orig(st));
     Node_Notes* nn = C->node_notes_at(_idx);
-    if (nn != NULL && !nn->is_clear()) {
-      if (nn->jvms() != NULL) {
+    if (nn != nullptr && !nn->is_clear()) {
+      if (nn->jvms() != nullptr) {
         st->print(" !jvms:");
         nn->jvms()->dump_spec(st);
       }
@@ -2599,7 +2599,7 @@ void Node::dump_req(outputStream* st, DumpConfig* dc) const {
   // Dump the required input edges
   for (uint i = 0; i < req(); i++) {    // For all required inputs
     Node* d = in(i);
-    if (d == NULL) {
+    if (d == nullptr) {
       st->print("_ ");
     } else if (not_a_node(d)) {
       st->print("not_a_node ");  // uninitialized, sentinel, garbage, etc.
@@ -2617,7 +2617,7 @@ void Node::dump_prec(outputStream* st, DumpConfig* dc) const {
   int any_prec = 0;
   for (uint i = req(); i < len(); i++) {       // For all precedence inputs
     Node* p = in(i);
-    if (p != NULL) {
+    if (p != nullptr) {
       if (!any_prec++) st->print(" |");
       if (not_a_node(p)) { st->print("not_a_node "); continue; }
       p->dump_idx(false, st, dc);
@@ -2633,7 +2633,7 @@ void Node::dump_out(outputStream* st, DumpConfig* dc) const {
   // Dump the output edges
   for (uint i = 0; i < _outcnt; i++) {    // For all outputs
     Node* u = _out[i];
-    if (u == NULL) {
+    if (u == nullptr) {
       st->print("_ ");
     } else if (not_a_node(u)) {
       st->print("not_a_node ");
@@ -2691,7 +2691,7 @@ void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
     Node* n = worklist[list_index];
 
     if (n->is_Con() && n->bottom_type() == Type::TOP) {
-      if (C->cached_top_node() == NULL) {
+      if (C->cached_top_node() == nullptr) {
         C->set_cached_top_node((Node*)n);
       }
       assert(C->cached_top_node() == n, "TOP node must be unique");
@@ -2787,14 +2787,14 @@ void Node_Array::insert(uint i, Node* n) {
 
 void Node_Array::remove(uint i) {
   Copy::conjoint_words_to_lower((HeapWord*)&_nodes[i + 1], (HeapWord*)&_nodes[i], ((_max - i - 1) * sizeof(Node*)));
-  _nodes[_max - 1] = NULL;
+  _nodes[_max - 1] = nullptr;
 }
 
 void Node_Array::dump() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _max; i++) {
     Node* nn = _nodes[i];
-    if (nn != NULL) {
+    if (nn != nullptr) {
       tty->print("%5d--> ",i); nn->dump();
     }
   }
@@ -2809,7 +2809,7 @@ bool Node::is_iteratively_computed() {
   if (ideal_reg()) { // does operation have a result register?
     for (uint i = 1; i < req(); i++) {
       Node* n = in(i);
-      if (n != NULL && n->is_Phi()) {
+      if (n != nullptr && n->is_Phi()) {
         for (uint j = 1; j < n->req(); j++) {
           if (n->in(j) == this) {
             return true;
@@ -2823,7 +2823,7 @@ bool Node::is_iteratively_computed() {
 
 //--------------------------find_similar------------------------------
 // Return a node with opcode "opc" and same inputs as "this" if one can
-// be found; Otherwise return NULL;
+// be found; Otherwise return null;
 Node* Node::find_similar(int opc) {
   if (req() >= 2) {
     Node* def = in(1);
@@ -2846,19 +2846,19 @@ Node* Node::find_similar(int opc) {
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
 //--------------------------unique_ctrl_out_or_null-------------------------
 // Return the unique control out if only one. Null if none or more than one.
 Node* Node::unique_ctrl_out_or_null() const {
-  Node* found = NULL;
+  Node* found = nullptr;
   for (uint i = 0; i < outcnt(); i++) {
     Node* use = raw_out(i);
     if (use->is_CFG() && use != this) {
-      if (found != NULL) {
-        return NULL;
+      if (found != nullptr) {
+        return nullptr;
       }
       found = use;
     }
@@ -2870,12 +2870,12 @@ Node* Node::unique_ctrl_out_or_null() const {
 // Return the unique control out. Asserts if none or more than one control out.
 Node* Node::unique_ctrl_out() const {
   Node* ctrl = unique_ctrl_out_or_null();
-  assert(ctrl != NULL, "control out is assumed to be unique");
+  assert(ctrl != nullptr, "control out is assumed to be unique");
   return ctrl;
 }
 
 void Node::ensure_control_or_add_prec(Node* c) {
-  if (in(0) == NULL) {
+  if (in(0) == nullptr) {
     set_req(0, c);
   } else if (in(0) != c) {
     add_prec(c);
@@ -2886,7 +2886,7 @@ bool Node::is_dead_loop_safe() const {
   if (is_Phi()) {
     return true;
   }
-  if (is_Proj() && in(0) == NULL)  {
+  if (is_Proj() && in(0) == nullptr)  {
     return true;
   }
   if ((_flags & (Flag_is_dead_loop_safe | Flag_is_Con)) != 0) {
@@ -2939,7 +2939,7 @@ void Node_List::dump_simple() const {
     if( _nodes[i] ) {
       tty->print(" %d", _nodes[i]->_idx);
     } else {
-      tty->print(" NULL");
+      tty->print(" null");
     }
   }
 #endif
@@ -2965,7 +2965,7 @@ void Unique_Node_List::remove(Node* n) {
 void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
   for (uint i = 0; i < size(); ++i) {
     Node *n = at(i);
-    assert( n != NULL, "Did not expect null entries in worklist");
+    assert( n != nullptr, "Did not expect null entries in worklist");
     if (!useful.test(n->_idx)) {
       _in_worklist.remove(n->_idx);
       map(i, Node_List::pop());
@@ -2993,7 +2993,7 @@ Node* Node_Stack::find(uint idx) const {
       return node_at(i);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================

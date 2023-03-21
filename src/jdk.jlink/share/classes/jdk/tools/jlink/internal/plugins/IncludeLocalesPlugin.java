@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,8 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 String path = resource.path();
                 resource = predicate.test(path) ? resource: null;
                 if (resource != null &&
-                    resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
+                    resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE) &&
+                    path.endsWith(".class")) {
                     byte[] bytes = resource.contentBytes();
                     ClassReader cr = newClassReader(path, bytes);
                     if (Arrays.stream(cr.getInterfaces())
