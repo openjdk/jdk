@@ -476,8 +476,8 @@ public sealed interface Linker permits AbstractLinker {
      *     <li>The invocation occurs in a thread {@code T} such that {@code A.isAccessibleBy(T) == true}.
      *     Otherwise, the invocation throws {@link WrongThreadException}; and</li>
      *     <li>{@code A} is kept alive during the invocation. For instance, if {@code A} has been obtained using a
-     *     {@linkplain Arena#ofConfined() confined arena}, any attempt to {@linkplain Arena#close() close}
-     *     the confined arena while the downcall method handle is executing will result in a {@link IllegalStateException}.</li>
+     *     {@linkplain Arena#ofShared()} confined arena}, any attempt to {@linkplain Arena#close() close}
+     *     the shared arena while the downcall method handle is executing will result in an {@link IllegalStateException}.</li>
      *</ul>
      * <p>
      * Moreover, if the provided function descriptor's return layout is an {@linkplain AddressLayout address layout},
@@ -604,6 +604,8 @@ public sealed interface Linker permits AbstractLinker {
          * }
          *
          * @param capturedState the names of the values to save.
+         * @throws IllegalArgumentException if at least one of the provided {@code capturedState} names
+         *                                  is unsupported on the current platform.
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
