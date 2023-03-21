@@ -290,13 +290,13 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void print_value_on(outputStream* out) const;
   void verify();
 
-  bool handles_contain(oop obj);
   OopHandle add_handle(Handle h);
   void remove_handle(OopHandle h);
   void init_handle_locked(OopHandle& pd, Handle h);  // used for concurrent access to ModuleEntry::_pd field
   void add_class(Klass* k, bool publicize = true);
   void remove_class(Klass* k);
   bool contains_klass(Klass* k);
+  bool needs_dependency(const Klass* to);
   void record_dependency(const Klass* to);
   PackageEntryTable* packages() { return _packages; }
   ModuleEntry* unnamed_module() { return _unnamed_module; }

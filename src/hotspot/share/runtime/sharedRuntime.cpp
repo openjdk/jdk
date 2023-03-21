@@ -1382,7 +1382,6 @@ public:
 // Without that path the target method could get unloaded even if the caller
 // nmethod is not unloading and a dangling Method* could be left int the static
 // stub for the call.
-// (See also ClassLoaderData::record_dependency())
 static void check_path_to_callee(bool is_virtual,
                                  bool is_optimized,
                                  CompiledMethod* from_cm,
@@ -1392,9 +1391,7 @@ static void check_path_to_callee(bool is_virtual,
                                  JavaThread* thread) {
   nmethod* from_nm = from_cm->as_nmethod_or_null();
   InstanceKlass* to_klass = to_method->method_holder();
-  oop to_holder = to_klass->klass_holder();
-  ClassLoaderData * const to_cld = to_klass->class_loader_data();
-  if (from_nm != nullptr && !to_cld->is_permanent_class_loader_data()) {
+  if (from_nm != nullptr && !to_klass->class_loader_data()->is_permanent_class_loader_data()) {
     RegisterMap regmap(thread,
                        RegisterMap::UpdateMap::skip,
                        RegisterMap::ProcessFrames::include,
@@ -1402,37 +1399,16 @@ static void check_path_to_callee(bool is_virtual,
     Method* from_method = thread->last_java_vframe(&regmap)->method();
     ClassLoaderData* const from_cld = from_method->method_holder()->class_loader_data();
 
-    if (to_cld->has_class_mirror_holder()) {
-      if (from_cld == to_cld) {
-        return;
-      }
-    } else {
-      oop to = to_cld->class_loader();
-      oop from = from_cld->class_loader();
-
-      if (from == to ||
-          (!from_cld->is_boot_class_loader_data() &&
-           java_lang_ClassLoader::isAncestor(from, to))) {
-        return; // `to` is reachable by iterating parents of `from`
-      }
+    if (!from_cld->needs_dependency(to_klass)) {
+      return; // dependency is not needed or has been recorded
     }
 
-    // Search for to_holder in the oops. to_holder has to be reachable from the
-    // receiver. If it is a constant among the oops, then there is also a path
-    // from the caller to to_holder.
-    Search2OopsClosure f(to_holder, receiver());
+    // Search the oop constants of the caller for the holder of the target. Also
+    // look for the receiver. If we find it then this means a permanent path to
+    // the callee exists because the callee does not depend on the receiver.
+    Search2OopsClosure f(to_klass->klass_holder(), receiver());
     from_nm->oops_do(&f);
-    if (f.found()) {
-      return;
-    }
-
-    // The callers loader will keep the callee alive if a dependency has been recorded with
-    // ClassLoaderData::record_dependency()
-    if (from_cld->handles_contain(to_holder)) {
-      return;
-    }
-
-    {
+    if (!f.found()) {
       stringStream ss;
       to_method->print_short_name(&ss);
       guarantee(false, "Missing dependency resolving %s%s (%s) call to %s",

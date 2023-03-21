@@ -415,27 +415,28 @@ void ClassLoaderData::packages_do(void f(PackageEntry*)) {
   }
 }
 
-void ClassLoaderData::record_dependency(const Klass* k) {
+// An explicit dependency might be needed to prevent unloading of Klass* k
+// before this CLD is unloading.
+bool ClassLoaderData::needs_dependency(const Klass* k) {
   assert(k != nullptr, "invariant");
 
   ClassLoaderData * const from_cld = this;
   ClassLoaderData * const to_cld = k->class_loader_data();
 
-  // Do not need to record dependency if the dependency is to a class whose
+  // Do not need a dependency if the dependency is to a class whose
   // class loader data is never freed.  (i.e. the dependency's class loader
   // is one of the three builtin class loaders and the dependency's class
   // loader data has a ClassLoader holder, not a Class holder.)
   if (to_cld->is_permanent_class_loader_data()) {
-    return;
+    return false;
   }
 
   oop to;
   if (to_cld->has_class_mirror_holder()) {
-    // Just return if a non-strong hidden class class is attempting to record a dependency
-    // to itself.  (Note that every non-strong hidden class has its own unique class
-    // loader data.)
+    // An explicit dependency to itself is not needed.
+    // (Note that every non-strong hidden class has its own unique class loader data.)
     if (to_cld == from_cld) {
-      return;
+      return false;
     }
     // Hidden class dependencies are through the mirror.
     to = k->java_mirror();
@@ -443,15 +444,22 @@ void ClassLoaderData::record_dependency(const Klass* k) {
     to = to_cld->class_loader();
     oop from = from_cld->class_loader();
 
-    // Just return if this dependency is to a class with the same or a parent
-    // class_loader.
+    // K cannot be unloaded before this CLD is unloading if it has the same
+    // or a parent class_loader.
     if (from == to || java_lang_ClassLoader::isAncestor(from, to)) {
-      return; // this class loader is in the parent list, no need to add it.
+      return false;
     }
   }
 
-  // It's a dependency we won't find through GC, add it.
-  if (!_handles.contains(to)) {
+  // An explicit dependency is needed. Let's see if it's already recorded.
+  return !_handles.contains(to);
+}
+
+void ClassLoaderData::record_dependency(const Klass* k) {
+  if (needs_dependency(k)) {
+    // It's a dependency we won't find through GC, add it.
+    ClassLoaderData * const to_cld = k->class_loader_data();
+    oop to = to_cld->has_class_mirror_holder() ? k->java_mirror() : to_cld->class_loader();
     NOT_PRODUCT(Atomic::inc(&_dependency_count));
     LogTarget(Trace, class, loader, data) lt;
     if (lt.is_enabled()) {
@@ -785,10 +793,6 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
     }
   }
   return metaspace;
-}
-
-bool ClassLoaderData::handles_contain(oop obj) {
-  return _handles.contains(obj);
 }
 
 OopHandle ClassLoaderData::add_handle(Handle h) {
