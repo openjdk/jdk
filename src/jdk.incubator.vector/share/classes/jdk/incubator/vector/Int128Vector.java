@@ -141,27 +141,6 @@ final class Int128Vector extends IntVector {
     @ForceInline
     Int128Shuffle iotaShuffle() { return Int128Shuffle.IOTA; }
 
-    @ForceInline
-    Int128Shuffle iotaShuffle(int start, int step, boolean wrap) {
-        if ((VLENGTH & (VLENGTH - 1)) != 0) {
-            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, VLENGTH)))
-                        : shuffleFromOp(i -> i * step + start);
-        }
-
-        Int128Vector iota = Int128Shuffle.IOTA.toBitsVector();
-        IntVector.IntSpecies species = Int128Vector.VSPECIES;
-        iota = iota.lanewise(VectorOperators.MUL, species.broadcast(step))
-                .lanewise(VectorOperators.ADD, species.broadcast(start));
-        Int128Vector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-
-        if (!wrap) {
-            Int128Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Integer> mask = wrapped.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedEx.blend(wrapped, mask);
-        }
-        return wrapped.toShuffle();
-    }
-
     @Override
     @ForceInline
     Int128Shuffle shuffleFromArray(int[] indices, int i) { return new Int128Shuffle(indices, i); }
@@ -857,27 +836,6 @@ final class Int128Vector extends IntVector {
         @ForceInline
         public void intoArray(int[] a, int offset) {
             toBitsVector().intoArray(a, offset);
-        }
-
-        @ForceInline
-        @Override
-        public Int128Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return toBitsVector().rearrange(shuffle).toShuffle();
-        }
-
-        @ForceInline
-        @Override
-        public Int128Shuffle wrapIndexes() {
-            Int128Vector v = toBitsVector();
-            IntVector.IntSpecies species = Int128Vector.VSPECIES;
-            if ((VLENGTH & (VLENGTH - 1)) == 0) {
-                v = v.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-            } else {
-                VectorMask<Integer> neg = v.compare(VectorOperators.LT, 0);
-                Vector<Integer> adjusted = v.lanewise(VectorOperators.ADD, VLENGTH);
-                v = v.blend(adjusted, neg);
-            }
-            return v.toShuffle();
         }
 
         private static int[] prepare(int[] indices, int offset) {

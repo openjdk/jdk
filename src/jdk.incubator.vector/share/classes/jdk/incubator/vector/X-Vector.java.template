@@ -2881,11 +2881,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #end[!FP]
 
 #if[intOrLong]
-    abstract VectorShuffle<$Boxfptype$> toFPShuffle();
+    abstract AbstractShuffle<$Boxfptype$> toFPShuffle();
 
     @ForceInline
     private final
-    VectorShuffle<$Boxfptype$> toFPShuffle0(VectorSpecies<$Boxfptype$> dsp) {
+    AbstractShuffle<$Boxfptype$> toFPShuffle0(VectorSpecies<$Boxfptype$> dsp) {
         $type$[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2896,7 +2896,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     @ForceInline
     final
-    VectorShuffle<$Boxfptype$> toFPShuffleTemplate(Class<?> shuffleType, $Fptype$Vector.$Fptype$Species dsp) {
+    AbstractShuffle<$Boxfptype$> toFPShuffleTemplate(Class<?> shuffleType, $Fptype$Vector.$Fptype$Species dsp) {
         return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), $type$.class, length(),
                                      shuffleType, $type$.class, length(),

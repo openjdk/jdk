@@ -136,27 +136,6 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     LongMaxShuffle iotaShuffle() { return LongMaxShuffle.IOTA; }
 
-    @ForceInline
-    LongMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-        if ((VLENGTH & (VLENGTH - 1)) != 0) {
-            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, VLENGTH)))
-                        : shuffleFromOp(i -> i * step + start);
-        }
-
-        LongMaxVector iota = LongMaxShuffle.IOTA.toBitsVector();
-        LongVector.LongSpecies species = LongMaxVector.VSPECIES;
-        iota = iota.lanewise(VectorOperators.MUL, species.broadcast(step))
-                .lanewise(VectorOperators.ADD, species.broadcast(start));
-        LongMaxVector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-
-        if (!wrap) {
-            LongMaxVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Long> mask = wrapped.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedEx.blend(wrapped, mask);
-        }
-        return wrapped.toShuffle();
-    }
-
     @Override
     @ForceInline
     LongMaxShuffle shuffleFromArray(int[] indices, int i) { return new LongMaxShuffle(indices, i); }
@@ -847,27 +826,6 @@ final class LongMaxVector extends LongVector {
             v.convertShape(VectorOperators.L2I, species, 0)
                     .reinterpretAsInts()
                     .intoArray(a, offset);
-        }
-
-        @ForceInline
-        @Override
-        public LongMaxShuffle rearrange(VectorShuffle<Long> shuffle) {
-            return toBitsVector().rearrange(shuffle).toShuffle();
-        }
-
-        @ForceInline
-        @Override
-        public LongMaxShuffle wrapIndexes() {
-            LongMaxVector v = toBitsVector();
-            LongVector.LongSpecies species = LongMaxVector.VSPECIES;
-            if ((VLENGTH & (VLENGTH - 1)) == 0) {
-                v = v.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-            } else {
-                VectorMask<Long> neg = v.compare(VectorOperators.LT, 0);
-                Vector<Long> adjusted = v.lanewise(VectorOperators.ADD, VLENGTH);
-                v = v.blend(adjusted, neg);
-            }
-            return v.toShuffle();
         }
 
         private static long[] prepare(int[] indices, int offset) {

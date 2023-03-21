@@ -2486,11 +2486,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                      IntVector::toShuffle0);
     }
 
-    abstract VectorShuffle<Float> toFPShuffle();
+    abstract AbstractShuffle<Float> toFPShuffle();
 
     @ForceInline
     private final
-    VectorShuffle<Float> toFPShuffle0(VectorSpecies<Float> dsp) {
+    AbstractShuffle<Float> toFPShuffle0(VectorSpecies<Float> dsp) {
         int[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2501,7 +2501,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     @ForceInline
     final
-    VectorShuffle<Float> toFPShuffleTemplate(Class<?> shuffleType, FloatVector.FloatSpecies dsp) {
+    AbstractShuffle<Float> toFPShuffleTemplate(Class<?> shuffleType, FloatVector.FloatSpecies dsp) {
         return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), int.class, length(),
                                      shuffleType, int.class, length(),

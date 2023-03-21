@@ -141,27 +141,6 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     Byte512Shuffle iotaShuffle() { return Byte512Shuffle.IOTA; }
 
-    @ForceInline
-    Byte512Shuffle iotaShuffle(int start, int step, boolean wrap) {
-        if ((VLENGTH & (VLENGTH - 1)) != 0) {
-            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, VLENGTH)))
-                        : shuffleFromOp(i -> i * step + start);
-        }
-
-        Byte512Vector iota = Byte512Shuffle.IOTA.toBitsVector();
-        ByteVector.ByteSpecies species = Byte512Vector.VSPECIES;
-        iota = iota.lanewise(VectorOperators.MUL, species.broadcast(step))
-                .lanewise(VectorOperators.ADD, species.broadcast(start));
-        Byte512Vector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-
-        if (!wrap) {
-            Byte512Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Byte> mask = wrapped.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedEx.blend(wrapped, mask);
-        }
-        return wrapped.toShuffle();
-    }
-
     @Override
     @ForceInline
     Byte512Shuffle shuffleFromArray(int[] indices, int i) { return new Byte512Shuffle(indices, i); }
@@ -985,27 +964,6 @@ final class Byte512Vector extends ByteVector {
             v.convertShape(VectorOperators.B2I, species, 3)
                     .reinterpretAsInts()
                     .intoArray(a, offset + species.length() * 3);
-        }
-
-        @ForceInline
-        @Override
-        public Byte512Shuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return toBitsVector().rearrange(shuffle).toShuffle();
-        }
-
-        @ForceInline
-        @Override
-        public Byte512Shuffle wrapIndexes() {
-            Byte512Vector v = toBitsVector();
-            ByteVector.ByteSpecies species = Byte512Vector.VSPECIES;
-            if ((VLENGTH & (VLENGTH - 1)) == 0) {
-                v = v.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-            } else {
-                VectorMask<Byte> neg = v.compare(VectorOperators.LT, 0);
-                Vector<Byte> adjusted = v.lanewise(VectorOperators.ADD, VLENGTH);
-                v = v.blend(adjusted, neg);
-            }
-            return v.toShuffle();
         }
 
         private static byte[] prepare(int[] indices, int offset) {

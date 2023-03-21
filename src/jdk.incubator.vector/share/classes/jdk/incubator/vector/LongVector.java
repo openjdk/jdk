@@ -2352,11 +2352,11 @@ public abstract class LongVector extends AbstractVector<Long> {
                                      LongVector::toShuffle0);
     }
 
-    abstract VectorShuffle<Double> toFPShuffle();
+    abstract AbstractShuffle<Double> toFPShuffle();
 
     @ForceInline
     private final
-    VectorShuffle<Double> toFPShuffle0(VectorSpecies<Double> dsp) {
+    AbstractShuffle<Double> toFPShuffle0(VectorSpecies<Double> dsp) {
         long[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2367,7 +2367,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     @ForceInline
     final
-    VectorShuffle<Double> toFPShuffleTemplate(Class<?> shuffleType, DoubleVector.DoubleSpecies dsp) {
+    AbstractShuffle<Double> toFPShuffleTemplate(Class<?> shuffleType, DoubleVector.DoubleSpecies dsp) {
         return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
                                      getClass(), long.class, length(),
                                      shuffleType, long.class, length(),

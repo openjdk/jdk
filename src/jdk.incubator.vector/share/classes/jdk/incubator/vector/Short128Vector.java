@@ -141,27 +141,6 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     Short128Shuffle iotaShuffle() { return Short128Shuffle.IOTA; }
 
-    @ForceInline
-    Short128Shuffle iotaShuffle(int start, int step, boolean wrap) {
-        if ((VLENGTH & (VLENGTH - 1)) != 0) {
-            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, VLENGTH)))
-                        : shuffleFromOp(i -> i * step + start);
-        }
-
-        Short128Vector iota = Short128Shuffle.IOTA.toBitsVector();
-        ShortVector.ShortSpecies species = Short128Vector.VSPECIES;
-        iota = iota.lanewise(VectorOperators.MUL, species.broadcast(step))
-                .lanewise(VectorOperators.ADD, species.broadcast(start));
-        Short128Vector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-
-        if (!wrap) {
-            Short128Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Short> mask = wrapped.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedEx.blend(wrapped, mask);
-        }
-        return wrapped.toShuffle();
-    }
-
     @Override
     @ForceInline
     Short128Shuffle shuffleFromArray(int[] indices, int i) { return new Short128Shuffle(indices, i); }
@@ -867,27 +846,6 @@ final class Short128Vector extends ShortVector {
             v.convertShape(VectorOperators.S2I, species, 1)
                     .reinterpretAsInts()
                     .intoArray(a, offset + species.length());
-        }
-
-        @ForceInline
-        @Override
-        public Short128Shuffle rearrange(VectorShuffle<Short> shuffle) {
-            return toBitsVector().rearrange(shuffle).toShuffle();
-        }
-
-        @ForceInline
-        @Override
-        public Short128Shuffle wrapIndexes() {
-            Short128Vector v = toBitsVector();
-            ShortVector.ShortSpecies species = Short128Vector.VSPECIES;
-            if ((VLENGTH & (VLENGTH - 1)) == 0) {
-                v = v.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-            } else {
-                VectorMask<Short> neg = v.compare(VectorOperators.LT, 0);
-                Vector<Short> adjusted = v.lanewise(VectorOperators.ADD, VLENGTH);
-                v = v.blend(adjusted, neg);
-            }
-            return v.toShuffle();
         }
 
         private static short[] prepare(int[] indices, int offset) {

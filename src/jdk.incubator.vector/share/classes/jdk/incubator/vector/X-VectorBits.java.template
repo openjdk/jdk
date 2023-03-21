@@ -143,32 +143,6 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     $shuffletype$ iotaShuffle() { return $shuffletype$.IOTA; }
 
-    @ForceInline
-    $shuffletype$ iotaShuffle(int start, int step, boolean wrap) {
-        if ((VLENGTH & (VLENGTH - 1)) != 0) {
-            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, VLENGTH)))
-                        : shuffleFromOp(i -> i * step + start);
-        }
-
-        $bitsvectortype$ iota = $shuffletype$.IOTA.toBitsVector();
-        $Bitstype$Vector.$Bitstype$Species species = $bitsvectortype$.VSPECIES;
-        iota = iota.lanewise(VectorOperators.MUL, species.broadcast(step))
-                .lanewise(VectorOperators.ADD, species.broadcast(start));
-        $bitsvectortype$ wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-
-        if (!wrap) {
-            $bitsvectortype$ wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<$Boxbitstype$> mask = wrapped.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedEx.blend(wrapped, mask);
-        }
-#if[!FP]
-        return wrapped.toShuffle();
-#end[!FP]
-#if[FP]
-        return wrapped.toFPShuffle();
-#end[FP]
-    }
-
     @Override
     @ForceInline
     $shuffletype$ shuffleFromArray(int[] indices, int i) { return new $shuffletype$(indices, i); }
@@ -1199,39 +1173,6 @@ final class $vectortype$ extends $abstractvectortype$ {
             a[offset] = laneSource(0);
 #end[1L]
 #end[longOrDouble]
-        }
-
-        @ForceInline
-        @Override
-        public $shuffletype$ rearrange(VectorShuffle<$Boxtype$> shuffle) {
-#if[!FP]
-            return toBitsVector().rearrange(shuffle).toShuffle();
-#end[!FP]
-#if[FP]
-            return toBitsVector()
-                    .rearrange(shuffle.cast($bitsvectortype$.VSPECIES))
-                    .toFPShuffle();
-#end[FP]
-        }
-
-        @ForceInline
-        @Override
-        public $shuffletype$ wrapIndexes() {
-            $bitsvectortype$ v = toBitsVector();
-            $Bitstype$Vector.$Bitstype$Species species = $bitsvectortype$.VSPECIES;
-            if ((VLENGTH & (VLENGTH - 1)) == 0) {
-                v = v.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-            } else {
-                VectorMask<$Boxbitstype$> neg = v.compare(VectorOperators.LT, 0);
-                Vector<$Boxbitstype$> adjusted = v.lanewise(VectorOperators.ADD, VLENGTH);
-                v = v.blend(adjusted, neg);
-            }
-#if[!FP]
-            return v.toShuffle();
-#end[!FP]
-#if[FP]
-            return v.toFPShuffle();
-#end[FP]
         }
 
         private static $bitstype$[] prepare(int[] indices, int offset) {

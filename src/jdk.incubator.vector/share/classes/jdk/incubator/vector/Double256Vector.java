@@ -141,27 +141,6 @@ final class Double256Vector extends DoubleVector {
     @ForceInline
     Double256Shuffle iotaShuffle() { return Double256Shuffle.IOTA; }
 
-    @ForceInline
-    Double256Shuffle iotaShuffle(int start, int step, boolean wrap) {
-        if ((VLENGTH & (VLENGTH - 1)) != 0) {
-            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, VLENGTH)))
-                        : shuffleFromOp(i -> i * step + start);
-        }
-
-        Long256Vector iota = Double256Shuffle.IOTA.toBitsVector();
-        LongVector.LongSpecies species = Long256Vector.VSPECIES;
-        iota = iota.lanewise(VectorOperators.MUL, species.broadcast(step))
-                .lanewise(VectorOperators.ADD, species.broadcast(start));
-        Long256Vector wrapped = iota.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-
-        if (!wrap) {
-            Long256Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, species.broadcast(VLENGTH));
-            VectorMask<Long> mask = wrapped.compare(VectorOperators.EQ, iota);
-            wrapped = wrappedEx.blend(wrapped, mask);
-        }
-        return wrapped.toFPShuffle();
-    }
-
     @Override
     @ForceInline
     Double256Shuffle shuffleFromArray(int[] indices, int i) { return new Double256Shuffle(indices, i); }
@@ -849,29 +828,6 @@ final class Double256Vector extends DoubleVector {
             v.convertShape(VectorOperators.L2I, species, 0)
                     .reinterpretAsInts()
                     .intoArray(a, offset);
-        }
-
-        @ForceInline
-        @Override
-        public Double256Shuffle rearrange(VectorShuffle<Double> shuffle) {
-            return toBitsVector()
-                    .rearrange(shuffle.cast(Long256Vector.VSPECIES))
-                    .toFPShuffle();
-        }
-
-        @ForceInline
-        @Override
-        public Double256Shuffle wrapIndexes() {
-            Long256Vector v = toBitsVector();
-            LongVector.LongSpecies species = Long256Vector.VSPECIES;
-            if ((VLENGTH & (VLENGTH - 1)) == 0) {
-                v = v.lanewise(VectorOperators.AND, species.broadcast(VLENGTH - 1));
-            } else {
-                VectorMask<Long> neg = v.compare(VectorOperators.LT, 0);
-                Vector<Long> adjusted = v.lanewise(VectorOperators.ADD, VLENGTH);
-                v = v.blend(adjusted, neg);
-            }
-            return v.toFPShuffle();
         }
 
         private static long[] prepare(int[] indices, int offset) {

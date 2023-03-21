@@ -190,7 +190,27 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     abstract AbstractShuffle<E> iotaShuffle();
 
-    abstract AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap);
+    @ForceInline
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    final AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap) {
+        if ((length() & (length() - 1)) != 0) {
+            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, length())))
+                    : shuffleFromOp(i -> i * step + start);
+        }
+
+        AbstractSpecies<?> species = vspecies().asIntegral();
+        Vector iota = species.iota();
+        iota = iota.lanewise(VectorOperators.MUL, step)
+                .lanewise(VectorOperators.ADD, start);
+        Vector wrapped = iota.lanewise(VectorOperators.AND, length() - 1);
+
+        if (!wrap) {
+            Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<?> mask = wrapped.compare(VectorOperators.EQ, iota);
+            wrapped = wrappedEx.blend(wrapped, mask);
+        }
+        return (AbstractShuffle<E>) wrapped.toShuffle().cast(vspecies());
+    }
 
     abstract AbstractShuffle<E> shuffleFromArray(int[] indexes, int i);
 
