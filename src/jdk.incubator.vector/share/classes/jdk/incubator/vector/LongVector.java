@@ -2362,7 +2362,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
-        return VectorShuffle.fromArray(dsp, sa, 0);
+        return (AbstractShuffle<Double>) VectorShuffle.fromArray(dsp, sa, 0);
     }
 
     @ForceInline

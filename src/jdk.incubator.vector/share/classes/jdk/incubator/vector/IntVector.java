@@ -2496,7 +2496,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
-        return VectorShuffle.fromArray(dsp, sa, 0);
+        return (AbstractShuffle<Float>) VectorShuffle.fromArray(dsp, sa, 0);
     }
 
     @ForceInline
