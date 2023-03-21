@@ -1107,6 +1107,7 @@ public abstract class JComponent extends Container implements Serializable,
             boolean printing = getFlag(IS_PRINTING);
             if (!printing && repaintManager.isDoubleBufferingEnabled() &&
                 !getFlag(ANCESTOR_USING_BUFFER) && isDoubleBuffered() &&
+                !repaintManager.isPaintManagerPainting() &&
                 (getFlag(IS_REPAINTING) || repaintManager.isPainting()))
             {
                 repaintManager.beginPaint();

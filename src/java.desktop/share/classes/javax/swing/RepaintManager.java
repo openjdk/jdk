@@ -1519,6 +1519,17 @@ public class RepaintManager
         }
     }
 
+    ThreadLocal<AtomicInteger> paintManagerRecursionMonitor = new ThreadLocal<>();
+
+    /**
+     * Returns true if this thread is currently repainting one or more Components with a AWTPaintManager.
+     *
+     * @return rue if this thread is currently repainting one or more Components with a AWTPaintManager.
+     */
+    public boolean isPaintManagerPainting() {
+        return paintManagerRecursionMonitor.get() != null;
+    }
+
     static class AWTPaintManager<T extends Component> {
         /**
          * RepaintManager the PaintManager has been installed on.
@@ -1540,44 +1551,57 @@ public class RepaintManager
         public boolean paint(T paintingComponent,
                              T bufferComponent, Graphics g,
                              int x, int y, int w, int h) {
-            // First attempt to use VolatileImage buffer for performance.
-            // If this fails (which should rarely occur), fallback to a
-            // standard Image buffer.
-            boolean paintCompleted = false;
-            Image offscreen;
-            int sw = w + 1;
-            int sh = h + 1;
+            AtomicInteger recursionCtr = repaintManager.paintManagerRecursionMonitor.get();
+            if (recursionCtr == null) {
+                recursionCtr = new AtomicInteger(0);
+                repaintManager.paintManagerRecursionMonitor.set(recursionCtr);
+            }
+            recursionCtr.incrementAndGet();
 
-            if (repaintManager.useVolatileDoubleBuffer() &&
-                    (offscreen = getValidImage(repaintManager.
-                            getVolatileOffscreenBuffer(bufferComponent, sw, sh))) != null) {
-                VolatileImage vImage = (java.awt.image.VolatileImage)offscreen;
-                GraphicsConfiguration gc = bufferComponent.
-                        getGraphicsConfiguration();
-                for (int i = 0; !paintCompleted &&
-                        i < RepaintManager.VOLATILE_LOOP_MAX; i++) {
-                    if (vImage.validate(gc) ==
-                            VolatileImage.IMAGE_INCOMPATIBLE) {
-                        repaintManager.resetVolatileDoubleBuffer(gc);
-                        offscreen = repaintManager.getVolatileOffscreenBuffer(
-                                bufferComponent, sw, sh);
-                        vImage = (java.awt.image.VolatileImage)offscreen;
+            try {
+                // First attempt to use VolatileImage buffer for performance.
+                // If this fails (which should rarely occur), fallback to a
+                // standard Image buffer.
+                boolean paintCompleted = false;
+                Image offscreen;
+                int sw = w + 1;
+                int sh = h + 1;
+
+                if (repaintManager.useVolatileDoubleBuffer() &&
+                        (offscreen = getValidImage(repaintManager.
+                                getVolatileOffscreenBuffer(bufferComponent, sw, sh))) != null) {
+                    VolatileImage vImage = (java.awt.image.VolatileImage) offscreen;
+                    GraphicsConfiguration gc = bufferComponent.
+                            getGraphicsConfiguration();
+                    for (int i = 0; !paintCompleted &&
+                            i < RepaintManager.VOLATILE_LOOP_MAX; i++) {
+                        if (vImage.validate(gc) ==
+                                VolatileImage.IMAGE_INCOMPATIBLE) {
+                            repaintManager.resetVolatileDoubleBuffer(gc);
+                            offscreen = repaintManager.getVolatileOffscreenBuffer(
+                                    bufferComponent, sw, sh);
+                            vImage = (java.awt.image.VolatileImage) offscreen;
+                        }
+                        paintDoubleBuffered(paintingComponent, vImage, g, x, y,
+                                w, h);
+                        paintCompleted = !vImage.contentsLost();
                     }
-                    paintDoubleBuffered(paintingComponent, vImage, g, x, y,
-                            w, h);
-                    paintCompleted = !vImage.contentsLost();
+                }
+                // VolatileImage painting loop failed, fallback to regular
+                // offscreen buffer
+                if (!paintCompleted && (offscreen = getValidImage(
+                        repaintManager.getOffscreenBuffer(
+                                bufferComponent, w, h))) != null) {
+                    paintDoubleBuffered(paintingComponent, offscreen, g, x, y, w,
+                            h);
+                    paintCompleted = true;
+                }
+                return paintCompleted;
+            } finally {
+                if (recursionCtr.decrementAndGet() == 0) {
+                    repaintManager.paintManagerRecursionMonitor.remove();
                 }
             }
-            // VolatileImage painting loop failed, fallback to regular
-            // offscreen buffer
-            if (!paintCompleted && (offscreen = getValidImage(
-                    repaintManager.getOffscreenBuffer(
-                            bufferComponent, w, h))) != null) {
-                paintDoubleBuffered(paintingComponent, offscreen, g, x, y, w,
-                        h);
-                paintCompleted = true;
-            }
-            return paintCompleted;
         }
 
         /**
