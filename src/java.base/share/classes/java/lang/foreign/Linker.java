@@ -35,6 +35,7 @@ import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -619,6 +620,17 @@ public sealed interface Linker permits AbstractLinker {
          /**
          * {@return A struct layout that represents the layout of the capture state segment that is passed
          *          to a downcall handle linked with {@link #captureCallState(String...)}}
+         * <p>
+         * The capture state layout is <em>platform dependent</em>.
+         * The following example demonstrates how to print the element names of
+         * the current capture state layout on the console:
+         * {@snippet lang = "java":
+         *     captureStateLayout().memberLayouts().stream()
+         *         .map(MemoryLayout::name)
+         *         .filter(Optional::isPresent)
+         *         .map(Optional::get)
+         *         .forEach(System.out::println);
+         * }
          *
          * @see #captureCallState(String...)
          */
