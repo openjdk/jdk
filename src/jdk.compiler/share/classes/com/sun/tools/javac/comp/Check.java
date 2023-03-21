@@ -3512,7 +3512,7 @@ public class Check {
     protected boolean isTypeAnnotation(JCAnnotation a, boolean isTypeParameter) {
         List<Attribute> targets = typeAnnotations.annotationTargets(a.annotationType.type.tsym);
         return (targets == null) ?
-                isTypeParameter :
+                (source.compareTo(Source.JDK14) >= 0 && isTypeParameter) :
                 targets.stream()
                         .anyMatch(attr -> isTypeAnnotation(attr, isTypeParameter));
     }
