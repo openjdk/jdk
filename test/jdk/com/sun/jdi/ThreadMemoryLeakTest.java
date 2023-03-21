@@ -104,7 +104,6 @@ public class ThreadMemoryLeakTest extends TestScaffold {
             println("Got ThreadStartEvent #" + threadStartCount +
                     " threads:" + (threadStartCount.sum() - threadDeathCount.sum()));
         }
-        ThreadStartEvent tse = (ThreadStartEvent)event;
     }
 
     public void threadDied(ThreadDeathEvent event) {
@@ -113,8 +112,6 @@ public class ThreadMemoryLeakTest extends TestScaffold {
             println("Got ThreadDeathEvent #" + threadDeathCount +
                     " threads:" + (threadStartCount.sum() - threadDeathCount.sum()));
         }
-        ThreadDeathEvent tde = (ThreadDeathEvent)event;
-        ThreadReference thread = tde.thread();
     }
 
     public void vmDied(VMDeathEvent event) {
