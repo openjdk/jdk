@@ -1722,3 +1722,34 @@ void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register 
     }
   }
 }
+
+void C2_MacroAssembler::rvv_compare(VectorRegister vd, BasicType bt, int length_in_bytes, VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
+  rvv_vsetvli(bt, length_in_bytes);
+  vmxor_mm(vd, vd, vd);
+  if (bt == T_FLOAT || bt == T_DOUBLE) {
+    switch (cond) {
+      case BoolTest::eq: vmfeq_vv(vd, src1, src2, vm); break;
+      case BoolTest::ne: vmfne_vv(vd, src1, src2, vm); break;
+      case BoolTest::le: vmfle_vv(vd, src1, src2, vm); break;
+      case BoolTest::ge: vmfle_vv(vd, src2, src1, vm); break;
+      case BoolTest::lt: vmflt_vv(vd, src1, src2, vm); break;
+      case BoolTest::gt: vmflt_vv(vd, src2, src1, vm); break;
+      default:
+        assert(false, "unsupported compare condition");
+        ShouldNotReachHere();
+    }
+  } else {
+    assert(is_integral_type(bt), "unsupported element type");
+    switch (cond) {
+      case BoolTest::eq: vmseq_vv(vd, src1, src2, vm); break;
+      case BoolTest::ne: vmsne_vv(vd, src1, src2, vm); break;
+      case BoolTest::le: vmsle_vv(vd, src1, src2, vm); break;
+      case BoolTest::ge: vmsle_vv(vd, src2, src1, vm); break;
+      case BoolTest::lt: vmslt_vv(vd, src1, src2, vm); break;
+      case BoolTest::gt: vmslt_vv(vd, src2, src1, vm); break;
+      default:
+        assert(false, "unsupported compare condition");
+        ShouldNotReachHere();
+    }
+  }
+}

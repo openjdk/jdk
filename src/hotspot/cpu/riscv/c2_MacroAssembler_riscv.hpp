@@ -137,10 +137,12 @@
     vl1re8_v(v, t0);
   }
 
-  void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vec_reg_size_in_bytes) {
-    assert(vec_reg_size_in_bytes % 16 == 0, "unexpected vector reg size");
-    unspill(v0, src_offset);
-    spill(v0, dst_offset);
+  void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
+    assert(vector_length_in_bytes % 16 == 0, "unexpected vector reg size");
+    for (int i = 0; i < vector_length_in_bytes / 8; i++) {
+      unspill(t0, true, src_offset + (i * 8));
+      spill(t0, true, dst_offset + (i * 8));
+    }
   }
 
   void minmax_FD(FloatRegister dst,
@@ -197,5 +199,31 @@
                           BasicType bt, int opc, int length_in_bytes);
 
  void rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp = t0);
+
+ void rvv_compare(VectorRegister dst, BasicType bt, int length_in_bytes,
+                  VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
+
+ // In Matcher::scalable_predicate_reg_slots,
+ // we assume each predicate register is one-eighth of the size of
+ // scalable vector register, one mask bit per vector byte.
+ void spill_vmask(VectorRegister v, int offset){
+   rvv_vsetvli(T_BYTE, MaxVectorSize >> 3);
+   add(t0, sp, offset);
+   vse8_v(v, t0);
+ }
+
+ void unspill_vmask(VectorRegister v, int offset){
+   rvv_vsetvli(T_BYTE, MaxVectorSize >> 3);
+   add(t0, sp, offset);
+   vle8_v(v, t0);
+ }
+
+  void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
+    assert(vector_length_in_bytes % 4 == 0, "unexpected vector mask reg size");
+    for (int i = 0; i < vector_length_in_bytes / 4; i++) {
+      unspill(t0, false, src_offset + (i * 4));
+      spill(t0, false, dst_offset + (i * 4));
+    }
+  }
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
