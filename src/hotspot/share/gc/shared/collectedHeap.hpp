@@ -314,7 +314,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
   static size_t lab_alignment_reserve() {
-    assert(_lab_alignment_reserve != ~(size_t)0, "uninitialized");
+    assert(_lab_alignment_reserve != SIZE_MAX, "uninitialized");
     return _lab_alignment_reserve;
   }
 

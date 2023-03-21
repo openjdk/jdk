@@ -258,6 +258,7 @@ public class ClassReader {
     }
 
     /** Construct a new class reader. */
+    @SuppressWarnings("this-escape")
     protected ClassReader(Context context) {
         context.put(classReaderKey, this);
         annotate = Annotate.instance(context);
@@ -2925,18 +2926,13 @@ public class ClassReader {
         private final Name name;
 
         public ProxyType(int index) {
-            super(syms.noSymbol, TypeMetadata.EMPTY);
+            super(syms.noSymbol, List.nil());
             this.name = poolReader.getName(index);
         }
 
         @Override
         public TypeTag getTag() {
             return TypeTag.NONE;
-        }
-
-        @Override
-        public Type cloneWithMetadata(TypeMetadata metadata) {
-            throw new UnsupportedOperationException();
         }
 
         public Type resolve() {
