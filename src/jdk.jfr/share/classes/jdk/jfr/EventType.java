@@ -40,6 +40,11 @@ import jdk.jfr.internal.Utils;
 
 /**
  * Describes an event, its fields, settings and annotations.
+ * <p>
+ * The following example shows how the {@code EventType} class can
+ * be used to print metadata about an event.
+ *
+ * {@snippet class="Snippets" region="EventTypeOverview"}
  *
  * @since 9
  */

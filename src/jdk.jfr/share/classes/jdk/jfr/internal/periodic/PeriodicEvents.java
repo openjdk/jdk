@@ -31,6 +31,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jdk.jfr.Event;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.PlatformEventType;
 
 /**
@@ -132,6 +135,7 @@ public final class PeriodicEvents {
 
         }
         boolean flush = false;
+        Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG,"Periodic work started");
         for (Batch batch : batchManager.getBatches()) {
             long left = 0;
             long r_period = batch.getPeriod();
@@ -178,6 +182,7 @@ public final class PeriodicEvents {
         if (flush) {
             flushTask.run(eventTimestamp, PeriodicType.INTERVAL);
         }
+        Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG,"Periodic work ended");
         lastTimeMillis = now;
         return min;
     }

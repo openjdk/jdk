@@ -33,7 +33,7 @@ abstract class EventTask extends PeriodicTask {
     private final PlatformEventType eventType;
 
     public EventTask(PlatformEventType eventType, LookupKey lookupKey) {
-        super(lookupKey, eventType.getLogName());
+        super(lookupKey, "event " + eventType.getLogName());
         this.eventType = eventType;
     }
 

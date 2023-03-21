@@ -36,6 +36,11 @@ import jdk.jfr.internal.Utils;
 
 /**
  * Describes the event fields and annotation elements.
+ * <p>
+ * The following example shows how the {@code ValueDescriptor} class can
+ * be used to list field information of all types.
+ *
+ * {@snippet class="Snippets" region="ValueDescriptorOverview"}
  *
  * @since 9
  */
