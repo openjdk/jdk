@@ -375,6 +375,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _memory_size("memorysize", "Overall memory size, ", "MEMORY SIZE", false, "10m"),
   _max_chunk_size("maxchunksize", "Size of an individual disk chunk", "MEMORY SIZE", false, "12m"),
   _sample_threads("samplethreads", "Activate Thread sampling", "BOOLEAN", false, "true"),
+  _preserve_repository("preserve-repository", "Delete disk repository files on exit", "BOOLEAN", false, "false"),
   _verbose(true) {
   _dcmdparser.add_dcmd_option(&_repository_path);
   _dcmdparser.add_dcmd_option(&_dump_path);
@@ -385,6 +386,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _dcmdparser.add_dcmd_option(&_memory_size);
   _dcmdparser.add_dcmd_option(&_max_chunk_size);
   _dcmdparser.add_dcmd_option(&_sample_threads);
+  _dcmdparser.add_dcmd_option(&_preserve_repository);
 };
 
 void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
@@ -392,49 +394,52 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
               // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
   out->print_cr("Options:");
   out->print_cr("");
-  out->print_cr("  globalbuffercount  (Optional) Number of global buffers. This option is a legacy");
-  out->print_cr("                     option: change the memorysize parameter to alter the number of");
-  out->print_cr("                     global buffers. This value cannot be changed once JFR has been");
-  out->print_cr("                     initialized. (STRING, default determined by the value for");
-  out->print_cr("                     memorysize)");
+  out->print_cr("  globalbuffercount   (Optional) Number of global buffers. This option is a legacy");
+  out->print_cr("                      option: change the memorysize parameter to alter the number of");
+  out->print_cr("                      global buffers. This value cannot be changed once JFR has been");
+  out->print_cr("                      initialized. (STRING, default determined by the value for");
+  out->print_cr("                      memorysize)");
   out->print_cr("");
-  out->print_cr("  globalbuffersize   (Optional) Size of the global buffers, in bytes. This option is a");
-  out->print_cr("                     legacy option: change the memorysize parameter to alter the size");
-  out->print_cr("                     of the global buffers. This value cannot be changed once JFR has");
-  out->print_cr("                     been initialized. (STRING, default determined by the value for");
-  out->print_cr("                     memorysize)");
+  out->print_cr("  globalbuffersize    (Optional) Size of the global buffers, in bytes. This option is a");
+  out->print_cr("                      legacy option: change the memorysize parameter to alter the size");
+  out->print_cr("                      of the global buffers. This value cannot be changed once JFR has");
+  out->print_cr("                      been initialized. (STRING, default determined by the value for");
+  out->print_cr("                      memorysize)");
   out->print_cr("");
-  out->print_cr("  maxchunksize       (Optional) Maximum size of an individual data chunk in bytes if");
-  out->print_cr("                     one of the following suffixes is not used: 'm' or 'M' for");
-  out->print_cr("                     megabytes OR 'g' or 'G' for gigabytes. This value cannot be");
-  out->print_cr("                     changed once JFR has been initialized. (STRING, 12M)");
+  out->print_cr("  maxchunksize        (Optional) Maximum size of an individual data chunk in bytes if");
+  out->print_cr("                      one of the following suffixes is not used: 'm' or 'M' for");
+  out->print_cr("                      megabytes OR 'g' or 'G' for gigabytes. This value cannot be");
+  out->print_cr("                      changed once JFR has been initialized. (STRING, 12M)");
   out->print_cr("");
-  out->print_cr("  memorysize         (Optional) Overall memory size, in bytes if one of the following");
-  out->print_cr("                     suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for");
-  out->print_cr("                     gigabytes. This value cannot be changed once JFR has been");
-  out->print_cr("                     initialized. (STRING, 10M)");
+  out->print_cr("  memorysize          (Optional) Overall memory size, in bytes if one of the following");
+  out->print_cr("                      suffixes is not used: 'm' or 'M' for megabytes OR 'g' or 'G' for");
+  out->print_cr("                      gigabytes. This value cannot be changed once JFR has been");
+  out->print_cr("                      initialized. (STRING, 10M)");
   out->print_cr("");
-  out->print_cr("  repositorypath     (Optional) Path to the location where recordings are stored until");
-  out->print_cr("                     they are written to a permanent file. (STRING, The default");
-  out->print_cr("                     location is the temporary directory for the operating system. On");
-  out->print_cr("                     Linux operating systems, the temporary directory is /tmp. On");
-  out->print_cr("                     Windows, the temporary directory is specified by the TMP");
-  out->print_cr("                     environment variable)");
+  out->print_cr("  repositorypath      (Optional) Path to the location where recordings are stored until");
+  out->print_cr("                      they are written to a permanent file. (STRING, The default");
+  out->print_cr("                      location is the temporary directory for the operating system. On");
+  out->print_cr("                      Linux operating systems, the temporary directory is /tmp. On");
+  out->print_cr("                      Windows, the temporary directory is specified by the TMP");
+  out->print_cr("                      environment variable)");
   out->print_cr("");
-  out->print_cr("  dumppath           (Optional) Path to the location where a recording file is written");
-  out->print_cr("                     in case the VM runs into a critical error, such as a system");
-  out->print_cr("                     crash. (STRING, The default location is the current directory)");
+  out->print_cr("  dumppath            (Optional) Path to the location where a recording file is written");
+  out->print_cr("                      in case the VM runs into a critical error, such as a system");
+  out->print_cr("                      crash. (STRING, The default location is the current directory)");
   out->print_cr("");
-  out->print_cr("  stackdepth         (Optional) Stack depth for stack traces. Setting this value");
-  out->print_cr("                     greater than the default of 64 may cause a performance");
-  out->print_cr("                     degradation. This value cannot be changed once JFR has been");
-  out->print_cr("                     initialized. (LONG, 64)");
+  out->print_cr("  stackdepth          (Optional) Stack depth for stack traces. Setting this value");
+  out->print_cr("                      greater than the default of 64 may cause a performance");
+  out->print_cr("                      degradation. This value cannot be changed once JFR has been");
+  out->print_cr("                      initialized. (LONG, 64)");
   out->print_cr("");
-  out->print_cr("  thread_buffer_size (Optional) Local buffer size for each thread in bytes if one of");
-  out->print_cr("                     the following suffixes is not used: 'k' or 'K' for kilobytes or");
-  out->print_cr("                     'm' or 'M' for megabytes. Overriding this parameter could reduce");
-  out->print_cr("                     performance and is not recommended. This value cannot be changed");
-  out->print_cr("                     once JFR has been initialized. (STRING, 8k)");
+  out->print_cr("  thread_buffer_size  (Optional) Local buffer size for each thread in bytes if one of");
+  out->print_cr("                      the following suffixes is not used: 'k' or 'K' for kilobytes or");
+  out->print_cr("                      'm' or 'M' for megabytes. Overriding this parameter could reduce");
+  out->print_cr("                      performance and is not recommended. This value cannot be changed");
+  out->print_cr("                      once JFR has been initialized. (STRING, 8k)");
+  out->print_cr("");
+  out->print_cr("  preserve-repository (Optional) Preserve files stored in the disk repository after the");
+  out->print_cr("                      Java Virtual Machine has exited. (BOOLEAN, false)");
   out->print_cr("");
   out->print_cr("Options must be specified using the <key> or <key>=<value> syntax.");
   out->print_cr("");
@@ -490,6 +495,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   jobject thread_buffer_size = NULL;
   jobject max_chunk_size = NULL;
   jobject memory_size = NULL;
+  jobject preserve_repository = nullptr;
 
   if (!JfrRecorder::is_created()) {
     if (_stack_depth.is_set()) {
@@ -510,6 +516,9 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
     if (_memory_size.is_set()) {
       memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value()._size, CHECK);
     }
+    if (_preserve_repository.is_set()) {
+      preserve_repository = JfrJavaSupport::new_java_lang_Boolean(_preserve_repository.value(), CHECK);
+    }
     if (_sample_threads.is_set()) {
       bool startup = DCmd_Source_Internal == source;
       if (startup) {
@@ -525,7 +534,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   static const char method[] = "execute";
   static const char signature[] = "(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;"
     "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;"
-    "Ljava/lang/Long;)[Ljava/lang/String;";
+    "Ljava/lang/Long;Ljava/lang/Boolean;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -540,6 +549,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(thread_buffer_size);
   execute_args.push_jobject(memory_size);
   execute_args.push_jobject(max_chunk_size);
+  execute_args.push_jobject(preserve_repository);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
   handle_dcmd_result(output(), result.get_oop(), source, THREAD);
