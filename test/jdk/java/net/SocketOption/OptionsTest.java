@@ -25,7 +25,6 @@
  * @test
  * @bug 8036979 8072384 8044773 8225214 8233296 8234083
  * @library /test/lib
- * @build jdk.test.lib.Platform jdk.test.lib.NetworkConfiguration
  * @requires !vm.graal.enabled
  * @run main/othervm -Xcheck:jni OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
