@@ -25,6 +25,7 @@
 
 package sun.nio.fs;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
@@ -41,7 +42,6 @@ import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -73,8 +73,10 @@ abstract class UnixFileSystem
 
     private final UnixFileSystemProvider provider;
     private final byte[] defaultDirectory;
-    private final boolean needToResolveAgainstDefaultDirectory;
     private final UnixPath rootDirectory;
+
+    // lazily initialized in needToResolveAgainstDefaultDirectory()
+    private Boolean needToResolveAgainstDefaultDirectory;
 
     // package-private
     UnixFileSystem(UnixFileSystemProvider provider, String dir) {
@@ -82,28 +84,6 @@ abstract class UnixFileSystem
         this.defaultDirectory = Util.toBytes(UnixPath.normalizeAndCheck(dir));
         if (this.defaultDirectory[0] != '/') {
             throw new RuntimeException("default directory must be absolute");
-        }
-
-        // if process-wide chdir is allowed or default directory is not the
-        // process working directory then paths must be resolved against the
-        // default directory.
-        String propValue = GetPropertyAction
-                .privilegedGetProperty("sun.nio.fs.chdirAllowed", "false");
-        boolean chdirAllowed = propValue.isEmpty() ? true : Boolean.parseBoolean(propValue);
-        if (chdirAllowed) {
-            this.needToResolveAgainstDefaultDirectory = true;
-        } else {
-            byte[] cwd = UnixNativeDispatcher.getcwd();
-            boolean defaultIsCwd = (cwd.length == defaultDirectory.length);
-            if (defaultIsCwd) {
-                for (int i=0; i<cwd.length; i++) {
-                    if (cwd[i] != defaultDirectory[i]) {
-                        defaultIsCwd = false;
-                        break;
-                    }
-                }
-            }
-            this.needToResolveAgainstDefaultDirectory = !defaultIsCwd;
         }
 
         // the root directory
@@ -116,6 +96,31 @@ abstract class UnixFileSystem
     }
 
     boolean needToResolveAgainstDefaultDirectory() {
+        // OK if two or more threads initialize this instance variable
+        if (needToResolveAgainstDefaultDirectory == null) {
+            // if process-wide chdir is allowed or default directory is not the
+            // process working directory then paths must be resolved against the
+            // default directory.
+            String propValue = GetPropertyAction
+                .privilegedGetProperty("sun.nio.fs.chdirAllowed", "false");
+            boolean chdirAllowed = Boolean.parseBoolean(propValue);
+
+            if (chdirAllowed) {
+                this.needToResolveAgainstDefaultDirectory = true;
+            } else {
+                byte[] cwd = UnixNativeDispatcher.getcwd();
+                boolean defaultIsCwd = (cwd.length == defaultDirectory.length);
+                if (defaultIsCwd) {
+                    for (int i=0; i<cwd.length; i++) {
+                        if (cwd[i] != defaultDirectory[i]) {
+                            defaultIsCwd = false;
+                            break;
+                        }
+                    }
+                }
+                this.needToResolveAgainstDefaultDirectory = !defaultIsCwd;
+            }
+        }
         return needToResolveAgainstDefaultDirectory;
     }
 
