@@ -61,8 +61,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
     /**
      * working arrays initialized on demand by readUTF
      */
-    private byte[] bytearr = null;
-    private char[] chararr = null;
+    private byte[] bytearr;
+    private char[] chararr;
 
     /**
      * Reads some number of bytes from the contained input stream and
