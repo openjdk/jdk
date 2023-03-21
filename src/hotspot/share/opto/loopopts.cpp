@@ -1928,7 +1928,13 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // in the loop to break the loop, then test is again outside of the
       // loop to determine which way the loop exited.
       // Loop predicate If node connects to Bool node through Opaque1 node.
-      if (use->is_If() || use->is_CMove() || C->is_predicate_opaq(use) || use->Opcode() == Op_Opaque4) {
+      //
+      // If the use is an AllocateArray through its ValidLengthTest input,
+      // make sure the Bool/Cmp input is cloned down to avoid a Phi between
+      // the AllocateArray node and its ValidLengthTest input that could cause
+      // split if to break.
+      if (use->is_If() || use->is_CMove() || C->is_predicate_opaq(use) || use->Opcode() == Op_Opaque4 ||
+          (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
         if (!split_if_set) {
@@ -2442,9 +2448,10 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   if (split_if_set) {
     while (split_if_set->size()) {
       Node *iff = split_if_set->pop();
-      if (iff->in(1)->is_Phi()) {
-        Node *b = clone_iff(iff->in(1)->as_Phi(), loop);
-        _igvn.replace_input_of(iff, 1, b);
+      uint input = iff->Opcode() == Op_AllocateArray ? AllocateNode::ValidLengthTest : 1;
+      if (iff->in(input)->is_Phi()) {
+        Node *b = clone_iff(iff->in(input)->as_Phi(), loop);
+        _igvn.replace_input_of(iff, input, b);
       }
     }
   }

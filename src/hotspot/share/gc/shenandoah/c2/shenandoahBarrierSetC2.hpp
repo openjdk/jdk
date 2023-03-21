@@ -139,7 +139,7 @@ public:
 #endif
 
   virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const;
-  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const;
+  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const;
 
   virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const;
   virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const;

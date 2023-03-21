@@ -1124,7 +1124,7 @@ bool ShenandoahBarrierSetC2::has_only_shenandoah_wb_pre_uses(Node* n) {
   return n->outcnt() > 0;
 }
 
-bool ShenandoahBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode) const {
+bool ShenandoahBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const {
   switch (opcode) {
     case Op_CallLeaf:
     case Op_CallLeafNoFP: {
