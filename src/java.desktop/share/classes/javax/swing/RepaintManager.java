@@ -884,9 +884,19 @@ public class RepaintManager
                             // If the Graphics goes away, it means someone disposed of
                             // the window, don't do anything.
                             if (g != null) {
-                                g.setClip(rect.x, rect.y, rect.width, rect.height);
                                 try {
-                                    dirtyComponent.paint(g);
+                                    Component componentToPaint = dirtyComponent;
+                                    if (dirtyComponent instanceof Window &&
+                                            dirtyComponent instanceof RootPaneContainer rootPaneContainer) {
+                                        JRootPane rootPane = rootPaneContainer.getRootPane();
+                                        componentToPaint = rootPane;
+
+                                        // offset for the titlebar, if necessary:
+                                        g.translate(rootPane.getX(), rootPane.getY());
+                                    }
+
+                                    g.setClip(rect.x, rect.y, rect.width, rect.height);
+                                    componentToPaint.paint(g);
                                 } finally {
                                     g.dispose();
                                 }
