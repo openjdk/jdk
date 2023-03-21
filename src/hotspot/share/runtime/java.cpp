@@ -445,8 +445,20 @@ void before_exit(JavaThread* thread, bool halt) {
   if (DynamicArchive::should_dump_at_vm_exit()) {
     HandleMark hm(thread);
     DynamicArchive::prepare_for_dump_at_exit();
+    assert(ArchiveClassesAtExit != nullptr, "Must be already set");
+    ExceptionMark em(thread);
+    DynamicArchive::dump(ArchiveClassesAtExit, thread);
+    if (thread->has_pending_exception()) {
+      ResourceMark rm(thread);
+      oop pending_exception = thread->pending_exception();
+      log_error(cds)("ArchiveClassesAtExit has failed %s: %s",
+                     pending_exception->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
+      thread->clear_pending_exception();
+    }
   }
 #endif
+
 
   // Actual shutdown logic begins here.
 
@@ -522,21 +534,6 @@ void before_exit(JavaThread* thread, bool halt) {
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
-
-#if INCLUDE_CDS
-  if (DynamicArchive::should_dump_at_vm_exit()) {
-    assert(ArchiveClassesAtExit != nullptr, "Must be already set");
-    ExceptionMark em(thread);
-    DynamicArchive::dump(ArchiveClassesAtExit, thread);
-    if (thread->has_pending_exception()) {
-      ResourceMark rm(thread);
-      oop pending_exception = thread->pending_exception();
-      log_error(cds)("ArchiveClassesAtExit has failed %s: %s", pending_exception->klass()->external_name(),
-                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
-      thread->clear_pending_exception();
-    }
-  }
-#endif
 
   print_statistics();
   Universe::heap()->print_tracing_info();
