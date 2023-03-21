@@ -572,8 +572,12 @@ There are a few exceptions to this rule.
 
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
-* `#include <type_traits>`.
+* `#include <type_traits>` with some restrictions, listed below.
 * `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
+
+Certain restrictions apply to the declarations provided by `<type_traits>`.
+
+* The `alignof` operator should be used rather than `std::alignment_of<>`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
@@ -1054,7 +1058,36 @@ and other supported compilers may not have anything similar.
 [p0136r1]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html
   "p0136r1"
 
+### Attributes
+
+The use of some attributes
+([n2761](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf))
+(listed below) is permitted.  (Note that some of the attributes defined in
+that paper didn't make it into the final specification.)
+
+Attributes are syntactically permitted in a broad set of locations, but
+specific attributes are only permitted in a subset of those locations.  In
+some cases an attribute that appertains to a given element may be placed in
+any of several locations with the same meaning.  In those cases HotSpot has a
+preferred location.
+
+* An attribute that appertains to a function is placed at the beginning of the
+function's declaration, rather than between the function name and the parameter
+list.
+
+Only the following attributes are permitted:
+
+* `[[noreturn]]`
+
+The following attributes are expressly forbidden:
+
+* `[[carries_dependency]]` - Related to `memory_order_consume`.
+* `[[deprecated]]` - Not relevant in HotSpot code.
+
 ### Additional Permitted Features
+
+* `alignof`
+([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
 
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))
@@ -1153,10 +1186,6 @@ difficult to deal with and lead to surprises, as can destruction
 ordering.  HotSpot doesn't generally try to cleanup on exit, and
 running destructors at exit can also lead to problems.
 
-* `[[deprecated]]` attribute
-([n3760](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3760.html)) &mdash;
-Not relevant in HotSpot code.
-
 * Avoid most operator overloading, preferring named functions.  When
 operator overloading is used, ensure the semantics conform to the
 normal expected behavior of the operation.
@@ -1180,9 +1209,6 @@ features that have not yet been discussed.
 
 * Member initializers and aggregates
 ([n3653](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html))
-
-* `[[noreturn]]` attribute
-([n2761](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf))
 
 * Rvalue references and move semantics
 

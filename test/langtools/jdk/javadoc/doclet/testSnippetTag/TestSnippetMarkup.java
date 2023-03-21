@@ -73,7 +73,7 @@ import static javax.tools.DocumentationTool.Location.DOCUMENTATION_OUTPUT;
 public class TestSnippetMarkup extends SnippetTester {
 
     public static void main(String... args) throws Exception {
-        new TestSnippetMarkup().runTests(m -> new Object[]{Paths.get(m.getName())});
+        new TestSnippetMarkup().runTests();
     }
 
     /*

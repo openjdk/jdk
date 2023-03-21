@@ -50,7 +50,7 @@ public class TestExceptionTypeMatching extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         var tester = new TestExceptionTypeMatching();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();

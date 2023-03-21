@@ -65,7 +65,7 @@ import javax.tools.StandardLocation;
  * <h3>Options and Environment Variables</h3>
  *
  * The full set of options and environment variables supported by <em>javac</em>
- * is given in the <a href="../specs/man/javac.html"><em>javac Tool Guide</em></a>.
+ * is given in the <a href="../../specs/man/javac.html"><em>javac Tool Guide</em></a>.
  * However, there are some restrictions when the compiler is invoked through
  * its API.
  *
@@ -162,6 +162,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code fallthrough}          <td>falling through from one case of a {@code switch} statement to
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
+ * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
  *                                                      in exported packages
  * <tr><th scope="row">{@code module}               <td>module system related issues
@@ -183,6 +184,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
  * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
+ * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
  * <tr><th scope="row">{@code try}                  <td>issues relating to use of {@code try} blocks
  *                                                      (that is, try-with-resources)
  * <tr><th scope="row">{@code unchecked}            <td>unchecked operations

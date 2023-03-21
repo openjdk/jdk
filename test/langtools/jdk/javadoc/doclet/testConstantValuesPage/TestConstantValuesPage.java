@@ -39,7 +39,7 @@ import toolbox.ToolBox;
 public class TestConstantValuesPage extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestConstantValuesPage tester = new TestConstantValuesPage();
+        var tester = new TestConstantValuesPage();
         tester.runTests();
     }
 

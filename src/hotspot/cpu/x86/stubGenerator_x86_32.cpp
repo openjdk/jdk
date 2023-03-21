@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4011,13 +4011,7 @@ class StubGenerator: public StubCodeGenerator {
     Register java_thread = rdi;
     __ get_thread(java_thread);
     __ reset_last_Java_frame(java_thread, true);
-    Label null_jobject;
-    __ testptr(rax, rax);
-    __ jcc(Assembler::zero, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(masm, decorators, T_OBJECT, rax, Address(rax, 0), noreg, java_thread);
-    __ bind(null_jobject);
+    __ resolve_global_jobject(rax, java_thread, rdx);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
@@ -4036,7 +4030,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize
     };
 
-    int insts_size = 512;
+    int insts_size = 1024;
     int locs_size = 64;
     CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();

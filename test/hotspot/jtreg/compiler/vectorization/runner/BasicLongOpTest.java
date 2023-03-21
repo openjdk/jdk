@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +36,17 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicLongOpTest
  *
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled & vm.flagless
  */
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicLongOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private long[] a;
     private long[] b;
@@ -61,6 +65,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public long[] vectorNeg() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -70,6 +76,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512vl", "true"},
+        counts = {IRNode.ABS_V, ">0"})
     public long[] vectorAbs() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -79,6 +87,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.ADD_V, ">0"})
     public long[] vectorAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +98,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public long[] vectorSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -97,6 +109,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx512dq", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public long[] vectorMul() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -106,6 +120,10 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
+        counts = {IRNode.ADD_V, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -115,6 +133,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
+        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
     public long[] vectorMulSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -125,6 +145,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_V, ">0"})
     public long[] vectorNot() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,6 +156,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.AND_V, ">0"})
     public long[] vectorAnd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -143,6 +167,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.OR_V, ">0"})
     public long[] vectorOr() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -152,6 +178,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_V, ">0"})
     public long[] vectorXor() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -162,6 +190,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.LSHIFT_V, ">0"})
     public long[] vectorShiftLeft() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -171,6 +201,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
     public long[] vectorSignedShiftRight() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -180,6 +212,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.URSHIFT_V, ">0"})
     public long[] vectorUnsignedShiftRight() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -226,6 +260,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that long integer max produces non-vectorizable CMoveL node.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public long reductionMax() {
         long res = Long.MIN_VALUE;
         for (int i = 0; i < SIZE; i++) {
@@ -235,6 +271,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that long integer min produces non-vectorizable CMoveL node.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public long reductionMin() {
         long res = Long.MAX_VALUE;
         for (int i = 0; i < SIZE; i++) {
@@ -243,4 +281,3 @@ public class BasicLongOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

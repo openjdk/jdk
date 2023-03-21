@@ -77,6 +77,11 @@ class FrameMap : public CompilationResourceObj {
     spill_slot_size_in_bytes = 4
   };
 
+  void update_reserved_argument_area_size (int size) {
+    assert(size >= 0, "check");
+    _reserved_argument_area_size = MAX2(_reserved_argument_area_size, size);
+  }
+
 #include CPU_HEADER(c1_FrameMap)
 
   friend class LIR_Opr;
@@ -122,17 +127,11 @@ class FrameMap : public CompilationResourceObj {
     _cpu_reg2rnr[reg->encoding()] = rnr;
   }
 
-  void update_reserved_argument_area_size (int size) {
-    assert(size >= 0, "check");
-    _reserved_argument_area_size = MAX2(_reserved_argument_area_size, size);
-  }
-
  protected:
 #ifndef PRODUCT
   static void cpu_range_check (int rnr)          { assert(0 <= rnr && rnr < nof_cpu_regs, "cpu register number is too big"); }
   static void fpu_range_check (int rnr)          { assert(0 <= rnr && rnr < nof_fpu_regs, "fpu register number is too big"); }
 #endif
-
 
   ByteSize sp_offset_for_monitor_base(const int idx) const;
 

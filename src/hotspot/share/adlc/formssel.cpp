@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -605,15 +605,16 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
   // TEMPORARY
   // if( is_simple_chain_rule(globals) )  return false;
 
-  // String.(compareTo/equals/indexOf) and Arrays.equals use many memorys edges,
-  // but writes none
+  // String.(compareTo/equals/indexOf/hashCode) and Arrays.(equals/hashCode)
+  // use many memorys edges, but writes none
   if( _matrule && _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar" )==0 ||
         strcmp(_matrule->_rChild->_opType,"CountPositives" )==0 ||
-        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ))
+        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ||
+        strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ))
     return true;
 
   // Check if instruction has a USE of a memory operand class, but no defs
@@ -896,6 +897,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
 
   if( _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
+        strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrInflatedCopy"   )==0 ||
@@ -904,7 +906,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar")==0 ||
         strcmp(_matrule->_rChild->_opType,"CountPositives")==0 ||
         strcmp(_matrule->_rChild->_opType,"EncodeISOArray")==0)) {
-        // String.(compareTo/equals/indexOf) and Arrays.equals
+        // String.(compareTo/equals/indexOf/hashCode) and Arrays.equals
         // and sun.nio.cs.iso8859_1$Encoder.EncodeISOArray
         // take 1 control and 1 memory edges.
         // Also String.(compressedCopy/inflatedCopy).
@@ -1300,7 +1302,7 @@ bool InstructForm::check_branch_variant(ArchDesc &AD, InstructForm *short_branch
 void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   // Handle special constant table variables.
   if (strcmp(rep_var, "constanttablebase") == 0) {
-    fprintf(fp, "char reg[128];  ra->dump_register(in(mach_constant_base_node_input()), reg);\n");
+    fprintf(fp, "char reg[128];  ra->dump_register(in(mach_constant_base_node_input()), reg, sizeof(reg));\n");
     fprintf(fp, "    st->print(\"%%s\", reg);\n");
     return;
   }
@@ -2499,7 +2501,7 @@ void  OperandForm::int_format(FILE *fp, FormDict &globals, uint index) {
                    strcmp(ideal_type(globalAD->globalNames()), "RegFlags") == 0)) {
     // !!!!! !!!!!
     fprintf(fp,"  { char reg_str[128];\n");
-    fprintf(fp,"    ra->dump_register(node,reg_str);\n");
+    fprintf(fp,"    ra->dump_register(node,reg_str, sizeof(reg_str));\n");
     fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
     fprintf(fp,"  }\n");
   } else if (_matrule && (dtype = _matrule->is_base_constant(globals)) != Form::none) {
@@ -2507,7 +2509,7 @@ void  OperandForm::int_format(FILE *fp, FormDict &globals, uint index) {
   } else if (ideal_to_sReg_type(_ident) != Form::none) {
     // Special format for Stack Slot Register
     fprintf(fp,"  { char reg_str[128];\n");
-    fprintf(fp,"    ra->dump_register(node,reg_str);\n");
+    fprintf(fp,"    ra->dump_register(node,reg_str, sizeof(reg_str));\n");
     fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
     fprintf(fp,"  }\n");
   } else {
@@ -2528,7 +2530,7 @@ void  OperandForm::ext_format(FILE *fp, FormDict &globals, uint index) {
     fprintf(fp,"  { char reg_str[128];\n");
     fprintf(fp,"    ra->dump_register(node->in(idx");
     if ( index != 0 ) fprintf(fp,              "+%d",index);
-    fprintf(fp,                                      "),reg_str);\n");
+    fprintf(fp,                                      "),reg_str,sizeof(reg_str));\n");
     fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
     fprintf(fp,"  }\n");
   } else if (_matrule && (dtype = _matrule->is_base_constant(globals)) != Form::none) {
@@ -2538,7 +2540,7 @@ void  OperandForm::ext_format(FILE *fp, FormDict &globals, uint index) {
     fprintf(fp,"  { char reg_str[128];\n");
     fprintf(fp,"    ra->dump_register(node->in(idx");
     if ( index != 0 ) fprintf(fp,                  "+%d",index);
-    fprintf(fp,                                       "),reg_str);\n");
+    fprintf(fp,                                       "),reg_str,sizeof(reg_str));\n");
     fprintf(fp,"    st->print(\"%cs\",reg_str);\n",'%');
     fprintf(fp,"  }\n");
   } else {

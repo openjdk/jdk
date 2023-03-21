@@ -1378,25 +1378,30 @@ final class ClientHello {
                 shc.resumingSession = resumingSession ? previous : null;
             }
 
-            HelloCookieManager hcm =
-                shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS10);
-            if (!shc.isResumption &&
-                !hcm.isCookieValid(shc, clientHello, clientHello.cookie)) {
-                //
-                // Perform cookie exchange for DTLS handshaking if no cookie
-                // or the cookie is invalid in the ClientHello message.
-                //
-                // update the responders
-                shc.handshakeProducers.put(
-                        SSLHandshake.HELLO_VERIFY_REQUEST.id,
-                        SSLHandshake.HELLO_VERIFY_REQUEST);
 
-                //
-                // produce response handshake message
-                //
-                SSLHandshake.HELLO_VERIFY_REQUEST.produce(context, clientHello);
+            // We will by default exchange DTLS cookies for all handshakes
+            // (new and resumed) unless jdk.tls.enableDtlsResumeCookie=false.
+            // The property only affects the cookie exchange for resumption.
+            if (!shc.isResumption || SSLConfiguration.enableDtlsResumeCookie) {
+                HelloCookieManager hcm =
+                        shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS10);
+                if (!hcm.isCookieValid(shc, clientHello, clientHello.cookie)) {
+                    //
+                    // Perform cookie exchange for DTLS handshaking if no cookie
+                    // or the cookie is invalid in the ClientHello message.
+                    //
+                    // update the responders
+                    shc.handshakeProducers.put(
+                            SSLHandshake.HELLO_VERIFY_REQUEST.id,
+                            SSLHandshake.HELLO_VERIFY_REQUEST);
 
-                return;
+                    //
+                    // produce response handshake message
+                    //
+                    SSLHandshake.HELLO_VERIFY_REQUEST.produce(context, clientHello);
+
+                    return;
+                }
             }
 
             // cache the client random number for further using

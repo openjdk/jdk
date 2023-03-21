@@ -147,35 +147,42 @@ public class ByteBuffer {
         appendBytes(name.getByteArray(), name.getByteOffset(), name.getByteLength());
     }
 
-     /** Append the content of a given input stream.
+     /** Append the content of a given input stream, and then close the stream.
      */
     public void appendStream(InputStream is) throws IOException {
-        try {
-            int start = length;
-            int initialSize = is.available();
-            elems = ArrayUtils.ensureCapacity(elems, length + initialSize);
-            int r = is.read(elems, start, initialSize);
-            int bp = start;
-            while (r != -1) {
-                bp += r;
-                elems = ArrayUtils.ensureCapacity(elems, bp);
-                r = is.read(elems, bp, elems.length - bp);
-            }
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                /* Ignore any errors, as this stream may have already
-                 * thrown a related exception which is the one that
-                 * should be reported.
-                 */
+        try (InputStream input = is) {
+            while (true) {
+
+                // Read another chunk of data, using size hint from available().
+                // If available() is accurate, the array size should be just right.
+                int amountToRead = Math.max(input.available(), 64);
+                elems = ArrayUtils.ensureCapacity(elems, length + amountToRead);
+                int amountRead = input.read(elems, length, amountToRead);
+                if (amountRead == -1)
+                    break;
+                length += amountRead;
+
+                // Check for the common case where input.available() returned the
+                // entire remaining input; in that case, avoid an extra array extension.
+                // Note we are guaranteed that elems.length >= length + 1 at this point.
+                if (amountRead == amountToRead) {
+                    int byt = input.read();
+                    if (byt == -1)
+                        break;
+                    elems[length++] = (byte)byt;
+                }
             }
         }
     }
 
     /** Extract an integer at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws UnderflowException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public int getInt(int bp) {
+    public int getInt(int bp) throws UnderflowException {
+        verifyRange(bp, 4);
         return
             ((elems[bp] & 0xFF) << 24) +
             ((elems[bp+1] & 0xFF) << 16) +
@@ -185,8 +192,13 @@ public class ByteBuffer {
 
 
     /** Extract a long integer at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws UnderflowException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public long getLong(int bp) {
+    public long getLong(int bp) throws UnderflowException {
+        verifyRange(bp, 8);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 8));
         try {
@@ -197,8 +209,13 @@ public class ByteBuffer {
     }
 
     /** Extract a float at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws UnderflowException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public float getFloat(int bp) {
+    public float getFloat(int bp) throws UnderflowException {
+        verifyRange(bp, 4);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 4));
         try {
@@ -209,8 +226,13 @@ public class ByteBuffer {
     }
 
     /** Extract a double at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws UnderflowException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public double getDouble(int bp) {
+    public double getDouble(int bp) throws UnderflowException {
+        verifyRange(bp, 8);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 8));
         try {
@@ -221,13 +243,25 @@ public class ByteBuffer {
     }
 
     /** Extract a character at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws UnderflowException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
-    public char getChar(int bp) {
+    public char getChar(int bp) throws UnderflowException {
+        verifyRange(bp, 2);
         return
             (char)(((elems[bp] & 0xFF) << 8) + (elems[bp+1] & 0xFF));
     }
 
-    public byte getByte(int bp) {
+    /** Extract a byte at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws UnderflowException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
+     */
+    public byte getByte(int bp) throws UnderflowException {
+        verifyRange(bp, 1);
         return elems[bp];
     }
 
@@ -241,5 +275,40 @@ public class ByteBuffer {
      */
     public Name toName(Names names) {
         return names.fromUtf(elems, 0, length);
+    }
+
+    /** Verify there are at least the specified number of bytes in this buffer at the specified offset.
+     *
+     * @param off starting offset
+     * @param len required length
+     * @throws UnderflowException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code off} or {@code len} is negative
+     */
+    public void verifyRange(int off, int len) throws UnderflowException {
+        if (off < 0 || len < 0)
+            throw new IllegalArgumentException("off=" + off + ", len=" + len);
+        if (off + len < 0 || off + len > length)
+            throw new UnderflowException(length);
+    }
+
+// UnderflowException
+
+    /** Thrown when trying to read past the end of the buffer.
+     */
+    public static class UnderflowException extends Exception {
+
+        private static final long serialVersionUID = 0;
+
+        private final int length;
+
+        public UnderflowException(int length) {
+            this.length = length;
+        }
+
+        /** Get the length of the buffer, which apparently is not long enough.
+         */
+        public int getLength() {
+            return length;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import sun.security.testlibrary.SimpleOCSPServer;
 import sun.security.testlibrary.SimpleOCSPServer;
 import sun.security.testlibrary.SimpleOCSPServer;
@@ -114,11 +116,10 @@ public class GetAndPostTests {
                             SimpleOCSPServer.CertStatus.CERT_STATUS_GOOD)));
             ocspResponder.start();
             // Wait 5 seconds for server ready
-            for (int i = 0; (i < 100 && !ocspResponder.isServerReady()); i++) {
-                Thread.sleep(50);
-            }
-            if (!ocspResponder.isServerReady()) {
-                throw new RuntimeException("Server not ready yet");
+            boolean readyStatus =
+                    ocspResponder.awaitServerReady(5, TimeUnit.SECONDS);
+            if (!readyStatus) {
+                throw new RuntimeException("Server not ready");
             }
 
             int ocspPort = ocspResponder.getPort();

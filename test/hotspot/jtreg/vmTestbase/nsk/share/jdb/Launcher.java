@@ -163,10 +163,12 @@ public class Launcher extends DebugeeBinder {
         args.add(jdbExecPath.trim());
 
         if (argumentHandler.isLaunchingConnector()) {
-            /* Need --enable-preview on the debuggee in order to support virtual threads. */
             boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
             if (vthreadMode) {
+                /* Need --enable-preview on the debuggee in order to support virtual threads. */
                 args.add("-R--enable-preview");
+                /* Some tests need more carrier threads than the default provided. */
+                args.add("-R-Djdk.virtualThreadScheduler.parallelism=15");
             }
         }
 

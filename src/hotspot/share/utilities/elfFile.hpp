@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,8 @@ class ElfFile: public CHeapObj<mtInternal> {
   bool decode(address addr, char* buf, int buflen, int* offset);
 
   bool same_elf_file(const char* filepath) const {
-    assert(filepath != NULL, "null file path");
-    return (_filepath != NULL && !strcmp(filepath, _filepath));
+    assert(filepath != nullptr, "null file path");
+    return (_filepath != nullptr && !strcmp(filepath, _filepath));
   }
 
   NullDecoder::decoder_status get_status() const {
@@ -797,7 +797,7 @@ class DwarfFile : public ElfFile {
       uint32_t _line;
 
       // A column number within a source line. Columns are numbered beginning at 1. The value 0 is reserved to indicate
-      // that a statement begins at the “left edge” of the line.
+      // that a statement begins at the "left edge" of the line.
       uint32_t _column;
 
       // Indicates that the current instruction is a recommended breakpoint location.
@@ -876,6 +876,8 @@ class DwarfFile : public ElfFile {
     LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset, bool is_pc_after_call)
       : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _offset_in_library(offset_in_library),
         _debug_line_offset(debug_line_offset), _is_pc_after_call(is_pc_after_call) {}
+
+    ~LineNumberProgram() { delete _state; }
 
     bool find_filename_and_line_number(char* filename, size_t filename_len, int* line);
   };

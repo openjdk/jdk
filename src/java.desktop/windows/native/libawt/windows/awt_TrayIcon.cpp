@@ -1113,7 +1113,7 @@ Java_sun_awt_windows_WTrayIconPeer__1displayMessage(JNIEnv *env, jobject self,
     AwtToolkit::GetInstance().SyncCall(AwtTrayIcon::_DisplayMessage, dms);
     // global ref is deleted in _DisplayMessage
 
-    CATCH_BAD_ALLOC(NULL);
+    CATCH_BAD_ALLOC;
 }
 
 } /* extern "C" */

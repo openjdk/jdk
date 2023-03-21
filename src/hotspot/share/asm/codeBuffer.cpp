@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,10 @@ CodeBuffer::~CodeBuffer() {
     cb->free_blob();
     // free any overflow storage
     delete cb->_overflow_arena;
+  }
+
+  if (_shared_trampoline_requests != nullptr) {
+    delete _shared_trampoline_requests;
   }
 
   NOT_PRODUCT(clear_strings());
@@ -348,8 +352,8 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
   // each carrying the largest possible offset, to advance the locs_point.
   while (offset >= relocInfo::offset_limit()) {
     assert(end < locs_limit(), "adjust previous paragraph of code");
-    *end++ = filler_relocInfo();
-    offset -= filler_relocInfo().addr_offset();
+    *end++ = relocInfo::filler_info();
+    offset -= relocInfo::filler_info().addr_offset();
   }
 
   // If it's a simple reloc with no data, we'll just write (rtype | offset).
@@ -519,7 +523,7 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     // pull code out of each section
     CodeSection* cs = code_section(n);
-    if (cs->is_empty())  continue;  // skip trivial section
+    if (cs->is_empty() || !cs->has_locs()) continue;  // skip trivial section
     RelocIterator iter(cs);
     while (iter.next()) {
       if (iter.type() == relocInfo::metadata_type) {
@@ -596,6 +600,17 @@ csize_t CodeBuffer::total_offset_of(const CodeSection* cs) const {
   return -1;
 }
 
+int CodeBuffer::total_skipped_instructions_size() const {
+  int total_skipped_size = 0;
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
+    const CodeSection* cur_cs = code_section(n);
+    if (!cur_cs->is_empty()) {
+      total_skipped_size += cur_cs->_skipped_instructions_size;
+    }
+  }
+  return total_skipped_size;
+}
+
 csize_t CodeBuffer::total_relocation_size() const {
   csize_t total = copy_relocations_to(NULL);  // dry run only
   return (csize_t) align_up(total, HeapWordSize);
@@ -634,7 +649,7 @@ csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool onl
            code_point_so_far < new_code_point;
            code_point_so_far += jump) {
         jump = new_code_point - code_point_so_far;
-        relocInfo filler = filler_relocInfo();
+        relocInfo filler = relocInfo::filler_info();
         if (jump >= filler.addr_offset()) {
           jump = filler.addr_offset();
         } else {  // else shrink the filler to fit
@@ -776,7 +791,7 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
     // pull code out of each section
     const CodeSection* cs = code_section(n);
-    if (cs->is_empty()) continue;  // skip trivial section
+    if (cs->is_empty() || !cs->has_locs()) continue;  // skip trivial section
     CodeSection* dest_cs = dest->code_section(n);
     { // Repair the pc relative information in the code after the move
       RelocIterator iter(dest_cs);
@@ -983,12 +998,12 @@ void CodeBuffer::log_section_sizes(const char* name) {
   if (xtty != NULL) {
     ttyLocker ttyl;
     // log info about buffer usage
-    xtty->print_cr("<blob name='%s' size='%d'>", name, _total_size);
+    xtty->print_cr("<blob name='%s' total_size='%d'>", name, _total_size);
     for (int n = (int) CodeBuffer::SECT_FIRST; n < (int) CodeBuffer::SECT_LIMIT; n++) {
       CodeSection* sect = code_section(n);
       if (!sect->is_allocated() || sect->is_empty())  continue;
-      xtty->print_cr("<sect index='%d' size='" SIZE_FORMAT "' free='" SIZE_FORMAT "'/>",
-                     n, sect->limit() - sect->start(), sect->limit() - sect->end());
+      xtty->print_cr("<sect index='%d' capacity='%d' size='%d' remaining='%d'/>",
+                     n, sect->capacity(), sect->size(), sect->remaining());
     }
     xtty->print_cr("</blob>");
   }

@@ -70,10 +70,11 @@ class JfrBuffer {
   const void* _identity;
   u1* _pos;
   mutable const u1* _top;
-  u4 _size;
+  size_t _size;
   u2 _header_size;
   u1 _flags;
   u1 _context;
+  LP64_ONLY(const u4 _pad;)
 
   const u1* stable_top() const;
 
@@ -125,7 +126,7 @@ class JfrBuffer {
   void release_critical_section_top(const u1* new_top);
 
   size_t size() const {
-    return _size * BytesPerWord;
+    return _size;
   }
 
   size_t total_size() const {

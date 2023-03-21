@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ public:
   void verify_region_sets_optional() { DEBUG_ONLY(verify_region_sets();) }
 
   void prepare_for_verify();
-  void verify(G1VerifyType type, VerifyOption vo, const char* msg);
-  void verify_before_gc(G1VerifyType type);
-  void verify_after_gc(G1VerifyType type);
+  void verify(VerifyOption vo, const char* msg);
+  void verify_before_gc();
+  void verify_after_gc();
 
   void verify_bitmap_clear(bool above_tams_only);
 
@@ -81,7 +81,6 @@ public:
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
 
-  static void verify_ready_for_archiving();
   static void verify_archive_regions();
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ class Template {
 
  public:
   Bytecodes::Code bytecode() const;
-  bool      is_valid() const                     { return _gen != NULL; }
+  bool      is_valid() const                     { return _gen != nullptr; }
   bool      uses_bcp() const                     { return (_flags & (1 << uses_bcp_bit     )) != 0; }
   bool      does_dispatch() const                { return (_flags & (1 << does_dispatch_bit)) != 0; }
   bool      calls_vm() const                     { return (_flags & (1 << calls_vm_bit     )) != 0; }

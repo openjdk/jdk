@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 #ifndef SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 #define SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 
+#include "cds/filemap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/macros.hpp"
 
 class  FileMapInfo;
@@ -101,10 +103,20 @@ public:
   // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_regions_impl.
   // To decode them, do not use CompressedOops::decode_not_null. Use this
   // function instead.
-  inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
-  static void patch_embedded_pointers(MemRegion region, address oopmap,
-                                      size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
+  // More efficient version, but works only when ArchiveHeap is mapped.
+  inline static oop decode_from_mapped_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+
+  static void patch_compressed_embedded_pointers(BitMapView bm,
+                                                 FileMapInfo* info,
+                                                 FileMapRegion* map_region,
+                                                 MemRegion region) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void patch_embedded_pointers(FileMapInfo* info,
+                                      FileMapRegion* map_region,
+                                      MemRegion region, address oopmap,
+                                      size_t oopmap_size_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void fixup_regions() NOT_CDS_JAVA_HEAP_RETURN;
 
@@ -158,6 +170,9 @@ private:
   static bool is_in_loaded_heap(uintptr_t o) {
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
   }
+
+  template<bool IS_MAPPED>
+  inline static oop decode_from_archive_impl(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
 public:
 

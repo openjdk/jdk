@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class UnsafeCopyMemory : public CHeapObj<mtCode> {
   static UnsafeCopyMemory* _table;
   static int               _table_length;
   static int               _table_max_length;
-  UnsafeCopyMemory() : _start_pc(NULL), _end_pc(NULL), _error_exit_pc(NULL) {}
+  UnsafeCopyMemory() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
   void    set_start_pc(address pc)      { _start_pc = pc; }
   void    set_end_pc(address pc)        { _end_pc = pc; }
   void    set_error_exit_pc(address pc) { _error_exit_pc = pc; }
@@ -117,7 +117,7 @@ class UnsafeCopyMemoryMark : public StackObj {
   UnsafeCopyMemory*  _ucm_entry;
   StubCodeGenerator* _cgen;
  public:
-  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = NULL);
+  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
   ~UnsafeCopyMemoryMark();
 };
 
@@ -249,6 +249,9 @@ class StubRoutines: AllStatic {
   static address _dlibm_tan_cot_huge;
   static address _dtan;
 
+  static address _f2hf;
+  static address _hf2f;
+
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -270,8 +273,8 @@ class StubRoutines: AllStatic {
 
   static bool contains(address addr) {
     return
-      (_code1 != NULL && _code1->blob_contains(addr)) ||
-      (_code2 != NULL && _code2->blob_contains(addr)) ;
+      (_code1 != nullptr && _code1->blob_contains(addr)) ||
+      (_code2 != nullptr && _code2->blob_contains(addr)) ;
   }
 
   static RuntimeBlob* code1() { return _code1; }
@@ -423,6 +426,24 @@ class StubRoutines: AllStatic {
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
+
+  // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
+  // methods which perform the same operations as the intrinsic version.
+  // They are used for constant folding in JIT compiler to ensure equivalence.
+  //
+  static address f2hf_adr()            { return _f2hf; }
+  static address hf2f_adr()            { return _hf2f; }
+
+  static jshort f2hf(jfloat x) {
+    assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    typedef jshort (*f2hf_stub_t)(jfloat x);
+    return ((f2hf_stub_t)_f2hf)(x);
+  }
+  static jfloat hf2f(jshort x) {
+    assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    typedef jfloat (*hf2f_stub_t)(jshort x);
+    return ((hf2f_stub_t)_hf2f)(x);
+  }
 
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }

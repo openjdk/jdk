@@ -9,7 +9,7 @@ import java.util.List;
 
 public class DeconstructionPatternErrors {
 
-    public static void main(String... args) throws Throwable {
+    public static void meth() throws Throwable {
         Object p;
         p = new P(42);
         if (p instanceof P(_));

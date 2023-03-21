@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -108,21 +108,21 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = os::Posix::ucontext_get_pc(uc);
-    if (ret_sp != NULL) {
+    if (ret_sp != nullptr) {
       *ret_sp = os::Linux::ucontext_get_sp(uc);
     }
-    if (ret_fp != NULL) {
+    if (ret_fp != nullptr) {
       *ret_fp = os::Linux::ucontext_get_fp(uc);
     }
   } else {
-    epc = NULL;
-    if (ret_sp != NULL) {
-      *ret_sp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp != nullptr) {
+      *ret_sp = (intptr_t *)nullptr;
     }
-    if (ret_fp != NULL) {
-      *ret_fp = (intptr_t *)NULL;
+    if (ret_fp != nullptr) {
+      *ret_fp = (intptr_t *)nullptr;
     }
   }
 
@@ -142,8 +142,8 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 }
 
 frame os::fetch_frame_from_context(const void* ucVoid) {
-  intptr_t* frame_sp = NULL;
-  intptr_t* frame_fp = NULL;
+  intptr_t* frame_sp = nullptr;
+  intptr_t* frame_fp = nullptr;
   address epc = fetch_frame_from_context(ucVoid, &frame_sp, &frame_fp);
   if (!is_readable_pointer(epc)) {
     // Try to recover from calling into bad memory
@@ -162,7 +162,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
 
 NOINLINE frame os::current_frame() {
   intptr_t **sender_sp = (intptr_t **)__builtin_frame_address(0);
-  if (sender_sp != NULL) {
+  if (sender_sp != nullptr) {
     frame myframe((intptr_t*)os::current_stack_pointer(),
                   sender_sp[frame::link_offset],
                   CAST_FROM_FN_PTR(address, os::current_frame));
@@ -183,12 +183,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
   // decide if this trap can be handled by a stub
-  address stub = NULL;
+  address stub = nullptr;
 
-  address pc = NULL;
+  address pc = nullptr;
 
   //%note os_trap_1
-  if (info != NULL && uc != NULL && thread != NULL) {
+  if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
     address addr = (address) info->si_addr;
@@ -226,9 +226,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
+        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + NativeCall::instruction_size;
           if (is_unsafe_arraycopy) {
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
@@ -249,7 +249,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
         va_list va_dummy;
-        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
         va_end(va_dummy);
 
         ShouldNotReachHere();
@@ -287,9 +287,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-  if (stub != NULL) {
+  if (stub != nullptr) {
     // save all thread context in case we need to restore it
-    if (thread != NULL) {
+    if (thread != nullptr) {
       thread->set_saved_exception_pc(pc);
     }
 
@@ -340,7 +340,7 @@ static const char* reg_abi_names[] = {
 };
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
 
@@ -352,7 +352,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
@@ -369,7 +369,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
 

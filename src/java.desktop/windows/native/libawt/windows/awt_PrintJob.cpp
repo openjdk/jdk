@@ -24,6 +24,7 @@
  */
 
 #include "awt.h"
+#include <strsafe.h>
 #include <math.h>
 #include <windef.h>
 #include <wtypes.h>
@@ -841,9 +842,9 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
 
           // set margins to 1"
           margins.left = convertFromPoints(72, units);
-          margins.top = convertFromPoints(72, units);;
-          margins.right = convertFromPoints(72, units);;
-          margins.bottom = convertFromPoints(72, units);;
+          margins.top = convertFromPoints(72, units);
+          margins.right = convertFromPoints(72, units);
+          margins.bottom = convertFromPoints(72, units);
 
           jobject paper = getPaper(env, page);
           if (paper == NULL) {
@@ -2408,7 +2409,7 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
     size_t nameLen = wcslen(fontNameW);
     if (nameLen < (sizeof(lf.lfFaceName) / sizeof(lf.lfFaceName[0]))) {
 
-        wcscpy(lf.lfFaceName, fontNameW);
+        StringCchCopyW(lf.lfFaceName, LF_FACESIZE, fontNameW);
 
         lf.lfCharSet = DEFAULT_CHARSET;
         lf.lfPitchAndFamily = 0;
@@ -4297,7 +4298,7 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
       hDevMode = NULL;
     }
 
-    HANDLE hDevNames = AwtPrintControl::getPrintHDName(env, name);;
+    HANDLE hDevNames = AwtPrintControl::getPrintHDName(env, name);
     if (hDevNames != NULL) {
       ::GlobalFree(hDevNames);
       hDevNames = NULL;

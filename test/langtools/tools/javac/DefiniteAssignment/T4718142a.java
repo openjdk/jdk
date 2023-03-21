@@ -8,7 +8,7 @@
  */
 
 class T4718142a {
-    public static void main(String[] args) {
+    public static void meth() {
         final int i;
         for (int n=0; n<10; n++) {
             b: {
