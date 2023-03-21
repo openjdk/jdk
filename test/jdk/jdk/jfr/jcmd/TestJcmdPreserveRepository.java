@@ -41,14 +41,14 @@ import jdk.test.lib.Utils;
  * @run main/othervm jdk.jfr.jcmd.TestJcmdPreserveRepository
  */
 public class TestJcmdPreserveRepository {
-     
+
     public static class TestProcess {
         public static void main(String... args) {
             OutputAnalyzer output = JcmdHelper.jcmd("JFR.configure", "preserve-repository=true");
             System.exit(output.getExitValue());
         }
     }
-    
+
     public static void main(String[] args) throws Throwable {
         Path path = Path.of("./preserved");
         String[] arguments = {
