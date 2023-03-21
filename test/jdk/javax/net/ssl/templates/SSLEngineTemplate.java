@@ -51,7 +51,7 @@ import java.nio.ByteBuffer;
  * (wrap/unwrap) pass before any application data is consumed or
  * produced.
  */
-public class SSLEngineTemplate implements SSLContextTemplate {
+public class SSLEngineTemplate extends SSLContextTemplate {
     protected final SSLEngine clientEngine;     // client Engine
     protected final ByteBuffer clientOut;       // write side of clientEngine
     protected final ByteBuffer clientIn;        // read side of clientEngine

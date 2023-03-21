@@ -1162,15 +1162,17 @@ void StubGenerator::setup_arg_regs(int nargs) {
 #ifdef _WIN64
   assert(c_rarg0 == rcx && c_rarg1 == rdx && c_rarg2 == r8 && c_rarg3 == r9,
          "unexpected argument registers");
-  if (nargs >= 4)
+  if (nargs == 4) {
     __ mov(rax, r9);  // r9 is also saved_rdi
+  }
   __ movptr(saved_rdi, rdi);
   __ movptr(saved_rsi, rsi);
   __ mov(rdi, rcx); // c_rarg0
   __ mov(rsi, rdx); // c_rarg1
   __ mov(rdx, r8);  // c_rarg2
-  if (nargs >= 4)
+  if (nargs == 4) {
     __ mov(rcx, rax); // c_rarg3 (via rax)
+  }
 #else
   assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
          "unexpected argument registers");
@@ -1192,9 +1194,13 @@ void StubGenerator::restore_arg_regs() {
 
 // This is used in places where r10 is a scratch register, and can
 // be adapted if r9 is needed also.
-void StubGenerator::setup_arg_regs_using_thread() {
+void StubGenerator::setup_arg_regs_using_thread(int nargs) {
   const Register saved_r15 = r9;
+  assert(nargs == 3 || nargs == 4, "else fix");
 #ifdef _WIN64
+  if (nargs == 4) {
+    __ mov(rax, r9);       // r9 is also saved_r15
+  }
   __ mov(saved_r15, r15);  // r15 is callee saved and needs to be restored
   __ get_thread(r15_thread);
   assert(c_rarg0 == rcx && c_rarg1 == rdx && c_rarg2 == r8 && c_rarg3 == r9,
@@ -1205,6 +1211,9 @@ void StubGenerator::setup_arg_regs_using_thread() {
   __ mov(rdi, rcx); // c_rarg0
   __ mov(rsi, rdx); // c_rarg1
   __ mov(rdx, r8);  // c_rarg2
+  if (nargs == 4) {
+    __ mov(rcx, rax); // c_rarg3 (via rax)
+  }
 #else
   assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
          "unexpected argument registers");
@@ -3509,6 +3518,55 @@ void StubGenerator::generate_libm_stubs() {
   }
 }
 
+/**
+*  Arguments:
+*
+*  Input:
+*    c_rarg0   - float16  jshort
+*
+*  Output:
+*       xmm0   - float
+*/
+address StubGenerator::generate_float16ToFloat() {
+  StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+
+  address start = __ pc();
+
+  BLOCK_COMMENT("Entry:");
+  // No need for RuntimeStub frame since it is called only during JIT compilation
+
+  // Load value into xmm0 and convert
+  __ flt16_to_flt(xmm0, c_rarg0);
+
+  __ ret(0);
+
+  return start;
+}
+
+/**
+*  Arguments:
+*
+*  Input:
+*       xmm0   - float
+*
+*  Output:
+*        rax   - float16  jshort
+*/
+address StubGenerator::generate_floatToFloat16() {
+  StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+
+  address start = __ pc();
+
+  BLOCK_COMMENT("Entry:");
+  // No need for RuntimeStub frame since it is called only during JIT compilation
+
+  // Convert and put result into rax
+  __ flt_to_flt16(rax, xmm0, xmm1);
+
+  __ ret(0);
+
+  return start;
+}
 
 address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
   if (!Continuations::enabled()) return nullptr;
@@ -3872,6 +3930,16 @@ void StubGenerator::generate_initial() {
 
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+  }
+
+  if (VM_Version::supports_float16()) {
+    // For results consistency both intrinsics should be enabled.
+    // vmIntrinsics checks InlineIntrinsics flag, no need to check it here.
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
+    }
   }
 
   generate_libm_stubs();

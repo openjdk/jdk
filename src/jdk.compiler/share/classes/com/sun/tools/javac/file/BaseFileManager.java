@@ -74,6 +74,7 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     private static final byte[] EMPTY_ARRAY = new byte[0];
 
+    @SuppressWarnings("this-escape")
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         locations = createLocations();

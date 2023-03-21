@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.util.*;
  * which loop, hitting a bkpt in each iteration.
  *
  */
-class InvokeHangTarg extends Thread {
+class InvokeHangTarg implements Runnable {
     static boolean one = false;
     static String name1 = "Thread 1";
     static String name2 = "Thread 2";
@@ -54,8 +54,8 @@ class InvokeHangTarg extends Thread {
 
     public static void main(String[] args) {
         System.out.println("Howdy!");
-        InvokeHangTarg t1 = new InvokeHangTarg(name1);
-        InvokeHangTarg t2 = new InvokeHangTarg(name2);
+        Thread t1 = TestScaffold.newThread(new InvokeHangTarg(), name1);
+        Thread t2 = TestScaffold.newThread(new InvokeHangTarg(), name2);
 
         t1.start();
         t2.start();
@@ -81,12 +81,8 @@ class InvokeHangTarg extends Thread {
         return s;
     }
 
-    public InvokeHangTarg(String name) {
-        super(name);
-    }
-
     public void run() {
-        if (getName().equals(name1)) {
+        if (Thread.currentThread().getName().equals(name1)) {
             run1();
         } else {
             run2();

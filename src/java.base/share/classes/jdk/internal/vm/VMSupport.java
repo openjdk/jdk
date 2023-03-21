@@ -66,7 +66,7 @@ public class VMSupport {
     }
 
     /**
-     * @returns a Properties object containing only the entries in {@code p}
+     * @return a Properties object containing only the entries in {@code p}
      *          whose key and value are both Strings
      */
     private static Properties onlyStrings(Properties p) {
@@ -113,15 +113,35 @@ public class VMSupport {
     public static native String getVMTemporaryDirectory();
 
     /**
-     * Decodes the exception encoded in {@code buffer} and throws it.
+     * Decodes the exception encoded in {@code errorOrBuffer} and throws it.
      *
-     * @param buffer a native byte buffer containing an exception encoded by
+     * @param errorOrBuffer an error code or a native byte errorOrBuffer containing an exception encoded by
+     *            {@link #encodeThrowable}. Error code values and their meanings are:
+     *
+     *            <pre>
+     *             0: native memory for the errorOrBuffer could not be allocated
+     *            -1: an OutOfMemoryError was thrown while encoding the exception
+     *            -2: some other throwable was thrown while encoding the exception
+     *            </pre>
+     * @param errorOrBuffer a native byte errorOrBuffer containing an exception encoded by
      *            {@link #encodeThrowable}
+     * @param inJVMHeap [@code true} if executing in the JVM heap, {@code false} otherwise
      */
-    public static void decodeAndThrowThrowable(long buffer) throws Throwable {
-        int encodingLength = U.getInt(buffer);
+    public static void decodeAndThrowThrowable(long errorOrBuffer, boolean inJVMHeap) throws Throwable {
+        if (errorOrBuffer >= -2L && errorOrBuffer <= 0) {
+            String context = String.format("while encoding an exception to translate it %s the JVM heap",
+                    inJVMHeap ? "to" : "from");
+            if (errorOrBuffer == 0) {
+                throw new InternalError("native errorOrBuffer could not be allocated " + context);
+            }
+            if (errorOrBuffer == -1L) {
+                throw new OutOfMemoryError("OutOfMemoryError occurred " + context);
+            }
+            throw new InternalError("unexpected problem occurred " + context);
+        }
+        int encodingLength = U.getInt(errorOrBuffer);
         byte[] encoding = new byte[encodingLength];
-        U.copyMemory(null, buffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
+        U.copyMemory(null, errorOrBuffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
         throw TranslatedException.decodeThrowable(encoding);
     }
 

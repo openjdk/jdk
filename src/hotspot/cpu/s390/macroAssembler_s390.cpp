@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1052,29 +1052,47 @@ int MacroAssembler::preset_reg(Register r, unsigned long pattern, int pattern_le
 }
 #endif
 
-// addr: Address descriptor of memory to clear index register will not be used !
+// addr: Address descriptor of memory to clear. Index register will not be used!
 // size: Number of bytes to clear.
+// condition code will not be preserved.
 //    !!! DO NOT USE THEM FOR ATOMIC MEMORY CLEARING !!!
 //    !!! Use store_const() instead                  !!!
-void MacroAssembler::clear_mem(const Address& addr, unsigned size) {
-  guarantee(size <= 256, "MacroAssembler::clear_mem: size too large");
-
-  if (size == 1) {
-    z_mvi(addr, 0);
-    return;
-  }
+void MacroAssembler::clear_mem(const Address& addr, unsigned int size) {
+  guarantee((addr.disp() + size) <= 4096, "MacroAssembler::clear_mem: size too large");
 
   switch (size) {
-    case 2: z_mvhhi(addr, 0);
+    case 0:
       return;
-    case 4: z_mvhi(addr, 0);
+    case 1:
+      z_mvi(addr, 0);
       return;
-    case 8: z_mvghi(addr, 0);
+    case 2:
+      z_mvhhi(addr, 0);
+      return;
+    case 4:
+      z_mvhi(addr, 0);
+      return;
+    case 8:
+      z_mvghi(addr, 0);
       return;
     default: ; // Fallthru to xc.
   }
 
-  z_xc(addr, size, addr);
+  // Caution: the emitter with Address operands does implicitly decrement the length
+  if (size <= 256) {
+    z_xc(addr, size, addr);
+  } else {
+    unsigned int offset = addr.disp();
+    unsigned int incr   = 256;
+    for (unsigned int i = 0; i <= size-incr; i += incr) {
+      z_xc(offset, incr - 1, addr.base(), offset, addr.base());
+      offset += incr;
+    }
+    unsigned int rest = size - (offset - addr.disp());
+    if (size > 0) {
+      z_xc(offset, rest-1, addr.base(), offset, addr.base());
+    }
+  }
 }
 
 void MacroAssembler::align(int modulus) {
