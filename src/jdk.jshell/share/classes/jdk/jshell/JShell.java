@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -92,7 +93,7 @@ public class JShell implements AutoCloseable {
     final InputStream in;
     final PrintStream out;
     final PrintStream err;
-    final JShellConsole console;
+    final Optional<JShellConsole> console;
     final Supplier<String> tempVariableNameGenerator;
     final BiFunction<Snippet, Integer, String> idGenerator;
     final List<String> extraRemoteVMOptions;
@@ -117,7 +118,7 @@ public class JShell implements AutoCloseable {
         this.in = b.in;
         this.out = b.out;
         this.err = b.err;
-        this.console = b.console;
+        this.console = Optional.ofNullable(b.console);
         this.tempVariableNameGenerator = b.tempVariableNameGenerator;
         this.idGenerator = b.idGenerator;
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
@@ -245,7 +246,7 @@ public class JShell implements AutoCloseable {
          * Sets the console for the running evalution.
          * <p>
          * The default, if this is not set, is no console ({@code System.console()}
-         * will return {@code null} while running a snippet.
+         * will return {@code null} while running a snippet).
          *
          * @param console console to use while a snippet is run
          * @return the {@code Builder} instance (for use in chained
@@ -815,7 +816,7 @@ public class JShell implements AutoCloseable {
         }
 
         @Override
-        public JShellConsole console() {
+        public Optional<JShellConsole> console() {
             return console;
         }
 

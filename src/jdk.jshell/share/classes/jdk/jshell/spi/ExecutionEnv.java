@@ -28,6 +28,7 @@ package jdk.jshell.spi;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Optional;
 import jdk.jshell.JShellConsole;
 
 /**
@@ -84,10 +85,14 @@ public interface ExecutionEnv {
      * <p>
      * Note: an execution engine may not support {@code JShellConsole}.
      *
-     * @return returns console, or {@code null} if none
+     * @implSpec The default implementation of this method
+     *           return an empty {@code Optional}.
+     *
+     * @return returns console, or an empty {@code Optional} if none,
+     *         never {@code null}
      * @since 21
      */
-    default JShellConsole console() {
-        return null;
+    default Optional<JShellConsole> console() {
+        return Optional.empty();
     }
 }

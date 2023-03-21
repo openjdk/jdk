@@ -48,6 +48,7 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
+import java.util.Optional;
 import java.util.stream.Stream;
 import jdk.jshell.JShellConsole;
 import jdk.jshell.spi.ExecutionControl;
@@ -99,8 +100,8 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             // timeout on I/O-socket
             listener.setSoTimeout(timeout);
             int port = listener.getLocalPort();
-            JShellConsole console = env.console();
-            String consoleModule = console != null ? "jdk.jshell" : "java.base";
+            Optional<JShellConsole> console = env.console();
+            String consoleModule = console.isPresent() ? "jdk.jshell" : "java.base";
             List<String> augmentedremoteVMOptions =
                     Stream.concat(env.extraRemoteVMOptions().stream(),
                                   //disable System.console():
@@ -131,12 +132,12 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             outputs.put("err", env.userErr());
             Map<String, InputStream> input = new HashMap<>();
             input.put("in", env.userIn());
-            if (console != null) {
+            if (console.isPresent()) {
                 if (!RemoteExecutionControl.class.getName().equals(remoteAgent)) {
                     throw new IllegalArgumentException("JShellConsole is only supported for " +
                                                        "the default remote agent!");
                 }
-                ConsoleOutputStream consoleOutput = new ConsoleOutputStream(console);
+                ConsoleOutputStream consoleOutput = new ConsoleOutputStream(console.get());
                 outputs.put("consoleInput", consoleOutput);
                 input.put("consoleOutput", consoleOutput.sinkInput);
             }
