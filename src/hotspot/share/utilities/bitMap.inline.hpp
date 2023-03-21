@@ -351,6 +351,25 @@ inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const {
   return iterate(function, beg, end);
 }
 
+template <typename Function>
+inline bool BitMap::reverse_iterate(Function function, idx_t beg, idx_t end) const {
+  auto invoke = IterateInvoker<decltype(function(beg))>();
+  for (idx_t index; true; end = index) {
+    index = find_last_set_bit(beg, end);
+    if (index >= end) {
+      return true;
+    } else if (!invoke(function, index)) {
+      return false;
+    }
+  }
+}
+
+template <typename BitMapClosureType>
+inline bool BitMap::reverse_iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const {
+  auto function = [&](idx_t index) { return cl->do_bit(index); };
+  return reverse_iterate(function, beg, end);
+}
+
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each
 // bit in the mask is 0 if the bit is in the range, 1 if not in the range.  The
 // returned mask can be used directly to clear the range, or inverted to set the
