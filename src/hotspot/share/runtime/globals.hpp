@@ -688,10 +688,6 @@ const int ObjectAlignmentInBytes = 8;
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
                                                                             \
-  product(bool, EnableWaitForParallelLoad, false,                           \
-          "(Deprecated) Enable legacy parallel classloading logic for "     \
-          "class loaders not registered as parallel capable")               \
-                                                                            \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
