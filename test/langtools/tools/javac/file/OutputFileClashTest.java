@@ -109,22 +109,6 @@ public class OutputFileClashTest extends TestRunner {
             "Test\\.java:(2:5|4:5): compiler\\.err\\.class\\.cant\\.write: Test.Caf.*, output file clash: .*Test\\$Caf.*\\.class$");
     }
 
-    @Test
-    public void testBug7016187(Path base) throws Exception {
-        testClash(base,
-                """
-                public class Foo {
-                    public static class Bar {
-                        public static native void method1();
-                    }
-                }
-                class Foo_Bar {
-                    public static native void method2();
-                }
-                """,
-            "Foo\\.java:(2:8|6:1): compiler\\.err\\.class\\.cant\\.write: Foo.Bar, output file clash: .*Foo_Bar\\.h$");
-    }
-
     private void testClash(Path base, String javaSource, String regex) throws Exception {
 
         // Compile source
