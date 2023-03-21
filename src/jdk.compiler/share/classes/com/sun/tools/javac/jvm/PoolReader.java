@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
@@ -32,8 +33,10 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.ByteBuffer;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
+import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.InvalidUtfException;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
@@ -75,7 +78,7 @@ public class PoolReader {
     private final ByteBuffer buf;
     private final Names names;
     private final Symtab syms;
-    private final boolean lenientUtf8;
+    private final int utf8validation;
 
     private ImmutablePoolHelper pool;
 
@@ -92,7 +95,7 @@ public class PoolReader {
         this.buf = buf;
         this.names = names;
         this.syms = syms;
-        this.lenientUtf8 = reader != null && reader.majorVersion < ClassFile.Version.V48.major;
+        this.utf8validation = reader != null ? reader.utf8validation : Convert.UTF8_LAX;
     }
 
     private static final BitSet classCP = new BitSet();
@@ -226,7 +229,18 @@ public class PoolReader {
         switch (tag) {
             case CONSTANT_Utf8: {
                 int len = poolbuf.getChar(offset);
-                return names.fromUtf(poolbuf.elems, offset + 2, len, lenientUtf8);
+                try {
+                    return names.fromUtf(poolbuf.elems, offset + 2, len, utf8validation);
+                } catch (InvalidUtfException e) {
+                    if (Source.DEFAULT == Source.JDK21) {
+                        if (reader != null) {
+                            reader.log.warning(Warnings.InvalidUtf8InClassfile(
+                                reader.currentClassFile, Fragments.BadUtf8ByteSequenceAt(e.getOffset())));
+                        }
+                        return names.fromUtfLax(poolbuf.elems, offset + 2, len);
+                    }
+                    throw e;
+                }
             }
             case CONSTANT_Class: {
                 int index = poolbuf.getChar(offset);
@@ -374,7 +388,7 @@ public class PoolReader {
                 }
                 P p;
                 try {
-                    p = (P)resolve(poolbuf, tag(index), offset(index));
+                    p = (P)resolve(poolbuf, currentTag, offset(index));
                 } catch (InvalidUtfException e) {
                     throw reader.badClassFile(Fragments.BadUtf8ByteSequenceAt(e.getOffset()));
                 } catch (UnderflowException e) {

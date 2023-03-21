@@ -275,7 +275,7 @@ public class ByteBuffer {
      *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
      */
     public Name toName(Names names) throws InvalidUtfException {
-        return names.fromUtf(elems, 0, length, false);
+        return names.fromUtf(elems, 0, length, Convert.UTF8_STRICT);
     }
 
     /** Verify there are at least the specified number of bytes in this buffer at the specified offset.

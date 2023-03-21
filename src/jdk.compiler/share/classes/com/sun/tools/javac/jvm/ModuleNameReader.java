@@ -27,7 +27,6 @@ package com.sun.tools.javac.jvm;
 import com.sun.tools.javac.util.ByteBuffer;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.Convert;
-import com.sun.tools.javac.util.InvalidUtfException;
 import com.sun.tools.javac.util.Name.NameMapper;
 
 import java.io.IOException;
@@ -162,9 +161,9 @@ public class ModuleNameReader {
         return internalize ?
             (buf, offset, len) -> {
                 buf = ClassFile.internalize(buf, offset, len);
-                return Convert.utf2string(buf, 0, buf.length, false);
+                return Convert.utf2string(buf, 0, buf.length, Convert.UTF8_STRICT);
             } :
-            (buf, offset, len) -> Convert.utf2string(buf, offset, len, false);
+            (buf, offset, len) -> Convert.utf2string(buf, offset, len, Convert.UTF8_STRICT);
     }
 
 }

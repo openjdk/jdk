@@ -53,6 +53,23 @@ package com.sun.tools.javac.util;
  */
 public class Convert {
 
+    /**
+     * Do minimum validation of UTF-8, i.e., just enough to decode something/anything.
+     * When this value is used, {@link InvalidUtfException} is never thrown.
+     */
+    public static final int UTF8_LAX = 0;
+
+    /**
+     * Do validation of UTF-8 corresponding to pre-1.4, i.e., validate strictly except
+     * allow longer-than-necessary encodings (e.g., three bytes instead of two).
+     */
+    public static final int UTF8_PREJDK14 = 1;
+
+    /**
+     * Do strict validation of UTF-8. At this level, each character has only one valid encoding.
+     */
+    public static final int UTF8_STRICT = 2;
+
     /** Convert string to integer.
      */
     public static int string2int(String s, int radix)
@@ -100,20 +117,21 @@ public class Convert {
 /* Conversion routines between names, strings, and byte arrays in Utf8 format
  */
 
-    /** Validate the given Modified UTF-8 encoding.
+    /** Validate the given Modified UTF-8 encoding using the given validation level.
      *  Reject invalid data by throwing an {@link InvalidUtfException}.
+     *  Note: there is no point in calling this method with no-op validation {@link #UTF8_LAX}.
      *  @param buf        Buffer containing data
      *  @param off        Data starting offset
      *  @param len        Data length
-     *  @param lenient    Whether to allow longer-than-necessary encodings
-     *                    (for obsolete classfile versions &lt; 48)
-     *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
+     *  @param validation Level of validation (e.g., {@link #UTF8_STRICT})
+     *  @throws InvalidUtfException if {@code validation} is greater than {@link #UTF8_LAX}
+     *      and invalid Modified UTF-8 is encountered
      */
-    public static void utfValidate(byte[] buf, int off, int len, boolean lenient) throws InvalidUtfException {
-        utf2chars(buf, off, null, 0, len, lenient);
+    public static void utfValidate(byte[] buf, int off, int len, int validation) throws InvalidUtfException {
+        utf2chars(buf, off, null, 0, len, validation);
     }
 
-    /** Decode characters encoded in Modified UTF-8 encoding.
+    /** Decode characters encoded in Modified UTF-8 encoding using the given validation level.
      *  Reject any invalid data by throwing an {@link InvalidUtfException}.
      *  Parameters are as in System.arraycopy():
      *  @param src        The array holding the bytes to convert.
@@ -123,12 +141,13 @@ public class Convert {
      *  @param doff       The start index from which converted characters
      *                    are written.
      *  @param len        The maximum number of bytes to convert.
-     *  @param lenient    Whether to allow longer-than-necessary encodings
-     *                    (for obsolete classfile versions &lt; 48)
-     *  @return the index in {@code dst} just after the last copied char
+     *  @param validation Level of validation (e.g., {@link #UTF8_STRICT})
      *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
+     *  @return the index in {@code dst} just after the last copied char
+     *  @throws InvalidUtfException if {@code validation} is greater than {@link #UTF8_LAX}
+     *      and invalid Modified UTF-8 is encountered
      */
-    public static int utf2chars(byte[] src, int soff, char[] dst, int doff, int len, boolean lenient)
+    public static int utf2chars(byte[] src, int soff, char[] dst, int doff, int len, int validation)
       throws InvalidUtfException {
         final int doff0 = doff;
         while (len-- > 0) {
@@ -136,28 +155,41 @@ public class Convert {
             int value = src[soff++];
             if (value < 0) {
                 if ((value & 0xe0) == 0xc0) {
-                    if (--len < 0)
+                    int value2;
+                    if (len-- > 0)
+                        value2 = src[soff++];
+                    else if (validation == UTF8_LAX)
+                        value2 = 0;
+                    else
                         throw new InvalidUtfException(soff0);
-                    int value2 = src[soff++];
-                    if ((value2 & 0xc0) != 0x80)
+                    if (validation >= UTF8_PREJDK14 && (value2 & 0xc0) != 0x80)
                         throw new InvalidUtfException(soff0);
                     value = ((value & 0x1f) << 6) | (value2 & 0x3f);
-                    if (!lenient && value != 0 && (value & ~0x7f) == 0)
+                    if (validation >= UTF8_STRICT && value != 0 && (value & ~0x7f) == 0)
                         throw new InvalidUtfException(soff0);   // could have been one byte
                 } else if ((value & 0xf0) == 0xe0) {
-                    if ((len -= 2) < 0)
+                    int value2;
+                    int value3;
+                    if ((len -= 2) >= 0) {
+                        value2 = src[soff++];
+                        value3 = src[soff++];
+                    } else if (validation == UTF8_LAX) {
+                        value2 = 0;
+                        value3 = 0;
+                    } else
                         throw new InvalidUtfException(soff0);
-                    int value2 = src[soff++];
-                    int value3 = src[soff++];
-                    if ((value2 & 0xc0) != 0x80 || (value3 & 0xc0) != 0x80)
+                    if (validation >= UTF8_PREJDK14
+                      && ((value2 & 0xc0) != 0x80 || (value3 & 0xc0) != 0x80))
                         throw new InvalidUtfException(soff0);
                     value = ((value & 0x0f) << 12) | ((value2 & 0x3f) << 6) | (value3 & 0x3f);
-                    if (!lenient && (value & ~0x7ff) == 0)
+                    if (validation >= UTF8_STRICT && (value & ~0x7ff) == 0)
                         throw new InvalidUtfException(soff0);   // could have been two bytes
-                } else
+                } else if (validation == UTF8_LAX)
+                    value &= 0xff;
+                else
                     throw new InvalidUtfException(soff0);
-            } else if (value == 0)
-                throw new InvalidUtfException(soff0);   // 0x0000 must be encoded as two bytes
+            } else if (validation >= UTF8_PREJDK14 && value == 0)
+                throw new InvalidUtfException(soff0);           // 0x0000 must be encoded as two bytes
             if (dst != null)
                 dst[doff] = (char)value;
             doff++;
@@ -169,15 +201,15 @@ public class Convert {
      *  @param src        The array holding the bytes.
      *  @param sindex     The start index from which bytes are converted.
      *  @param len        The maximum number of bytes to convert.
-     *  @param lenient    Whether to allow longer-than-necessary encodings
-     *                    (for obsolete classfile versions &lt; 48)
+     *  @param validation Level of validation (e.g., {@link #UTF8_STRICT})
      *  @return           The decoded characters in an array.
-     *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
+     *  @throws InvalidUtfException if {@code validation} is greater than {@link #UTF8_LAX}
+     *      and invalid Modified UTF-8 is encountered
      */
-    public static char[] utf2chars(byte[] src, int sindex, int len, boolean lenient)
+    public static char[] utf2chars(byte[] src, int sindex, int len, int validation)
       throws InvalidUtfException {
         char[] dst = new char[len];
-        int len1 = utf2chars(src, sindex, dst, 0, len, lenient);
+        int len1 = utf2chars(src, sindex, dst, 0, len, validation);
         if (len1 == len)
             return dst;
         char[] result = new char[len1];
@@ -189,14 +221,14 @@ public class Convert {
      *  @param src        The array holding the bytes.
      *  @param sindex     The start index from which bytes are converted.
      *  @param len        The maximum number of bytes to convert.
-     *  @param lenient    Whether to allow longer-than-necessary encodings
-     *                    (for obsolete classfile versions &lt; 48)
-     *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
+     *  @param validation Level of validation (e.g., {@link #UTF8_STRICT})
+     *  @throws InvalidUtfException if {@code validation} is greater than {@link #UTF8_LAX}
+     *      and invalid Modified UTF-8 is encountered
      */
-    public static String utf2string(byte[] src, int sindex, int len, boolean lenient)
+    public static String utf2string(byte[] src, int sindex, int len, int validation)
       throws InvalidUtfException {
         char dst[] = new char[len];
-        int len1 = utf2chars(src, sindex, dst, 0, len, lenient);
+        int len1 = utf2chars(src, sindex, dst, 0, len, validation);
         return new String(dst, 0, len1);
     }
 

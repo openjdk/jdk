@@ -85,8 +85,9 @@ public class UnsharedNameTable extends Name.Table {
     }
 
     @Override
-    public Name fromUtf(byte[] cs, int start, int len, boolean lenient) throws InvalidUtfException {
-        Convert.utfValidate(cs, start, len, lenient);
+    public Name fromUtf(byte[] cs, int start, int len, int validation) throws InvalidUtfException {
+        if (validation > Convert.UTF8_LAX)
+            Convert.utfValidate(cs, start, len, validation);
         return fromValidUtf(cs, start, len);
     }
 

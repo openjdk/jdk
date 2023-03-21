@@ -43,6 +43,7 @@ import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
@@ -190,6 +191,9 @@ public class ClassReader {
     int majorVersion;
     /** The minor version number of the class file being read. */
     int minorVersion;
+
+    /** UTF-8 validation level, e.g., {@link Convert#UTF8_STRICT}. */
+    int utf8validation;
 
     /** A table to hold the constant pool indices for method parameter
      * names, as given in LocalVariableTable attributes.
@@ -666,9 +670,9 @@ public class ClassReader {
     String quoteBadSignature() {
         String sigString;
         try {
-            sigString = Convert.utf2string(signature, sigp, siglimit - sigp, majorVersion < V48.major);
+            sigString = Convert.utf2string(signature, sigp, siglimit - sigp, Convert.UTF8_LAX);
         } catch (InvalidUtfException e) {
-            return diagFactory.fragment("bad.utf8.byte.sequence.at", sigp).toString();
+            throw new AssertionError(e);
         }
         if (sigString.length() > 32)
             sigString = sigString.substring(0, 32) + "...";
@@ -774,8 +778,13 @@ public class ClassReader {
 
     private Name readName(byte[] buf, int off, int len) {
         try {
-            return names.fromUtf(buf, off, len, majorVersion < V48.major);
+            return names.fromUtf(buf, off, len, utf8validation);
         } catch (InvalidUtfException e) {
+            if (Source.DEFAULT == Source.JDK21) {
+                log.warning(Warnings.InvalidUtf8InClassfile(currentClassFile,
+                    Fragments.BadUtf8ByteSequenceAt(sigp)));
+                return names.fromUtfLax(buf, off, len);
+            }
             throw badClassFile(Fragments.BadUtf8ByteSequenceAt(sigp));
         }
     }
@@ -1231,7 +1240,16 @@ public class ClassReader {
 
                 private Name classNameMapper(byte[] arr, int offset, int length) throws InvalidUtfException {
                     byte[] buf = ClassFile.internalize(arr, offset, length);
-                    return names.fromUtf(buf, 0, buf.length, majorVersion < V48.major);
+                    try {
+                        return names.fromUtf(buf, 0, buf.length, utf8validation);
+                    } catch (InvalidUtfException e) {
+                        if (Source.DEFAULT == Source.JDK21) {
+                            log.warning(Warnings.InvalidUtf8InClassfile(currentClassFile,
+                                Fragments.BadUtf8ByteSequenceAt(e.getOffset())));
+                            return names.fromUtfLax(buf, 0, buf.length);
+                        }
+                        throw e;
+                    }
                 }
             },
 
@@ -2688,6 +2706,7 @@ public class ClassReader {
                                    Integer.toString(maxMajor),
                                    Integer.toString(maxMinor));
         }
+        utf8validation = majorVersion < V48.major ? Convert.UTF8_PREJDK14 : Convert.UTF8_STRICT;
 
         if (previewClassFile) {
             if (!preview.isEnabled()) {
