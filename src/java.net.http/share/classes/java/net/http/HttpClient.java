@@ -661,7 +661,7 @@ public abstract class HttpClient implements AutoCloseable {
      * <p> The returned completable future completes exceptionally with:
      * <ul>
      * <li>{@link IOException} - if an I/O error occurs when sending or receiving,
-     *      or the client {@linkplain ##closing shutting down}.</li>
+     *      or the client is {@linkplain ##closing shutting down}.</li>
      * <li>{@link SecurityException} - If a security manager has been installed
      *          and it denies {@link java.net.URLPermission access} to the
      *          URL in the given request, or proxy if one is configured.
