@@ -210,7 +210,7 @@ public class CSS implements Serializable {
          * CSS attribute "background-position".
          */
         public static final Attribute BACKGROUND_POSITION =
-            new Attribute("background-position", null, false);
+            new Attribute("background-position", "0% 0%", false);
 
         /**
          * CSS attribute "background-repeat".
