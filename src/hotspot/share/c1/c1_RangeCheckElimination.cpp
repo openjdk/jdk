@@ -270,18 +270,16 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
 
         Bound * bound = _rce->get_bound(y);
         if (bound->has_upper() && bound->has_lower()) {
-          // TODO: consider using __builtin_add_overflow
-          jlong new_lowerl = ((jlong)bound->lower()) + const_value;
-          jint new_lower = low(new_lowerl);
-          jlong new_upperl = ((jlong)bound->upper()) + const_value;
-          jint new_upper = low(new_upperl);
-
-          if (((jlong)new_lower) == new_lowerl && ((jlong)new_upper == new_upperl)) {
-            Bound *newBound = new Bound(new_lower, bound->lower_instr(), new_upper, bound->upper_instr());
-            _bound = newBound;
-          } else {
-            // overflow
+          jint t_lo = bound->lower();
+          jint t_hi = bound->upper();
+          jint new_lower = java_add(t_lo, const_value);
+          jint new_upper = java_add(t_hi, const_value);
+          bool overflow = ((const_value < 0 && (new_lower > t_lo)) ||
+                           (const_value > 0 && (new_upper < t_hi)));
+          if (overflow) {
             _bound = new Bound();
+          } else {
+            _bound = new Bound(new_lower, bound->lower_instr(), new_upper, bound->upper_instr());
           }
         } else {
           _bound = new Bound();
@@ -1555,7 +1553,6 @@ void RangeCheckEliminator::Bound::add_assertion(Instruction *instruction, Instru
       NOT_PRODUCT(ao->set_printable_bci(position->printable_bci()));
       result = result->insert_after(ao);
       compare_with = ao;
-      // TODO: Check that add operation does not overflow!
     }
   }
   assert(compare_with != nullptr, "You have to compare with something!");
