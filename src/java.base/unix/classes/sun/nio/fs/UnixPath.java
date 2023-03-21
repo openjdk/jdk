@@ -42,10 +42,8 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
-import static sun.nio.fs.UnixConstants.O_NOFOLLOW;
-import static sun.nio.fs.UnixConstants.O_RDONLY;
-import static sun.nio.fs.UnixNativeDispatcher.open;
-import static sun.nio.fs.UnixNativeDispatcher.realpath;
+import static sun.nio.fs.UnixConstants.*;
+import static sun.nio.fs.UnixNativeDispatcher.*;
 
 /**
  * Linux/Mac implementation of java.nio.file.Path
