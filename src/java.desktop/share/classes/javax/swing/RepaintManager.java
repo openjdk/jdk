@@ -41,7 +41,6 @@ import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
-import sun.awt.SunHints;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.security.action.GetPropertyAction;
 
@@ -887,13 +886,11 @@ public class RepaintManager
                             if (g != null) {
                                 g.setClip(rect.x, rect.y, rect.width, rect.height);
 
-                                if (g instanceof Graphics2D g2d) {
-                                    // If Window#paint(Graphics) fills its background color we may see flickering
-                                    g2d.setRenderingHint(SunHints.KEY_PAINT_WINDOW_BACKGROUND_COLOR, SunHints.VALUE_PAINT_WINDOW_BACKGROUND_OFF);
-                                }
-
                                 try {
-                                    dirtyComponent.paint(g);
+                                    AWTPaintManager<Component> pm = new AWTPaintManager<Component>();
+                                    pm.repaintManager = RepaintManager.this;
+                                    pm.paint(dirtyComponent, dirtyComponent, g,
+                                            rect.x, rect.y, rect.width, rect.height);
                                 } finally {
                                     g.dispose();
                                 }
@@ -1522,18 +1519,11 @@ public class RepaintManager
         }
     }
 
-
-    /**
-     * PaintManager is used to handle all double buffered painting for
-     * Swing.  Subclasses should call back into the JComponent method
-     * <code>paintToOffscreen</code> to handle the actual painting.
-     */
-    static class PaintManager {
+    static class AWTPaintManager<T extends Component> {
         /**
          * RepaintManager the PaintManager has been installed on.
          */
         protected RepaintManager repaintManager;
-        boolean isRepaintingRoot;
 
         /**
          * Paints a region of a component
@@ -1547,8 +1537,8 @@ public class RepaintManager
          * @param h Height
          * @return true if painting was successful.
          */
-        public boolean paint(JComponent paintingComponent,
-                             JComponent bufferComponent, Graphics g,
+        public boolean paint(T paintingComponent,
+                             T bufferComponent, Graphics g,
                              int x, int y, int w, int h) {
             // First attempt to use VolatileImage buffer for performance.
             // If this fails (which should rarely occur), fallback to a
@@ -1559,79 +1549,43 @@ public class RepaintManager
             int sh = h + 1;
 
             if (repaintManager.useVolatileDoubleBuffer() &&
-                (offscreen = getValidImage(repaintManager.
-                getVolatileOffscreenBuffer(bufferComponent, sw, sh))) != null) {
+                    (offscreen = getValidImage(repaintManager.
+                            getVolatileOffscreenBuffer(bufferComponent, sw, sh))) != null) {
                 VolatileImage vImage = (java.awt.image.VolatileImage)offscreen;
                 GraphicsConfiguration gc = bufferComponent.
-                                            getGraphicsConfiguration();
+                        getGraphicsConfiguration();
                 for (int i = 0; !paintCompleted &&
-                         i < RepaintManager.VOLATILE_LOOP_MAX; i++) {
+                        i < RepaintManager.VOLATILE_LOOP_MAX; i++) {
                     if (vImage.validate(gc) ==
-                                   VolatileImage.IMAGE_INCOMPATIBLE) {
+                            VolatileImage.IMAGE_INCOMPATIBLE) {
                         repaintManager.resetVolatileDoubleBuffer(gc);
                         offscreen = repaintManager.getVolatileOffscreenBuffer(
-                            bufferComponent, sw, sh);
+                                bufferComponent, sw, sh);
                         vImage = (java.awt.image.VolatileImage)offscreen;
                     }
                     paintDoubleBuffered(paintingComponent, vImage, g, x, y,
-                                        w, h);
+                            w, h);
                     paintCompleted = !vImage.contentsLost();
                 }
             }
             // VolatileImage painting loop failed, fallback to regular
             // offscreen buffer
             if (!paintCompleted && (offscreen = getValidImage(
-                      repaintManager.getOffscreenBuffer(
-                      bufferComponent, w, h))) != null) {
+                    repaintManager.getOffscreenBuffer(
+                            bufferComponent, w, h))) != null) {
                 paintDoubleBuffered(paintingComponent, offscreen, g, x, y, w,
-                                    h);
+                        h);
                 paintCompleted = true;
             }
             return paintCompleted;
         }
 
         /**
-         * Does a copy area on the specified region.
-         */
-        public void copyArea(JComponent c, Graphics g, int x, int y, int w,
-                             int h, int deltaX, int deltaY, boolean clip) {
-            g.copyArea(x, y, w, h, deltaX, deltaY);
-        }
-
-        /**
-         * Invoked prior to any calls to paint or copyArea.
-         */
-        public void beginPaint() {
-        }
-
-        /**
-         * Invoked to indicate painting has been completed.
-         */
-        public void endPaint() {
-        }
-
-        /**
-         * Shows a region of a previously rendered component.  This
-         * will return true if successful, false otherwise.  The default
-         * implementation returns false.
-         */
-        public boolean show(Container c, int x, int y, int w, int h) {
-            return false;
-        }
-
-        /**
-         * Invoked when the doubleBuffered or useTrueDoubleBuffering
-         * properties of a JRootPane change.  This may come in on any thread.
-         */
-        public void doubleBufferingChanged(JRootPane rootPane) {
-        }
-
-        /**
          * Paints a portion of a component to an offscreen buffer.
          */
-        protected void paintDoubleBuffered(JComponent c, Image image,
-                Graphics g, int clipX, int clipY,
-                int clipW, int clipH) {
+        protected void paintDoubleBuffered(T c, Image image,
+                                           Graphics g, int clipX, int clipY,
+                                           int clipW, int clipH) {
             if (image instanceof VolatileImage && isPixelsCopying(c, g)) {
                 paintDoubleBufferedFPScales(c, image, g, clipX, clipY, clipW, clipH);
             } else {
@@ -1639,7 +1593,7 @@ public class RepaintManager
             }
         }
 
-        private void paintDoubleBufferedImpl(JComponent c, Image image,
+        private void paintDoubleBufferedImpl(T c, Image image,
                                              Graphics g, int clipX, int clipY,
                                              int clipW, int clipH) {
             Graphics osg = image.getGraphics();
@@ -1660,7 +1614,11 @@ public class RepaintManager
                             g2d.clearRect(x, y, bw, bh);
                             g2d.setBackground(oldBg);
                         }
-                        c.paintToOffscreen(osg, x, y, bw, bh, maxx, maxy);
+                        if (c instanceof JComponent jc) {
+                            jc.paintToOffscreen(osg, x, y, bw, bh, maxx, maxy);
+                        } else {
+                            c.paint(osg);
+                        }
                         g.setClip(x, y, bw, bh);
                         if (volatileBufferType != Transparency.OPAQUE
                                 && g instanceof Graphics2D) {
@@ -1680,7 +1638,7 @@ public class RepaintManager
             }
         }
 
-        private void paintDoubleBufferedFPScales(JComponent c, Image image,
+        private void paintDoubleBufferedFPScales(Component c, Image image,
                                                  Graphics g, int clipX, int clipY,
                                                  int clipW, int clipH) {
             Graphics osg = image.getGraphics();
@@ -1724,7 +1682,11 @@ public class RepaintManager
                         osg2d.setClip(0, 0, pixelw, pixelh);
                         osg2d.translate(trX - pixelx1, trY - pixely1);
                         osg2d.scale(scaleX, scaleY);
-                        c.paintToOffscreen(osg, x, y, bw, bh, maxx, maxy);
+                        if (c instanceof JComponent jc) {
+                            jc.paintToOffscreen(osg, x, y, bw, bh, maxx, maxy);
+                        } else {
+                            c.paint(osg);
+                        }
 
                         g2d.setTransform(identity);
                         g2d.setClip(pixelx1, pixely1, pixelw, pixelh);
@@ -1756,10 +1718,80 @@ public class RepaintManager
          */
         private Image getValidImage(Image image) {
             if (image != null && image.getWidth(null) > 0 &&
-                                 image.getHeight(null) > 0) {
+                    image.getHeight(null) > 0) {
                 return image;
             }
             return null;
+        }
+
+        private boolean isPixelsCopying(T c, Graphics g) {
+
+            AffineTransform tx = getTransform(g);
+            GraphicsConfiguration gc = c.getGraphicsConfiguration();
+
+            if (tx == null || gc == null
+                    || !SwingUtilities2.isFloatingPointScale(tx)) {
+                return false;
+            }
+
+            AffineTransform gcTx = gc.getDefaultTransform();
+
+            return gcTx.getScaleX() == tx.getScaleX()
+                    && gcTx.getScaleY() == tx.getScaleY();
+        }
+
+        private static AffineTransform getTransform(Graphics g) {
+            if (g instanceof SunGraphics2D) {
+                return ((SunGraphics2D) g).transform;
+            } else if (g instanceof Graphics2D) {
+                return ((Graphics2D) g).getTransform();
+            }
+            return null;
+        }
+    }
+
+    /**
+     * PaintManager is used to handle all double buffered painting for
+     * Swing.  Subclasses should call back into the JComponent method
+     * <code>paintToOffscreen</code> to handle the actual painting.
+     */
+    static class PaintManager extends AWTPaintManager<JComponent> {
+        boolean isRepaintingRoot;
+
+        /**
+         * Does a copy area on the specified region.
+         */
+        public void copyArea(JComponent c, Graphics g, int x, int y, int w,
+                             int h, int deltaX, int deltaY, boolean clip) {
+            g.copyArea(x, y, w, h, deltaX, deltaY);
+        }
+
+        /**
+         * Invoked prior to any calls to paint or copyArea.
+         */
+        public void beginPaint() {
+        }
+
+        /**
+         * Invoked to indicate painting has been completed.
+         */
+        public void endPaint() {
+        }
+
+        /**
+         * Shows a region of a previously rendered component.  This
+         * will return true if successful, false otherwise.  The default
+         * implementation returns false.
+         */
+        public boolean show(Container c, int x, int y, int w, int h) {
+            return false;
+        }
+
+        /**
+         * Invoked when the doubleBuffered or useTrueDoubleBuffering
+         * properties of a JRootPane change.  This may come in on any thread.
+         */
+        public void doubleBufferingChanged(JRootPane rootPane) {
         }
 
         /**
@@ -1791,31 +1823,6 @@ public class RepaintManager
          * longer be used anymore.
          */
         protected void dispose() {
-        }
-
-        private boolean isPixelsCopying(JComponent c, Graphics g) {
-
-            AffineTransform tx = getTransform(g);
-            GraphicsConfiguration gc = c.getGraphicsConfiguration();
-
-            if (tx == null || gc == null
-                    || !SwingUtilities2.isFloatingPointScale(tx)) {
-                return false;
-            }
-
-            AffineTransform gcTx = gc.getDefaultTransform();
-
-            return gcTx.getScaleX() == tx.getScaleX()
-                    && gcTx.getScaleY() == tx.getScaleY();
-        }
-
-        private static AffineTransform getTransform(Graphics g) {
-            if (g instanceof SunGraphics2D) {
-                return ((SunGraphics2D) g).transform;
-            } else if (g instanceof Graphics2D) {
-                return ((Graphics2D) g).getTransform();
-            }
-            return null;
         }
     }
 
