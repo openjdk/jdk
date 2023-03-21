@@ -2430,6 +2430,9 @@ public:
         for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
           Node* pred = preds.current();
           int pred_pid = get_pid_or_zero(pred);
+          if (pred_pid == pid && n->is_reduction()) {
+            continue; // reduction -> self-cycle is not a cyclic dependency
+          }
           // Only add edges once, and only for mapped nodes (in _block)
           if (pred_pid > 0 && !set.test_set(pred_pid)) {
             incnt_set(pid, incnt(pid) + 1); // increment
