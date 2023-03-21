@@ -2928,7 +2928,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          *
          * @param <T> the type of the class to be access-checked
          * @param targetClass the class to be access-checked
-         * @return the class that has been access-checked
+         * @return {@code targetClass} that has been access-checked
          * @throws IllegalAccessException if the class is not accessible from the lookup class
          * and previous lookup class, if present, using the allowed access modes.
          * @throws SecurityException if a security manager is present and it
