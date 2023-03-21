@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 // This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
 // See comments there about the need for making a deep copy.
 DumpTimeLambdaProxyClassInfo::DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src) {
-  _proxy_klasses = NULL;
-  if (src._proxy_klasses != NULL && src._proxy_klasses->length() > 0) {
+  _proxy_klasses = nullptr;
+  if (src._proxy_klasses != nullptr && src._proxy_klasses->length() > 0) {
     int n = src._proxy_klasses->length();
     _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(n, mtClassShared);
     for (int i = 0; i < n; i++) {
@@ -41,7 +41,7 @@ DumpTimeLambdaProxyClassInfo::DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaP
 }
 
 DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
-  if (_proxy_klasses != NULL) {
+  if (_proxy_klasses != nullptr) {
     delete _proxy_klasses;
   }
 }

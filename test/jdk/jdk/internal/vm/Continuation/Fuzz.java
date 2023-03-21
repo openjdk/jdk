@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class Fuzz implements Runnable {
     static final boolean VERBOSE = false;
 
     static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-    static final int COMPILATION_TIMEOUT = (int)(5_000 * timeoutFactor); // ms
+    static int COMPILATION_TIMEOUT = (int)(5_000 * timeoutFactor); // ms
 
     static final Path TEST_DIR = Path.of(System.getProperty("test.src", "."));
 
@@ -90,6 +90,9 @@ public class Fuzz implements Runnable {
         if (Platform.isSlowDebugBuild() && Platform.isOSX() && Platform.isAArch64()) {
             throw new SkippedException("Test is unstable with slowdebug bits "
                                        + "on macosx-aarch64");
+        }
+        if (Platform.isPPC()) {
+            COMPILATION_TIMEOUT = COMPILATION_TIMEOUT * 2;
         }
         warmup();
         for (int compileLevel : new int[]{4}) {

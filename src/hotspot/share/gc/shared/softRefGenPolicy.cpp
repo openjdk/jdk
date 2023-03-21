@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ void SoftRefGenPolicy::cleared_all_soft_refs() {
   // have been cleared in the last collection but if the gc overhear
   // limit continues to be near, SoftRefs should still be cleared.
   AdaptiveSizePolicy* size_policy = GenCollectedHeap::heap()->size_policy();
-  if (size_policy != NULL) {
+  if (size_policy != nullptr) {
     set_should_clear_all_soft_refs(size_policy->gc_overhead_limit_near());
   }
 

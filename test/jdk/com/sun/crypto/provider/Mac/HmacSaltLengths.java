@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4925866
+ * @bug 4925866 8288050
  * @summary ensures various salt lengths can be used for
  * HmacPBESHA1.
  * @author Valerie Peng
@@ -45,7 +45,9 @@ public class HmacSaltLengths {
         "PBEWithHmacSHA224",
         "PBEWithHmacSHA256",
         "PBEWithHmacSHA384",
-        "PBEWithHmacSHA512"
+        "PBEWithHmacSHA512",
+        "PBEWithHmacSHA512/224",
+        "PBEWithHmacSHA512/256",
     };
 
     private static void runTest(String alg, byte[] plaintext,

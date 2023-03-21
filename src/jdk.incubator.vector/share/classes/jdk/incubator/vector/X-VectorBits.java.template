@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -926,6 +926,15 @@ final class $vectortype$ extends $abstractvectortype$ {
             Objects.requireNonNull(mask);
             $masktype$ m = ($masktype$)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        $masktype$ indexPartiallyInUpperRange(long offset, long limit) {
+            return ($masktype$) VectorSupport.indexPartiallyInUpperRange(
+                $masktype$.class, $type$.class, VLENGTH, offset, limit,
+                (o, l) -> ($masktype$) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

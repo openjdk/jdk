@@ -40,7 +40,7 @@ import java.nio.file.Path;
 public class TestSeeTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSeeTag tester = new TestSeeTag();
+        var tester = new TestSeeTag();
         tester.runTests();
     }
 

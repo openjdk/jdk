@@ -43,7 +43,6 @@ import java.io.*;
  *     the agent disables the event generation.
  * COMMENTS
  *
- * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} singlestep03.java
  * @run main/othervm/native --enable-preview -agentlib:singlestep03 singlestep03 platform

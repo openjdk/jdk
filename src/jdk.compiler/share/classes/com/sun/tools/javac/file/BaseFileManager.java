@@ -71,6 +71,7 @@ import com.sun.tools.javac.util.Options;
  * java.io.File or java.nio.file.Path.
  */
 public abstract class BaseFileManager implements JavaFileManager {
+    @SuppressWarnings("this-escape")
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         byteBufferCache = new ByteBufferCache();
@@ -432,7 +433,7 @@ public abstract class BaseFileManager implements JavaFileManager {
             ByteBuffer result =
                 (cached != null && cached.capacity() >= capacity)
                 ? cached.clear()
-                : ByteBuffer.allocate(capacity + capacity>>1);
+                : ByteBuffer.allocate(capacity);
             cached = null;
             return result;
         }

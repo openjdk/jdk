@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -131,7 +131,7 @@ class JavaThread: public Thread {
   // adapter to store the callee Method*. This value is NEVER live
   // across a gc point so it does NOT have to be gc'd
   // The handshake is open ended since we can't be certain that it will
-  // be NULLed. This is because we rarely ever see the race and end up
+  // be nulled. This is because we rarely ever see the race and end up
   // in handle_wrong_method which is the backend of the handshake. See
   // code in i2c adapters and handle_wrong_method.
 
@@ -163,7 +163,7 @@ class JavaThread: public Thread {
   ObjectMonitor* current_pending_monitor() {
     // Use Atomic::load() to prevent data race between concurrent modification and
     // concurrent readers, e.g. ThreadService::get_current_contended_monitor().
-    // Especially, reloading pointer from thread after NULL check must be prevented.
+    // Especially, reloading pointer from thread after null check must be prevented.
     return Atomic::load(&_current_pending_monitor);
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
@@ -224,7 +224,7 @@ class JavaThread: public Thread {
   friend class AsyncExceptionHandshake;
   friend class HandshakeState;
 
-  void install_async_exception(AsyncExceptionHandshake* aec = NULL);
+  void install_async_exception(AsyncExceptionHandshake* aec = nullptr);
   void handle_async_exception(oop java_throwable);
  public:
   bool has_async_exception_condition();
@@ -514,7 +514,7 @@ private:
     return on_thread_list() && !is_terminated();
   }
 
-  // Thread oop. threadObj() can be NULL for initial JavaThread
+  // Thread oop. threadObj() can be null for initial JavaThread
   // (or for threads attached via JNI)
   oop threadObj() const;
   void set_threadOopHandles(oop p);
@@ -536,7 +536,7 @@ private:
 
   ThreadFunction entry_point() const             { return _entry_point; }
 
-  // Allocates a new Java level thread object for this thread. thread_name may be NULL.
+  // Allocates a new Java level thread object for this thread. thread_name may be null.
   void allocate_threadObj(Handle thread_group, const char* thread_name, bool daemon, TRAPS);
 
   // Last frame anchor routines
@@ -595,7 +595,7 @@ private:
   void push_cont_fastpath(intptr_t* sp)        { if (sp > _cont_fastpath) _cont_fastpath = sp; }
   void set_cont_fastpath_thread_state(bool x)  { _cont_fastpath_thread_state = (int)x; }
   intptr_t* raw_cont_fastpath() const          { return _cont_fastpath; }
-  bool cont_fastpath() const                   { return _cont_fastpath == NULL && _cont_fastpath_thread_state != 0; }
+  bool cont_fastpath() const                   { return _cont_fastpath == nullptr && _cont_fastpath_thread_state != 0; }
   bool cont_fastpath_thread_state() const      { return _cont_fastpath_thread_state != 0; }
 
   void inc_held_monitor_count(int i = 1, bool jni = false);
@@ -706,8 +706,8 @@ private:
   void set_pending_deoptimization(int reason)     { _pending_deoptimization = reason; }
   void set_pending_failed_speculation(jlong failed_speculation) { _pending_failed_speculation = failed_speculation; }
   void set_pending_transfer_to_interpreter(bool b) { _pending_transfer_to_interpreter = b; }
-  void set_jvmci_alternate_call_target(address a) { assert(_jvmci._alternate_call_target == NULL, "must be"); _jvmci._alternate_call_target = a; }
-  void set_jvmci_implicit_exception_pc(address a) { assert(_jvmci._implicit_exception_pc == NULL, "must be"); _jvmci._implicit_exception_pc = a; }
+  void set_jvmci_alternate_call_target(address a) { assert(_jvmci._alternate_call_target == nullptr, "must be"); _jvmci._alternate_call_target = a; }
+  void set_jvmci_implicit_exception_pc(address a) { assert(_jvmci._implicit_exception_pc == nullptr, "must be"); _jvmci._implicit_exception_pc = a; }
 
   virtual bool in_retryable_allocation() const    { return _in_retryable_allocation; }
   void set_in_retryable_allocation(bool b)        { _in_retryable_allocation = b; }
@@ -729,8 +729,8 @@ private:
   void set_is_method_handle_return(bool value)   { _is_method_handle_return = value ? 1 : 0; }
 
   void clear_exception_oop_and_pc() {
-    set_exception_oop(NULL);
-    set_exception_pc(NULL);
+    set_exception_oop(nullptr);
+    set_exception_pc(nullptr);
   }
 
   // Check if address is in the usable part of the stack (excludes protected
@@ -741,10 +741,6 @@ private:
   }
 
   // Misc. accessors/mutators
-  void set_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = true; }
-  void clr_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = false; }
-  bool do_not_unlock(void)                       { return _do_not_unlock_if_synchronized; }
-
   static ByteSize scopedValueCache_offset()       { return byte_offset_of(JavaThread, _scopedValueCache); }
 
   // For assembly stub generation
@@ -851,8 +847,8 @@ private:
   // pending check, this is done for Native->Java transitions (i.e. user JNI code).
   // VM->Java transitions are not cleared, it is expected that JNI code enclosed
   // within ThreadToNativeFromVM makes proper exception checks (i.e. VM internal).
-  bool is_pending_jni_exception_check() const { return _pending_jni_exception_check_fn != NULL; }
-  void clear_pending_jni_exception_check() { _pending_jni_exception_check_fn = NULL; }
+  bool is_pending_jni_exception_check() const { return _pending_jni_exception_check_fn != nullptr; }
+  void clear_pending_jni_exception_check() { _pending_jni_exception_check_fn = nullptr; }
   const char* get_pending_jni_exception_check() const { return _pending_jni_exception_check_fn; }
   void set_pending_jni_exception_check(const char* fn_name) { _pending_jni_exception_check_fn = (char*) fn_name; }
 
@@ -880,7 +876,7 @@ private:
   void set_entry_point(ThreadFunction entry_point) { _entry_point = entry_point; }
 
   // factor out low-level mechanics for use in both normal and error cases
-  const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
+  const char* get_thread_name_string(char* buf = nullptr, int buflen = 0) const;
 
  public:
 
@@ -945,7 +941,7 @@ private:
   void print_vthread_stack_on(outputStream* st);
   // This prints the active stack: either carrier/platform or virtual.
   void print_active_stack_on(outputStream* st);
-  // Print stack trace for checked JNI warnings and JNI fatal errors.
+  // Print current stack trace for checked JNI warnings and JNI fatal errors.
   // This is the external format from above, but selecting the platform
   // or vthread as applicable.
   void print_jni_stack();
@@ -973,7 +969,7 @@ private:
     return JavaThread::cast(Thread::current());
   }
 
-  // Returns the current thread as a JavaThread, or NULL if not attached
+  // Returns the current thread as a JavaThread, or nullptr if not attached
   static inline JavaThread* current_or_null();
 
   // Casts
@@ -1004,10 +1000,10 @@ private:
   void set_jvmti_thread_state(JvmtiThreadState *value)                           { _jvmti_thread_state = value; }
   // A JvmtiThreadState is lazily allocated. This jvmti_thread_state()
   // getter is used to get this JavaThread's JvmtiThreadState if it has
-  // one which means NULL can be returned. JvmtiThreadState::state_for()
+  // one which means null can be returned. JvmtiThreadState::state_for()
   // is used to get the specified JavaThread's JvmtiThreadState if it has
   // one or it allocates a new JvmtiThreadState for the JavaThread and
-  // returns it. JvmtiThreadState::state_for() will return NULL only if
+  // returns it. JvmtiThreadState::state_for() will return null only if
   // the specified JavaThread is exiting.
   JvmtiThreadState *jvmti_thread_state() const                                   { return _jvmti_thread_state; }
   static ByteSize jvmti_thread_state_offset()                                    { return byte_offset_of(JavaThread, _jvmti_thread_state); }

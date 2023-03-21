@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public:
     _limit  = limit;
     _handler_bci = handler_bci;
     _catch_klass_index = klass_index;
-    _catch_klass = NULL;
+    _catch_klass = nullptr;
   }
 
   int       start()             { return _start; }

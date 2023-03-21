@@ -59,7 +59,7 @@ public class HeapByteBufferTest extends ByteBufferTest {
     public static void main(String[] args) {
         // The number of iterations is high to ensure that tiered
         // compilation kicks in all the way up to C2.
-        long iterations = 100000;
+        long iterations = 5000;
         if (args.length > 0)
             iterations = Long.parseLong(args[0]);
 

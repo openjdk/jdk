@@ -85,7 +85,7 @@ typedef struct {
  * Pointer to native-specific (GLX, WGL, etc.) SurfaceData info, such as the
  * native Drawable handle and GraphicsConfig data.
  *
- *     jobject graphicsConfig;;
+ *     jobject graphicsConfig;
  * Strong reference to the OGLGraphicsConfig used by this OGLSurfaceData.
  *
  *     jint drawableType;

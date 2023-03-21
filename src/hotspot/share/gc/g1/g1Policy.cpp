@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -103,8 +102,9 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_young_length_bounds();
-  // We may immediately start allocating regions and placing them on the
-  // collection set list. Initialize the per-collection set info
+
+  // We immediately start allocating regions placing them in the collection set.
+  // Initialize the collection set info.
   _collection_set->start_incremental_building();
 }
 
@@ -188,17 +188,14 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 void G1Policy::update_young_length_bounds() {
   assert(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(), "must be");
   bool for_young_only_phase = collector_state()->in_young_only_phase();
-  // Request at least one eden region to ensure progress.
-  bool after_gc = true;
   update_young_length_bounds(_analytics->predict_pending_cards(for_young_only_phase),
-                             _analytics->predict_rs_length(for_young_only_phase),
-                             after_gc);
+                             _analytics->predict_rs_length(for_young_only_phase));
 }
 
-void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length, bool after_gc) {
+void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
   uint old_young_list_target_length = young_list_target_length();
 
-  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length, after_gc);
+  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
   uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length);
   uint new_young_list_max_length = calculate_young_max_length(new_young_list_target_length);
 
@@ -237,7 +234,7 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length
 // value smaller than what is already allocated or what can actually be allocated.
 // This return value is only an expectation.
 //
-uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length, bool after_gc) const {
+uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length) const {
   uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
   uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
 
@@ -251,17 +248,17 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   // Size of the already allocated young gen.
   const uint allocated_young_length = _g1h->young_regions_count();
   // This is the absolute minimum young length that we can return. Ensure that we
-  // don't go below any user-defined minimum bound; but we might have already
-  // allocated more than that for various reasons. In this case, use that.
-  uint absolute_min_young_length = MAX2(allocated_young_length, min_young_length_by_sizer);
+  // don't go below any user-defined minimum bound.  Also, we must have at least
+  // one eden region, to ensure progress. But when revising during the ensuing
+  // mutator phase we might have already allocated more than either of those, in
+  // which case use that.
+  uint absolute_min_young_length = MAX3(min_young_length_by_sizer,
+                                        survivor_length + 1,
+                                        allocated_young_length);
   // Calculate the absolute max bounds. After evac failure or when revising the
   // young length we might have exceeded absolute min length or absolute_max_length,
   // so adjust the result accordingly.
   uint absolute_max_young_length = MAX2(max_young_length_by_sizer, absolute_min_young_length);
-
-  // The absolute minimum young gen length (as provided by the young gen sizer) ensures
-  // that we desire at least one young gen region.
-  assert(absolute_min_young_length > 0, "must be");
 
   uint desired_eden_length_by_mmu = 0;
   uint desired_eden_length_by_pause = 0;
@@ -291,28 +288,14 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   // Clamp to absolute min/max after we determined desired lengths.
   desired_young_length = clamp(desired_young_length, absolute_min_young_length, absolute_max_young_length);
 
-  // After a garbage collection, make room for at least one eden region (i.e. in addition to
-  // already allocated survivor regions).
-  // This may make desired regions go over absolute maximum length by the heap sizer, however
-  // the immediate full gcs after that young gc (particularly on small heaps) are worse.
-  if (after_gc && (allocated_young_length >= desired_young_length)) {
-   log_trace(gc, ergo, heap)("Young desired length: Desired young region length less than already "
-                              "allocated region length, but requesting one eden region minimum. "
-                              "Expanding desired young length from %u to %u.",
-                              desired_young_length,
-                              allocated_young_length + 1);
-    desired_young_length = allocated_young_length + 1;
-  }
-
-  log_trace(gc, ergo, heap)("Young desired length %u (after gc: %s) "
+  log_trace(gc, ergo, heap)("Young desired length %u "
                             "survivor length %u "
                             "allocated young length %u "
                             "absolute min young length %u "
                             "absolute max young length %u "
                             "desired eden length by mmu %u "
                             "desired eden length by pause %u ",
-                            desired_young_length, BOOL_TO_STR(after_gc),
-                            survivor_length,
+                            desired_young_length, survivor_length,
                             allocated_young_length, absolute_min_young_length,
                             absolute_max_young_length, desired_eden_length_by_mmu,
                             desired_eden_length_by_pause);
@@ -546,10 +529,7 @@ void G1Policy::revise_young_list_target_length(size_t rs_length) {
   size_t thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t pending_cards = dcqs.num_cards() + thread_buffer_cards;
-  // We are only revising young gen length to meet pause time goal, so do not request
-  // at least one eden region for progress. At this point we actually want to run into
-  // a GC soon if young gen is already (too) large.
-  update_young_length_bounds(pending_cards, rs_length, false /* need_one_eden_region */);
+  update_young_length_bounds(pending_cards, rs_length);
 }
 
 void G1Policy::record_full_collection_start() {
@@ -657,8 +637,6 @@ void G1Policy::record_young_collection_start() {
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(now.seconds());
-
-  _collection_set->reset_bytes_used_before();
 
   // do that for any other surv rate groups
   _eden_surv_rate_group->stop_adding_regions();
@@ -821,11 +799,9 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _eden_surv_rate_group->start_adding_regions();
 
-  double merge_hcc_time_ms = average_time_ms(G1GCPhaseTimes::MergeHCC);
   if (update_stats) {
     // Update prediction for card merge.
-    size_t const merged_cards_from_log_buffers = p->sum_thread_work_items(G1GCPhaseTimes::MergeHCC, G1GCPhaseTimes::MergeHCCDirtyCards) +
-                                                 p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
+    size_t const merged_cards_from_log_buffers = p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
     // MergeRSCards includes the cards from the Eager Reclaim phase.
     size_t const merged_cards_from_rs = p->sum_thread_work_items(G1GCPhaseTimes::MergeRS, G1GCPhaseTimes::MergeRSCards) +
                                         p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSCards);
@@ -835,7 +811,6 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     if (total_cards_merged >= G1NumCardsCostSampleThreshold) {
       double avg_time_merge_cards = average_time_ms(G1GCPhaseTimes::MergeER) +
                                     average_time_ms(G1GCPhaseTimes::MergeRS) +
-                                    average_time_ms(G1GCPhaseTimes::MergeHCC) +
                                     average_time_ms(G1GCPhaseTimes::MergeLB) +
                                     average_time_ms(G1GCPhaseTimes::OptMergeRS);
       _analytics->report_cost_per_card_merge_ms(avg_time_merge_cards / total_cards_merged, is_young_only_pause);
@@ -918,36 +893,21 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  if (logged_cards_time_goal_ms < merge_hcc_time_ms) {
-    log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
-                                "Logged Cards Scan time goal: %1.2fms Scan HCC time: %1.2fms",
-                                logged_cards_time_goal_ms, merge_hcc_time_ms);
-
-    logged_cards_time_goal_ms = 0;
-  } else {
-    logged_cards_time_goal_ms -= merge_hcc_time_ms;
-  }
-
   double const logged_cards_time_ms = logged_cards_processing_time();
   size_t logged_cards =
     phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB,
                                          G1GCPhaseTimes::MergeLBDirtyCards);
-  size_t hcc_cards =
-    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeHCC,
-                                         G1GCPhaseTimes::MergeHCCDirtyCards);
   bool exceeded_goal = logged_cards_time_goal_ms < logged_cards_time_ms;
   size_t predicted_thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1ConcurrentRefine* cr = _g1h->concurrent_refine();
 
   log_debug(gc, ergo, refine)
-           ("GC refinement: goal: %zu + %zu / %1.2fms, actual: %zu / %1.2fms, HCC: %zu / %1.2fms%s",
+           ("GC refinement: goal: %zu + %zu / %1.2fms, actual: %zu / %1.2fms, %s",
             cr->pending_cards_target(),
             predicted_thread_buffer_cards,
             logged_cards_time_goal_ms,
             logged_cards,
             logged_cards_time_ms,
-            hcc_cards,
-            merge_hcc_time_ms,
             (exceeded_goal ? " (exceeded goal)" : ""));
 
   cr->adjust_after_gc(logged_cards_time_ms,

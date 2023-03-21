@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@
 
 DEF_STUB_INTERFACE(ICStub);
 
-StubQueue* InlineCacheBuffer::_buffer    = NULL;
+StubQueue* InlineCacheBuffer::_buffer    = nullptr;
 
-CompiledICHolder* InlineCacheBuffer::_pending_released = NULL;
+CompiledICHolder* InlineCacheBuffer::_pending_released = nullptr;
 int InlineCacheBuffer::_pending_count = 0;
 
 #ifdef ASSERT
@@ -53,30 +53,30 @@ ICRefillVerifier::ICRefillVerifier()
     _refill_remembered(false)
 {
   Thread* thread = Thread::current();
-  assert(thread->missed_ic_stub_refill_verifier() == NULL, "nesting not supported");
+  assert(thread->missed_ic_stub_refill_verifier() == nullptr, "nesting not supported");
   thread->set_missed_ic_stub_refill_verifier(this);
 }
 
 ICRefillVerifier::~ICRefillVerifier() {
   assert(!_refill_requested || _refill_remembered,
          "Forgot to refill IC stubs after failed IC transition");
-  Thread::current()->set_missed_ic_stub_refill_verifier(NULL);
+  Thread::current()->set_missed_ic_stub_refill_verifier(nullptr);
 }
 
 ICRefillVerifierMark::ICRefillVerifierMark(ICRefillVerifier* verifier) {
   Thread* thread = Thread::current();
-  assert(thread->missed_ic_stub_refill_verifier() == NULL, "nesting not supported");
+  assert(thread->missed_ic_stub_refill_verifier() == nullptr, "nesting not supported");
   thread->set_missed_ic_stub_refill_verifier(verifier);
 }
 
 ICRefillVerifierMark::~ICRefillVerifierMark() {
-  Thread::current()->set_missed_ic_stub_refill_verifier(NULL);
+  Thread::current()->set_missed_ic_stub_refill_verifier(nullptr);
 }
 
 static ICRefillVerifier* current_ic_refill_verifier() {
   Thread* current = Thread::current();
   ICRefillVerifier* verifier = current->missed_ic_stub_refill_verifier();
-  assert(verifier != NULL, "need a verifier for safety");
+  assert(verifier != nullptr, "need a verifier for safety");
   return verifier;
 }
 #endif
@@ -85,7 +85,7 @@ void ICStub::finalize() {
   if (!is_empty()) {
     ResourceMark rm;
     CompiledIC *ic = CompiledIC_at(CodeCache::find_compiled(ic_site()), ic_site());
-    assert(CodeCache::find_compiled(ic->instruction_address()) != NULL, "inline cache in non-compiled?");
+    assert(CodeCache::find_compiled(ic->instruction_address()) != nullptr, "inline cache in non-compiled?");
 
     assert(this == ICStub_from_destination_address(ic->stub_address()), "wrong owner of ic buffer");
     ic->set_ic_destination_and_value(destination(), cached_value());
@@ -119,7 +119,7 @@ void ICStub::clear() {
   if (CompiledIC::is_icholder_entry(destination())) {
     InlineCacheBuffer::queue_for_release((CompiledICHolder*)cached_value());
   }
-  _ic_site = NULL;
+  _ic_site = nullptr;
 }
 
 
@@ -139,9 +139,9 @@ void ICStub::print() {
 
 
 void InlineCacheBuffer::initialize() {
-  if (_buffer != NULL) return; // already initialized
+  if (_buffer != nullptr) return; // already initialized
   _buffer = new StubQueue(new ICStubInterface, 10*K, InlineCacheBuffer_lock, "InlineCacheBuffer");
-  assert (_buffer != NULL, "cannot allocate InlineCacheBuffer");
+  assert (_buffer != nullptr, "cannot allocate InlineCacheBuffer");
 }
 
 
@@ -196,7 +196,7 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
 
   // allocate and initialize new "out-of-line" inline-cache
   ICStub* ic_stub = new_ic_stub();
-  if (ic_stub == NULL) {
+  if (ic_stub == nullptr) {
 #ifdef ASSERT
     ICRefillVerifier* verifier = current_ic_refill_verifier();
     verifier->request_refill();
@@ -234,8 +234,8 @@ void* InlineCacheBuffer::cached_value_for(CompiledIC *ic) {
 void InlineCacheBuffer::release_pending_icholders() {
   assert(SafepointSynchronize::is_at_safepoint(), "should only be called during a safepoint");
   CompiledICHolder* holder = _pending_released;
-  _pending_released = NULL;
-  while (holder != NULL) {
+  _pending_released = nullptr;
+  while (holder != nullptr) {
     CompiledICHolder* next = holder->next();
     delete holder;
     holder = next;

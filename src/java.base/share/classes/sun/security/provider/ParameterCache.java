@@ -34,6 +34,7 @@ import java.security.SecureRandom;
 import java.security.spec.*;
 
 import javax.crypto.spec.DHParameterSpec;
+import sun.security.util.SafeDHParameterSpec;
 
 /**
  * Cache for DSA and DH parameter specs. Used by the KeyPairGenerators
@@ -55,6 +56,26 @@ public final class ParameterCache {
     // cache of DH parameters
     private static final Map<Integer,DHParameterSpec> dhCache;
 
+    // convert DHParameterSpec to SafeDHParameterSpec if its parameters are
+    // safe primes; validation takes time but should be worthwhile for the
+    // parameter cache since the parameters may be reused many times.
+    private static DHParameterSpec makeSafe(DHParameterSpec spec) {
+        if (spec instanceof SafeDHParameterSpec) {
+            return spec;
+        }
+
+        BigInteger p = spec.getP();
+        BigInteger g = spec.getG();
+
+        boolean isSafe = (g.equals(BigInteger.TWO) && p.testBit(0) &&
+                p.shiftRight(1).isProbablePrime(100));
+        if (isSafe) {
+            return new SafeDHParameterSpec(p, g, spec.getL());
+        } else {
+            return spec;
+        }
+    }
+
     /**
      * Return cached DSA parameters for the given length combination of
      * prime and subprime, or null if none are available in the cache.
@@ -74,7 +95,7 @@ public final class ParameterCache {
      * are available in the cache.
      */
     public static DHParameterSpec getCachedDHParameterSpec(int keyLength) {
-        return dhCache.get(Integer.valueOf(keyLength));
+        return dhCache.get(keyLength);
     }
 
     /**
@@ -132,7 +153,7 @@ public final class ParameterCache {
         gen.init(keyLength, random);
         AlgorithmParameters params = gen.generateParameters();
         spec = params.getParameterSpec(DHParameterSpec.class);
-        dhCache.put(Integer.valueOf(keyLength), spec);
+        dhCache.put(keyLength, makeSafe(spec));
         return spec;
     }
 
@@ -393,6 +414,12 @@ public final class ParameterCache {
         // the common generator
         BigInteger dhG = BigInteger.TWO;
 
+        // Self generated following the approach from RFC 2412 Appendix E but
+        // using random source instead of binary expansion of pi
+        BigInteger dhP512 = new BigInteger(
+                "FFFFFFFFFFFFFFFF8B479B3A6E8DE86C294188F0BF2CD86C" +
+                "DB950ADB36D0F61FD51E46F69C99ED95ABE5A7BBB230A6ED" +
+                "1D0B4506B5317284FFFFFFFFFFFFFFFF", 16);
         //
         // From RFC 7296
 
@@ -561,16 +588,18 @@ public final class ParameterCache {
                 "9558E4475677E9AA9E3050E2765694DFC81F56E880B96E71" +
                 "60C980DD98EDD3DFFFFFFFFFFFFFFFFF", 16);
 
-        // use DSA parameters for DH for sizes not defined in RFC 7296, 3526
-        dhCache.put(Integer.valueOf(512), new DHParameterSpec(p512, g512));
+        // self-generated safe prime
+        dhCache.put(512, new SafeDHParameterSpec(dhP512, dhG));
 
-        dhCache.put(Integer.valueOf(768), new DHParameterSpec(dhP768, dhG));
-        dhCache.put(Integer.valueOf(1024), new DHParameterSpec(dhP1024, dhG));
-        dhCache.put(Integer.valueOf(1536), new DHParameterSpec(dhP1536, dhG));
-        dhCache.put(Integer.valueOf(2048), new DHParameterSpec(dhP2048, dhG));
-        dhCache.put(Integer.valueOf(3072), new DHParameterSpec(dhP3072, dhG));
-        dhCache.put(Integer.valueOf(4096), new DHParameterSpec(dhP4096, dhG));
-        dhCache.put(Integer.valueOf(6144), new DHParameterSpec(dhP6144, dhG));
-        dhCache.put(Integer.valueOf(8192), new DHParameterSpec(dhP8192, dhG));
+        // from RFC 7296
+        dhCache.put(768, new SafeDHParameterSpec(dhP768, dhG));
+        dhCache.put(1024, new SafeDHParameterSpec(dhP1024, dhG));
+        // from RFC 3526
+        dhCache.put(1536, new SafeDHParameterSpec(dhP1536, dhG));
+        dhCache.put(2048, new SafeDHParameterSpec(dhP2048, dhG));
+        dhCache.put(3072, new SafeDHParameterSpec(dhP3072, dhG));
+        dhCache.put(4096, new SafeDHParameterSpec(dhP4096, dhG));
+        dhCache.put(6144, new SafeDHParameterSpec(dhP6144, dhG));
+        dhCache.put(8192, new SafeDHParameterSpec(dhP8192, dhG));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,14 +41,14 @@ namespace metaspace {
 
 RootChunkArea::RootChunkArea(const MetaWord* base) :
   _base(base),
-  _first_chunk(NULL)
+  _first_chunk(nullptr)
 {}
 
 RootChunkArea::~RootChunkArea() {
   // This is called when a VirtualSpaceNode is destructed (purged).
   // All chunks should be free of course. In fact, there should only
   // be one chunk, since all free chunks should have been merged.
-  if (_first_chunk != NULL) {
+  if (_first_chunk != nullptr) {
     assert(_first_chunk->is_root_chunk() && _first_chunk->is_free(),
            "Cannot delete root chunk area if not all chunks are free.");
     ChunkHeaderPool::pool()->return_chunk_header(_first_chunk);
@@ -123,7 +123,7 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
     }
 
     // Insert splinter chunk into vs list
-    if (c->next_in_vs() != NULL) {
+    if (c->next_in_vs() != nullptr) {
       c->next_in_vs()->set_prev_in_vs(splinter_chunk);
     }
     splinter_chunk->set_next_in_vs(c->next_in_vs());
@@ -146,11 +146,11 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
 // Given a chunk, attempt to merge it recursively with its neighboring chunks.
 //
 // If successful (merged at least once), returns address of
-// the merged chunk; NULL otherwise.
+// the merged chunk; null otherwise.
 //
 // The merged chunks are removed from the freelists.
 //
-// !!! Please note that if this method returns a non-NULL value, the
+// !!! Please note that if this method returns a non-null value, the
 // original chunk will be invalid and should not be accessed anymore! !!!
 Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
   // Note rules:
@@ -199,7 +199,7 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
   log_trace(metaspace)("Attempting to merge chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
 
   bool stop = false;
-  Metachunk* result = NULL;
+  Metachunk* result = nullptr;
 
   do {
 
@@ -250,7 +250,7 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
 
       // Leader survives, follower chunk is freed. Remove follower from vslist ..
       leader->set_next_in_vs(follower->next_in_vs());
-      if (follower->next_in_vs() != NULL) {
+      if (follower->next_in_vs() != nullptr) {
         follower->next_in_vs()->set_prev_in_vs(leader);
       }
 
@@ -276,7 +276,7 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
 
 #ifdef ASSERT
   verify();
-  if (result != NULL) {
+  if (result != nullptr) {
     result->verify();
   }
 #endif // ASSERT
@@ -333,7 +333,7 @@ bool RootChunkArea::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* fre
 
   // Remove buddy from vs list...
   Metachunk* successor = buddy->next_in_vs();
-  if (successor != NULL) {
+  if (successor != nullptr) {
     successor->set_prev_in_vs(c);
   }
   c->set_next_in_vs(successor);
@@ -360,7 +360,7 @@ bool RootChunkArea::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* fre
 //  In that case, it should only contain one chunk (maximally merged, so a root chunk)
 //  and it should be free.
 bool RootChunkArea::is_free() const {
-  return _first_chunk == NULL ||
+  return _first_chunk == nullptr ||
       (_first_chunk->is_root_chunk() && _first_chunk->is_free());
 }
 
@@ -381,13 +381,13 @@ void RootChunkArea::verify() const {
   // being adjacent to each other, and cover the complete area
   int num_chunk = 0;
 
-  if (_first_chunk != NULL) {
-    assrt_(_first_chunk->prev_in_vs() == NULL, "Sanity");
+  if (_first_chunk != nullptr) {
+    assrt_(_first_chunk->prev_in_vs() == nullptr, "Sanity");
 
     const Metachunk* c = _first_chunk;
     const MetaWord* expected_next_base = _base;
 
-    while (c != NULL) {
+    while (c != nullptr) {
       assrt_(c->is_free() || c->is_in_use(),
           "Chunk No. %d " METACHUNK_FORMAT " - invalid state.",
           num_chunk, METACHUNK_FORMAT_ARGS(c));
@@ -413,7 +413,7 @@ void RootChunkArea::verify() const {
 void RootChunkArea::verify_area_is_ideally_merged() const {
   SOMETIMES(assert_lock_strong(Metaspace_lock);)
   int num_chunk = 0;
-  for (const Metachunk* c = _first_chunk; c != NULL; c = c->next_in_vs()) {
+  for (const Metachunk* c = _first_chunk; c != nullptr; c = c->next_in_vs()) {
     if (!c->is_root_chunk() && c->is_free()) {
       // If a chunk is free, it must not have a buddy which is also free, because
       // those chunks should have been merged.
@@ -432,12 +432,12 @@ void RootChunkArea::verify_area_is_ideally_merged() const {
 
 void RootChunkArea::print_on(outputStream* st) const {
   st->print(PTR_FORMAT ": ", p2i(base()));
-  if (_first_chunk != NULL) {
+  if (_first_chunk != nullptr) {
     const Metachunk* c = _first_chunk;
     //                                    01234567890123
     const char* letters_for_levels_cap = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const char* letters_for_levels =     "abcdefghijklmnopqrstuvwxyz";
-    while (c != NULL) {
+    while (c != nullptr) {
       const chunklevel_t l = c->level();
       if (l >= 0 && (size_t)l < strlen(letters_for_levels)) {
         st->print("%c", c->is_free() ? letters_for_levels[c->level()] : letters_for_levels_cap[c->level()]);
@@ -453,12 +453,12 @@ void RootChunkArea::print_on(outputStream* st) const {
   st->cr();
 }
 
-// Create an array of ChunkTree objects, all initialized to NULL, covering
+// Create an array of ChunkTree objects, all initialized to null, covering
 // a given memory range. Memory range must be a multiple of root chunk size.
 RootChunkAreaLUT::RootChunkAreaLUT(const MetaWord* base, size_t word_size) :
   _base(base),
   _num((int)(word_size / chunklevel::MAX_CHUNK_WORD_SIZE)),
-  _arr(NULL)
+  _arr(nullptr)
 {
   assert_is_aligned(word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
   _arr = NEW_C_HEAP_ARRAY(RootChunkArea, _num, mtClass);

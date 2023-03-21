@@ -49,8 +49,8 @@ public class TestVisibleMembers extends JavadocTester {
 
     final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestVisibleMembers tester = new TestVisibleMembers();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestVisibleMembers();
+        tester.runTests();
     }
 
     TestVisibleMembers() {

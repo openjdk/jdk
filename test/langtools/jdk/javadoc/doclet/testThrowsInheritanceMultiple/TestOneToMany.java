@@ -42,7 +42,7 @@ public class TestOneToMany extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         var tester = new TestOneToMany();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();

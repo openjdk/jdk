@@ -891,8 +891,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/ForceGarbageCollection/forcegc001/TestDescription.java \
   vmTestbase/nsk/jvmti/ForceGarbageCollection/forcegc002/TestDescription.java \
   vmTestbase/nsk/jvmti/GenerateEvents/genevents001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetAllThreads/allthr001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetAllThreads/allthr002/TestDescription.java \
   vmTestbase/nsk/jvmti/GetAvailableProcessors/getavailproc001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetArgumentsSize/argsize001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetArgumentsSize/argsize002/TestDescription.java \

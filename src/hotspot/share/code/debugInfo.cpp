@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ void DebugInfoWriteStream::write_metadata(Metadata* h) {
 oop DebugInfoReadStream::read_oop() {
   nmethod* nm = const_cast<CompiledMethod*>(code())->as_nmethod_or_null();
   oop o;
-  if (nm != NULL) {
+  if (nm != nullptr) {
     // Despite these oops being found inside nmethods that are on-stack,
     // they are not kept alive by all GCs (e.g. G1 and Shenandoah).
     o = nm->oop_at_phantom(read_int());
@@ -68,7 +68,7 @@ oop DebugInfoReadStream::read_oop() {
 ScopeValue* DebugInfoReadStream::read_object_value(bool is_auto_box) {
   int id = read_int();
 #ifdef ASSERT
-  assert(_obj_pool != NULL, "object pool does not exist");
+  assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
     assert(_obj_pool->at(i)->as_ObjectValue()->id() != id, "should not be read twice");
   }
@@ -82,7 +82,7 @@ ScopeValue* DebugInfoReadStream::read_object_value(bool is_auto_box) {
 
 ScopeValue* DebugInfoReadStream::get_cached_object() {
   int id = read_int();
-  assert(_obj_pool != NULL, "object pool does not exist");
+  assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
     ObjectValue* ov = _obj_pool->at(i)->as_ObjectValue();
     if (ov->id() == id) {
@@ -90,7 +90,7 @@ ScopeValue* DebugInfoReadStream::get_cached_object() {
     }
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 // Serializing scope values
@@ -101,7 +101,7 @@ enum { LOCATION_CODE = 0, CONSTANT_INT_CODE = 1,  CONSTANT_OOP_CODE = 2,
                           AUTO_BOX_OBJECT_CODE = 7, MARKER_CODE = 8 };
 
 ScopeValue* ScopeValue::read_from(DebugInfoReadStream* stream) {
-  ScopeValue* result = NULL;
+  ScopeValue* result = nullptr;
   switch(stream->read_int()) {
    case LOCATION_CODE:        result = new LocationValue(stream);                        break;
    case CONSTANT_INT_CODE:    result = new ConstantIntValue(stream);                     break;
@@ -244,7 +244,7 @@ void ConstantOopWriteValue::write_on(DebugInfoWriteStream* stream) {
     // cannot use ThreadInVMfromNative here since in case of JVMCI compiler,
     // thread is already in VM state.
     ThreadInVMfromUnknown tiv;
-    assert(JNIHandles::resolve(value()) == NULL ||
+    assert(JNIHandles::resolve(value()) == nullptr ||
            Universe::heap()->is_in(JNIHandles::resolve(value())),
            "Should be in heap");
  }
@@ -265,7 +265,7 @@ void ConstantOopWriteValue::print_on(outputStream* st) const {
 
 ConstantOopReadValue::ConstantOopReadValue(DebugInfoReadStream* stream) {
   _value = Handle(Thread::current(), stream->read_oop());
-  assert(_value() == NULL ||
+  assert(_value() == nullptr ||
          Universe::heap()->is_in(_value()), "Should be in heap");
 }
 
@@ -274,10 +274,10 @@ void ConstantOopReadValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ConstantOopReadValue::print_on(outputStream* st) const {
-  if (value()() != NULL) {
+  if (value()() != nullptr) {
     value()()->print_value_on(st);
   } else {
-    st->print("NULL");
+    st->print("nullptr");
   }
 }
 

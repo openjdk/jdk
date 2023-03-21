@@ -45,7 +45,7 @@ import javadoc.tester.JavadocTester;
 public class TestSearch extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSearch tester = new TestSearch();
+        var tester = new TestSearch();
         tester.runTests();
     }
 

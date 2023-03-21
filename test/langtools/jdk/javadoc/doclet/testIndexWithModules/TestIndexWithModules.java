@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ public class TestIndexWithModules extends JavadocTester {
     private final Path src;
 
     public static void main(String... args) throws Exception {
-        TestIndexWithModules tester = new TestIndexWithModules();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestIndexWithModules();
+        tester.runTests();
     }
 
     TestIndexWithModules() throws Exception{

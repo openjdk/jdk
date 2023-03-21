@@ -79,7 +79,7 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
             g.setColor(Color.darkGray);
             g.drawRect(0, 0, getWidth()-1, getHeight()-1);
         }
-    };
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////
 ///  MotifDesktopManager class
@@ -266,5 +266,5 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
             }
             return null;
         }
-    }; /// END of MotifDesktopManager
+    } /// END of MotifDesktopManager
 }

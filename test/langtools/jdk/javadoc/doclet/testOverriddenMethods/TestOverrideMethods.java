@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestOverrideMethods  extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestOverrideMethods tester = new TestOverrideMethods();
+        var tester = new TestOverrideMethods();
         tester.runTests();
     }
 

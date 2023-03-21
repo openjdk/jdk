@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ class LibraryCallKit : public GraphKit {
   LibraryCallKit(JVMState* jvms, LibraryIntrinsic* intrinsic)
     : GraphKit(jvms),
       _intrinsic(intrinsic),
-      _result(NULL)
+      _result(nullptr)
   {
     // Check if this is a root compile.  In that case we don't have a caller.
     if (!jvms->has_method()) {
@@ -85,7 +85,7 @@ class LibraryCallKit : public GraphKit {
       // and save the stack pointer value so it can used by uncommon_trap.
       // We find the argument count by looking at the declared signature.
       bool ignored_will_link;
-      ciSignature* declared_signature = NULL;
+      ciSignature* declared_signature = nullptr;
       ciMethod* ignored_callee = caller()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
       const int nargs = declared_signature->arg_size_for_bc(caller()->java_code_at_bci(bci()));
       _reexecute_sp = sp() + nargs;  // "push" arguments back on stack
@@ -105,7 +105,7 @@ class LibraryCallKit : public GraphKit {
 
   void push_result() {
     // Push the result onto the stack.
-    if (!stopped() && result() != NULL) {
+    if (!stopped() && result() != nullptr) {
       BasicType bt = result()->bottom_type()->basic_type();
       push_node(bt, result());
     }
@@ -116,7 +116,7 @@ class LibraryCallKit : public GraphKit {
     fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
   }
 
-  void  set_result(Node* n) { assert(_result == NULL, "only set once"); _result = n; }
+  void  set_result(Node* n) { assert(_result == nullptr, "only set once"); _result = n; }
   void  set_result(RegionNode* region, PhiNode* value);
   Node*     result() { return _result; }
 
@@ -128,7 +128,7 @@ class LibraryCallKit : public GraphKit {
   Node* generate_fair_guard(Node* test, RegionNode* region);
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
-                                Node* *pos_index = NULL);
+                                Node* *pos_index = nullptr);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
                              RegionNode* region);
@@ -184,8 +184,8 @@ class LibraryCallKit : public GraphKit {
   CallJavaNode* generate_method_call_virtual(vmIntrinsics::ID method_id) {
     return generate_method_call(method_id, true, false);
   }
-  Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators = IN_HEAP, bool is_static = false, ciInstanceKlass* fromKls = NULL);
-  Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact = true, bool is_static = false, ciInstanceKlass* fromKls = NULL);
+  Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators = IN_HEAP, bool is_static = false, ciInstanceKlass* fromKls = nullptr);
+  Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact = true, bool is_static = false, ciInstanceKlass* fromKls = nullptr);
 
   Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_compareTo(StrIntrinsicNode::ArgEnc ae);
@@ -195,6 +195,7 @@ class LibraryCallKit : public GraphKit {
                           RegionNode* region, Node* phi, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_equals(StrIntrinsicNode::ArgEnc ae);
+  bool inline_vectorizedHashCode();
   bool inline_string_toBytesU();
   bool inline_string_getCharsU();
   bool inline_string_copy(bool compress);
@@ -265,8 +266,13 @@ class LibraryCallKit : public GraphKit {
   // Helper functions for inlining arraycopy
   bool inline_arraycopy();
   AllocateArrayNode* tightly_coupled_allocation(Node* ptr);
+  static CallStaticJavaNode* get_uncommon_trap_from_success_proj(Node* node);
+  SafePointNode* create_safepoint_with_state_before_array_allocation(const AllocateArrayNode* alloc) const;
+  void replace_unrelated_uncommon_traps_with_alloc_state(AllocateArrayNode* alloc, JVMState* saved_jvms_before_guards);
+  void replace_unrelated_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards);
+  void create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_call);
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
-  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp,
+  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards, int saved_reexecute_sp,
                                       uint new_idx);
 
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
@@ -351,6 +357,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_insert();
   bool inline_vector_compress_expand();
   bool inline_index_vector();
+  bool inline_index_partially_in_upper_range();
 
   Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 

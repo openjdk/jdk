@@ -40,8 +40,8 @@ import toolbox.ToolBox;
 public class TestReturnTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestReturnTag tester = new TestReturnTag();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestReturnTag();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

@@ -53,7 +53,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestMetadata extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestMetadata tester = new TestMetadata();
+        var tester = new TestMetadata();
         tester.runTests();
     }
 
