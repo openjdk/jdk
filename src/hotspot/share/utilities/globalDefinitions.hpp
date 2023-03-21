@@ -1349,4 +1349,14 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
 
+template <typename T>
+constexpr T&& forward(std::remove_reference_t<T>& x) noexcept {
+  return static_cast<T&&>(x);
+}
+
+template <typename T>
+constexpr T&& forward(std::remove_reference_t<T>&& x) noexcept {
+  return static_cast<T&&>(x);
+}
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

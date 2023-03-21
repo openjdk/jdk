@@ -2794,10 +2794,10 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
                                     !Compile_lock->owned_by_self();
   bool should_take_CodeCache_lock = !SafepointSynchronize::is_at_safepoint() &&
                                     !CodeCache_lock->owned_by_self();
-  Mutex*   global_lock_1   = allFun ? (should_take_Compile_lock   ? Compile_lock   : nullptr) : nullptr;
-  Monitor* global_lock_2   = allFun ? (should_take_CodeCache_lock ? CodeCache_lock : nullptr) : nullptr;
-  Mutex*   function_lock_1 = allFun ? nullptr : (should_take_Compile_lock   ? Compile_lock    : nullptr);
-  Monitor* function_lock_2 = allFun ? nullptr : (should_take_CodeCache_lock ? CodeCache_lock  : nullptr);
+  Mutex*   global_lock_1   = allFun ? (should_take_Compile_lock   ? Compile_lock.get()   : nullptr) : nullptr;
+  Monitor* global_lock_2   = allFun ? (should_take_CodeCache_lock ? CodeCache_lock.get() : nullptr) : nullptr;
+  Mutex*   function_lock_1 = allFun ? nullptr : (should_take_Compile_lock   ? Compile_lock.get()    : nullptr);
+  Monitor* function_lock_2 = allFun ? nullptr : (should_take_CodeCache_lock ? CodeCache_lock.get()  : nullptr);
   ts_global.update(); // record starting point
   MutexLocker mu1(global_lock_1, Mutex::_safepoint_check_flag);
   MutexLocker mu2(global_lock_2, Mutex::_no_safepoint_check_flag);
