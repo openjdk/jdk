@@ -488,11 +488,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ add(esp, esp, cache, Assembler::LSL, 3);
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(r1, r2, 1, index_size);
-    __ ldr(r1, Address(r1, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-    __ andr(r1, r1, ConstantPoolCacheEntry::parameter_size_mask);
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+    __ ldr(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andr(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
 
-    __ add(esp, esp, r1, Assembler::LSL, 3);
+    __ add(esp, esp, cache, Assembler::LSL, 3);
   }
 
   // Restore machine SP
