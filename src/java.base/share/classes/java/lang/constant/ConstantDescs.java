@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,6 +298,33 @@ public final class ConstantDescs {
     public static final DynamicConstantDesc<Boolean> FALSE
             = DynamicConstantDesc.ofNamed(BSM_GET_STATIC_FINAL,
                                           "FALSE", CD_Boolean, CD_Boolean);
+
+    /**
+     * The special name of instance initialization methods, {@value}. An instance
+     * initialization method has this special name and is {@code void}.
+     *
+     * @jvms 2.9.1 Instance Initialization Methods
+     * @since 21
+     */
+    public static final String INIT_NAME = "<init>";
+
+    /**
+     * The special name of class initialization methods, {@value}. A class
+     * initialization method has this special name, {@link java.lang.reflect.AccessFlag#STATIC
+     * ACC_STATIC} flag set, is {@link #MTD_void void} and takes no arguments.
+     *
+     * @jvms 2.9.2 Class Initialization Methods
+     * @since 21
+     */
+    public static final String CLASS_INIT_NAME = "<clinit>";
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()V},
+     * taking no argument and returning {@code void}.
+     *
+     * @since 21
+     */
+    public static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);
 
     static final DirectMethodHandleDesc MHD_METHODHANDLE_ASTYPE
             = MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_MethodHandle, "asType",
