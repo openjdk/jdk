@@ -1,3 +1,10 @@
+Owner: CN=Microsoft ECC Root Certificate Authority 2017, O=Microsoft Corporation, C=US
+Issuer: CN=Microsoft ECC Root Certificate Authority 2017, O=Microsoft Corporation, C=US
+Serial number: 66f23daf87de8bb14aea0c573101c2ec
+Valid from: Wed Dec 18 23:06:45 GMT 2019 until: Fri Jul 18 23:16:04 GMT 2042
+Signature algorithm name: SHA384withECDSA
+Subject Public Key Algorithm: 384-bit EC (secp384r1) key
+Version: 3
 -----BEGIN CERTIFICATE-----
 MIICWTCCAd+gAwIBAgIQZvI9r4fei7FK6gxXMQHC7DAKBggqhkjOPQQDAzBlMQsw
 CQYDVQQGEwJVUzEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0aW9uMTYwNAYD

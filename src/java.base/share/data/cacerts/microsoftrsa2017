@@ -1,3 +1,10 @@
+Owner: CN=Microsoft RSA Root Certificate Authority 2017, O=Microsoft Corporation, C=US
+Issuer: CN=Microsoft RSA Root Certificate Authority 2017, O=Microsoft Corporation, C=US
+Serial number: 1ed397095fd8b4b347701eaabe7f45b3
+Valid from: Wed Dec 18 22:51:22 GMT 2019 until: Fri Jul 18 23:00:23 GMT 2042
+Signature algorithm name: SHA384withRSA
+Subject Public Key Algorithm: 4096-bit RSA key
+Version: 3
 -----BEGIN CERTIFICATE-----
 MIIFqDCCA5CgAwIBAgIQHtOXCV/YtLNHcB6qvn9FszANBgkqhkiG9w0BAQwFADBl
 MQswCQYDVQQGEwJVUzEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0aW9uMTYw
