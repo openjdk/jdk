@@ -3586,7 +3586,7 @@ static bool use_vm_log() {
   if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
       PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
       PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
-      PrintAssembly || TraceDeoptimization || log_is_enabled(Debug, dependencies) ||
+      PrintAssembly || TraceDeoptimization ||
       (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
     return true;
   }
