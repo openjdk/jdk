@@ -65,6 +65,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -306,10 +307,18 @@ public class ClassReader {
  ***********************************************************************/
 
     public ClassFinder.BadClassFile badClassFile(String key, Object... args) {
+        return badClassFile(diagFactory.fragment(key, args));
+    }
+
+    public ClassFinder.BadClassFile badClassFile(Fragment fragment) {
+        return badClassFile(diagFactory.fragment(fragment));
+    }
+
+    public ClassFinder.BadClassFile badClassFile(JCDiagnostic diagnostic) {
         return new ClassFinder.BadClassFile (
             currentOwner.enclClass(),
             currentClassFile,
-            diagFactory.fragment(key, args),
+            diagnostic,
             diagFactory,
             dcfh);
     }
@@ -334,7 +343,7 @@ public class ClassReader {
         try {
             res = buf.getChar(bp);
         } catch (UnderflowException e) {
-            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
         bp += 2;
         return res;
@@ -346,7 +355,7 @@ public class ClassReader {
         try {
             return buf.getByte(bp++) & 0xFF;
         } catch (UnderflowException e) {
-            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
     }
 
@@ -357,7 +366,7 @@ public class ClassReader {
         try {
             res = buf.getInt(bp);
         } catch (UnderflowException e) {
-            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
         bp += 4;
         return res;
@@ -767,7 +776,7 @@ public class ClassReader {
         try {
             return names.fromUtf(buf, off, len, majorVersion < V48.major);
         } catch (InvalidUtfException e) {
-           throw badClassFile("bad.utf8.byte.sequence.at", sigp);
+            throw badClassFile(Fragments.BadUtf8ByteSequenceAt(sigp));
         }
     }
 
@@ -1522,7 +1531,7 @@ public class ClassReader {
         try {
             numParameters = buf.getByte(bp++) & 0xFF;
         } catch (UnderflowException e) {
-            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
         if (parameterAnnotations == null) {
             parameterAnnotations = new ParameterAnnotations[numParameters];
@@ -1816,7 +1825,7 @@ public class ClassReader {
         try {
             c = (char)buf.getByte(bp++);
         } catch (UnderflowException e) {
-            throw badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
         switch (c) {
         case 'B':

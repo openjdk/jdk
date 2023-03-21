@@ -31,6 +31,7 @@ import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.util.ByteBuffer;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.InvalidUtfException;
@@ -142,7 +143,7 @@ public class PoolReader {
         try {
             index = buf.getChar(pool.offset(index));
         } catch (UnderflowException e) {
-            throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw reader.badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
         return peekName(index, mapper);
     }
@@ -168,9 +169,9 @@ public class PoolReader {
         try {
             return getUtf8(index, mapper);
         } catch (InvalidUtfException e) {
-            throw reader.badClassFile("bad.utf8.byte.sequence.at", Integer.toString(e.getOffset()));
+            throw reader.badClassFile(Fragments.BadUtf8ByteSequenceAt(e.getOffset()));
         } catch (UnderflowException e) {
-            throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw reader.badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
     }
 
@@ -273,7 +274,7 @@ public class PoolReader {
         try {
             return readPoolInternal(poolbuf, offset);
         } catch (UnderflowException e) {
-            throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw reader.badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
     }
 
@@ -375,9 +376,9 @@ public class PoolReader {
                 try {
                     p = (P)resolve(poolbuf, tag(index), offset(index));
                 } catch (InvalidUtfException e) {
-                    throw reader.badClassFile("bad.utf8.byte.sequence.at", Integer.toString(e.getOffset()));
+                    throw reader.badClassFile(Fragments.BadUtf8ByteSequenceAt(e.getOffset()));
                 } catch (UnderflowException e) {
-                    throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+                    throw reader.badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
                 }
                 values[index] = p;
                 return p;
