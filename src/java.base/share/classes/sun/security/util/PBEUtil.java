@@ -43,7 +43,22 @@ import javax.crypto.spec.PBEParameterSpec;
 
 public final class PBEUtil {
 
-    // Used by SunJCE and SunPKCS11
+    /*
+     * PBES2Params is an auxiliary class that represents the state needed for
+     * PBES2 operations (iterations count, salt and IV) and its (re)
+     * initialization logic. Users of this class are CipherSpi implementors that
+     * support PBES2 cryptography (RFC #8018), such as PBES2Core (SunJCE) and
+     * P11PBECipher (SunPKCS11).
+     *
+     * CipherSpi implementors must call ::getPBEKeySpec in every engine
+     * initialization (CipherSpi::engineInit override) to reset the state and
+     * get new values in a PBEKeySpec instance. These new values are taken
+     * from parameters, defaults or generated randomly.
+     *
+     * After engine initialization, values in effect can be extracted with
+     * ::getAlgorithmParameters (as AlgorithmParameters) or ::getIvSpec (as
+     * IvParameterSpec).
+     */
     public final static class PBES2Params {
         private static final int DEFAULT_SALT_LENGTH = 20;
         private static final int DEFAULT_ITERATIONS = 4096;
@@ -52,10 +67,21 @@ public final class PBEUtil {
         private byte[] salt;
         private IvParameterSpec ivSpec;
 
+        /*
+         * Obtain an IvParameterSpec for Cipher services. This method returns
+         * null when the state is not initialized. Used by PBES2Core (SunJCE)
+         * and P11PBECipher (SunPKCS11).
+         */
         public IvParameterSpec getIvSpec() {
             return ivSpec;
         }
 
+        /*
+         * Obtain AlgorithmParameters for Cipher services. If the state is not
+         * initialized, this method will generate new values randomly or assign
+         * from defaults. If the state is initialized, existing values will be
+         * returned. Used by PBES2Core (SunJCE) and P11PBECipher (SunPKCS11).
+         */
         public AlgorithmParameters getAlgorithmParameters(int blkSize,
                 String pbeAlgo, Provider algParamsProv, SecureRandom random) {
             AlgorithmParameters params = null;
@@ -88,6 +114,11 @@ public final class PBEUtil {
             return params;
         }
 
+        /*
+         * Obtain a PBEKeySpec for Cipher services, after key and parameters
+         * validation, random generation or assignment from defaults. Used by
+         * PBES2Core (SunJCE) and P11PBECipher (SunPKCS11).
+         */
         public PBEKeySpec getPBEKeySpec(int blkSize, int keyLength, int opmode,
                 Key key, AlgorithmParameterSpec params, SecureRandom random)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -169,6 +200,11 @@ public final class PBEUtil {
             return pbeSpec;
         }
 
+        /*
+         * Obtain an AlgorithmParameterSpec from an AlgorithmParameters
+         * instance, for Cipher services. Used by PBES2Core (SunJCE) and
+         * P11PBECipher (SunPKCS11).
+         */
         public static AlgorithmParameterSpec getParameterSpec(
                 AlgorithmParameters params)
                 throws InvalidAlgorithmParameterException {
@@ -203,7 +239,10 @@ public final class PBEUtil {
         }
     }
 
-    // Used by SunJCE and SunPKCS11
+    /*
+     * Obtain a PBEKeySpec for Mac services, after key and parameters
+     * validation. Used by HmacPKCS12PBECore (SunJCE) and P11Mac (SunPKCS11).
+     */
     public static PBEKeySpec getPBAKeySpec(Key key,
             AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -281,7 +320,12 @@ public final class PBEUtil {
         }
     }
 
-    public static AlgorithmParameterSpec checkKeyParams(Key key,
+    /*
+     * Check that the key implements the PBEKey interface. If params is an
+     * instance of PBEParameterSpec, validate consistency with the key's
+     * derivation data. Used by P11Mac and P11PBECipher (SunPKCS11).
+     */
+    public static void checkKeyAndParams(Key key,
             AlgorithmParameterSpec params, String algorithm)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         if (key instanceof javax.crypto.interfaces.PBEKey pbeKey) {
@@ -293,13 +337,11 @@ public final class PBEUtil {
                             "Salt or iteration count parameters are " +
                             "not consistent with PBE key");
                 }
-                return pbeParams.getParameterSpec();
             }
         } else {
             throw new InvalidKeyException(
                     "Cannot use a " + algorithm + " service with a key that " +
                     "does not implement javax.crypto.interfaces.PBEKey");
         }
-        return params;
     }
 }

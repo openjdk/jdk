@@ -117,8 +117,6 @@ public class PKCS11 {
     // Otherwise, the native data is not able to be collected.
     private long pNativeData;
 
-    private CK_INFO pInfo;
-
     /**
      * This method does the initialization of the native library. It is called
      * exactly once for this class.
@@ -160,9 +158,9 @@ public class PKCS11 {
         // and get cryptoki version from there
         if (this.version.major != 2 && this.version.major != 3) {
             try {
-                getInfo();
-                this.version.major = pInfo.cryptokiVersion.major;
-                this.version.minor = pInfo.cryptokiVersion.minor;
+                CK_INFO p11Info = C_GetInfo();
+                this.version.major = p11Info.cryptokiVersion.major;
+                this.version.minor = p11Info.cryptokiVersion.minor;
             } catch (PKCS11Exception e) {
                 // give up; just use what is returned by connect()
             }
@@ -211,17 +209,6 @@ public class PKCS11 {
                 PKCS11.disconnect(pNativeData);
             }
         };
-    }
-
-    /**
-     * Returns the CK_INFO structure fetched at initialization with
-     * C_GetInfo. This structure represent Cryptoki library information.
-     */
-    public CK_INFO getInfo() throws PKCS11Exception {
-        if (pInfo == null) {
-            pInfo = C_GetInfo();
-        }
-        return pInfo;
     }
 
     /**

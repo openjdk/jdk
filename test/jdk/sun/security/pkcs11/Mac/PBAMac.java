@@ -78,11 +78,7 @@ public final class PBAMac extends PKCS11Test {
             try {
                 expectedMac = computeMac(sunJCE, pbeHmacAlgo,
                         pbeHmacAlgo, Configuration.PBEParameterSpec);
-                // Test sanity check
-                if (!expectedMac.equals(staticExpectedMac)) {
-                    throw new Error("Static and SunJCE macs do not " +
-                            "match.");
-                }
+                checkAssertionValues(expectedMac, staticExpectedMac);
             } catch (GeneralSecurityException e) {
                 // Move to staticExpectedMac as it's unlikely
                 // that any of the algorithms are available.
@@ -93,6 +89,15 @@ public final class PBAMac extends PKCS11Test {
             expectedMac = staticExpectedMac;
         }
         return new AssertionData(pbeHmacAlgo, hmacAlgo, expectedMac);
+    }
+
+    private static void checkAssertionValues(BigInteger expectedValue,
+            BigInteger staticExpectedValue) {
+        if (!expectedValue.equals(staticExpectedValue)) {
+            printHex("SunJCE value", expectedValue);
+            printHex("Static value", staticExpectedValue);
+            throw new Error("Static and SunJCE values do not match.");
+        }
     }
 
     // Generated with SunJCE.

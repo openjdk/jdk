@@ -205,11 +205,12 @@ public class CK_MECHANISM {
 
         sb.append(Constants.INDENT);
         sb.append("mechanism: ");
-        sb.append(mechanism);
+        sb.append(Functions.getMechanismName(mechanism));
         sb.append(Constants.NEWLINE);
 
         sb.append(Constants.INDENT);
-        sb.append("pParameter: ");
+        sb.append("pParameter:");
+        sb.append(Constants.NEWLINE);
         sb.append(pParameter.toString());
         sb.append(Constants.NEWLINE);
 

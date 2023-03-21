@@ -353,7 +353,7 @@ public final class SunPKCS11 extends AuthProvider {
             }
             boolean showInfo = config.getShowInfo();
             if (showInfo) {
-                CK_INFO p11Info = p11.getInfo();
+                CK_INFO p11Info = p11.C_GetInfo();
                 System.out.println("Information for provider " + getName());
                 System.out.println("Library info:");
                 System.out.println(p11Info);
@@ -484,16 +484,17 @@ public final class SunPKCS11 extends AuthProvider {
         register(new Descriptor(type, algorithm, className, null, m,
                 requiredMechs));
     }
-    private static void dA(String type, String algorithm, String className,
-                           int[] m, int[] requiredMechs) {
-        register(new Descriptor(type, algorithm, className,
-                getAliases(algorithm), m, requiredMechs));
-    }
 
     private static void dA(String type, String algorithm, String className,
             int[] m) {
         register(new Descriptor(type, algorithm, className,
                 getAliases(algorithm), m));
+    }
+
+    private static void dA(String type, String algorithm, String className,
+            int[] m, int[] requiredMechs) {
+        register(new Descriptor(type, algorithm, className,
+                getAliases(algorithm), m, requiredMechs));
     }
 
     private static void register(Descriptor d) {
@@ -625,10 +626,6 @@ public final class SunPKCS11 extends AuthProvider {
         d(MAC, "HmacPBESHA384",     P11Mac, m(CKM_SHA384_HMAC),
                 m(CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN));
         d(MAC, "HmacPBESHA512",     P11Mac, m(CKM_SHA512_HMAC),
-                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
-        d(MAC, "HmacPBESHA512/224", P11Mac, m(CKM_SHA512_224_HMAC),
-                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
-        d(MAC, "HmacPBESHA512/256", P11Mac, m(CKM_SHA512_256_HMAC),
                 m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
 
         d(KPG, "RSA",           P11KeyPairGenerator,
@@ -768,10 +765,6 @@ public final class SunPKCS11 extends AuthProvider {
         d(SKF, "HmacPBESHA384",     P11SecretKeyFactory,
                 m(CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN));
         d(SKF, "HmacPBESHA512",     P11SecretKeyFactory,
-                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
-        d(SKF, "HmacPBESHA512/224", P11SecretKeyFactory,
-                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
-        d(SKF, "HmacPBESHA512/256", P11SecretKeyFactory,
                 m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
         /*
          * PBKDF2 Secret Key Factories

@@ -75,8 +75,10 @@ public final class TestPBKD extends PKCS11Test {
 
     private static AssertionData p12PBKDAssertionData(String algo,
             char[] password, int keyLen, String hashAlgo, int blockLen,
-            String staticExpectedKey) {
+            String staticExpectedKeyString) {
         PBEKeySpec keySpec = new PBEKeySpec(password, salt, iterations, keyLen);
+        BigInteger staticExpectedKey = new BigInteger(staticExpectedKeyString,
+                16);
         BigInteger expectedKey;
         try {
             // Since we need to access an internal
@@ -96,8 +98,9 @@ public final class TestPBKD extends PKCS11Test {
                     keySpec.getPassword(), keySpec.getSalt(),
                     keySpec.getIterationCount(), keySpec.getKeyLength() / 8,
                     MAC_KEY, hashAlgo, blockLen));
+            checkAssertionValues(expectedKey, staticExpectedKey);
         } catch (ReflectiveOperationException ignored) {
-            expectedKey = new BigInteger(staticExpectedKey, 16);
+            expectedKey = staticExpectedKey;
         }
         return new AssertionData(algo, keySpec, expectedKey);
     }
@@ -113,11 +116,7 @@ public final class TestPBKD extends PKCS11Test {
             try {
                 expectedKey = i(SecretKeyFactory.getInstance(kdfAlgo, sunJCE)
                         .generateSecret(keySpec).getEncoded());
-                // Test sanity check
-                if (!expectedKey.equals(staticExpectedKey)) {
-                    throw new Error("Static and SunJCE keys do not " +
-                            "match.");
-                }
+                checkAssertionValues(expectedKey, staticExpectedKey);
             } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                 // Move to staticExpectedKey as it's unlikely
                 // that any of the algorithms are available.
@@ -128,6 +127,15 @@ public final class TestPBKD extends PKCS11Test {
             expectedKey = staticExpectedKey;
         }
         return new AssertionData(algo, keySpec, expectedKey);
+    }
+
+    private static void checkAssertionValues(BigInteger expectedValue,
+            BigInteger staticExpectedValue) {
+        if (!expectedValue.equals(staticExpectedValue)) {
+            printHex("SunJCE value", expectedValue);
+            printHex("Static value", staticExpectedValue);
+            throw new Error("Static and SunJCE values do not match.");
+        }
     }
 
     private static final char[] pwd = "123456\uA4F7".toCharArray();

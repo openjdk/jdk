@@ -32,6 +32,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.MacSpi;
+import javax.crypto.spec.PBEParameterSpec;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
@@ -67,7 +68,7 @@ final class P11Mac extends MacSpi {
     // algorithm name
     private final String algorithm;
 
-    // PBEKeyInfo if algorithm is PBE, otherwise null
+    // PBEKeyInfo if algorithm is PBE-related, otherwise null
     private final P11SecretKeyFactory.PBEKeyInfo svcPbeKi;
 
     // mechanism object
@@ -199,26 +200,40 @@ final class P11Mac extends MacSpi {
     protected void engineInit(Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         reset(true);
+        p11Key = null;
         if (svcPbeKi != null) {
             if (key instanceof P11Key) {
-                params = PBEUtil.checkKeyParams(key, params, algorithm);
+                // If the key is a P11Key, it must come from a PBE derivation
+                // because this is a PBE Mac service. In addition to checking
+                // the key, check that params (if passed) are consistent.
+                PBEUtil.checkKeyAndParams(key, params, algorithm);
             } else {
-                // The key is a plain password. Use SunPKCS11's PBE
-                // key derivation mechanism to obtain a P11Key.
+                // If the key is not a P11Key, a derivation is needed. Data for
+                // derivation has to be carried either as part of the key or
+                // params. Use SunPKCS11 PBE key derivation to obtain a P11Key.
+                // Assign the derived key to p11Key because conversion is never
+                // needed for this case.
                 try {
-                    p11Key = P11SecretKeyFactory.derivePBEKey(
-                            token, PBEUtil.getPBAKeySpec(key, params),
-                            svcPbeKi);
+                    p11Key = P11SecretKeyFactory.derivePBEKey(token,
+                            PBEUtil.getPBAKeySpec(key, params), svcPbeKi);
                 } catch (InvalidKeySpecException e) {
                     throw new InvalidKeyException(e);
                 }
             }
-        }
-        if (svcPbeKi == null || key instanceof P11Key) {
-            if (params != null) {
-                throw new InvalidAlgorithmParameterException
-                    ("Parameters not supported");
+            if (params instanceof PBEParameterSpec pbeParams) {
+                // For PBE services, reassign params to the underlying
+                // service params. Notice that Mac services expect this
+                // value to be null.
+                params = pbeParams.getParameterSpec();
             }
+        }
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException(
+                    "Parameters not supported");
+        }
+        // In non-PBE cases and PBE cases where we didn't derive,
+        // a key conversion might be needed.
+        if (p11Key == null) {
             p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
         }
         try {

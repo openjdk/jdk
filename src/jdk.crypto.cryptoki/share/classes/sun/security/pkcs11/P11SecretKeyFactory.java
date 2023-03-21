@@ -54,7 +54,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     // algorithm name
     private final String algorithm;
 
-    // PBEKeyInfo if algorithm is PBE
+    // PBEKeyInfo if algorithm is PBE-related, otherwise null
     private final PBEKeyInfo svcPbeKi;
 
     P11SecretKeyFactory(Token token, String algorithm) {
@@ -105,6 +105,11 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             this.keyType = keyType;
         }
 
+        // The P11SecretKeyFactory::convertKey method needs to know if a service
+        // type and a key are compatible. Trivial cases such as having the same
+        // algorithm names are handled directly. KeyInfo::checkUse helps with
+        // cases that require to retrieve the key's KeyInfo (ki), in addition to
+        // the service's KeyInfo (si), to make a decision.
         static boolean checkUse(KeyInfo ki, KeyInfo si) {
             if (si instanceof PBEKeyInfo && !si.algo.equals(ki.algo)) {
                 // PBE services require a PBE key of the same algorithm.
@@ -115,6 +120,9 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                 // so any service is allowed in principle.
                 return true;
             }
+            // This path handles non-PBE cases where aliases are used (i.e:
+            // RC4 vs ARCFOUR) and mixed PBE - non-PBE cases (i.e.: a
+            // PBE-derived AES key used in an AES Cipher service).
             return ki.keyType == si.keyType;
         }
     }
@@ -227,16 +235,12 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                 CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN, 384));
         putKeyInfo(new P12MacPBEKeyInfo("HmacPBESHA512",
                 CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN, 512));
-        putKeyInfo(new P12MacPBEKeyInfo("HmacPBESHA512/224",
-                CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN, 512));
-        putKeyInfo(new P12MacPBEKeyInfo("HmacPBESHA512/256",
-                CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN, 512));
     }
 
+    // No pseudo key types
     static long getPKCS11KeyType(String algorithm) {
         long kt = getKeyType(algorithm);
         if (kt == -1 || kt > PCKK_ANY) {
-            // Replace pseudo key type.
             kt = CKK_GENERIC_SECRET;
         }
         return kt;
@@ -388,7 +392,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             if (pbeKi.kdfMech == CKM_PKCS5_PBKD2) {
                 encPassword = P11Util.encodePassword(password,
                         StandardCharsets.UTF_8, 0);
-                CK_VERSION p11Ver = token.p11.getInfo().cryptokiVersion;
+                CK_VERSION p11Ver = token.p11.getVersion();
                 if (P11Util.isNSS(token) || p11Ver.major < 2 ||
                         p11Ver.major == 2 && p11Ver.minor < 40) {
                     // NSS keeps using the old structure beyond PKCS #11 v2.40.

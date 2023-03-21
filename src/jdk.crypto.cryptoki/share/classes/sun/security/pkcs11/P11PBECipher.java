@@ -39,6 +39,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
 import com.sun.crypto.provider.SunJCE;
 import sun.security.jca.JCAUtil;
@@ -130,10 +131,18 @@ final class P11PBECipher extends CipherSpi {
                     throws InvalidKeyException,
                     InvalidAlgorithmParameterException {
         if (key instanceof P11Key) {
-            params = PBEUtil.checkKeyParams(key, params, pbeAlg);
+            // If the key is a P11Key, it must come from a PBE derivation
+            // because this is a PBE Cipher service. In addition to checking the
+            // key, check that params (if passed) are consistent.
+            PBEUtil.checkKeyAndParams(key, params, pbeAlg);
+            if (params instanceof PBEParameterSpec pbeParams) {
+                // Reassign params to the underlying service params.
+                params = pbeParams.getParameterSpec();
+            }
         } else {
-            // The key is a plain password. Use SunPKCS11's PBE
-            // key derivation mechanism to obtain a P11Key.
+            // If the key is not a P11Key, a derivation is needed. Data for
+            // derivation has to be carried either as part of the key or params.
+            // Use SunPKCS11 PBE key derivation to obtain a P11Key.
             PBEKeySpec pbeSpec = pbes2Params.getPBEKeySpec(
                     blkSize, svcPbeKi.keyLen, opmode, key, params, random);
             try {

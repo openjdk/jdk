@@ -142,7 +142,7 @@ public class CK_PKCS5_PBKD2_PARAMS {
 
         sb.append(Constants.INDENT);
         sb.append("saltSource: ");
-        sb.append(saltSource);
+        sb.append(Functions.getParamSourcesName(saltSource));
         sb.append(Constants.NEWLINE);
 
         sb.append(Constants.INDENT);
@@ -152,7 +152,7 @@ public class CK_PKCS5_PBKD2_PARAMS {
 
         sb.append(Constants.INDENT);
         sb.append("ulSaltSourceDataLen: ");
-        sb.append(pSaltSourceData.length);
+        sb.append(Functions.getLength(pSaltSourceData));
         sb.append(Constants.NEWLINE);
 
         sb.append(Constants.INDENT);
@@ -162,7 +162,7 @@ public class CK_PKCS5_PBKD2_PARAMS {
 
         sb.append(Constants.INDENT);
         sb.append("prf: ");
-        sb.append(prf);
+        sb.append(Functions.getPrfName(prf));
         sb.append(Constants.NEWLINE);
 
         sb.append(Constants.INDENT);
@@ -172,7 +172,7 @@ public class CK_PKCS5_PBKD2_PARAMS {
 
         sb.append(Constants.INDENT);
         sb.append("ulPrfDataLen: ");
-        sb.append(pPrfData.length);
+        sb.append(Functions.getLength(pPrfData));
         //buffer.append(Constants.NEWLINE);
 
         return sb.toString();

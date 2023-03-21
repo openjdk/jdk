@@ -27,6 +27,8 @@ package sun.security.pkcs11;
 
 import java.lang.ref.Cleaner;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.security.*;
 
@@ -74,16 +76,19 @@ public final class P11Util {
          * UTF-16 BE:
          *     char[] password       => [    0x0061,         0x0000    ]
          *                                   /    \          /    \
-         *     byte[] passwordBytes  => [ 0x00,   0x61,   0x00,   0x00 ]
+         * ByteBuffer passwordBytes  => [ 0x00,   0x61,   0x00,   0x00 ]
          *                                  |       |       |       |
          *     char[] encPassword    => [0x0000, 0x0061, 0x0000, 0x0000]
          *                                  |       |       |       |
          *     PKCS #11 call (bytes) => [ 0x00,   0x61,   0x00,   0x00 ]
          */
-        byte[] passwordBytes = new String(password).getBytes(cs);
-        char[] encPassword = new char[passwordBytes.length + nullTermBytes];
-        for (int i = 0; i < passwordBytes.length; i++) {
-            encPassword[i] = (char) (passwordBytes[i]);
+        ByteBuffer passwordBytes = cs.encode(
+                CharBuffer.allocate(password.length).put(password).rewind());
+        char[] encPassword =
+                new char[passwordBytes.remaining() + nullTermBytes];
+        int i = 0;
+        while (passwordBytes.hasRemaining()) {
+            encPassword[i++] = (char) (passwordBytes.get() & 0xFF);
         }
         return encPassword;
     }

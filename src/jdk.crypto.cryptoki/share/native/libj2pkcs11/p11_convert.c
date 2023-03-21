@@ -1512,8 +1512,6 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
         case CKM_RSA_PKCS_OAEP:
             ckpParamPtr = jRsaPkcsOaepParamToCKRsaPkcsOaepParamPtr(env, jParam, ckpLength);
             break;
-        case CKM_PBE_SHA1_DES3_EDE_CBC:
-        case CKM_PBE_SHA1_DES2_EDE_CBC:
         case CKM_PBA_SHA1_WITH_SHA1_HMAC:
         case CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN:
         case CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN:
@@ -1822,6 +1820,7 @@ jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pL
             && (*env)->IsInstanceOf(env, jParam, jPkcs5Pbkd2ParamsClass)) {
         paramVersion = PARAMS2;
     } else {
+        throwPKCS11RuntimeException(env, "Unknown PBKD2 mechanism parameters class.");
         return NULL;
     }
     fieldID = (*env)->GetFieldID(env, jPkcs5Pbkd2ParamsClass, "saltSource", "J");

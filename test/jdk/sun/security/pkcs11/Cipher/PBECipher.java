@@ -87,11 +87,8 @@ public final class PBECipher extends PKCS11Test {
             try {
                 expectedCiphertext = computeCipherText(sunJCE, pbeCipherAlgo,
                         pbeCipherAlgo, Configuration.PBEParameterSpec);
-                // Test sanity check
-                if (!expectedCiphertext.equals(staticExpectedCiphertext)) {
-                    throw new Error("Static and SunJCE ciphertexts do not " +
-                            "match.");
-                }
+                checkAssertionValues(expectedCiphertext,
+                        staticExpectedCiphertext);
             } catch (GeneralSecurityException e) {
                 // Move to staticExpectedCiphertext as it's unlikely
                 // that any of the algorithms are available.
@@ -102,6 +99,15 @@ public final class PBECipher extends PKCS11Test {
             expectedCiphertext = staticExpectedCiphertext;
         }
         return new AssertionData(pbeCipherAlgo, cipherAlgo, expectedCiphertext);
+    }
+
+    private static void checkAssertionValues(BigInteger expectedValue,
+            BigInteger staticExpectedValue) {
+        if (!expectedValue.equals(staticExpectedValue)) {
+            printHex("SunJCE value", expectedValue);
+            printHex("Static value", staticExpectedValue);
+            throw new Error("Static and SunJCE values do not match.");
+        }
     }
 
     // Generated with SunJCE.
