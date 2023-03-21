@@ -61,8 +61,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
     /**
      * working arrays initialized on demand by readUTF
      */
-    private byte[] bytearr = new byte[80];
-    private char[] chararr = new char[80];
+    private byte[] bytearr = null;
+    private char[] chararr = null;
 
     /**
      * Reads some number of bytes from the contained input stream and
@@ -573,7 +573,7 @@ loop:   while (true) {
         byte[] bytearr = null;
         char[] chararr = null;
         if (in instanceof DataInputStream dis) {
-            if (dis.bytearr.length < utflen){
+            if (dis.bytearr == null || dis.bytearr.length < utflen){
                 dis.bytearr = new byte[utflen*2];
                 dis.chararr = new char[utflen*2];
             }
