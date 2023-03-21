@@ -165,11 +165,15 @@ public final class ClassHierarchyImpl {
     }
 
     public static final class StaticClassHierarchyResolver implements ClassHierarchyResolver {
+
+        private static final ClassHierarchyInfo CHI_Object =
+                new ClassHierarchyInfo(ConstantDescs.CD_Object, false, null);
+
         private final Map<ClassDesc, ClassHierarchyInfo> map;
 
         public StaticClassHierarchyResolver(Collection<ClassDesc> interfaceNames, Map<ClassDesc, ClassDesc> classToSuperClass) {
             map = HashMap.newHashMap(interfaceNames.size() + classToSuperClass.size() + 1);
-            map.put(ConstantDescs.CD_Object, new ClassHierarchyInfo(ConstantDescs.CD_Object, false, null));
+            map.put(ConstantDescs.CD_Object, CHI_Object);
             for (var e : classToSuperClass.entrySet())
                 map.put(e.getKey(), new ClassHierarchyInfo(e.getKey(), false, e.getValue()));
             for (var i : interfaceNames)
