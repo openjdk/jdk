@@ -405,7 +405,7 @@ char* stringStream::as_string(bool c_heap) const {
   char* copy = c_heap ?
     NEW_C_HEAP_ARRAY(char, _written + 1, mtInternal) : NEW_RESOURCE_ARRAY(char, _written + 1);
   ::memcpy(copy, _buffer, _written);
-  copy[_written] = 0;  // terminating null
+  copy[_written] = '\0';  // terminating null
   if (c_heap) {
     // Need to ensure our content is written to memory before we return
     // the pointer to it.
@@ -586,36 +586,53 @@ void fileStream::write(const char* s, size_t len) {
   }
 }
 
-long fileStream::fileSize() {
-  long size = -1;
-  if (_file != nullptr) {
-    long pos = ::ftell(_file);
-    if (pos < 0) return pos;
-    if (::fseek(_file, 0, SEEK_END) == 0) {
-      size = ::ftell(_file);
-    }
-    ::fseek(_file, pos, SEEK_SET);
-  }
-  return size;
+size_t fileStream::position() {
+  if (_file == nullptr)  return NO_SIZE;
+#if _LP64
+  typedef off_t position_t;
+  position_t p = ::ftello(_file);
+#else
+  typedef long position_t;
+  position_t p = ::ftell(_file);
+#endif
+  if (p == (position_t) -1)  return NO_SIZE;
+  size_t result = (size_t) p;
+  if (p != (position_t) result)  return NO_SIZE;
+  return (size_t) p;
 }
 
-char* fileStream::readln(char *data, int count ) {
-  char * ret = nullptr;
-  if (_file != nullptr) {
-    ret = ::fgets(data, count, _file);
-    // Get rid of annoying \n char only if it is present.
-    size_t len = ::strlen(data);
-    if (len > 0 && data[len - 1] == '\n') {
-      data[len - 1] = '\0';
-    }
+size_t fileStream::set_position(size_t position) {
+  if (_file == nullptr)  return NO_SIZE;
+  int res = -1;
+#if _LP64
+  res = ::fseeko(_file, (off_t) position, SEEK_SET);
+#else
+  res = ::fseek(_file, (long) position, SEEK_SET);
+#endif
+  if (res != 0)  return NO_SIZE;
+  // re-read position; why not...
+  return this->position();
+}
+
+size_t fileStream::remaining() {
+  if (_file == nullptr)  return -1;
+  size_t p1 = position();
+  if (p1 == NO_SIZE)  return p1;
+  if (::fseek(_file, 0, SEEK_END) != 0) {
+    return NO_SIZE;
   }
-  return ret;
+  size_t p2 = position();
+  p1 = set_position(p1);
+  if (p2 == NO_SIZE || p1 == NO_SIZE) {
+    return NO_SIZE;
+  }
+  return (p2 < p1) ? 0 : p2 - p1;
 }
 
 fileStream::~fileStream() {
   if (_file != nullptr) {
-    if (_need_close) fclose(_file);
-    _file      = nullptr;
+    close();
+    _file = nullptr;
   }
 }
 

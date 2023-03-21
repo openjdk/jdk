@@ -235,6 +235,7 @@ class fileStream : public outputStream {
   FILE* _file;
   bool  _need_close;
  public:
+  static constexpr size_t NO_SIZE = (size_t) -1;  // sentinel for query gone wrong
   fileStream() { _file = nullptr; _need_close = false; }
   fileStream(const char* file_name);
   fileStream(const char* file_name, const char* opentype);
@@ -242,12 +243,20 @@ class fileStream : public outputStream {
   ~fileStream();
   bool is_open() const { return _file != nullptr; }
   virtual void write(const char* c, size_t len);
-  size_t read(void *data, size_t size, size_t count) { return _file != nullptr ? ::fread(data, size, count, _file) : 0; }
-  char* readln(char *data, int count);
-  int eof() { return _file != nullptr ? feof(_file) : -1; }
-  long fileSize();
-  void rewind() { if (_file != nullptr) ::rewind(_file); }
+  // unlike other classes in this file, fileStream can perform input as well as output
+  size_t read(void* data, size_t size) {
+    if (_file == nullptr)  return 0;
+    return ::fread(data, 1, size, _file);
+  }
+  void close() {
+    if (_file == nullptr || !_need_close)  return;
+    fclose(_file);
+    _need_close = false;
+  }
   void flush();
+  size_t position();  // return NO_SIZE on failure
+  size_t set_position(size_t position);  // return new position or NO_SIZE on failure
+  size_t remaining();  // return remaining file size or NO_SIZE on failure
 };
 
 // unlike fileStream, fdStream does unbuffered I/O by calling

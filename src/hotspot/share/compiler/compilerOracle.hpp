@@ -28,6 +28,7 @@
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
+class BlockInput;
 class methodHandle;
 
 
@@ -114,10 +115,17 @@ enum class OptionType {
 };
 
 class CompilerOracle : AllStatic {
+ public:
+  typedef void parse_from_line_fn_t(char*);
+
  private:
   static bool _quiet;
   static void print_parse_error(char* error_msg, char* original_line);
   static void print_command(enum CompileCommand option, const char* name, enum OptionType type);
+
+  // The core parser.
+  static void parse_from_input(BlockInput* input,
+                               parse_from_line_fn_t* parse_from_line);
 
  public:
   // True if the command file has been specified or is implicit
@@ -167,7 +175,8 @@ class CompilerOracle : AllStatic {
   static bool option_matches_type(enum CompileCommand option, T& value);
 
   // Reads from string instead of file
-  static void parse_from_string(const char* option_string, void (*parser)(char*));
+  static void parse_from_string(const char* option_string,
+                                parse_from_line_fn_t* parser);
   static void parse_from_line(char* line);
   static void parse_compile_only(char* line);
 

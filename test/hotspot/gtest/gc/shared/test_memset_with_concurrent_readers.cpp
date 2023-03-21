@@ -28,6 +28,7 @@
 #include "utilities/vmassert_uninstall.hpp"
 #include <string.h>
 #include <sstream>
+#include <iomanip>
 #include "utilities/vmassert_reinstall.hpp"
 
 #include "unittest.hpp"

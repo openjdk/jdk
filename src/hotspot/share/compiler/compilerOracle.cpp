@@ -39,6 +39,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "utilities/istream.hpp"
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -948,45 +949,27 @@ bool CompilerOracle::_quiet = false;
 
 void CompilerOracle::parse_from_file() {
   assert(has_command_file(), "command file must be specified");
+
   FILE* stream = os::fopen(cc_file(), "rt");
   if (stream == nullptr) return;
 
-  char token[1024];
-  int  pos = 0;
-  int  c = getc(stream);
-  while(c != EOF && pos < (int)(sizeof(token)-1)) {
-    if (c == '\n') {
-      token[pos++] = '\0';
-      parse_from_line(token);
-      pos = 0;
-    } else {
-      token[pos++] = c;
-    }
-    c = getc(stream);
-  }
-  token[pos++] = '\0';
-  parse_from_line(token);
-
-  fclose(stream);
+  FileInput input(stream, /*need_close=*/ true);
+  parse_from_input(&input, parse_from_line);
 }
 
-void CompilerOracle::parse_from_string(const char* str, void (*parse_line)(char*)) {
-  char token[1024];
-  int  pos = 0;
-  const char* sp = str;
-  int  c = *sp++;
-  while (c != '\0' && pos < (int)(sizeof(token)-1)) {
-    if (c == '\n') {
-      token[pos++] = '\0';
-      parse_line(token);
-      pos = 0;
-    } else {
-      token[pos++] = c;
-    }
-    c = *sp++;
+void CompilerOracle::parse_from_input(BlockInput* input,
+                                      CompilerOracle::
+                                      parse_from_line_fn_t* parse_from_line) {
+  for (inputStream in(input); !in.done(); in.next()) {
+    parse_from_line(in.current_line());
   }
-  token[pos++] = '\0';
-  parse_line(token);
+}
+
+void CompilerOracle::parse_from_string(const char* str,
+                                       CompilerOracle::
+                                       parse_from_line_fn_t* parse_from_line) {
+  MemoryInput input(str, strlen(str));
+  parse_from_input(&input, parse_from_line);
 }
 
 void compilerOracle_init() {
