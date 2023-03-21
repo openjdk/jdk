@@ -763,10 +763,13 @@ class AndVNode : public VectorNode {
 
 //------------------------------AndReductionVNode--------------------------------------
 // Vector and byte, short, int, long as a reduction
-class AndReductionVNode : public ReductionNode {
+class AndReductionVNode : public UnorderedReductionNode {
  public:
-  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new AndVNode(in1, in2, vt);
+  }
 };
 
 //------------------------------OrVNode---------------------------------------
@@ -780,18 +783,13 @@ class OrVNode : public VectorNode {
 
 //------------------------------OrReductionVNode--------------------------------------
 // Vector xor byte, short, int, long as a reduction
-class OrReductionVNode : public ReductionNode {
+class OrReductionVNode : public UnorderedReductionNode {
  public:
-  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
-};
-
-//------------------------------XorReductionVNode--------------------------------------
-// Vector and int, long as a reduction
-class XorReductionVNode : public ReductionNode {
- public:
-  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new OrVNode(in1, in2, vt);
+  }
 };
 
 //------------------------------XorVNode---------------------------------------
@@ -803,20 +801,37 @@ class XorVNode : public VectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+//------------------------------XorReductionVNode--------------------------------------
+// Vector and int, long as a reduction
+class XorReductionVNode : public UnorderedReductionNode {
+ public:
+  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new XorVNode(in1, in2, vt);
+  }
+};
+
 //------------------------------MinReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MinReductionVNode : public ReductionNode {
+class MinReductionVNode : public UnorderedReductionNode {
 public:
-  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new MinVNode(in1, in2, vt);
+  }
 };
 
 //------------------------------MaxReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MaxReductionVNode : public ReductionNode {
+class MaxReductionVNode : public UnorderedReductionNode {
 public:
-  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+  virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) {
+    return new MaxVNode(in1, in2, vt);
+  }
 };
 
 //------------------------------CompressVNode--------------------------------------
