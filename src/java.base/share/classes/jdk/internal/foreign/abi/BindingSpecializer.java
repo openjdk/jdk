@@ -244,7 +244,7 @@ public class BindingSpecializer {
         // slots that store the output arguments (passed to the leaf handle)
         leafArgSlots = new int[leafType.parameterCount()];
         for (int i = 0; i < leafType.parameterCount(); i++) {
-            leafArgSlots[i] = cb.allocateLocal(typeKindFor(leafType.parameterType(i)));
+            leafArgSlots[i] = cb.allocateLocal(TypeKind.from(leafType.parameterType(i)));
         }
 
         // allocator passed to us for allocating the return MS (downcalls only)
@@ -344,7 +344,7 @@ public class BindingSpecializer {
         cb.checkcast(CD_MethodHandle);
         // load all the leaf args
         for (int i = 0; i < leafArgSlots.length; i++) {
-            cb.loadInstruction(typeKindFor(leafArgTypes.get(i)), leafArgSlots[i]);
+            cb.loadInstruction(TypeKind.from(leafArgTypes.get(i)), leafArgSlots[i]);
         }
         // call leaf MH
         cb.invokevirtual(CD_MethodHandle, "invokeExact", desc(leafType));
@@ -381,7 +381,7 @@ public class BindingSpecializer {
             } else {
                 popType(callerMethodType.returnType());
                 assert typeStack.isEmpty();
-                cb.returnInstruction(typeKindFor(callerMethodType.returnType()));
+                cb.returnInstruction(TypeKind.from(callerMethodType.returnType()));
             }
         } else {
             assert callerMethodType.returnType() == void.class;
@@ -400,7 +400,7 @@ public class BindingSpecializer {
         } else {
             cb.invokestatic(CD_SharedUtils, "handleUncaughtException", MTD_HANDLE_UNCAUGHT_EXCEPTION);
             if (callerMethodType.returnType() != void.class) {
-                TypeKind returnTypeKind = typeKindFor(callerMethodType.returnType());
+                TypeKind returnTypeKind = TypeKind.from(callerMethodType.returnType());
                 emitConstZero(returnTypeKind);
                 cb.returnInstruction(returnTypeKind);
             } else {
@@ -409,10 +409,6 @@ public class BindingSpecializer {
         }
 
         cb.exceptionCatchAll(tryStart, tryEnd, catchStart);
-    }
-
-    private TypeKind typeKindFor(Class<?> cls) {
-        return TypeKind.fromDescriptor(cls.descriptorString());
     }
 
     private boolean needsSession() {
@@ -463,13 +459,13 @@ public class BindingSpecializer {
     }
 
     private void emitSetOutput(Class<?> storeType) {
-        cb.storeInstruction(typeKindFor(storeType), leafArgSlots[leafArgTypes.size()]);
+        cb.storeInstruction(TypeKind.from(storeType), leafArgSlots[leafArgTypes.size()]);
         leafArgTypes.add(storeType);
     }
 
     private void emitGetInput() {
         Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
-        cb.loadInstruction(typeKindFor(highLevelType), cb.parameterSlot(paramIndex));
+        cb.loadInstruction(TypeKind.from(highLevelType), cb.parameterSlot(paramIndex));
 
         if (shouldAcquire(paramIndex)) {
             cb.dup();
@@ -525,14 +521,14 @@ public class BindingSpecializer {
     }
 
     private void emitSaveReturnValue(Class<?> storeType) {
-        TypeKind typeKind = typeKindFor(storeType);
+        TypeKind typeKind = TypeKind.from(storeType);
         retValIdx = cb.allocateLocal(typeKind);
         cb.storeInstruction(typeKind, retValIdx);
     }
 
     private void emitRestoreReturnValue(Class<?> loadType) {
         assert retValIdx != -1;
-        cb.loadInstruction(typeKindFor(loadType), retValIdx);
+        cb.loadInstruction(TypeKind.from(loadType), retValIdx);
         pushType(loadType);
     }
 
@@ -582,7 +578,7 @@ public class BindingSpecializer {
 
     private void emitBufferStore(BufferStore bufferStore) {
         Class<?> storeType = bufferStore.type();
-        TypeKind storeTypeKind = typeKindFor(storeType);
+        TypeKind storeTypeKind = TypeKind.from(storeType);
         long offset = bufferStore.offset();
         int byteWidth = bufferStore.byteWidth();
 
@@ -643,7 +639,7 @@ public class BindingSpecializer {
                     cb.lushr();
                 }
                 cb.l2i();
-                TypeKind chunkStoreTypeKind = typeKindFor(chunkStoreType);
+                TypeKind chunkStoreTypeKind = TypeKind.from(chunkStoreType);
                 int chunkIdx = cb.allocateLocal(chunkStoreTypeKind);
                 cb.storeInstruction(chunkStoreTypeKind, chunkIdx);
                 // chunk done, now write it
@@ -666,7 +662,7 @@ public class BindingSpecializer {
     // VM_STORE and VM_LOAD are emulated, which is different for down/upcalls
     private void emitVMStore(VMStore vmStore) {
         Class<?> storeType = vmStore.type();
-        TypeKind storeTypeKind = typeKindFor(storeType);
+        TypeKind storeTypeKind = TypeKind.from(storeType);
         popType(storeType);
 
         if (callingSequence.forDowncall()) {
