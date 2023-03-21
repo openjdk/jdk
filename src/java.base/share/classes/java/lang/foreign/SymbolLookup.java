@@ -53,7 +53,7 @@ import java.util.function.BiFunction;
  *     <li>It can be passed to a {@link Linker} to create a downcall method handle, which can then be used to call the foreign function at the segment's address.</li>
  *     <li>It can be passed to an existing {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}, as an argument to the underlying foreign function.</li>
  *     <li>It can be {@linkplain MemorySegment#set(AddressLayout, long, MemorySegment) stored} inside another memory segment.</li>
- *     <li>It can be used to access the region of memory backing a global variable (this might require
+ *     <li>It can be used to access the region of memory backing a global variable (this requires
  *     {@link MemorySegment#reinterpret(long)} () resizing} the segment first).</li>
  * </ul>
  *
