@@ -43,6 +43,8 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 
 import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 
 /*
  * @test
@@ -103,7 +105,6 @@ public class TestEventInstrumentation {
     }
 
     static class Transformer implements ClassFileTransformer {
-        private static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);
         private static final ClassDesc CD_InstrumentationEventCallback = InstrumentationEventCallback.class
                 .describeConstable().orElseThrow();
 
@@ -118,7 +119,7 @@ public class TestEventInstrumentation {
                 }
 
                 result = Classfile.parse(bytes).transform((clb, ce) -> {
-                    if (ce instanceof MethodModel mm && mm.methodName().equalsString("<init>")) {
+                    if (ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)) {
                         clb.transformMethod(mm, MethodTransform.transformingCode(new CodeTransform() {
                             @Override
                             public void atStart(CodeBuilder cb) {

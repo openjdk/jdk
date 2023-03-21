@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
 
 /**
  * @test CompilerInliningTest
@@ -112,7 +113,7 @@ public class TestCompilerInlining {
             MethodDesc callee = ciMethodToMethodDesc(calleeObject);
             // only TestCase.* -> TestCase.* OR TestCase.* -> Object.<init> are tested/filtered
             if (caller.className.equals(CD_TestCase) && (callee.className.equals(CD_TestCase)
-                    || (callee.className.equals(CD_Object) && callee.methodName.equals("<init>")))) {
+                    || (callee.className.equals(CD_Object) && callee.methodName.equals(INIT_NAME)))) {
                 System.out.println(event);
                 boolean succeeded = (boolean) event.getValue("succeeded");
                 int bci = Events.assertField(event, "bci").atLeast(0).getValue();
@@ -278,7 +279,7 @@ class MethodDesc {
             methodName = executable.getName();
             retType = method.getReturnType().describeConstable().orElseThrow();
         } else {
-            methodName = "<init>";
+            methodName = INIT_NAME;
             retType = CD_void;
         }
 
