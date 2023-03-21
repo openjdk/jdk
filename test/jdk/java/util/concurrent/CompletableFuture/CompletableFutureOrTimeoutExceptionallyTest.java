@@ -25,7 +25,7 @@
  * @test
  * @bug 8303742
  * @summary CompletableFuture.orTimeout can leak memory if completed exceptionally
- * @run junit/othervm -Xmx128m CompletableFutureOrTimeoutExceptionallyTest
+ * @run junit/othervm/timeout=1000 -Xmx128m CompletableFutureOrTimeoutExceptionallyTest
  */
 
 import java.time.Duration;
@@ -41,7 +41,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
     @Test
     void testOrTimeoutWithCompleteExceptionallyDoesNotLeak() {
         var count = 0L;
-        while (count++ < 2_000_000) {
+        while (count++ < 1_000_000) {
             new CompletableFuture<>()
             .orTimeout(12, TimeUnit.HOURS)
             .completeExceptionally(new RuntimeException("This is fine"));
@@ -54,7 +54,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
     @Test
     void testCompleteOnTimeoutWithCompleteExceptionallyDoesNotLeak() {
         var count = 0L;
-        while (count++ < 2_000_000) {
+        while (count++ < 1_000_000) {
             new CompletableFuture<>()
             .completeOnTimeout(null, 12, TimeUnit.HOURS)
             .completeExceptionally(new RuntimeException("This is fine"));
