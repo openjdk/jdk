@@ -45,6 +45,7 @@ public class TestGeneralizedReductions {
 
     @Run(test = {"testReductionOnGlobalAccumulator",
                  "testReductionOnPartiallyUnrolledLoop",
+                 "testReductionOnPartiallyUnrolledLoopWithSwappedInputs",
                  "testMapReductionOnGlobalAccumulator"})
     void run() {
         long[] array = new long[100];
@@ -56,6 +57,11 @@ public class TestGeneralizedReductions {
         }
         initArray(array);
         result = testReductionOnPartiallyUnrolledLoop(array);
+        if (result != 4950) {
+            throw new RuntimeException("unexpected result");
+        }
+        initArray(array);
+        result = testReductionOnPartiallyUnrolledLoopWithSwappedInputs(array);
         if (result != 4950) {
             throw new RuntimeException("unexpected result");
         }
@@ -88,11 +94,29 @@ public class TestGeneralizedReductions {
     @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
-        private static long testReductionOnPartiallyUnrolledLoop(long[] array) {
+    private static long testReductionOnPartiallyUnrolledLoop(long[] array) {
         int sum = 0;
         for (int i = 0; i < array.length / 2; i++) {
             sum += array[2*i];
             sum += array[2*i + 1];
+        }
+        return sum;
+    }
+
+    // This test illustrates a limitation of the current reduction analysis: it
+    // fails to detect reduction cycles where nodes are connected via different
+    // input indices (except if the differences result from C2 edge swapping).
+    // If this limitation is overcome in the future, the test case should be
+    // turned into a positive one.
+    @Test
+    @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        failOn = {IRNode.ADD_REDUCTION_VI})
+    private static long testReductionOnPartiallyUnrolledLoopWithSwappedInputs(long[] array) {
+        int sum = 0;
+        for (int i = 0; i < array.length / 2; i++) {
+            sum = sum + (int)array[2*i];
+            sum = (int)array[2*i + 1] + sum;
         }
         return sum;
     }
@@ -104,7 +128,7 @@ public class TestGeneralizedReductions {
                       "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
                   IRNode.POPCOUNT_VL, ">= 1"})
-        private static long testMapReductionOnGlobalAccumulator(long[] array) {
+    private static long testMapReductionOnGlobalAccumulator(long[] array) {
         acc = 0;
         for (int i = 0; i < array.length; i++) {
             acc += Long.bitCount(array[i]);
