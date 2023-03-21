@@ -314,7 +314,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
   static size_t lab_alignment_reserve() {
-    assert(_lab_alignment_reserve != ~(size_t)0, "uninitialized");
+    assert(_lab_alignment_reserve != SIZE_MAX, "uninitialized");
     return _lab_alignment_reserve;
   }
 
@@ -445,6 +445,12 @@ class CollectedHeap : public CHeapObj<mtGC> {
   GCHeapSummary create_heap_summary();
 
   MetaspaceSummary create_metaspace_summary();
+
+  // GCs are free to represent the bit representation for null differently in memory,
+  // which is typically not observable when using the Access API. However, if for
+  // some reason a context doesn't allow using the Access API, then this function
+  // explicitly checks if the given memory location contains a null value.
+  virtual bool contains_null(const oop* p) const;
 
   // Print heap information on the given outputStream.
   virtual void print_on(outputStream* st) const = 0;
