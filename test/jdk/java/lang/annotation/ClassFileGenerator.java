@@ -47,7 +47,7 @@ import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import static java.lang.constant.ConstantDescs.CD_Exception;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static java.lang.reflect.AccessFlag.ABSTRACT;
 import static java.lang.reflect.AccessFlag.INTERFACE;
 import static java.lang.reflect.AccessFlag.PUBLIC;
@@ -97,7 +97,7 @@ public class ClassFileGenerator {
                         Annotation.of(CD_Retention, AnnotationElement.of("value",
                                 AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_void), ACC_PUBLIC | ACC_ABSTRACT,
+                clb.withMethod("m", MTD_void, ACC_PUBLIC | ACC_ABSTRACT,
                         mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
             });
         }

@@ -31,12 +31,9 @@
  * @run main/othervm MHIllegalAccess
  */
 
-import java.lang.reflect.AccessFlag;
 import java.lang.reflect.InvocationTargetException;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import jdk.internal.classfile.AccessFlags;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.MethodModel;

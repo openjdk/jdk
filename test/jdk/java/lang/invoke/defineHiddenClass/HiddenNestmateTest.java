@@ -44,15 +44,14 @@ import org.testng.annotations.Test;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
 import static org.testng.Assert.*;
 
 public class HiddenNestmateTest {
-    private static final String CTOR_NAME = "<init>";
-    private static final MethodTypeDesc CTOR_DESC = MethodTypeDesc.of(CD_void);
     private static final ClassDesc CD_HiddenNestmateTest = HiddenNestmateTest.class.describeConstable().orElseThrow();
     private static final byte[] bytes = classBytes("HiddenInjected");
 
@@ -176,9 +175,9 @@ public class HiddenNestmateTest {
         return Classfile.build(ClassDesc.ofInternalName(classname), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.FINAL);
-            clb.withMethodBody(CTOR_NAME, CTOR_DESC, PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_Object, CTOR_NAME, CTOR_DESC);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cob.return_();
             });
             clb.withMethodBody("test", MethodTypeDesc.of(CD_int, CD_HiddenNestmateTest), PUBLIC, cob -> {

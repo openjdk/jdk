@@ -32,9 +32,7 @@
  * @run main/othervm Test
  */
 
-import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import jdk.internal.classfile.ClassTransform;

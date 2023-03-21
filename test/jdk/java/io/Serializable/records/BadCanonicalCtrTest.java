@@ -52,6 +52,8 @@ import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
@@ -200,15 +202,13 @@ public class BadCanonicalCtrTest {
 
     // -- machinery for augmenting record class bytes --
 
-    static final String CTR_NAME = "<init>";
-
     /**
      * Removes the constructor from the given class bytes.
      * Assumes just a single, canonical, constructor.
      */
     static byte[] removeConstructor(byte[] classBytes) {
         return Classfile.parse(classBytes).transform(ClassTransform.dropping(ce ->
-                ce instanceof MethodModel mm && mm.methodName().equalsString(CTR_NAME)));
+                ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)));
     }
 
     /**
@@ -217,12 +217,12 @@ public class BadCanonicalCtrTest {
      */
     static byte[] modifyConstructor(byte[] classBytes) {
         return Classfile.parse(classBytes).transform(ClassTransform.dropping(ce ->
-                        ce instanceof MethodModel mm && mm.methodName().equalsString(CTR_NAME))
-                .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(CTR_NAME,
+                        ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
+                .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(INIT_NAME,
                         MethodTypeDesc.of(CD_void, CD_Object), ACC_PUBLIC, cob -> {
                             cob.aload(0);
                             cob.invokespecial(Record.class.describeConstable().orElseThrow(),
-                                    CTR_NAME, MethodTypeDesc.of(CD_void));
+                                    INIT_NAME, MTD_void);
                             cob.return_();
                         }))));
     }

@@ -31,11 +31,12 @@
 package test;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
@@ -55,8 +56,6 @@ import static org.testng.Assert.*;
 
 public class DefineClassTest {
     private static final String THIS_PACKAGE = DefineClassTest.class.getPackageName();
-    private static final String CTOR_NAME = "<init>";
-    private static final MethodTypeDesc MD_void = MethodTypeDesc.of(CD_void);
     private static final ClassDesc CD_Runnable = Runnable.class.describeConstable().orElseThrow();
     private static final ClassDesc CD_MissingSuperClass = ClassDesc.of("MissingSuperClass");
 
@@ -265,9 +264,9 @@ public class DefineClassTest {
         return Classfile.build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
-            clb.withMethodBody(CTOR_NAME, MD_void, PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cob.return_();
             });
         });
@@ -284,13 +283,13 @@ public class DefineClassTest {
         return Classfile.build(ClassDesc.of(className), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(CD_Runnable);
-            clb.withMethodBody(CTOR_NAME, MD_void, PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cob.return_();
             });
-            clb.withMethodBody("run", MD_void, PUBLIC, cob -> {
-                cob.invokestatic(ClassDesc.of(targetClass), targetMethod, MD_void);
+            clb.withMethodBody("run", MTD_void, PUBLIC, cob -> {
+                cob.invokestatic(ClassDesc.of(targetClass), targetMethod, MTD_void);
                 cob.return_();
             });
         });
@@ -307,13 +306,13 @@ public class DefineClassTest {
         return Classfile.build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
-            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cob.return_();
             });
-            clb.withMethodBody("<clinit>", MD_void, ACC_STATIC, cob -> {
-                cob.invokestatic(ClassDesc.of(targetClass), targetMethod, MD_void);
+            clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
+                cob.invokestatic(ClassDesc.of(targetClass), targetMethod, MTD_void);
                 cob.return_();
             });
         });
@@ -326,9 +325,9 @@ public class DefineClassTest {
         return Classfile.build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_MissingSuperClass);
-            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_MissingSuperClass, CTOR_NAME, MD_void);
+                cob.invokespecial(CD_MissingSuperClass, INIT_NAME, MTD_void);
                 cob.return_();
             });
         });

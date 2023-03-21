@@ -37,7 +37,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessFlag;
-import java.util.Objects;
 
 import jdk.internal.classfile.Classfile;
 import org.testng.annotations.*;
@@ -81,10 +80,8 @@ public class SpecialStatic {
 
     private static ClassLoader cl = new CustomClassLoader();
     private static Class t1, t3;
-    private static final MethodTypeDesc MD_void = MethodTypeDesc.of(CD_void);
-    private static final MethodTypeDesc MD_int = MethodTypeDesc.of(CD_int);
-    private static final MethodTypeDesc MD_Lookup = MethodTypeDesc.of(CD_MethodHandles_Lookup);
-    private static final String CTOR_NAME = "<init>";
+    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
+    private static final MethodTypeDesc MTD_Lookup = MethodTypeDesc.of(CD_MethodHandles_Lookup);
     private static final String METHOD_NAME = "m";
     private static final ClassDesc CD_T1 = ClassDesc.of("T1");
     private static final ClassDesc CD_T2 = ClassDesc.of("T2");
@@ -123,12 +120,12 @@ public class SpecialStatic {
         return Classfile.build(CD_T1, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_Object, CTOR_NAME, MD_void);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cob.return_();
             });
-            clb.withMethodBody(METHOD_NAME, MD_int, ACC_PUBLIC, cob -> {
+            clb.withMethodBody(METHOD_NAME, MTD_int, ACC_PUBLIC, cob -> {
                 cob.bipush(1);
                 cob.ireturn();
             });
@@ -139,12 +136,12 @@ public class SpecialStatic {
         return Classfile.build(CD_T2, clb -> {
             clb.withSuperclass(CD_T1);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_T1, CTOR_NAME, MD_void);
+                cob.invokespecial(CD_T1, INIT_NAME, MTD_void);
                 cob.return_();
             });
-            clb.withMethodBody(METHOD_NAME, MD_int, ACC_PUBLIC | ACC_STATIC, cob -> {
+            clb.withMethodBody(METHOD_NAME, MTD_int, ACC_PUBLIC | ACC_STATIC, cob -> {
                 cob.bipush(2);
                 cob.ireturn();
             });
@@ -155,23 +152,23 @@ public class SpecialStatic {
         return Classfile.build(CD_T3, clb -> {
             clb.withSuperclass(CD_T2);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_T2, CTOR_NAME, MD_void);
+                cob.invokespecial(CD_T2, INIT_NAME, MTD_void);
                 cob.return_();
             });
-            clb.withMethodBody(METHOD_NAME, MD_int, ACC_PUBLIC, cob -> {
+            clb.withMethodBody(METHOD_NAME, MTD_int, ACC_PUBLIC, cob -> {
                 cob.bipush(3);
                 cob.ireturn();
             });
             clb.withMethodBody("getMethodHandle", MethodTypeDesc.of(CD_MethodHandle),
                     ACC_PUBLIC | ACC_STATIC, cob -> {
-                cob.constantInstruction(MethodHandleDesc.ofMethod(SPECIAL, CD_T1, METHOD_NAME, MD_int));
+                cob.constantInstruction(MethodHandleDesc.ofMethod(SPECIAL, CD_T1, METHOD_NAME, MTD_int));
                 cob.areturn();
             });
-            clb.withMethodBody("getLookup", MD_Lookup,
+            clb.withMethodBody("getLookup", MTD_Lookup,
                     ACC_PUBLIC | ACC_STATIC, cob -> {
-                cob.invokestatic(CD_MethodHandles, "lookup", MD_Lookup);
+                cob.invokestatic(CD_MethodHandles, "lookup", MTD_Lookup);
                 cob.areturn();
             });
         });

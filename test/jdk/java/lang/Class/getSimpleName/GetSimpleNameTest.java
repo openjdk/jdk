@@ -29,7 +29,6 @@
  */
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.Optional;
 import jdk.internal.classfile.ClassBuilder;
@@ -40,7 +39,8 @@ import jdk.internal.classfile.attribute.InnerClassInfo;
 import jdk.internal.classfile.attribute.InnerClassesAttribute;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
@@ -136,8 +136,6 @@ public class GetSimpleNameTest {
     }
 
     static class BytecodeGenerator {
-        private static final String CTOR_NAME = "<init>";
-        private static final MethodTypeDesc MD_void = MethodTypeDesc.of(CD_void);
         final ClassDesc innerName;
         final ClassDesc outerName;
         final String simpleName;
@@ -149,9 +147,9 @@ public class GetSimpleNameTest {
         }
 
         static void makeDefaultCtor(ClassBuilder clb) {
-            clb.withMethodBody(CTOR_NAME, MD_void, ACC_PUBLIC, cb -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cb -> {
                 cb.aload(0);
-                cb.invokespecial(CD_Object, CTOR_NAME, MD_void);
+                cb.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cb.return_();
             });
         }
@@ -159,9 +157,9 @@ public class GetSimpleNameTest {
         void makeCtxk(ClassBuilder clb, boolean isInner) {
             if (isInner) {
                 clb.with(EnclosingMethodAttribute.of(outerName,
-                        Optional.of("f"), Optional.of(MD_void)));
+                        Optional.of("f"), Optional.of(MTD_void)));
             } else {
-                clb.withMethodBody("f", MD_void, ACC_PUBLIC | ACC_STATIC,
+                clb.withMethodBody("f", MTD_void, ACC_PUBLIC | ACC_STATIC,
                         CodeBuilder::return_);
             }
         }

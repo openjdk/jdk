@@ -56,6 +56,8 @@ import org.testng.annotations.DataProvider;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import static org.testng.Assert.*;
@@ -223,7 +225,7 @@ public class BadProvidersTest {
                     ACC_PUBLIC | ACC_STATIC, cob -> {
                         cob.new_(providerFactory$1);
                         cob.dup();
-                        cob.invokespecial(providerFactory$1, "<init>", MethodTypeDesc.of(CD_void));
+                        cob.invokespecial(providerFactory$1, INIT_NAME, MTD_void);
                         cob.areturn();
                     });
 
@@ -232,7 +234,7 @@ public class BadProvidersTest {
                     ACC_PUBLIC | ACC_STATIC, cob -> {
                         cob.new_(providerFactory$1);
                         cob.dup();
-                        cob.invokespecial(providerFactory$1, "<init>", MethodTypeDesc.of(CD_void));
+                        cob.invokespecial(providerFactory$1, INIT_NAME, MTD_void);
                         cob.areturn();
                     });
         });

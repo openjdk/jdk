@@ -61,6 +61,9 @@ import static java.lang.System.out;
 import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static jdk.internal.classfile.Classfile.ACC_FINAL;
 import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
@@ -257,7 +260,7 @@ public class SerialPersistentFieldsTest {
         @Override
         public void atEnd(ClassBuilder builder) {
             builder.withField(FIELD_NAME, FIELD_DESC, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
-            builder.withMethodBody("<clinit>", MethodTypeDesc.of(CD_void), ACC_STATIC, cob -> {
+            builder.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
                 cob.bipush(spf.length);
                 cob.anewarray(CD_ObjectStreamField);
 
@@ -275,7 +278,7 @@ public class SerialPersistentFieldsTest {
                         // Currently Classfile API cannot encode primitive classdescs as condy
                         cob.constantInstruction(osf.getType().describeConstable().orElseThrow());
                     }
-                    cob.invokespecial(CD_ObjectStreamField, "<init>", MethodTypeDesc.of(CD_void, CD_String, CD_Class));
+                    cob.invokespecial(CD_ObjectStreamField, INIT_NAME, MethodTypeDesc.of(CD_void, CD_String, CD_Class));
                     cob.aastore();
                 }
 

@@ -42,7 +42,8 @@ import org.testng.annotations.Test;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
@@ -105,9 +106,6 @@ public class StaticInvocableTest {
         }
     }
 
-    private static final String CTOR_NAME = "<init>";
-    private static final MethodTypeDesc CTOR_DESC = MethodTypeDesc.of(CD_void);
-
     /*
      * Constructs bytecode for the following class:
      * public class pkg.MyClass {
@@ -119,9 +117,9 @@ public class StaticInvocableTest {
         return Classfile.build(ClassDesc.of(pkg.replace('/', '.'), "MyClass"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
-            clb.withMethodBody(CTOR_NAME, CTOR_DESC, 0, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_Object, CTOR_NAME, CTOR_DESC);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cob.return_();
             });
             clb.withMethodBody("get", MethodTypeDesc.of(CD_Object, CD_int),

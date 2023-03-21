@@ -58,13 +58,14 @@ import jdk.internal.classfile.TypeKind;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.lang.constant.ConstantDescs.BSM_CLASS_DATA;
+import static java.lang.constant.ConstantDescs.BSM_CLASS_DATA_AT;
 import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_MethodHandle;
-import static java.lang.constant.ConstantDescs.CD_MethodHandles;
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 import static jdk.internal.classfile.Classfile.*;
 import static org.testng.Assert.*;
@@ -72,8 +73,6 @@ import static org.testng.Assert.*;
 public class ClassDataTest {
     private static final Lookup LOOKUP = MethodHandles.lookup();
     private static final ClassDesc CD_ClassDataTest = ClassDataTest.class.describeConstable().orElseThrow();
-    private static final DirectMethodHandleDesc BSM_CLASS_DATA = ConstantDescs.ofConstantBootstrap(CD_MethodHandles, "classData", CD_Object);
-    private static final DirectMethodHandleDesc BSM_CLASS_DATA_AT = ConstantDescs.ofConstantBootstrap(CD_MethodHandles, "classDataAt", CD_Object, CD_int);
 
     @Test
     public void testOriginalAccess() throws IllegalAccessException {
@@ -371,9 +370,9 @@ public class ClassDataTest {
             this.cw = clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.FINAL);
-                clb.withMethodBody("<init>", MethodTypeDesc.of(CD_void), ACC_PUBLIC, cob -> {
+                clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                     cob.aload(0);
-                    cob.invokespecial(CD_Object, "<init>", MethodTypeDesc.of(CD_void));
+                    cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                     cob.return_();
                 });
             };
@@ -399,7 +398,7 @@ public class ClassDataTest {
             cw = cw.andThen(clb -> {
                 clb.withMethodBody("classData", mt, accessFlags, cob -> {
                     cob.constantInstruction(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, returnDesc));
-                    cob.returnInstruction(TypeKind.fromDescriptor(returnType.descriptorString()));
+                    cob.returnInstruction(TypeKind.from(returnType));
                 });
             });
             return this;
@@ -414,7 +413,7 @@ public class ClassDataTest {
             cw = cw.andThen(clb -> {
                 clb.withMethodBody("classData", mt, accessFlags, cob -> {
                     cob.constantInstruction(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA_AT, DEFAULT_NAME, returnDesc, index));
-                    cob.returnInstruction(TypeKind.fromDescriptor(returnType.descriptorString()));
+                    cob.returnInstruction(TypeKind.from(returnType));
                 });
             });
             return this;
@@ -426,7 +425,7 @@ public class ClassDataTest {
             cw = cw.andThen(clb -> {
                 clb.withMethodBody(name, mt, accessFlags, cob -> {
                     cob.constantInstruction(dynamic);
-                    cob.returnInstruction(TypeKind.fromDescriptor(returnType.descriptorString()));
+                    cob.returnInstruction(TypeKind.from(returnType));
                 });
             });
             return this;

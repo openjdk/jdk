@@ -271,8 +271,8 @@ public class BasicTest {
      */
     @Test(dataProvider = "emptyClasses")
     public void emptyHiddenClass(String name, Set<AccessFlag> accessFlags) throws Exception {
-        byte[] bytes = (accessFlags.equals(Set.of(ENUM))) ? classBytes(name, CD_Enum, accessFlags)
-                                                 : classBytes(name, accessFlags);
+        byte[] bytes = accessFlags.contains(ENUM) ? classBytes(name, CD_Enum, accessFlags)
+                                                  : classBytes(name, accessFlags);
         Class<?> hc = lookup().defineHiddenClass(bytes, false).lookupClass();
         assertEquals(hc.isSynthetic(), accessFlags.contains(SYNTHETIC));
         assertEquals(hc.isEnum(), accessFlags.contains(ENUM));

@@ -45,7 +45,6 @@ import java.lang.reflect.AccessFlag;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -59,7 +58,7 @@ public class Instrumentor {
 
     private final ClassModel model;
     private ClassTransform transform = ClassTransform.ACCEPT_ALL;
-    private final AtomicInteger matches = new AtomicInteger(0);
+    private final AtomicBoolean dirty = new AtomicBoolean(false);
 
     private Instrumentor(byte[] classData) {
         model = Classfile.parse(classData);
@@ -68,7 +67,7 @@ public class Instrumentor {
     public synchronized Instrumentor addMethodEntryInjection(String methodName, Consumer<CodeBuilder> injector) {
         transform = transform.andThen(ClassTransform.transformingMethodBodies(mm -> {
             if (mm.methodName().equalsString(methodName)) {
-                matches.getAndIncrement();
+                dirty.set(true);
                 return true;
             }
             return false;
@@ -87,13 +86,13 @@ public class Instrumentor {
     }
 
     public synchronized Instrumentor addNativeMethodTrackingInjection(String prefix, BiConsumer<String, CodeBuilder> injector) {
-        transform = transform.andThen(new ClassTransform() {
+        transform = transform.andThen(ClassTransform.ofStateful(() -> new ClassTransform() {
             private final Set<Consumer<ClassBuilder>> wmGenerators = new HashSet<>();
 
             @Override
             public void accept(ClassBuilder builder, ClassElement element) {
                 if (element instanceof MethodModel mm && mm.flags().has(AccessFlag.NATIVE)) {
-                    matches.getAndIncrement();
+                    dirty.set(true);
 
                     String name = mm.methodName().stringValue();
                     String newName = prefix + name;
@@ -145,13 +144,13 @@ public class Instrumentor {
             public void atEnd(ClassBuilder builder) {
                 wmGenerators.forEach(e -> e.accept(builder));
             }
-        });
+        }));
         return this;
     }
 
     public synchronized byte[] apply() {
         var bytes = model.transform(transform);
 
-        return matches.get() == 0 ? null : bytes;
+        return dirty.get() ? bytes : null;
     }
 }
