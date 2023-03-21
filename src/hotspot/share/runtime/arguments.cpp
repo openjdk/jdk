@@ -542,7 +542,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -551,6 +550,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
+  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
@@ -2137,6 +2137,11 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   result = parse_each_vm_init_arg(java_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
+  }
+
+  // Disable CDS for exploded image
+  if (!has_jimage()) {
+    no_shared_spaces("CDS disabled on exploded JDK");
   }
 
   // We need to ensure processor and memory resources have been properly

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,6 +101,8 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  */
 
 public final class SystemModulesPlugin extends AbstractPlugin {
+    private static final int CLASSFILE_VERSION =
+            ClassFileFormatVersion.latest().major();
     private static final String SYSTEM_MODULES_MAP_CLASSNAME =
             "jdk/internal/module/SystemModulesMap";
     private static final String SYSTEM_MODULES_CLASS_PREFIX =
@@ -578,7 +581,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     clb -> {
                         clb.withFlags(ACC_FINAL + ACC_SUPER)
                            .withInterfaceSymbols(List.of(CD_SYSTEM_MODULES))
-                           .withVersion(52, 0);
+                           .withVersion(CLASSFILE_VERSION, 0);
 
                         // generate <init>
                         genConstructor(clb);
