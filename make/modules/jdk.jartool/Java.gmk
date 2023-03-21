@@ -25,3 +25,5 @@
 
 DISABLED_WARNINGS_java += missing-explicit-ctor
 JAVAC_FLAGS += -XDstringConcat=inline
+JAVAC_FLAGS += --enable-preview
+DISABLED_WARNINGS_java += preview
