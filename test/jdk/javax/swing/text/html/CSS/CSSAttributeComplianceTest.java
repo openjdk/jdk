@@ -30,9 +30,9 @@
 import javax.swing.text.html.CSS.Attribute;
 
 public class CSSAttributeComplianceTest{
- 
+
     public static void main(String[] argv) {
-        String val = Attribute.BACKGROUND_POSITION.getDefaultValue();	    
+        String val = Attribute.BACKGROUND_POSITION.getDefaultValue();
         if (!"0% 0%".equals(val)) {
             System.out.println("Attribute.BACKGROUND_POSITION value : " + val);
             throw new RuntimeException("Expected from w3c.background-position: " +
