@@ -206,7 +206,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     /**
      * Retrieves and removes the <a href="#expired-head">expired head</a> of
      * this queue, or returns {@code null} if this queue has no
-     * <a href="#expired">expired elements</a>
+     * <a href="#expired">expired elements</a>.
      *
      * @return the <em>expired head</em> of this queue, or {@code null} if this
      *         queue has no elements with an expired delay
