@@ -47,7 +47,7 @@ import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 
 public class MHIllegalAccess {
 
-   public static void main(String[] args) throws Throwable  {
+   public static void main(String[] args) throws Throwable {
       System.out.println("Classpath is " + System.getProperty("java.class.path"));
       System.out.println();
 
