@@ -325,6 +325,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
 
           if (!validator.is_valid()) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in ControlIntrinsic: %s", validator.what());
+            FREE_C_HEAP_ARRAY(char, s);
             return false;
           }
         } else if (strncmp(option_key->name, "DisableIntrinsic", 16) == 0) {
@@ -332,6 +333,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
 
           if (!validator.is_valid()) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
+            FREE_C_HEAP_ARRAY(char, s);
             return false;
           }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
@@ -340,10 +342,12 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
 
           if (!validator.is_valid()) {
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
+            FREE_C_HEAP_ARRAY(char, s);
             return false;
           }
           set->set_ideal_phase_mask(mask);
         }
+        FREE_C_HEAP_ARRAY(char, s);
       }
       break;
 
