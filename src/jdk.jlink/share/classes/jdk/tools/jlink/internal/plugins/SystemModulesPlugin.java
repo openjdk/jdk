@@ -1020,8 +1020,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                    .invokespecial(CD_MODULE_BUILDER,
                                   "<init>",
                                   MethodTypeDesc.of(CD_void, CD_String))
-                   .astore(BUILDER_VAR)
-                   .aload(BUILDER_VAR);
+                   .astore(BUILDER_VAR);
 
                 if (md.isOpen()) {
                     setModuleBit("open", true);
