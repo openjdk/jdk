@@ -73,6 +73,10 @@ public class TransferTo extends TransferToBase {
             // optimized case
             {fileChannelInput(), writableByteChannelOutput()},
 
+            // tests ReadableFileChannel transfer to WritableByteChannelOutput
+            // optimized case
+            {readableByteChannelInput(), writableByteChannelOutput()},
+
             // tests InputStream.transferTo(OutputStream) default case
             {readableByteChannelInput(), defaultOutput()}
         };

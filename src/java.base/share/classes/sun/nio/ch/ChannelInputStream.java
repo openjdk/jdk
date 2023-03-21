@@ -46,7 +46,7 @@ import jdk.internal.util.ArraysSupport;
  * @author Mark Reinhold
  */
 class ChannelInputStream extends InputStream {
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 16384;
 
     private final ReadableByteChannel ch;
     private ByteBuffer bb;
@@ -265,11 +265,43 @@ class ChannelInputStream extends InputStream {
             return transfer(rbc, fc);
         }
 
+        // ReableByteChannel -> WritableByteChannel
+        if (out instanceof ChannelOutputStream cos) {
+            ReadableByteChannel rbc = ch;
+            WritableByteChannel wbc = cos.channel();
+
+            if (rbc instanceof SelectableChannel rsc) {
+                synchronized (rsc.blockingLock()) {
+                    if (!rsc.isBlocking())
+                        throw new IllegalBlockingModeException();
+                    if (wbc instanceof SelectableChannel wsc) {
+                        synchronized (wsc.blockingLock()) {
+                            if (!wsc.isBlocking())
+                                throw new IllegalBlockingModeException();
+                            return transfer(rbc, wbc);
+                        }
+                    }
+
+                    return transfer(rbc, wbc);
+                }
+            }
+
+            if (wbc instanceof SelectableChannel wsc) {
+                synchronized (wsc.blockingLock()) {
+                    if (!wsc.isBlocking())
+                        throw new IllegalBlockingModeException();
+                    return transfer(rbc, wbc);
+                }
+            }
+
+            return transfer(rbc, wbc);
+        }
+
         return super.transferTo(out);
     }
 
     /**
-     * Transfers all bytes from a channel's file to a target writeable byte channel.
+     * Transfers all bytes from a channel's file to a target writable byte channel.
      * If the writeable byte channel is a selectable channel then it must be in
      * blocking mode.
      */
@@ -305,6 +337,28 @@ class ChannelInputStream extends InputStream {
             dst.position(pos);
         }
         return pos - initialPos;
+    }
+
+    /**
+     * Transfers all bytes from a readable byte channel to a writable byte channel.
+     * If the readable or writable byte channel is a selectable channel then it must be in
+     * blocking mode.
+     */
+    private static long transfer(ReadableByteChannel src, WritableByteChannel dst) throws IOException {
+        long bytesWritten = 0L;
+        ByteBuffer bb = Util.getTemporaryDirectBuffer(DEFAULT_BUFFER_SIZE);
+        try {
+            for (int bytesRead = src.read(bb); bytesRead > -1; bytesRead = src.read(bb)) {
+                bb.flip();
+                while (bb.hasRemaining())
+                    dst.write(bb);
+                bb.clear();
+                bytesWritten += bytesRead;
+            }
+            return bytesWritten;
+        } finally {
+            Util.releaseTemporaryDirectBuffer(bb);
+        }
     }
 
     @Override
