@@ -63,6 +63,7 @@ public:
   static void prepare_for_dump_at_exit();
   static void dump_for_jcmd(const char* archive_name, TRAPS);
   static void dump(const char* archive_name, TRAPS);
+  static void dump_at_exit(JavaThread* current, const char* archive_name);
   static bool is_mapped() { return FileMapInfo::dynamic_info() != nullptr; }
   static bool validate(FileMapInfo* dynamic_info);
 };

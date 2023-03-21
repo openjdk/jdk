@@ -440,22 +440,11 @@ void before_exit(JavaThread* thread, bool halt) {
 #endif
 
 #if INCLUDE_CDS
-  // Link all classes for dynamic CDS dumping whilst we can still reliably
+  // Dynamic CDS dumping must happen whilst we can still reliably
   // run Java code.
   if (DynamicArchive::should_dump_at_vm_exit()) {
-    HandleMark hm(thread);
-    DynamicArchive::prepare_for_dump_at_exit();
-    assert(ArchiveClassesAtExit != nullptr, "Must be already set");
-    ExceptionMark em(thread);
-    DynamicArchive::dump(ArchiveClassesAtExit, thread);
-    if (thread->has_pending_exception()) {
-      ResourceMark rm(thread);
-      oop pending_exception = thread->pending_exception();
-      log_error(cds)("ArchiveClassesAtExit has failed %s: %s",
-                     pending_exception->klass()->external_name(),
-                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
-      thread->clear_pending_exception();
-    }
+    DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
+    assert(!thread->has_pending_exception(), "must be");
   }
 #endif
 

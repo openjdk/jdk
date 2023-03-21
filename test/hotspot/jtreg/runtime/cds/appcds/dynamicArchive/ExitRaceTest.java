@@ -37,7 +37,6 @@
 import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ExitRaceTest extends DynamicArchiveTestBase {
-    //    private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("top.jsa");
 
     public static void main(String[] args) throws Exception {
         runTest(ExitRaceTest::test);
@@ -49,11 +48,12 @@ public class ExitRaceTest extends DynamicArchiveTestBase {
         String mainClass = "ExitRace";
 
         dump(topArchiveName,
-             "-Xlog:cds,cds+dynamic=debug",
+             "-Xlog:cds+dynamic=debug",
              "-XX:-CreateCoredumpOnCrash",
              "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                                 output.shouldHaveExitValue(0)
+                                      .shouldContain("Preparing for dynamic dump")
                                       .reportDiagnosticSummary();
                               });
     }
