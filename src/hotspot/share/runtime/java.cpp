@@ -442,10 +442,8 @@ void before_exit(JavaThread* thread, bool halt) {
 #if INCLUDE_CDS
   // Dynamic CDS dumping must happen whilst we can still reliably
   // run Java code.
-  if (DynamicArchive::should_dump_at_vm_exit()) {
-    DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
-    assert(!thread->has_pending_exception(), "must be");
-  }
+  DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
+  assert(!thread->has_pending_exception(), "must be");
 #endif
 
 
