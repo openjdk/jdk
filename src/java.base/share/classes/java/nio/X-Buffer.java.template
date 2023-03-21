@@ -264,9 +264,9 @@ import jdk.internal.util.ArraysSupport;
  * operations</a></i> throw a {@linkplain ReadOnlyBufferException} when invoked
  * on a {@linkplain java.nio.Buffer#isReadOnly read-only} $Type$Buffer. The
  * methods {@linkplain #array array} and {@linkplain #arrayOffset arrayOffset},
- * however, instead throw an {@linkplain UnsupportedOperationException} if the
+ * throw an {@linkplain UnsupportedOperationException} if the
  * $Type$Buffer is not backed by an {@linkplain Buffer#hasArray accessible
- * $type$ array} irrespective of whether the $Type$Buffer is read-only.
+ * $type$ array} (irrespective of whether the $Type$Buffer is read-only).
  *
  *
  * @author Mark Reinhold
