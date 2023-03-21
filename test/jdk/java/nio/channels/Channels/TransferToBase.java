@@ -215,11 +215,14 @@ class TransferToBase {
                     fc.position(initPos);
 
                     // Add random bytes to the remainder of the file
-                    int nw = (int)(NUM_WRITES - initPos/BYTES_PER_WRITE);
-                    for (int i = 0; i < nw; i++) {
-                        byte[] rndBytes = createRandomBytes(BYTES_PER_WRITE, 0);
+                    long pos = initPos;
+                    while (pos < BYTES_WRITTEN) {
+                        int len = Math.toIntExact(BYTES_WRITTEN - pos);
+                        if (len > BYTES_PER_WRITE)
+                            len = BYTES_PER_WRITE;
+                        byte[] rndBytes = createRandomBytes(len, 0);
                         ByteBuffer src = ByteBuffer.wrap(rndBytes);
-                        fc.write(src);
+                        pos += fc.write(src);
                     }
                 }
 
