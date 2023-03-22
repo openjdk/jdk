@@ -619,18 +619,17 @@ public sealed interface Linker permits AbstractLinker {
 
          /**
          * {@return A struct layout that represents the layout of the capture state segment that is passed
-         *          to a downcall handle linked with {@link #captureCallState(String...)}}
+         *          to a downcall handle linked with {@link #captureCallState(String...)}}.
          * <p>
-         * The capture state layout is <em>platform dependent</em>.
-         * The following example demonstrates how to print the element names of
-         * the current capture state layout on the console:
-         * {@snippet lang = "java":
-         *     captureStateLayout().memberLayouts().stream()
-         *         .map(MemoryLayout::name)
-         *         .filter(Optional::isPresent)
-         *         .map(Optional::get)
-         *         .forEach(System.out::println);
-         * }
+         * The capture state layout is <em>platform dependent</em> but is guaranteed to be
+         * a {@linkplain StructLayout struct layout} containing only {@linkplain ValueLayout value layouts}
+         * and possibly {@linkplain PaddingLayout padding layouts}.
+         * As an example, on Windows, the returned layout might contain three value layouts named:
+         * <ul>
+         *     <li>GetLastError</li>
+         *     <li>WSAGetLastError</li>
+         *     <li>errno</li>
+         * </ul>
          *
          * @see #captureCallState(String...)
          */
