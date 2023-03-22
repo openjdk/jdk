@@ -178,7 +178,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
     JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
     return p;
   }
-  static int num_arguments() { return 9; }
+  static int num_arguments() { return 10; }
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;
 };
