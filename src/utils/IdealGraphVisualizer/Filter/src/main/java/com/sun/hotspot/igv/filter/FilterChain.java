@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.graph.Diagram;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -56,6 +57,10 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
 
     public FilterChain() {
         this("");
+    }
+
+    public void sortBy(List<String> order) {
+        filters.sort(Comparator.comparingInt(f -> order.indexOf(f.getName())));
     }
 
     @Override

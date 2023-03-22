@@ -118,6 +118,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     }
 
     private FilterTopComponent() {
+        System.out.println("FilterTopComponent");
         filterSettingsChangedEvent = new ChangedEvent<>(this);
         initComponents();
         setName(NbBundle.getMessage(FilterTopComponent.class, "CTL_FilterTopComponent"));
@@ -340,24 +341,37 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     public void newFilter() {
         CustomFilter cf = new CustomFilter("My custom filter", "", engine);
         if (cf.openInEditor()) {
-            allFiltersOrdered.addFilter(cf);
-            FileObject fo = getFileObject(cf);
-            FilterChangedListener listener = new FilterChangedListener(fo, cf);
-            listener.changed(cf);
-            cf.getChangedEvent().addListener(listener);
+            addFilter(cf);
         }
     }
 
-    public void removeFilter(Filter f) {
-        CustomFilter cf = (CustomFilter) f;
+    public void addFilter(CustomFilter cf) {
+        allFiltersOrdered.addFilter(cf);
+        FileObject fo = getFileObject(cf);
+        FilterChangedListener listener = new FilterChangedListener(fo, cf);
+        listener.changed(cf);
+        cf.getChangedEvent().addListener(listener);
+    }
 
+    public void removeFilter(CustomFilter cf) {
         allFiltersOrdered.removeFilter(cf);
         try {
             getFileObject(cf).delete();
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
         }
+    }
 
+    private FileObject getFileObject(CustomFilter f) {
+        FileObject fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + f.getName());
+        if (fo == null) {
+            try {
+                fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(f.getName());
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+        }
+        return fo;
     }
 
     private static class FilterChangedListener implements ChangedListener<Filter> {
@@ -437,14 +451,13 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
             map.put(displayName, cf);
 
             String after = (String) fo.getAttribute(AFTER_ID);
+            System.out.println(displayName + " after " + after);
             afterMap.put(cf, after);
 
             Boolean enabled = (Boolean) fo.getAttribute(ENABLED_ID);
             if (enabled != null && enabled) {
                 enabledSet.add(cf);
             }
-
-            cf.getChangedEvent().addListener(new FilterChangedListener(fo, cf));
 
             customFilters.add(cf);
         }
@@ -471,7 +484,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         }
 
         for (CustomFilter cf : customFilters) {
-            allFiltersOrdered.addFilter(cf);
+            addFilter(cf);
             if (enabledSet.contains(cf)) {
                 defaultFilterChain.addFilter(cf);
             }
@@ -534,18 +547,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         return manager;
     }
 
-    private FileObject getFileObject(CustomFilter cf) {
-        FileObject fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + cf.getName());
-        if (fo == null) {
-            try {
-                fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(cf.getName());
-            } catch (IOException ex) {
-                Exceptions.printStackTrace(ex);
-            }
-        }
-        return fo;
-    }
-
     @Override
     public boolean requestFocus(boolean temporary) {
         view.requestFocus();
@@ -569,35 +570,29 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     public void writeExternal(ObjectOutput out) throws IOException {
         super.writeExternal(out);
 
-        out.writeInt(comboBox.getItemCount()-1);
+        out.writeUTF(getCurrentChain().getName());
+        out.writeInt(comboBox.getItemCount());
         for (int i=0; i<comboBox.getItemCount(); i++) {
             FilterChain filterChain = comboBox.getItemAt(i);
-            if (filterChain != customFilterChain) {
-                out.writeUTF(filterChain.getName());
-                out.writeInt(filterChain.getFilters().size());
-                for (Filter filter : filterChain.getFilters()) {
-                    CustomFilter cf = (CustomFilter) filter;
-                    out.writeUTF(cf.getName());
-                }
-            }
-        }
-    }
-
-    public CustomFilter findFilter(String name) {
-        for (Filter f : allFiltersOrdered.getFilters()) {
-            CustomFilter cf = (CustomFilter) f;
-            if (cf.getName().equals(name)) {
-                return cf;
+            out.writeUTF(filterChain.getName());
+            out.writeInt(filterChain.getFilters().size());
+            for (Filter filter : filterChain.getFilters()) {
+                CustomFilter cf = (CustomFilter) filter;
+                out.writeUTF(cf.getName());
             }
         }
 
-        return null;
+        out.writeInt(allFiltersOrdered.getFilters().size());
+        for (Filter filter : allFiltersOrdered.getFilters()) {
+            out.writeUTF(filter.getName());
+        }
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         super.readExternal(in);
 
+        String selectedChainName = in.readUTF();
         int filterSettingsCount = in.readInt();
         for (int i = 0; i < filterSettingsCount; i++) {
             String name = in.readUTF();
@@ -610,13 +605,41 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
                     filterChain.addFilter(filter);
                 }
             }
-            for (int cnt=0; cnt<comboBox.getItemCount(); cnt++) {
-                FilterChain s = comboBox.getItemAt(cnt);
-                if (s.getName().equals(name)) {
-                    comboBox.removeItem(s);
+            if (Objects.equals(filterChain.getName(), customFilterChain.getName())) {
+                setCustomFilterChain(filterChain);
+            } else {
+                for (int cnt=0; cnt<comboBox.getItemCount(); cnt++) {
+                    FilterChain s = comboBox.getItemAt(cnt);
+                    if (s.getName().equals(name)) {
+                        comboBox.removeItem(s);
+                    }
                 }
+                comboBox.addItem(filterChain);
             }
-            comboBox.addItem(filterChain);
+            if (selectedChainName.equals(filterChain.getName())) {
+                selectFilterChain(filterChain);
+            }
         }
+
+        ArrayList<String> order = new ArrayList<>();
+        int filterOrderCount = in.readInt();
+        for (int i = 0; i < filterOrderCount; i++) {
+            String name = in.readUTF();
+            order.add(name);
+        }
+        allFiltersOrdered.sortBy(order);
+
+        System.out.println("readExternal");
+    }
+
+    public CustomFilter findFilter(String name) {
+        for (Filter f : allFiltersOrdered.getFilters()) {
+            CustomFilter cf = (CustomFilter) f;
+            if (cf.getName().equals(name)) {
+                return cf;
+            }
+        }
+
+        return null;
     }
 }
