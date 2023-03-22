@@ -2526,12 +2526,14 @@ WB_ENTRY(jboolean, WB_SetVirtualThreadsNotifyJvmtiMode(JNIEnv* env, jobject wb, 
     tty->print_cr("WB error: must be Continuations::enabled()!");
     return JNI_FALSE;
   }
-  jboolean result;
+  jboolean result = false;
+#if INCLUDE_JVMTI
   if (enable) {
     result = JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
   } else {
     result = JvmtiEnvBase::disable_virtual_threads_notify_jvmti();
   }
+#endif
   return result;
 WB_END
 
