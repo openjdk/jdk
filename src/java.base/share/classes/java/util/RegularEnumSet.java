@@ -33,7 +33,7 @@ package java.util;
  * @since 1.5
  * @serial exclude
  */
-final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> implements RegularEnumSetCompatible<E> {
+final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
     @java.io.Serial
     private static final long serialVersionUID = 3411599620347842686L;
     /**
@@ -43,13 +43,13 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> implements Regu
     private long elements = 0L;
 
     @Override
-    public long elements() {
-        return elements;
+    boolean isRegularEnumSetCompatible() {
+        return true;
     }
 
     @Override
-    public Class<E> elementType() {
-        return elementType;
+    long regularEnumElements() {
+        return elements;
     }
 
     RegularEnumSet(Class<E>elementType, Enum<?>[] universe) {
@@ -206,13 +206,13 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> implements Regu
      * @throws NullPointerException if the specified collection is null
      */
     public boolean containsAll(Collection<?> c) {
-        if (!(c instanceof RegularEnumSetCompatible<?> es))
+        if (!(c instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible()))
             return super.containsAll(c);
 
-        if (es.elementType() != elementType)
-            return es.isEmpty();
+        if (ac.enumElementType() != elementType)
+            return ac.isEmpty();
 
-        return (es.elements() & ~elements) == 0;
+        return (ac.regularEnumElements() & ~elements) == 0;
     }
 
     /**
@@ -224,19 +224,19 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> implements Regu
      *     of its elements are null
      */
     public boolean addAll(Collection<? extends E> c) {
-        if (!(c instanceof RegularEnumSetCompatible<?> es))
+        if (!(c instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible()))
             return super.addAll(c);
 
-        if (es.elementType() != elementType) {
-            if (es.isEmpty())
+        if (ac.enumElementType() != elementType) {
+            if (ac.isEmpty())
                 return false;
             else
                 throw new ClassCastException(
-                    es.elementType() + " != " + elementType);
+                    ac.enumElementType() + " != " + elementType);
         }
 
         long oldElements = elements;
-        elements |= es.elements();
+        elements |= ac.regularEnumElements();
         return elements != oldElements;
     }
 
@@ -249,14 +249,14 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> implements Regu
      * @throws NullPointerException if the specified collection is null
      */
     public boolean removeAll(Collection<?> c) {
-        if (!(c instanceof RegularEnumSetCompatible<?> es))
+        if (!(c instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible()))
             return super.removeAll(c);
 
-        if (es.elementType() != elementType)
+        if (ac.enumElementType() != elementType)
             return false;
 
         long oldElements = elements;
-        elements &= ~es.elements();
+        elements &= ~ac.regularEnumElements();
         return elements != oldElements;
     }
 
@@ -269,17 +269,17 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> implements Regu
      * @throws NullPointerException if the specified collection is null
      */
     public boolean retainAll(Collection<?> c) {
-        if (!(c instanceof RegularEnumSetCompatible<?> es))
+        if (!(c instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible()))
             return super.retainAll(c);
 
-        if (es.elementType() != elementType) {
+        if (ac.enumElementType() != elementType) {
             boolean changed = (elements != 0);
             elements = 0;
             return changed;
         }
 
         long oldElements = elements;
-        elements &= es.elements();
+        elements &= ac.regularEnumElements();
         return elements != oldElements;
     }
 
@@ -300,11 +300,11 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> implements Regu
      * @return {@code true} if the specified object is equal to this set
      */
     public boolean equals(Object o) {
-        if (!(o instanceof RegularEnumSetCompatible<?> es))
+        if (!(o instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible()))
             return super.equals(o);
 
-        if (es.elementType() != elementType)
-            return elements == 0 && es.elements() == 0;
-        return es.elements() == elements;
+        if (ac.enumElementType() != elementType)
+            return elements == 0 && ac.regularEnumElements() == 0;
+        return ac.regularEnumElements() == elements;
     }
 }

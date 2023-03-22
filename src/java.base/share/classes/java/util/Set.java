@@ -724,7 +724,7 @@ public interface Set<E> extends Collection<E> {
      * @throws NullPointerException if coll is null, or if it contains any nulls
      * @since 10
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     static <E> Set<E> copyOf(Collection<? extends E> coll) {
         if (coll instanceof ImmutableCollections.AbstractImmutableSet) {
             return (Set<E>)coll;
@@ -732,11 +732,15 @@ public interface Set<E> extends Collection<E> {
         if (coll.isEmpty()) {
             return Set.of();
         }
-        if (coll instanceof RegularEnumSetCompatible<?> res && res.size() > 2) {
-            return (Set<E>)new ImmutableCollections.ImmutableRegularEnumSet<>(res.elements(), res.elementType());
-        }
-        if (coll instanceof JumboEnumSetCompatible<?> jes && jes.size() > 2) {
-            return (Set<E>)new ImmutableCollections.ImmutableJumboEnumSet<>(jes.elements().clone(), jes.elementType(), jes.size());
+        if (coll instanceof AbstractCollection<?> ac && ac.size() > 2) {
+            if (ac.isRegularEnumSetCompatible()) {
+                return (Set<E>)
+                    new ImmutableCollections.ImmutableRegularEnumSet(ac.regularEnumElements(), ac.enumElementType());
+            }
+            if (ac.isJumboEnumSetCompatible()) {
+                return (Set<E>)
+                    new ImmutableCollections.ImmutableJumboEnumSet(ac.jumboEnumElements().clone(), ac.enumElementType(), ac.size());
+            }
         }
         return (Set<E>)Set.of(new HashSet<>(coll).toArray());
     }

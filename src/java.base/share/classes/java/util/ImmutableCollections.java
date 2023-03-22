@@ -922,10 +922,10 @@ class ImmutableCollections {
             }
         }
         if (es instanceof RegularEnumSet<?> res) {
-            return (Set<E>)new ImmutableRegularEnumSet<>(res.elements(), res.elementType());
+            return (Set<E>)new ImmutableRegularEnumSet<>(res.regularEnumElements(), res.enumElementType());
         }
         if (es instanceof JumboEnumSet<?> jes) {
-            return (Set<E>)new ImmutableJumboEnumSet<>(jes.elements(), jes.elementType(), jes.size());
+            return (Set<E>)new ImmutableJumboEnumSet<>(jes.jumboEnumElements(), jes.enumElementType(), jes.size());
         }
         // Should not be reached here. This is a fallback.
         return new SetN<>(input);
@@ -1114,8 +1114,8 @@ class ImmutableCollections {
             this.elementType = elementType;
         }
 
-        // Overrides elementType() in RegularEnumSetCompatible and JumboEnumSetCompatible
-        public final Class<E> elementType() {
+        @Override
+        final Class<E> enumElementType() {
             return elementType;
         }
 
@@ -1170,7 +1170,7 @@ class ImmutableCollections {
 
     @jdk.internal.ValueBased
     static final class ImmutableRegularEnumSet<E extends Enum<E>> extends AbstractImmutableEnumSet<E>
-            implements RegularEnumSetCompatible<E>, Serializable {
+            implements Serializable {
         @Stable
         final long elements;
 
@@ -1180,7 +1180,12 @@ class ImmutableCollections {
         }
 
         @Override
-        public long elements() {
+        boolean isRegularEnumSetCompatible() {
+            return true;
+        }
+
+        @Override
+        long regularEnumElements() {
             return elements;
         }
 
@@ -1227,11 +1232,11 @@ class ImmutableCollections {
 
         @Override
         public boolean containsAll(Collection<?> c) {
-            if ((c instanceof RegularEnumSetCompatible<?> es)) {
-                if (es.elementType() != elementType)
-                    return es.isEmpty();
+            if (c instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible()) {
+                if (ac.enumElementType() != elementType)
+                    return ac.isEmpty();
 
-                return (es.elements() & ~elements) == 0;
+                return (ac.regularEnumElements() & ~elements) == 0;
             } else {
                 return super.containsAll(c);
             }
@@ -1239,12 +1244,12 @@ class ImmutableCollections {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof RegularEnumSetCompatible<?> es))
+            if (!(o instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible()))
                 return super.equals(o);
 
-            if (es.elementType() != elementType)
-                return elements == 0 && es.elements() == 0;
-            return es.elements() == elements;
+            if (ac.enumElementType() != elementType)
+                return elements == 0 && ac.regularEnumElements() == 0;
+            return ac.regularEnumElements() == elements;
         }
 
         @java.io.Serial
@@ -1260,7 +1265,7 @@ class ImmutableCollections {
 
     @jdk.internal.ValueBased
     static final class ImmutableJumboEnumSet<E extends Enum<E>> extends AbstractImmutableEnumSet<E>
-            implements JumboEnumSetCompatible<E>, Serializable {
+            implements Serializable {
         @Stable
         final long[] elements;
 
@@ -1273,8 +1278,12 @@ class ImmutableCollections {
             this.size = size;
         }
 
+        boolean isJumboEnumSetCompatible() {
+            return true;
+        }    
+
         @Override
-        public long[] elements() {
+        long[] jumboEnumElements() {
             return elements;
         }
 
@@ -1327,13 +1336,13 @@ class ImmutableCollections {
 
         @Override
         public boolean containsAll(Collection<?> c) {
-            if (!(c instanceof JumboEnumSetCompatible<?> es))
+            if (!(c instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible()))
                 return super.containsAll(c);
 
-            if (es.elementType() != elementType)
-                return es.isEmpty();
+            if (ac.enumElementType() != elementType)
+                return ac.isEmpty();
 
-            long[] esElements = es.elements();
+            long[] esElements = ac.jumboEnumElements();
             for (int i = 0; i < elements.length; i++)
                 if ((esElements[i] & ~elements[i]) != 0)
                     return false;
@@ -1342,13 +1351,13 @@ class ImmutableCollections {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof JumboEnumSetCompatible<?> es))
+            if (!(o instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible()))
                 return super.equals(o);
 
-            if (es.elementType() != elementType)
-                return size == 0 && es.size() == 0;
+            if (ac.enumElementType() != elementType)
+                return size == 0 && ac.size() == 0;
 
-            return Arrays.equals(es.elements(), elements);
+            return Arrays.equals(ac.jumboEnumElements(), elements);
         }
 
         @java.io.Serial

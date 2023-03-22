@@ -463,4 +463,25 @@ public abstract class AbstractCollection<E> implements Collection<E> {
         }
     }
 
+    // Optimization for enum sets -- all package-private
+
+    boolean isRegularEnumSetCompatible() {
+        return false;
+    }
+
+    boolean isJumboEnumSetCompatible() {
+        return false;
+    }
+
+    Class<E> enumElementType() {
+        throw new InternalError("cannot be called");
+    }
+
+    long regularEnumElements() {
+        throw new InternalError("cannot be called");
+    }
+
+    long[] jumboEnumElements() {
+        throw new InternalError("cannot be called");
+    }
 }

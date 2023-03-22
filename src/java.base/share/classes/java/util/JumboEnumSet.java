@@ -33,7 +33,7 @@ package java.util;
  * @since 1.5
  * @serial exclude
  */
-final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> implements JumboEnumSetCompatible<E> {
+final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
     @java.io.Serial
     private static final long serialVersionUID = 334349849919042784L;
 
@@ -45,13 +45,13 @@ final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> implements JumboE
     private long elements[];
 
     @Override
-    public long[] elements() {
-        return elements;
+    boolean isJumboEnumSetCompatible() {
+        return true;
     }
 
     @Override
-    public Class<E> elementType() {
-        return elementType;
+    long[] jumboEnumElements() {
+        return elements;
     }
 
     // Redundant - maintained for performance
@@ -258,13 +258,13 @@ final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> implements JumboE
      * @throws NullPointerException if the specified collection is null
      */
     public boolean containsAll(Collection<?> c) {
-        if (!(c instanceof JumboEnumSetCompatible<?> es))
+        if (!(c instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible()))
             return super.containsAll(c);
 
-        if (es.elementType() != elementType)
-            return es.isEmpty();
+        if (ac.enumElementType() != elementType)
+            return ac.isEmpty();
 
-        long[] esElements = es.elements();
+        long[] esElements = ac.jumboEnumElements();
         for (int i = 0; i < elements.length; i++)
             if ((esElements[i] & ~elements[i]) != 0)
                 return false;
@@ -280,18 +280,18 @@ final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> implements JumboE
      *     its elements are null
      */
     public boolean addAll(Collection<? extends E> c) {
-        if (!(c instanceof JumboEnumSetCompatible<?> es))
+        if (!(c instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible()))
             return super.addAll(c);
 
-        if (es.elementType() != elementType) {
-            if (es.isEmpty())
+        if (ac.enumElementType() != elementType) {
+            if (ac.isEmpty())
                 return false;
             else
                 throw new ClassCastException(
-                    es.elementType() + " != " + elementType);
+                    ac.enumElementType() + " != " + elementType);
         }
 
-        long[] esElements = es.elements();
+        long[] esElements = ac.jumboEnumElements();
         for (int i = 0; i < elements.length; i++)
             elements[i] |= esElements[i];
         return recalculateSize();
@@ -306,13 +306,13 @@ final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> implements JumboE
      * @throws NullPointerException if the specified collection is null
      */
     public boolean removeAll(Collection<?> c) {
-        if (!(c instanceof JumboEnumSetCompatible<?> es))
+        if (!(c instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible()))
             return super.removeAll(c);
 
-        if (es.elementType() != elementType)
+        if (ac.enumElementType() != elementType)
             return false;
 
-        long[] esElements = es.elements();
+        long[] esElements = ac.jumboEnumElements();
         for (int i = 0; i < elements.length; i++)
             elements[i] &= ~esElements[i];
         return recalculateSize();
@@ -327,16 +327,16 @@ final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> implements JumboE
      * @throws NullPointerException if the specified collection is null
      */
     public boolean retainAll(Collection<?> c) {
-        if (!(c instanceof JumboEnumSetCompatible<?> es))
+        if (!(c instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible()))
             return super.retainAll(c);
 
-        if (es.elementType() != elementType) {
+        if (ac.enumElementType() != elementType) {
             boolean changed = (size != 0);
             clear();
             return changed;
         }
 
-        long[] esElements = es.elements();
+        long[] esElements = ac.jumboEnumElements();
         for (int i = 0; i < elements.length; i++)
             elements[i] &= esElements[i];
         return recalculateSize();
@@ -360,13 +360,13 @@ final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> implements JumboE
      * @return {@code true} if the specified object is equal to this set
      */
     public boolean equals(Object o) {
-        if (!(o instanceof JumboEnumSetCompatible<?> es))
+        if (!(o instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible()))
             return super.equals(o);
 
-        if (es.elementType() != elementType)
-            return size == 0 && es.size() == 0;
+        if (ac.enumElementType() != elementType)
+            return size == 0 && ac.size() == 0;
 
-        return Arrays.equals(es.elements(), elements);
+        return Arrays.equals(ac.jumboEnumElements(), elements);
     }
 
     /**

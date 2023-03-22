@@ -410,6 +410,11 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
                                         .getEnumConstantsShared(elementType);
     }
 
+    @Override
+    Class<E> enumElementType() {
+        return elementType;
+    }
+
     /**
      * This class is used to serialize all EnumSet instances, regardless of
      * implementation type.  It captures their "logical contents" and they
