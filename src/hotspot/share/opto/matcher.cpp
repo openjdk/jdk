@@ -1253,7 +1253,7 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
     if( warped >= out_arg_limit_per_call )
       out_arg_limit_per_call = OptoReg::add(warped,1);
     if (!RegMask::can_represent_arg(warped)) {
-      // Bailout. For example not enoug space on stack for all arguments. Happens for methods with too many arguments.
+      // Bailout. For example not enough space on stack for all arguments. Happens for methods with too many arguments.
       C->record_method_not_compilable("unsupported calling sequence");
       return OptoReg::Bad;
     }

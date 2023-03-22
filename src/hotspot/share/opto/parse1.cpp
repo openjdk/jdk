@@ -433,7 +433,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _iter.reset_to_method(method());
   _flow = method()->get_flow_analysis();
   if (_flow->failing()) {
-    assert(false, "flow fails during parsing");
+    assert(false, "type flow failed during parsing");
     C->record_method_not_compilable(_flow->failure_reason());
   }
 
@@ -512,7 +512,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     _entry_bci = C->entry_bci();
     _flow = method()->get_osr_flow_analysis(osr_bci());
     if (_flow->failing()) {
-      assert(false, "OSR flow failure");
+      assert(false, "type flow analysis failed for OSR compilation");
       C->record_method_not_compilable(_flow->failure_reason());
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
