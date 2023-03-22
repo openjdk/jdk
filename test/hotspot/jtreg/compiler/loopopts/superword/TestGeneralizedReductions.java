@@ -27,6 +27,7 @@
  * @summary Test reduction vectorizations that are enabled by performing SLP
  *          reduction analysis on unrolled loops.
  * @library /test/lib /
+ * @requires vm.bits == 64
  * @run driver compiler.loopopts.superword.TestGeneralizedReductions
  */
 
