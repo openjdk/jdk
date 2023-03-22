@@ -112,6 +112,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             SYSTEM_MODULES_CLASS_PREFIX + "all";
     private static final String DEFAULT_SYSTEM_MODULES_CLASSNAME =
             SYSTEM_MODULES_CLASS_PREFIX + "default";
+    private static final ClassDesc CD_ALL_SYSTEM_MODULES =
+            ClassDesc.ofInternalName(ALL_SYSTEM_MODULES_CLASSNAME);
     private static final ClassDesc CD_SYSTEM_MODULES =
             ClassDesc.ofInternalName("jdk/internal/module/SystemModules");
     private static final ClassDesc CD_SYSTEM_MODULES_MAP =
@@ -272,7 +274,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         // generate SystemModulesMap
-        rn = genSystemModulesMapClass(ClassDesc.ofInternalName(ALL_SYSTEM_MODULES_CLASSNAME),
+        rn = genSystemModulesMapClass(CD_ALL_SYSTEM_MODULES,
                                       ClassDesc.ofInternalName(defaultSystemModulesClassName),
                                       map,
                                       out);
