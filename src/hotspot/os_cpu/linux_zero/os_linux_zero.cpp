@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,13 +24,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
 #include "os_linux.hpp"
@@ -60,7 +60,7 @@ address os::current_stack_pointer() {
 
 frame os::get_sender_for_C_frame(frame* fr) {
   ShouldNotCallThis();
-  return frame(NULL, NULL); // silence compile warning.
+  return frame(nullptr, nullptr); // silence compile warning.
 }
 
 frame os::current_frame() {
@@ -71,7 +71,7 @@ frame os::current_frame() {
   //     set the sp to a close approximation of the real value in
   //     order to allow this step to complete.
   //   - Step 120 (printing native stack) tries to walk the stack.
-  //     The frame we create has a NULL pc, which is ignored as an
+  //     The frame we create has a null pc, which is ignored as an
   //     invalid frame.
   frame dummy = frame();
   dummy.set_sp((intptr_t *) current_stack_pointer());
@@ -87,30 +87,136 @@ char* os::non_memory_address_word() {
 }
 
 address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
-  ShouldNotCallThis();
-  return NULL; // silence compile warnings
+  if (DecodeErrorContext) {
+#if defined(IA32)
+    return (address)uc->uc_mcontext.gregs[REG_EIP];
+#elif defined(AMD64)
+    return (address)uc->uc_mcontext.gregs[REG_RIP];
+#elif defined(ARM)
+    return (address)uc->uc_mcontext.arm_pc;
+#elif defined(AARCH64)
+    return (address)uc->uc_mcontext.pc;
+#elif defined(PPC)
+    return (address)uc->uc_mcontext.regs->nip;
+#elif defined(RISCV)
+    return (address)uc->uc_mcontext.__gregs[REG_PC];
+#elif defined(S390)
+    return (address)uc->uc_mcontext.psw.addr;
+#else
+    // Non-arch-specific Zero code does not really know the PC.
+    // If possible, add the arch-specific definition in this method.
+    fatal("Cannot handle ucontext_get_pc");
+#endif
+  }
+
+  // Answer the default and hope for the best
+  return nullptr;
 }
 
-void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
+void os::Posix::ucontext_set_pc(ucontext_t* uc, address pc) {
   ShouldNotCallThis();
+}
+
+intptr_t* os::Linux::ucontext_get_sp(const ucontext_t* uc) {
+  if (DecodeErrorContext) {
+#if defined(IA32)
+    return (intptr_t*)uc->uc_mcontext.gregs[REG_UESP];
+#elif defined(AMD64)
+    return (intptr_t*)uc->uc_mcontext.gregs[REG_RSP];
+#elif defined(ARM)
+    return (intptr_t*)uc->uc_mcontext.arm_sp;
+#elif defined(AARCH64)
+    return (intptr_t*)uc->uc_mcontext.sp;
+#elif defined(PPC)
+    return (intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/];
+#elif defined(RISCV)
+    return (intptr_t*)uc->uc_mcontext.__gregs[REG_SP];
+#elif defined(S390)
+    return (intptr_t*)uc->uc_mcontext.gregs[15/*REG_SP*/];
+#else
+    // Non-arch-specific Zero code does not really know the SP.
+    // If possible, add the arch-specific definition in this method.
+    fatal("Cannot handle ucontext_get_sp");
+#endif
+  }
+
+  // Answer the default and hope for the best
+  return nullptr;
+}
+
+intptr_t* os::Linux::ucontext_get_fp(const ucontext_t* uc) {
+  if (DecodeErrorContext) {
+#if defined(IA32)
+    return (intptr_t*)uc->uc_mcontext.gregs[REG_EBP];
+#elif defined(AMD64)
+    return (intptr_t*)uc->uc_mcontext.gregs[REG_RBP];
+#elif defined(ARM)
+    return (intptr_t*)uc->uc_mcontext.arm_fp;
+#elif defined(AARCH64)
+    return (intptr_t*)uc->uc_mcontext.regs[29 /* REG_FP */];
+#elif defined(PPC)
+    return nullptr;
+#elif defined(RISCV)
+    return (intptr_t*)uc->uc_mcontext.__gregs[8 /* REG_FP */];
+#elif defined(S390)
+    return nullptr;
+#else
+    // Non-arch-specific Zero code does not really know the FP.
+    // If possible, add the arch-specific definition in this method.
+    fatal("Cannot handle ucontext_get_fp");
+#endif
+  }
+
+  // Answer the default and hope for the best
+  return nullptr;
 }
 
 address os::fetch_frame_from_context(const void* ucVoid,
                                      intptr_t** ret_sp,
                                      intptr_t** ret_fp) {
-  ShouldNotCallThis();
-  return NULL; // silence compile warnings
+  address epc;
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+
+  if (uc != nullptr) {
+    epc = os::Posix::ucontext_get_pc(uc);
+    if (ret_sp) {
+      *ret_sp = (intptr_t*) os::Linux::ucontext_get_sp(uc);
+    }
+    if (ret_fp) {
+      *ret_fp = (intptr_t*) os::Linux::ucontext_get_fp(uc);
+    }
+  } else {
+    epc = nullptr;
+    if (ret_sp) {
+      *ret_sp = nullptr;
+    }
+    if (ret_fp) {
+      *ret_fp = nullptr;
+    }
+  }
+
+  return epc;
 }
 
 frame os::fetch_frame_from_context(const void* ucVoid) {
-  ShouldNotCallThis();
-  return frame(NULL, NULL); // silence compile warnings
+  // This code is only called from error handler to get PC and SP.
+  // We don't have the ready ZeroFrame* at this point, so fake the
+  // frame with bare minimum.
+  if (ucVoid != nullptr) {
+    const ucontext_t* uc = (const ucontext_t*)ucVoid;
+    frame dummy = frame();
+    dummy.set_pc(os::Posix::ucontext_get_pc(uc));
+    dummy.set_sp((intptr_t*)os::Linux::ucontext_get_sp(uc));
+    return dummy;
+  } else {
+    return frame(nullptr, nullptr);
+  }
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  if (info != NULL && thread != NULL) {
+  if (info != nullptr && thread != nullptr) {
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
       address addr = (address) info->si_addr;
@@ -288,16 +394,27 @@ size_t os::current_stack_size() {
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
 
-void os::print_context(outputStream* st, const void* context) {
-  ShouldNotCallThis();
+void os::print_context(outputStream* st, const void* ucVoid) {
+  st->print_cr("No context information.");
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  ShouldNotCallThis();
+void os::print_tos_pc(outputStream *st, const void* ucVoid) {
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+
+  address sp = (address)os::Linux::ucontext_get_sp(uc);
+  print_tos(st, sp);
+  st->cr();
+
+  // Note: it may be unsafe to inspect memory near pc. For example, pc may
+  // point to garbage if entry point in an nmethod is corrupted. Leave
+  // this at the end, and hope for the best.
+  address pc = os::Posix::ucontext_get_pc(uc);
+  print_instructions(st, pc, sizeof(char));
+  st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  ShouldNotCallThis();
+void os::print_register_info(outputStream *st, const void* ucVoid) {
+  st->print_cr("No register info.");
 }
 
 /////////////////////////////////////////////////////////////////////////////

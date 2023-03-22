@@ -56,7 +56,7 @@ import java.util.zip.Checksum;
 
 /**
  *  Invokes RMIClassLoader.loadProxyClass() to load a proxy class with
- *  multiple interfaces using using RMI class unmarshalling.  Test is
+ *  multiple interfaces using RMI class unmarshalling.  Test is
  *  composed of cases which each unmarshal a proxy class in a
  *  different environment.  All of the cases create needed class
  *  loaders, load appropriate interfaces, create a proxy class that

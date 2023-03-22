@@ -35,7 +35,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
@@ -209,7 +208,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         if (apiList.size() > 0) {
             TableHeader tableHeader = getTableHeader(headerKey);
 
-            Table table = new Table(HtmlStyle.summaryTable)
+            var table = new Table<Element>(HtmlStyle.summaryTable)
                     .setCaption(getTableCaption(headingKey))
                     .setHeader(tableHeader)
                     .setId(id)
@@ -337,5 +336,5 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
      * @param table the element table
      * @param headingKey the key for the caption (default tab)
      */
-    protected abstract void addTableTabs(Table table, String headingKey);
+    protected abstract void addTableTabs(Table<Element> table, String headingKey);
 }

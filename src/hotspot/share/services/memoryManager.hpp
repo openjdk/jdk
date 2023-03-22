@@ -82,7 +82,7 @@ public:
   static MemoryManager*   get_metaspace_memory_manager();
 };
 
-class GCStatInfo : public ResourceObj {
+class GCStatInfo : public CHeapObj<mtGC> {
 private:
   size_t _index;
   jlong  _start_time;

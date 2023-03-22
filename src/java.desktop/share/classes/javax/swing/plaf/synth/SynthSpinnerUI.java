@@ -207,7 +207,7 @@ public class SynthSpinnerUI extends BasicSpinnerUI
      * <p>
      * The <code>replaceEditor</code> method is called when the spinners
      * editor is changed with <code>JSpinner.setEditor</code>.  If you've
-     * overriden this method, then you'll probably want to override
+     * overridden this method, then you'll probably want to override
      * <code>replaceEditor</code> as well.
      *
      * @return the JSpinners editor JComponent, spinner.getEditor() by default

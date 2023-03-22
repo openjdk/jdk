@@ -40,7 +40,7 @@ public class TestFloatIsFinite extends TestFloatClassCheck {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"IsFiniteF", ">= 1"}) // At least one IsFiniteF node is generated if intrinsic is used
+    @IR(counts = {IRNode.IS_FINITE_F, ">= 1"}) // At least one IsFiniteF node is generated if intrinsic is used
     public void testIsFinite() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             outputs[i] = Float.isFinite(inputs[i]);

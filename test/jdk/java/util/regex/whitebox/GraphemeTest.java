@@ -95,7 +95,7 @@ public class GraphemeTest {
                         // #tr29 "plus a few General_Category = Spacing_Mark needed for
                         // canonical equivalence."
                         // For "extended grapheme clusters" support, there is no
-                        // need actually to diff "extend" and "spackmark" given GB9, GB9a.
+                        // need actually to diff "Extend" and "SpacingMark" given GB9, GB9a.
                         try {
                             if (!expected.equals(types[(int) mh.invokeExact(cp)])) {
                                 if ("Extend".equals(expected) &&

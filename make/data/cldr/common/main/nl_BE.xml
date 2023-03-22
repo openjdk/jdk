@@ -37,26 +37,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d/MM – d/MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/MM – d/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d/MM – E d/MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d/MM – E d/MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d/MM – E d/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/MM – E d/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">MM/y – MM/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MM/y – MM/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MM/y – MM/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM/y – MM/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">d/MM/y – d/MM/y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d/MM/y – d/MM/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d/MM/y – d/MM/y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d/MM/y – d/MM/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/MM/y – d/MM/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/MM/y – d/MM/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E d/MM/y – E d/MM/y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d/MM/y – E d/MM/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d/MM/y – E d/MM/y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d/MM/y – E d/MM/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/MM/y – E d/MM/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d/MM/y – E d/MM/y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -80,30 +80,94 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">d/MM – d/MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d/MM – d/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/MM – d/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E d/MM – E d/MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d/MM – E d/MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d/MM – E d/MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/MM – E d/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/MM/y – d/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d/MM/y – E d/MM/y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
 	</dates>
+	<personNames>
+		<!-- Minor variations from nl-NL
+			 https://onzetaal.nl/taaladvies/hoofdletters-namen-nederland
+			 "Belgian surnames are immutable: they are written as they are recorded in the
+			 population register. If the surname is registered as Van der Meeren ,
+			 that is always the correct spelling in Belgium"
+			 https://onzetaal.nl/taaladvies/hoofdletters-namen-belgie
+			 "In practice, Belgian names are almost always capitalized: Margot De Ridder,
+			 Patsy Van der Meeren, Marie De Ruyter-Van Goethem."
+			 Therfore, no need for -prefix and -core modifiers in nl-BE
+			 inherit initialPattern, initialSequence, and order='surnameFirst' from nl.xml
+		-->
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern draft="provisional">{prefix} {given-initial-allCaps}{given2-initial-allCaps} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern draft="provisional">{prefix} {surname-core-initialCap}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern draft="provisional">{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern draft="provisional">{prefix} {surname-initialCap}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern draft="provisional">{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern draft="provisional">{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern draft="provisional">{prefix} {surname-initialCap}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern draft="provisional">{surname}, {prefix} {given} {given2}, {suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern draft="provisional">{surname}, {given-initial}{given2-initial}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given" draft="provisional">Liam</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given" draft="provisional">Liam</nameField>
+			<nameField type="surname" draft="provisional">Van den Berg</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given" draft="provisional">Liam</nameField>
+			<nameField type="given2" draft="provisional">Hugo Mees</nameField>
+			<nameField type="surname" draft="provisional">Van den Berg</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="given" draft="provisional">Juliette</nameField>
+			<nameField type="given-informal" draft="provisional">Juli</nameField>
+			<nameField type="surname" draft="provisional">Van den Berg</nameField>
+			<nameField type="surname-prefix">Van den</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

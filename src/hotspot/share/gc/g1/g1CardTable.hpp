@@ -100,9 +100,7 @@ public:
 
   // Change Clean cards in a (large) area on the card table as Dirty, preserving
   // already scanned cards. Assumes that most cards in that area are Clean.
-  // Returns the number of dirtied cards that were not yet dirty. This result may
-  // be inaccurate as it does not perform the dirtying atomically.
-  inline size_t mark_range_dirty(size_t start_card_index, size_t num_cards);
+  inline void mark_range_dirty(size_t start_card_index, size_t num_cards);
 
   // Change the given range of dirty cards to "which". All of these cards must be Dirty.
   inline void change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which);

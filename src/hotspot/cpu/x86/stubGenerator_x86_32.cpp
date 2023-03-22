@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,7 +364,7 @@ class StubGenerator: public StubCodeGenerator {
            ExternalAddress((address)__FILE__), noreg);
     __ movl(Address(rcx, Thread::exception_line_offset()), __LINE__ );
     // complete return to VM
-    assert(StubRoutines::_call_stub_return_address != NULL, "_call_stub_return_address must have been generated before");
+    assert(StubRoutines::_call_stub_return_address != nullptr, "_call_stub_return_address must have been generated before");
     __ jump(RuntimeAddress(StubRoutines::_call_stub_return_address));
 
     return start;
@@ -656,6 +656,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", stub_name);
     address start = __ pc();
+    // B
     __ emit_data(0x03020100, relocInfo::none, 0);
     __ emit_data(0x07060504, relocInfo::none, 0);
     __ emit_data(0x0B0A0908, relocInfo::none, 0);
@@ -672,6 +673,96 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_data(0x37363534, relocInfo::none, 0);
     __ emit_data(0x3B3A3938, relocInfo::none, 0);
     __ emit_data(0x3F3E3D3C, relocInfo::none, 0);
+
+    // W
+    __ emit_data(0x00010000, relocInfo::none, 0);
+    __ emit_data(0x00030002, relocInfo::none, 0);
+    __ emit_data(0x00050004, relocInfo::none, 0);
+    __ emit_data(0x00070006, relocInfo::none, 0);
+    __ emit_data(0x00090008, relocInfo::none, 0);
+    __ emit_data(0x000B000A, relocInfo::none, 0);
+    __ emit_data(0x000D000C, relocInfo::none, 0);
+    __ emit_data(0x000F000E, relocInfo::none, 0);
+    __ emit_data(0x00110010, relocInfo::none, 0);
+    __ emit_data(0x00130012, relocInfo::none, 0);
+    __ emit_data(0x00150014, relocInfo::none, 0);
+    __ emit_data(0x00170016, relocInfo::none, 0);
+    __ emit_data(0x00190018, relocInfo::none, 0);
+    __ emit_data(0x001B001A, relocInfo::none, 0);
+    __ emit_data(0x001D001C, relocInfo::none, 0);
+    __ emit_data(0x001F001E, relocInfo::none, 0);
+
+    // D
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000001, relocInfo::none, 0);
+    __ emit_data(0x00000002, relocInfo::none, 0);
+    __ emit_data(0x00000003, relocInfo::none, 0);
+    __ emit_data(0x00000004, relocInfo::none, 0);
+    __ emit_data(0x00000005, relocInfo::none, 0);
+    __ emit_data(0x00000006, relocInfo::none, 0);
+    __ emit_data(0x00000007, relocInfo::none, 0);
+    __ emit_data(0x00000008, relocInfo::none, 0);
+    __ emit_data(0x00000009, relocInfo::none, 0);
+    __ emit_data(0x0000000A, relocInfo::none, 0);
+    __ emit_data(0x0000000B, relocInfo::none, 0);
+    __ emit_data(0x0000000C, relocInfo::none, 0);
+    __ emit_data(0x0000000D, relocInfo::none, 0);
+    __ emit_data(0x0000000E, relocInfo::none, 0);
+    __ emit_data(0x0000000F, relocInfo::none, 0);
+
+    // Q
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000001, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000002, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000003, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000004, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000005, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000006, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000007, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+
+    // D - FP
+    __ emit_data(0x00000000, relocInfo::none, 0); // 0.0f
+    __ emit_data(0x3F800000, relocInfo::none, 0); // 1.0f
+    __ emit_data(0x40000000, relocInfo::none, 0); // 2.0f
+    __ emit_data(0x40400000, relocInfo::none, 0); // 3.0f
+    __ emit_data(0x40800000, relocInfo::none, 0); // 4.0f
+    __ emit_data(0x40A00000, relocInfo::none, 0); // 5.0f
+    __ emit_data(0x40C00000, relocInfo::none, 0); // 6.0f
+    __ emit_data(0x40E00000, relocInfo::none, 0); // 7.0f
+    __ emit_data(0x41000000, relocInfo::none, 0); // 8.0f
+    __ emit_data(0x41100000, relocInfo::none, 0); // 9.0f
+    __ emit_data(0x41200000, relocInfo::none, 0); // 10.0f
+    __ emit_data(0x41300000, relocInfo::none, 0); // 11.0f
+    __ emit_data(0x41400000, relocInfo::none, 0); // 12.0f
+    __ emit_data(0x41500000, relocInfo::none, 0); // 13.0f
+    __ emit_data(0x41600000, relocInfo::none, 0); // 14.0f
+    __ emit_data(0x41700000, relocInfo::none, 0); // 15.0f
+
+    // Q - FP
+    __ emit_data(0x00000000, relocInfo::none, 0); // 0.0d
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 1.0d
+    __ emit_data(0x3FF00000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 2.0d
+    __ emit_data(0x40000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 3.0d
+    __ emit_data(0x40080000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 4.0d
+    __ emit_data(0x40100000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 5.0d
+    __ emit_data(0x40140000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 6.0d
+    __ emit_data(0x40180000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 7.0d
+    __ emit_data(0x401c0000, relocInfo::none, 0);
     return start;
   }
 
@@ -879,7 +970,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure object is 'reasonable'
     __ movptr(rax, Address(rsp, 4 * wordSize));    // get object
     __ testptr(rax, rax);
-    __ jcc(Assembler::zero, exit);               // if obj is NULL it is ok
+    __ jcc(Assembler::zero, exit);               // if obj is null it is ok
 
     // Check if the oop is in the right area of memory
     const int oop_mask = Universe::verify_oop_mask();
@@ -892,7 +983,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure klass is 'reasonable', which is not zero.
     __ movptr(rax, Address(rax, oopDesc::klass_offset_in_bytes())); // get klass
     __ testptr(rax, rax);
-    __ jcc(Assembler::zero, error);              // if klass is NULL it is broken
+    __ jcc(Assembler::zero, error);              // if klass is null it is broken
 
     // return if everything seems ok
     __ bind(exit);
@@ -1018,7 +1109,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(to   , Address(rsp, 12+ 8));
     __ movl(count, Address(rsp, 12+ 12));
 
-    if (entry != NULL) {
+    if (entry != nullptr) {
       *entry = __ pc(); // Entry point from conjoint arraycopy stub.
       BLOCK_COMMENT("Entry:");
     }
@@ -1195,7 +1286,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(dst  , Address(rsp, 12+ 8));   // to
     __ movl2ptr(count, Address(rsp, 12+12)); // count
 
-    if (entry != NULL) {
+    if (entry != nullptr) {
       *entry = __ pc(); // Entry point from generic arraycopy stub.
       BLOCK_COMMENT("Entry:");
     }
@@ -1453,13 +1544,13 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_fallthrough;
 #define LOCAL_JCC(assembler_con, label_ptr)                             \
-    if (label_ptr != NULL)  __ jcc(assembler_con, *(label_ptr));        \
+    if (label_ptr != nullptr)  __ jcc(assembler_con, *(label_ptr));        \
     else                    __ jcc(assembler_con, L_fallthrough) /*omit semi*/
 
     // The following is a strange variation of the fast path which requires
     // one less register, because needed values are on the argument stack.
     // __ check_klass_subtype_fast_path(sub_klass, *super_klass*, temp,
-    //                                  L_success, L_failure, NULL);
+    //                                  L_success, L_failure, null);
     assert_different_registers(sub_klass, temp);
 
     int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
@@ -1488,8 +1579,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_fallthrough);
 
-    if (L_success == NULL) { BLOCK_COMMENT("L_success:"); }
-    if (L_failure == NULL) { BLOCK_COMMENT("L_failure:"); }
+    if (L_success == nullptr) { BLOCK_COMMENT("L_success:"); }
+    if (L_failure == nullptr) { BLOCK_COMMENT("L_failure:"); }
 
 #undef LOCAL_JCC
   }
@@ -1543,7 +1634,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(to,         to_arg);
     __ movl2ptr(length, length_arg);
 
-    if (entry != NULL) {
+    if (entry != nullptr) {
       *entry = __ pc(); // Entry point from generic arraycopy stub.
       BLOCK_COMMENT("Entry:");
     }
@@ -1611,7 +1702,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ movptr(elem_klass, elem_klass_addr); // query the object klass
     generate_type_check(elem_klass, ckoff_arg, ckval_arg, temp,
-                        &L_store_element, NULL);
+                        &L_store_element, nullptr);
     // (On fall-through, we have failed the element type check.)
     // ======== end loop ========
 
@@ -1818,7 +1909,7 @@ class StubGenerator: public StubCodeGenerator {
     // (2) src_pos must not be negative.
     // (3) dst_pos must not be negative.
     // (4) length  must not be negative.
-    // (5) src klass and dst klass should be the same and not NULL.
+    // (5) src klass and dst klass should be the same and not null.
     // (6) src and dst should be arrays.
     // (7) src_pos + length must not exceed length of src.
     // (8) dst_pos + length must not exceed length of dst.
@@ -1830,7 +1921,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register dst_pos = rdi;
     const Register length  = rcx;       // transfer count
 
-    //  if (src == NULL) return -1;
+    //  if (src == null) return -1;
     __ movptr(src, SRC);      // src oop
     __ testptr(src, src);
     __ jccb(Assembler::zero, L_failed_0);
@@ -1840,7 +1931,7 @@ class StubGenerator: public StubCodeGenerator {
     __ testl(src_pos, src_pos);
     __ jccb(Assembler::negative, L_failed_0);
 
-    //  if (dst == NULL) return -1;
+    //  if (dst == nullptr) return -1;
     __ movptr(dst, DST);      // dst oop
     __ testptr(dst, dst);
     __ jccb(Assembler::zero, L_failed_0);
@@ -1855,18 +1946,18 @@ class StubGenerator: public StubCodeGenerator {
     __ testl(length, length);
     __ jccb(Assembler::negative, L_failed_0);
 
-    //  if (src->klass() == NULL) return -1;
+    //  if (src->klass() == nullptr) return -1;
     Address src_klass_addr(src, oopDesc::klass_offset_in_bytes());
     Address dst_klass_addr(dst, oopDesc::klass_offset_in_bytes());
     const Register rcx_src_klass = rcx;    // array klass
     __ movptr(rcx_src_klass, Address(src, oopDesc::klass_offset_in_bytes()));
 
 #ifdef ASSERT
-    //  assert(src->klass() != NULL);
+    //  assert(src->klass() != nullptr);
     BLOCK_COMMENT("assert klasses not null");
     { Label L1, L2;
       __ testptr(rcx_src_klass, rcx_src_klass);
-      __ jccb(Assembler::notZero, L2);   // it is broken if klass is NULL
+      __ jccb(Assembler::notZero, L2);   // it is broken if klass is null
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
@@ -2039,7 +2130,7 @@ class StubGenerator: public StubCodeGenerator {
       Label L_fail_array_check;
       generate_type_check(rbx_src_klass,
                           super_check_offset_addr, dst_klass_addr,
-                          rdi_temp, NULL, &L_fail_array_check);
+                          rdi_temp, nullptr, &L_fail_array_check);
       // (On fall-through, we have passed the array type check.)
       __ pop(rbx);
       __ jmp(L_plain_copy);
@@ -2103,7 +2194,7 @@ class StubGenerator: public StubCodeGenerator {
                                "arrayof_jbyte_disjoint_arraycopy");
     StubRoutines::_arrayof_jbyte_arraycopy =
         generate_conjoint_copy(T_BYTE,  true, Address::times_1,  entry,
-                               NULL, "arrayof_jbyte_arraycopy");
+                               nullptr, "arrayof_jbyte_arraycopy");
     StubRoutines::_jbyte_disjoint_arraycopy =
         generate_disjoint_copy(T_BYTE, false, Address::times_1, &entry,
                                "jbyte_disjoint_arraycopy");
@@ -2116,7 +2207,7 @@ class StubGenerator: public StubCodeGenerator {
                                "arrayof_jshort_disjoint_arraycopy");
     StubRoutines::_arrayof_jshort_arraycopy =
         generate_conjoint_copy(T_SHORT,  true, Address::times_2,  entry,
-                               NULL, "arrayof_jshort_arraycopy");
+                               nullptr, "arrayof_jshort_arraycopy");
     StubRoutines::_jshort_disjoint_arraycopy =
         generate_disjoint_copy(T_SHORT, false, Address::times_2, &entry,
                                "jshort_disjoint_arraycopy");
@@ -2145,7 +2236,7 @@ class StubGenerator: public StubCodeGenerator {
                                /*dest_uninitialized*/true);
     StubRoutines::_oop_arraycopy_uninit =
         generate_conjoint_copy(T_OBJECT, true, Address::times_ptr,  entry,
-                               NULL, "oop_arraycopy_uninit",
+                               nullptr, "oop_arraycopy_uninit",
                                /*dest_uninitialized*/true);
 
     StubRoutines::_jlong_disjoint_arraycopy =
@@ -2174,7 +2265,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_checkcast_arraycopy =
         generate_checkcast_copy("checkcast_arraycopy", &entry_checkcast_arraycopy);
     StubRoutines::_checkcast_arraycopy_uninit =
-        generate_checkcast_copy("checkcast_arraycopy_uninit", NULL, /*dest_uninitialized*/true);
+        generate_checkcast_copy("checkcast_arraycopy_uninit", nullptr, /*dest_uninitialized*/true);
 
     StubRoutines::_unsafe_arraycopy =
         generate_unsafe_copy("unsafe_arraycopy",
@@ -3833,7 +3924,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Set up last_Java_sp and last_Java_fp
-    __ set_last_Java_frame(java_thread, rsp, rbp, NULL, noreg);
+    __ set_last_Java_frame(java_thread, rsp, rbp, nullptr, noreg);
 
     // Call runtime
     BLOCK_COMMENT("call runtime_entry");
@@ -3920,13 +4011,7 @@ class StubGenerator: public StubCodeGenerator {
     Register java_thread = rdi;
     __ get_thread(java_thread);
     __ reset_last_Java_frame(java_thread, true);
-    Label null_jobject;
-    __ testptr(rax, rax);
-    __ jcc(Assembler::zero, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(masm, decorators, T_OBJECT, rax, Address(rax, 0), noreg, java_thread);
-    __ bind(null_jobject);
+    __ resolve_global_jobject(rax, java_thread, rdx);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
@@ -3945,7 +4030,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize
     };
 
-    int insts_size = 512;
+    int insts_size = 1024;
     int locs_size = 64;
     CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();
@@ -4146,7 +4231,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
+    if (bs_nm != nullptr) {
       StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
     }
   }
@@ -4166,7 +4251,7 @@ class StubGenerator: public StubCodeGenerator {
 
 #define UCM_TABLE_MAX_ENTRIES 16
 void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == NULL) {
+  if (UnsafeCopyMemory::_table == nullptr) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
   StubGenerator g(code, phase);

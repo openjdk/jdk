@@ -23,9 +23,9 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import java.awt.Dimension;
 import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.layout.Cluster;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,10 +43,6 @@ public class Block implements Cluster {
     public Block(InputBlock inputBlock, Diagram diagram) {
         this.inputBlock = inputBlock;
         this.diagram = diagram;
-    }
-
-    public Cluster getOuter() {
-        return null;
     }
 
     public InputBlock getInputBlock() {

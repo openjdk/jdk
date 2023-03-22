@@ -549,7 +549,7 @@ AWT_ASSERT_APPKIT_THREAD;
     return isVisible;
 }
 
-// Orders window's childs based on the current focus state
+// Orders window children based on the current focus state
 - (void) orderChildWindows:(BOOL)focus {
 AWT_ASSERT_APPKIT_THREAD;
 
@@ -685,7 +685,7 @@ AWT_ASSERT_APPKIT_THREAD;
                 : [self standardFrame];
 }
 
-// Hides/shows window's childs during iconify/de-iconify operation
+// Hides/shows window children during iconify/de-iconify operation
 - (void) iconifyChildWindows:(BOOL)iconify {
 AWT_ASSERT_APPKIT_THREAD;
 

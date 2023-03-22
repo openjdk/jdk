@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -96,23 +96,28 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     OLD_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
 
-    HEADERS_TO_CHECK="X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h"
-    # There is no Xrandr extension on AIX
     if test "x$OPENJDK_TARGET_OS" = xaix; then
+      # There is no Xrandr extension on AIX. Code is duplicated to avoid autoconf
+      # 2.71+ warning "AC_CHECK_HEADERS: you should use literals"
       X_CFLAGS="$X_CFLAGS -DNO_XRANDR"
+      AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h],
+          [X11_HEADERS_OK=yes],
+          [X11_HEADERS_OK=no; break],
+          [
+            # include <X11/Xlib.h>
+            # include <X11/Xutil.h>
+          ]
+      )
     else
-      HEADERS_TO_CHECK="$HEADERS_TO_CHECK X11/extensions/Xrandr.h"
+      AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h X11/extensions/Xrandr.h],
+          [X11_HEADERS_OK=yes],
+          [X11_HEADERS_OK=no; break],
+          [
+            # include <X11/Xlib.h>
+            # include <X11/Xutil.h>
+          ]
+      )
     fi
-
-    # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
-    AC_CHECK_HEADERS([$HEADERS_TO_CHECK],
-        [X11_HEADERS_OK=yes],
-        [X11_HEADERS_OK=no; break],
-        [
-          # include <X11/Xlib.h>
-          # include <X11/Xutil.h>
-        ]
-    )
 
     if test "x$X11_HEADERS_OK" = xno; then
       HELP_MSG_MISSING_DEPENDENCY([x11])

@@ -14,7 +14,7 @@ public class T6450290 {
 
     static class A extends Box<A,A> {}
     static class B extends Box<B,B> {}
-    public static void main(String[] args) {
+    public static void meth() {
         Box<?,?> b = new Box<Box<A,A>,Box<A,A>>();
         b.value.same = new Box<B,B>(); //javac misses this bad assignment
     }

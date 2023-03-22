@@ -255,7 +255,11 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         // Decrypt the fragment
         //
         ByteBuffer fragment;
+        recordLock.lock();
         try {
+            if (isClosed) {
+                return null;
+            }
             Plaintext plaintext =
                     readCipher.decrypt(contentType, recordBody, null);
             fragment = plaintext.fragment;
@@ -264,6 +268,8 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
             throw bpe;
         } catch (GeneralSecurityException gse) {
             throw new SSLProtocolException("Unexpected exception", gse);
+        } finally {
+            recordLock.unlock();
         }
 
         if (contentType != ContentType.HANDSHAKE.id &&

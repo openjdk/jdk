@@ -43,7 +43,7 @@ import javax.lang.model.SourceVersion;
 /**
  * Compiler factory for instances of Example.Compiler that use custom
  * DiagnosticFormatter and Messages objects to track the types of args
- * when when localizing diagnostics.
+ * when localizing diagnostics.
  * The compiler objects only support "output" mode, not "check" mode.
  */
 class ArgTypeCompilerFactory implements Example.Compiler.Factory {

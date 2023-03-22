@@ -30,7 +30,7 @@ import java.awt.event.AdjustmentEvent;
 
 final class WScrollbarPeer extends WComponentPeer implements ScrollbarPeer {
 
-    // Returns width for vertial scrollbar as SM_CXHSCROLL,
+    // Returns width for vertical scrollbar as SM_CXHSCROLL,
     // height for horizontal scrollbar as SM_CYVSCROLL
     static native int getScrollbarSize(int orientation);
 

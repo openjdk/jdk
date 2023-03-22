@@ -82,7 +82,7 @@ public class MotifSplitPaneDivider extends BasicSplitPaneDivider
 
     /**
      * overrides to hardcode the size of the divider
-     * PENDING(jeff) - rewrite JSplitPane so that this ins't needed
+     * PENDING(jeff) - rewrite JSplitPane so that this isn't needed
      */
     public void setDividerSize(int newSize) {
         Insets          insets = getInsets();
@@ -185,7 +185,7 @@ public class MotifSplitPaneDivider extends BasicSplitPaneDivider
 
     /**
      * Sets the SplitPaneUI that is using the receiver. This is completely
-     * overriden from super to create a different MouseHandler.
+     * overridden from super to create a different MouseHandler.
      */
     public void setBasicSplitPaneUI(BasicSplitPaneUI newUI) {
         if (splitPane != null) {

@@ -148,11 +148,23 @@ class JfrVframeStream : public vframeStreamCommon {
   void next_vframe();
 };
 
+static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
+  // NOTE: WalkContinuation::skip, because of interactions with ZGC relocation
+  //       and load barriers. This code is run while generating stack traces for
+  //       the ZPage allocation event, even when ZGC is relocating  objects.
+  //       When ZGC is relocating, it is forbidden to run code that performs
+  //       load barriers. With WalkContinuation::include, we visit heap stack
+  //       chunks and could be using load barriers.
+  return (UseZGC && !StackWatermarkSet::processing_started(jt))
+      ? RegisterMap::WalkContinuation::skip
+      : RegisterMap::WalkContinuation::include;
+}
+
 JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode) :
   vframeStreamCommon(RegisterMap(jt,
                                  RegisterMap::UpdateMap::skip,
                                  RegisterMap::ProcessFrames::skip,
-                                 RegisterMap::WalkContinuation::include)),
+                                 walk_continuation(jt))),
     _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
     _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
@@ -274,7 +286,10 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
   assert(jt != NULL, "invariant");
   assert(jt == Thread::current(), "invariant");
   assert(!_lineno, "invariant");
-  HandleMark hm(jt); // RegisterMap uses Handles to support continuations.
+  // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
+  // This is because RegisterMap uses Handles to support continuations.
+  ResetNoHandleMark rnhm;
+  HandleMark hm(jt);
   JfrVframeStream vfs(jt, frame, false, false);
   u4 count = 0;
   _reached_root = true;

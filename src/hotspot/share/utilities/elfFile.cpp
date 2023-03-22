@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,6 @@
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
-#include <string.h>
-#include <stdio.h>
-#include <limits.h>
-#include <new>
-
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -41,17 +36,22 @@
 #include "utilities/elfSymbolTable.hpp"
 #include "utilities/ostream.hpp"
 
+#include <string.h>
+#include <stdio.h>
+#include <limits.h>
+#include <new>
+
 const char* ElfFile::USR_LIB_DEBUG_DIRECTORY = "/usr/lib/debug";
 
 // For test only, disable elf section cache and force to read from file directly.
 bool ElfFile::_do_not_cache_elf_section = false;
 
-ElfSection::ElfSection(FILE* fd, const Elf_Shdr& hdr) : _section_data(NULL) {
+ElfSection::ElfSection(FILE* fd, const Elf_Shdr& hdr) : _section_data(nullptr) {
   _stat = load_section(fd, hdr);
 }
 
 ElfSection::~ElfSection() {
-  if (_section_data != NULL) {
+  if (_section_data != nullptr) {
     os::free(_section_data);
   }
 }
@@ -67,7 +67,7 @@ NullDecoder::decoder_status ElfSection::load_section(FILE* const fd, const Elf_S
   _section_data = os::malloc(shdr.sh_size, mtInternal);
   // No enough memory for caching. It is okay, we can try to read from
   // file instead.
-  if (_section_data == NULL) return NullDecoder::no_error;
+  if (_section_data == nullptr) return NullDecoder::no_error;
 
   MarkedFileReader mfd(fd);
   if (mfd.has_mark() &&
@@ -76,19 +76,19 @@ NullDecoder::decoder_status ElfSection::load_section(FILE* const fd, const Elf_S
     return NullDecoder::no_error;
   } else {
     os::free(_section_data);
-    _section_data = NULL;
+    _section_data = nullptr;
     return NullDecoder::file_invalid;
   }
 }
 
 bool FileReader::read(void* buf, size_t size) {
-  assert(buf != NULL, "no buffer");
+  assert(buf != nullptr, "no buffer");
   assert(size > 0, "no space");
   return fread(buf, size, 1, _fd) == 1;
 }
 
 size_t FileReader::read_buffer(void* buf, size_t size) {
-  assert(buf != NULL, "no buffer");
+  assert(buf != nullptr, "no buffer");
   assert(size > 0, "no space");
   return fread(buf, 1, size, _fd);
 }
@@ -107,8 +107,8 @@ MarkedFileReader::~MarkedFileReader() {
 }
 
 ElfFile::ElfFile(const char* filepath) :
-  _next(NULL), _filepath(os::strdup(filepath)), _file(NULL),
-  _symbol_tables(NULL), _string_tables(NULL), _shdr_string_table(NULL), _funcDesc_table(NULL),
+  _next(nullptr), _filepath(os::strdup(filepath)), _file(nullptr),
+  _symbol_tables(nullptr), _string_tables(nullptr), _shdr_string_table(nullptr), _funcDesc_table(nullptr),
   _status(NullDecoder::no_error), _dwarf_file(nullptr) {
   memset(&_elfHdr, 0, sizeof(_elfHdr));
   if (_filepath == nullptr) {
@@ -121,7 +121,7 @@ ElfFile::ElfFile(const char* filepath) :
 ElfFile::~ElfFile() {
   cleanup_tables();
 
-  if (_file != NULL) {
+  if (_file != nullptr) {
     fclose(_file);
   }
 
@@ -165,7 +165,7 @@ NullDecoder::decoder_status ElfFile::parse_elf(const char* filepath) {
   assert(filepath, "null file path");
 
   _file = os::fopen(filepath, "r");
-  if (_file != NULL) {
+  if (_file != nullptr) {
     return load_tables();
   } else {
     return NullDecoder::file_not_found;
@@ -211,11 +211,11 @@ NullDecoder::decoder_status ElfFile::load_tables() {
     if (shdr.sh_type == SHT_STRTAB) {
       // string tables
       ElfStringTable* table = new (std::nothrow) ElfStringTable(fd(), shdr, index);
-      if (table == NULL) {
+      if (table == nullptr) {
         return NullDecoder::out_of_memory;
       }
       if (index == _elfHdr.e_shstrndx) {
-        assert(_shdr_string_table == NULL, "Only set once");
+        assert(_shdr_string_table == nullptr, "Only set once");
         _shdr_string_table = table;
       } else {
         add_string_table(table);
@@ -223,7 +223,7 @@ NullDecoder::decoder_status ElfFile::load_tables() {
     } else if (shdr.sh_type == SHT_SYMTAB || shdr.sh_type == SHT_DYNSYM) {
       // symbol tables
       ElfSymbolTable* table = new (std::nothrow) ElfSymbolTable(fd(), shdr);
-      if (table == NULL) {
+      if (table == nullptr) {
         return NullDecoder::out_of_memory;
       }
       add_symbol_table(table);
@@ -247,7 +247,7 @@ NullDecoder::decoder_status ElfFile::load_tables() {
   }
 
   _funcDesc_table = new (std::nothrow) ElfFuncDescTable(_file, shdr, sect_index);
-  if (_funcDesc_table == NULL) {
+  if (_funcDesc_table == nullptr) {
       return NullDecoder::out_of_memory;
   }
 #endif
@@ -256,14 +256,14 @@ NullDecoder::decoder_status ElfFile::load_tables() {
 
 #if defined(PPC64) && !defined(ABI_ELFv2)
 int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
-  assert(name != NULL, "No section name");
+  assert(name != nullptr, "No section name");
   size_t len = strlen(name) + 1;
   char* buf = (char*)os::malloc(len, mtInternal);
-  if (buf == NULL) {
+  if (buf == nullptr) {
     return -1;
   }
 
-  assert(_shdr_string_table != NULL, "Section header string table should be loaded");
+  assert(_shdr_string_table != nullptr, "Section header string table should be loaded");
   ElfStringTable* const table = _shdr_string_table;
   MarkedFileReader mfd(fd());
   if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) return -1;
@@ -299,7 +299,7 @@ bool ElfFile::decode(address addr, char* buf, int buflen, int* offset) {
   bool found_symbol = false;
   ElfSymbolTable* symbol_table = _symbol_tables;
 
-  while (symbol_table != NULL) {
+  while (symbol_table != nullptr) {
     if (symbol_table->lookup(addr, &string_table_index, &pos_in_string_table, &off, _funcDesc_table)) {
       found_symbol = true;
       break;
@@ -312,7 +312,7 @@ bool ElfFile::decode(address addr, char* buf, int buflen, int* offset) {
 
   ElfStringTable* string_table = get_string_table(string_table_index);
 
-  if (string_table == NULL) {
+  if (string_table == nullptr) {
     _status = NullDecoder::file_invalid;
     return false;
   }
@@ -322,7 +322,7 @@ bool ElfFile::decode(address addr, char* buf, int buflen, int* offset) {
 }
 
 void ElfFile::add_symbol_table(ElfSymbolTable* table) {
-  if (_symbol_tables == NULL) {
+  if (_symbol_tables == nullptr) {
     _symbol_tables = table;
   } else {
     table->set_next(_symbol_tables);
@@ -331,7 +331,7 @@ void ElfFile::add_symbol_table(ElfSymbolTable* table) {
 }
 
 void ElfFile::add_string_table(ElfStringTable* table) {
-  if (_string_tables == NULL) {
+  if (_string_tables == nullptr) {
     _string_tables = table;
   } else {
     table->set_next(_string_tables);
@@ -341,11 +341,11 @@ void ElfFile::add_string_table(ElfStringTable* table) {
 
 ElfStringTable* ElfFile::get_string_table(int index) {
   ElfStringTable* p = _string_tables;
-  while (p != NULL) {
+  while (p != nullptr) {
     if (p->index() == index) return p;
     p = p->next();
   }
-  return NULL;
+  return nullptr;
 }
 
 // Use unified logging to report errors rather than assert() throughout this method as this code is already part of the error reporting
@@ -445,7 +445,7 @@ bool ElfFile::DwarfFilePath::set(const char* src) {
 }
 
 bool ElfFile::DwarfFilePath::set_after_last_slash(const char* src) {
-  char* last_slash = strrchr(_path, '/');
+  char* last_slash = strrchr(_path, *os::file_separator());
   if (last_slash == nullptr) {
     // Should always find a slash.
     return false;
@@ -763,6 +763,8 @@ bool DwarfFile::DebugAranges::read_set_header(DebugArangesSetHeader& header) {
     return false;
   }
 
+  _entry_end = _reader.get_position() + header._unit_length;
+
   if (!_reader.read_word(&header._version) || header._version != 2) {
     // DWARF 4 uses version 2 as specified in Appendix F of the DWARF 4 spec.
     DWARF_LOG_ERROR(".debug_aranges in unsupported DWARF version %" PRIu16, header._version)
@@ -803,7 +805,7 @@ bool DwarfFile::DebugAranges::read_address_descriptors(const DwarfFile::DebugAra
       found_matching_set = true;
       return true;
     }
-  } while (!is_terminating_entry(descriptor) && _reader.has_bytes_left());
+  } while (!is_terminating_entry(header, descriptor) && _reader.has_bytes_left());
 
   // Set does not match offset_in_library. Continue with next.
   return true;
@@ -819,8 +821,12 @@ bool DwarfFile::DebugAranges::does_match_offset(const uint32_t offset_in_library
          && offset_in_library < descriptor.beginning_address + descriptor.range_length;
 }
 
-bool DwarfFile::DebugAranges::is_terminating_entry(const AddressDescriptor& descriptor) {
-  return descriptor.beginning_address == 0 && descriptor.range_length == 0;
+bool DwarfFile::DebugAranges::is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
+                                                   const AddressDescriptor& descriptor) {
+  bool is_terminating = _reader.get_position() >= _entry_end;
+  assert(!is_terminating || (descriptor.beginning_address == 0 && descriptor.range_length == 0),
+         "a terminating entry needs a pair of zero");
+  return is_terminating;
 }
 
 // Find the .debug_line offset for the line number program by reading from the .debug_abbrev and .debug_info section.
@@ -1195,7 +1201,7 @@ bool DwarfFile::LineNumberProgram::read_header() {
     return false;
   }
 
-  if (!_reader.read_sbyte(&_header._line_base)) {
+  if (!_reader.read_byte(&_header._line_base)) {
     return false;
   }
 
@@ -1602,14 +1608,13 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
   _reader.set_position(_header._file_names_offset);
   uint32_t current_index = 1; // file_names start at index 1
   while (_reader.has_bytes_left()) {
-    if (!_reader.read_string(filename, filename_len)) {
-      // Either an error while reading or we have reached the end of the file_names. Both should not happen.
-      return false;
-    }
-
     if (current_index == file_index) {
       // Found correct file.
-      return true;
+      return read_filename(filename, filename_len);
+    } else if (!_reader.read_string()) { // We don't care about this filename string. Read and ignore it.
+      // Either an error while reading or we have reached the end of the file_names section before reaching the file_index.
+      // Both should not happen.
+      return false;
     }
 
     // We don't care about these values.
@@ -1622,6 +1627,64 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
   }
   DWARF_LOG_DEBUG("Did not find filename entry at index " UINT32_FORMAT " in .debug_line header", file_index);
   return false;
+}
+
+// Read the filename into the provided 'filename' buffer. If it does not fit, an alternative smaller tag will be emitted
+// in order to let the DWARF parser succeed. The line number with a function name will almost always be sufficient to get
+// to the actual source code location.
+bool DwarfFile::LineNumberProgram::read_filename(char* filename, const size_t filename_len) {
+  char next_char;
+  if (!_reader.read_non_null_char(&next_char)) {
+    // Either error while reading or read an empty string which indicates the end of the file_names section.
+    // Both should not happen.
+    return false;
+  }
+
+  filename[0] = next_char;
+  size_t index = 1;
+  bool overflow_filename = false; // Is the currently read filename overflowing the provided 'filename' buffer?
+  while (next_char != '\0' && _reader.has_bytes_left()) {
+    if (!_reader.read_byte(&next_char)) {
+      return false;
+    }
+    if (next_char == *os::file_separator()) {
+      // Skip file separator to get to the actual filename and reset the buffer and overflow flag. GCC does not emit
+      // file separators while Clang does.
+      index = 0;
+      overflow_filename = false;
+    } else if (index == filename_len) {
+      // Just keep reading as we could read another file separator and reset the buffer again. But don't bother to store
+      // the additionally read characters as it would not fit into the buffer anyway.
+      overflow_filename = true;
+    } else {
+      assert(!overflow_filename, "sanity check");
+      filename[index] = next_char;
+      index++;
+    }
+  }
+
+  if (overflow_filename) {
+    // 'filename' buffer overflow. Store either a generic overflow message or a minimal filename.
+    write_filename_for_overflow(filename, filename_len);
+  }
+  return true;
+}
+
+// Try to write a generic overflow message to the provided buffer. If it does not fit, store the minimal filename "L"
+// which always fits to get the source information in the form "L:line_number".
+void DwarfFile::LineNumberProgram::write_filename_for_overflow(char* filename, const size_t filename_len) {
+  DWARF_LOG_ERROR("DWARF filename string is too large to fit into the provided buffer of size %zu.", filename_len);
+  const size_t filename_overflow_message_length = strlen(overflow_filename) + 1;
+  if (filename_overflow_message_length <= filename_len) {
+    jio_snprintf(filename, filename_overflow_message_length, "%s", overflow_filename);
+    DWARF_LOG_ERROR("Use overflow filename: %s", overflow_filename);
+  } else {
+    // Buffer too small of generic overflow message.
+    DWARF_LOG_ERROR("Too small for overflow filename, use minimal filename: %c", minimal_overflow_filename);
+    assert(filename_len > 1, "sanity check");
+    filename[0] = minimal_overflow_filename;
+    filename[1] = '\0';
+  }
 }
 
 void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {
@@ -1694,12 +1757,7 @@ bool DwarfFile::MarkedDwarfFileReader::move_position(const long offset) {
   return set_position(_current_pos + offset);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_sbyte(int8_t* result) {
-  _current_pos++;
-  return read(result, 1);
-}
-
-bool DwarfFile::MarkedDwarfFileReader::read_byte(uint8_t* result) {
+bool DwarfFile::MarkedDwarfFileReader::read_byte(void* result) {
   _current_pos++;
   return read(result, 1);
 }
@@ -1768,13 +1826,8 @@ bool DwarfFile::MarkedDwarfFileReader::read_sleb128(int64_t* result, const int8_
 
 // If result is a nullptr, we do not care about the content of the string being read.
 bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t result_len) {
-  uint8_t next_byte;
-  if (!read_byte(&next_byte)) {
-    return false;
-  }
-
-  if (next_byte == 0) {
-    // Strings must contain at least one non-null byte.
+  char first_char;
+  if (!read_non_null_char(&first_char)) {
     return false;
   }
 
@@ -1783,9 +1836,10 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
       // Strings must contain at least one non-null byte and a null byte terminator.
       return false;
     }
-    result[0] = (char)next_byte;
+    result[0] = first_char;
   }
 
+  uint8_t next_byte;
   size_t char_index = 1;
   bool exceeded_buffer = false;
   while (has_bytes_left()) {
@@ -1813,6 +1867,13 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
     }
   }
   return false;
+}
+
+bool DwarfFile::MarkedDwarfFileReader::read_non_null_char(char* result) {
+  if (!read_byte(result)) {
+    return false;
+  }
+  return *result != '\0';
 }
 
 #endif // !_WINDOWS && !__APPLE__

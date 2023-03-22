@@ -24,7 +24,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="h" draft="contributed">h a</dateFormatItem>
+						<dateFormatItem id="h" draft="contributed">h a</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>

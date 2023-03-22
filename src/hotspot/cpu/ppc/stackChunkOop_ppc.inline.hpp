@@ -25,12 +25,18 @@
 #ifndef CPU_PPC_STACKCHUNKOOP_PPC_INLINE_HPP
 #define CPU_PPC_STACKCHUNKOOP_PPC_INLINE_HPP
 
+#include "runtime/frame.inline.hpp"
+
 inline void stackChunkOopDesc::relativize_frame_pd(frame& fr) const {
-  Unimplemented();
+  if (fr.is_interpreted_frame()) {
+    fr.set_offset_fp(relativize_address(fr.fp()));
+  }
 }
 
 inline void stackChunkOopDesc::derelativize_frame_pd(frame& fr) const {
-  Unimplemented();
+  if (fr.is_interpreted_frame()) {
+    fr.set_fp(derelativize_address(fr.offset_fp()));
+  }
 }
 
 #endif // CPU_PPC_STACKCHUNKOOP_PPC_INLINE_HPP

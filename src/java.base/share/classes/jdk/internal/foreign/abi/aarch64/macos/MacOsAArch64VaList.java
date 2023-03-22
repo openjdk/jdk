@@ -25,10 +25,15 @@
  */
 package jdk.internal.foreign.abi.aarch64.macos;
 
-import java.lang.foreign.*;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.VaList;
+import java.lang.foreign.ValueLayout;
 import jdk.internal.foreign.abi.aarch64.TypeClass;
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
 
@@ -45,21 +50,19 @@ import static jdk.internal.foreign.abi.SharedUtils.alignUp;
  * parameters are passed on the stack and the type of va_list decays to
  * char* instead of the structure defined in the AAPCS.
  */
-public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
+public non-sealed class MacOsAArch64VaList implements VaList {
     private static final long VA_SLOT_SIZE_BYTES = 8;
     private static final VarHandle VH_address = C_POINTER.varHandle();
 
-    private static final VaList EMPTY = new SharedUtils.EmptyVaList(MemoryAddress.NULL);
+    private static final VaList EMPTY = new SharedUtils.EmptyVaList(MemorySegment.NULL);
 
     private MemorySegment segment;
-    private final MemorySession session;
 
-    private MacOsAArch64VaList(MemorySegment segment, MemorySession session) {
+    private MacOsAArch64VaList(MemorySegment segment) {
         this.segment = segment;
-        this.session = session;
     }
 
-    public static final VaList empty() {
+    public static VaList empty() {
         return EMPTY;
     }
 
@@ -79,8 +82,8 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
     }
 
     @Override
-    public MemoryAddress nextVarg(ValueLayout.OfAddress layout) {
-        return (MemoryAddress) read(layout);
+    public MemorySegment nextVarg(ValueLayout.OfAddress layout) {
+        return (MemorySegment) read(layout);
     }
 
     @Override
@@ -101,8 +104,8 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
             res = switch (typeClass) {
                 case STRUCT_REFERENCE -> {
                     checkElement(layout, VA_SLOT_SIZE_BYTES);
-                    MemoryAddress structAddr = (MemoryAddress) VH_address.get(segment);
-                    MemorySegment struct = MemorySegment.ofAddress(structAddr, layout.byteSize(), session());
+                    MemorySegment structAddr = (MemorySegment) VH_address.get(segment);
+                    MemorySegment struct = MemorySegment.ofAddress(structAddr.address(), layout.byteSize(), segment.scope());
                     MemorySegment seg = allocator.allocate(layout);
                     seg.copyFrom(struct);
                     segment = segment.asSlice(VA_SLOT_SIZE_BYTES);
@@ -137,7 +140,7 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        sessionImpl().checkValidState();
+        ((MemorySessionImpl) segment.scope()).checkValidState();
 
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
@@ -153,38 +156,34 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
         }
     }
 
-    static MacOsAArch64VaList ofAddress(MemoryAddress addr, MemorySession session) {
-        MemorySegment segment = MemorySegment.ofAddress(addr, Long.MAX_VALUE, session);
-        return new MacOsAArch64VaList(segment, session);
+    static MacOsAArch64VaList ofAddress(long address, SegmentScope session) {
+        MemorySegment segment = MemorySegment.ofAddress(address, Long.MAX_VALUE, session);
+        return new MacOsAArch64VaList(segment);
     }
 
-    static Builder builder(MemorySession session) {
+    static Builder builder(SegmentScope session) {
         return new Builder(session);
     }
 
     @Override
-    public MemorySession session() {
-        return session;
-    }
-
-    @Override
     public VaList copy() {
-        sessionImpl().checkValidState();
-        return new MacOsAArch64VaList(segment, session);
+        ((MemorySessionImpl) segment.scope()).checkValidState();
+        return new MacOsAArch64VaList(segment);
     }
 
     @Override
-    public MemoryAddress address() {
-        return segment.address();
+    public MemorySegment segment() {
+        // make sure that returned segment cannot be accessed
+        return segment.asSlice(0, 0);
     }
 
     public static non-sealed class Builder implements VaList.Builder {
 
-        private final MemorySession session;
+        private final SegmentScope session;
         private final List<SimpleVaArg> args = new ArrayList<>();
 
-        public Builder(MemorySession session) {
-            MemorySessionImpl.toSessionImpl(session).checkValidState();
+        public Builder(SegmentScope session) {
+            ((MemorySessionImpl) session).checkValidState();
             this.session = session;
         }
 
@@ -211,8 +210,8 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
         }
 
         @Override
-        public Builder addVarg(ValueLayout.OfAddress layout, Addressable value) {
-            return arg(layout, value.address());
+        public Builder addVarg(ValueLayout.OfAddress layout, MemorySegment value) {
+            return arg(layout, value);
         }
 
         @Override
@@ -225,10 +224,8 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
                 return EMPTY;
             }
 
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
-
             long allocationSize = args.stream().reduce(0L, (acc, e) -> acc + sizeOf(e.layout), Long::sum);
-            MemorySegment segment = allocator.allocate(allocationSize);
+            MemorySegment segment = MemorySegment.allocateNative(allocationSize, session);
             MemorySegment cursor = segment;
 
             for (SimpleVaArg arg : args) {
@@ -237,9 +234,9 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
                     TypeClass typeClass = TypeClass.classifyLayout(arg.layout);
                     switch (typeClass) {
                         case STRUCT_REFERENCE -> {
-                            MemorySegment copy = allocator.allocate(arg.layout);
+                            MemorySegment copy = MemorySegment.allocateNative(arg.layout, session);
                             copy.copyFrom(msArg); // by-value
-                            VH_address.set(cursor, copy.address());
+                            VH_address.set(cursor, copy);
                             cursor = cursor.asSlice(VA_SLOT_SIZE_BYTES);
                         }
                         case STRUCT_REGISTER, STRUCT_HFA ->
@@ -254,7 +251,7 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
                 }
             }
 
-            return new MacOsAArch64VaList(segment, session);
+            return new MacOsAArch64VaList(segment);
         }
     }
 }

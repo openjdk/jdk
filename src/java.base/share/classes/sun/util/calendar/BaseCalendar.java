@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,10 +307,6 @@ public abstract class BaseCalendar extends AbstractCalendar {
         return isLeapYear(((Date)date).getNormalizedYear()) ? 366 : 365;
     }
 
-    public int getYearLengthInMonths(CalendarDate date) {
-        return 12;
-    }
-
     static final int[] DAYS_IN_MONTH
         //  12   1   2   3   4   5   6   7   8   9  10  11  12
         = { 31, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -494,7 +490,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
      */
     final int getGregorianYearFromFixedDate(long fixedDate) {
         long d0;
-        int  d1, d2, d3, d4;
+        int  d1, d2, d3;
         int  n400, n100, n4, n1;
         int  year;
 
@@ -507,7 +503,6 @@ public abstract class BaseCalendar extends AbstractCalendar {
             n4 = d2 / 1461;
             d3 = d2 % 1461;
             n1 = d3 / 365;
-            d4 = (d3 % 365) + 1;
         } else {
             d0 = fixedDate - 1;
             n400 = (int)CalendarUtils.floorDivide(d0, 146097L);
@@ -517,7 +512,6 @@ public abstract class BaseCalendar extends AbstractCalendar {
             n4 = CalendarUtils.floorDivide(d2, 1461);
             d3 = CalendarUtils.mod(d2, 1461);
             n1 = CalendarUtils.floorDivide(d3, 365);
-            d4 = CalendarUtils.mod(d3, 365) + 1;
         }
         year = 400 * n400 + 100 * n100 + 4 * n4 + n1;
         if (!(n100 == 4 || n1 == 4)) {
@@ -529,7 +523,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
     /**
      * @return true if the specified year is a Gregorian leap year, or
      * false otherwise.
-     * @see BaseCalendar#isGregorianLeapYear
+     * @see CalendarUtils#isGregorianLeapYear
      */
     protected boolean isLeapYear(CalendarDate date) {
         return isLeapYear(((Date)date).getNormalizedYear());

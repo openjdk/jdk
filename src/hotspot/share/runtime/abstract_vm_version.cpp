@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "compiler/compilerDefinitions.hpp"
+#include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -161,13 +161,6 @@ const char* Abstract_VM_Version::vm_release() {
   return VM_RELEASE;
 }
 
-// NOTE: do *not* use stringStream. this function is called by
-//       fatal error handlers. if the crash is in native thread,
-//       stringStream cannot get resource allocated and will SEGV.
-const char* Abstract_VM_Version::jre_release_version() {
-  return VERSION_STRING;
-}
-
 #define OS       LINUX_ONLY("linux")             \
                  WINDOWS_ONLY("windows")         \
                  AIX_ONLY("aix")                 \
@@ -203,11 +196,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
-      #if _MSC_VER == 1800
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 12.0 (VS2013)"
-      #elif _MSC_VER == 1900
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 14.0 (VS2015)"
-      #elif _MSC_VER == 1911
+      #if _MSC_VER == 1911
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 15.3 (VS2017)"
       #elif _MSC_VER == 1912
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 15.5 (VS2017)"
@@ -243,6 +232,10 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.0 (VS2022)"
       #elif _MSC_VER == 1931
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.1 (VS2022)"
+      #elif _MSC_VER == 1932
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.2 (VS2022)"
+      #elif _MSC_VER == 1933
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.3 (VS2022)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
@@ -281,10 +274,6 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
       : VMNAME " (" DEBUG_LEVEL " " INTERNAL_VERSION_SUFFIX;
 }
 
-const char *Abstract_VM_Version::vm_build_user() {
-  return HOTSPOT_BUILD_USER;
-}
-
 const char *Abstract_VM_Version::jdk_debug_level() {
   return DEBUG_LEVEL;
 }
@@ -320,14 +309,14 @@ void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const 
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
   char line[500];
   FILE* fp = os::fopen(filename, "r");
-  if (fp == NULL) {
+  if (fp == nullptr) {
     return false;
   }
 
   st->print_cr("Virtualization information:");
-  while (fgets(line, sizeof(line), fp) != NULL) {
+  while (fgets(line, sizeof(line), fp) != nullptr) {
     int i = 0;
-    while (keywords_to_match[i] != NULL) {
+    while (keywords_to_match[i] != nullptr) {
       if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
         st->print("%s", line);
         break;
@@ -365,8 +354,8 @@ int Abstract_VM_Version::number_of_sockets(void) {
 const char* Abstract_VM_Version::cpu_name(void) {
   assert(_initialized, "should be initialized");
   char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_TYPE_DESC_BUF_SIZE, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
+  if (nullptr == tmp) {
+    return nullptr;
   }
   strncpy(tmp, _cpu_name, CPU_TYPE_DESC_BUF_SIZE);
   return tmp;
@@ -375,8 +364,8 @@ const char* Abstract_VM_Version::cpu_name(void) {
 const char* Abstract_VM_Version::cpu_description(void) {
   assert(_initialized, "should be initialized");
   char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_DETAILED_DESC_BUF_SIZE, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
+  if (nullptr == tmp) {
+    return nullptr;
   }
   strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
   return tmp;

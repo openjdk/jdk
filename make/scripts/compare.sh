@@ -42,6 +42,7 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
     LDD_CMD="$OTOOL -L"
     DIS_CMD="$OTOOL -v -V -t"
     STAT_PRINT_SIZE="-f %z"
+    STRIP="$STRIP -no_code_signature_warning"
 elif [ "$OPENJDK_TARGET_OS" = "windows" ]; then
     FULLDUMP_CMD="$DUMPBIN -all"
     LDD_CMD="$DUMPBIN -dependents"
@@ -674,14 +675,22 @@ compare_bin_file() {
     ORIG_THIS_FILE="$THIS_FILE"
     ORIG_OTHER_FILE="$OTHER_FILE"
 
-    if [ "$STRIP_ALL" = "true" ] || [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]]; then
+    if [ "$STRIP_ALL" = "true" ] || [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]] \
+           || [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
         THIS_STRIPPED_FILE=$FILE_WORK_DIR/this/$NAME
         OTHER_STRIPPED_FILE=$FILE_WORK_DIR/other/$NAME
         $MKDIR -p $FILE_WORK_DIR/this $FILE_WORK_DIR/other
         $CP $THIS_FILE $THIS_STRIPPED_FILE
         $CP $OTHER_FILE $OTHER_STRIPPED_FILE
-        $STRIP $THIS_STRIPPED_FILE
-        $STRIP $OTHER_STRIPPED_FILE
+        if [ "$STRIP_ALL" = "true" ] || [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]]; then
+            $STRIP $THIS_STRIPPED_FILE
+            $STRIP $OTHER_STRIPPED_FILE
+        fi
+        # On macosx, always remove any signature before comparing
+        if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+            $CODESIGN --remove-signature $THIS_STRIPPED_FILE
+            $CODESIGN --remove-signature $OTHER_STRIPPED_FILE
+        fi
         THIS_FILE="$THIS_STRIPPED_FILE"
         OTHER_FILE="$OTHER_STRIPPED_FILE"
     fi

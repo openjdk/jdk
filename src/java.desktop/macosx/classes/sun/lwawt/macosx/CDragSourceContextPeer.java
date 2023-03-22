@@ -314,7 +314,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
     private void setDefaultDragImage(JList<?> component) {
         Rectangle selectedOutline = null;
 
-        // This code actually works, even under the (non-existant) multiple-selections, because we only draw a union outline
+        // This code actually works, even under the (non-existent) multiple-selections, because we only draw a union outline
         int[] selectedIndices = component.getSelectedIndices();
         if (selectedIndices.length > 0)
             selectedOutline = component.getCellBounds(selectedIndices[0], selectedIndices[selectedIndices.length-1]);

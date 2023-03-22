@@ -38,7 +38,7 @@ import sun.reflect.misc.ReflectUtil;
 /**
  * A class that holds a list of EventListeners.  A single instance
  * can be used to hold all listeners (of all types) for the instance
- * using the list.  It is the responsiblity of the class using the
+ * using the list.  It is the responsibility of the class using the
  * EventListenerList to provide type-safe API (preferably conforming
  * to the JavaBeans spec) and methods which dispatch event notification
  * methods to appropriate Event Listeners on the list.

@@ -117,7 +117,7 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  * A collection of utility methods for Swing.
  * <p>
  * <b>WARNING:</b> While this class is public, it should not be treated as
- * public API and its API may change in incompatable ways between dot dot
+ * public API and its API may change in incompatible ways between dot dot
  * releases and even patch releases. You should not rely on this class even
  * existing.
  *
@@ -1516,7 +1516,7 @@ public class SwingUtilities2 {
     }
 
     /**
-     * Returns true if the given event is corrent gesture for
+     * Returns true if the given event is current gesture for
      * accessing clipboard
      *
      * @param ie InputEvent to check
@@ -1564,7 +1564,7 @@ public class SwingUtilities2 {
         if (EventQueue.isDispatchThread()) {
             /*
              * Checking event permissions makes sense only for event
-             * dispathing thread
+             * dispatching thread
              */
             if (e instanceof InputEvent
                 && (! checkGesture || isAccessClipboardGesture((InputEvent)e))) {
@@ -1779,7 +1779,7 @@ public class SwingUtilities2 {
 
     /**
      * Returns an integer from the defaults table. If {@code key} does
-     * not map to a valid {@code Integer}, or can not be convered from
+     * not map to a valid {@code Integer}, or cannot be converted from
      * a {@code String} to an integer, the value 0 is returned.
      *
      * @param key  an {@code Object} specifying the int.
@@ -1792,7 +1792,7 @@ public class SwingUtilities2 {
     /**
      * Returns an integer from the defaults table that is appropriate
      * for the given locale. If {@code key} does not map to a valid
-     * {@code Integer}, or can not be convered from a {@code String}
+     * {@code Integer}, or cannot be converted from a {@code String}
      * to an integer, the value 0 is returned.
      *
      * @param key  an {@code Object} specifying the int. Returned value
@@ -1806,7 +1806,7 @@ public class SwingUtilities2 {
 
     /**
      * Returns an integer from the defaults table. If {@code key} does
-     * not map to a valid {@code Integer}, or can not be convered from
+     * not map to a valid {@code Integer}, or can not be converted from
      * a {@code String} to an integer, {@code default} is
      * returned.
      *
@@ -1823,7 +1823,7 @@ public class SwingUtilities2 {
     /**
      * Returns an integer from the defaults table that is appropriate
      * for the given locale. If {@code key} does not map to a valid
-     * {@code Integer}, or can not be convered from a {@code String}
+     * {@code Integer}, or can not be converted from a {@code String}
      * to an integer, {@code default} is returned.
      *
      * @param key  an {@code Object} specifying the int. Returned value
@@ -2206,7 +2206,7 @@ public class SwingUtilities2 {
      * Returns the {@link TreePath} that identifies the changed nodes.
      *
      * @param event  changes in a tree model
-     * @param model  corresponing tree model
+     * @param model  corresponding tree model
      * @return  the path to the changed nodes
      */
     public static TreePath getTreePath(TreeModelEvent event, TreeModel model) {
@@ -2278,11 +2278,11 @@ public class SwingUtilities2 {
 
     /**
      * Returns the client property for the given key if it is set; otherwise
-     * returns the {@L&F} property.
+     * returns the {@literal L&F} property.
      *
      * @param component the component
      * @param key an {@code String} specifying the key for the desired boolean value
-     * @return the boolean value of the client property if it is set or the {@L&F}
+     * @return the boolean value of the client property if it is set or the {@literal L&F}
      *         property in other case.
      */
     public static boolean getBoolean(JComponent component, String key) {

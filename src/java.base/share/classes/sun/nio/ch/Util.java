@@ -502,19 +502,18 @@ public class Util {
         return dbb;
     }
 
-    static void checkBufferPositionAligned(ByteBuffer bb,
-                                                     int pos, int alignment)
+    static void checkBufferPositionAligned(ByteBuffer bb, int pos, int alignment)
         throws IOException
     {
-        if (bb.alignmentOffset(pos, alignment) != 0) {
-            throw new IOException("Current location of the bytebuffer ("
+        final int alignmentOffset = bb.alignmentOffset(pos, alignment);
+        if (alignmentOffset != 0) {
+            throw new IOException("Current position of the bytebuffer ("
                 + pos + ") is not a multiple of the block size ("
-                + alignment + ")");
+                + alignment + "): alignment offset = " + alignmentOffset);
         }
     }
 
-    static void checkRemainingBufferSizeAligned(int rem,
-                                                          int alignment)
+    static void checkRemainingBufferSizeAligned(int rem, int alignment)
         throws IOException
     {
         if (rem % alignment != 0) {
@@ -524,8 +523,7 @@ public class Util {
         }
     }
 
-    static void checkChannelPositionAligned(long position,
-                                                      int alignment)
+    static void checkChannelPositionAligned(long position, int alignment)
         throws IOException
     {
         if (position % alignment != 0) {

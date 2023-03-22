@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class FileOutputStream extends OutputStream
     /**
      * Access to FileDescriptor internals.
      */
-    private static final JavaIOFileDescriptorAccess fdAccess =
+    private static final JavaIOFileDescriptorAccess FD_ACCESS =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     /**
@@ -316,7 +316,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(int b) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             write(b, append);
@@ -346,7 +346,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             writeBytes(b, 0, b.length, append);
@@ -363,10 +363,11 @@ public class FileOutputStream extends OutputStream
      * @param      off   {@inheritDoc}
      * @param      len   {@inheritDoc}
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             writeBytes(b, off, len, append);

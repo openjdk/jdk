@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@ package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.VM;
 import sun.security.action.GetPropertyAction;
 
+import java.lang.reflect.ClassFileFormatVersion;
 import java.util.Properties;
 
 import static java.lang.invoke.LambdaForm.basicTypeSignature;
@@ -47,8 +47,7 @@ class MethodHandleStatics {
     private MethodHandleStatics() { }  // do not instantiate
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    static final int CLASSFILE_VERSION = VM.classFileVersion();
-
+    static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
     static final boolean DEBUG_METHOD_HANDLE_NAMES;
     static final boolean DUMP_CLASS_FILES;
     static final boolean TRACE_INTERPRETER;

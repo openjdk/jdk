@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,6 +78,8 @@ class zarch {
   static address _trot_table_addr;
   static jlong   _trot_table[TROT_COLUMN_SIZE];
 
+  static address _nmethod_entry_barrier;
+
  public:
   // Global lock for everyone who needs to use atomic_compare_and_exchange
   // or atomic_increment -- should probably use more locks for more
@@ -98,6 +100,8 @@ class zarch {
 
   // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
   static void generate_load_trot_table_addr(MacroAssembler* masm, Register table);
+
+  static address nmethod_entry_barrier() { return _nmethod_entry_barrier; }
 };
 
 #endif // CPU_S390_STUBROUTINES_S390_HPP

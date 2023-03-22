@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,23 @@
  * @test
  * @summary Test virtual threads using Object.wait/notifyAll
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} WaitNotify.java
- * @run testng/othervm --enable-preview WaitNotify
+ * @enablePreview
+ * @run junit WaitNotify
  */
 
 import java.util.concurrent.Semaphore;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class WaitNotify {
+class WaitNotify {
 
     /**
      * Test virtual thread waits, notified by platform thread.
      */
     @Test
-    public void testWaitNotify1() throws Exception {
+    void testWaitNotify1() throws Exception {
         var lock = new Object();
         var ready = new Semaphore(0);
         var thread = Thread.ofVirtual().start(() -> {
@@ -64,7 +64,7 @@ public class WaitNotify {
      * Test platform thread waits, notified by virtual thread.
      */
     @Test
-    public void testWaitNotify2() throws Exception {
+    void testWaitNotify2() throws Exception {
         var lock = new Object();
         var ready = new Semaphore(0);
         var thread = Thread.ofVirtual().start(() -> {
@@ -84,7 +84,7 @@ public class WaitNotify {
      * Test virtual thread waits, notified by another virtual thread.
      */
     @Test
-    public void testWaitNotify3() throws Exception {
+    void testWaitNotify3() throws Exception {
         var lock = new Object();
         var ready = new Semaphore(0);
         var thread1 = Thread.ofVirtual().start(() -> {
@@ -109,7 +109,7 @@ public class WaitNotify {
      * Test interrupt status set when calling Object.wait.
      */
     @Test
-    public void testWaitNotify4() throws Exception {
+    void testWaitNotify4() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
@@ -130,7 +130,7 @@ public class WaitNotify {
      * Test interrupt when blocked in Object.wait.
      */
     @Test
-    public void testWaitNotify5() throws Exception {
+    void testWaitNotify5() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             scheduleInterrupt(t, 1000);

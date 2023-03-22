@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,12 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g"
+    # -gdwarf-4 and -gdwarf-aranges were introduced in clang 5.0
+    GDWARF_FLAGS="-gdwarf-4 -gdwarf-aranges"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
+        IF_FALSE: [GDWARF_FLAGS=""])
+
+    CFLAGS_DEBUG_SYMBOLS="-g ${GDWARF_FLAGS}"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g1"
@@ -184,6 +189,10 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
       DISABLED_WARNINGS="unused-parameter unused"
+      # gcc10/11 on ppc generate lots of abi warnings about layout of aggregates containing vectors
+      if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
+        DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
+      fi
       ;;
 
     clang)
@@ -471,8 +480,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
         -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
     ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE \
-        -D_WINSOCK_DEPRECATED_NO_WARNINGS"
+        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE"
   fi
 
   ###############################################################################
@@ -527,7 +535,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # Suggested additions: -qsrcmsg to get improved error reporting
     # set -qtbtable=full for a better traceback table/better stacks in hs_err when xlc16 is used
     TOOLCHAIN_CFLAGS_JDK="-qtbtable=full -qchars=signed -qfullpath -qsaveopt -qstackprotect"  # add on both CFLAGS
-    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced \
+    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced -fno-exceptions \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -MP"

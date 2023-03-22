@@ -533,7 +533,7 @@ void AwtDesktopProperties::GetColorParameters() {
 }
 
 void AwtDesktopProperties::GetOtherParameters() {
-    // TODO BEGIN: On NT4, some setttings don't trigger WM_SETTINGCHANGE --
+    // TODO BEGIN: On NT4, some settings don't trigger WM_SETTINGCHANGE --
     // check whether this has been fixed on Windows 2000 and Windows 98
     // ECH 10/6/2000 seems to be fixed on NT4 SP5, but not on 98
     SetBooleanProperty(TEXT("win.frame.fullWindowDragsOn"), GetBooleanParameter(SPI_GETDRAGFULLWINDOWS));

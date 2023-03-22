@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /**
  * @test
  * @summary Unit test for Thread.Builder
- * @compile --enable-preview -source ${jdk.version} BuilderTest.java
- * @run testng/othervm --enable-preview BuilderTest
+ * @enablePreview
+ * @run junit BuilderTest
  */
 
 import java.util.concurrent.*;
@@ -33,17 +33,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
-import org.testng.SkipException;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
-public class BuilderTest {
+class BuilderTest {
 
     /**
      * Test Thread.ofPlatform to create platform threads.
      */
     @Test
-    public void testPlatformThread() throws Exception {
+    void testPlatformThread() throws Exception {
         Thread parent = Thread.currentThread();
         Thread.Builder.OfPlatform builder = Thread.ofPlatform();
 
@@ -94,7 +94,7 @@ public class BuilderTest {
      * Test Thread.ofVirtual to create virtual threads.
      */
     @Test
-    public void testVirtualThread() throws Exception {
+    void testVirtualThread() throws Exception {
         Thread parent = Thread.currentThread();
         Thread.Builder.OfVirtual builder = Thread.ofVirtual();
 
@@ -141,7 +141,7 @@ public class BuilderTest {
      * Test Thread.Builder.name.
      */
     @Test
-    public void testName1() {
+    void testName1() {
         Thread.Builder builder = Thread.ofPlatform().name("duke");
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -154,7 +154,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testName2() {
+    void testName2() {
         Thread.Builder builder = Thread.ofVirtual().name("duke");
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -167,7 +167,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testName3() {
+    void testName3() {
         Thread.Builder builder = Thread.ofPlatform().name("duke-", 100);
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -189,7 +189,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testName4() {
+    void testName4() {
         Thread.Builder builder = Thread.ofVirtual().name("duke-", 100);
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -214,7 +214,7 @@ public class BuilderTest {
      * Test Thread.Builder.OfPlatform.group.
      */
     @Test
-    public void testThreadGroup1() {
+    void testThreadGroup1() {
         ThreadGroup group = new ThreadGroup("groupies");
         Thread.Builder builder = Thread.ofPlatform().group(group);
 
@@ -240,9 +240,9 @@ public class BuilderTest {
     }
 
     @Test
-    public void testThreadGroup2() {
+    void testThreadGroup2() {
         ThreadGroup vgroup = Thread.ofVirtual().unstarted(() -> { }).getThreadGroup();
-        assertEquals(vgroup.getName(), "VirtualThreads");
+        assertEquals("VirtualThreads", vgroup.getName());
 
         Thread thread1 = Thread.ofVirtual().unstarted(() -> { });
         Thread thread2 = Thread.ofVirtual().start(LockSupport::park);
@@ -261,7 +261,7 @@ public class BuilderTest {
      * Test Thread.Builder.OfPlatform.priority.
      */
     @Test
-    public void testPriority1() {
+    void testPriority1() {
         int priority = Thread.currentThread().getPriority();
 
         Thread.Builder builder = Thread.ofPlatform();
@@ -275,7 +275,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testPriority2() {
+    void testPriority2() {
         int priority = Thread.MIN_PRIORITY;
 
         Thread.Builder builder = Thread.ofPlatform().priority(priority);
@@ -289,10 +289,9 @@ public class BuilderTest {
     }
 
     @Test
-    public void testPriority3() {
+    void testPriority3() {
         Thread currentThread = Thread.currentThread();
-        if (currentThread.isVirtual())
-            throw new SkipException("Main test is a virtual thread");
+        assumeFalse(currentThread.isVirtual(), "Main thread is a virtual thread");
 
         int maxPriority = currentThread.getThreadGroup().getMaxPriority();
         int priority = Math.min(maxPriority + 1, Thread.MAX_PRIORITY);
@@ -308,14 +307,14 @@ public class BuilderTest {
     }
 
     @Test
-    public void testPriority4() {
+    void testPriority4() {
         var builder = Thread.ofPlatform();
         assertThrows(IllegalArgumentException.class,
                      () -> builder.priority(Thread.MIN_PRIORITY - 1));
     }
 
     @Test
-    public void testPriority5() {
+    void testPriority5() {
         var builder = Thread.ofPlatform();
         assertThrows(IllegalArgumentException.class,
                      () -> builder.priority(Thread.MAX_PRIORITY + 1));
@@ -325,7 +324,7 @@ public class BuilderTest {
      * Test Thread.Builder.OfPlatform.daemon.
      */
     @Test
-    public void testDaemon1() {
+    void testDaemon1() {
         Thread.Builder builder = Thread.ofPlatform().daemon(false);
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -338,7 +337,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testDaemon2() {
+    void testDaemon2() {
         Thread.Builder builder = Thread.ofPlatform().daemon(true);
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -351,7 +350,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testDaemon3() {
+    void testDaemon3() {
         Thread.Builder builder = Thread.ofPlatform().daemon();
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -364,7 +363,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testDaemon4() {
+    void testDaemon4() {
         Thread.Builder builder = Thread.ofPlatform();
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -382,7 +381,7 @@ public class BuilderTest {
      * Test Thread.ofVirtual creates daemon threads.
      */
     @Test
-    public void testDaemon5() {
+    void testDaemon5() {
         Thread.Builder builder = Thread.ofVirtual();
 
         Thread thread1 = builder.unstarted(() -> { });
@@ -399,7 +398,7 @@ public class BuilderTest {
      * Test Thread.Builder.OfPlatform.stackSize.
      */
     @Test
-    public void testStackSize1() {
+    void testStackSize1() {
         Thread.Builder builder = Thread.ofPlatform().stackSize(1024*1024);
         Thread thread1 = builder.unstarted(() -> { });
         Thread thread2 = builder.start(() -> { });
@@ -407,7 +406,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testStackSize2() {
+    void testStackSize2() {
         Thread.Builder builder = Thread.ofPlatform().stackSize(0);
         Thread thread1 = builder.unstarted(() -> { });
         Thread thread2 = builder.start(() -> { });
@@ -415,7 +414,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testStackSize3() {
+    void testStackSize3() {
         var builder = Thread.ofPlatform();
         assertThrows(IllegalArgumentException.class, () -> builder.stackSize(-1));
     }
@@ -424,7 +423,7 @@ public class BuilderTest {
      * Test Thread.Builder.uncaughtExceptionHandler.
      */
     @Test
-    public void testUncaughtExceptionHandler1() throws Exception {
+    void testUncaughtExceptionHandler1() throws Exception {
         class FooException extends RuntimeException { }
         AtomicReference<Thread> threadRef = new AtomicReference<>();
         AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
@@ -441,7 +440,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testUncaughtExceptionHandler2() throws Exception {
+    void testUncaughtExceptionHandler2() throws Exception {
         class FooException extends RuntimeException { }
         AtomicReference<Thread> threadRef = new AtomicReference<>();
         AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
@@ -458,7 +457,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testUncaughtExceptionHandler3() throws Exception {
+    void testUncaughtExceptionHandler3() throws Exception {
         class FooException extends RuntimeException { }
         AtomicReference<Thread> threadRef = new AtomicReference<>();
         AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
@@ -477,7 +476,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testUncaughtExceptionHandler4() throws Exception {
+    void testUncaughtExceptionHandler4() throws Exception {
         class FooException extends RuntimeException { }
         AtomicReference<Thread> threadRef = new AtomicReference<>();
         AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
@@ -563,13 +562,13 @@ public class BuilderTest {
      * Test Thread.Builder creates threads that allow thread locals.
      */
     @Test
-    public void testThreadLocals1() throws Exception {
+    void testThreadLocals1() throws Exception {
         Thread.Builder builder = Thread.ofPlatform();
         testThreadLocals(builder);
     }
 
     @Test
-    public void testThreadLocals2() throws Exception {
+    void testThreadLocals2() throws Exception {
         Thread.Builder builder = Thread.ofVirtual();
         testThreadLocals(builder);
     }
@@ -579,7 +578,7 @@ public class BuilderTest {
      * thread locals.
      */
     @Test
-    public void testThreadLocals3() throws Exception {
+    void testThreadLocals3() throws Exception {
         Thread.Builder builder = Thread.ofPlatform();
 
         // disallow
@@ -592,7 +591,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testThreadLocals4() throws Exception {
+    void testThreadLocals4() throws Exception {
         Thread.Builder builder = Thread.ofVirtual();
 
         // disallow
@@ -646,7 +645,7 @@ public class BuilderTest {
 
         AtomicBoolean done = new AtomicBoolean();
         Runnable task = () -> {
-            assertTrue(INHERITED_LOCAL.get() == null);
+            assertNull(INHERITED_LOCAL.get());
             done.set(true);
         };
 
@@ -673,7 +672,7 @@ public class BuilderTest {
      * the initial values of inheritable thread locals.
      */
     @Test
-    public void testInheritedThreadLocals1() throws Exception {
+    void testInheritedThreadLocals1() throws Exception {
         Thread.Builder builder = Thread.ofPlatform();
         testInheritedThreadLocals(builder); // default
 
@@ -687,7 +686,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testInheritedThreadLocals2() throws Exception {
+    void testInheritedThreadLocals2() throws Exception {
         Thread.Builder builder = Thread.ofVirtual();
         testInheritedThreadLocals(builder); // default
 
@@ -701,7 +700,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testInheritedThreadLocals3() throws Exception {
+    void testInheritedThreadLocals3() throws Exception {
         Thread.Builder builder = Thread.ofPlatform();
 
         // thread locals not allowed
@@ -721,7 +720,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testInheritedThreadLocals4() throws Exception {
+    void testInheritedThreadLocals4() throws Exception {
         Thread.Builder builder = Thread.ofVirtual();
 
         // thread locals not allowed
@@ -824,7 +823,7 @@ public class BuilderTest {
      * the thread context class loader.
      */
     @Test
-    public void testContextClassLoader1() throws Exception {
+    void testContextClassLoader1() throws Exception {
         Thread.Builder builder = Thread.ofPlatform();
         testInheritContextClassLoader(builder); // default
 
@@ -838,7 +837,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testContextClassLoader2() throws Exception {
+    void testContextClassLoader2() throws Exception {
         Thread.Builder builder = Thread.ofVirtual();
         testInheritContextClassLoader(builder); // default
 
@@ -852,7 +851,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testContextClassLoader3() throws Exception {
+    void testContextClassLoader3() throws Exception {
         Thread.Builder builder = Thread.ofPlatform();
 
         // thread locals not allowed
@@ -872,7 +871,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testContextClassLoader4() throws Exception {
+    void testContextClassLoader4() throws Exception {
         Thread.Builder builder = Thread.ofVirtual();
 
         // thread locals not allowed
@@ -895,7 +894,7 @@ public class BuilderTest {
      * Test NullPointerException.
      */
     @Test
-    public void testNulls1() {
+    void testNulls1() {
         Thread.Builder.OfPlatform builder = Thread.ofPlatform();
         assertThrows(NullPointerException.class, () -> builder.group(null));
         assertThrows(NullPointerException.class, () -> builder.name(null));
@@ -906,7 +905,7 @@ public class BuilderTest {
     }
 
     @Test
-    public void testNulls2() {
+    void testNulls2() {
         Thread.Builder builder = Thread.ofVirtual();
         assertThrows(NullPointerException.class, () -> builder.name(null));
         assertThrows(NullPointerException.class, () -> builder.name(null, 0));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,9 +99,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      */
     public abstract TableHeader getSummaryTableHeader(Element member);
 
-    private Table summaryTable;
+    private Table<Element> summaryTable;
 
-    private Table getSummaryTable() {
+    private Table<Element> getSummaryTable() {
         if (summaryTable == null) {
             summaryTable = createSummaryTable();
         }
@@ -116,7 +116,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      *
      * @return the summary table
      */
-    protected abstract Table createSummaryTable();
+    protected abstract Table<Element> createSummaryTable();
 
     /**
      * Adds inherited summary label for the member.
@@ -142,7 +142,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param content     the content to which the link will be added
      */
     protected void addSummaryLink(TypeElement typeElement, Element member, Content content) {
-        addSummaryLink(HtmlLinkInfo.Kind.MEMBER, typeElement, member, content);
+        addSummaryLink(HtmlLinkInfo.Kind.PLAIN, typeElement, member, content);
     }
 
     /**
@@ -212,7 +212,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             }
             code.add(
                     writer.getLink(new HtmlLinkInfo(configuration,
-                            HtmlLinkInfo.Kind.SUMMARY_RETURN_TYPE, type)));
+                            HtmlLinkInfo.Kind.LINK_TYPE_PARAMS, type)));
         }
         target.add(code);
     }
@@ -300,7 +300,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             return;
         }
         boolean printedUseTableHeader = false;
-        Table useTable = new Table(HtmlStyle.summaryTable)
+        var useTable = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(heading)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
         for (Element element : members) {
@@ -323,8 +323,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 typeContent.add(name);
             }
             addSummaryLink(utils.isClass(element) || utils.isPlainInterface(element)
-                    ? HtmlLinkInfo.Kind.CLASS_USE
-                    : HtmlLinkInfo.Kind.MEMBER,
+                    ? HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS
+                    : HtmlLinkInfo.Kind.PLAIN,
                     te, element, typeContent);
             Content desc = new ContentBuilder();
             writer.addSummaryLinkComment(element, desc);
@@ -345,7 +345,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         if (tElement != typeElement) {
             throw new IllegalStateException();
         }
-        Table table = getSummaryTable();
+        var table = getSummaryTable();
         List<Content> rowContents = new ArrayList<>();
         Content summaryType = new ContentBuilder();
         addSummaryType(member, summaryType);

@@ -1400,7 +1400,7 @@ public class HTMLDocument extends DefaultStyledDocument {
 
             if (parent != null) {
                 // If we are going to insert the string into the body
-                // section, it is necessary to set the corrsponding flag.
+                // section, it is necessary to set the corresponding flag.
                 if (HTML.Tag.BODY.name.equals(parent.getName())) {
                     insertInBody = true;
                 }
@@ -2390,7 +2390,7 @@ public class HTMLDocument extends DefaultStyledDocument {
 
         /**
          * Generates a RuntimeException (will eventually generate
-         * a BadLocationException when API changes are alloced) if inserting
+         * a BadLocationException when API changes are allocated) if inserting
          * into non empty document, <code>insertTag</code> is
          * non-<code>null</code>, and <code>offset</code> is not in the body.
          */
@@ -2801,7 +2801,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 if (t == HTML.Tag.BODY) {
                     inBody = true;
                     // Increment inBlock since we know we are in the body,
-                    // this is needed incase an implied-p is needed. If
+                    // this is needed in case an implied-p is needed. If
                     // inBlock isn't incremented, and an implied-p is
                     // encountered, addContent won't be called!
                     inBlock++;
@@ -3528,6 +3528,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                 String href = (String) attr.getAttribute(HTML.Attribute.HREF);
                 if (href != null) {
                     try {
+                        @SuppressWarnings("deprecation")
                         URL newBase = new URL(base, href);
                         setBase(newBase);
                         hasBaseTag = true;
@@ -4038,7 +4039,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             if (insertTagDepthDelta < 0) {
                 // When inserting via an insertTag, the depths (of the tree
                 // being read in, and existing hierarchy) may not match up.
-                // This attemps to clean it up.
+                // This attempts to clean it up.
                 int removeCounter = insertTagDepthDelta;
                 while (removeCounter < 0 && size >= 0 &&
                         parseBuffer.elementAt(size - 1).
@@ -4122,10 +4123,12 @@ public class HTMLDocument extends DefaultStyledDocument {
         void linkCSSStyleSheet(String href) {
             URL url;
             try {
-                url = new URL(base, href);
+                @SuppressWarnings("deprecation")
+                var _unused = url = new URL(base, href);
             } catch (MalformedURLException mfe) {
                 try {
-                    url = new URL(href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = url = new URL(href);
                 } catch (MalformedURLException mfe2) {
                     url = null;
                 }
@@ -4337,7 +4340,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         /** True if inside the head tag. */
         boolean inHead = false;
         /** Set to true if the style language is text/css. Since this is
-         * used alot, it is cached. */
+         * used a lot, it is cached. */
         boolean isStyleCSS;
         /** True if inserting into an empty document. */
         boolean emptyDocument;

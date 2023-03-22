@@ -21,10 +21,10 @@
  * questions.
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -72,8 +72,8 @@ public class ThrowingUpcall extends NativeTestHelper {
         MethodHandle invoker = MethodHandles.exactInvoker(MethodType.methodType(void.class));
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
-        try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), arena.scope());
 
             downcallVoid.invoke(stub); // should call Shutdown.exit(1);
         }
@@ -85,8 +85,8 @@ public class ThrowingUpcall extends NativeTestHelper {
         MethodHandle invoker = MethodHandles.exactInvoker(MethodType.methodType(int.class, int.class));
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
-        try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), arena.scope());
 
             downcallNonVoid.invoke(42, stub); // should call Shutdown.exit(1);
         }

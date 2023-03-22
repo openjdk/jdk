@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ static jint data_dump(AttachOperation* op, outputStream* out) {
 static jint thread_dump(AttachOperation* op, outputStream* out) {
   bool print_concurrent_locks = false;
   bool print_extended_info = false;
-  if (op->arg(0) != NULL) {
+  if (op->arg(0) != nullptr) {
     for (int i = 0; op->arg(0)[i] != 0; ++i) {
       if (op->arg(0)[i] == 'l') {
         print_concurrent_locks = true;
@@ -219,12 +219,12 @@ static jint jcmd(AttachOperation* op, outputStream* out) {
 //   arg2: Compress level
 jint dump_heap(AttachOperation* op, outputStream* out) {
   const char* path = op->arg(0);
-  if (path == NULL || path[0] == '\0') {
+  if (path == nullptr || path[0] == '\0') {
     out->print_cr("No dump file specified");
   } else {
     bool live_objects_only = true;   // default is true to retain the behavior before this change is made
     const char* arg1 = op->arg(1);
-    if (arg1 != NULL && (strlen(arg1) > 0)) {
+    if (arg1 != nullptr && (strlen(arg1) > 0)) {
       if (strcmp(arg1, "-all") != 0 && strcmp(arg1, "-live") != 0) {
         out->print_cr("Invalid argument to dumpheap operation: %s", arg1);
         return JNI_ERR;
@@ -234,7 +234,7 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
 
     const char* num_str = op->arg(2);
     uintx level = 0;
-    if (num_str != NULL && num_str[0] != '\0') {
+    if (num_str != nullptr && num_str[0] != '\0') {
       if (!Arguments::parse_uintx(num_str, &level, 0)) {
         out->print_cr("Invalid compress level: [%s]", num_str);
         return JNI_ERR;
@@ -261,15 +261,15 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
 //
 // Input arguments :-
 //   arg0: "-live" or "-all"
-//   arg1: Name of the dump file or NULL
+//   arg1: Name of the dump file or null
 //   arg2: parallel thread number
 static jint heap_inspection(AttachOperation* op, outputStream* out) {
   bool live_objects_only = true;   // default is true to retain the behavior before this change is made
-  outputStream* os = out;   // if path not specified or path is NULL, use out
-  fileStream* fs = NULL;
+  outputStream* os = out;   // if path not specified or path is null, use out
+  fileStream* fs = nullptr;
   const char* arg0 = op->arg(0);
   uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
-  if (arg0 != NULL && (strlen(arg0) > 0)) {
+  if (arg0 != nullptr && (strlen(arg0) > 0)) {
     if (strcmp(arg0, "-all") != 0 && strcmp(arg0, "-live") != 0) {
       out->print_cr("Invalid argument to inspectheap operation: %s", arg0);
       return JNI_ERR;
@@ -278,17 +278,17 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
   }
 
   const char* path = op->arg(1);
-  if (path != NULL && path[0] != '\0') {
+  if (path != nullptr && path[0] != '\0') {
     // create file
-    fs = new (ResourceObj::C_HEAP, mtInternal) fileStream(path);
-    if (fs == NULL) {
+    fs = new (mtInternal) fileStream(path);
+    if (fs == nullptr) {
       out->print_cr("Failed to allocate space for file: %s", path);
     }
     os = fs;
   }
 
   const char* num_str = op->arg(2);
-  if (num_str != NULL && num_str[0] != '\0') {
+  if (num_str != nullptr && num_str[0] != '\0') {
     uintx num;
     if (!Arguments::parse_uintx(num_str, &num, 0)) {
       out->print_cr("Invalid parallel thread number: [%s]", num_str);
@@ -300,7 +300,7 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
 
   VM_GC_HeapInspection heapop(os, live_objects_only /* request full gc */, parallel_thread_num);
   VMThread::execute(&heapop);
-  if (os != NULL && os != out) {
+  if (os != nullptr && os != out) {
     out->print_cr("Heap inspection file created: %s", path);
     delete fs;
   }
@@ -310,8 +310,8 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
 // Implementation of "setflag" command
 static jint set_flag(AttachOperation* op, outputStream* out) {
 
-  const char* name = NULL;
-  if ((name = op->arg(0)) == NULL) {
+  const char* name = nullptr;
+  if ((name = op->arg(0)) == nullptr) {
     out->print_cr("flag name is missing");
     return JNI_ERR;
   }
@@ -336,8 +336,8 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
 // Implementation of "printflag" command
 // See also: PrintVMFlagsDCmd class
 static jint print_flag(AttachOperation* op, outputStream* out) {
-  const char* name = NULL;
-  if ((name = op->arg(0)) == NULL) {
+  const char* name = nullptr;
+  if ((name = op->arg(0)) == nullptr) {
     out->print_cr("flag name is missing");
     return JNI_ERR;
   }
@@ -365,7 +365,7 @@ static AttachOperationFunctionInfo funcs[] = {
   { "setflag",          set_flag },
   { "printflag",        print_flag },
   { "jcmd",             jcmd },
-  { NULL,               NULL }
+  { nullptr,            nullptr }
 };
 
 
@@ -378,7 +378,7 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
   os::set_priority(thread, NearMaxPriority);
 
   assert(thread == Thread::current(), "Must be");
-  assert(thread->stack_base() != NULL && thread->stack_size() > 0,
+  assert(thread->stack_base() != nullptr && thread->stack_size() > 0,
          "Should already be setup");
 
   if (AttachListener::pd_init() != 0) {
@@ -389,7 +389,7 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
 
   for (;;) {
     AttachOperation* op = AttachListener::dequeue();
-    if (op == NULL) {
+    if (op == nullptr) {
       AttachListener::set_state(AL_NOT_INITIALIZED);
       return;   // dequeue failed or shutdown
     }
@@ -407,8 +407,8 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
       res = JNI_ERR;
     } else {
       // find the function to dispatch too
-      AttachOperationFunctionInfo* info = NULL;
-      for (int i=0; funcs[i].name != NULL; i++) {
+      AttachOperationFunctionInfo* info = nullptr;
+      for (int i=0; funcs[i].name != nullptr; i++) {
         const char* name = funcs[i].name;
         assert(strlen(name) <= AttachOperation::name_length_max, "operation <= name_length_max");
         if (strcmp(op->name(), name) == 0) {
@@ -418,11 +418,11 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
       }
 
       // check for platform dependent attach operation
-      if (info == NULL) {
+      if (info == nullptr) {
         info = AttachListener::pd_find_operation(op->name());
       }
 
-      if (info != NULL) {
+      if (info != nullptr) {
         // dispatch to the function that implements this operation
         res = (info->func)(op, &st);
       } else {

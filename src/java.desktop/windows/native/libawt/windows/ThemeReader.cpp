@@ -436,10 +436,11 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
         GdiFlush();
         // Copy the resulting pixels to our Java BufferedImage.
         pDstBits = (int *)env->GetPrimitiveArrayCritical(array, 0);
-        BOOL transparent = FALSE;
-        transparent = IsThemeBackgroundPartiallyTransparentFunc(hTheme, part, state);
-        copyDIBToBufferedImage(pDstBits, pSrcBits, transparent, w, h, stride);
-        env->ReleasePrimitiveArrayCritical(array, pDstBits, 0);
+        if (pDstBits != NULL) {
+            BOOL transparent = IsThemeBackgroundPartiallyTransparentFunc(hTheme, part, state);
+            copyDIBToBufferedImage(pDstBits, pSrcBits, transparent, w, h, stride);
+            env->ReleasePrimitiveArrayCritical(array, pDstBits, 0);
+        }
     }
 
     // Delete resources.

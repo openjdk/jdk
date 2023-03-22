@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "concurrentTestRunner.inline.hpp"
+#include "jvm.h"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/logConfiguration.hpp"
@@ -71,8 +71,8 @@ TEST_VM_F(LogConfigurationTest, describe) {
   const char* description = ss.as_string();
 
   // Verify that stdout and stderr are listed by default
-  EXPECT_PRED2(string_contains_substring, description, StdoutLog.name());
-  EXPECT_PRED2(string_contains_substring, description, StderrLog.name());
+  EXPECT_PRED2(string_contains_substring, description, StdoutLog->name());
+  EXPECT_PRED2(string_contains_substring, description, StderrLog->name());
 
   // Verify that each tag, level and decorator is listed
   for (size_t i = 0; i < LogTag::Count; i++) {
@@ -129,7 +129,7 @@ TEST_VM_F(LogConfigurationTest, update_output) {
     EXPECT_TRUE(is_described("all=info"));
 
     // Verify by iterating over tagsets
-    LogOutput* o = &StdoutLog;
+    LogOutput* o = StdoutLog;
     for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
       EXPECT_TRUE(ts->has_output(o));
       EXPECT_TRUE(ts->is_level(LogLevel::Info));
@@ -181,8 +181,8 @@ TEST_VM_F(LogConfigurationTest, disable_logging) {
 
   // Verify that no tagset has logging enabled
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-    EXPECT_FALSE(ts->has_output(&StdoutLog));
-    EXPECT_FALSE(ts->has_output(&StderrLog));
+    EXPECT_FALSE(ts->has_output(StdoutLog));
+    EXPECT_FALSE(ts->has_output(StderrLog));
     EXPECT_FALSE(ts->is_level(LogLevel::Error));
   }
 }
@@ -196,7 +196,7 @@ TEST_VM_F(LogConfigurationTest, disable_output) {
   EXPECT_TRUE(is_described("#0: stdout all=off"));
 
   // Verify by iterating over tagsets
-  LogOutput* o = &StdoutLog;
+  LogOutput* o = StdoutLog;
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     EXPECT_FALSE(ts->has_output(o));
     EXPECT_FALSE(ts->is_level(LogLevel::Error));
@@ -336,7 +336,7 @@ TEST_VM_F(LogConfigurationTest, parse_empty_command_line_arguments) {
     bool ret = LogConfiguration::parse_command_line_arguments(cmdline);
     EXPECT_TRUE(ret) << "Error parsing command line arguments '" << cmdline << "'";
     for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-      EXPECT_EQ(LogLevel::Unspecified, ts->level_for(&StdoutLog));
+      EXPECT_EQ(LogLevel::Unspecified, ts->level_for(StdoutLog));
     }
   }
 }
@@ -418,7 +418,7 @@ TEST_VM_F(LogConfigurationTest, configure_stdout) {
   EXPECT_FALSE(log_is_enabled(Debug, logging));
   EXPECT_FALSE(log_is_enabled(Info, gc));
   LogTagSet* logging_ts = &LogTagSetMapping<LOG_TAGS(logging)>::tagset();
-  EXPECT_EQ(LogLevel::Info, logging_ts->level_for(&StdoutLog));
+  EXPECT_EQ(LogLevel::Info, logging_ts->level_for(StdoutLog));
 
   // Enable 'gc=debug' (no wildcard), verifying no other tags are enabled
   LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(gc));
@@ -428,9 +428,9 @@ TEST_VM_F(LogConfigurationTest, configure_stdout) {
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     if (ts->contains(PREFIX_LOG_TAG(gc))) {
       if (ts->ntags() == 1) {
-        EXPECT_EQ(LogLevel::Debug, ts->level_for(&StdoutLog));
+        EXPECT_EQ(LogLevel::Debug, ts->level_for(StdoutLog));
       } else {
-        EXPECT_EQ(LogLevel::Off, ts->level_for(&StdoutLog));
+        EXPECT_EQ(LogLevel::Off, ts->level_for(StdoutLog));
       }
     }
   }
@@ -441,12 +441,12 @@ TEST_VM_F(LogConfigurationTest, configure_stdout) {
   EXPECT_TRUE(log_is_enabled(Trace, gc, heap));
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     if (ts->contains(PREFIX_LOG_TAG(gc))) {
-      EXPECT_EQ(LogLevel::Trace, ts->level_for(&StdoutLog));
+      EXPECT_EQ(LogLevel::Trace, ts->level_for(StdoutLog));
     } else if (ts == logging_ts) {
       // Previous setting for 'logging' should remain
-      EXPECT_EQ(LogLevel::Info, ts->level_for(&StdoutLog));
+      EXPECT_EQ(LogLevel::Info, ts->level_for(StdoutLog));
     } else {
-      EXPECT_EQ(LogLevel::Off, ts->level_for(&StdoutLog));
+      EXPECT_EQ(LogLevel::Off, ts->level_for(StdoutLog));
     }
   }
 
@@ -457,7 +457,7 @@ TEST_VM_F(LogConfigurationTest, configure_stdout) {
   EXPECT_FALSE(log_is_enabled(Error, gc));
   EXPECT_FALSE(log_is_enabled(Error, gc, heap));
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-    EXPECT_EQ(LogLevel::Off, ts->level_for(&StdoutLog));
+    EXPECT_EQ(LogLevel::Off, ts->level_for(StdoutLog));
   }
 }
 

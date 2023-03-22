@@ -480,8 +480,6 @@
   address* sender_pc_addr(void) const;
 
  public:
-  inline intptr_t* interpreter_frame_last_sp() const;
-
   template <typename RegisterMapT>
   static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);
 
@@ -547,11 +545,13 @@
     // for z/Architecture, too.
     //
     // Normal return address is the instruction following the branch.
-    pc_return_offset =  0,
-    metadata_words   = 0,
-    frame_alignment  = 16,
+    pc_return_offset         = 0,
+    metadata_words           = 0,
+    metadata_words_at_bottom = 0,
+    metadata_words_at_top    = 0,
+    frame_alignment          = 16,
     // size, in words, of maximum shift in frame position due to alignment
-    align_wiggle     =  1
+    align_wiggle             =  1
   };
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }

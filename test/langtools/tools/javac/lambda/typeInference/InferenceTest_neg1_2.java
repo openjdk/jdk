@@ -9,7 +9,7 @@
 
 public class InferenceTest_neg1_2 {
 
-    public static void main(String[] args) {
+    public static void meth() {
         InferenceTest_neg1_2 test = new InferenceTest_neg1_2();
         test.method(n -> null); //method 1-5 all match
         test.method(n -> "a"); //method 2, 4 match

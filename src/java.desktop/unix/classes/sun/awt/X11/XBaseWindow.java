@@ -81,7 +81,7 @@ public class XBaseWindow {
         INITIALISING,
         INITIALISED,
         FAILED_INITIALISATION
-    };
+    }
 
     private InitialiseState initialising;
 
@@ -483,7 +483,7 @@ public class XBaseWindow {
 
     /*
      * Call this method under AWTLock.
-     * The lock should be acquired untill all operations with XSizeHints are completed.
+     * The lock should be acquired until all operations with XSizeHints are completed.
      */
     public XSizeHints getHints() {
         if (hints == null) {

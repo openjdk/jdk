@@ -54,10 +54,10 @@ import java.util.Map;
  * </ol>
  * The two ways to use this class are:
  * <ol>
- * <li>Invoke <code>paint</code> to draw the cached reprensentation at
+ * <li>Invoke <code>paint</code> to draw the cached representation at
  *     the specified location.
- * <li>Invoke <code>getImage</code> to get the cached reprensentation and
- *     draw the image yourself.  This is primarly useful when you are not
+ * <li>Invoke <code>getImage</code> to get the cached representation and
+ *     draw the image yourself.  This is primarily useful when you are not
  *     using <code>VolatileImage</code>.
  * </ol>
  *

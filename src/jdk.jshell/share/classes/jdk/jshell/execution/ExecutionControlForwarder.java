@@ -57,6 +57,10 @@ class ExecutionControlForwarder {
      */
     private static final int MAX_UTF_CHARS = 21844;
 
+    private static final int TRUNCATE_END = MAX_UTF_CHARS / 3;
+    private static final String TRUNCATE_JOIN = " ... ";
+    private static final int TRUNCATE_START = MAX_UTF_CHARS - TRUNCATE_JOIN.length() - TRUNCATE_END;
+
     private final ExecutionControl ec;
     private final ObjectInput in;
     private final ObjectOutput out;
@@ -108,7 +112,7 @@ class ExecutionControlForwarder {
             s = "";
         } else if (s.length() > MAX_UTF_CHARS) {
             // Truncate extremely long strings to prevent writeUTF from crashing the VM
-            s = s.substring(0, MAX_UTF_CHARS);
+            s = s.substring(0, TRUNCATE_START) + TRUNCATE_JOIN + s.substring(s.length() - TRUNCATE_END);
         }
         out.writeUTF(s);
     }

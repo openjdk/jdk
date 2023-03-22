@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
 
 /**
  * JDK-7156085: ArrayIndexOutOfBoundsException throws in UTF8Reader of SAXParser
- * https://bugs.openjdk.java.net/browse/JDK-7156085
+ * https://bugs.openjdk.org/browse/JDK-7156085
  *
  * XERCESJ-1257: buffer overflow in UTF8Reader for characters out of BMP
  * https://issues.apache.org/jira/browse/XERCESJ-1257

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package com.sun.source.util;
 
 import java.util.List;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Name;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
@@ -43,6 +45,7 @@ import com.sun.source.doctree.DocTypeTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.HiddenTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.IndexTree;
@@ -174,6 +177,29 @@ public interface DocTreeFactory {
      * @return an {@code ErroneousTree} object
      */
     ErroneousTree newErroneousTree(String text, Diagnostic<JavaFileObject> diag);
+
+    /**
+     * Creates a new {@code EscapeTree} object, to represent an escaped character.
+     *
+     * @apiNote This method does not itself constrain the set of valid escape sequences,
+     * although the set may be effectively constrained to those defined in the
+     * <a href="{@docRoot}/../specs/javadoc/doc-comment-spec.html#escape-sequences">
+     * Documentation Comment Specification for the Standard Doclet</a>,
+     * including the following context-sensitive escape sequences:
+     *
+     * <ul>
+     * <li>{@code @@}, representing {@code @}, where it would otherwise be treated as introducing a block or inline tag,
+     * <li>{@code @/}, representing {@code /}, as part of {@code *@/} to represent <code>&ast;&sol;</code>, and
+     * <li>{@code @*}, representing {@code *}, where it would otherwise be {@linkplain Elements#getDocComment(Element) discarded},
+     *     after whitespace at the beginning of a line.
+     * </ul>
+     *
+     * @param ch the character
+     * @return an {@code EscapeTree} object
+     *
+     * @since 21
+     */
+    EscapeTree newEscapeTree(char ch);
 
     /**
      * Creates a new {@code ThrowsTree} object, to represent an {@code @exception} tag.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     void oops_do_chunk(OopClosure* f, Chunk* c, const juint size);
 
    public:
-    ChunkedHandleList() : _head(NULL) {}
+    ChunkedHandleList() : _head(nullptr) {}
     ~ChunkedHandleList();
 
     // Only one thread at a time can add, guarded by ClassLoaderData::metaspace_lock().
@@ -143,7 +143,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ModuleEntry* _unnamed_module;          // This class loader's unnamed module.
   Dictionary*  _dictionary;              // The loaded InstanceKlasses, including initiated by this class loader
 
-  // These method IDs are created for the class loader and set to NULL when the
+  // These method IDs are created for the class loader and set to null when the
   // class loader is unloaded.  They are rarely freed, only for redefine classes
   // and if they lose a data race in InstanceKlass.
   JNIMethodBlock*                  _jmethod_ids;
@@ -202,13 +202,16 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // The "claim" is typically used to check if oops_do needs to be applied on
   // the CLD or not. Most GCs only perform strong marking during the marking phase.
   enum Claim {
-    _claim_none         = 0,
-    _claim_finalizable  = 2,
-    _claim_strong       = 3,
-    _claim_other        = 4
+    _claim_none              = 0,
+    _claim_finalizable       = 2,
+    _claim_strong            = 3,
+    _claim_stw_fullgc_mark   = 4,
+    _claim_stw_fullgc_adjust = 8,
+    _claim_other             = 16
   };
   void clear_claim() { _claim = 0; }
   void clear_claim(int claim);
+  void verify_not_claimed(int claim) NOT_DEBUG_RETURN;
   bool claimed() const { return _claim != 0; }
   bool claimed(int claim) const { return (_claim & claim) == claim; }
   bool try_claim(int claim);
@@ -251,7 +254,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   OopHandle class_loader_handle() const { return _class_loader; }
 
-  // The Metaspace is created lazily so may be NULL.  This
+  // The Metaspace is created lazily so may be null.  This
   // method will allocate a Metaspace if needed.
   ClassLoaderMetaspace* metaspace_non_null();
 
@@ -297,7 +300,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   PackageEntryTable* packages() { return _packages; }
   ModuleEntry* unnamed_module() { return _unnamed_module; }
   ModuleEntryTable* modules();
-  bool modules_defined() { return (_modules != NULL); }
+  bool modules_defined() { return (_modules != nullptr); }
 
   // Offsets
   static ByteSize holder_offset()     { return in_ByteSize(offset_of(ClassLoaderData, _holder)); }
@@ -311,7 +314,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* class_loader_data(oop loader);
   static ClassLoaderData* class_loader_data_or_null(oop loader);
 
-  // Returns Klass* of associated class loader, or NULL if associated loader is 'bootstrap'.
+  // Returns Klass* of associated class loader, or null if associated loader is 'bootstrap'.
   // Also works if unloading.
   Klass* class_loader_klass() const { return _class_loader_klass; }
 
@@ -319,7 +322,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // construction or the class loader's qualified class name.
   // Works during unloading.
   const char* loader_name() const;
-  // Returns the explicitly specified class loader name or NULL.
+  // Returns the explicitly specified class loader name or null.
   Symbol* name() const { return _name; }
 
   // Obtain the class loader's _name_and_id, works during unloading.

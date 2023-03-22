@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,24 @@ public interface Types {
 
     /**
      * Returns the element corresponding to a type.
-     * The type may be a {@code DeclaredType} or {@code TypeVariable}.
-     * Returns {@code null} if the type is not one with a
+     * The type may be one of:
+     * <ul>
+     * <li>a {@link DeclaredType}
+     * <li>a {@link TypeVariable}
+     * <li>a pseudo-type for a {@linkplain TypeKind#PACKAGE package} or
+     * {@linkplain TypeKind#MODULE module}
+     * </ul>
+     * The method returns {@code null} if the type is not one with a
      * corresponding element.
+     * Types <em>without</em> corresponding elements include:
+     * <ul>
+     * <li>{@linkplain TypeKind#isPrimitive() primitive types}
+     * <li>{@linkplain TypeKind#EXECUTABLE executable types}
+     * <li>{@linkplain TypeKind#NONE "none"} pseudo-types
+     * <li>{@linkplain TypeKind#NULL null types}
+     * <li>{@link TypeKind#VOID void}
+     * <li>{@linkplain TypeKind#WILDCARD wildcard type argument}
+     * </ul>
      *
      * @param t the type to map to an element
      * @return the element corresponding to the given type
@@ -133,6 +148,10 @@ public interface Types {
      * will appear last in the list. For an interface type with no direct
      * super-interfaces, a type mirror representing {@code java.lang.Object}
      * is returned.
+     * The type {@code java.lang.Object} has no direct supertype (JLS
+     * {@jls 8.1.4}, {@jls 8.1.5}) so an empty list is returned for
+     * the direct supertypes of a type mirror representing {@code
+     * java.lang.Object}.
      *
      * @param t  the type being examined
      * @return the direct supertypes, or an empty list if none

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -655,6 +655,15 @@ final class Int64Vector extends IntVector {
             Objects.requireNonNull(mask);
             Int64Mask m = (Int64Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Int64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Int64Mask) VectorSupport.indexPartiallyInUpperRange(
+                Int64Mask.class, int.class, VLENGTH, offset, limit,
+                (o, l) -> (Int64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

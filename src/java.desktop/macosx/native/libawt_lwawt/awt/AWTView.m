@@ -369,7 +369,7 @@ static BOOL shouldUsePressAndHold() {
     NSPoint absP = [NSEvent mouseLocation];
 
     // Convert global numbers between Cocoa's coordinate system and Java.
-    // TODO: need consitent way for doing that both with global as well as with local coordinates.
+    // TODO: need consistent way for doing that both with global as well as with local coordinates.
     // The reason to do it here is one more native method for getting screen dimension otherwise.
 
     NSRect screenRect = [[[NSScreen screens] objectAtIndex:0] frame];
@@ -1050,7 +1050,7 @@ static jclass jc_CInputMethod = NULL;
 
     // NSInputContext already did the analysis of the TSM event and created attributes indicating
     // the underlining and color that should be done to the string.  We need to look at the underline
-    // style and color to determine what kind of Java hilighting needs to be done.
+    // style and color to determine what kind of Java highlighting needs to be done.
     jstring inProcessText = NSStringToJavaString(env, incomingString);
     (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_startIMUpdate, inProcessText);
     CHECK_EXCEPTION();
@@ -1261,7 +1261,7 @@ static jclass jc_CInputMethod = NULL;
     return range;
 }
 
-/* This method returns the first frame of rects for theRange in screen coordindate system.
+/* This method returns the first frame of rects for theRange in screen coordinate system.
  */
 - (NSRect) firstRectForCharacterRange:(NSRange)theRange actualRange:(NSRangePointer)actualRange
 {

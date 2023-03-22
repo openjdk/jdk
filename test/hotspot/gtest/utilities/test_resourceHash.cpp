@@ -86,7 +86,7 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
   unsigned (*HASH) (K const&) = primitive_hash<K>,
   bool (*EQUALS)(K const&, K const&) = primitive_equals<K>,
   unsigned SIZE = 256,
-  ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA
+  AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA
   >
   class Runner : public AllStatic {
    public:
@@ -188,27 +188,27 @@ TEST_VM_F(SmallResourceHashtableTest, identity_hash_shifted) {
 }
 
 TEST_VM_F(SmallResourceHashtableTest, primitive_hash_no_rm) {
-  Runner<primitive_hash<K>, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test(0x1);
+  Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x1);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, primitive_hash_no_rm_shifted) {
-  Runner<primitive_hash<K>, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test(0x10);
+  Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x10);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, bad_hash_no_rm) {
-  Runner<bad_hash, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test(0x1);
+  Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x1);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, bad_hash_no_rm_shifted) {
-  Runner<bad_hash, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test(0x10);
+  Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x10);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, identity_hash_no_rm) {
-  Runner<identity_hash, primitive_equals<K>, 1, ResourceObj::C_HEAP>::test(0x1);
+  Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(0x1);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, identity_hash_no_rm_shifted) {
-  Runner<identity_hash, primitive_equals<K>, 1, ResourceObj::C_HEAP>::test(0x10);
+  Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(0x10);
 }
 
 class GenericResourceHashtableTest : public CommonResourceHashtableTest {
@@ -218,7 +218,7 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
   unsigned (*HASH) (K const&) = primitive_hash<K>,
   bool (*EQUALS)(K const&, K const&) = primitive_equals<K>,
   unsigned SIZE = 256,
-  ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA
+  AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA
   >
   class Runner : public AllStatic {
    public:
@@ -279,15 +279,15 @@ TEST_VM_F(GenericResourceHashtableTest, identity_hash) {
 }
 
 TEST_VM_F(GenericResourceHashtableTest, primitive_hash_no_rm) {
-  Runner<primitive_hash<K>, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test();
+  Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test();
 }
 
 TEST_VM_F(GenericResourceHashtableTest, bad_hash_no_rm) {
-  Runner<bad_hash, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test();
+  Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test();
 }
 
 TEST_VM_F(GenericResourceHashtableTest, identity_hash_no_rm) {
-  Runner<identity_hash, primitive_equals<K>, 1, ResourceObj::C_HEAP>::test(512);
+  Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(512);
 }
 
 // Simple ResourceHashtable whose key is a SymbolHandle and value is an int
@@ -295,7 +295,7 @@ TEST_VM_F(GenericResourceHashtableTest, identity_hash_no_rm) {
 // in the table.
 class SimpleResourceHashtableDeleteTest : public ::testing::Test {
  public:
-    ResourceHashtable<SymbolHandle, int, 107, ResourceObj::C_HEAP, mtTest, SymbolHandle::compute_hash> _simple_test_table;
+    ResourceHashtable<SymbolHandle, int, 107, AnyObj::C_HEAP, mtTest, SymbolHandle::compute_hash> _simple_test_table;
 
     class SimpleDeleter : public StackObj {
       public:
@@ -349,7 +349,7 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
     };
 
     // ResourceHashtable whose value is a *copy* of TestValue.
-    ResourceHashtable<Symbol*, TestValue, 107, ResourceObj::C_HEAP, mtTest> _test_table;
+    ResourceHashtable<Symbol*, TestValue, 107, AnyObj::C_HEAP, mtTest> _test_table;
 
     class Deleter : public StackObj {
       public:
@@ -363,7 +363,7 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
     };
 
     // ResourceHashtable whose value is a pointer to TestValue.
-    ResourceHashtable<Symbol*, TestValue*, 107, ResourceObj::C_HEAP, mtTest> _ptr_test_table;
+    ResourceHashtable<Symbol*, TestValue*, 107, AnyObj::C_HEAP, mtTest> _ptr_test_table;
 
     class PtrDeleter : public StackObj {
       public:
@@ -441,7 +441,7 @@ class ResourceHashtablePrintTest : public ::testing::Test {
      public:
       TestValue(int i) : _i(i), _j(i+1), _k(i+2) {}
     };
-    ResourceHashtable<int, TestValue*, 30, ResourceObj::C_HEAP, mtTest> _test_table;
+    ResourceHashtable<int, TestValue*, 30, AnyObj::C_HEAP, mtTest> _test_table;
 
     class TableDeleter {
      public:

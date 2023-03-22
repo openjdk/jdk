@@ -23,9 +23,8 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
-import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.services.GraphViewer;
+import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
@@ -33,11 +32,9 @@ import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JMenu;
@@ -57,7 +54,6 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
 import org.openide.util.ImageUtilities;
-import org.openide.util.Lookup;
 
 /**
  *
@@ -65,11 +61,8 @@ import org.openide.util.Lookup;
  */
 public class FigureWidget extends Widget implements Properties.Provider, PopupMenuProvider, DoubleClickHandler {
 
-    public static final boolean VERTICAL_LAYOUT = true;
     private static final double LABEL_ZOOM_FACTOR = 0.3;
     private Figure figure;
-    private Widget leftWidget;
-    private Widget rightWidget;
     private Widget middleWidget;
     private ArrayList<LabelWidget> labelWidgets;
     private DiagramScene diagramScene;
@@ -86,16 +79,12 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         return boundary;
     }
 
-    public Node getNode() {
-        return node;
-    }
-
     @Override
     public boolean isHitAt(Point localLocation) {
         return middleWidget.isHitAt(localLocation);
     }
 
-    public FigureWidget(final Figure f, WidgetAction hoverAction, WidgetAction selectAction, DiagramScene scene, Widget parent) {
+    public FigureWidget(final Figure f, DiagramScene scene) {
         super(scene);
 
         assert this.getScene() != null;
@@ -104,7 +93,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.figure = f;
         this.setCheckClipping(true);
         this.diagramScene = scene;
-        parent.addChild(this);
 
         Widget outer = new Widget(scene);
         outer.setBackground(f.getColor());
@@ -144,7 +132,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             labelWidgets.add(lw);
             textWidget.addChild(lw);
             lw.setLabel(displayString);
-            lw.setFont(figure.getDiagram().getFont());
+            lw.setFont(Diagram.FONT);
             lw.setForeground(getTextColor());
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
@@ -184,22 +172,14 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
     }
 
-    public Widget getLeftWidget() {
-        return leftWidget;
-    }
-
-    public Widget getRightWidget() {
-        return rightWidget;
-    }
-
     @Override
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         super.notifyStateChanged(previousState, state);
 
-        Font font = this.figure.getDiagram().getFont();
+        Font font = Diagram.FONT;
         int thickness = 1;
         if (state.isSelected()) {
-            font = this.figure.getDiagram().getBoldFont();
+            font = Diagram.BOLD_FONT;
             thickness = 2;
         }
 
@@ -286,27 +266,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         menu.addSeparator();
         build(menu, getFigure(), this, true, diagramScene);
 
-        if (getFigure().getSubgraphs() != null) {
-            menu.addSeparator();
-            JMenu subgraphs = new JMenu("Subgraphs");
-            menu.add(subgraphs);
-
-            final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
-            for (final InputGraph subgraph : getFigure().getSubgraphs()) {
-                Action a = new AbstractAction() {
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        viewer.view(subgraph, true);
-                    }
-                };
-
-                a.setEnabled(true);
-                a.putValue(Action.NAME, subgraph.getName());
-                subgraphs.add(a);
-            }
-        }
-
         return menu;
     }
 
@@ -383,20 +342,18 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
 
     @Override
     public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
-
         if (diagramScene.isAllVisible()) {
-            final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getAllNodes());
-            hiddenNodes.removeAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getGroup().getAllNodes());
+            hiddenNodes.remove(this.getFigure().getInputNode().getId());
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         } else if (isBoundary()) {
-
             final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
-            hiddenNodes.removeAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            hiddenNodes.remove(this.getFigure().getInputNode().getId());
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         } else {
             final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
-            hiddenNodes.addAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            hiddenNodes.add(this.getFigure().getInputNode().getId());
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         }
     }
 }

@@ -52,7 +52,7 @@ package compiler.c2;
 // an incorrect result on 32-bit server VMs on SPARC due to a regression
 // introduced by the change: "6420645: Create a vm that uses compressed oops
 // for up to 32gb heapsizes"
-// (http://hg.openjdk.java.net/jdk7/jdk7/hotspot/rev/ba764ed4b6f2).  Further
+// (https://git.openjdk.org/jdk/commit/4a831d4).  Further
 // investigation showed that change 6420645 is not really the root cause of
 // this error but only reveals a problem with the float register encodings in
 // sparc.ad which was hidden until now.

@@ -399,7 +399,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * be read from a stream.
      *
      * @param elem an element of type StyleConstants.IconElementName
-     * @throws IOException if I/O error occured.
+     * @throws IOException if I/O error occurred.
      */
     protected void writeImage(Element elem) throws IOException {
     }
@@ -411,7 +411,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * How this method is implemented is a matter of policy.
      *
      * @param elem an element of type StyleConstants.ComponentElementName
-     * @throws IOException if I/O error occured.
+     * @throws IOException if I/O error occurred.
      */
     protected void writeComponent(Element elem) throws IOException {
     }
@@ -433,7 +433,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * in an HTML-compliant manner.
      *
      * @param elem an element
-     * @param needsIndenting indention will be added if {@code needsIndenting} is {@code true}
+     * @param needsIndenting indentation will be added if {@code needsIndenting} is {@code true}
      * @throws IOException on any I/O error
      * @throws BadLocationException if pos represents an invalid
      *            location within the document.

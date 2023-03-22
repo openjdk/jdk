@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -233,7 +233,7 @@ void strFrom16(char str[3], cmsUInt16Number n)
 }
 
 // Add an ASCII entry. Do not add any \0 termination (ICC1v43_2010-12.pdf page 61)
-// In the case the user explicitely sets an empty string, we force a \0
+// In the case the user explicitly sets an empty string, we force a \0
 cmsBool CMSEXPORT cmsMLUsetASCII(cmsMLU* mlu, const char LanguageCode[3], const char CountryCode[3], const char* ASCIIString)
 {
     cmsUInt32Number i, len = (cmsUInt32Number) strlen(ASCIIString);
@@ -398,6 +398,8 @@ const wchar_t* _cmsMLUgetWide(const cmsMLU* mlu,
     if (UsedCountryCode  != NULL) *UsedCountryCode = v ->Country;
 
     if (len != NULL) *len   = v ->Len;
+
+    if (v->StrW + v->Len > mlu->PoolSize) return NULL;
 
     return(wchar_t*) ((cmsUInt8Number*) mlu ->MemPool + v ->StrW);
 }
@@ -571,8 +573,12 @@ cmsBool  GrowNamedColorList(cmsNAMEDCOLORLIST* v)
 // Allocate a list for n elements
 cmsNAMEDCOLORLIST* CMSEXPORT cmsAllocNamedColorList(cmsContext ContextID, cmsUInt32Number n, cmsUInt32Number ColorantCount, const char* Prefix, const char* Suffix)
 {
-    cmsNAMEDCOLORLIST* v = (cmsNAMEDCOLORLIST*) _cmsMallocZero(ContextID, sizeof(cmsNAMEDCOLORLIST));
+    cmsNAMEDCOLORLIST* v;
 
+    if (ColorantCount > cmsMAXCHANNELS)
+        return NULL;
+
+    v = (cmsNAMEDCOLORLIST*)_cmsMallocZero(ContextID, sizeof(cmsNAMEDCOLORLIST));
     if (v == NULL) return NULL;
 
     v ->List      = NULL;
@@ -670,7 +676,7 @@ cmsUInt32Number CMSEXPORT cmsNamedColorCount(const cmsNAMEDCOLORLIST* NamedColor
      return NamedColorList ->nColors;
 }
 
-// Info aboout a given color
+// Info about a given color
 cmsBool  CMSEXPORT cmsNamedColorInfo(const cmsNAMEDCOLORLIST* NamedColorList, cmsUInt32Number nColor,
                                      char* Name,
                                      char* Prefix,
@@ -786,7 +792,13 @@ cmsStage* CMSEXPORT _cmsStageAllocNamedColor(cmsNAMEDCOLORLIST* NamedColorList, 
 cmsNAMEDCOLORLIST* CMSEXPORT cmsGetNamedColorList(cmsHTRANSFORM xform)
 {
     _cmsTRANSFORM* v = (_cmsTRANSFORM*) xform;
-    cmsStage* mpe  = v ->Lut->Elements;
+    cmsStage* mpe;
+
+    if (v == NULL) return NULL;
+    if (v->Lut == NULL) return NULL;
+
+    mpe = v->Lut->Elements;
+    if (mpe == NULL) return NULL;
 
     if (mpe ->Type != cmsSigNamedColorElemType) return NULL;
     return (cmsNAMEDCOLORLIST*) mpe ->Data;

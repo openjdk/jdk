@@ -55,7 +55,7 @@ import sun.security.util.*;
  * @author      Ram Marti
  */
 
-public class CertId {
+public class CertId implements DerEncoder {
 
     private static final boolean debug = false;
     private static final AlgorithmId SHA1_ALGID
@@ -154,7 +154,8 @@ public class CertId {
      * Encode the CertId using ASN.1 DER.
      * The hash algorithm used is SHA-1.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
 
         DerOutputStream tmp = new DerOutputStream();
         hashAlgId.encode(tmp);

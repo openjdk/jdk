@@ -21,7 +21,7 @@
  *
  */
 
-/* @test @(#)TestTibetan.java
+/* @test
  * @summary verify tibetan output
  * @bug 6886358
  * @ignore Requires a special font installed
@@ -84,4 +84,3 @@ public class TestTibetan {
         frame.setVisible(true);
     }
 }
-

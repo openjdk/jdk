@@ -49,7 +49,7 @@ static int findIdx(unsigned int rgb, unsigned int *lut, int numLut1);
     if ((ss) != 0) {                                        \
         int limit = 0x7fffffff / ((ss) > 0 ? (ss) : -(ss)); \
         if (limit < (yy) || limit < ((yy) + (hh) - 1)) {    \
-            /* integer oveflow */                           \
+            /* integer overflow */                           \
             return JNI_FALSE;                               \
         }                                                   \
     }                                                       \

@@ -417,7 +417,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
         }
     }
 
-    // TODO: copied directly from XButtonPeer.  Should probabaly be shared
+    // TODO: copied directly from XButtonPeer.  Should probably be shared
     protected void paintFocus(Graphics g, int x, int y, int w, int h) {
         g.setColor(focusColor);
         g.drawRect(x,y,w,h);

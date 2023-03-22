@@ -2272,13 +2272,13 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 boolean isEnd = ((startIndex + 1) == endFractureIndex);
                 boolean isEndLeaf = ((startIndex + 1) == changeLength);
 
-                // Create the newChild, a duplicate of the elment at
+                // Create the newChild, a duplicate of the element at
                 // index. This isn't done if isEnd and offsetLastIndex are true
                 // indicating a join previous was done.
                 change = changed[startIndex];
 
                 // Determine the child to duplicate, won't have to duplicate
-                // if at end of fracture, or offseting index.
+                // if at end of fracture, or offsetting index.
                 if(isEnd) {
                     if(offsetLastIndex || !isEndLeaf)
                         child = null;
@@ -2430,7 +2430,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                     offsetLastIndexOnReplace = true;
                 }
                 // else Inserted at end, and is total length.
-                // Update index incase something added/removed.
+                // Update index in case something added/removed.
                 break;
             case ElementSpec.JoinNextDirection:
                 if(offset != 0) {
@@ -2453,7 +2453,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                     ec.removed.addElement(child);
                     ec.removed.addElement(nextChild);
                 }
-                // else nothin to do.
+                // else nothing to do.
                 // PENDING: if !isOnlyContent could raise here!
                 break;
             default:

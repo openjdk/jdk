@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,7 @@
 import java.awt.*;
 import java.awt.image.*;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 
 public class DashStrokeTest extends Component {
 
@@ -60,12 +57,12 @@ public class DashStrokeTest extends Component {
             try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
-            @Override
-            public void run() {
-                drawGui();
-            }
+                @Override
+                public void run() {
+                    drawGui();
+                }
 
-            });
+                });
             } catch (Exception e) {
             }
 

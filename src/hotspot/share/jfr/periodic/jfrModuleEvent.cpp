@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ class ModuleExportClosure : public ModuleEventCallbackClosure {
 
 static void write_module_dependency_event(const void* from_module, const ModuleEntry* to_module) {
   EventModuleRequire event(UNTIMED);
+  event.set_starttime(invocation_time);
   event.set_endtime(invocation_time);
   event.set_source((const ModuleEntry* const)from_module);
   event.set_requiredModule(to_module);
@@ -68,6 +69,7 @@ static void write_module_dependency_event(const void* from_module, const ModuleE
 
 static void write_module_export_event(const void* package, const ModuleEntry* qualified_export) {
   EventModuleExport event(UNTIMED);
+  event.set_starttime(invocation_time);
   event.set_endtime(invocation_time);
   event.set_exportedPackage((const PackageEntry*)package);
   event.set_targetModule(qualified_export);

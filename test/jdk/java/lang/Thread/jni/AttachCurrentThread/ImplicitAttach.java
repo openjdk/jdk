@@ -58,11 +58,11 @@ public class ImplicitAttach {
                 .findStatic(ImplicitAttach.class, "callback", MethodType.methodType(void.class));
         MemorySegment upcallStub = abi.upcallStub(callback,
                 FunctionDescriptor.ofVoid(),
-                MemorySession.global());
+                SegmentScope.global());
 
         // void start_threads(int count, void *(*f)(void *))
         SymbolLookup symbolLookup = SymbolLookup.loaderLookup();
-        MemorySegment symbol = symbolLookup.lookup("start_threads").orElseThrow();
+        MemorySegment symbol = symbolLookup.find("start_threads").orElseThrow();
         FunctionDescriptor desc = FunctionDescriptor.ofVoid(C_INT, C_POINTER);
         MethodHandle start_threads = abi.downcallHandle(symbol, desc);
 

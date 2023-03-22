@@ -97,7 +97,7 @@ public abstract class AccumulativeRunnable<T> implements Runnable {
      * Equivalent to {@code Runnable.run} method with the
      * accumulated arguments to process.
      *
-     * @param args accumulated argumets to process.
+     * @param args accumulated arguments to process.
      */
     protected abstract void run(List<T> args);
 
@@ -105,7 +105,7 @@ public abstract class AccumulativeRunnable<T> implements Runnable {
      * {@inheritDoc}
      *
      * <p>
-     * This implementation calls {@code run(List<T> args)} mehtod
+     * This implementation calls {@code run(List<T> args)} method
      * with the list of accumulated arguments.
      */
     public final void run() {
@@ -116,7 +116,7 @@ public abstract class AccumulativeRunnable<T> implements Runnable {
      * appends arguments and sends this {@code Runnable} for the
      * execution if needed.
      * <p>
-     * This implementation uses {@see #submit} to send this
+     * This implementation uses {@link #submit} to send this
      * {@code Runnable} for execution.
      * @param args the arguments to accumulate
      */

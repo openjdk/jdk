@@ -471,13 +471,8 @@ final class CryptoPolicyParser {
     CryptoPermission[] getPermissions() {
         ArrayList<CryptoPermission> result = new ArrayList<>();
 
-        Enumeration<GrantEntry> grantEnum = grantEntries.elements();
-        while (grantEnum.hasMoreElements()) {
-            GrantEntry ge = grantEnum.nextElement();
-            Enumeration<CryptoPermissionEntry> permEnum =
-                    ge.permissionElements();
-            while (permEnum.hasMoreElements()) {
-                CryptoPermissionEntry pe = permEnum.nextElement();
+        for (GrantEntry ge : grantEntries) {
+            for (CryptoPermissionEntry pe : ge.permissionEntries) {
                 if (pe.cryptoPermission.equals(
                                         "javax.crypto.CryptoAllPermission")) {
                     result.add(CryptoAllPermission.INSTANCE);
@@ -577,24 +572,6 @@ final class CryptoPolicyParser {
         {
             permissionEntries.addElement(pe);
         }
-
-        boolean remove(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.removeElement(pe);
-        }
-
-        boolean contains(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.contains(pe);
-        }
-
-        /**
-         * Enumerate all the permission entries in this {@code GrantEntry}.
-         */
-        Enumeration<CryptoPermissionEntry> permissionElements(){
-            return permissionEntries.elements();
-        }
-
     }
 
     /**

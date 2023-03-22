@@ -34,7 +34,7 @@
 // element currently in them.
 
 //------------------------------VectorSet--------------------------------------
-class VectorSet : public ResourceObj {
+class VectorSet : public AnyObj {
 private:
 
   static const uint word_bits = 5;

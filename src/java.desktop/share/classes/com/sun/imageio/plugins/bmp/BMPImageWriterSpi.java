@@ -44,7 +44,7 @@ public class BMPImageWriterSpi extends ImageWriterSpi {
     private static String [] readerSpiNames =
         {"com.sun.imageio.plugins.bmp.BMPImageReaderSpi"};
     private static String[] formatNames = {"bmp", "BMP"};
-    private static String[] entensions = {"bmp"};
+    private static String[] extensions = {"bmp"};
     private static String[] mimeType = {"image/bmp"};
 
     private boolean registered = false;
@@ -53,7 +53,7 @@ public class BMPImageWriterSpi extends ImageWriterSpi {
         super("Oracle Corporation",
               "1.0",
               formatNames,
-              entensions,
+              extensions,
               mimeType,
               "com.sun.imageio.plugins.bmp.BMPImageWriter",
               new Class<?>[] { ImageOutputStream.class },

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }
 
-inline CompactibleSpace* TenuredGeneration::first_compaction_space() const {
+inline ContiguousSpace* TenuredGeneration::first_compaction_space() const {
   return space();
 }
 

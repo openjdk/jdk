@@ -35,10 +35,10 @@ public class InputBlockEdge {
         DELETED
     }
 
-    private InputBlock from;
-    private InputBlock to;
+    private final InputBlock from;
+    private final InputBlock to;
     private State state = State.SAME;
-    private String label;
+    private final String label;
 
     public InputBlockEdge(InputBlock from, InputBlock to, String label) {
         assert from != null;
@@ -70,7 +70,7 @@ public class InputBlockEdge {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof InputBlockEdge) {
+        if (obj instanceof InputBlockEdge) {
             InputBlockEdge e = (InputBlockEdge) obj;
             return e.from.equals(from) && e.to.equals(to);
         }

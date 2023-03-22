@@ -256,7 +256,7 @@ public final class ConfigFile extends Configuration {
 
                     URL configURL;
                     try {
-                        configURL = new URL(extra_config);
+                        configURL = newURL(extra_config);
                     } catch (MalformedURLException mue) {
                         File configFile = new File(extra_config);
                         if (configFile.exists()) {
@@ -293,7 +293,7 @@ public final class ConfigFile extends Configuration {
                     if (debugConfig != null) {
                         debugConfig.println("\tReading config: " + config_url);
                     }
-                    init(new URL(config_url), newConfig);
+                    init(newURL(config_url), newConfig);
                     initialized = true;
                 } catch (PropertyExpander.ExpandException peee) {
                     throw ioException("Unable.to.properly.expand.config",
@@ -668,5 +668,10 @@ public final class ConfigFile extends Configuration {
                 ResourcesMgr.getAuthResourceString(resourceKey));
             return new IOException(form.format(args));
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

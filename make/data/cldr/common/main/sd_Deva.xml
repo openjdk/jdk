@@ -64,6 +64,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IN">भारत</territory>
 			<territory type="IT">इटली</territory>
 			<territory type="JP">जापान</territory>
+			<territory type="PK">पाकिस्तान</territory>
 			<territory type="RU">रशिया</territory>
 			<territory type="US">अमेरिका</territory>
 			<territory type="ZZ">अणजातल इलाइको</territory>
@@ -124,11 +125,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ते {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ते {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -188,7 +195,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="7">जुलाई</month>
 							<month type="8">अगस्ट</month>
 							<month type="9">सप्टेंबर</month>
-							<month type="10">ऑक्टोबर</month>
+							<month type="10">ओक्टोबर</month>
 							<month type="11">नवंबर</month>
 							<month type="12">डिसंबर</month>
 						</monthWidth>
@@ -343,8 +350,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">मंझंदि खां पहिंरियों</dayPeriod>
-							<dayPeriod type="pm">मंझंदि खां पोइ</dayPeriod>
+							<dayPeriod type="am">सुबुह जा</dayPeriod>
+							<dayPeriod type="pm">शाम जा</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -411,11 +418,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ते {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ते {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -544,6 +557,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
+			<gmtFormat>जीएमटी{0}</gmtFormat>
+			<gmtZeroFormat>जीएमटी</gmtZeroFormat>
 			<regionFormat>{0} वक्त</regionFormat>
 			<regionFormat type="daylight">{0} दीं॒ह जो वक्त</regionFormat>
 			<regionFormat type="standard">{0} मअयारी वक्त</regionFormat>
@@ -694,4 +709,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>न:न</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und sd</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

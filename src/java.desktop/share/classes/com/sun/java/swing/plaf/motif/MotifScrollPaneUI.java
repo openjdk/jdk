@@ -77,7 +77,7 @@ public class MotifScrollPaneUI extends BasicScrollPaneUI
                         JScrollBar vsb = pane.getVerticalScrollBar();
                         if (vsb != null && vsbBorder != null &&
                             vsb.getBorder() == vsbBorder) {
-                            // The Border on the verticall scrollbar matches
+                            // The Border on the vertical scrollbar matches
                             // what we installed, reset it.
                             if (pane.getComponentOrientation().isLeftToRight()) {
                                 vsbBorder = new CompoundBorder(vsbMarginBorderR,

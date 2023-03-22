@@ -31,8 +31,8 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1MonotonicArena.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
-#include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
@@ -181,8 +181,6 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
 }
 
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
-  assert(!is_pinned(), "must be");
-
   set_top(new_top);
   // After a compaction the mark bitmap in a non-pinned regions is invalid.
   // But all objects are live, we get this by setting TAMS to bottom.

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ void TemplateTable::sipush() {
   __ get_2_byte_integer_at_bcp(1, R17_tos, InterpreterMacroAssembler::Signed);
 }
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   Register Rscratch1 = R11_scratch1,
            Rscratch2 = R12_scratch2,
            Rcpool    = R3_ARG1;
@@ -246,7 +246,7 @@ void TemplateTable::ldc(bool wide) {
   Label notInt, notFloat, notClass, exit;
 
   __ get_cpool_and_tags(Rcpool, Rscratch2); // Set Rscratch2 = &tags.
-  if (wide) { // Read index.
+  if (is_ldc_wide(type)) { // Read index.
     __ get_2_byte_integer_at_bcp(1, Rscratch1, InterpreterMacroAssembler::Unsigned);
   } else {
     __ lbz(Rscratch1, 1, R14_bcp);
@@ -268,7 +268,7 @@ void TemplateTable::ldc(bool wide) {
   __ crnor(CCR0, Assembler::equal, CCR1, Assembler::equal); // Neither resolved class nor unresolved case from above?
   __ beq(CCR0, notClass);
 
-  __ li(R4, wide ? 1 : 0);
+  __ li(R4, is_ldc_wide(type) ? 1 : 0);
   call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), R4);
   __ push(atos);
   __ b(exit);
@@ -301,10 +301,10 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
   Label is_null;
 
   // We are resolved if the resolved reference cache entry contains a
@@ -1635,9 +1635,6 @@ void TemplateTable::branch_conditional(ConditionRegister crx, TemplateTable::Con
 
 void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
-  // Note: on SPARC, we use InterpreterMacroAssembler::if_cmp also.
-  __ verify_thread();
-
   const Register Rscratch1    = R11_scratch1,
                  Rscratch2    = R12_scratch2,
                  Rscratch3    = R3_ARG1,
@@ -2146,7 +2143,9 @@ void TemplateTable::_return(TosState state) {
     __ andi_(R11_scratch1, R11_scratch1, SafepointMechanism::poll_bit());
     __ beq(CCR0, no_safepoint);
     __ push(state);
+    __ push_cont_fastpath();
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop_cont_fastpath();
     __ pop(state);
     __ bind(no_safepoint);
   }
@@ -3440,8 +3439,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ load_dispatch_table(Rtable_addr, Interpreter::invoke_return_entry_table());
   __ sldi(Rret_type, Rret_type, LogBytesPerWord);
   __ ldx(Rret_addr, Rret_type, Rtable_addr);
-  __ null_check_throw(Rrecv, oopDesc::klass_offset_in_bytes(), R11_scratch1);
-  __ load_klass(Rrecv_klass, Rrecv);
+  __ load_klass_check_null_throw(Rrecv_klass, Rrecv, R11_scratch1);
   __ verify_klass_ptr(Rrecv_klass);
   __ profile_virtual_call(Rrecv_klass, R11_scratch1, R12_scratch2, false);
 
@@ -3578,8 +3576,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // then regular interface method.
 
   // Get receiver klass - this is also a null check
-  __ null_check_throw(Rreceiver, oopDesc::klass_offset_in_bytes(), Rscratch2);
-  __ load_klass(Rrecv_klass, Rreceiver);
+  __ load_klass_check_null_throw(Rrecv_klass, Rreceiver, Rscratch2);
 
   // Check corner case object method.
   // Special case of invokeinterface called for virtual method of
@@ -4070,7 +4067,7 @@ void TemplateTable::monitorenter() {
     Register Rlimit = Rcurrent_monitor;
 
     // Set up search loop - start with topmost monitor.
-    __ add(Rcurrent_obj_addr, BasicObjectLock::obj_offset_in_bytes(), R26_monitor);
+    __ addi(Rcurrent_obj_addr, R26_monitor, BasicObjectLock::obj_offset_in_bytes());
 
     __ ld(Rlimit, 0, R1_SP);
     __ addi(Rlimit, Rlimit, - (frame::ijava_state_size + frame::interpreter_frame_monitor_size_in_bytes() - BasicObjectLock::obj_offset_in_bytes())); // Monitor base

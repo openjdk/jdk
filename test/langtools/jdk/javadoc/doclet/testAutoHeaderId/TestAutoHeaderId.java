@@ -40,7 +40,7 @@ import javadoc.tester.JavadocTester;
 public class TestAutoHeaderId extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestAutoHeaderId tester = new TestAutoHeaderId();
+        var tester = new TestAutoHeaderId();
         tester.runTests();
     }
 

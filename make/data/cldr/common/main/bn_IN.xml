@@ -16,8 +16,223 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ksh">কোলোনিয়ান</language>
 		</languages>
 		<territories>
+			<territory type="018">দক্ষিণাঞ্চলীয় আফ্রিকা</territory>
+			<territory type="202">সাহারা-নিম্ন আফ্রিকা</territory>
 			<territory type="CD" alt="variant">কঙ্গো (DRC)</territory>
-			<territory type="UM">মার্কিন যুক্তরাষ্ট্রের পার্শ্ববর্তী দ্বীপপুঞ্জ</territory>
+			<territory type="NZ" alt="variant">আওটেয়ারোয়া নিউজিল্যান্ড</territory>
+			<territory type="QO">ওশিয়ানিয়ার দূরবর্তী অঞ্চল</territory>
+			<territory type="UM">মার্কিন যুক্তরাষ্ট্রের দূরবর্তী দ্বীপপুঞ্জ</territory>
 		</territories>
+		<types>
+			<type key="calendar" type="gregorian">গ্রেগোরিয়ান ক্যালেন্ডার</type>
+			<type key="calendar" type="iso8601">ISO-8601 ক্যালেন্ডার</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="US">ইউএস</measurementSystemName>
+		</measurementSystemNames>
 	</localeDisplayNames>
+	<characters>
+		<ellipsis type="final">{0}…</ellipsis>
+		<ellipsis type="initial">…{0}</ellipsis>
+		<ellipsis type="medial">{0}…{1}</ellipsis>
+		<ellipsis type="word-medial">{0}…{1}</ellipsis>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">জানু</month>
+							<month type="2">ফেব</month>
+							<month type="3">মার্চ</month>
+							<month type="4">এপ্রি</month>
+							<month type="5">মে</month>
+							<month type="6">জুন</month>
+							<month type="7">জুল</month>
+							<month type="8">আগ</month>
+							<month type="9">সেপ্টেঃ</month>
+							<month type="10">অক্টোঃ</month>
+							<month type="11">নভেঃ</month>
+							<month type="12">ডিসেঃ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">জা</month>
+							<month type="2">ফে</month>
+							<month type="3">মা</month>
+							<month type="4">এ</month>
+							<month type="5">মে</month>
+							<month type="6">জুন</month>
+							<month type="7">জুল</month>
+							<month type="8">আ</month>
+							<month type="9">সে</month>
+							<month type="10">অ</month>
+							<month type="11">ন</month>
+							<month type="12">ডি</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">জানু</month>
+							<month type="2">ফেব</month>
+							<month type="3">মার্চ</month>
+							<month type="4">এপ্রিল</month>
+							<month type="5">মে</month>
+							<month type="6">জুন</month>
+							<month type="7">জুলাই</month>
+							<month type="8">আগস্ট</month>
+							<month type="9">সেপ্টেঃ</month>
+							<month type="10">অক্টোঃ</month>
+							<month type="11">নভেঃ</month>
+							<month type="12">ডিসেঃ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">জা</month>
+							<month type="2">ফে</month>
+							<month type="3">মা</month>
+							<month type="4">এ</month>
+							<month type="5">মে</month>
+							<month type="6">জুন</month>
+							<month type="7">জুল</month>
+							<month type="8">আ</month>
+							<month type="9">সে</month>
+							<month type="10">অ</month>
+							<month type="11">ন</month>
+							<month type="12">ডি</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="short">
+							<day type="sun">রঃ</day>
+							<day type="mon">সোঃ</day>
+							<day type="tue">মঃ</day>
+							<day type="wed">বুঃ</day>
+							<day type="thu">বৃঃ</day>
+							<day type="fri">শুঃ</day>
+							<day type="sat">শঃ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="morning1">ভোরবেলায়</dayPeriod>
+							<dayPeriod type="morning2">সকালবেলায়</dayPeriod>
+							<dayPeriod type="afternoon1">দুপুরবেলায়</dayPeriod>
+							<dayPeriod type="afternoon2">বিকাল</dayPeriod>
+							<dayPeriod type="evening1">সন্ধ্যাবেলায়</dayPeriod>
+							<dayPeriod type="night1">রাত্রি</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="1">খ্রিষ্টাব্দ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">খ্রিঃপূঃ</era>
+						<era type="1">খ্রিঃ</era>
+					</eraAbbr>
+				</eras>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MMMMW" count="one">MMMM এর W নম্বর সপ্তাহ</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM এর W নম্বর সপ্তাহ</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencyFormats numberSystem="beng">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤#,##,##0.00;(¤#,##,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00;(¤ #,##,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="ANG">
+				<displayName>নেদারল্যান্ডস অ্যান্টিলিয়ান গিল্ডার</displayName>
+				<displayName count="one">নেদারল্যান্ডস অ্যান্টিলিয়ান গিল্ডার</displayName>
+				<displayName count="other">নেদারল্যান্ডস অ্যান্টিলিয়ান গিল্ডার</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>আরুবান গিল্ডার</displayName>
+				<displayName count="one">আরুবান গিল্ডার</displayName>
+				<displayName count="other">আরুবান গিল্ডার</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>বারমুডান ডলার</displayName>
+				<displayName count="one">বারমুডান ডলার</displayName>
+				<displayName count="other">বারমুডান ডলার</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>গুয়াতেমালান কেৎসাল</displayName>
+				<displayName count="one">গুয়াতেমালান কেৎসাল</displayName>
+				<displayName count="other">গুয়াতেমালান কেৎসাল</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>হন্ডুরান লেম্পিরা</displayName>
+				<displayName count="one">হন্ডুরান লেম্পিরা</displayName>
+				<displayName count="other">হন্ডুরান লেম্পিরা</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>হাইতিয়ান গুর্দ</displayName>
+				<displayName count="one">হাইতিয়ান গুর্দ</displayName>
+				<displayName count="other">হাইতিয়ান গুর্দ</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>মেক্সিকান পেসো</displayName>
+				<displayName count="one">মেক্সিকান পেসো</displayName>
+				<displayName count="other">মেক্সিকান পেসো</displayName>
+			</currency>
+			<currency type="USD">
+				<symbol draft="contributed">$</symbol>
+			</currency>
+			<currency type="XCD">
+				<displayName>পূর্ব ক্যারিবিয়ান ডলার</displayName>
+				<displayName count="one">পূর্ব ক্যারিবিয়ান ডলার</displayName>
+				<displayName count="other">পূর্ব ক্যারিবিয়ান ডলার</displayName>
+			</currency>
+		</currencies>
+		<minimalPairs>
+			<pluralMinimalPairs count="one" draft="contributed">{0}টি দিন</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">{0} দিন</pluralMinimalPairs>
+		</minimalPairs>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
+			</compoundUnit>
+			<coordinateUnit>
+				<displayName>প্রধান দিক</displayName>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<coordinateUnit>
+				<displayName>দিক</displayName>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<coordinateUnit>
+				<displayName>দিক</displayName>
+			</coordinateUnit>
+		</unitLength>
+	</units>
 </ldml>

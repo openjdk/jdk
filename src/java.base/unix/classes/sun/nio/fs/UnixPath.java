@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,25 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.nio.charset.*;
-import java.io.*;
+import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.nio.charset.CharacterCodingException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.ProviderMismatchException;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.nio.file.spi.FileSystemProvider;
+import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
-import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
+import static sun.nio.fs.UnixNativeDispatcher.*;
 
 /**
  * Linux/Mac implementation of java.nio.file.Path
@@ -829,15 +837,17 @@ class UnixPath implements Path {
         // if not resolving links then eliminate "." and also ".."
         // where the previous element is not a link.
         UnixPath result = fs.rootDirectory();
-        for (int i=0; i<absolute.getNameCount(); i++) {
+        for (int i = 0; i < absolute.getNameCount(); i++) {
             UnixPath element = absolute.getName(i);
 
             // eliminate "."
-            if ((element.asByteArray().length == 1) && (element.asByteArray()[0] == '.'))
+            if ((element.asByteArray().length == 1) &&
+                (element.asByteArray()[0] == '.'))
                 continue;
 
             // cannot eliminate ".." if previous element is a link
-            if ((element.asByteArray().length == 2) && (element.asByteArray()[0] == '.') &&
+            if ((element.asByteArray().length == 2) &&
+                (element.asByteArray()[0] == '.') &&
                 (element.asByteArray()[1] == '.'))
             {
                 UnixFileAttributes attrs = null;
@@ -857,13 +867,74 @@ class UnixPath implements Path {
             result = result.resolve(element);
         }
 
-        // check file exists (without following links)
+        // check whether file exists (without following links)
         try {
             UnixFileAttributes.get(result, false);
         } catch (UnixException x) {
             x.rethrowAsIOException(result);
         }
-        return result;
+
+        // Return if the file system is not both case insensitive and retentive
+        if (!fs.isCaseInsensitiveAndPreserving())
+            return result;
+
+        UnixPath path = fs.rootDirectory();
+
+        // Traverse the result obtained above from the root downward, leaving
+        // any '..' elements intact, and replacing other elements with the
+        // entry in the same directory which has an equal key
+        for (int i = 0; i < result.getNameCount(); i++ ) {
+            UnixPath element = result.getName(i);
+
+            // If the element is "..", append it directly and continue
+            if (element.toString().equals("..")) {
+                path = path.resolve(element);
+                continue;
+            }
+
+            // Derive full path to element and check readability
+            UnixPath elementPath = path.resolve(element);
+
+            // Obtain the file key of elementPath
+            UnixFileAttributes attrs = null;
+            try {
+                attrs = UnixFileAttributes.get(elementPath, false);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(result);
+            }
+            final UnixFileKey elementKey = attrs.fileKey();
+
+            // Obtain the stream of entries in the directory corresponding
+            // to the path constructed thus far, and extract the entry whose
+            // key is equal to the key of the current element
+            FileSystemProvider provider = getFileSystem().provider();
+            DirectoryStream.Filter<Path> filter = (p) -> { return true; };
+            try (DirectoryStream<Path> entries = provider.newDirectoryStream(path, filter)) {
+                boolean found = false;
+                for (Path entry : entries) {
+                    UnixPath p = path.resolve(entry.getFileName());
+                    UnixFileAttributes attributes = null;
+                    try {
+                        attributes = UnixFileAttributes.get(p, false);
+                        UnixFileKey key = attributes.fileKey();
+                        if (key.equals(elementKey)) {
+                            path = path.resolve(entry);
+                            found = true;
+                            break;
+                        }
+                    } catch (UnixException ignore) {
+                        continue;
+                    }
+                }
+
+                // Fallback which should in theory never happen
+                if (!found) {
+                    path = path.resolve(element);
+                }
+            }
+        }
+
+        return path;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  */
 
 /**
- * Post https://bugs.openjdk.java.net/browse/JDK-8138729, this test verifies
+ * Post https://bugs.openjdk.org/browse/JDK-8138729, this test verifies
  * that MethodParameters attribute are NOT emitted for lambdas.
  */
 class LambdaTest {

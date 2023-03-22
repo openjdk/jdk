@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class PSScavenge: AllStatic {
   static bool should_attempt_scavenge();
 
   // Private accessors
-  static PSCardTable* const card_table()           { assert(_card_table != NULL, "Sanity"); return _card_table; }
+  static PSCardTable* const card_table()           { assert(_card_table != nullptr, "Sanity"); return _card_table; }
   static const ParallelScavengeTracer* gc_tracer() { return &_gc_tracer; }
 
  public:
@@ -93,7 +93,7 @@ class PSScavenge: AllStatic {
   }
   // Used by scavenge_contents
   static ReferenceProcessor* const reference_processor() {
-    assert(_ref_processor != NULL, "Sanity");
+    assert(_ref_processor != nullptr, "Sanity");
     return _ref_processor;
   }
   // The promotion managers tell us if they encountered overflow

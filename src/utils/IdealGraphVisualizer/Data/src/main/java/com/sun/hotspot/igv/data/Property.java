@@ -32,8 +32,8 @@ import java.io.Serializable;
 public class Property implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    private String name;
-    private String value;
+    private final String name;
+    private final String value;
 
     Property(String name, String value) {
         this.name = name;

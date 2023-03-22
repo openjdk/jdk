@@ -183,7 +183,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
-    protected Table createSummaryTable() {
+    protected Table<Element> createSummaryTable() {
         List<HtmlStyle> bodyRowStyles;
 
         if (foundNonPubConstructor) {
@@ -193,7 +193,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             bodyRowStyles = Arrays.asList(HtmlStyle.colConstructorName, HtmlStyle.colLast);
         }
 
-        return new Table(
+        return new Table<Element>(
                 HtmlStyle.summaryTable)
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))

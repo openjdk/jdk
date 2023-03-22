@@ -56,7 +56,7 @@ public:
   address instruction_address() const { return addr_at(0); }
   address immediate_address() const { return addr_at(imm_offset); }
 
-  jint get_immedate() const { return int_at(imm_offset); }
+  jint get_immediate() const { return int_at(imm_offset); }
   void set_immediate(jint imm) { set_int_at(imm_offset, imm); }
   void verify() const;
 };
@@ -176,29 +176,20 @@ static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
   return barrier;
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
-  cmp->set_immediate(disarmed_value());
+  cmp->set_immediate(value);
 }
 
-void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+int BarrierSetNMethod::guard_value(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {
-    return;
+    return disarmed_guard_value();
   }
 
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
-  cmp->set_immediate(arm_value);
-}
-
-bool BarrierSetNMethod::is_armed(nmethod* nm) {
-  if (!supports_entry_barrier(nm)) {
-    return false;
-  }
-
-  NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
-  return (disarmed_value() != cmp->get_immedate());
+  return cmp->get_immediate();
 }

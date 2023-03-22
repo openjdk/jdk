@@ -21,6 +21,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<languages>
 			<language type="aa">Afáiris</language>
 			<language type="ab">Abcáisis</language>
+			<language type="ace">Aicinéis</language>
+			<language type="ada">Daingmis</language>
 			<language type="ady">Adaigéis</language>
 			<language type="ae">Aivéistis</language>
 			<language type="af">Afracáinis</language>
@@ -28,17 +30,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ain">Aidhniúis</language>
 			<language type="ak">Acáinis</language>
 			<language type="akk">Acáidis</language>
+			<language type="ale">Ailiúitis</language>
+			<language type="alt">Altaeis an Deiscirt</language>
 			<language type="am">Amáiris</language>
 			<language type="an">Aragóinis</language>
 			<language type="ang">Sean-Bhéarla</language>
+			<language type="ann">Obolo</language>
+			<language type="anp">Aingícis</language>
 			<language type="ar">Araibis</language>
 			<language type="ar_001">Araibis Chaighdeánach</language>
 			<language type="arc">Aramais</language>
 			<language type="arn">Mapúitsis</language>
+			<language type="arp">Arapachóis</language>
+			<language type="ars">Araibis Najdi</language>
 			<language type="as">Asaimis</language>
 			<language type="asa">Asúis</language>
 			<language type="ast">Astúiris</language>
+			<language type="atj">Atikamekw</language>
 			<language type="av">Aváiris</language>
+			<language type="awa">Avaidis</language>
 			<language type="ay">Aidhmiris</language>
 			<language type="az">Asarbaiseáinis</language>
 			<language type="az" alt="short">Asairis</language>
@@ -50,7 +60,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bem">Beimbis</language>
 			<language type="bez">Beinis</language>
 			<language type="bg">Bulgáiris</language>
+			<language type="bho">Vóispiris</language>
 			<language type="bi">Bioslaimis</language>
+			<language type="bin">Binis</language>
+			<language type="bla">Sicsicis</language>
 			<language type="bm">Bambairis</language>
 			<language type="bn">Beangáilis</language>
 			<language type="bo">Tibéidis</language>
@@ -59,48 +72,68 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bs">Boisnis</language>
 			<language type="bua">Buiriáitis</language>
 			<language type="bug">Buiginis</language>
+			<language type="byn">Blinis</language>
 			<language type="ca">Catalóinis</language>
+			<language type="cay">teanga Cayuga</language>
 			<language type="ccp">Seácmais</language>
 			<language type="ce">Seisnis</language>
 			<language type="ceb">Seabúáinis</language>
-			<language type="cgg">Chiga</language>
+			<language type="cgg">Cígis</language>
 			<language type="ch">Seamóiris</language>
+			<language type="chk">Siúicísis</language>
 			<language type="chm">Mairis</language>
+			<language type="cho">Seactáis</language>
+			<language type="chp">Siopúáinis</language>
 			<language type="chr">Seiricis</language>
+			<language type="chy">Siáinis</language>
 			<language type="ckb">Coirdis Lárnach</language>
 			<language type="ckb" alt="variant">Coirdis, Sóráinis</language>
+			<language type="clc">Chilcotin</language>
 			<language type="co">Corsaicis</language>
 			<language type="cop">Coptais</language>
 			<language type="cr">Craís</language>
+			<language type="crg">Michif</language>
+			<language type="crj">Craís an Deiscirt Thoir</language>
+			<language type="crk">Plains Cree</language>
+			<language type="crl">Craís Thoir Thuaidh</language>
+			<language type="crm">Moose Cree</language>
+			<language type="crr">teanga Algancach Carolina</language>
 			<language type="crs">Criól Fraincise Seselwa</language>
 			<language type="cs">Seicis</language>
 			<language type="csb">Caisiúibis</language>
+			<language type="csw">Swampy Cree</language>
 			<language type="cu">Slavais na hEaglaise</language>
 			<language type="cv">Suvaisis</language>
 			<language type="cy">Breatnais</language>
 			<language type="da">Danmhairgis</language>
+			<language type="dak">Dacótais</language>
+			<language type="dar">Dargais</language>
 			<language type="dav">Taita</language>
 			<language type="de">Gearmáinis</language>
-			<language type="de_AT">Gearmáinis Ostarach</language>
+			<language type="de_AT">Gearmáinis na hOstaire</language>
 			<language type="de_CH">Ard-Ghearmáinis Eilvéiseach</language>
+			<language type="dgr">Dograibis</language>
 			<language type="dje">Zarmais</language>
-			<language type="doi" draft="contributed">Dóigris</language>
+			<language type="doi">Dóigris</language>
 			<language type="dsb">Sorbais Íochtarach</language>
 			<language type="dua">Duailis</language>
 			<language type="dum">Meán-Ollainnis</language>
 			<language type="dv">Divéihis</language>
 			<language type="dyo">Jóla-Fainis</language>
 			<language type="dz">Seoinicis</language>
+			<language type="dzg">Dazaga</language>
 			<language type="ebu">Ciambúis</language>
 			<language type="ee">Éabhais</language>
+			<language type="efi">Eificis</language>
 			<language type="egy">Sean-Éigiptis</language>
+			<language type="eka">Acaidiúcais</language>
 			<language type="el">Gréigis</language>
 			<language type="en">Béarla</language>
-			<language type="en_AU">Béarla Astrálach</language>
-			<language type="en_CA">Béarla Ceanadach</language>
-			<language type="en_GB">Béarla Briotanach</language>
+			<language type="en_AU">Béarla na hAstráile</language>
+			<language type="en_CA">Béarla Cheanada</language>
+			<language type="en_GB">Béarla na Breataine</language>
 			<language type="en_GB" alt="short">Béarla na R.A.</language>
-			<language type="en_US">Béarla Meiriceánach</language>
+			<language type="en_US">Béarla Mheiriceá</language>
 			<language type="en_US" alt="short">Béarla S.A.M.</language>
 			<language type="enm">Meán-Bhéarla</language>
 			<language type="eo">Esperanto</language>
@@ -118,33 +151,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fil">Filipínis</language>
 			<language type="fj">Fidsis</language>
 			<language type="fo">Faróis</language>
-			<language type="fon">fon</language>
+			<language type="fon">Fonais</language>
 			<language type="fr">Fraincis</language>
-			<language type="fr_CA">Fraincis Cheanadach</language>
-			<language type="fr_CH">Fraincis Eilvéiseach</language>
+			<language type="fr_CA">Fraincis Cheanada</language>
+			<language type="fr_CH">Fraincis na hEilvéise</language>
+			<language type="frc">Fraincis Cajun</language>
 			<language type="frm">Meán-Fhraincis</language>
 			<language type="fro">Sean-Fhraincis</language>
 			<language type="frr">Freaslainnis an Tuaiscirt</language>
 			<language type="fur">Friúilis</language>
 			<language type="fy">Freaslainnis Iartharach</language>
 			<language type="ga">Gaeilge</language>
+			<language type="gaa">Geáis</language>
 			<language type="gan">Sínis Gan</language>
 			<language type="gd">Gaeilge na hAlban</language>
 			<language type="gez">Aetóipis</language>
-			<language type="gil">Cireabaitis</language>
+			<language type="gil">Gilbeartais</language>
 			<language type="gl">Gailísis</language>
 			<language type="gmh">Meán-Ard-Ghearmáinis</language>
 			<language type="gn">Guaráinis</language>
 			<language type="goh">Sean-Ard-Ghearmáinis</language>
+			<language type="gor">Gorantalais</language>
 			<language type="grc">Sean-Ghréigis</language>
 			<language type="gsw">Gearmáinis Eilvéiseach</language>
 			<language type="gu">Gúisearáitis</language>
 			<language type="guc">Uaúis</language>
 			<language type="guz">Gúsaís</language>
 			<language type="gv">Manainnis</language>
+			<language type="gwi">Goitsinis</language>
 			<language type="ha">Hásais</language>
+			<language type="hai">Haídis</language>
 			<language type="hak">Haicéis</language>
 			<language type="haw">Haváis</language>
+			<language type="hax">Haídis an Deiscirt</language>
 			<language type="he">Eabhrais</language>
 			<language type="hi">Hiondúis</language>
 			<language type="hif">Hiondúis Fhidsí</language>
@@ -155,20 +194,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hr">Cróitis</language>
 			<language type="hsb">Sorbais Uachtarach</language>
 			<language type="hsn">Sínis Xiang</language>
-			<language type="ht">Criól Háítíoch</language>
+			<language type="ht">Críol Háítí</language>
 			<language type="hu">Ungáiris</language>
 			<language type="hup">Húipis</language>
+			<language type="hur">Halkomelem</language>
 			<language type="hy">Airméinis</language>
 			<language type="hz">Heiréiris</language>
 			<language type="ia">Interlingua</language>
+			<language type="iba">Ibeainis</language>
 			<language type="ibb">Ibibis</language>
 			<language type="id">Indinéisis</language>
 			<language type="ie">Interlingue</language>
 			<language type="ig">Íogbóis</language>
 			<language type="ii">Ís Shichuan</language>
 			<language type="ik">Iniúipiaicis</language>
+			<language type="ikt">Ionúitis Iarthar Cheanada</language>
+			<language type="ilo">Ileacáinis</language>
 			<language type="inh">Iongúis</language>
-			<language type="io">Ido</language>
+			<language type="io">Ídis</language>
 			<language type="is">Íoslainnis</language>
 			<language type="it">Iodáilis</language>
 			<language type="iu">Ionúitis</language>
@@ -181,10 +224,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ka">Seoirsis</language>
 			<language type="kaa">Cara-Chalpáis</language>
 			<language type="kab">Caibílis</language>
+			<language type="kac">Caitsinis</language>
+			<language type="kaj">Jju</language>
 			<language type="kam">Cambais</language>
+			<language type="kbd">Cabairdis</language>
+			<language type="kcg">Tyap</language>
 			<language type="kde">Makonde</language>
 			<language type="kea">Criól Cabo Verde</language>
+			<language type="kfo">Koro</language>
 			<language type="kg">Congóis</language>
+			<language type="kgp">Kaingang</language>
+			<language type="kha">Caisis</language>
 			<language type="khq">Songais Iartharach</language>
 			<language type="ki">Ciocúis</language>
 			<language type="kj">Cuainiáimis</language>
@@ -193,10 +243,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kl">Kalaallisut</language>
 			<language type="kln">Kalenjin</language>
 			<language type="km">Ciméiris</language>
+			<language type="kmb">Ciombundais</language>
 			<language type="kn">Cannadais</language>
 			<language type="ko">Cóiréis</language>
 			<language type="kok">Concáinis</language>
+			<language type="kpe">Caipeilis</language>
 			<language type="kr">Canúiris</language>
+			<language type="krc">Caraicí-Balcáiris</language>
 			<language type="krl">Cairéilis</language>
 			<language type="kru">Curúicis</language>
 			<language type="ks">Caismíris</language>
@@ -204,30 +257,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">Baifiais</language>
 			<language type="ksh">Coilsis</language>
 			<language type="ku">Coirdis</language>
+			<language type="kum">Cúimicis</language>
 			<language type="kv">Coimis</language>
 			<language type="kw">Coirnis</language>
+			<language type="kwk">Kwakʼwala</language>
 			<language type="ky">Cirgisis</language>
 			<language type="la">Laidin</language>
 			<language type="lad">Laidínis</language>
 			<language type="lag">Ciolaingis</language>
 			<language type="lah">Puinseáibis Iartharach</language>
 			<language type="lb">Lucsambuirgis</language>
+			<language type="lez">Leisgis</language>
 			<language type="lg">Lugandais</language>
 			<language type="li">Liombuirgis</language>
 			<language type="lij">Liogúiris</language>
+			<language type="lil">Lillooet</language>
 			<language type="liv">Liovóinis</language>
 			<language type="lkt">Lacótais</language>
 			<language type="lmo">Lombairdis</language>
 			<language type="ln">Liongáilis</language>
 			<language type="lo">Laoisis</language>
+			<language type="lou">Criól Louisiana</language>
+			<language type="loz">Lóisis</language>
 			<language type="lrc">Lúiris an Tuaiscirt</language>
+			<language type="lsm">Saamia</language>
 			<language type="lt">Liotuáinis</language>
 			<language type="lu">Lúba-Cataingis</language>
+			<language type="lua">Luba-Lulua</language>
+			<language type="lun">Lundais</language>
 			<language type="luo">Lúóis</language>
+			<language type="lus">Míosóis</language>
 			<language type="luy">Luyia</language>
 			<language type="lv">Laitvis</language>
+			<language type="mad">Maidiúiris</language>
+			<language type="mag">Magaidis</language>
 			<language type="mai">Maitilis</language>
+			<language type="mak">Macasairis</language>
 			<language type="mas">Másais</language>
+			<language type="mdf">Mocsais</language>
 			<language type="men">Meindis</language>
 			<language type="mer">Meru</language>
 			<language type="mfe">Morisyen</language>
@@ -237,20 +304,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mgo">Metaʼ</language>
 			<language type="mh">Mairsillis</language>
 			<language type="mi">Maorais</language>
+			<language type="mic">Micmeaicis</language>
+			<language type="min">Míneangcababhais</language>
 			<language type="mk">Macadóinis</language>
 			<language type="ml">Mailéalaimis</language>
 			<language type="mn">Mongóilis</language>
 			<language type="mni">Manapúiris</language>
+			<language type="moe">Innu-aimun</language>
 			<language type="moh">Móháicis</language>
+			<language type="mos">Mosais</language>
 			<language type="mr">Maraitis</language>
 			<language type="mrj">Mairis Iartharach</language>
 			<language type="ms">Malaeis</language>
 			<language type="mt">Máltais</language>
 			<language type="mua">Mundang</language>
 			<language type="mul">Ilteangacha</language>
+			<language type="mus">Muscogee</language>
 			<language type="mwl">Mioraindéis</language>
 			<language type="mwr">Marmhairis</language>
 			<language type="my">Burmais</language>
+			<language type="myv">Éirsis</language>
 			<language type="mzn">Mázandaráinis</language>
 			<language type="na">Nárúis</language>
 			<language type="nan">Sínis Min Nan</language>
@@ -261,7 +334,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nds">Gearmáinis Íochtarach</language>
 			<language type="nds_NL">Sacsainis Íochtarach</language>
 			<language type="ne">Neipeailis</language>
+			<language type="new">Néamharais</language>
 			<language type="ng">Ndongais</language>
+			<language type="nia">Niaisis</language>
 			<language type="niu">Níobhais</language>
 			<language type="nl">Ollainnis</language>
 			<language type="nl_BE">Pléimeannais</language>
@@ -269,7 +344,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nn">Nua-Ioruais</language>
 			<language type="nnh">Ngiemboon</language>
 			<language type="no">Ioruais</language>
+			<language type="nog">Nógaeis</language>
 			<language type="non">Sean-Lochlainnis</language>
+			<language type="nqo">N-cóis</language>
 			<language type="nr">Ndeibéilis an Deiscirt</language>
 			<language type="nso">Sútúis an Tuaiscirt</language>
 			<language type="nus">Nuairis</language>
@@ -278,14 +355,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nyn">Niancóilis</language>
 			<language type="oc">Ocsatáinis</language>
 			<language type="oj">Óisibis</language>
+			<language type="ojb">Óisibis Iarthuiscirt</language>
+			<language type="ojc">Óisibis Lárnach</language>
+			<language type="ojs">Oji-Cree</language>
+			<language type="ojw">Óisibis an Iarthar</language>
+			<language type="oka">Okanagan</language>
 			<language type="om">Oraimis</language>
 			<language type="or">Odia</language>
 			<language type="os">Oiséitis</language>
 			<language type="pa">Puinseáibis</language>
+			<language type="pag">Pangasaíneánais</language>
+			<language type="pam">Pampaingis</language>
+			<language type="pap">Paipeamaintis</language>
+			<language type="pau">Palabhais</language>
 			<language type="pcm">pidsean na Nigéire</language>
 			<language type="peo">Sean-Pheirsis</language>
 			<language type="pi">Páilis</language>
+			<language type="pis">Pijin</language>
 			<language type="pl">Polainnis</language>
+			<language type="pqm">Maliseet-Passamaquoddy</language>
 			<language type="prg">Prúisis</language>
 			<language type="ps">Paistis</language>
 			<language type="pt">Portaingéilis</language>
@@ -293,6 +381,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pt_PT">Portaingéilis Ibéarach</language>
 			<language type="qu">Ceatsuais</language>
 			<language type="quc">Cuitséis</language>
+			<language type="rap">Rapanúis</language>
+			<language type="rar">Raratongais</language>
 			<language type="rhg">Róihinis</language>
 			<language type="rm">Rómainis</language>
 			<language type="rn">Rúindis</language>
@@ -305,10 +395,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rw">Ciniaruaindis</language>
 			<language type="rwk">Rwa</language>
 			<language type="sa">Sanscrait</language>
+			<language type="sad">Sandabhais</language>
 			<language type="sah">Sachais</language>
 			<language type="sam">Aramais Shamárach</language>
 			<language type="saq">Samburu</language>
 			<language type="sat">Santáilis</language>
+			<language type="sba">Ngambay</language>
 			<language type="sbp">Sangu</language>
 			<language type="sc">Sairdínis</language>
 			<language type="scn">Sicilis</language>
@@ -321,51 +413,71 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sga">Sean-Ghaeilge</language>
 			<language type="sh">Seirbea-Chróitis</language>
 			<language type="shi">Tachelhit</language>
+			<language type="shn">Seánais</language>
 			<language type="si">Siolóinis</language>
 			<language type="sk">Slóvaicis</language>
 			<language type="sl">Slóivéinis</language>
+			<language type="slh">Lushootseed an Deiscirt</language>
 			<language type="sm">Samóis</language>
 			<language type="sma">Sáimis Theas</language>
 			<language type="smj">Sáimis Lule</language>
 			<language type="smn">Sáimis Inari</language>
 			<language type="sms">Sáimis Skolt</language>
 			<language type="sn">Seoinis</language>
+			<language type="snk">Soinincéis</language>
 			<language type="so">Somáilis</language>
 			<language type="sog">Sogdánais</language>
 			<language type="sq">Albáinis</language>
 			<language type="sr">Seirbis</language>
+			<language type="srn">Suranaimis</language>
 			<language type="ss">Suaisis</language>
 			<language type="st">Sútúis an Deiscirt</language>
+			<language type="str">Straits Salish</language>
 			<language type="su">Sundais</language>
+			<language type="suk">Sucúimis</language>
 			<language type="sux">Suiméiris</language>
 			<language type="sv">Sualainnis</language>
 			<language type="sw">Svahaílis</language>
 			<language type="sw_CD">Svahaílis an Chongó</language>
-			<language type="swb">Comóiris</language>
+			<language type="swb">teanga na gComórach</language>
 			<language type="syr">Siricis</language>
 			<language type="szl">Siléisis</language>
 			<language type="ta">Tamailis</language>
+			<language type="tce">Tutchone an Deiscirt</language>
 			<language type="te">Teileagúis</language>
+			<language type="tem">Teimnis</language>
 			<language type="teo">Teso</language>
+			<language type="tet">Teitimis</language>
 			<language type="tg">Taidsícis</language>
+			<language type="tgx">Tagish</language>
 			<language type="th">Téalainnis</language>
+			<language type="tht">Tahltan</language>
 			<language type="ti">Tigrinis</language>
+			<language type="tig">Tigréis</language>
 			<language type="tk">Tuircméinis</language>
 			<language type="tl">Tagálaigis</language>
 			<language type="tlh">Klingon</language>
+			<language type="tli">Clincitis</language>
 			<language type="tn">Suáinis</language>
 			<language type="to">Tongais</language>
+			<language type="tok">Toki Pona</language>
 			<language type="tpi">Tok Pisin</language>
 			<language type="tr">Tuircis</language>
+			<language type="trv">Taroko</language>
 			<language type="ts">Songais</language>
 			<language type="tt">Tatairis</language>
+			<language type="ttm">Northern Tutchone</language>
+			<language type="tum">Tumbúicis</language>
+			<language type="tvl">Tuvalu</language>
 			<language type="tw">Tíbhis</language>
 			<language type="twq">Tasawaq</language>
 			<language type="ty">Taihítis</language>
+			<language type="tyv">Túvainis</language>
 			<language type="tzm">Tamaisis Atlais Láir</language>
 			<language type="udm">Udmairtis</language>
 			<language type="ug">Uigiúiris</language>
 			<language type="uk">Úcráinis</language>
+			<language type="umb">Umbundais</language>
 			<language type="und">Teanga anaithnid</language>
 			<language type="ur">Urdúis</language>
 			<language type="uz">Úisbéiceastáinis</language>
@@ -378,20 +490,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vun">Vunjo</language>
 			<language type="wa">Vallúnais</language>
 			<language type="wae">Walser</language>
+			<language type="wal">Uailéitis</language>
+			<language type="war">Uairéis</language>
 			<language type="wo">Volaifis</language>
+			<language type="wuu">Sínis Wu</language>
 			<language type="xal">Cailmícis</language>
 			<language type="xh">Cóisis</language>
 			<language type="xog">Soga</language>
 			<language type="yav">Yangben</language>
+			<language type="ybb">Yemba</language>
 			<language type="yi">Giúdais</language>
 			<language type="yo">Iarúibis</language>
+			<language type="yrl">Nheengatu</language>
 			<language type="yue">Cantainis</language>
 			<language type="yue" alt="menu">Sínis, Cantainis</language>
 			<language type="za">Siuáingis</language>
 			<language type="zea">Séalainnis</language>
 			<language type="zgh">Tamaisis Chaighdeánach Mharacó</language>
 			<language type="zh">Sínis</language>
-			<language type="zh" alt="menu">Mandairínis</language>
+			<language type="zh" alt="menu">Sínis, Mandairínis</language>
 			<language type="zh_Hans">Sínis Shimplithe</language>
 			<language type="zh_Hans" alt="long">Mandairínis Shimplithe</language>
 			<language type="zh_Hant">Sínis Thraidisiúnta</language>
@@ -399,12 +516,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zu">Súlúis</language>
 			<language type="zun">Zúinis</language>
 			<language type="zxx">Gan ábhar teangeolaíoch</language>
+			<language type="zza">Zázá</language>
 		</languages>
 		<scripts>
-			<script type="Adlm" draft="contributed">Adlam</script>
+			<script type="Adlm">Adlam</script>
 			<script type="Aghb">Albánach Cugasach</script>
 			<script type="Ahom">Ahom</script>
 			<script type="Arab">Arabach</script>
+			<script type="Aran">Nastaliq</script>
 			<script type="Armi">Aramach Impiriúil</script>
 			<script type="Armn">Airméanach</script>
 			<script type="Avst">Aivéisteach</script>
@@ -415,13 +534,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Brai">Braille</script>
 			<script type="Bugi">Buigineach</script>
 			<script type="Buhd">Buthaideach</script>
-			<script type="Cans" draft="contributed">Siollach Bundúchasach Ceanadach Aontaithe</script>
+			<script type="Cakm">Seácmais</script>
+			<script type="Cans">Siollach Bundúchasach Ceanadach Aontaithe</script>
 			<script type="Cher">Seiricíoch</script>
 			<script type="Copt">Coptach</script>
 			<script type="Cprt">Cipireach</script>
 			<script type="Cyrl">Coireallach</script>
 			<script type="Deva">Déiveanágrach</script>
-			<script type="Dupl" draft="contributed">Gearrscríobh Duployan</script>
+			<script type="Dupl">Gearrscríobh Duployan</script>
 			<script type="Egyd">Éigipteach coiteann</script>
 			<script type="Egyh">Éigipteach cliarúil</script>
 			<script type="Egyp">Iairiglifí Éigipteacha</script>
@@ -435,7 +555,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hanb">Han agus Bopomofo</script>
 			<script type="Hang">Hangalach</script>
 			<script type="Hani">Han</script>
-			<script type="Hano" draft="contributed">Hananúis</script>
+			<script type="Hano">Hananúis</script>
 			<script type="Hans">Simplithe</script>
 			<script type="Hans" alt="stand-alone">Han Simplithe</script>
 			<script type="Hant">Traidisiúnta</script>
@@ -468,28 +588,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Mend">Meindeach</script>
 			<script type="Mlym">Mailéalamach</script>
 			<script type="Mong">Mongólach</script>
-			<script type="Mult" draft="contributed">Multani</script>
+			<script type="Mtei">Meitei Mayek</script>
+			<script type="Mult">Multani</script>
 			<script type="Mymr">Maenmarach</script>
 			<script type="Narb">Sean-Arabach Thuaidh</script>
 			<script type="Newa">Newa</script>
-			<script type="Nkoo" draft="contributed">N-cóis</script>
+			<script type="Nkoo">N-cóis</script>
 			<script type="Ogam">Ogham</script>
+			<script type="Olck">Ol Chiki</script>
 			<script type="Orya">Oiríseach</script>
-			<script type="Osge" draft="contributed">Ósáis</script>
+			<script type="Osge">Ósáis</script>
 			<script type="Perm">Sean-Pheirmeach</script>
 			<script type="Phnx">Féiníceach</script>
 			<script type="Plrd">Pollard Foghrach</script>
 			<script type="Prti">Pairtiach Inscríbhinniúil</script>
+			<script type="Rohg">Hanifi</script>
 			<script type="Runr">Rúnach</script>
 			<script type="Samr">Samárach</script>
 			<script type="Sarb">Sean-Arabach Theas</script>
-			<script type="Sgnw" draft="contributed">Litritheoireacht Comharthaí</script>
+			<script type="Sgnw">Litritheoireacht Comharthaí</script>
 			<script type="Shaw">Shawach</script>
 			<script type="Sinh">Siolónach</script>
-			<script type="Sund" draft="contributed">Sundainéis</script>
+			<script type="Sund">Sundainéis</script>
 			<script type="Syrc">Siriceach</script>
-			<script type="Tale" draft="contributed">Deiheoingis</script>
-			<script type="Talu" draft="contributed">Tai Lue Nua</script>
+			<script type="Tale">Deiheoingis</script>
+			<script type="Talu">Tai Lue Nua</script>
 			<script type="Taml">Tamalach</script>
 			<script type="Telu">Teileagúch</script>
 			<script type="Tfng">Tifinagh</script>
@@ -498,7 +621,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Thai">Téalannach</script>
 			<script type="Tibt">Tibéadach</script>
 			<script type="Ugar">Úgairíteach</script>
-			<script type="Vaii" draft="contributed">Vadhais</script>
+			<script type="Vaii">Vadhais</script>
 			<script type="Xpeo">Sean-Pheirseach</script>
 			<script type="Xsux">Dingchruthach Suiméar-Acádach</script>
 			<script type="Yiii">Ís</script>
@@ -818,90 +941,90 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</territories>
 		<variants>
 			<variant type="1901">Litriú Traidisiúnta na Gearmáinise</variant>
-			<variant type="1994" draft="contributed">Ortagrafaíocht Resian Chaighdeánaithe</variant>
-			<variant type="1996" draft="contributed">Ortagrafaíocht na Gearmáinise in 1996</variant>
-			<variant type="1606NICT" draft="contributed">Fraincis Dhéanach Mheánach go 1606</variant>
+			<variant type="1994">Ortagrafaíocht Resian Chaighdeánaithe</variant>
+			<variant type="1996">Ortagrafaíocht na Gearmáinise in 1996</variant>
+			<variant type="1606NICT">Fraincis Dhéanach Mheánach go 1606</variant>
 			<variant type="1694ACAD">Nua-Fhraincis Mhoch</variant>
 			<variant type="1959ACAD">Acadúil</variant>
-			<variant type="ABL1943" draft="contributed">Foirmiú ortagrafaíochta in 1943</variant>
+			<variant type="ABL1943">Foirmiú ortagrafaíochta in 1943</variant>
 			<variant type="ALALC97">Rómhánú ALA-LC, eagrán 1997</variant>
-			<variant type="ALUKU" draft="contributed">Canúint Aluku</variant>
-			<variant type="AO1990" draft="contributed">Comhaontú Ortagrafaíochta Theanga na Portaingéilise, 1990</variant>
+			<variant type="ALUKU">Canúint Aluku</variant>
+			<variant type="AO1990">Comhaontú Ortagrafaíochta Theanga na Portaingéilise, 1990</variant>
 			<variant type="AREVELA">Airméinis an Oirthir</variant>
 			<variant type="AREVMDA">Airméinis an Iarthair</variant>
-			<variant type="BAKU1926" draft="contributed">Abítir Laidine Tuircice Aontaithe</variant>
-			<variant type="BALANKA" draft="contributed">Canúint Balanka de Anii</variant>
-			<variant type="BARLA" draft="contributed">Grúpa canúna Barlavento de Kabuverdianu</variant>
+			<variant type="BAKU1926">Abítir Laidine Tuircice Aontaithe</variant>
+			<variant type="BALANKA">Canúint Balanka de Anii</variant>
+			<variant type="BARLA">Grúpa canúna Barlavento de Kabuverdianu</variant>
 			<variant type="BASICENG">Bun-Bhéarla</variant>
-			<variant type="BAUDDHA" draft="contributed">Bauddha</variant>
-			<variant type="BISCAYAN" draft="contributed">BIOSCÁNACH</variant>
+			<variant type="BAUDDHA">Bauddha</variant>
+			<variant type="BISCAYAN">BIOSCÁNACH</variant>
 			<variant type="BISKE">Canúint San Giorgo/Bila</variant>
 			<variant type="BOHORIC">Aibítir Bohorič</variant>
-			<variant type="BOONT" draft="contributed">Boontling</variant>
-			<variant type="COLB1945" draft="contributed">Coinbhinsiún Ortagrafaíochta na Portaingéilise na Brasaíle, 1945</variant>
+			<variant type="BOONT">Boontling</variant>
+			<variant type="COLB1945">Coinbhinsiún Ortagrafaíochta na Portaingéilise na Brasaíle, 1945</variant>
 			<variant type="CORNU">Béarla an Choirn</variant>
 			<variant type="DAJNKO">Aibítir Dajnko</variant>
-			<variant type="EKAVSK" draft="contributed">Seirbis le fuaimniú Ekavian</variant>
+			<variant type="EKAVSK">Seirbis le fuaimniú Ekavian</variant>
 			<variant type="EMODENG">Nua-Bhéarla Moch</variant>
 			<variant type="FONIPA">Fogharscríobh IPA</variant>
-			<variant type="FONNAPA" draft="contributed">Fonnapa</variant>
+			<variant type="FONNAPA">Fonnapa</variant>
 			<variant type="FONUPA">Fogharscríobh UPA</variant>
-			<variant type="FONXSAMP" draft="contributed">Fonxsamp</variant>
+			<variant type="FONXSAMP">Fonxsamp</variant>
 			<variant type="HEPBURN">Rómhánú Hepburn</variant>
-			<variant type="HOGNORSK" draft="contributed">Hognorsk</variant>
-			<variant type="HSISTEMO" draft="contributed">Hsistemo</variant>
-			<variant type="IJEKAVSK" draft="contributed">Seirbis le fuaimniú Ijekavach</variant>
-			<variant type="ITIHASA" draft="contributed">Itihasa</variant>
-			<variant type="JAUER" draft="contributed">Jauer</variant>
-			<variant type="JYUTPING" draft="contributed">Jyutping</variant>
+			<variant type="HOGNORSK">Hognorsk</variant>
+			<variant type="HSISTEMO">Hsistemo</variant>
+			<variant type="IJEKAVSK">Seirbis le fuaimniú Ijekavach</variant>
+			<variant type="ITIHASA">Itihasa</variant>
+			<variant type="JAUER">Jauer</variant>
+			<variant type="JYUTPING">Jyutping</variant>
 			<variant type="KKCOR">Gnáth-Litriú</variant>
-			<variant type="KOCIEWIE" draft="contributed">Kociewie</variant>
+			<variant type="KOCIEWIE">Kociewie</variant>
 			<variant type="KSCOR">Litriú Caighdeánach</variant>
-			<variant type="LAUKIKA" draft="contributed">Laukika</variant>
-			<variant type="LIPAW" draft="contributed">Canúint Lipovaz de Resian</variant>
-			<variant type="LUNA1918" draft="contributed">Luna1918</variant>
+			<variant type="LAUKIKA">Laukika</variant>
+			<variant type="LIPAW">Canúint Lipovaz de Resian</variant>
+			<variant type="LUNA1918">Luna1918</variant>
 			<variant type="METELKO">Aibítir Metelko</variant>
 			<variant type="MONOTON">Aontonach</variant>
-			<variant type="NDYUKA" draft="contributed">Canúint Ndyuka</variant>
-			<variant type="NEDIS" draft="contributed">Canúint Natisone</variant>
+			<variant type="NDYUKA">Canúint Ndyuka</variant>
+			<variant type="NEDIS">Canúint Natisone</variant>
 			<variant type="NEWFOUND">Talamh an Éisc</variant>
-			<variant type="NJIVA" draft="contributed">Canúint Gniva/Njiva</variant>
+			<variant type="NJIVA">Canúint Gniva/Njiva</variant>
 			<variant type="NULIK">Volapük Nua-Aimseartha</variant>
-			<variant type="OSOJS" draft="contributed">Canúint Oseacco/Osojane</variant>
+			<variant type="OSOJS">Canúint Oseacco/Osojane</variant>
 			<variant type="OXENDICT">Litriú OED</variant>
-			<variant type="PAHAWH2" draft="contributed">Pahawh2</variant>
-			<variant type="PAHAWH3" draft="contributed">Pahawh3</variant>
-			<variant type="PAHAWH4" draft="contributed">Pahawh4</variant>
-			<variant type="PAMAKA" draft="contributed">Canúint Pamaka</variant>
-			<variant type="PETR1708" draft="contributed">Petr1708</variant>
+			<variant type="PAHAWH2">Pahawh2</variant>
+			<variant type="PAHAWH3">Pahawh3</variant>
+			<variant type="PAHAWH4">Pahawh4</variant>
+			<variant type="PAMAKA">Canúint Pamaka</variant>
+			<variant type="PETR1708">Petr1708</variant>
 			<variant type="PINYIN">Rómhánú Pinyin</variant>
 			<variant type="POLYTON">Iltonach</variant>
 			<variant type="POSIX">Ríomhaire</variant>
-			<variant type="PUTER" draft="contributed">Puter</variant>
+			<variant type="PUTER">Puter</variant>
 			<variant type="REVISED">Litriú Athbhreithnithe</variant>
 			<variant type="RIGIK">Volapük Clasaiceach</variant>
-			<variant type="ROZAJ" draft="contributed">Reisiach</variant>
-			<variant type="RUMGR" draft="contributed">Rumgr</variant>
-			<variant type="SAAHO" draft="contributed">Saho</variant>
+			<variant type="ROZAJ">Reisiach</variant>
+			<variant type="RUMGR">Rumgr</variant>
+			<variant type="SAAHO">Saho</variant>
 			<variant type="SCOTLAND">Béarla Caighdeánach na hAlban</variant>
 			<variant type="SCOUSE">Béarla Learphoill</variant>
 			<variant type="SIMPLE">Simplí</variant>
-			<variant type="SOLBA" draft="contributed">Canúint Stolvizza/Solbica</variant>
-			<variant type="SOTAV" draft="contributed">Grúpa canúna Sotavento de Kabuverdianu</variant>
-			<variant type="SPANGLIS" draft="contributed">Spainglis</variant>
-			<variant type="SURMIRAN" draft="contributed">Surmiran</variant>
-			<variant type="SURSILV" draft="contributed">Sursilvan</variant>
-			<variant type="SUTSILV" draft="contributed">Sutsilv</variant>
-			<variant type="TARASK" draft="contributed">Ortografaíocht Taraskievica</variant>
+			<variant type="SOLBA">Canúint Stolvizza/Solbica</variant>
+			<variant type="SOTAV">Grúpa canúna Sotavento de Kabuverdianu</variant>
+			<variant type="SPANGLIS">Spainglis</variant>
+			<variant type="SURMIRAN">Surmiran</variant>
+			<variant type="SURSILV">Sursilvan</variant>
+			<variant type="SUTSILV">Sutsilv</variant>
+			<variant type="TARASK">Ortografaíocht Taraskievica</variant>
 			<variant type="UCCOR">Litriú Comhaontaithe</variant>
 			<variant type="UCRCOR">Litriú Comhaontaithe Athbhreithnithe</variant>
 			<variant type="ULSTER">Cúige Uladh</variant>
 			<variant type="UNIFON">Aibítir foghraíochta Unifon</variant>
 			<variant type="VAIDIKA">Véideach</variant>
 			<variant type="VALENCIA">Vaileinsis</variant>
-			<variant type="VALLADER" draft="contributed">Vallader</variant>
+			<variant type="VALLADER">Vallader</variant>
 			<variant type="WADEGILE">Rómhánú Wade-Giles</variant>
-			<variant type="XSISTEMO" draft="contributed">Xsistemo</variant>
+			<variant type="XSISTEMO">Xsistemo</variant>
 		</variants>
 		<keys>
 			<key type="calendar">Féilire</key>
@@ -924,10 +1047,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Féilire na nEabhrach</type>
 			<type key="calendar" type="indian">Féilire Náisiúnta na hIndia</type>
 			<type key="calendar" type="islamic">Féilire Ioslamach</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">Féilire Ioslamach (táblach, seanré shibhialta)</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">Féilire Ioslamach (an Araib Shádach, dearcadh)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">Féilire Ioslamach (táblach, seanré réalteolaíoch)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Féilire Ioslamach (Umm al-Qura)</type>
+			<type key="calendar" type="islamic-civil">Féilire Ioslamach (táblach, seanré shibhialta)</type>
+			<type key="calendar" type="islamic-rgsa">Féilire Ioslamach (an Araib Shádach, dearcadh)</type>
+			<type key="calendar" type="islamic-tbla">Féilire Ioslamach (táblach, seanré réalteolaíoch)</type>
+			<type key="calendar" type="islamic-umalqura">Féilire Ioslamach (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Féilire ISO-8601</type>
 			<type key="calendar" type="japanese">Féilire Seapánach</type>
 			<type key="calendar" type="persian">Féilire Peirseach</type>
@@ -935,22 +1058,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account">Formáid Airgeadra don Chuntasaíocht</type>
 			<type key="cf" type="standard">Formáid Airgeadra Caighdeánach</type>
 			<type key="collation" type="big5han">Ord sórtála Síneach traidisiúnta - Big5</type>
-			<type key="collation" type="compat" draft="contributed">Ord Sórtála Roimhe Seo, ar son na comhoiriúnachta</type>
+			<type key="collation" type="compat">Ord Sórtála Roimhe Seo, ar son na comhoiriúnachta</type>
 			<type key="collation" type="dictionary">Ord Sórtála Foclóirí</type>
 			<type key="collation" type="ducet">Ord Sórtála Réamhshocraithe Unicode</type>
 			<type key="collation" type="emoji">Ord Sórtála Emoji</type>
-			<type key="collation" type="eor" draft="contributed">Rialacha Ordaithe Eorpacha</type>
+			<type key="collation" type="eor">Rialacha Ordaithe Eorpacha</type>
 			<type key="collation" type="gb2312han">Ord sórtála Síneach simplithe - GB 2312</type>
 			<type key="collation" type="phonebook">Ord sórtála an eolaire teileafóin</type>
 			<type key="collation" type="pinyin">Ord sórtála pinyin</type>
-			<type key="collation" type="reformed" draft="contributed">Ord Sórtála Athfhoirmithe</type>
+			<type key="collation" type="reformed">Ord Sórtála Athfhoirmithe</type>
 			<type key="collation" type="search">Cuardach Ilfhóinteach</type>
-			<type key="collation" type="searchjl" draft="contributed">Cuardach de réir Consan Tosaigh Hangul</type>
+			<type key="collation" type="searchjl">Cuardach de réir Consan Tosaigh Hangul</type>
 			<type key="collation" type="standard">Ord Sórtála Caighdeánach</type>
 			<type key="collation" type="stroke">Ord sórtála stríce</type>
 			<type key="collation" type="traditional">Ord sórtála traidisiúnta</type>
-			<type key="collation" type="unihan" draft="contributed">Ord Sórtála Stríce Radacaí</type>
-			<type key="collation" type="zhuyin" draft="contributed">Ord Sórtála Zhuyin</type>
+			<type key="collation" type="unihan">Ord Sórtála Stríce Radacaí</type>
+			<type key="collation" type="zhuyin">Ord Sórtála Zhuyin</type>
 			<type key="hc" type="h11">Córas 12 Uair (0–11)</type>
 			<type key="hc" type="h12">Córas 12 Uair (1–12)</type>
 			<type key="hc" type="h23">Córas 24 Uair (0–23)</type>
@@ -976,7 +1099,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ethi">Uimhreacha Aetóipice</type>
 			<type key="numbers" type="fullwide">Digití Lánleithid</type>
 			<type key="numbers" type="geor">Uimhreacha Seoirseacha</type>
-			<type key="numbers" type="gonm" draft="contributed">Digití Masaram Gondi</type>
+			<type key="numbers" type="gonm">Digití Masaram Gondi</type>
 			<type key="numbers" type="grek">Uimhreacha Gréagacha</type>
 			<type key="numbers" type="greklow">Uimhreacha Cás Íochtair Gréagacha</type>
 			<type key="numbers" type="gujr">Digití Gúisearátacha</type>
@@ -987,54 +1110,54 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">Uimhreacha sa tSínis Thraidisiúnta</type>
 			<type key="numbers" type="hantfin">Uimhreacha Airgeadúla sa tSínis Thraidisiúnta</type>
 			<type key="numbers" type="hebr">Uimhreacha Eabhracha</type>
-			<type key="numbers" type="hmng" draft="contributed">Digití Pahawh Hmong</type>
+			<type key="numbers" type="hmng">Digití Pahawh Hmong</type>
 			<type key="numbers" type="java">Digití Iávacha</type>
 			<type key="numbers" type="jpan">Uimhreacha Seapánacha</type>
 			<type key="numbers" type="jpanfin">Uimhreacha Airgeadúla Seapánacha</type>
-			<type key="numbers" type="kali" draft="contributed">Digití Kayah Li</type>
+			<type key="numbers" type="kali">Digití Kayah Li</type>
 			<type key="numbers" type="khmr">Digití Ciméaracha</type>
 			<type key="numbers" type="knda">Digití Cannadacha</type>
-			<type key="numbers" type="lana" draft="contributed">Digití Tai Tham Hora</type>
-			<type key="numbers" type="lanatham" draft="contributed">Digití Tai Tham Tham</type>
+			<type key="numbers" type="lana">Digití Tai Tham Hora</type>
+			<type key="numbers" type="lanatham">Digití Tai Tham Tham</type>
 			<type key="numbers" type="laoo">Digití Laosacha</type>
 			<type key="numbers" type="latn">Digití Iartharacha</type>
-			<type key="numbers" type="lepc" draft="contributed">Digití Lepcha</type>
-			<type key="numbers" type="limb" draft="contributed">Digití Limbu</type>
-			<type key="numbers" type="mathbold" draft="contributed">Digití Troma Matamaiticiúla</type>
-			<type key="numbers" type="mathdbl" draft="contributed">Digití Stríce Dúbailte Matamaiticiúla</type>
-			<type key="numbers" type="mathmono" draft="contributed">Digití Aonspáis Matamaiticiúla</type>
-			<type key="numbers" type="mathsanb" draft="contributed">Digití Troma Sans-Serif Matamaiticiúla</type>
-			<type key="numbers" type="mathsans" draft="contributed">Digití Sans-Serif Matamaiticiúla</type>
+			<type key="numbers" type="lepc">Digití Lepcha</type>
+			<type key="numbers" type="limb">Digití Limbu</type>
+			<type key="numbers" type="mathbold">Digití Troma Matamaiticiúla</type>
+			<type key="numbers" type="mathdbl">Digití Stríce Dúbailte Matamaiticiúla</type>
+			<type key="numbers" type="mathmono">Digití Aonspáis Matamaiticiúla</type>
+			<type key="numbers" type="mathsanb">Digití Troma Sans-Serif Matamaiticiúla</type>
+			<type key="numbers" type="mathsans">Digití Sans-Serif Matamaiticiúla</type>
 			<type key="numbers" type="mlym">Digití Mailéalamacha</type>
-			<type key="numbers" type="modi" draft="contributed">Digití Modi</type>
+			<type key="numbers" type="modi">Digití Modi</type>
 			<type key="numbers" type="mong">Digití Mongólacha</type>
-			<type key="numbers" type="mroo" draft="contributed">Digití Mro</type>
-			<type key="numbers" type="mtei" draft="contributed">Digití Meetei Mayek</type>
+			<type key="numbers" type="mroo">Digití Mro</type>
+			<type key="numbers" type="mtei">Digití Meetei Mayek</type>
 			<type key="numbers" type="mymr">Digití Maenmaracha</type>
-			<type key="numbers" type="mymrshan" draft="contributed">Digití Myanmar Shan</type>
-			<type key="numbers" type="mymrtlng" draft="contributed">Digití Myanmar Tai Laing</type>
-			<type key="numbers" type="nkoo" draft="contributed">Digití N’ko</type>
-			<type key="numbers" type="olck" draft="contributed">Digití Ol Chiki</type>
+			<type key="numbers" type="mymrshan">Digití Myanmar Shan</type>
+			<type key="numbers" type="mymrtlng">Digití Myanmar Tai Laing</type>
+			<type key="numbers" type="nkoo">Digití N’ko</type>
+			<type key="numbers" type="olck">Digití Ol Chiki</type>
 			<type key="numbers" type="orya">Digití Oiríseacha</type>
-			<type key="numbers" type="osma" draft="contributed">Digití Osmanya</type>
+			<type key="numbers" type="osma">Digití Osmanya</type>
 			<type key="numbers" type="roman">Uimhreacha Rómhánacha</type>
 			<type key="numbers" type="romanlow">Uimhreacha Cás Íochtair Rómhánacha</type>
-			<type key="numbers" type="saur" draft="contributed">Digití Saurashtra</type>
-			<type key="numbers" type="shrd" draft="contributed">Digití Sharada</type>
-			<type key="numbers" type="sind" draft="contributed">Digití Khudawadi</type>
-			<type key="numbers" type="sinh" draft="contributed">Digití Sinhala Lith</type>
-			<type key="numbers" type="sora" draft="contributed">Digití Sora Sompeng</type>
-			<type key="numbers" type="sund" draft="contributed">Digití Sundainéise</type>
-			<type key="numbers" type="takr" draft="contributed">Digití Takri</type>
-			<type key="numbers" type="talu" draft="contributed">Digití Tai Lue Nua</type>
+			<type key="numbers" type="saur">Digití Saurashtra</type>
+			<type key="numbers" type="shrd">Digití Sharada</type>
+			<type key="numbers" type="sind">Digití Khudawadi</type>
+			<type key="numbers" type="sinh">Digití Sinhala Lith</type>
+			<type key="numbers" type="sora">Digití Sora Sompeng</type>
+			<type key="numbers" type="sund">Digití Sundainéise</type>
+			<type key="numbers" type="takr">Digití Takri</type>
+			<type key="numbers" type="talu">Digití Tai Lue Nua</type>
 			<type key="numbers" type="taml">Uimhreacha Traidisiúnta Tamalacha</type>
 			<type key="numbers" type="tamldec">Digití Tamalacha</type>
 			<type key="numbers" type="telu">Digití Teileagúcha</type>
 			<type key="numbers" type="thai">Digití Téalannacha</type>
 			<type key="numbers" type="tibt">Digití Tibéadacha</type>
-			<type key="numbers" type="tirh" draft="contributed">Digití Tirhuta</type>
-			<type key="numbers" type="vaii" draft="contributed">Digití Vai</type>
-			<type key="numbers" type="wara" draft="contributed">Digití Warang Citi</type>
+			<type key="numbers" type="tirh">Digití Tirhuta</type>
+			<type key="numbers" type="vaii">Digití Vai</type>
+			<type key="numbers" type="wara">Digití Warang Citi</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Méadrach</measurementSystemName>
@@ -1146,98 +1269,98 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h – h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h – h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">MM – MM</greatestDifference>
+							<greatestDifference id="M">MM – MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
-							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E dd/MM – E dd/MM</greatestDifference>
-							<greatestDifference id="M">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="d">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="M">E dd/MM – E dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="d">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1274,20 +1397,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'ag' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'ag' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1299,19 +1434,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
@@ -1334,119 +1469,119 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
-							<greatestDifference id="h">h – h B</greatestDifference>
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">MM/y GGGGG – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G">MM/y GGGGG – MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h – h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">MM – MM</greatestDifference>
+							<greatestDifference id="M">MM – MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
-							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E dd/MM – E dd/MM</greatestDifference>
-							<greatestDifference id="M">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="d">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="M">E dd/MM – E dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="d">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1761,20 +1896,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'ag' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'ag' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1786,24 +1933,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd" draft="contributed">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd">dd/MM/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
@@ -1838,107 +1985,107 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
-							<greatestDifference id="h">h – h B</greatestDifference>
+							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h – h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h – h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">MM – MM</greatestDifference>
+							<greatestDifference id="M">MM – MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
-							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E dd/MM – E dd/MM</greatestDifference>
-							<greatestDifference id="M">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="d">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="M">E dd/MM – E dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y</greatestDifference>
+							<greatestDifference id="y">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM/y – MM/y</greatestDifference>
-							<greatestDifference id="y">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd/MM/y – dd/MM/y</greatestDifference>
-							<greatestDifference id="M">dd/MM/y – dd/MM/y</greatestDifference>
-							<greatestDifference id="y">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="d">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="M">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="y">dd/MM/y – dd/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E dd/MM/y – E dd/MM/y</greatestDifference>
-							<greatestDifference id="M">E dd/MM/y – E dd/MM/y</greatestDifference>
-							<greatestDifference id="y">E dd/MM/y – E dd/MM/y</greatestDifference>
+							<greatestDifference id="d">E dd/MM/y – E dd/MM/y</greatestDifference>
+							<greatestDifference id="M">E dd/MM/y – E dd/MM/y</greatestDifference>
+							<greatestDifference id="y">E dd/MM/y – E dd/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d MMM y</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
+							<greatestDifference id="d">d – d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d MMM – E d MMM y</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1960,7 +2107,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">i mbliana</relative>
 				<relative type="1">an bhliain seo chugainn</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">i gceann {0} bhliain</relativeTimePattern>
+					<relativeTimePattern count="one">i gceann {0} bliana</relativeTimePattern>
 					<relativeTimePattern count="two">i gceann {0} bhliain</relativeTimePattern>
 					<relativeTimePattern count="few">i gceann {0} bliana</relativeTimePattern>
 					<relativeTimePattern count="many">i gceann {0} mbliana</relativeTimePattern>
@@ -2100,7 +2247,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">an mhí seo</relative>
 				<relative type="1">an mhí seo chugainn</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">i gceann {0} mhí</relativeTimePattern>
+					<relativeTimePattern count="one">i gceann {0} míosa</relativeTimePattern>
 					<relativeTimePattern count="two">i gceann {0} mhí</relativeTimePattern>
 					<relativeTimePattern count="few">i gceann {0} mhí</relativeTimePattern>
 					<relativeTimePattern count="many">i gceann {0} mí</relativeTimePattern>
@@ -2140,7 +2287,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">an tseachtain seo</relative>
 				<relative type="1">an tseachtain seo chugainn</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">i gceann {0} seachtain</relativeTimePattern>
+					<relativeTimePattern count="one">i gceann {0} seachtaine</relativeTimePattern>
 					<relativeTimePattern count="two">i gceann {0} sheachtain</relativeTimePattern>
 					<relativeTimePattern count="few">i gceann {0} seachtaine</relativeTimePattern>
 					<relativeTimePattern count="many">i gceann {0} seachtaine</relativeTimePattern>
@@ -2163,14 +2310,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativeTime type="future">
 					<relativeTimePattern count="one">i gceann {0} scht.</relativeTimePattern>
 					<relativeTimePattern count="two">i gceann {0} shcht.</relativeTimePattern>
-					<relativeTimePattern count="few">i gceann {0} scht.</relativeTimePattern>
+					<relativeTimePattern count="few">i gceann {0} shcht.</relativeTimePattern>
 					<relativeTimePattern count="many">i gceann {0} scht.</relativeTimePattern>
 					<relativeTimePattern count="other">i gceann {0} scht.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} scht. ó shin</relativeTimePattern>
-					<relativeTimePattern count="two">{0} scht. ó shin</relativeTimePattern>
-					<relativeTimePattern count="few">{0} scht. ó shin</relativeTimePattern>
+					<relativeTimePattern count="two">{0} shcht. ó shin</relativeTimePattern>
+					<relativeTimePattern count="few">{0} shcht. ó shin</relativeTimePattern>
 					<relativeTimePattern count="many">{0} scht. ó shin</relativeTimePattern>
 					<relativeTimePattern count="other">{0} scht. ó shin</relativeTimePattern>
 				</relativeTime>
@@ -2183,31 +2330,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="1">an tscht. seo chugainn</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">+{0} scht.</relativeTimePattern>
-					<relativeTimePattern count="two">+{0} scht.</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} scht.</relativeTimePattern>
+					<relativeTimePattern count="two">i gceann {0} shcht.</relativeTimePattern>
+					<relativeTimePattern count="few">i gceann {0} shcht.</relativeTimePattern>
 					<relativeTimePattern count="many">+{0} scht.</relativeTimePattern>
 					<relativeTimePattern count="other">+{0} scht.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">-{0} scht.</relativeTimePattern>
-					<relativeTimePattern count="two">-{0} scht.</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} scht.</relativeTimePattern>
+					<relativeTimePattern count="two">{0} shcht. ó shin</relativeTimePattern>
+					<relativeTimePattern count="few">{0} shcht. ó shin</relativeTimePattern>
 					<relativeTimePattern count="many">-{0} scht.</relativeTimePattern>
 					<relativeTimePattern count="other">-{0} scht.</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>seachtain {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
-				<displayName>Seachtain den mhí</displayName>
+				<displayName>seachtain den mhí</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>7n den mhí</displayName>
+				<displayName>scht. den mhí</displayName>
 			</field>
 			<field type="weekOfMonth-narrow">
-				<displayName>7n den mhí</displayName>
+				<displayName>scht. den mhí</displayName>
 			</field>
 			<field type="day">
-				<displayName>Lá</displayName>
+				<displayName>lá</displayName>
 				<relative type="-2">arú inné</relative>
 				<relative type="-1">inné</relative>
 				<relative type="0">inniu</relative>
@@ -2229,7 +2376,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="day-short">
-				<displayName>Lá</displayName>
 				<relative type="-2">arú inné</relative>
 				<relative type="-1">inné</relative>
 				<relative type="0">inniu</relative>
@@ -2251,7 +2397,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="day-narrow">
-				<displayName>Lá</displayName>
 				<relative type="-2">arú inné</relative>
 				<relative type="-1">inné</relative>
 				<relative type="0">inniu</relative>
@@ -2273,7 +2418,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
-				<displayName>Lá den bhliain</displayName>
+				<displayName>lá den bhliain</displayName>
 			</field>
 			<field type="dayOfYear-short">
 				<displayName>lá den bhl.</displayName>
@@ -2282,16 +2427,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lá den bhl.</displayName>
 			</field>
 			<field type="weekday">
-				<displayName>Lá na seachtaine</displayName>
+				<displayName>lá den tseachtain</displayName>
 			</field>
 			<field type="weekday-short">
-				<displayName>lá den t7n</displayName>
-			</field>
-			<field type="weekday-narrow">
-				<displayName>lá den t7n</displayName>
+				<displayName>lá den tscht.</displayName>
 			</field>
 			<field type="weekdayOfMonth">
-				<displayName>Lá oibre den mhí</displayName>
+				<displayName>lá den tseachtain sa mhí</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
 				<displayName>lá oib. den mhí</displayName>
@@ -2475,11 +2617,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">an Chéadaoin seo</relative>
 				<relative type="1">an Chéadaoin seo chugainn</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} seachtain ón Chéadaoin</relativeTimePattern>
-					<relativeTimePattern count="two">{0} sheachtain ón Chéadaoin</relativeTimePattern>
-					<relativeTimePattern count="few">{0} seachtaine ón Chéadaoin</relativeTimePattern>
-					<relativeTimePattern count="many">{0} seachtaine ón Chéadaoin</relativeTimePattern>
-					<relativeTimePattern count="other">{0} seachtain ón Chéadaoin</relativeTimePattern>
+					<relativeTimePattern count="one">{0} seachtain ón gCéadaoin</relativeTimePattern>
+					<relativeTimePattern count="two">{0} sheachtain ón gCéadaoin</relativeTimePattern>
+					<relativeTimePattern count="few">{0} seachtaine ón gCéadaoin</relativeTimePattern>
+					<relativeTimePattern count="many">{0} seachtaine ón gCéadaoin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} seachtain ón gCéadaoin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">Dé Céadaoin {0} seachtain ó shin</relativeTimePattern>
@@ -2494,11 +2636,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">an Chéad. seo</relative>
 				<relative type="1">an Chéad. seo chugainn</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} seachtain ón Chéadaoin</relativeTimePattern>
-					<relativeTimePattern count="two">{0} sheachtain ón Chéadaoin</relativeTimePattern>
-					<relativeTimePattern count="few">{0} seachtaine ón Chéadaoin</relativeTimePattern>
-					<relativeTimePattern count="many">{0} seachtaine ón Chéadaoin</relativeTimePattern>
-					<relativeTimePattern count="other">{0} seachtain ón Chéadaoin</relativeTimePattern>
+					<relativeTimePattern count="one">{0} seachtain ón gCéadaoin</relativeTimePattern>
+					<relativeTimePattern count="two">{0} sheachtain ón gCéadaoin</relativeTimePattern>
+					<relativeTimePattern count="few">{0} seachtaine ón gCéadaoin</relativeTimePattern>
+					<relativeTimePattern count="many">{0} seachtaine ón gCéadaoin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} seachtain ón gCéadaoin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">Dé Céadaoin {0} seachtain ó shin</relativeTimePattern>
@@ -2630,14 +2772,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="one">+{0} Aoine</relativeTimePattern>
 					<relativeTimePattern count="two">+{0} Aoine</relativeTimePattern>
 					<relativeTimePattern count="few">+{0} Aoine</relativeTimePattern>
-					<relativeTimePattern count="many">+{0} Aoine</relativeTimePattern>
+					<relativeTimePattern count="many">+{0} nAoine</relativeTimePattern>
 					<relativeTimePattern count="other">+{0} Aoine</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Aoine ó shin</relativeTimePattern>
 					<relativeTimePattern count="two">{0} Aoine ó shin</relativeTimePattern>
 					<relativeTimePattern count="few">{0} Aoine ó shin</relativeTimePattern>
-					<relativeTimePattern count="many">{0} Aoine ó shin</relativeTimePattern>
+					<relativeTimePattern count="many">{0} nAoine ó shin</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Aoine ó shin</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2708,20 +2850,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>a.m./p.m.</displayName>
 			</field>
 			<field type="hour">
-				<displayName>Uair</displayName>
+				<displayName>uair</displayName>
 				<relative type="0">an uair seo</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">i gceann {0} uair an chloig</relativeTimePattern>
 					<relativeTimePattern count="two">i gceann {0} uair an chloig</relativeTimePattern>
 					<relativeTimePattern count="few">i gceann {0} uair an chloig</relativeTimePattern>
-					<relativeTimePattern count="many">i gceann {0} n-uaire an chloig</relativeTimePattern>
+					<relativeTimePattern count="many">i gceann {0} n-uair an chloig</relativeTimePattern>
 					<relativeTimePattern count="other">i gceann {0} uair an chloig</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} uair an chloig ó shin</relativeTimePattern>
 					<relativeTimePattern count="two">{0} uair an chloig ó shin</relativeTimePattern>
 					<relativeTimePattern count="few">{0} uair an chloig ó shin</relativeTimePattern>
-					<relativeTimePattern count="many">{0} n-uaire an chloig ó shin</relativeTimePattern>
+					<relativeTimePattern count="many">{0} n-uair an chloig ó shin</relativeTimePattern>
 					<relativeTimePattern count="other">{0} uair an chloig ó shin</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2762,7 +2904,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="minute">
-				<displayName>Nóiméad</displayName>
+				<displayName>nóiméad</displayName>
 				<relative type="0">an nóiméad seo</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">i gceann {0} nóiméad</relativeTimePattern>
@@ -2816,7 +2958,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="second">
-				<displayName>Soicind</displayName>
+				<displayName>soicind</displayName>
 				<relative type="0">anois</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">i gceann {0} soicind</relativeTimePattern>
@@ -2870,7 +3012,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName>Crios Ama</displayName>
+				<displayName>crios ama</displayName>
 			</field>
 			<field type="zone-short">
 				<displayName>crios</displayName>
@@ -5310,75 +5452,140 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">¤0k</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ 0K</pattern>
 					<pattern type="1000" count="two">¤0k</pattern>
+					<pattern type="1000" count="two" alt="alphaNextToNumber">¤0K</pattern>
 					<pattern type="1000" count="few">¤0k</pattern>
+					<pattern type="1000" count="few" alt="alphaNextToNumber">¤0K</pattern>
 					<pattern type="1000" count="many">¤0k</pattern>
+					<pattern type="1000" count="many" alt="alphaNextToNumber">¤0K</pattern>
 					<pattern type="1000" count="other">¤0k</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0K</pattern>
 					<pattern type="10000" count="one">¤00k</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ 00K</pattern>
 					<pattern type="10000" count="two">¤00k</pattern>
+					<pattern type="10000" count="two" alt="alphaNextToNumber">¤00K</pattern>
 					<pattern type="10000" count="few">¤00k</pattern>
+					<pattern type="10000" count="few" alt="alphaNextToNumber">¤00K</pattern>
 					<pattern type="10000" count="many">¤00k</pattern>
+					<pattern type="10000" count="many" alt="alphaNextToNumber">¤00K</pattern>
 					<pattern type="10000" count="other">¤00k</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00K</pattern>
 					<pattern type="100000" count="one">¤000k</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ 000K</pattern>
 					<pattern type="100000" count="two">¤000k</pattern>
+					<pattern type="100000" count="two" alt="alphaNextToNumber">¤000K</pattern>
 					<pattern type="100000" count="few">¤000k</pattern>
+					<pattern type="100000" count="few" alt="alphaNextToNumber">¤000K</pattern>
 					<pattern type="100000" count="many">¤000k</pattern>
+					<pattern type="100000" count="many" alt="alphaNextToNumber">¤000K</pattern>
 					<pattern type="100000" count="other">¤000k</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000K</pattern>
 					<pattern type="1000000" count="one">¤0M</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ 0M</pattern>
 					<pattern type="1000000" count="two">¤0M</pattern>
+					<pattern type="1000000" count="two" alt="alphaNextToNumber">¤0M</pattern>
 					<pattern type="1000000" count="few">¤0M</pattern>
+					<pattern type="1000000" count="few" alt="alphaNextToNumber">¤0M</pattern>
 					<pattern type="1000000" count="many">¤0M</pattern>
+					<pattern type="1000000" count="many" alt="alphaNextToNumber">¤0M</pattern>
 					<pattern type="1000000" count="other">¤0M</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0M</pattern>
 					<pattern type="10000000" count="one">¤00M</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber">¤ 00M</pattern>
 					<pattern type="10000000" count="two">¤00M</pattern>
+					<pattern type="10000000" count="two" alt="alphaNextToNumber">¤00M</pattern>
 					<pattern type="10000000" count="few">¤00M</pattern>
+					<pattern type="10000000" count="few" alt="alphaNextToNumber">¤00M</pattern>
 					<pattern type="10000000" count="many">¤00M</pattern>
+					<pattern type="10000000" count="many" alt="alphaNextToNumber">¤00M</pattern>
 					<pattern type="10000000" count="other">¤00M</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00M</pattern>
 					<pattern type="100000000" count="one">¤000M</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ 000M</pattern>
 					<pattern type="100000000" count="two">¤000M</pattern>
+					<pattern type="100000000" count="two" alt="alphaNextToNumber">¤000M</pattern>
 					<pattern type="100000000" count="few">¤000M</pattern>
+					<pattern type="100000000" count="few" alt="alphaNextToNumber">¤000M</pattern>
 					<pattern type="100000000" count="many">¤000M</pattern>
+					<pattern type="100000000" count="many" alt="alphaNextToNumber">¤000M</pattern>
 					<pattern type="100000000" count="other">¤000M</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000M</pattern>
 					<pattern type="1000000000" count="one">¤0B</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0B</pattern>
 					<pattern type="1000000000" count="two">¤0B</pattern>
+					<pattern type="1000000000" count="two" alt="alphaNextToNumber">¤0B</pattern>
 					<pattern type="1000000000" count="few">¤0B</pattern>
+					<pattern type="1000000000" count="few" alt="alphaNextToNumber">¤0B</pattern>
 					<pattern type="1000000000" count="many">¤0B</pattern>
+					<pattern type="1000000000" count="many" alt="alphaNextToNumber">¤0B</pattern>
 					<pattern type="1000000000" count="other">¤0B</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0B</pattern>
 					<pattern type="10000000000" count="one">¤00B</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00B</pattern>
 					<pattern type="10000000000" count="two">¤00B</pattern>
+					<pattern type="10000000000" count="two" alt="alphaNextToNumber">¤00B</pattern>
 					<pattern type="10000000000" count="few">¤00B</pattern>
+					<pattern type="10000000000" count="few" alt="alphaNextToNumber">¤00B</pattern>
 					<pattern type="10000000000" count="many">¤00B</pattern>
+					<pattern type="10000000000" count="many" alt="alphaNextToNumber">¤00B</pattern>
 					<pattern type="10000000000" count="other">¤00B</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00B</pattern>
 					<pattern type="100000000000" count="one">¤000B</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ 000B</pattern>
 					<pattern type="100000000000" count="two">¤000B</pattern>
+					<pattern type="100000000000" count="two" alt="alphaNextToNumber">¤000B</pattern>
 					<pattern type="100000000000" count="few">¤000B</pattern>
+					<pattern type="100000000000" count="few" alt="alphaNextToNumber">¤000B</pattern>
 					<pattern type="100000000000" count="many">¤000B</pattern>
+					<pattern type="100000000000" count="many" alt="alphaNextToNumber">¤000B</pattern>
 					<pattern type="100000000000" count="other">¤000B</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000B</pattern>
 					<pattern type="1000000000000" count="one">¤0T</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 0T</pattern>
 					<pattern type="1000000000000" count="two">¤0T</pattern>
+					<pattern type="1000000000000" count="two" alt="alphaNextToNumber">¤0T</pattern>
 					<pattern type="1000000000000" count="few">¤0T</pattern>
+					<pattern type="1000000000000" count="few" alt="alphaNextToNumber">¤0T</pattern>
 					<pattern type="1000000000000" count="many">¤0T</pattern>
+					<pattern type="1000000000000" count="many" alt="alphaNextToNumber">¤0T</pattern>
 					<pattern type="1000000000000" count="other">¤0T</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0T</pattern>
 					<pattern type="10000000000000" count="one">¤00T</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ 00T</pattern>
 					<pattern type="10000000000000" count="two">¤00T</pattern>
+					<pattern type="10000000000000" count="two" alt="alphaNextToNumber">¤00T</pattern>
 					<pattern type="10000000000000" count="few">¤00T</pattern>
+					<pattern type="10000000000000" count="few" alt="alphaNextToNumber">¤00T</pattern>
 					<pattern type="10000000000000" count="many">¤00T</pattern>
+					<pattern type="10000000000000" count="many" alt="alphaNextToNumber">¤00T</pattern>
 					<pattern type="10000000000000" count="other">¤00T</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00T</pattern>
 					<pattern type="100000000000000" count="one">¤000T</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ 000T</pattern>
 					<pattern type="100000000000000" count="two">¤000T</pattern>
+					<pattern type="100000000000000" count="two" alt="alphaNextToNumber">¤000T</pattern>
 					<pattern type="100000000000000" count="few">¤000T</pattern>
+					<pattern type="100000000000000" count="few" alt="alphaNextToNumber">¤000T</pattern>
 					<pattern type="100000000000000" count="many">¤000T</pattern>
+					<pattern type="100000000000000" count="many" alt="alphaNextToNumber">¤000T</pattern>
 					<pattern type="100000000000000" count="other">¤000T</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="two">{0} {1}</unitPattern>
 			<unitPattern count="few">{0} {1}</unitPattern>
@@ -6170,7 +6377,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="FRF">
-				<displayName draft="contributed">Franc na Fraince</displayName>
+				<displayName>Franc na Fraince</displayName>
 				<displayName count="one">Franc Francach</displayName>
 				<displayName count="two">Franc Francach</displayName>
 				<displayName count="few">Franc Francach</displayName>
@@ -6592,11 +6799,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LSL">
 				<displayName>Loti Leosóta</displayName>
-				<displayName count="one">Loti Leosóta</displayName>
+				<displayName count="one">loti Leosóta</displayName>
 				<displayName count="two">Loti Leosóta</displayName>
-				<displayName count="few">Loti Leosóta</displayName>
-				<displayName count="many">Loti Leosóta</displayName>
-				<displayName count="other">Loti Leosóta</displayName>
+				<displayName count="few">loti Leosóta</displayName>
+				<displayName count="many">loti Leosóta</displayName>
+				<displayName count="other">loti Leosóta</displayName>
 				<symbol>LSL</symbol>
 			</currency>
 			<currency type="LTL">
@@ -6619,12 +6826,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="contributed">LTT</symbol>
 			</currency>
 			<currency type="LUC">
-				<displayName draft="contributed">Franc Inmhalartach Lucsamburgach</displayName>
-				<displayName count="one" draft="contributed">Franc Inmhalartach Lucsamburgach</displayName>
-				<displayName count="two" draft="contributed">Franc Inmhalartach Lucsamburgach</displayName>
-				<displayName count="few" draft="contributed">Franc Inmhalartach Lucsamburgach</displayName>
-				<displayName count="many" draft="contributed">Franc Inmhalartach Lucsamburgach</displayName>
-				<displayName count="other" draft="contributed">Franc Inmhalartach Lucsamburgach</displayName>
+				<displayName>Franc Inmhalartach Lucsamburgach</displayName>
+				<displayName count="one">Franc Inmhalartach Lucsamburgach</displayName>
+				<displayName count="two">Franc Inmhalartach Lucsamburgach</displayName>
+				<displayName count="few">Franc Inmhalartach Lucsamburgach</displayName>
+				<displayName count="many">Franc Inmhalartach Lucsamburgach</displayName>
+				<displayName count="other">Franc Inmhalartach Lucsamburgach</displayName>
 				<symbol draft="contributed">LUC</symbol>
 			</currency>
 			<currency type="LUF">
@@ -6647,7 +6854,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow" draft="contributed">Ls</symbol>
 			</currency>
 			<currency type="LVR">
-				<displayName draft="contributed">Rúbal na Laitvia</displayName>
+				<displayName>Rúbal na Laitvia</displayName>
 				<displayName count="one">Rúbal Laitviach</displayName>
 				<displayName count="two">Rúbal Laitviach</displayName>
 				<displayName count="few">Rúbal Laitviach</displayName>
@@ -6840,7 +7047,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="contributed">MXP</symbol>
 			</currency>
 			<currency type="MXV">
-				<displayName draft="contributed">Aonad Infheistíochta Meicsiceach</displayName>
+				<displayName>Aonad Infheistíochta Meicsiceach</displayName>
 				<displayName count="one">Unidad de Inversion (UDI) Meicsiceo</displayName>
 				<displayName count="two">Unidad de Inversion (UDI) Meicsiceo</displayName>
 				<displayName count="few">Unidad de Inversion (UDI) Meicsiceo</displayName>
@@ -7771,7 +7978,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol draft="contributed">YUM</symbol>
 			</currency>
 			<currency type="YUN">
-				<displayName draft="contributed">Dinar Inmhalartaithe Iúgslavach (1990–1992)</displayName>
+				<displayName>Dinar Inmhalartaithe Iúgslavach (1990–1992)</displayName>
 				<displayName count="one">Dínear Inathraithe Iúgslavach</displayName>
 				<displayName count="two">Dínear Inathraithe Iúgslavach</displayName>
 				<displayName count="few">Dínear Inathraithe Iúgslavach</displayName>
@@ -7928,16 +8135,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>cibi-{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p2">
-				<unitPrefixPattern draft="contributed">mebi{0}</unitPrefixPattern>
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p4">
-				<unitPrefixPattern draft="contributed">tebi{0}</unitPrefixPattern>
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p7">
-				<unitPrefixPattern draft="contributed">zebi{0}</unitPrefixPattern>
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p8">
-				<unitPrefixPattern draft="contributed">yobe{0}</unitPrefixPattern>
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} sa {1}</compoundUnitPattern>
@@ -8290,12 +8497,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} céad bliain</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<displayName draft="contributed">deicheanna blianta</displayName>
-				<unitPattern count="one" draft="contributed">{0} deich mbliana</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} dec</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} dec</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} dec</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} deich mbliana</unitPattern>
+				<displayName>deicheanna blianta</displayName>
+				<unitPattern count="one">{0} deich mbliana</unitPattern>
+				<unitPattern count="two">{0} dec</unitPattern>
+				<unitPattern count="few">{0} dec</unitPattern>
+				<unitPattern count="many">{0} dec</unitPattern>
+				<unitPattern count="other">{0} deich mbliana</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>blianta</displayName>
@@ -8305,6 +8512,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} mbliana</unitPattern>
 				<unitPattern count="other">{0} bliain</unitPattern>
 				<perUnitPattern>{0} sa bhliain</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>ceathrúna</displayName>
+				<unitPattern count="one">{0} ceathrú</unitPattern>
+				<unitPattern count="two">{0} cna</unitPattern>
+				<unitPattern count="few">{0} cna</unitPattern>
+				<unitPattern count="many">{0} cna</unitPattern>
+				<unitPattern count="other">{0} ceathrúna</unitPattern>
+				<perUnitPattern>{0}/c</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>míonna</displayName>
@@ -8505,12 +8721,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} niútan</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName draft="contributed">cileavatuair in aghaidh 100 ciliméadar</displayName>
-				<unitPattern count="one" draft="contributed">cileavatuair in aghaidh 100 ciliméadar</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} cileavatuair in aghaidh 100 cilliméadar</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} kWh/100km</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} kWh/100km</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} cileavatuair in aghaidh 100 ciliméadar</unitPattern>
+				<displayName>cileavatuair in aghaidh 100 ciliméadar</displayName>
+				<unitPattern count="one">cileavatuair in aghaidh 100 ciliméadar</unitPattern>
+				<unitPattern count="two">{0} cileavatuair in aghaidh 100 cilliméadar</unitPattern>
+				<unitPattern count="few">{0} kWh/100km</unitPattern>
+				<unitPattern count="many">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} cileavatuair in aghaidh 100 ciliméadar</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>gigiheirts</displayName>
@@ -8821,7 +9037,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} grianlonrachas</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tonnaí méadracha</displayName>
 				<unitPattern count="one">{0} tonna méadrach</unitPattern>
 				<unitPattern count="two">{0} thonna mhéadracha</unitPattern>
@@ -9019,11 +9235,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-bar">
 				<displayName>bair</displayName>
-				<unitPattern count="one" draft="contributed">{0} bharra</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} bharra</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} bharra</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} mbarra</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} barra</unitPattern>
+				<unitPattern count="one">{0} bharra</unitPattern>
+				<unitPattern count="two">{0} bharra</unitPattern>
+				<unitPattern count="few">{0} bharra</unitPattern>
+				<unitPattern count="many">{0} mbarra</unitPattern>
+				<unitPattern count="other">{0} barra</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>milleabair</displayName>
@@ -9862,6 +10078,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} bl</unitPattern>
 				<perUnitPattern>{0}/bl</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>ctú</displayName>
+				<unitPattern count="one">{0} ctú</unitPattern>
+				<unitPattern count="two">{0} cna</unitPattern>
+				<unitPattern count="few">{0} cna</unitPattern>
+				<unitPattern count="many">{0} cna</unitPattern>
+				<unitPattern count="other">{0} cna</unitPattern>
+				<perUnitPattern>{0}/c</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>míonna</displayName>
 				<unitPattern count="one">{0} mhí</unitPattern>
@@ -10101,10 +10326,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} eim</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName draft="contributed">picteilíní</displayName>
+				<displayName>picteilíní</displayName>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName draft="contributed">meigiphicteilíní</displayName>
+				<displayName>meigiphicteilíní</displayName>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>ponc</displayName>
@@ -10303,7 +10528,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="two">{0} t</unitPattern>
@@ -10500,12 +10725,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} or. Hg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<displayName draft="contributed">barra</displayName>
-				<unitPattern count="one" draft="contributed">{0} bharra</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} bharra</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} bharra</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} mbarra</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} barra</unitPattern>
+				<displayName>barra</displayName>
+				<unitPattern count="one">{0} bharra</unitPattern>
+				<unitPattern count="two">{0} bharra</unitPattern>
+				<unitPattern count="few">{0} bharra</unitPattern>
+				<unitPattern count="many">{0} mbarra</unitPattern>
+				<unitPattern count="other">{0} barra</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
@@ -11299,6 +11524,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}b</unitPattern>
 				<perUnitPattern>{0}/bl</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>ctú</displayName>
+				<unitPattern count="one">{0} ctú</unitPattern>
+				<unitPattern count="two">{0} cna</unitPattern>
+				<unitPattern count="few">{0} cna</unitPattern>
+				<unitPattern count="many">{0} cna</unitPattern>
+				<unitPattern count="other">{0} ctú</unitPattern>
+				<perUnitPattern>{0}/c</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>mí</displayName>
 				<unitPattern count="one">{0}m</unitPattern>
@@ -11662,7 +11896,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}lx</unitPattern>
 				<unitPattern count="other">{0}lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0}t</unitPattern>
 				<unitPattern count="two">{0}t</unitPattern>
@@ -11820,11 +12054,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>orlaí Hg</displayName>
-				<unitPattern count="one">{0}&quot; Hg</unitPattern>
-				<unitPattern count="two">{0}&quot; Hg</unitPattern>
-				<unitPattern count="few">{0}&quot; Hg</unitPattern>
-				<unitPattern count="many">{0}&quot; Hg</unitPattern>
-				<unitPattern count="other">{0}&quot; Hg</unitPattern>
+				<unitPattern count="one">{0}″ Hg</unitPattern>
+				<unitPattern count="two">{0}″ Hg</unitPattern>
+				<unitPattern count="few">{0}″ Hg</unitPattern>
+				<unitPattern count="many">{0}″ Hg</unitPattern>
+				<unitPattern count="other">{0}″ Hg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
@@ -12139,7 +12373,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<listPattern type="or">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, nó {1}</listPatternPart>
+			<listPatternPart type="end">{0} nó {1}</listPatternPart>
 			<listPatternPart type="2">{0} nó {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
@@ -12209,7 +12443,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="animals_nature">ainmhí nó an nádúr</characterLabel>
 		<characterLabel type="arrows">saighead</characterLabel>
 		<characterLabel type="body">corp</characterLabel>
-		<characterLabel type="box_drawing">Líníocht Boscaí</characterLabel>
+		<characterLabel type="box_drawing">líníocht boscaí</characterLabel>
 		<characterLabel type="braille">Braille</characterLabel>
 		<characterLabel type="building">foirgneamh</characterLabel>
 		<characterLabel type="bullets_stars">urchar nó réalta</characterLabel>
@@ -12256,7 +12490,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="modern_scripts">script nua-aimseartha</characterLabel>
 		<characterLabel type="modifier">mionathraitheoir</characterLabel>
 		<characterLabel type="musical_symbols">siombail cheoil</characterLabel>
-		<characterLabel type="nature">nádúr</characterLabel>
+		<characterLabel type="nature">dúlra</characterLabel>
 		<characterLabel type="nonspacing">neamhspásáil</characterLabel>
 		<characterLabel type="numbers">uimhreacha</characterLabel>
 		<characterLabel type="objects">Nithe</characterLabel>
@@ -12264,7 +12498,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="paired">péireáilte</characterLabel>
 		<characterLabel type="person">duine</characterLabel>
 		<characterLabel type="phonetic_alphabet">aibítir foghraíochta</characterLabel>
-		<characterLabel type="pictographs">Picteagraif</characterLabel>
+		<characterLabel type="pictographs">picteagraf</characterLabel>
 		<characterLabel type="place">áit</characterLabel>
 		<characterLabel type="plant">planda</characterLabel>
 		<characterLabel type="punctuation">poncaíocht</characterLabel>
@@ -12279,7 +12513,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="sport">spórt</characterLabel>
 		<characterLabel type="symbols">siombail</characterLabel>
 		<characterLabel type="technical_symbols">siombail theicniúil</characterLabel>
-		<characterLabel type="tone_marks">Comharthaí Toin</characterLabel>
+		<characterLabel type="tone_marks">comhartha toin</characterLabel>
 		<characterLabel type="travel">taisteal</characterLabel>
 		<characterLabel type="travel_places">taisteal nó áit</characterLabel>
 		<characterLabel type="upwards_arrows">saigheada suas</characterLabel>
@@ -12359,4 +12593,158 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">uimhreacha táblacha</featureName>
 		<featureName type="zero">náid shlaiseáilte</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und ga</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<initialPattern type="initial">{0}.</initialPattern>
+		<initialPattern type="initialSequence">{0} {1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}, {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}, {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}, {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Sinbad</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Irene</nameField>
+			<nameField type="surname">Adler</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Seán</nameField>
+			<nameField type="given2">Seamas</nameField>
+			<nameField type="surname">Watson</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">An tOll. An Dr.</nameField>
+			<nameField type="given">Ada Cornelia</nameField>
+			<nameField type="given-informal">Neele</nameField>
+			<nameField type="given2">Aoibhe Sophia</nameField>
+			<nameField type="surname-prefix">van den</nameField>
+			<nameField type="surname-core">de Bhulbh</nameField>
+			<nameField type="surname2">Becker Schmidt</nameField>
+			<nameField type="suffix">M.D. Ph.D.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

@@ -26,6 +26,7 @@
 package sun.security.x509;
 
 import java.io.*;
+import java.util.Objects;
 
 import sun.security.util.*;
 
@@ -42,7 +43,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class GeneralSubtree {
+public class GeneralSubtree implements DerEncoder {
     private static final byte TAG_MIN = 0;
     private static final byte TAG_MAX = 1;
     private static final int  MIN_DEFAULT = 0;
@@ -61,7 +62,7 @@ public class GeneralSubtree {
      * @param max the maximum BaseDistance
      */
     public GeneralSubtree(GeneralName name, int min, int max) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name);
         this.minimum = min;
         this.maximum = max;
     }
@@ -193,7 +194,8 @@ public class GeneralSubtree {
      *
      * @param out the DerOutputStream to encode this object to.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream seq = new DerOutputStream();
 
         name.encode(seq);

@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.text.Normalizer;
 import java.util.*;
@@ -617,30 +616,19 @@ public class AVA implements DerEncoder {
         return toRFC2253CanonicalString().hashCode();
     }
 
-    /*
-     * AVAs are encoded as a SEQUENCE of two elements.
-     */
-    public void encode(DerOutputStream out) throws IOException {
-        derEncode(out);
-    }
-
     /**
      * DER encode this object onto an output stream.
      * Implements the <code>DerEncoder</code> interface.
      *
-     * @param out
-     * the output stream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding error.
+     * @param out the output stream on which to write the DER encoding.
      */
-    public void derEncode(OutputStream out) throws IOException {
-        DerOutputStream         tmp = new DerOutputStream();
-        DerOutputStream         tmp2 = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) {
+        DerOutputStream tmp = new DerOutputStream();
 
         tmp.putOID(oid);
         value.encode(tmp);
-        tmp2.write(DerValue.tag_Sequence, tmp);
-        out.write(tmp2.toByteArray());
+        out.write(DerValue.tag_Sequence, tmp);
     }
 
     private String toKeyword(int format, Map<String, String> oidMap) {
@@ -714,12 +702,7 @@ public class AVA implements DerEncoder {
         if ((typeAndValue.charAt(0) >= '0' && typeAndValue.charAt(0) <= '9') ||
             !isDerString(value, false))
         {
-            byte[] data;
-            try {
-                data = value.toByteArray();
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("DER Value conversion");
-            }
+            byte[] data = value.toByteArray();
             typeAndValue.append('#');
             HexFormat.of().formatHex(typeAndValue, data);
         } else {
@@ -731,12 +714,7 @@ public class AVA implements DerEncoder {
              * NOTE: this implementation only emits DirectoryStrings of the
              * types returned by isDerString().
              */
-            String valStr;
-            try {
-                valStr = new String(value.getDataBytes(), UTF_8);
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("DER Value conversion");
-            }
+            String valStr = new String(value.getDataBytes(), UTF_8);
 
             /*
              * 2.4 (cont): If the UTF-8 string does not have any of the
@@ -849,12 +827,7 @@ public class AVA implements DerEncoder {
         if ((typeAndValue.charAt(0) >= '0' && typeAndValue.charAt(0) <= '9') ||
             !isDerString(value, true))
         {
-            byte[] data;
-            try {
-                data = value.toByteArray();
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("DER Value conversion");
-            }
+            byte[] data = value.toByteArray();
             typeAndValue.append('#');
             HexFormat.of().formatHex(typeAndValue, data);
         } else {
@@ -866,12 +839,7 @@ public class AVA implements DerEncoder {
              * NOTE: this implementation only emits DirectoryStrings of the
              * types returned by isDerString().
              */
-            String valStr;
-            try {
-                valStr = new String(value.getDataBytes(), UTF_8);
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("DER Value conversion");
-            }
+            String valStr = new String(value.getDataBytes(), UTF_8);
 
             /*
              * 2.4 (cont): If the UTF-8 string does not have any of the

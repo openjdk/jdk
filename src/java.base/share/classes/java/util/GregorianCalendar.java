@@ -2431,7 +2431,6 @@ public class GregorianCalendar extends Calendar {
             long fixedDateJan1 = calsys.getFixedDate(normalizedYear, 1, 1, cdate);
             int dayOfYear = (int)(fixedDate - fixedDateJan1) + 1;
             long fixedDateMonth1 = fixedDate - dayOfMonth + 1;
-            int cutoverGap = 0;
             int cutoverYear = (calsys == gcal) ? gregorianCutoverYear : gregorianCutoverYearJulian;
             int relativeDayOfMonth = dayOfMonth - 1;
 
@@ -2447,9 +2446,7 @@ public class GregorianCalendar extends Calendar {
                         fixedDateMonth1 = getFixedDateMonth1(cdate, fixedDate);
                     }
                 }
-                int realDayOfYear = (int)(fixedDate - fixedDateJan1) + 1;
-                cutoverGap = dayOfYear - realDayOfYear;
-                dayOfYear = realDayOfYear;
+                dayOfYear = (int)(fixedDate - fixedDateJan1) + 1;
                 relativeDayOfMonth = (int)(fixedDate - fixedDateMonth1);
             }
             internalSet(DAY_OF_YEAR, dayOfYear);

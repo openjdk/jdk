@@ -205,14 +205,9 @@ final class KeyProtector {
 
         // wrap the protected private key in a PKCS#8-style
         // EncryptedPrivateKeyInfo, and returns its encoding
-        AlgorithmId encrAlg;
-        try {
-            encrAlg = new AlgorithmId(ObjectIdentifier.of
-                    (KnownOIDs.JAVASOFT_JDKKeyProtector));
-            return new EncryptedPrivateKeyInfo(encrAlg,encrKey).getEncoded();
-        } catch (IOException ioe) {
-            throw new KeyStoreException(ioe.getMessage());
-        }
+        AlgorithmId encrAlg = new AlgorithmId(ObjectIdentifier.of
+                (KnownOIDs.JAVASOFT_JDKKeyProtector));
+        return new EncryptedPrivateKeyInfo(encrAlg,encrKey).getEncoded();
     }
 
     /*

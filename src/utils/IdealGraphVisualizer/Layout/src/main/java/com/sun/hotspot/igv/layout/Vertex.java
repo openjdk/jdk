@@ -32,13 +32,13 @@ import java.awt.Point;
  */
 public interface Vertex extends Comparable<Vertex> {
 
-    public Dimension getSize();
+    Dimension getSize();
 
-    public Point getPosition();
+    Point getPosition();
 
-    public void setPosition(Point p);
+    void setPosition(Point p);
 
-    public boolean isRoot();
+    boolean isRoot();
 
-    public Cluster getCluster();
+    Cluster getCluster();
 }

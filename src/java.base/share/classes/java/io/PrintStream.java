@@ -612,6 +612,7 @@ public class PrintStream extends FilterOutputStream
      * @param  buf   A byte array
      * @param  off   Offset from which to start taking bytes
      * @param  len   Number of bytes to write
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public void write(byte[] buf, int off, int len) {

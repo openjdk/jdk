@@ -181,69 +181,115 @@ public class InitialDirContext extends InitialContext implements DirContext {
         return getURLOrDefaultInitDirCtx(name).getAttributes(name, attrIds);
     }
 
+    /**
+     * @throws  AttributeModificationException {@inheritDoc}
+     */
     public void modifyAttributes(String name, int mod_op, Attributes attrs)
             throws NamingException {
         getURLOrDefaultInitDirCtx(name).modifyAttributes(name, mod_op, attrs);
     }
 
+    /**
+     * @throws  AttributeModificationException {@inheritDoc}
+     */
     public void modifyAttributes(Name name, int mod_op, Attributes attrs)
             throws NamingException  {
         getURLOrDefaultInitDirCtx(name).modifyAttributes(name, mod_op, attrs);
     }
 
+    /**
+     * @throws  AttributeModificationException {@inheritDoc}
+     */
     public void modifyAttributes(String name, ModificationItem[] mods)
             throws NamingException  {
         getURLOrDefaultInitDirCtx(name).modifyAttributes(name, mods);
     }
 
+    /**
+     * @throws  AttributeModificationException {@inheritDoc}
+     */
     public void modifyAttributes(Name name, ModificationItem[] mods)
             throws NamingException  {
         getURLOrDefaultInitDirCtx(name).modifyAttributes(name, mods);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     * @throws  InvalidAttributesException {@inheritDoc}
+     */
     public void bind(String name, Object obj, Attributes attrs)
             throws NamingException  {
         getURLOrDefaultInitDirCtx(name).bind(name, obj, attrs);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     * @throws  InvalidAttributesException {@inheritDoc}
+     */
     public void bind(Name name, Object obj, Attributes attrs)
             throws NamingException  {
         getURLOrDefaultInitDirCtx(name).bind(name, obj, attrs);
     }
 
+    /**
+     * @throws  InvalidAttributesException {@inheritDoc}
+     */
     public void rebind(String name, Object obj, Attributes attrs)
             throws NamingException  {
         getURLOrDefaultInitDirCtx(name).rebind(name, obj, attrs);
     }
 
+    /**
+     * @throws  InvalidAttributesException {@inheritDoc}
+     */
     public void rebind(Name name, Object obj, Attributes attrs)
             throws NamingException  {
         getURLOrDefaultInitDirCtx(name).rebind(name, obj, attrs);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     * @throws  InvalidAttributesException {@inheritDoc}
+     */
     public DirContext createSubcontext(String name, Attributes attrs)
             throws NamingException  {
         return getURLOrDefaultInitDirCtx(name).createSubcontext(name, attrs);
     }
 
+    /**
+     * @throws  NameAlreadyBoundException {@inheritDoc}
+     * @throws  InvalidAttributesException {@inheritDoc}
+     */
     public DirContext createSubcontext(Name name, Attributes attrs)
             throws NamingException  {
         return getURLOrDefaultInitDirCtx(name).createSubcontext(name, attrs);
     }
 
+    /**
+     * @throws  OperationNotSupportedException {@inheritDoc}
+     */
     public DirContext getSchema(String name) throws NamingException {
         return getURLOrDefaultInitDirCtx(name).getSchema(name);
     }
 
+    /**
+     * @throws  OperationNotSupportedException {@inheritDoc}
+     */
     public DirContext getSchema(Name name) throws NamingException {
         return getURLOrDefaultInitDirCtx(name).getSchema(name);
     }
 
+    /**
+     * @throws  OperationNotSupportedException {@inheritDoc}
+     */
     public DirContext getSchemaClassDefinition(String name)
             throws NamingException {
         return getURLOrDefaultInitDirCtx(name).getSchemaClassDefinition(name);
     }
 
+    /**
+     * @throws  OperationNotSupportedException {@inheritDoc}
+     */
     public DirContext getSchemaClassDefinition(Name name)
             throws NamingException {
         return getURLOrDefaultInitDirCtx(name).getSchemaClassDefinition(name);
@@ -287,6 +333,10 @@ public class InitialDirContext extends InitialContext implements DirContext {
                                             attributesToReturn);
     }
 
+    /**
+     * @throws  InvalidSearchFilterException {@inheritDoc}
+     * @throws  InvalidSearchControlsException {@inheritDoc}
+     */
     public NamingEnumeration<SearchResult>
         search(String name,
                String filter,
@@ -296,6 +346,10 @@ public class InitialDirContext extends InitialContext implements DirContext {
         return getURLOrDefaultInitDirCtx(name).search(name, filter, cons);
     }
 
+    /**
+     * @throws  InvalidSearchFilterException {@inheritDoc}
+     * @throws  InvalidSearchControlsException {@inheritDoc}
+     */
     public NamingEnumeration<SearchResult>
         search(Name name,
                String filter,
@@ -305,6 +359,10 @@ public class InitialDirContext extends InitialContext implements DirContext {
         return getURLOrDefaultInitDirCtx(name).search(name, filter, cons);
     }
 
+    /**
+     * @throws  InvalidSearchControlsException {@inheritDoc}
+     * @throws  InvalidSearchFilterException {@inheritDoc}
+     */
     public NamingEnumeration<SearchResult>
         search(String name,
                String filterExpr,
@@ -316,6 +374,10 @@ public class InitialDirContext extends InitialContext implements DirContext {
                                                       filterArgs, cons);
     }
 
+    /**
+     * @throws  InvalidSearchControlsException {@inheritDoc}
+     * @throws  InvalidSearchFilterException {@inheritDoc}
+     */
     public NamingEnumeration<SearchResult>
         search(Name name,
                String filterExpr,

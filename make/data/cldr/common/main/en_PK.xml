@@ -25,44 +25,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">M/d – M/d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">M/d – M/d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">M/d – M/d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/d – M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E, M/d – E, M/d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, M/d – E, M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM d – d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">MMM d – d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM d – d, y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d, y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MMM d, y – MMM d, y G</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d, y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM d, y – MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d, y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, MMM d, y – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, MMM d, y – E, MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -79,44 +79,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">M/d – M/d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">M/d – M/d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">M/d – M/d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/d – M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E, M/d – E, M/d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, M/d – E, M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM d – d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">MMM d – d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">M/y – M/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">M/y – M/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">M/d/y – M/d/y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">M/d/y – M/d/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/d/y – M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, M/d/y – E, M/d/y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, M/d/y – E, M/d/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, M/d/y – E, M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM d – d, y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d, y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MMM d, y – MMM d, y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">MMM d – d, y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d, y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM d, y – MMM d, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d, y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d, y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, MMM d, y – E, MMM d, y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d, y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d, y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, MMM d, y – E, MMM d, y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>

@@ -214,13 +214,13 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
-     * Overriden XMenuWindow caption-painting functions
+     * Overridden XMenuWindow caption-painting functions
      * Necessary to fix 6267144: PIT: Popup menu label is not shown, XToolkit
      *
      ************************************************/
     /**
      * Returns height of menu window's caption.
-     * Can be overriden for popup menus and tear-off menus
+     * Can be overridden for popup menus and tear-off menus
      */
     @Override
     protected Dimension getCaptionSize() {
@@ -247,7 +247,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /**
      * Paints menu window's caption.
-     * Can be overriden for popup menus and tear-off menus.
+     * Can be overridden for popup menus and tear-off menus.
      * Default implementation does nothing
      */
     @Override
@@ -270,7 +270,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
-     * Overriden XBaseMenuWindow functions
+     * Overridden XBaseMenuWindow functions
      *
      ************************************************/
     @Override
@@ -303,7 +303,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
-     * Overriden XWindow general-purpose functions
+     * Overridden XWindow general-purpose functions
      *
      ************************************************/
     @Override
@@ -313,7 +313,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
-     * Overriden XWindow keyboard processing
+     * Overridden XWindow keyboard processing
      *
      ************************************************/
 

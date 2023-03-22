@@ -46,7 +46,7 @@ import java.lang.ref.WeakReference;
  * </p>
  * <p>
  * WARNING WARNING WARNING WARNING WARNING WARNING:<br>
- * Do NOT create an annonymous inner class that extends this!  If you do
+ * Do NOT create an anonymous inner class that extends this!  If you do,
  * a strong reference will be held to the containing class, which in most
  * cases defeats the purpose of this class.
  *

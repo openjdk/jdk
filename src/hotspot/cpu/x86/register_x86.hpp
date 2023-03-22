@@ -56,9 +56,9 @@ public:
 
   public:
     // accessors
-    int   raw_encoding() const      { return this - first(); }
-    int   encoding() const          { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    bool  is_valid() const          { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr int   raw_encoding() const { return this - first(); }
+    constexpr int       encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool      is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
     bool  has_byte_register() const { return 0 <= raw_encoding() && raw_encoding() < number_of_byte_registers; }
 
     // derived registers, offsets, and addresses
@@ -74,7 +74,7 @@ public:
   int operator==(const Register r) const { return _encoding == r._encoding; }
   int operator!=(const Register r) const { return _encoding != r._encoding; }
 
-  const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
+  constexpr const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
 };
 
 extern Register::RegisterImpl all_RegisterImpls[Register::number_of_registers + 1] INTERNAL_VISIBILITY;
@@ -202,9 +202,9 @@ public:
 
   public:
     // accessors
-    int raw_encoding() const  { return this - first(); }
-    int   encoding() const    { assert(is_valid(), "invalid register"); return raw_encoding(); }
-    bool  is_valid() const    { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
     // derived registers, offsets, and addresses
     inline XMMRegister successor() const;
@@ -219,7 +219,7 @@ public:
   int operator==(const XMMRegister r) const { return _encoding == r._encoding; }
   int operator!=(const XMMRegister r) const { return _encoding != r._encoding; }
 
-  const XMMRegisterImpl* operator->() const { return XMMRegisterImpl::first() + _encoding; }
+  constexpr const XMMRegisterImpl* operator->() const { return XMMRegisterImpl::first() + _encoding; }
 
   // Actually available XMM registers for use, depending on actual CPU capabilities and flags.
   static int available_xmm_registers() {

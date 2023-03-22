@@ -26,10 +26,11 @@
 * @summary Tests class unloading on virtual threads
 *
 * @requires vm.continuations
-* @compile --enable-preview -source ${jdk.version} ClassUnloading.java
-* @run main/othervm --enable-preview -XX:-UseCompressedOops ClassUnloading
-* @run main/othervm --enable-preview -XX:+UseCompressedOops ClassUnloading
-* @run main/othervm --enable-preview -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,ClassUnloading ClassUnloading
+* @enablePreview
+* @compile ClassUnloading.java
+* @run main/othervm -XX:-UseCompressedOops ClassUnloading
+* @run main/othervm -XX:+UseCompressedOops ClassUnloading
+* @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,ClassUnloading ClassUnloading
 */
 
 // @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic

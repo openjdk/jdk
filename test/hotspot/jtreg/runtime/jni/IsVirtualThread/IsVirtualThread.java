@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,21 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test id=default
+ * @bug 8284161
  * @summary Test JNI IsVirtualThread
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} IsVirtualThread.java
- * @run main/native/othervm --enable-preview IsVirtualThread
+ * @enablePreview
+ * @run main/native/othervm IsVirtualThread
+ */
+
+/*
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @library /test/lib
+ * @enablePreview
+ * @run main/native/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations IsVirtualThread
  */
 
 import jdk.test.lib.Asserts;
@@ -40,18 +50,24 @@ public class IsVirtualThread {
         Thread thread = Thread.ofPlatform().unstarted(LockSupport::park);
         test(thread);   // not started
         thread.start();
-        test(thread);   // started, probably parked
-        LockSupport.unpark(thread);
-        thread.join();
+        try {
+            test(thread);   // started, probably parked
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
         test(thread);   // terminated
 
         // test virtual thread
         Thread vthread = Thread.ofVirtual().unstarted(LockSupport::park);
         test(vthread);   // not started
         vthread.start();
-        test(vthread);   // started, probably parked
-        LockSupport.unpark(vthread);
-        vthread.join();
+        try {
+            test(vthread);   // started, probably parked
+        } finally {
+            LockSupport.unpark(vthread);
+            vthread.join();
+        }
         test(vthread);   // terminated
     }
 

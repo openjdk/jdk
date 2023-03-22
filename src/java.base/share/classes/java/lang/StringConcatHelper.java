@@ -434,8 +434,11 @@ final class StringConcatHelper {
     @ForceInline
     static byte[] newArray(long indexCoder) {
         byte coder = (byte)(indexCoder >> 32);
-        int index = (int)indexCoder;
-        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index << coder);
+        int index = ((int)indexCoder) << coder;
+        if (index < 0) {
+            throw new OutOfMemoryError("Overflow: String length out of range");
+        }
+        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index);
     }
 
     /**

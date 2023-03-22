@@ -168,7 +168,7 @@ public class BasicIconFactory implements Serializable
         }
         public int getIconWidth() { return width; }
         public int getIconHeight() { return height; }
-    };
+    }
 
     private static class CheckBoxIcon implements Icon, Serializable
     {

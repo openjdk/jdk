@@ -110,14 +110,16 @@ public class PolicyUtil {
             if (storePassURL != null) {
                 URL passURL;
                 try {
-                    passURL = new URL(storePassURL);
+                    @SuppressWarnings("deprecation")
+                    var _unused = passURL = new URL(storePassURL);
                     // absolute URL
                 } catch (MalformedURLException e) {
                     // relative URL
                     if (policyUrl == null) {
                         throw e;
                     }
-                    passURL = new URL(policyUrl, storePassURL);
+                    @SuppressWarnings("deprecation")
+                    var _unused = passURL = new URL(policyUrl, storePassURL);
                 }
 
                 if (debug != null) {
@@ -138,14 +140,16 @@ public class PolicyUtil {
                  */
                 URL keyStoreUrl;
                 try {
-                    keyStoreUrl = new URL(keyStoreName);
+                    @SuppressWarnings("deprecation")
+                    var _unused = keyStoreUrl = new URL(keyStoreName);
                     // absolute URL
                 } catch (MalformedURLException e) {
                     // relative URL
                     if (policyUrl == null) {
                         throw e;
                     }
-                    keyStoreUrl = new URL(policyUrl, keyStoreName);
+                    @SuppressWarnings("deprecation")
+                    var _unused = keyStoreUrl = new URL(policyUrl, keyStoreName);
                 }
 
                 if (debug != null) {

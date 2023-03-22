@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -56,7 +56,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
-  virtual ~InterpreterMacroAssembler() {}
 
   void load_earlyret_value(TosState state);
 
@@ -76,6 +75,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     ld(xlocals, Address(fp, frame::interpreter_frame_locals_offset * wordSize));
+    shadd(xlocals, xlocals, fp,  t0,  LogBytesPerWord);
   }
 
   void restore_constant_pool_cache() {

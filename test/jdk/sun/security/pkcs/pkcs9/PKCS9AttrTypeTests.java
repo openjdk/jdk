@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8239950
+ * @bug 8239950 8296736
  * @summary Update PKCS9 Attributes to PKCS#9 v2.0 Encodings
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
@@ -33,6 +33,7 @@
 import java.io.IOException;
 import java.util.*;
 import sun.security.pkcs.PKCS9Attribute;
+import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import jdk.test.lib.Utils;
 
@@ -123,6 +124,9 @@ public class PKCS9AttrTypeTests {
                 put("signingTime as GeneralizedTime",
                     "301e06092a864886f70d010905311118" +
                     "0f32303530303533313132303030305a");
+
+                put("SigningCertificateInfo",
+                    "3018060b2a864886f70d010910020c3109300730053003040100");
             }};
 
     static final Map<String, String> TEST_INPUT_BAD =
@@ -162,10 +166,20 @@ public class PKCS9AttrTypeTests {
             try {
                 System.out.print("Test - " + entry.getKey() + ": ");
 
-                // Decode each Base64 test vector into DER and place into
+                // Decode each HEX test vector into DER and place into
                 // a DerValue object to be consumed by PKCS9Attribute.
                 PKCS9Attribute p9Attr = new PKCS9Attribute(
                         new DerValue(Utils.toByteArray(entry.getValue())));
+
+                // There is a value inside
+                if (p9Attr.getValue() == null) {
+                    throw new IOException("Empty attribute");
+                }
+
+                // Encoding is supported
+                DerOutputStream dos = new DerOutputStream();
+                p9Attr.encode(dos);
+
                 System.out.println("PASS");
                 System.out.println("---------------");
                 System.out.println(p9Attr);

@@ -38,6 +38,10 @@
 #define IP_DONTFRAG             28
 #endif
 
+#ifndef IPV6_DONTFRAG
+#define IPV6_DONTFRAG           62
+#endif
+
 #include "jni_util.h"
 
 /*

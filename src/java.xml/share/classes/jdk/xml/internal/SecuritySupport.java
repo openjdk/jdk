@@ -340,6 +340,7 @@ public class SecuritySupport {
         if (!systemId.contains(":")) {
             protocol = "file";
         } else {
+            @SuppressWarnings("deprecation")
             URL url = new URL(systemId);
             protocol = url.getProtocol();
             if (protocol.equalsIgnoreCase("jar")) {

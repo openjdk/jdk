@@ -74,7 +74,7 @@ public class Popup {
      * A null <code>owner</code> implies there is no valid parent.
      * <code>x</code> and
      * <code>y</code> specify the preferred initial location to place
-     * the <code>Popup</code> at. Based on screen size, or other paramaters,
+     * the <code>Popup</code> at. Based on screen size, or other parameters,
      * the <code>Popup</code> may not display at <code>x</code> and
      * <code>y</code>.
      *

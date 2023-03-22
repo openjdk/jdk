@@ -28,11 +28,18 @@
 
 #include "runtime/prefetch.hpp"
 
-
 inline void Prefetch::read (const void *loc, intx interval) {
+  if (interval >= 0 && UseZicbop) {
+    // encoding for prefetch.r
+    asm("ori zero, %0, 1" : : "r"(intptr_t(loc)+interval));
+  }
 }
 
 inline void Prefetch::write(void *loc, intx interval) {
+  if (interval >= 0 && UseZicbop) {
+    // encoding for prefetch.w
+    asm("ori zero, %0, 3" : : "r"(intptr_t(loc)+interval));
+  }
 }
 
 #endif // OS_CPU_LINUX_RISCV_VM_PREFETCH_LINUX_RISCV_INLINE_HPP

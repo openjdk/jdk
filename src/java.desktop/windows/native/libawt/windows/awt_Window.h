@@ -210,7 +210,7 @@ public:
                              (LPARAM) oppositeHWnd);
     }
 
-    void moveToDefaultLocation(); /* moves Window to X,Y specified by Window Manger */
+    void moveToDefaultLocation(); /* moves Window to X,Y specified by Window Manager */
 
     void UpdateWindow(JNIEnv* env, jintArray data, int width, int height,
                       HBITMAP hNewBitmap = NULL);
@@ -369,8 +369,8 @@ public:
 protected:
     BOOL m_isResizable;
     static AwtWindow* m_grabbedWindow; // Current grabbing window
-    HICON m_hIcon;            /* Icon for this window. It can be set explicitely or inherited from the owner */
-    HICON m_hIconSm;          /* Small icon for this window. It can be set explicitely or inherited from the owner */
+    HICON m_hIcon;            /* Icon for this window. It can be set explicitly or inherited from the owner */
+    HICON m_hIconSm;          /* Small icon for this window. It can be set explicitly or inherited from the owner */
     BOOL m_iconInherited;     /* TRUE if icon is inherited from the owner */
     BOOL m_filterFocusAndActivation; /* Used in the WH_CBT hook */
 

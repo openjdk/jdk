@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8240756
+ * @bug 8240756 8298887
  * @summary Non-English characters are printed with wrong glyphs on MacOS
  * @modules java.desktop/sun.java2d java.desktop/sun.java2d.loops java.desktop/sun.font
  * @requires os.family == "mac"

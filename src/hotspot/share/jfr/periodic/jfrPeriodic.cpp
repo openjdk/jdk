@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
@@ -42,11 +41,13 @@
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
+#include "jfr/periodic/jfrNativeMemoryEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
@@ -72,12 +73,25 @@
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
+
 /**
  *  JfrPeriodic class
  *  Implementation of declarations in
  *  xsl generated traceRequestables.hpp
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
+
+// Timestamp to correlate events in the same batch/generation
+Ticks JfrPeriodicEventSet::_timestamp;
+PeriodicType JfrPeriodicEventSet::_type;
+
+Ticks JfrPeriodicEventSet::timestamp(void) {
+  return _timestamp;
+}
+
+PeriodicType JfrPeriodicEventSet::type(void) {
+  return _type;
+}
 
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
@@ -137,6 +151,7 @@ static int _native_library_callback(const char* name, address base, address top,
   event.set_name(name);
   event.set_baseAddress((u8)base);
   event.set_topAddress((u8)top);
+  event.set_starttime(*(JfrTicks*)param);
   event.set_endtime(*(JfrTicks*) param);
   event.commit();
   return 0;
@@ -411,6 +426,7 @@ TRACE_REQUEST_FUNC(InitialSystemProperty) {
       EventInitialSystemProperty event(UNTIMED);
       event.set_key(p->key());
       event.set_value(p->value());
+      event.set_starttime(time_stamp);
       event.set_endtime(time_stamp);
       event.commit();
     }
@@ -437,6 +453,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
     EventThreadAllocationStatistics event(UNTIMED);
     event.set_allocated(allocated.at(i));
     event.set_thread(thread_ids.at(i));
+    event.set_starttime(time_stamp);
     event.set_endtime(time_stamp);
     event.commit();
   }
@@ -571,6 +588,7 @@ TRACE_REQUEST_FUNC(CompilerConfiguration) {
   EventCompilerConfiguration event;
   event.set_threadCount(CICompilerCount);
   event.set_tieredCompilation(TieredCompilation);
+  event.set_dynamicCompilerThreadCount(UseDynamicNumberOfCompilerThreads);
   event.commit();
 }
 
@@ -622,4 +640,12 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 #else
   log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
+}
+
+TRACE_REQUEST_FUNC(NativeMemoryUsage) {
+  JfrNativeMemoryEvent::send_type_events(timestamp());
+}
+
+TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
+  JfrNativeMemoryEvent::send_total_event(timestamp());
 }

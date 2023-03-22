@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import javax.management.ObjectName;
 import javax.management.ServiceNotFoundException;
 import javax.management.loading.MLet;
 
+@SuppressWarnings("removal")
 public class ParserInfiniteLoopTest {
 
     public static void main(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1288,7 +1288,7 @@ public class X509CertSelector implements CertSelector {
      */
     @Deprecated(since="16")
     public String getIssuerAsString() {
-        return (issuer == null ? null : issuer.getName());
+        return issuer == null ? null : issuer.getName();
     }
 
     /**
@@ -1310,7 +1310,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getIssuerAsBytes() throws IOException {
-        return (issuer == null ? null: issuer.getEncoded());
+        return issuer == null ? null : issuer.getEncoded();
     }
 
     /**
@@ -1347,7 +1347,7 @@ public class X509CertSelector implements CertSelector {
      */
     @Deprecated(since="16")
     public String getSubjectAsString() {
-        return (subject == null ? null : subject.getName());
+        return subject == null ? null : subject.getName();
     }
 
     /**
@@ -1369,7 +1369,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if an encoding error occurs
      */
     public byte[] getSubjectAsBytes() throws IOException {
-        return (subject == null ? null : subject.getEncoded());
+        return subject == null ? null : subject.getEncoded();
     }
 
     /**
@@ -1868,7 +1868,7 @@ public class X509CertSelector implements CertSelector {
 
         s += "]\n";
 
-        return (s);
+        return s;
     }
 
     /**
@@ -2120,12 +2120,8 @@ public class X509CertSelector implements CertSelector {
         } catch (CertificateExpiredException e1) {
             if (debug != null) {
                 String time = "n/a";
-                try {
-                    Date notAfter = ext.get(PrivateKeyUsageExtension.NOT_AFTER);
-                    time = notAfter.toString();
-                } catch (CertificateException ex) {
-                    // not able to retrieve notAfter value
-                }
+                Date notAfter = ext.getNotAfter();
+                time = notAfter.toString();
                 debug.println("X509CertSelector.match: private key usage not "
                     + "within validity date; ext.NOT_After: "
                     + time + "; X509CertSelector: "
@@ -2136,12 +2132,8 @@ public class X509CertSelector implements CertSelector {
         } catch (CertificateNotYetValidException e2) {
             if (debug != null) {
                 String time = "n/a";
-                try {
-                    Date notBefore = ext.get(PrivateKeyUsageExtension.NOT_BEFORE);
-                    time = notBefore.toString();
-                } catch (CertificateException ex) {
-                    // not able to retrieve notBefore value
-                }
+                Date notBefore = ext.getNotBefore();
+                time = notBefore.toString();
                 debug.println("X509CertSelector.match: private key usage not "
                     + "within validity date; ext.NOT_BEFORE: "
                     + time + "; X509CertSelector: "
@@ -2227,8 +2219,7 @@ public class X509CertSelector implements CertSelector {
                 (ExtendedKeyUsageExtension)getExtensionObject(xcert,
                                                 KnownOIDs.extendedKeyUsage);
             if (ext != null) {
-                Vector<ObjectIdentifier> certKeyPurposeVector =
-                    ext.get(ExtendedKeyUsageExtension.USAGES);
+                Vector<ObjectIdentifier> certKeyPurposeVector = ext.getUsages();
                 if (!certKeyPurposeVector.contains(ANY_EXTENDED_KEY_USAGE)
                         && !certKeyPurposeVector.containsAll(keyPurposeOIDSet)) {
                     if (debug != null) {
@@ -2264,8 +2255,7 @@ public class X509CertSelector implements CertSelector {
                 }
                 return false;
             }
-            GeneralNames certNames =
-                    sanExt.get(SubjectAlternativeNameExtension.SUBJECT_NAME);
+            GeneralNames certNames = sanExt.getNames();
             Iterator<GeneralNameInterface> i =
                                 subjectAlternativeGeneralNames.iterator();
             while (i.hasNext()) {
@@ -2333,7 +2323,7 @@ public class X509CertSelector implements CertSelector {
                 }
                 return false;
             }
-            List<PolicyInformation> policies = ext.get(CertificatePoliciesExtension.POLICIES);
+            List<PolicyInformation> policies = ext.getCertPolicies();
             /*
              * Convert the Vector of PolicyInformation to a Vector
              * of CertificatePolicyIds for easier comparison.
@@ -2401,17 +2391,15 @@ public class X509CertSelector implements CertSelector {
                 }
             }
 
-            GeneralSubtrees permitted =
-                    ext.get(NameConstraintsExtension.PERMITTED_SUBTREES);
-            GeneralSubtrees excluded =
-                    ext.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
+            GeneralSubtrees permitted = ext.getPermittedSubtrees();
+            GeneralSubtrees excluded = ext.getExcludedSubtrees();
             if (excluded != null) {
-                if (matchExcluded(excluded) == false) {
+                if (!matchExcluded(excluded)) {
                     return false;
                 }
             }
             if (permitted != null) {
-                if (matchPermitted(permitted) == false) {
+                if (!matchPermitted(permitted)) {
                     return false;
                 }
             }

@@ -12,7 +12,7 @@ Lee Crocker, Julian Minguillon, Luis Ortiz, George Phillips, Davide Rossi,
 Guido Vollbeding, Ge' Weijers, and other members of the Independent JPEG
 Group.
 
-IJG is not affiliated with the official ISO JPEG standards committee. 
+IJG is not affiliated with the official ISO JPEG standards committee.
 
 The authors make NO WARRANTY or representation, either express or implied,
 with respect to this software, its quality, accuracy, merchantability, or

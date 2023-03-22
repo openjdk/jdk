@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class BufferedOutputStream extends FilterOutputStream {
     /**
      * The internal buffer where data is stored.
      */
-    protected byte buf[];
+    protected byte[] buf;
 
     /**
      * The number of valid bytes in the buffer. This value is always
@@ -190,6 +190,7 @@ public class BufferedOutputStream extends FilterOutputStream {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {

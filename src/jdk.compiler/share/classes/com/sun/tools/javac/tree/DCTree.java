@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,11 @@ public abstract class DCTree implements DocTree {
             case ERRONEOUS -> {
                 DCErroneous err = (DCErroneous) this;
                 return err.pos + err.body.length();
+            }
+
+            case ESCAPE -> {
+                DCEscape esc = (DCEscape) this;
+                return esc.pos + 2;
             }
 
             case IDENTIFIER -> {
@@ -641,7 +646,29 @@ public abstract class DCTree implements DocTree {
             this.prefPos = prefPos;
             return this;
         }
+    }
 
+    public static class DCEscape extends DCTree implements EscapeTree {
+        public final char ch;
+
+        DCEscape(char ch) {
+            this.ch = ch;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.ESCAPE;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitEscape(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public String getBody() {
+            return String.valueOf(ch);
+        }
     }
 
     public static class DCHidden extends DCBlockTag implements HiddenTree {
@@ -872,8 +899,8 @@ public abstract class DCTree implements DocTree {
         DCReference(String signature, JCTree.JCExpression moduleName, JCTree qualExpr, Name member, List<JCTree> paramTypes) {
             this.signature = signature;
             this.moduleName = moduleName;
-            qualifierExpression = qualExpr;
-            memberName = member;
+            this.qualifierExpression = qualExpr;
+            this.memberName = member;
             this.paramTypes = paramTypes;
         }
 

@@ -44,7 +44,7 @@
  * versions of those macros.  The "DitherDeclared" keyword is also
  * defined to indicate to the other include files that they are not
  * defining the primary implementation.  All other include files
- * will check for the existance of the "DitherDeclared" keyword
+ * will check for the existence of the "DitherDeclared" keyword
  * and define their implementations of the Encoding macros using
  * more specific names without overriding the standard names.  This
  * is done so that the other files can be included here to reuse

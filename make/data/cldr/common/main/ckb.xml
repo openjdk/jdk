@@ -98,7 +98,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">ئینگلیزیی بریتانیایی</language>
 			<language type="en_GB" alt="short">ئینگلیزی (GB)</language>
 			<language type="en_US">ئینگلیزیی ئەمەریکایی</language>
-			<language type="en_US" alt="short">ئینگلیزیی ئەمەریکایی</language>
 			<language type="eo">ئێسپیرانتۆ</language>
 			<language type="es">ئیسپانی</language>
 			<language type="et">ئیستۆنی</language>
@@ -1550,6 +1549,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -1557,9 +1557,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>

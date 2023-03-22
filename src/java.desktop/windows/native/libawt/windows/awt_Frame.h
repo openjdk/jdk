@@ -182,7 +182,7 @@ private:
     /* The frame is a LightweightFrame */
     BOOL m_isLightweight;
 
-    /* used so that calls to ::MoveWindow in SetMenuBar don't propogate
+    /* used so that calls to ::MoveWindow in SetMenuBar don't propagate
        because they are immediately followed by calls to Component.resize */
     BOOL m_ignoreWmSize;
 

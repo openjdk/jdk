@@ -2088,7 +2088,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>lx</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>متریک تُن</displayName>
 				<unitPattern count="other">{0} متریک تُن</unitPattern>
 			</unit>
@@ -2489,7 +2489,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>lx</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>

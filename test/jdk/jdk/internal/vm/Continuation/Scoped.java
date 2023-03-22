@@ -27,9 +27,9 @@
  * @requires vm.continuations
  * @modules java.base/jdk.internal.vm
  * @build java.base/java.lang.StackWalkerHelper
- *
- * @run testng/othervm --enable-preview -Xint Scoped
- * @run testng/othervm --enable-preview -Xcomp -XX:CompileOnly=jdk/internal/vm/Continuation,Scoped Scoped
+ * @enablePreview
+ * @run testng/othervm -Xint Scoped
+ * @run testng/othervm -Xcomp -XX:CompileOnly=jdk/internal/vm/Continuation,Scoped Scoped
  */
 
 import jdk.internal.vm.Continuation;

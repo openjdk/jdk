@@ -106,13 +106,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a 'a' h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h 'a' h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a 'a' h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h 'a' h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a 'a' h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm 'a' h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm 'a' h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a 'a' h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm 'a' h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm 'a' h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d" draft="contributed">d/M 'al' d/M</greatestDifference>

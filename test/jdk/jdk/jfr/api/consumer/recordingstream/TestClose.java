@@ -38,7 +38,7 @@ import jdk.jfr.consumer.RecordingStream;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestClose
+ * @run main/othervm -Xlog:jfr+streaming+system=trace jdk.jfr.api.consumer.recordingstream.TestClose
  */
 public class TestClose {
 

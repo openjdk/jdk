@@ -24,7 +24,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -37,6 +37,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
@@ -67,7 +68,7 @@ public class TestLoadBytes {
         }
 
         srcBufferNative = ByteBuffer.allocateDirect(size);
-        srcSegmentImplicit = MemorySegment.allocateNative(size, MemorySession.openImplicit());
+        srcSegmentImplicit = MemorySegment.allocateNative(size, SegmentScope.auto());
     }
 
     @Benchmark

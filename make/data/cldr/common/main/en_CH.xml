@@ -11,6 +11,323 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="en"/>
 		<territory type="CH"/>
 	</identity>
+	<dates>
+		<calendars>
+			<calendar type="buddhist">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="chinese">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.r</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="UM">M.U</dateFormatItem>
+						<dateFormatItem id="UMd">dd.MM.U</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.r</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.r</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.r</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="coptic">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="dangi">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.r</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="UM">M.U</dateFormatItem>
+						<dateFormatItem id="UMd">dd.MM.U</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.r</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.r</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.r</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="ethiopic">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="ethiopic-amete-alem">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">d.M.y G</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="MMdd">dd.MM</dateFormatItem>
+						<dateFormatItem id="yM">MM.y</dateFormatItem>
+						<dateFormatItem id="yMd">dd.MM.y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, dd.MM.y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="hebrew">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="indian">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic-civil">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic-rgsa">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic-tbla">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic-umalqura">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>M.d.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="persian">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="roc">
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
 			<group>’</group>

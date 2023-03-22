@@ -49,12 +49,6 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
                      p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
 }
 
-bool G1BlockOffsetTable::is_card_boundary(HeapWord* p) const {
-  assert(p >= _reserved.start(), "just checking");
-  size_t delta = pointer_delta(p, _reserved.start());
-  return (delta & right_n_bits((int)BOTConstants::log_card_size_in_words())) == (size_t)NoBits;
-}
-
 #ifdef ASSERT
 void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
   assert((index) < (_reserved.word_size() >> BOTConstants::log_card_size_in_words()),

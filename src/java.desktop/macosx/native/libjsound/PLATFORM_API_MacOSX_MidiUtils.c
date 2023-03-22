@@ -57,7 +57,7 @@ static const char* strMIDIInvalidPort =
 static const char* strMIDIWrongEndpointType =
                         "A source endpoint was passed to a function expecting a destination, or vice versa.";
 static const char* strMIDINoConnection =
-                        "Attempt to close a non-existant connection.";
+                        "Attempt to close a non-existent connection.";
 static const char* strMIDIUnknownEndpoint =
                         "An invalid MIDIEndpointRef was passed.";
 static const char* strMIDIUnknownProperty =

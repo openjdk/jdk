@@ -134,7 +134,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">Ingliż Awstraljan</language>
 			<language type="en_CA">Ingliż Kanadiż</language>
 			<language type="en_GB">Ingliż Brittaniku</language>
+			<language type="en_GB" alt="short">Ingliż (UK)</language>
 			<language type="en_US">Ingliż Amerikan</language>
+			<language type="en_US" alt="short">Ingliż (US)</language>
 			<language type="enm">Ingliż Medjevali</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanjol</language>
@@ -956,34 +958,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} - {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
@@ -992,58 +994,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
-							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, dd/MM – E, dd/MM</greatestDifference>
-							<greatestDifference id="M">E, dd/MM – E, dd/MM</greatestDifference>
+							<greatestDifference id="d">E, dd/MM – E, dd/MM</greatestDifference>
+							<greatestDifference id="M">E, dd/MM – E, dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM/y – MM/y G</greatestDifference>
-							<greatestDifference id="y">MM/y – MM/y G</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y G</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd/MM/y – dd/MM/y G</greatestDifference>
-							<greatestDifference id="M">dd/MM/y – dd/MM/y G</greatestDifference>
-							<greatestDifference id="y">dd/MM/y – dd/MM/y G</greatestDifference>
+							<greatestDifference id="d">dd/MM/y – dd/MM/y G</greatestDifference>
+							<greatestDifference id="M">dd/MM/y – dd/MM/y G</greatestDifference>
+							<greatestDifference id="y">dd/MM/y – dd/MM/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, dd/MM/y – E, dd/MM/y G</greatestDifference>
-							<greatestDifference id="M">E, dd/MM/y – E, dd/MM/y G</greatestDifference>
-							<greatestDifference id="y">E, dd/MM/y – E, dd/MM/y G</greatestDifference>
+							<greatestDifference id="d">E, dd/MM/y – E, dd/MM/y G</greatestDifference>
+							<greatestDifference id="M">E, dd/MM/y – E, dd/MM/y G</greatestDifference>
+							<greatestDifference id="y">E, dd/MM/y – E, dd/MM/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d MMM, y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM, y G</greatestDifference>
-							<greatestDifference id="y">d MMM, y – d MMM, y G</greatestDifference>
+							<greatestDifference id="d">d – d MMM, y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM, y G</greatestDifference>
+							<greatestDifference id="y">d MMM, y – d MMM, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM, y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM, y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM, y – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM, y – E, d MMM, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1385,23 +1387,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d 'ta'’ MMM, y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">MM-dd</dateFormatItem>
@@ -1411,8 +1413,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd">E, d 'ta'’ MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d 'ta'’ MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="few">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="many">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="two">W 'ġimgħatejn' 'ta''' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few">W 'ġimgħat' 'ta''' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="many">W-'il' 'ġimgħa' 'ta''' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">W 'ġimgħa' 'ta''' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
@@ -1426,46 +1429,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQ">QQQ - y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ - y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">w 'ġimgħa' 'ta''' Y</dateFormatItem>
-						<dateFormatItem id="yw" count="few">w 'ġimgħa' 'ta''' Y</dateFormatItem>
-						<dateFormatItem id="yw" count="many">w 'ġimgħa' 'ta''' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="two">w 'ġimgħatejn' 'ta''' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="few">w 'ġimgħat' 'ta''' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="many">w-'il' 'ġimgħa' 'ta''' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">w 'ġimgħa' 'ta''' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} - {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h – h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -1474,58 +1478,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
-							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, dd/MM – E, dd/MM</greatestDifference>
-							<greatestDifference id="M">E, dd/MM – E, dd/MM</greatestDifference>
+							<greatestDifference id="d">E, dd/MM – E, dd/MM</greatestDifference>
+							<greatestDifference id="M">E, dd/MM – E, dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d 'ta'’ MMM – d 'ta'’ MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d 'ta'’ MMM – d 'ta'’ MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d – E d MMM</greatestDifference>
-							<greatestDifference id="M">E, d 'ta'’ MMM – E, d 'ta'’ MMM</greatestDifference>
+							<greatestDifference id="d">E, d – E d MMM</greatestDifference>
+							<greatestDifference id="M">E, d 'ta'’ MMM – E, d 'ta'’ MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y</greatestDifference>
+							<greatestDifference id="y">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM/y – MM/y</greatestDifference>
-							<greatestDifference id="y">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd/MM/y – dd/MM/y</greatestDifference>
-							<greatestDifference id="M">dd/MM/y – dd/MM/y</greatestDifference>
-							<greatestDifference id="y">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="d">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="M">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="y">dd/MM/y – dd/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, dd/MM/y – E, dd/MM/y</greatestDifference>
-							<greatestDifference id="M">E, dd/MM/y – E, dd/MM/y</greatestDifference>
-							<greatestDifference id="y">E, dd/MM/y – E, dd/MM/y</greatestDifference>
+							<greatestDifference id="d">E, dd/MM/y – E, dd/MM/y</greatestDifference>
+							<greatestDifference id="M">E, dd/MM/y – E, dd/MM/y</greatestDifference>
+							<greatestDifference id="y">E, dd/MM/y – E, dd/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d MMM y</greatestDifference>
-							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">d MMM, y – d MMM, y</greatestDifference>
+							<greatestDifference id="d">d – d MMM y</greatestDifference>
+							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">d MMM, y – d MMM, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="M">E, d 'ta'’ MMM – E, d 'ta'’ MMM y</greatestDifference>
-							<greatestDifference id="y">E, d 'ta'’ MMM y – E, d 'ta'’ MMM y</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="M">E, d 'ta'’ MMM – E, d 'ta'’ MMM y</greatestDifference>
+							<greatestDifference id="y">E, d 'ta'’ MMM y – E, d 'ta'’ MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1548,45 +1552,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">is-sena d-dieħla</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien sentejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">fi żmien {0} snin oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0} snin oħra</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il sena oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} sena oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">sena ilu</relativeTimePattern>
+					<relativeTimePattern count="two">sentejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} snin ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} snin ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} snin ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il sena ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sena ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>Sena</displayName>
+				<displayName>Sn</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien sentejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">fi żmien {0} snin oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0} snin oħra</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il sena oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} sena oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">sa sena ilu</relativeTimePattern>
+					<relativeTimePattern count="two">sentejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} snin ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} snin ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} snin ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il sena ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sena ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName>Sena</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien sena</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien sentejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">fi żmien {0} snin oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0} snin oħra</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} snin oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il sena oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} sena oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">sena ilu</relativeTimePattern>
+					<relativeTimePattern count="two">sentejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} snin ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} snin ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} snin ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il sena ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sena ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter">
@@ -1595,34 +1605,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">il-kwart ta’ sena li qegħdin fih</relative>
 				<relative type="1">il-kwart li jmiss tas-sena</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="one">f’{0} kwart ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="two">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
 					<relativeTimePattern count="few">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
-					<relativeTimePattern count="many">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
-					<relativeTimePattern count="other">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="many">f’{0}-il kwart ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="other">f’{0} kwart ta’ sena oħrajn</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">il-kwart ta’ sena li għadda</relativeTimePattern>
+					<relativeTimePattern count="two">{0} kwarti ta’ sena li għaddew</relativeTimePattern>
 					<relativeTimePattern count="few">{0} kwarti ta’ sena li għaddew</relativeTimePattern>
-					<relativeTimePattern count="many">{0} kwarti ta’ sena li għaddew</relativeTimePattern>
-					<relativeTimePattern count="other">{0} kwarti ta’ sena li għaddew</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il kwart ta’ sena li għaddew</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kwart ta’ sena li għaddew</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
-				<displayName draft="provisional">kwrt.</displayName>
+				<displayName>kwrt</displayName>
 				<relative type="-1">il-kwart ta’ sena li għadda</relative>
 				<relative type="0">il-kwart ta’ sena li qegħdin fih</relative>
 				<relative type="1">il-kwart li jmiss tas-sena</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fil-kwart tas-sena li ġej</relativeTimePattern>
+					<relativeTimePattern count="two">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
 					<relativeTimePattern count="few">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
-					<relativeTimePattern count="many">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
-					<relativeTimePattern count="other">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="many">f’{0}-il kwart ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="other">f’{0} kwart ta’ sena oħrajn</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">fil-kwart tas-sena li għadda</relativeTimePattern>
+					<relativeTimePattern count="two">{0} kwarti ta’ sena ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} kwarti ta’ sena ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} kwarti ta’ sena ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} kwarti ta’ sena ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il kwart ta’ sena ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kwart ta’ sena ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
@@ -1632,63 +1646,77 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">il-kwart li jmiss tas-sena</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi kwart ta’ sena ieħor</relativeTimePattern>
+					<relativeTimePattern count="two">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
 					<relativeTimePattern count="few">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
-					<relativeTimePattern count="many">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
-					<relativeTimePattern count="other">f’{0} kwarti ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="many">f’{0}-il kwart ta’ sena oħrajn</relativeTimePattern>
+					<relativeTimePattern count="other">f’{0} kwart ta’ sena oħrajn</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">fil-kwart tas-sena li għadda</relativeTimePattern>
+					<relativeTimePattern count="two">{0} kwarti ta’ sena ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} kwarti ta’ sena ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} kwarti ta’ sena ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} kwarti ta’ sena ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il kwart ta’ sena ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kwart ta’ sena ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>xahar</displayName>
-				<relative type="-1">Ix-xahar li għadda</relative>
-				<relative type="0">Dan ix-xahar</relative>
-				<relative type="1">Ix-xahar id-dieħel</relative>
+				<relative type="-1">ix-xahar li għadda</relative>
+				<relative type="0">dan ix-xahar</relative>
+				<relative type="1">ix-xahar id-dieħel</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa xahar ieħor</relativeTimePattern>
+					<relativeTimePattern count="two">fi xahrejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">fi {0} xhur oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi {0} xhur oħra</relativeTimePattern>
-					<relativeTimePattern count="other">fi {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi {0}-xahar oħra</relativeTimePattern>
+					<relativeTimePattern count="other">fi {0} xahar oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="two">xahrejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} xhur ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} xhur ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} xahar ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month-short">
 				<displayName>Xahar</displayName>
+				<relative type="-1" draft="unconfirmed">ix-xahar li għadda</relative>
+				<relative type="0" draft="unconfirmed">dan ix-xahar</relative>
+				<relative type="1" draft="unconfirmed">ix-xahar id-dieħel</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa xahar ieħor</relativeTimePattern>
+					<relativeTimePattern count="two">sa xahrejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} xhur oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} xhur oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il xahar oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} xahar oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="two">xahrejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} xhur ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} xhur ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} xahar ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
 				<displayName>Xahar</displayName>
+				<relative type="-1" draft="unconfirmed">ix-xahar li għadda</relative>
+				<relative type="0" draft="unconfirmed">dan ix-xahar</relative>
+				<relative type="1" draft="unconfirmed">ix-xahar id-dieħel</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa xahar ieħor</relativeTimePattern>
+					<relativeTimePattern count="two">sa xahrejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} xhur oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} xhur oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} xhur oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il xahar oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} xahar oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="two">xahrejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} xhur ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} xhur ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} xhur ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il xahar ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} xahar ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week">
@@ -1698,31 +1726,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">il-ġimgħa d-dieħla</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa ġimagħtejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} ġimgħat oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} ġimgħat oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} ġimgħat oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} ġimgħa oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="two">ġimagħtejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} ġimgħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} ġimgħat ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġimgħa ilu</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>fil-ġimgħa ta’ {0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName draft="provisional">Ġimgħa</displayName>
+				<displayName>ġm</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa ġimagħtejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} ġimgħat oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} ġimgħat oħra</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} w</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} ġimgħa oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="two">ġimagħtejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} ġimgħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} ġimgħat ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġimgħa ilu</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>fil-ġimgħa ta’ {0}</relativePeriod>
 			</field>
@@ -1730,15 +1762,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="provisional">Ġimgħa</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa ġimagħtejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} ġimgħat oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} ġimgħat oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} ġimgħat oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il ġimgħa oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} ġimgħa oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="two">ġimagħtejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} ġimgħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} ġimgħat ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ġimgħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il ġimgħa ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġimgħa ilu</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>fil-ġimgħa ta’ {0}</relativePeriod>
 			</field>
@@ -1758,45 +1792,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">għada</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
-					<relativeTimePattern count="few">fi żmien {0} ġurnata oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien jumejn oħra</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} ġranet oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il ġurnata oħra</relativeTimePattern>
 					<relativeTimePattern count="other">fi żmien {0} ġurnata oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="two">jumejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} ġranet ilu</relativeTimePattern>
 					<relativeTimePattern count="many">{0}-il ġurnata ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0}-il ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġurnata ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-short">
 				<displayName>Jum</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
-					<relativeTimePattern count="few">fi żmien {0} ġurnata oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien jumejn oħra</relativeTimePattern>
+					<relativeTimePattern count="few">fi żmien {0} ġranet oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il ġurnata oħra</relativeTimePattern>
 					<relativeTimePattern count="other">fi żmien {0} ġurnata oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="two">jumejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} ġranet ilu</relativeTimePattern>
 					<relativeTimePattern count="many">{0}-il ġurnata ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0}-il ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġurnata ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-narrow">
 				<displayName>Jum</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien ġurnata</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien jumejn oħra</relativeTimePattern>
 					<relativeTimePattern count="few">fi żmien {0} ġurnata oħra</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0} ġurnata oħra</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il ġurnata oħra</relativeTimePattern>
 					<relativeTimePattern count="other">fi żmien {0} ġurnata oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="two">jumejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} ġranet ilu</relativeTimePattern>
 					<relativeTimePattern count="many">{0}-il ġurnata ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0}-il ġurnata ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ġurnata ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
@@ -1832,15 +1872,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">il-Ħadd ta’ wara</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa Ħadd ieħor</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} Ħdud oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} Ħdud oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} Ħdud oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} Ħdud oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il Ħadd oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} Ħadd oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">il-Ħadd li għadda</relativeTimePattern>
+					<relativeTimePattern count="two">{0} Ħdud ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} Ħdud ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} Ħdud ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} Ħdud ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il Ħadd ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Ħadd ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sun-short">
@@ -1849,14 +1891,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">il-Ħd. ta’ wara</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa Ħd. ieħor</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} Ħd. oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} Ħd. oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} Ħd. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il Ħd. oħra</relativeTimePattern>
 					<relativeTimePattern count="other">sa {0} Ħd. oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">il-Ħd. li għadda</relativeTimePattern>
+					<relativeTimePattern count="two">{0} Ħd. ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} Ħd. ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} Ħd. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il Ħd. ilu</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Ħd. ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1866,14 +1910,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">il-Ħd. ta’ wara</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa Ħd. ieħor</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} Ħd. oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} Ħd. oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} Ħd. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il Ħd. oħra</relativeTimePattern>
 					<relativeTimePattern count="other">sa {0} Ħd. oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} Ħd. ilu</relativeTimePattern>
+					<relativeTimePattern count="two">{0} Ħd. ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} Ħd. ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} Ħd. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il Ħd. ilu</relativeTimePattern>
 					<relativeTimePattern count="other">{0} Ħd. ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1916,45 +1962,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">din is-siegħa</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien sagħtejn</relativeTimePattern>
 					<relativeTimePattern count="few">fi żmien {0} sigħat</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien{0} sigħat</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} sigħat</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il siegħa</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} siegħa</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="two">sagħtejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} sigħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} sigħat ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} siegħa ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-short">
 				<displayName>siegħa</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien sagħtejn</relativeTimePattern>
 					<relativeTimePattern count="few">fi żmien {0} sigħat</relativeTimePattern>
-					<relativeTimePattern count="many">+{0} h</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} sigħat</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il siegħa</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} siegħa</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="two">sagħtejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} sigħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} sigħat ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} siegħa ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
 				<displayName>siegħa</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">fi żmien siegħa oħra</relativeTimePattern>
+					<relativeTimePattern count="two">fi żmien sagħtejn</relativeTimePattern>
 					<relativeTimePattern count="few">fi żmien {0} sigħat</relativeTimePattern>
-					<relativeTimePattern count="many">fi żmien {0} sigħat</relativeTimePattern>
-					<relativeTimePattern count="other">fi żmien {0} sigħat</relativeTimePattern>
+					<relativeTimePattern count="many">fi żmien {0}-il siegħa</relativeTimePattern>
+					<relativeTimePattern count="other">fi żmien {0} siegħa</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="two">sagħtejn ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} sigħat ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} sigħat ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sigħat ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il siegħa ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} siegħa ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute">
@@ -1962,29 +2014,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">din il-minuta</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa minuta oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} minuti oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} minuti oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} minuti oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} minuti oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il minuta oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} minuta oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">minuta ilu</relativeTimePattern>
+					<relativeTimePattern count="two">{0} minuti ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} minuti ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} minuti ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} minuti ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il minuta ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} minuta ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute-short">
 				<displayName>min.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa min. oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} min. oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} min. oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} min. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il min. oħra</relativeTimePattern>
 					<relativeTimePattern count="other">sa {0} min. oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">min. ilu</relativeTimePattern>
+					<relativeTimePattern count="two">{0} min. ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} min. ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} minuti ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il min. ilu</relativeTimePattern>
 					<relativeTimePattern count="other">{0} min. ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -1992,14 +2048,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>m</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa min. oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} min. oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} min. oħra</relativeTimePattern>
-					<relativeTimePattern count="many">+{0} min</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il min</relativeTimePattern>
 					<relativeTimePattern count="other">sa {0} min. oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">min. ilu</relativeTimePattern>
+					<relativeTimePattern count="two">{0} min. ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} min. ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} min. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il min. ilu</relativeTimePattern>
 					<relativeTimePattern count="other">{0} min. ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2007,30 +2065,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>sekonda</displayName>
 				<relative type="0">issa</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">sa {0} sekondi oħra</relativeTimePattern>
+					<relativeTimePattern count="one">sa sekonda oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} sekondi oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} sekondi oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} sekondi oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} sekondi oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il sekonda oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} sekonda oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">sekonda ilu</relativeTimePattern>
+					<relativeTimePattern count="two">{0} sekondi ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} sekondi ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} sekondi ilu</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sekondi ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il sekonda ilu</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sekonda ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-short">
 				<displayName>sek.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">sa {0} sekondi oħra</relativeTimePattern>
+					<relativeTimePattern count="one">sa sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} sek. oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} sek. oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} sek. oħra</relativeTimePattern>
-					<relativeTimePattern count="other">sa {0} sekondi oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} sek. oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="two">{0} sek. ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} sek. ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il sek. ilu</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sek. ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2038,14 +2100,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>s</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sa sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="two">sa {0} sek. oħra</relativeTimePattern>
 					<relativeTimePattern count="few">sa {0} sek. oħra</relativeTimePattern>
-					<relativeTimePattern count="many">sa {0} sek. oħra</relativeTimePattern>
+					<relativeTimePattern count="many">sa {0}-il sek. oħra</relativeTimePattern>
 					<relativeTimePattern count="other">sa {0} sek. oħra</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="two">{0} sek. ilu</relativeTimePattern>
 					<relativeTimePattern count="few">{0} sek. ilu</relativeTimePattern>
-					<relativeTimePattern count="many">{0} sek. ilu</relativeTimePattern>
+					<relativeTimePattern count="many">{0}-il sek. ilu</relativeTimePattern>
 					<relativeTimePattern count="other">{0} sek. ilu</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -3308,64 +3372,141 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one" draft="provisional">¤0K</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0K</pattern>
+					<pattern type="1000" count="two" draft="provisional">¤0K</pattern>
+					<pattern type="1000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 0K</pattern>
 					<pattern type="1000" count="few" draft="provisional">¤0K</pattern>
+					<pattern type="1000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 0K</pattern>
 					<pattern type="1000" count="many" draft="provisional">¤0K</pattern>
+					<pattern type="1000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 0K</pattern>
 					<pattern type="1000" count="other" draft="provisional">¤0K</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0K</pattern>
 					<pattern type="10000" count="one" draft="provisional">¤00K</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00K</pattern>
+					<pattern type="10000" count="two" draft="provisional">¤00K</pattern>
+					<pattern type="10000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 00K</pattern>
 					<pattern type="10000" count="few" draft="provisional">¤00K</pattern>
+					<pattern type="10000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 00K</pattern>
 					<pattern type="10000" count="many" draft="provisional">¤00K</pattern>
+					<pattern type="10000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 00K</pattern>
 					<pattern type="10000" count="other" draft="provisional">¤00K</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00K</pattern>
 					<pattern type="100000" count="one" draft="provisional">¤000K</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000K</pattern>
+					<pattern type="100000" count="two" draft="provisional">¤000K</pattern>
+					<pattern type="100000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 000K</pattern>
 					<pattern type="100000" count="few" draft="provisional">¤000K</pattern>
+					<pattern type="100000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 000K</pattern>
 					<pattern type="100000" count="many" draft="provisional">¤000K</pattern>
+					<pattern type="100000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 000K</pattern>
 					<pattern type="100000" count="other" draft="provisional">¤000K</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000K</pattern>
 					<pattern type="1000000" count="one" draft="provisional">¤0M</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0M</pattern>
+					<pattern type="1000000" count="two" draft="provisional">¤0M</pattern>
+					<pattern type="1000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 0M</pattern>
 					<pattern type="1000000" count="few" draft="provisional">¤0M</pattern>
+					<pattern type="1000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 0M</pattern>
 					<pattern type="1000000" count="many" draft="provisional">¤0M</pattern>
+					<pattern type="1000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 0M</pattern>
 					<pattern type="1000000" count="other" draft="provisional">¤0M</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0M</pattern>
 					<pattern type="10000000" count="one" draft="provisional">¤00M</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00M</pattern>
+					<pattern type="10000000" count="two" draft="provisional">¤00M</pattern>
+					<pattern type="10000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 00M</pattern>
 					<pattern type="10000000" count="few" draft="provisional">¤00M</pattern>
+					<pattern type="10000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 00M</pattern>
 					<pattern type="10000000" count="many" draft="provisional">¤00M</pattern>
+					<pattern type="10000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 00M</pattern>
 					<pattern type="10000000" count="other" draft="provisional">¤00M</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00M</pattern>
 					<pattern type="100000000" count="one" draft="provisional">¤000M</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000M</pattern>
+					<pattern type="100000000" count="two" draft="provisional">¤000M</pattern>
+					<pattern type="100000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 000M</pattern>
 					<pattern type="100000000" count="few" draft="provisional">¤000M</pattern>
+					<pattern type="100000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 000M</pattern>
 					<pattern type="100000000" count="many" draft="provisional">¤000M</pattern>
+					<pattern type="100000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 000M</pattern>
 					<pattern type="100000000" count="other" draft="provisional">¤000M</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000M</pattern>
 					<pattern type="1000000000" count="one" draft="provisional">¤0G</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0G</pattern>
+					<pattern type="1000000000" count="two" draft="provisional">¤0G</pattern>
+					<pattern type="1000000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 0G</pattern>
 					<pattern type="1000000000" count="few" draft="provisional">¤0G</pattern>
+					<pattern type="1000000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 0G</pattern>
 					<pattern type="1000000000" count="many" draft="provisional">¤0G</pattern>
+					<pattern type="1000000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 0G</pattern>
 					<pattern type="1000000000" count="other" draft="provisional">¤0G</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0G</pattern>
 					<pattern type="10000000000" count="one" draft="provisional">¤00G</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00G</pattern>
+					<pattern type="10000000000" count="two" draft="provisional">¤00G</pattern>
+					<pattern type="10000000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 00G</pattern>
 					<pattern type="10000000000" count="few" draft="provisional">¤00G</pattern>
+					<pattern type="10000000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 00G</pattern>
 					<pattern type="10000000000" count="many" draft="provisional">¤00G</pattern>
+					<pattern type="10000000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 00G</pattern>
 					<pattern type="10000000000" count="other" draft="provisional">¤00G</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00G</pattern>
 					<pattern type="100000000000" count="one" draft="provisional">¤000G</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000G</pattern>
+					<pattern type="100000000000" count="two" draft="provisional">¤000G</pattern>
+					<pattern type="100000000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 000G</pattern>
 					<pattern type="100000000000" count="few" draft="provisional">¤000G</pattern>
+					<pattern type="100000000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 000G</pattern>
 					<pattern type="100000000000" count="many" draft="provisional">¤000G</pattern>
+					<pattern type="100000000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 000G</pattern>
 					<pattern type="100000000000" count="other" draft="provisional">¤000G</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000G</pattern>
 					<pattern type="1000000000000" count="one" draft="provisional">¤0T</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0T</pattern>
+					<pattern type="1000000000000" count="two" draft="provisional">¤0T</pattern>
+					<pattern type="1000000000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 0T</pattern>
 					<pattern type="1000000000000" count="few" draft="provisional">¤0T</pattern>
+					<pattern type="1000000000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 0T</pattern>
 					<pattern type="1000000000000" count="many" draft="provisional">¤0T</pattern>
+					<pattern type="1000000000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 0T</pattern>
 					<pattern type="1000000000000" count="other" draft="provisional">¤0T</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0T</pattern>
 					<pattern type="10000000000000" count="one" draft="provisional">¤00T</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00T</pattern>
+					<pattern type="10000000000000" count="two" draft="provisional">¤00T</pattern>
+					<pattern type="10000000000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 00T</pattern>
 					<pattern type="10000000000000" count="few" draft="provisional">¤00T</pattern>
+					<pattern type="10000000000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 00T</pattern>
 					<pattern type="10000000000000" count="many" draft="provisional">¤00T</pattern>
+					<pattern type="10000000000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 00T</pattern>
 					<pattern type="10000000000000" count="other" draft="provisional">¤00T</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00T</pattern>
 					<pattern type="100000000000000" count="one" draft="provisional">¤000T</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000T</pattern>
+					<pattern type="100000000000000" count="two" draft="provisional">¤000T</pattern>
+					<pattern type="100000000000000" count="two" alt="alphaNextToNumber" draft="provisional">¤ 000T</pattern>
 					<pattern type="100000000000000" count="few" draft="provisional">¤000T</pattern>
+					<pattern type="100000000000000" count="few" alt="alphaNextToNumber" draft="provisional">¤ 000T</pattern>
 					<pattern type="100000000000000" count="many" draft="provisional">¤000T</pattern>
+					<pattern type="100000000000000" count="many" alt="alphaNextToNumber" draft="provisional">¤ 000T</pattern>
 					<pattern type="100000000000000" count="other" draft="provisional">¤000T</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="two">{0} {1}</unitPattern>
 			<unitPattern count="few">{0} {1}</unitPattern>
 			<unitPattern count="many">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
@@ -3519,6 +3660,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="EUR">
 				<displayName>ewro</displayName>
 				<displayName count="one">ewro</displayName>
+				<displayName count="two">ewro</displayName>
 				<displayName count="few">ewro</displayName>
 				<displayName count="many">ewro</displayName>
 				<displayName count="other">ewro</displayName>
@@ -3899,6 +4041,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="XXX">
 				<displayName>Munita Mhix Magħrufa jew Mhix Valida</displayName>
 				<displayName count="one">Munita mhix magħrufa jew mhix valida</displayName>
+				<displayName count="two">Munita Mhix Magħrufa jew Mhix Valida</displayName>
 				<displayName count="few">Munita Mhix Magħrufa jew Mhix Valida</displayName>
 				<displayName count="many">Munita Mhix Magħrufa jew Mhix Valida</displayName>
 				<displayName count="other">Munita Mhix Magħrufa jew Mhix Valida</displayName>
@@ -3920,11 +4063,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">jum</pluralMinimalPairs>
+			<pluralMinimalPairs count="two">jumejn</pluralMinimalPairs>
+			<pluralMinimalPairs count="few">{0} ijiem</pluralMinimalPairs>
+			<pluralMinimalPairs count="many">{0}-il jum</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} jum</pluralMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0}′</unitPattern>
+				<unitPattern count="two">{0}′</unitPattern>
 				<unitPattern count="few">{0}′</unitPattern>
 				<unitPattern count="many">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
@@ -3932,6 +4083,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-karat">
 				<displayName>karati</displayName>
 				<unitPattern count="one">{0} kt</unitPattern>
+				<unitPattern count="two">{0} kt</unitPattern>
 				<unitPattern count="few">{0} kt</unitPattern>
 				<unitPattern count="many">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
@@ -3939,13 +4091,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
 				<unitPattern count="one">{0} litru kull kilometru</unitPattern>
+				<unitPattern count="two">{0} litri kull kilometru</unitPattern>
 				<unitPattern count="few">{0} litri kull kilometru</unitPattern>
-				<unitPattern count="many">{0} litri kull kilometru</unitPattern>
-				<unitPattern count="other">{0} litri kull kilometru</unitPattern>
+				<unitPattern count="many">{0}-il litru kull kilometru</unitPattern>
+				<unitPattern count="other">{0} litru kull kilometru</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabytes</displayName>
 				<unitPattern count="one">{0} terabyte</unitPattern>
+				<unitPattern count="two">{0} terabytes</unitPattern>
 				<unitPattern count="few">{0} terabytes</unitPattern>
 				<unitPattern count="many">{0} terabytes</unitPattern>
 				<unitPattern count="other">{0} terabytes</unitPattern>
@@ -3953,6 +4107,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-terabit">
 				<displayName>terabits</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
+				<unitPattern count="two">{0} terabits</unitPattern>
 				<unitPattern count="few">{0} terabits</unitPattern>
 				<unitPattern count="many">{0} terabits</unitPattern>
 				<unitPattern count="other">{0} terabits</unitPattern>
@@ -3960,20 +4115,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-megabyte">
 				<displayName>megabytes</displayName>
 				<unitPattern count="one">{0} megabyte</unitPattern>
+				<unitPattern count="two">{0} megabytes</unitPattern>
 				<unitPattern count="few">{0} megabytes</unitPattern>
-				<unitPattern count="many">{0} megabytes</unitPattern>
-				<unitPattern count="other">{0} megabytes</unitPattern>
+				<unitPattern count="many">{0}-il megabyte</unitPattern>
+				<unitPattern count="other">{0} megabyte</unitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>millisekondi</displayName>
 				<unitPattern count="one">{0} millisekonda</unitPattern>
+				<unitPattern count="two">{0} millisekondi</unitPattern>
 				<unitPattern count="few">{0} millisekondi</unitPattern>
-				<unitPattern count="many">{0} millisekondi</unitPattern>
-				<unitPattern count="other">{0} millisekondi</unitPattern>
+				<unitPattern count="many">{0}-il millisekonda</unitPattern>
+				<unitPattern count="other">{0} millisekonda</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
+				<unitPattern count="two">{0} lx</unitPattern>
 				<unitPattern count="few">{0} lx</unitPattern>
 				<unitPattern count="many">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
@@ -3983,6 +4141,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-karat">
 				<displayName>kt</displayName>
 				<unitPattern count="one">{0} kt</unitPattern>
+				<unitPattern count="two">{0} kt</unitPattern>
 				<unitPattern count="few">{0} kt</unitPattern>
 				<unitPattern count="many">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
@@ -3990,6 +4149,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
 				<unitPattern count="one">{0} L/km</unitPattern>
+				<unitPattern count="two">{0} L/km</unitPattern>
 				<unitPattern count="few">{0} L/km</unitPattern>
 				<unitPattern count="many">{0} L/km</unitPattern>
 				<unitPattern count="other">{0} L/km</unitPattern>
@@ -3997,6 +4157,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
 				<unitPattern count="one">{0} TB</unitPattern>
+				<unitPattern count="two">{0} TB</unitPattern>
 				<unitPattern count="few">{0} TB</unitPattern>
 				<unitPattern count="many">{0} TB</unitPattern>
 				<unitPattern count="other">{0} TB</unitPattern>
@@ -4004,6 +4165,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-terabit">
 				<displayName>Tb</displayName>
 				<unitPattern count="one">{0} Tb</unitPattern>
+				<unitPattern count="two">{0} Tb</unitPattern>
 				<unitPattern count="few">{0} Tb</unitPattern>
 				<unitPattern count="many">{0} Tb</unitPattern>
 				<unitPattern count="other">{0} Tb</unitPattern>
@@ -4011,12 +4173,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-megabyte">
 				<displayName>MB</displayName>
 				<unitPattern count="one">{0} MB</unitPattern>
+				<unitPattern count="two">{0} MB</unitPattern>
 				<unitPattern count="few">{0} MB</unitPattern>
 				<unitPattern count="many">{0} MB</unitPattern>
 				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<unitPattern count="one">{0} Mb</unitPattern>
+				<unitPattern count="two">{0} Mb</unitPattern>
 				<unitPattern count="few">{0} Mb</unitPattern>
 				<unitPattern count="many">{0} Mb</unitPattern>
 				<unitPattern count="other">{0} Mb</unitPattern>
@@ -4024,6 +4188,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-millisecond">
 				<displayName>millisek</displayName>
 				<unitPattern count="one">{0} ms</unitPattern>
+				<unitPattern count="two">{0} ms</unitPattern>
 				<unitPattern count="few">{0} ms</unitPattern>
 				<unitPattern count="many">{0} ms</unitPattern>
 				<unitPattern count="other">{0} ms</unitPattern>
@@ -4031,6 +4196,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
+				<unitPattern count="two">{0} lx</unitPattern>
 				<unitPattern count="few">{0} lx</unitPattern>
 				<unitPattern count="many">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
@@ -4040,6 +4206,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-millisecond">
 				<displayName>millisek</displayName>
 				<unitPattern count="one">{0}ms</unitPattern>
+				<unitPattern count="two">{0}ms</unitPattern>
 				<unitPattern count="few">{0}ms</unitPattern>
 				<unitPattern count="many">{0}ms</unitPattern>
 				<unitPattern count="other">{0}ms</unitPattern>

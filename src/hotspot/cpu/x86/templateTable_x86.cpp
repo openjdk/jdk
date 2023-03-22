@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,8 @@ static Assembler::Condition j_not(TemplateTable::Condition cc) {
 
 
 // Miscellaneous helper routines
-// Store an oop (or NULL) at the address described by obj.
-// If val == noreg this means store a NULL
+// Store an oop (or null) at the address described by obj.
+// If val == noreg this means store a null
 
 
 static void do_oop_store(InterpreterMacroAssembler* _masm,
@@ -152,7 +152,10 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators = 0) {
   assert(val == noreg || val == rax, "parameter is just for looks");
-  __ store_heap_oop(dst, val, rdx, rbx, LP64_ONLY(r8) NOT_LP64(rsi), decorators);
+  __ store_heap_oop(dst, val,
+                    NOT_LP64(rdx) LP64_ONLY(rscratch2),
+                    NOT_LP64(rbx) LP64_ONLY(r9),
+                    NOT_LP64(rsi) LP64_ONLY(r8), decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
@@ -350,12 +353,12 @@ void TemplateTable::sipush() {
   __ sarl(rax, 16);
 }
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   transition(vtos, vtos);
   Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
   Label call_ldc, notFloat, notClass, notInt, Done;
 
-  if (wide) {
+  if (is_ldc_wide(type)) {
     __ get_unsigned_2_byte_index_at_bcp(rbx, 1);
   } else {
     __ load_unsigned_byte(rbx, at_bcp(1));
@@ -383,7 +386,7 @@ void TemplateTable::ldc(bool wide) {
 
   __ bind(call_ldc);
 
-  __ movl(rarg, wide);
+  __ movl(rarg, is_ldc_wide(type) ? 1 : 0);
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), rarg);
 
   __ push(atos);
@@ -415,13 +418,13 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
   Register result = rax;
   Register tmp = rdx;
   Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
 
@@ -449,7 +452,7 @@ void TemplateTable::fast_aldc(bool wide) {
     __ resolve_oop_handle(tmp, rscratch2);
     __ cmpoop(tmp, result);
     __ jccb(Assembler::notEqual, notNull);
-    __ xorptr(result, result);  // NULL object reference
+    __ xorptr(result, result);  // null object reference
     __ bind(notNull);
   }
 
@@ -1152,11 +1155,11 @@ void TemplateTable::aastore() {
   do_oop_store(_masm, element_address, rax, IS_ARRAY);
   __ jmp(done);
 
-  // Have a NULL in rax, rdx=array, ecx=index.  Store NULL at ary[idx]
+  // Have a null in rax, rdx=array, ecx=index.  Store null at ary[idx]
   __ bind(is_null);
   __ profile_null_seen(rbx);
 
-  // Store a NULL
+  // Store a null
   do_oop_store(_masm, element_address, noreg, IS_ARRAY);
 
   // Pop stack arguments
@@ -2205,7 +2208,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
           in_bytes(InvocationCounter::counter_offset()));
       const Address mask(rbx, in_bytes(MethodData::backedge_mask_offset()));
       __ increment_mask_and_jump(mdo_backedge_counter, mask, rax,
-          UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+          UseOnStackReplacement ? &backedge_counter_overflow : nullptr);
       __ jmp(dispatch);
     }
     __ bind(no_mdo);
@@ -2213,7 +2216,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
     const Address mask(rcx, in_bytes(MethodCounters::backedge_mask_offset()));
     __ increment_mask_and_jump(Address(rcx, be_offset), mask, rax,
-        UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+        UseOnStackReplacement ? &backedge_counter_overflow : nullptr);
     __ bind(dispatch);
   }
 
@@ -2239,7 +2242,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                                   InterpreterRuntime::frequency_counter_overflow),
                  rdx);
 
-      // rax: osr nmethod (osr ok) or NULL (osr not possible)
+      // rax: osr nmethod (osr ok) or null (osr not possible)
       // rdx: scratch
       // r14: locals pointer
       // r13: bcp
@@ -2684,7 +2687,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
 
     __ load_resolved_method_at_index(byte_no, method, cache, index);
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, thread, NULL /*L_fast_path*/, &L_clinit_barrier_slow);
+    __ clinit_barrier(klass, thread, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
   }
 }
 
@@ -2771,13 +2774,13 @@ void TemplateTable::jvmti_post_field_access(Register cache,
     __ shll(index, LogBytesPerWord);
     __ addptr(cache, index);
     if (is_static) {
-      __ xorptr(rax, rax);      // NULL object reference
+      __ xorptr(rax, rax);      // null object reference
     } else {
       __ pop(atos);         // Get the object
       __ verify_oop(rax);
       __ push(atos);        // Restore stack state
     }
-    // rax,:   object pointer or NULL
+    // rax,:   object pointer or null
     // cache: cache entry pointer
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_access),
                rax, cache);
@@ -3028,7 +3031,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     __ addptr(robj, RDX);
     // object (tos)
     __ mov(RCX, rsp);
-    // c_rarg1: object pointer set up above (NULL if static)
+    // c_rarg1: object pointer set up above (null if static)
     // c_rarg2: cache entry pointer
     // c_rarg3: jvalue object on the stack
     __ call_VM(noreg,
@@ -3658,8 +3661,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ null_check(recv, oopDesc::klass_offset_in_bytes());
-  __ load_klass(rax, recv, rscratch1);
+  __ load_klass_check_null(rax, recv, rscratch1);
 
   // profile this call
   __ profile_virtual_call(rax, rlocals, rdx);
@@ -3750,8 +3752,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ jcc(Assembler::zero, notVFinal);
 
   // Get receiver klass into rlocals - also a null check
-  __ null_check(rcx, oopDesc::klass_offset_in_bytes());
-  __ load_klass(rlocals, rcx, rscratch1);
+  __ load_klass_check_null(rlocals, rcx, rscratch1);
 
   Label subtype;
   __ check_klass_subtype(rlocals, rax, rbcp, subtype);
@@ -3773,8 +3774,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Get receiver klass into rdx - also a null check
   __ restore_locals();  // restore r14
-  __ null_check(rcx, oopDesc::klass_offset_in_bytes());
-  __ load_klass(rdx, rcx, rscratch1);
+  __ load_klass_check_null(rdx, rcx, rscratch1);
 
   Label no_such_method;
 
@@ -4112,7 +4112,7 @@ void TemplateTable::checkcast() {
   __ bind(ok_is_subtype);
   __ mov(rax, rdx); // Restore object in rdx
 
-  // Collect counts on whether this check-cast sees NULLs a lot or not.
+  // Collect counts on whether this check-cast sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ jmp(done);
     __ bind(is_null);
@@ -4175,7 +4175,7 @@ void TemplateTable::instanceof() {
   __ bind(ok_is_subtype);
   __ movl(rax, 1);
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ jmp(done);
     __ bind(is_null);
@@ -4184,8 +4184,8 @@ void TemplateTable::instanceof() {
     __ bind(is_null);   // same as 'done'
   }
   __ bind(done);
-  // rax = 0: obj == NULL or  obj is not an instanceof the specified klass
-  // rax = 1: obj != NULL and obj is     an instanceof the specified klass
+  // rax = 0: obj == nullptr or  obj is not an instanceof the specified klass
+  // rax = 1: obj != nullptr and obj is     an instanceof the specified klass
 }
 
 
@@ -4247,7 +4247,7 @@ void TemplateTable::athrow() {
 void TemplateTable::monitorenter() {
   transition(atos, vtos);
 
-  // check for NULL object
+  // check for null object
   __ null_check(rax);
 
   const Address monitor_block_top(
@@ -4263,7 +4263,7 @@ void TemplateTable::monitorenter() {
   Register rmon = LP64_ONLY(c_rarg1) NOT_LP64(rdx);
 
   // initialize entry pointer
-  __ xorl(rmon, rmon); // points to free slot or NULL
+  __ xorl(rmon, rmon); // points to free slot or null
 
   // find a free slot in the monitor block (result in rmon)
   {
@@ -4344,7 +4344,7 @@ void TemplateTable::monitorenter() {
 void TemplateTable::monitorexit() {
   transition(atos, vtos);
 
-  // check for NULL object
+  // check for null object
   __ null_check(rax);
 
   const Address monitor_block_top(

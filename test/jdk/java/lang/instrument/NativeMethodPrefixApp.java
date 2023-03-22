@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ public class NativeMethodPrefixApp implements StringIdCallback {
         java.lang.reflect.Array.getLength(new short[5]);
         RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
         System.err.println(mxbean.getVmVendor());
+
+        NativeMethodPrefixAgent.checkErrors();
 
         for (int i = 0; i < gotIt.length; ++i) {
             if (!gotIt[i]) {

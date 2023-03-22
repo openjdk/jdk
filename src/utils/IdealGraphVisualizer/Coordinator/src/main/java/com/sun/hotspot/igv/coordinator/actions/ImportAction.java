@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,31 +26,24 @@ package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.serialization.BinaryParser;
 import com.sun.hotspot.igv.data.serialization.GraphParser;
 import com.sun.hotspot.igv.data.serialization.ParseMonitor;
 import com.sun.hotspot.igv.data.serialization.Parser;
 import com.sun.hotspot.igv.settings.Settings;
-import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.Action;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.Action;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
-import org.openide.util.Exceptions;
-import org.openide.util.RequestProcessor;
-import org.openide.util.HelpCtx;
-import org.openide.util.NbBundle;
+import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
-import org.openide.util.Utilities;
 
 /**
  *
@@ -65,12 +58,12 @@ public final class ImportAction extends CallableSystemAction {
 
             @Override
             public boolean accept(File f) {
-                return f.getName().toLowerCase().endsWith(".xml") || f.getName().toLowerCase().endsWith(".bgv") || f.isDirectory();
+                return f.getName().toLowerCase().endsWith(".xml") || f.isDirectory();
             }
 
             @Override
             public String getDescription() {
-                return "Graph files (*.xml, *.bgv)";
+                return "Graph files (*.xml)";
             }
         };
     }
@@ -102,8 +95,7 @@ public final class ImportAction extends CallableSystemAction {
                                 try {
                                     int prog = (int) (WORKUNITS * (double) channel.position() / (double) start);
                                     handle.progress(prog);
-                                } catch (IOException ex) {
-                                }
+                                } catch (IOException ignored) {}
                             }
                             @Override
                             public void setState(String state) {
@@ -115,8 +107,6 @@ public final class ImportAction extends CallableSystemAction {
                     final OutlineTopComponent component = OutlineTopComponent.findInstance();
                     if (file.getName().endsWith(".xml")) {
                         parser = new Parser(channel, monitor, null);
-                    } else if (file.getName().endsWith(".bgv")) {
-                        parser = new BinaryParser(channel, monitor, component.getDocument(), null);
                     } else {
                         parser = null;
                     }
@@ -126,13 +116,10 @@ public final class ImportAction extends CallableSystemAction {
                                 try {
                                     final GraphDocument document = parser.parse();
                                     if (document != null) {
-                                        SwingUtilities.invokeLater(new Runnable(){
-                                                @Override
-                                                public void run() {
-                                                    component.requestActive();
-                                                    component.getDocument().addGraphDocument(document);
-                                                }
-                                            });
+                                        SwingUtilities.invokeLater(() -> {
+                                            component.requestActive();
+                                            component.getDocument().addGraphDocument(document);
+                                        });
                                     }
                                 } catch (IOException ex) {
                                     Exceptions.printStackTrace(ex);
@@ -142,8 +129,6 @@ public final class ImportAction extends CallableSystemAction {
                                 Logger.getLogger(getClass().getName()).log(Level.INFO, "Loaded in " + file + " in " + ((stop - startTime) / 1000.0) + " seconds");
                             }
                         });
-                } catch (FileNotFoundException ex) {
-                    Exceptions.printStackTrace(ex);
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }

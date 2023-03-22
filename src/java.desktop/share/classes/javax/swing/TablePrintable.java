@@ -316,7 +316,7 @@ class TablePrintable implements Printable {
         // create a copy of the graphics so we don't affect the one given to us
         Graphics2D g2d = (Graphics2D)graphics.create();
 
-        // translate into the co-ordinate system of the pageFormat
+        // translate into the coordinate system of the pageFormat
         g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
 
         // to save and store the transform

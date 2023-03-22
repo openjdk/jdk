@@ -79,7 +79,7 @@ D3DShaderGen_WriteShader(char *source, char *target, char *name, int flags)
         PROCESS_INFORMATION pi;
         STARTUPINFO si;
         char pargs[300];
-        sprintf(pargs,
+        snprintf(pargs, sizeof(pargs),
                 "c:\\progra~1\\mi5889~1\\utilit~1\\bin\\x86\\fxc.exe "
                 "/T %s /Vn %s%d /Fh tmp.h tmp.hlsl",
                 // uncomment the following line to generate debug
@@ -144,13 +144,13 @@ D3DShaderGen_WriteShaderArray(char *name, int num)
     char elem[30];
     int i;
 
-    sprintf(array, "const DWORD *%sShaders[] =\n{\n", name);
+    snprintf(array, sizeof(array), "const DWORD *%sShaders[] =\n{\n", name);
     for (i = 0; i < num; i++) {
         if (num == 32 && EXTRACT_CYCLE_METHOD(i) == 3) {
             // REMIND: what a hack!
-            sprintf(elem, "    NULL,\n");
+            snprintf(elem, sizeof(elem), "    NULL,\n");
         } else {
-            sprintf(elem, "    %s%d,\n", name, i);
+            snprintf(elem, sizeof(elem), "    %s%d,\n", name, i);
         }
         strcat(array, elem);
     }
@@ -225,7 +225,7 @@ D3DShaderGen_GenerateConvolveShader(int flags)
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, convolveShaderSource,
+    snprintf(finalSource, sizeof(finalSource), convolveShaderSource,
             kernelMax, edge, kernelMax);
 
     D3DShaderGen_WritePixelShader(finalSource, "convolve", flags);
@@ -283,7 +283,7 @@ D3DShaderGen_GenerateRescaleShader(int flags)
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, rescaleShaderSource,
+    snprintf(finalSource, sizeof(finalSource), rescaleShaderSource,
             preRescale, postRescale);
 
     D3DShaderGen_WritePixelShader(finalSource, "rescale", flags);
@@ -357,7 +357,7 @@ D3DShaderGen_GenerateLookupShader(int flags)
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, lookupShaderSource,
+    snprintf(finalSource, sizeof(finalSource), lookupShaderSource,
             preLookup, alpha, postLookup);
 
     D3DShaderGen_WritePixelShader(finalSource, "lookup", flags);
@@ -452,7 +452,7 @@ D3DShaderGen_GenerateBasicGradShader(int flags)
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, basicGradientShaderSource,
+    snprintf(finalSource, sizeof(finalSource), basicGradientShaderSource,
             maskVars, maskInput, colorSampler, cycleCode, maskCode);
 
     D3DShaderGen_WritePixelShader(finalSource, "grad", flags);
@@ -665,15 +665,15 @@ D3DShaderGen_GenerateMultiGradShader(int flags, char *name,
     }
 
     if (cycleMethod == CYCLE_NONE) {
-        sprintf(cycleCode, noCycleCode, texCoordCalcCode);
+        snprintf(cycleCode, sizeof(cycleCode), noCycleCode, texCoordCalcCode);
     } else if (cycleMethod == CYCLE_REFLECT) {
-        sprintf(cycleCode, reflectCode, texCoordCalcCode);
+        snprintf(cycleCode, sizeof(cycleCode), reflectCode, texCoordCalcCode);
     } else { // (cycleMethod == CYCLE_REPEAT)
-        sprintf(cycleCode, repeatCode, texCoordCalcCode);
+        snprintf(cycleCode, sizeof(cycleCode), repeatCode, texCoordCalcCode);
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, multiGradientShaderSource,
+    snprintf(finalSource, sizeof(finalSource), multiGradientShaderSource,
             MAX_COLORS, maxFractions, colorSampler,
             maskVars, paintVars, maskInput, colorSampler,
             distCode, cycleCode, colorSpaceCode, maskCode);
@@ -956,7 +956,7 @@ D3DShaderGen_GenerateAllShaders()
     // Generate LCD text shader
     D3DShaderGen_GenerateLCDTextShader();
 
-    // Genereate Shader to fill Antialiased parallelograms
+    // Generate Shader to fill Antialiased parallelograms
     D3DShaderGen_GenerateAAParallelogramShader();
 #else
     /*

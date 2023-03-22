@@ -1659,7 +1659,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
 
     /*
      * Fixed 5010944: List's rows overlap one another
-     * The bug is due to incorrent caching of the list item size
+     * The bug is due to incorrect caching of the list item size
      * So we should recalculate font metrics on setFont
      */
     public void setFont(Font f) {

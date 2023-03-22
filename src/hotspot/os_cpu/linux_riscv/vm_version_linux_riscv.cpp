@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,6 +75,20 @@ uint32_t VM_Version::get_current_vector_length() {
   return (uint32_t)read_csr(CSR_VLENB);
 }
 
+VM_Version::VM_MODE VM_Version::get_satp_mode() {
+  if (!strcmp(_vm_mode, "sv39")) {
+    return VM_SV39;
+  } else if (!strcmp(_vm_mode, "sv48")) {
+    return VM_SV48;
+  } else if (!strcmp(_vm_mode, "sv57")) {
+    return VM_SV57;
+  } else if (!strcmp(_vm_mode, "sv64")) {
+    return VM_SV64;
+  } else {
+    return VM_MBARE;
+  }
+}
+
 void VM_Version::get_os_cpu_info() {
 
   uint64_t auxv = getauxval(AT_HWCAP);
@@ -101,9 +115,16 @@ void VM_Version::get_os_cpu_info() {
 
   if (FILE *f = fopen("/proc/cpuinfo", "r")) {
     char buf[512], *p;
-    while (fgets(buf, sizeof (buf), f) != NULL) {
-      if ((p = strchr(buf, ':')) != NULL) {
-        if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
+    while (fgets(buf, sizeof (buf), f) != nullptr) {
+      if ((p = strchr(buf, ':')) != nullptr) {
+        if (strncmp(buf, "mmu", sizeof "mmu" - 1) == 0) {
+          if (_vm_mode[0] != '\0') {
+            continue;
+          }
+          char* vm_mode = os::strdup(p + 2);
+          vm_mode[strcspn(vm_mode, "\n")] = '\0';
+          _vm_mode = vm_mode;
+        } else if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
           char* uarch = os::strdup(p + 2);
           uarch[strcspn(uarch, "\n")] = '\0';
           _uarch = uarch;

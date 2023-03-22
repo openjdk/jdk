@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,34 +38,29 @@
 
 class fieldDescriptor {
  private:
-  AccessFlags         _access_flags;
-  int                 _index; // the field index
+  FieldInfo           _fieldinfo;
   constantPoolHandle  _cp;
 
-  // update the access_flags for the field in the klass
-  inline void update_klass_field_access_flag();
-
-  inline FieldInfo* field() const;
+  inline FieldInfo field() const { return _fieldinfo; };
 
  public:
-  fieldDescriptor() {
-    DEBUG_ONLY(_index = badInt);
-  }
+  fieldDescriptor() {}
   fieldDescriptor(InstanceKlass* ik, int index) {
-    DEBUG_ONLY(_index = badInt);
     reinitialize(ik, index);
   }
   inline Symbol* name() const;
   inline Symbol* signature() const;
-  inline InstanceKlass* field_holder() const;
+  inline InstanceKlass* field_holder() const {return _cp->pool_holder(); };
   inline ConstantPool* constants() const;
 
-  AccessFlags access_flags()      const    { return _access_flags; }
+  AccessFlags access_flags()      const    { return _fieldinfo.access_flags(); }
+  FieldInfo::FieldFlags field_flags() const { return _fieldinfo.field_flags(); }
+  FieldStatus field_status()      const    { return field_holder()->fields_status()->at(_fieldinfo.index()); }
   oop loader()                    const;
-  // Offset (in words) of field from start of instanceOop / Klass*
+  // Offset (in bytes) of field from start of instanceOop / Klass*
   inline int offset()             const;
   Symbol* generic_signature()     const;
-  int index()                     const    { return _index; }
+  int index()                     const    { return _fieldinfo.index(); }
   AnnotationArray* annotations()  const;
   AnnotationArray* type_annotations()  const;
 
@@ -83,24 +78,22 @@ class fieldDescriptor {
   inline BasicType field_type() const;
 
   // Access flags
-  bool is_public()                const    { return access_flags().is_public(); }
   bool is_private()               const    { return access_flags().is_private(); }
   bool is_protected()             const    { return access_flags().is_protected(); }
-  bool is_package_private()       const    { return !is_public() && !is_private() && !is_protected(); }
 
   bool is_static()                const    { return access_flags().is_static(); }
   bool is_final()                 const    { return access_flags().is_final(); }
-  bool is_stable()                const    { return access_flags().is_stable(); }
+  bool is_stable()                const    { return field_flags().is_stable(); }
   bool is_volatile()              const    { return access_flags().is_volatile(); }
   bool is_transient()             const    { return access_flags().is_transient(); }
 
   bool is_synthetic()             const    { return access_flags().is_synthetic(); }
 
-  bool is_field_access_watched()  const    { return access_flags().is_field_access_watched(); }
+  bool is_field_access_watched()  const    { return field_status().is_access_watched(); }
   bool is_field_modification_watched() const
-                                           { return access_flags().is_field_modification_watched(); }
-  bool has_initialized_final_update() const { return access_flags().has_field_initialized_final_update(); }
-  bool has_generic_signature()    const    { return access_flags().field_has_generic_signature(); }
+                                           { return field_status().is_modification_watched(); }
+  bool has_initialized_final_update() const { return field_status().is_initialized_final_update(); }
+  bool has_generic_signature()    const    { return field_flags().is_generic(); }
 
   bool is_trusted_final()         const;
 
@@ -115,7 +108,6 @@ class fieldDescriptor {
   void print() const;
   void print_on(outputStream* st) const;
   void print_on_for(outputStream* st, oop obj);
-  void verify() const                           PRODUCT_RETURN;
 };
 
 #endif // SHARE_RUNTIME_FIELDDESCRIPTOR_HPP

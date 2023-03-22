@@ -38,6 +38,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="am">阿姆哈拉文</language>
 			<language type="an">阿拉貢文</language>
 			<language type="ang">古英文</language>
+			<language type="ann">奧博洛文</language>
 			<language type="anp">昂加文</language>
 			<language type="ar">阿拉伯文</language>
 			<language type="ar_001">現代標準阿拉伯文</language>
@@ -46,6 +47,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="aro">阿拉奧納文</language>
 			<language type="arp">阿拉帕霍文</language>
 			<language type="arq">阿爾及利亞阿拉伯文</language>
+			<language type="ars">納吉迪阿拉伯文</language>
 			<language type="arw">阿拉瓦克文</language>
 			<language type="ary">摩洛哥阿拉伯文</language>
 			<language type="arz">埃及阿拉伯文</language>
@@ -53,6 +55,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="asa">阿蘇文</language>
 			<language type="ase">美國手語</language>
 			<language type="ast">阿斯圖里亞文</language>
+			<language type="atj">阿提卡米克文</language>
 			<language type="av">阿瓦爾文</language>
 			<language type="avk">科塔瓦文</language>
 			<language type="awa">阿瓦文</language>
@@ -118,14 +121,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chr">柴羅基文</language>
 			<language type="chy">沙伊安文</language>
 			<language type="ckb">索拉尼庫爾德文</language>
+			<language type="clc">奇爾科延文</language>
 			<language type="co">科西嘉文</language>
 			<language type="cop">科普特文</language>
 			<language type="cps">卡皮茲文</language>
 			<language type="cr">克裡文</language>
+			<language type="crg">米奇夫文</language>
 			<language type="crh">克里米亞半島的土耳其文；克里米亞半島的塔塔爾文</language>
+			<language type="crj">東南克里文</language>
+			<language type="crk">平原克里文</language>
+			<language type="crl">東北克里文</language>
+			<language type="crm">駝鹿克里文</language>
+			<language type="crr">卡羅來納州阿爾岡昆語</language>
 			<language type="crs">法語克里奧爾混合語</language>
 			<language type="cs">捷克文</language>
 			<language type="csb">卡舒布文</language>
+			<language type="csw">沼澤克里文</language>
 			<language type="cu">宗教斯拉夫文</language>
 			<language type="cv">楚瓦什文</language>
 			<language type="cy">威爾斯文</language>
@@ -219,6 +230,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hai">海達文</language>
 			<language type="hak">客家話</language>
 			<language type="haw">夏威夷文</language>
+			<language type="hax">南海達文</language>
 			<language type="he">希伯來文</language>
 			<language type="hi">北印度文</language>
 			<language type="hif">斐濟印地文</language>
@@ -232,6 +244,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ht">海地文</language>
 			<language type="hu">匈牙利文</language>
 			<language type="hup">胡帕文</language>
+			<language type="hur">哈爾科梅勒姆文</language>
 			<language type="hy">亞美尼亞文</language>
 			<language type="hz">赫雷羅文</language>
 			<language type="ia">國際文</language>
@@ -242,6 +255,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ig">伊布文</language>
 			<language type="ii">四川彝文</language>
 			<language type="ik">依奴皮維克文</language>
+			<language type="ikt">加拿大西部因紐特文</language>
 			<language type="ilo">伊洛闊文</language>
 			<language type="inh">印古什文</language>
 			<language type="io">伊多文</language>
@@ -308,6 +322,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kut">庫特奈文</language>
 			<language type="kv">科米文</language>
 			<language type="kw">康瓦耳文</language>
+			<language type="kwk">誇誇瓦拉文</language>
 			<language type="ky">吉爾吉斯文</language>
 			<language type="la">拉丁文</language>
 			<language type="lad">拉迪諾文</language>
@@ -320,14 +335,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lg">干達文</language>
 			<language type="li">林堡文</language>
 			<language type="lij">利古里亞文</language>
+			<language type="lil">利盧埃特文</language>
 			<language type="liv">利伏尼亞文</language>
 			<language type="lkt">拉科塔文</language>
 			<language type="lmo">倫巴底文</language>
 			<language type="ln">林加拉文</language>
 			<language type="lo">寮文</language>
 			<language type="lol">芒戈文</language>
+			<language type="lou">路易斯安那克里奧爾文</language>
 			<language type="loz">洛齊文</language>
 			<language type="lrc">北盧爾文</language>
+			<language type="lsm">薩米亞文</language>
 			<language type="lt">立陶宛文</language>
 			<language type="ltg">拉特加萊文</language>
 			<language type="lu">魯巴加丹加文</language>
@@ -366,6 +384,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mn">蒙古文</language>
 			<language type="mnc">滿族文</language>
 			<language type="mni">曼尼普裡文</language>
+			<language type="moe">因努埃蒙文</language>
 			<language type="moh">莫霍克文</language>
 			<language type="mos">莫西文</language>
 			<language type="mr">馬拉地文</language>
@@ -418,6 +437,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nzi">尼茲馬文</language>
 			<language type="oc">奧克西坦文</language>
 			<language type="oj">奧杰布瓦文</language>
+			<language type="ojb">西北奧吉布瓦文</language>
+			<language type="ojc">中奧吉布瓦文</language>
+			<language type="ojs">王子克里文</language>
+			<language type="ojw">西奧吉布瓦文</language>
+			<language type="oka">奧卡納根文</language>
 			<language type="om">奧羅莫文</language>
 			<language type="or">歐利亞文</language>
 			<language type="os">奧塞提文</language>
@@ -437,10 +461,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pfl">普法爾茨德文</language>
 			<language type="phn">腓尼基文</language>
 			<language type="pi">巴利文</language>
+			<language type="pis">皮京文</language>
 			<language type="pl">波蘭文</language>
 			<language type="pms">皮埃蒙特文</language>
 			<language type="pnt">旁狄希臘文</language>
 			<language type="pon">波那貝文</language>
+			<language type="pqm">馬里塞-帕薩馬誇迪文</language>
 			<language type="prg">普魯士文</language>
 			<language type="pro">古普羅旺斯文</language>
 			<language type="ps">普什圖文</language>
@@ -500,6 +526,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sid">希達摩文</language>
 			<language type="sk">斯洛伐克文</language>
 			<language type="sl">斯洛維尼亞文</language>
+			<language type="slh">南盧紹錫德文</language>
 			<language type="sli">下西利西亞文</language>
 			<language type="sly">塞拉亞文</language>
 			<language type="sm">薩摩亞文</language>
@@ -519,6 +546,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ssy">薩霍文</language>
 			<language type="st">塞索托文</language>
 			<language type="stq">沙特菲士蘭文</language>
+			<language type="str">海峽薩利希文</language>
 			<language type="su">巽他文</language>
 			<language type="suk">蘇庫馬文</language>
 			<language type="sus">蘇蘇文</language>
@@ -531,6 +559,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="syr">敘利亞文</language>
 			<language type="szl">西利西亞文</language>
 			<language type="ta">坦米爾文</language>
+			<language type="tce">南塔穹文</language>
 			<language type="tcy">圖盧文</language>
 			<language type="te">泰盧固文</language>
 			<language type="tem">提姆文</language>
@@ -538,7 +567,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ter">泰雷諾文</language>
 			<language type="tet">泰頓文</language>
 			<language type="tg">塔吉克文</language>
+			<language type="tgx">塔吉什文</language>
 			<language type="th">泰文</language>
+			<language type="tht">塔爾坦文</language>
 			<language type="ti">提格利尼亞文</language>
 			<language type="tig">蒂格雷文</language>
 			<language type="tiv">提夫文</language>
@@ -553,6 +584,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tn">突尼西亞文</language>
 			<language type="to">東加文</language>
 			<language type="tog">東加文（尼亞薩）</language>
+			<language type="tok">托基波納文</language>
 			<language type="tpi">托比辛文</language>
 			<language type="tr">土耳其文</language>
 			<language type="tru">圖羅尤文</language>
@@ -561,6 +593,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tsd">特薩克尼恩文</language>
 			<language type="tsi">欽西安文</language>
 			<language type="tt">韃靼文</language>
+			<language type="ttm">北塔奇訥文</language>
 			<language type="ttt">穆斯林塔特文</language>
 			<language type="tum">圖姆布卡文</language>
 			<language type="tvl">吐瓦魯文</language>
@@ -627,10 +660,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zza">扎扎文</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">阿德拉姆文</script>
 			<script type="Afak" draft="contributed">阿法卡文字</script>
 			<script type="Aghb" draft="contributed">高加索阿爾巴尼亞文</script>
 			<script type="Arab">阿拉伯文</script>
 			<script type="Arab" alt="variant">波斯阿拉伯文字</script>
+			<script type="Aran">納斯塔利克文</script>
 			<script type="Armi">皇室亞美尼亞文</script>
 			<script type="Armn">亞美尼亞文</script>
 			<script type="Avst" draft="contributed">阿維斯陀文</script>
@@ -745,6 +780,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Plrd">柏格理拼音符</script>
 			<script type="Prti" draft="contributed">帕提亞文（碑銘體）</script>
 			<script type="Rjng">拉讓文</script>
+			<script type="Rohg">哈尼菲文</script>
 			<script type="Roro">朗格朗格象形文</script>
 			<script type="Runr">古北歐文字</script>
 			<script type="Samr" draft="contributed">撒馬利亞文</script>
@@ -758,7 +794,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Sind" draft="contributed">信德文</script>
 			<script type="Sinh">錫蘭文</script>
 			<script type="Sora" draft="contributed">索朗桑朋文字</script>
-			<script type="Sund" draft="contributed">巽他文</script>
+			<script type="Sund">巽他文</script>
 			<script type="Sylo">希洛弟納格里文</script>
 			<script type="Syrc">敍利亞文</script>
 			<script type="Syre">敘利亞文（福音體文字變體）</script>
@@ -780,7 +816,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Tibt">西藏文</script>
 			<script type="Tirh" draft="contributed">邁蒂利文</script>
 			<script type="Ugar">烏加列文</script>
-			<script type="Vaii" draft="contributed">瓦依文</script>
+			<script type="Vaii">瓦依文</script>
 			<script type="Visp" draft="contributed">視覺語音文字</script>
 			<script type="Wara" draft="contributed">瓦郎奇蒂文字</script>
 			<script type="Wole" draft="contributed">沃雷艾文</script>
@@ -1192,7 +1228,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-civil">伊斯蘭民用曆</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">伊斯蘭新月曆</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">伊斯蘭天文曆</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">烏姆庫拉曆</type>
+			<type key="calendar" type="islamic-umalqura">烏姆庫拉曆</type>
 			<type key="calendar" type="iso8601">國際標準 ISO 8601</type>
 			<type key="calendar" type="japanese">日本曆</type>
 			<type key="calendar" type="persian">波斯曆</type>
@@ -1255,7 +1291,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="bali" draft="contributed">峇里文數字</type>
 			<type key="numbers" type="beng">孟加拉數字</type>
 			<type key="numbers" type="brah" draft="contributed">婆羅米數字</type>
-			<type key="numbers" type="cakm" draft="contributed">查克馬數字</type>
+			<type key="numbers" type="cakm">查克馬數字</type>
 			<type key="numbers" type="cham" draft="contributed">占文數字</type>
 			<type key="numbers" type="deva">梵文數字</type>
 			<type key="numbers" type="ethi">衣索比亞數字</type>
@@ -1272,7 +1308,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">小寫繁體中文數字</type>
 			<type key="numbers" type="hantfin">大寫繁體中文數字</type>
 			<type key="numbers" type="hebr">希伯來數字</type>
-			<type key="numbers" type="java" draft="contributed">爪哇文數字</type>
+			<type key="numbers" type="java">爪哇文數字</type>
 			<type key="numbers" type="jpan">小寫日文數字</type>
 			<type key="numbers" type="jpanfin">大寫日文數字</type>
 			<type key="numbers" type="kali" draft="contributed">克耶數字</type>
@@ -1286,12 +1322,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="limb" draft="contributed">林布文數字</type>
 			<type key="numbers" type="mlym">馬來亞拉姆數字</type>
 			<type key="numbers" type="mong">蒙古數字</type>
-			<type key="numbers" type="mtei" draft="contributed">曼尼普爾數字</type>
+			<type key="numbers" type="mtei">曼尼普爾數字</type>
 			<type key="numbers" type="mymr">緬甸數字</type>
 			<type key="numbers" type="mymrshan" draft="contributed">緬甸撣文數字</type>
-			<type key="numbers" type="native" draft="contributed">原始數字</type>
+			<type key="numbers" type="native">原始數字</type>
 			<type key="numbers" type="nkoo" draft="contributed">曼德數字</type>
-			<type key="numbers" type="olck" draft="contributed">桑塔利文數字</type>
+			<type key="numbers" type="olck">桑塔利文數字</type>
 			<type key="numbers" type="orya">歐利亞數字</type>
 			<type key="numbers" type="osma" draft="contributed">奧斯曼亞數字</type>
 			<type key="numbers" type="roman">羅馬數字</type>
@@ -1308,7 +1344,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="thai">泰文數字</type>
 			<type key="numbers" type="tibt">西藏數字</type>
 			<type key="numbers" type="traditional" draft="contributed">傳統數字</type>
-			<type key="numbers" type="vaii" draft="contributed">瓦伊文數字</type>
+			<type key="numbers" type="vaii">瓦伊文數字</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">公制</measurementSystemName>
@@ -1322,7 +1358,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[一 丁 七 丈-不 丑 且 世 丘 丙 丟 並 中 串 丸 丹 主 乃 久 么 之 乎 乏 乖 乘 乙 九 也 乾 亂 了 予 事 二 于 云 互 五 井 些 亞 亡 交-亦 亨 享 京 亮 人 什 仁 仇 今 介 仍 仔 他 付 仙 代-以 仰 仲 件 任 份 企 伊 伍 伐 休 伙 伯 估 伴 伸 似 伽 但 佈 佉 位-住 佔 何 余 佛 作 你 佩 佳 使 來 例 供 依 侯 侵 便 係-俄 俊 俏 俗 保 俠 信 修 俱 俾 倉 個 倍 們 倒 候 倚 借 倫 值 假 偉 偏 做 停 健 側-偷 偽 傅 傑 傘 備 傢 傣 傲 傳 傷 傻 傾 僅 像 僑 僧 價 儀 億 儒 儘 優 允 元-充 兇-光 克 免 兒 兔 入 內-兩 八-兮 共 兵-典 兼 冊 再 冒 冠 冬 冰 冷 准 凋-凍 凝 凡 凰 凱 出 函 刀 分 切 刊 列 初 判 別 刨-刪 刮 到 制 刷 刺 刻 剃 則 剌 前 剛 剩 剪 副 割 創 劃 劇 劉 劍 力 功 加 助-劫 勁 勇 勉 勒 動 務 勝 勞 勢 勤 勵 勸 勾 勿 包 匈 化 北 匯 匹 區 十 千 升 午 半 卒-協 南 博 卜 卡 卯-危 即 卷 卹 卻 厄 厘 厚 原 厭 厲 去 參 又 及 友 反 叔 取 受 口-另 只-叭 可 台 史 右 司 吃 各 合-吊 同-后 吐-吒 君 吝-吠 否 吧 含 吳 吵 吸 吹 吾 呀 呂 呆 告 呢 周 味 呵 呼 命 和 咖 咦 咧 咪 咬 咱 哀 品 哇-哉 哎 員 哥 哦 哩 哪 哭 哲 唇 唉 唐 唔 唬 售 唯 唱 唵 唷 唸 商 啊 問 啟 啡 啤-啦 啪 喀 喂 善 喇 喊 喔 喜 喝 喪 喬 單 喲 喵 嗎 嗚 嗨 嗯 嘆 嘉 嘗 嘛 嘴 嘻 嘿 噁 噓 器 噴 嚇 嚏 嚴 囉 四 回 因 困 固 圈 國 圍 園 圓 圖 團 圜 土 在 圭 地 圾 址 均 坎 坐 坑 坡 坤 坦 坪 垂 垃 型 埃 城 埔 域 執 培 基 堂 堅 堆 堡 堪 報 場 塊 塔 塗 塞 填 塵 境 墅 墓 增 墟 墨 墮 墳 壁 壇 壓 壘 壞 壢 壩 士 壬 壯 壺 壽 夏 夕 外 多 夜 夠 夢 夥 大 天-夫 央 失 夷 夸 夾 奇-奉 奎 奏 契 奔 套 奧 奪 奮 女 奴 奶 她 好 如 妙 妝 妥 妨 妮 妳 妹 妻 姆 姊 始 姐 姑 姓 委 姿 威 娃 娘 娛 婁 婆 婚 婦 媒 媽 嫌 嫩 子 孔 孕 字 存 孝 孟 季 孤 孩 孫 孵 學 它 宅 宇-安 宋 完 宏 宗-宜 客-室 宮 害 家 容 宿 寂 寄-密 富 寒 寞 察 寢 實-審 寫 寬 寮 寵 寶 寺 封 射 將 專 尊 尋 對-小 少 尖 尚 尤 就 尺 尼 尾-屁 居 屆 屋 屍 屏 屑 展 屠 層 屬 山 岡 岩 岸 峰 島 峽 崇 崙 崴 嵐 嶺 川 州 巡 工-巨 巫 差 己-巴 巷 市 布 希 帕 帖 帚 帛 帝 帥 師 席 帳 帶 常 帽 幅 幕 幟 幣 幫 干-年 幸 幹 幻-幾 庇 床 序 底 店 庚 府 度 座 庫 庭 康 庸 廈 廉 廖 廟 廠 廢 廣 廳 延 廷 建 弄 式 引 弗 弘 弟 弦 弱 張 強 彈 彊 彌 彎 彝 彞 形 彥 彩 彬 彭 彰 影 役 彼 往 征 待 很 律 後 徐-徒 得 從 復 微 徵 德 徹 心 必 忌 忍 志-忙 忠 忡 快 念 忽 怎 怒 怕 怖 思 怡 急 性 怨 怪 恆 恐 恢 恥 恨 恩 恭 息 恰 悅 悉 悔 悟 悠 您 悲 悶 情 惑 惜 惠 惡 惱 想 惹 愁 愈 愉 意 愚 愛 感 慈 態 慕 慘 慢 慣 慧 慮 慰 慶 慾 憂 憊 憐 憑 憲 憶 憾 懂 應 懨 懶 懷 懼 戀 戈 戊 戌 成-戒 或 截 戰 戲 戴 戶 房-扁 扇 手 才 扎 打 托 扣 扥 扭-扯 批 找-技 抄 把 抓 投 抗 折 披 抬 抱 抵 抹 抽 拆 拉 拋 拍 拏 拒 拔 拖 招 拜 括 拳 拼 拾 拿 持 指 按 挑 挖 挪 振 挺 捏 捐 捕 捧 捨 捲 捷 掃 授 掉 掌 排 掛 掠-探 接 控 推 措 掰 描 提 插 揚 換 握 揮 援 揹 損 搏 搖 搜 搞 搬 搭 搶 摀 摘 摩 摸 撐 撒 撕 撞 撣 撥 播 撲 撾 撿 擁 擇 擊 擋 操 擎 擔 據 擠 擦 擬 擴 擺 擾 攀 攝 攤 支 收 改 攻 放 政 故 效 敍 敏 救 敗-教 敝 敞 敢 散 敦 敬 整 敵 數 文 斐 斑 斗 料 斜 斧 斯 新 斷 方 於 施 旁 旅 旋 族 旗 既 日 旦 早 旭 旺 昂 昆 昇 昌 明 昏 易 星 映 春 昨 昭 是 時 晉 晒 晚 晨 普 景 晴 晶 智 暑 暖 暗 暫 暮 暴 曆 曇 曉 曬 曰 曲-更 書 曼 曾-最 會 月 有 朋 服 朔 朗 望 朝 期 木 未-札 朱 朵 杉 李 材 村 杖 杜 束 杯-東 松 板 析 林 果 枝 枯 架 柏 某 染 柔 查 柬 柯 柳 柴 栓 校 核 根 格 栽 桃 案 桌 桑 梁 梅 條 梨 梯 械 梵 棄 棉 棋 棍 棒 棕 棚 森 棺 椅 植 椒 椰 楊 楓 楚 業 極 概 榜 榮 構-槍 樂 樓 標 樞 模 樣 樹 橄 橇 橋 橘 橙 機 橫 檀 檔 檢 檬 檸 櫚 櫻 欄 權 欖 欠 次 欣 欲 欺 欽 款 歉 歌 歐 歡-武 歲 歷 歸 死 殊 残 殘 殭 段 殺 殼 毀 毅 母 每 毒 比 毛 毫 氏 民 氣 水 永 汁 求 汗 汝 江-污 汪 汶 決 汽 沃 沈 沉 沒 沖 沙 沫 沮 河 油 治 沿 況 泉 泊 法 泡-泣 泥 注 泰 泳 洋 洗 洛 洞 洩 洪 洲 活 洽 派 流 浣 浦 浩 浪 浮 浴 海 涇-涉 涎 涮 涯 液 涵 涼 淇 淋 淑 淚 淡 淨 深 混 淺 清 減 渡 測 港 游 湖 湘 湯 源 準 溜 溝 溪 溫 滄 滅 滋 滑 滴 滾 滿 漂 漏 演 漠 漢 漫 漲 漸 漿 潔 潘 潛 潮 澡 澤 澳 激 濃 濕 濟 濤 濫 濱 瀏 灌 灣 火 灰 災 炎 炮 炸 為 烈 烏 烘 烤 烹 焊 焙 無 焦 焰 然 煙 煞 照 煩 煮 熊 熟 熱 燃 燈 燒 燙 營 爆 爍 爐 爛 爪 爬 爭 爵 父 爸 爺 爽 爾 牆-版 牌 牙 牛 牠 牧 物 牲 特 牽 犀 犧 犬 犯 狀 狂 狐 狗 狠 狡 狸 狼 猛 猜 猩 猴 猶 猾 猿 獄 獅 獎 獨 獲 獸 獺 獻 獾 玄 率 玉 王 玩 玫 玲 玻 珊 珍 珠 珥 班 現 球 理 琉 琪 琴 瑙 瑜 瑞 瑟 瑤 瑪 瑰 環 瓜 瓢 瓦 瓶 甕 甘 甚 甜 生 產 用 田-申 男 甸 界 留 畢 略 番 畫 異 當 疆 疏 疑 疲 疼 疾 病 痕 痛 痴 瘋 瘦 瘧 療 癡 癸 登-百 皂 的 皆 皇 皮 皿 盃 盆 盈 益 盔 盛 盜 盟 盡 監-盥 盧 目 盲 直 相 盼 盾 省 眉 看 真 眠 眼 眾 睏 睛 睡 督 瞇 瞌 瞧 瞪 瞭 矛 矣 知 短 石 砂 砍 研 砲 破 硬 碎 碗 碟 碧 碩 碰 確 碼 磁 磚 磨 磯 礎 礙 礫 示 社 祈 祕 祖 祚 祛 祝 神 祥 票 祿 禁 禍-福 禪 禮 禱 禿-私 秋 科 秒 秘 租 秤 秦 移 稅 程 稍 種 稱 稻 稿 穀 穆 穌 積 穩 究 穹 空 穿 突 窄 窗 窩 窮 窶 立 站 竟 章 童 端 競 竹 竿 笑 笛 符 笨 第 筆 等 筋 答 策 筷 简 箏 箔 算 管 箭 箱 節 範 篇 築 篷 簡 簫 簽 簿 籃 籌 籍 籠 籤 米 粉 粗 粵 精 糊 糕 糖 糟 糥 系 糾 紀 約 紅 紉 納 紐 純 紙-紛 素 索 紫 紮-細 紳 紹 終 組 結 絕 絡 給 統 絲 經 綜 綠 維 綱 網 綽 綿 緊 緒 線 緣 編 緩 緬 緯 練 縛 縣 縫 縮 縱 總 績 繁 繃 繆 織 繞 繡 繩 繪 繳 繼 續 纖 缸 缺 罈 罐 罕 罩 罪 置 罰 署 罵 罷 羅 羊 美 羞 群 義 羽 翁 習 翔 翰 翹 翻 翼 耀 老 考 者 而 耍 耐 耗 耳 耶 聊 聖 聚 聞 聯 聰 聲 職 聽 聾 肉 肌 肚 股 肥 肩 肯 育 肺 背 胎 胖 胞 胡 胸 能 脆 脈 脖 脫 腐 腓 腔 腦 腰 腳 腹 腿 膚 膠 膽 臂 臉 臘 臟 臣 臥 臨 自 臭 至 致 臺 與-舊 舌 舍 舒 舞 舟 航 般 船 艦 良 色 艾 芙 芝 芬 芭 花 芳 芽 苣 若 苦 英 茄 茅 茫 茲 茵 茶 茸 草 荒 荷 荼 莉 莊 莎 莓 莖 莫 菇 菌 菜 菩 華 菲 萄 萊 萎 萬 萵 落 葉 著 葛 葡 葵 蒂 蒙 蒜 蒲 蒸 蒼 蓄 蓉 蓋 蓮 蔔 蔕 蔡 蔣 蔥 蔬 蕉 蕭 蕾 薄 薑 薦 薩 薪 薯 藉 藍 藏 藝 藤 藥 蘆 蘇 蘋 蘑 蘭 蘿 虎 處 虛 號 虧 蚊 蚓 蚯 蛇 蛋 蛙 蜂 蜜 蜥 蜴 蝙 蝟 蝠 蝦 蝶 螂 螃 融 螞 螢 螺 蟀 蟄 蟋 蟑 蟲 蟳 蟹 蟻 蠅 蠍 蠕 蠣 蠻 血 行 術 街 衛 衝 衡 衣 表 衫 袋 袍 被 裁 裂 裏 裕 補 裝 裡 裱 裹 製 複 褐 褲 襪 襯 西 要 覆 見 規 視 親 覺 覽 觀 角 解 觸 言 訂 計 訊 討 訓 託 記 訝 訥 訪 設 許 訴 診-証 評 詞 詢 試 詩 話-詳 誇 誌 認 誓 誕 語 誠 誤 說 誰 課 誼 調 談 請 諒 論 諸 諺 諾 謀 謂 謎 講 謝 證 識 譜 警 譯 議 護 譽 讀 變 讓 讚 谷 豆 豈 豎 豐 豔 象 豪 豬 豹 貌 貓 貝 貞 負-貢 貨 貪-責 貴 買 費 貼 賀 資 賈 賓 賜 賞 賢-賤 賦 質 賭 賴 賺 購 賽 贈 贊 贏 贛 赤 赫 走 起 超 越 趕 趙 趣 趨 足 跆 跌 跎 跑 距 跟 跡 跪 路 跳 踏 踢 踩 蹟 蹤 躍 身 躲 車 軌 軍 軒 軟 軸 較 載 輔 輕 輛 輝 輩 輪 輯 輸 轉 轎 轟 辛 辜 辣 辦 辨 辭 辯-農 迅 迎 近 返 迦 迪 迫 述 迴 迷 追 退 送 逃 逆 透 逐 途 這-逛 逝 速 造 逢 連 週 進 逸 逼 遇 遊 運 遍 過 道-違 遙 遜 遠 適 遭 遮 遲 遷 選 遺 避-邁 還 邊 邏 那 邦 邪 邱 郎 部 郭 郵 都 鄂 鄉 鄙 鄭 鄰 酉 配 酒 酪 酷 酸 醉 醒 醜 醫 醬 采 釋-量 金 針 釣 鈴 鉅 鉢 鉤 銀 銅 銖 銘 銳 銷 鋁 鋒 鋼 錄 錢 錦 錨 錫 錯 錶 鍊 鍋 鍵 鍾 鎊 鎖 鎮 鏈 鏡 鏢 鐘 鐡 鐵 鑑 鑿 長 門 閃 閉 開 閏 閒 間 閣 閩 閱 闆 闊 闍 闐 關 闡 阱 防 阻 阿 陀 附 降 限 院-除 陪 陰 陳 陵-陸 陽 隆 隊 階 隔 際 障 隨 險 隱 隻 雄-集 雉 雌 雖 雙 雜 雞 離 難 雨 雪 雲 零 雷 電 需 震 霍 霜 霧 露 霸 霹 靂 靈 青 靖 静 靜 非 靠 面 革 靴 靼 鞋 鞭 韃 韋 韓 音 韻 響 頁 頂 項 順 須 頌 預 頑 頓 頗 領 頞 頭 頸 頻 顆 題 額 顏 願 顛 類 顧 顯 風 颱 飄 飆 飛 食 飪 飯 飲 飽 飾 餃 餅 養 餌 餐 餘 餚 館 餾 首 香 馬 駐 駕 駛 駝 駱 騎 騙 騷 驅 驕 驗 驚 骨 體 高 髮 鬆 鬍 鬥 鬧 鬱 鬼 魁 魂 魅 魔 魚 魯 魷 鮑 鮮 鯊 鯨 鱷 鳥 鳩 鳳 鳴 鴨 鴻 鵝 鵡 鶴 鷹 鸚 鹽 鹿 麗 麥 麵 麻 麼 黃 黎 黑 默 黛 點 黨 鼓 鼠 鼬 鼻 齊 齋 齒 齡 龍 龐 龜]</exemplarCharacters>
+		<exemplarCharacters>[一 丁 七 丈-不 丑 且 世 丘 丙 丟 並 中 串 丸 丹 主 乃 久 么 之 乎 乏 乖 乘 乙 九 也 乾 亂 了 予 事 二 于 云 互 五 井 些 亞 亡 交-亦 亨 享 京 亮 人 什 仁 仇 今 介 仍 仔 他 付 仙 代-以 仰 仲 件 任 份 企 伊 伍 伐 休 伙 伯 估 伴 伸 似 伽 但 佈 佉 位-住 佔 何 余 佛 作 你 佩 佳 使 來 例 供 依 侯 侵 便 係-俄 俊 俏 俗 保 俠 信 修 俱 俾 倉 個 倍 們 倒 候 倚 借 倫 值 假 偉 偏 做 停 健 側-偷 偽 傅 傑 傘 備 傢 傣 傲 傳 傷 傻 傾 僅 像 僑 僧 價 儀 億 儒 儘 優 允 元-充 兇-光 克 免 兒 兔 入 內-兩 八-兮 共 兵-典 兼 冊 再 冒 冠 冬 冰 冷 准 凋-凍 凝 凡 凰 凱 出 函 刀 分 切 刊 列 初 判 別 刨-刪 刮 到 制 刷 刺 刻 剃 則 剌 前 剛 剩 剪 副 割 創 劃 劇 劉 劍 力 功 加 助-劫 勁 勇 勉 勒 動 務 勝 勞 勢 勤 勵 勸 勾 勿 包 匈 化 北 匯 匹 區 十 千 升 午 半 卒-協 南 博 卜 卡 卯-危 即 卷 卹 卻 厄 厘 厚 原 厭 厲 去 參 又 及 友 反 叔 取 受 口-另 只-叭 可 台 史 右 司 吃 各 合-吊 同-后 吐-吒 君 吝-吠 否 吧 含 吳 吵 吸 吹 吾 呀 呂 呆 告 呢 周 味 呵 呼 命 和 咖 咦 咧 咪 咬 咱 哀 品 哇-哉 哎 員 哥 哦 哩 哪 哭 哲 唇 唉 唐 唔 唬 售 唯 唱 唵 唷 唸 商 啊 問 啟 啡 啤-啦 啪 喀 喂 善 喇 喊 喔 喜 喝 喪 喬 單 喲 喵 嗎 嗚 嗨 嗯 嘆 嘉 嘗 嘛 嘴 嘻 嘿 噁 噓 器 噴 嚇 嚏 嚴 囉 四 回 因 困 固 圈 國 圍 園 圓 圖 團 圜 土 在 圭 地 圾 址 均 坎 坐 坑 坡 坤 坦 坪 垂 垃 型 埃 城 埔 域 執 培 基 堂 堅 堆 堡 堪 報 場 塊 塔 塗 塞 填 塵 境 墅 墓 增 墟 墨 墮 墳 壁 壇 壓 壘 壞 壢 壩 士 壬 壯 壺 壽 夏 夕 外 多 夜 夠 夢 夥 大 天-夫 央 失 夷 夸 夾 奇-奉 奎 奏 契 奔 套 奧 奪 奮 女 奴 奶 她 好 如 妙 妝 妥 妨 妮 妳 妹 妻 姆 姊 始 姐 姑 姓 委 姿 威 娃 娘 娛 婁 婆 婚 婦 媒 媽 嫌 嫩 子 孔 孕 字 存 孝 孟 季 孤 孩 孫 孵 學 它 宅 宇-安 宋 完 宏 宗-宜 客-室 宮 害 家 容 宿 寂 寄-密 富 寒 寞 察 寢 實-審 寫 寬 寮 寵 寶 寺 封 射 將 專 尊 尋 對-小 少 尖 尚 尤 就 尺 尼 尾-屁 居 屆 屋 屍 屏 屑 展 屠 層 屬 山 岡 岩 岸 峰 島 峽 崇 崙 崴 嵐 嶺 川 州 巡 工-巨 巫 差 己-巴 巷 市 布 希 帕 帖 帚 帛 帝 帥 師 席 帳 帶 常 帽 幅 幕 幟 幣 幫 干-年 幸 幹 幻-幾 庇 床 序 底 店 庚 府 度 座 庫 庭 康 庸 廈 廉 廖 廟 廠 廢 廣 廳 延 廷 建 弄 式 引 弗 弘 弟 弦 弱 張 強 彈 彊 彌 彎 彝 彞 形 彥 彩 彬 彭 彰 影 役 彼 往 征 待 很 律 後 徐-徒 得 從 復 微 徵 德 徹 心 必 忌 忍 志-忙 忠 忡 快 念 忽 怎 怒 怕 怖 思 怡 急 性 怨 怪 恆 恐 恢 恥 恨 恩 恭 息 恰 悅 悉 悔 悟 悠 您 悲 悶 情 惑 惜 惠 惡 惱 想 惹 愁 愈 愉 意 愚 愛 感 慈 態 慕 慘 慢 慣 慧 慮 慰 慶 慾 憂 憊 憐 憑 憲 憶 憾 懂 應 懨 懶 懷 懼 戀 戈 戊 戌 成-戒 或 截 戰 戲 戴 戶 房-扁 扇 手 才 扎 打 托 扣 扥 扭-扯 批 找-技 抄 把 抓 投 抗 折 披 抬 抱 抵 抹 抽 拆 拉 拋 拍 拏 拒 拔 拖 招 拜 括 拳 拼 拾 拿 持 指 按 挑 挖 挪 振 挺 捏 捐 捕 捧 捨 捲 捷 掃 授 掉 掌 排 掛 掠-探 接 控 推 措 掰 描 提 插 揚 換 握 揮 援 揹 損 搏 搖 搜 搞 搬 搭 搶 摀 摘 摩 摸 撐 撒 撕 撞 撣 撥 播 撲 撾 撿 擁 擇 擊 擋 操 擎 擔 據 擠 擦 擬 擴 擺 擾 攀 攝 攤 支 收 改 攻 放 政 故 效 敍 敏 救 敗-教 敝 敞 敢 散 敦 敬 整 敵 數 文 斐 斑 斗 料 斜 斧 斯 新 斷 方 於 施 旁 旅 旋 族 旗 既 日 旦 早 旭 旺 昂 昆 昇 昌 明 昏 易 星 映 春 昨 昭 是 時 晉 晒 晚 晨 普 景 晴 晶 智 暑 暖 暗 暫 暮 暴 曆 曇 曉 曬 曰 曲-更 書 曼 曾-最 會 月 有 朋 服 朔 朗 望 朝 期 木 未-札 朱 朵 杉 李 材 村 杖 杜 束 杯-東 松 板 析 林 果 枝 枯 架 柏 某 染 柔 查 柬 柯 柳 柴 栓 校 核 根 格 栽 桃 案 桌 桑 梁 梅 條 梨 梯 械 梵 棄 棉 棋 棍 棒 棕 棚 森 棺 椅 植 椒 椰 楊 楓 楚 業 極 概 榜 榮 構-槍 樂 樓 標 樞 模 樣 樹 橄 橇 橋 橘 橙 機 橫 檀 檔 檢 檬 檸 櫚 櫻 欄 權 欖 欠 次 欣 欲 欺 欽 款 歉 歌 歐 歡-武 歲 歷 歸 死 殊 残 殘 殭 段 殺 殼 毀 毅 母 每 毒 比 毛 毫 氏 民 氣 水 永 汁 求 汗 汝 江-污 汪 汶 決 汽 沃 沈 沉 沒 沖 沙 沫 沮 河 油 治 沿 況 泉 泊 法 泡-泣 泥 注 泰 泳 洋 洗 洛 洞 洩 洪 洲 活 洽 派 流 浣 浦 浩 浪 浮 浴 海 涇-涉 涎 涮 涯 液 涵 涼 淇 淋 淑 淚 淡 淨 深 混 淺 清 減 渡 測 港 游 湖 湘 湯 源 準 溜 溝 溪 溫 滄 滅 滋 滑 滴 滾 滿 漂 漏 演 漠 漢 漫 漲 漸 漿 潔 潘 潛 潮 澡 澤 澳 激 濃 濕 濟 濤 濫 濱 瀏 灌 灣 火 灰 災 炎 炮 炸 為 烈 烏 烘 烤 烹 焊 焙 無 焦 焰 然 煙 煞 照 煩 煮 熊 熟 熱 燃 燈 燒 燙 營 爆 爍 爐 爛 爪 爬 爭 爵 父 爸 爺 爽 爾 牆-版 牌 牙 牛 牠 牧 物 牲 特 牽 犀 犧 犬 犯 狀 狂 狐 狗 狠 狡 狸 狼 猛 猜 猩 猴 猶 猾 猿 獄 獅 獎 獨 獲 獸 獺 獻 獾 玄 率 玉 王 玩 玫 玲 玻 珊 珍 珠 珥 班 現 球 理 琉 琪 琴 瑙 瑜 瑞 瑟 瑤 瑪 瑰 環 瓜 瓢 瓦 瓶 甕 甘 甚 甜 生 產 用 田-申 男 甸 界 留 畢 略 番 畫 異 當 疆 疏 疑 疲 疼 疾 病 痕 痛 痴 瘋 瘦 瘧 療 癡 癸 登-百 皂 的 皆 皇 皮 皿 盃 盆 盈 益 盔 盛 盜 盟 盡 監-盥 盧 目 盲 直 相 盼 盾 省 眉 看 真 眠 眼 眾 睏 睛 睡 督 瞇 瞌 瞧 瞪 瞭 矛 矣 知 短 石 砂 砍 研 砲 破 硬 碎 碗 碟 碧 碩 碰 確 碼 磁 磚 磨 磯 礎 礙 礫 示 社 祈 祕 祖 祚 祛 祝 神 祥 票 祿 禁 禍-福 禪 禮 禱 禿-私 秋 科 秒 秘 租 秤 秦 移 稅 程 稍 種 稱 稻 稿 穀 穆 穌 積 穩 究 穹 空 穿 突 窄 窗 窩 窮 窶 立 站 竟 章 童 端 競 竹 竿 笑 笛 符 笨 第 筆 等 筋 答 策 筷 箏 箔 算 管 箭 箱 節 範 篇 築 篷 簡 簫 簽 簿 籃 籌 籍 籠 籤 米 粉 粗 粵 精 糊 糕 糖 糟 糥 系 糾 紀 約 紅 紉 納 紐 純 紙-紛 素 索 紫 紮-細 紳 紹 終 組 結 絕 絡 給 統 絲 經 綜 綠 維 綱 網 綽 綿 緊 緒 線 緣 編 緩 緬 緯 練 縛 縣 縫 縮 縱 總 績 繁 繃 繆 織 繞 繡 繩 繪 繳 繼 續 纖 缸 缺 罈 罐 罕 罩 罪 置 罰 署 罵 罷 羅 羊 美 羞 群 義 羽 翁 習 翔 翰 翹 翻 翼 耀 老 考 者 而 耍 耐 耗 耳 耶 聊 聖 聚 聞 聯 聰 聲 職 聽 聾 肉 肌 肚 股 肥 肩 肯 育 肺 背 胎 胖 胞 胡 胸 能 脆 脈 脖 脫 腐 腓 腔 腦 腰 腳 腹 腿 膚 膠 膽 臂 臉 臘 臟 臣 臥 臨 自 臭 至 致 臺 與-舊 舌 舍 舒 舞 舟 航 般 船 艦 良 色 艾 芙 芝 芬 芭 花 芳 芽 苣 若 苦 英 茄 茅 茫 茲 茵 茶 茸 草 荒 荷 荼 莉 莊 莎 莓 莖 莫 菇 菌 菜 菩 華 菲 萄 萊 萎 萬 萵 落 葉 著 葛 葡 葵 蒂 蒙 蒜 蒲 蒸 蒼 蓄 蓉 蓋 蓮 蔔 蔕 蔡 蔣 蔥 蔬 蕉 蕭 蕾 薄 薑 薦 薩 薪 薯 藉 藍 藏 藝 藤 藥 蘆 蘇 蘋 蘑 蘭 蘿 虎 處 虛 號 虧 蚊 蚓 蚯 蛇 蛋 蛙 蜂 蜜 蜥 蜴 蝙 蝟 蝠 蝦 蝶 螂 螃 融 螞 螢 螺 蟀 蟄 蟋 蟑 蟲 蟳 蟹 蟻 蠅 蠍 蠕 蠣 蠻 血 行 術 街 衛 衝 衡 衣 表 衫 袋 袍 被 裁 裂 裏 裕 補 裝 裡 裱 裹 製 複 褐 褲 襪 襯 西 要 覆 見 規 視 親 覺 覽 觀 角 解 觸 言 訂 計 訊 討 訓 託 記 訝 訥 訪 設 許 訴 診-証 評 詞 詢 試 詩 話-詳 誇 誌 認 誓 誕 語 誠 誤 說 誰 課 誼 調 談 請 諒 論 諸 諺 諾 謀 謂 謎 講 謝 證 識 譜 警 譯 議 護 譽 讀 變 讓 讚 谷 豆 豈 豎 豐 豔 象 豪 豬 豹 貌 貓 貝 貞 負-貢 貨 貪-責 貴 買 費 貼 賀 資 賈 賓 賜 賞 賢-賤 賦 質 賭 賴 賺 購 賽 贈 贊 贏 贛 赤 赫 走 起 超 越 趕 趙 趣 趨 足 跆 跌 跎 跑 距 跟 跡 跪 路 跳 踏 踢 踩 蹟 蹤 躍 身 躲 車 軌 軍 軒 軟 軸 較 載 輔 輕 輛 輝 輩 輪 輯 輸 轉 轎 轟 辛 辜 辣 辦 辨 辭 辯-農 迅 迎 近 返 迦 迪 迫 述 迴 迷 追 退 送 逃 逆 透 逐 途 這-逛 逝 速 造 逢 連 週 進 逸 逼 遇 遊 運 遍 過 道-違 遙 遜 遠 適 遭 遮 遲 遷 選 遺 避-邁 還 邊 邏 那 邦 邪 邱 郎 部 郭 郵 都 鄂 鄉 鄙 鄭 鄰 酉 配 酒 酪 酷 酸 醉 醒 醜 醫 醬 采 釋-量 金 針 釣 鈴 鉅 鉢 鉤 銀 銅 銖 銘 銳 銷 鋁 鋒 鋼 錄 錢 錦 錨 錫 錯 錶 鍊 鍋 鍵 鍾 鎊 鎖 鎮 鏈 鏡 鏢 鐘 鐡 鐵 鑑 鑿 長 門 閃 閉 開 閏 閒 間 閣 閩 閱 闆 闊 闍 闐 關 闡 阱 防 阻 阿 陀 附 降 限 院-除 陪 陰 陳 陵-陸 陽 隆 隊 階 隔 際 障 隨 險 隱 隻 雄-集 雉 雌 雖 雙 雜 雞 離 難 雨 雪 雲 零 雷 電 需 震 霍 霜 霧 露 霸 霹 靂 靈 青 靖 静 靜 非 靠 面 革 靴 靼 鞋 鞭 韃 韋 韓 音 韻 響 頁 頂 項 順 須 頌 預 頑 頓 頗 領 頞 頭 頸 頻 顆 題 額 顏 願 顛 類 顧 顯 風 颱 飄 飆 飛 食 飪 飯 飲 飽 飾 餃 餅 養 餌 餐 餘 餚 館 餾 首 香 馬 駐 駕 駛 駝 駱 騎 騙 騷 驅 驕 驗 驚 骨 體 高 髮 鬆 鬍 鬥 鬧 鬱 鬼 魁 魂 魅 魔 魚 魯 魷 鮑 鮮 鯊 鯨 鱷 鳥 鳩 鳳 鳴 鴨 鴻 鵝 鵡 鶴 鷹 鸚 鹽 鹿 麗 麥 麵 麻 麼 黃 黎 黑 默 黛 點 黨 鼓 鼠 鼬 鼻 齊 齋 齒 齡 龍 龐 龜]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[乍 仂 伏 佐 侶 僳 兆 兌 兹 凸 别 券 勳 卑 卞 占 叶 嘅 堤 墎 壤 奥 孜 峇 嶼 巽 栗 楔 涅 渾 澎 灘 燦 狄 琳 瑚 甫 碑 礁 纜 艇 芒 苗 茨 蓬 蚩 蜀 裘 謬 酋 隴 雀 髪]</exemplarCharacters>
 		<exemplarCharacters type="index">[一 丁 丈 不 且 丞 並 串 乘 乾 亂 亭 傀 僎 僵 儐 償 儳 儷 儻 叢 嚴 囌 囑 廳]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9 〇 一 七 三 九 二 五 八 六 四]</exemplarCharacters>
@@ -2251,10 +2287,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
@@ -2812,15 +2854,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}{0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
@@ -5086,6 +5137,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>恩得伯理島</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>坎頓</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>基里地馬地島</exemplarCity>
 			</zone>
@@ -6826,6 +6880,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -6833,9 +6889,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -8751,6 +8811,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 年</unitPattern>
 				<perUnitPattern>每年 {0}</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>季</displayName>
+				<unitPattern count="other">{0} 季</unitPattern>
+				<perUnitPattern>每季 {0}</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>月</displayName>
 				<unitPattern count="other">{0} 個月</unitPattern>
@@ -9014,7 +9079,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>太陽光度</displayName>
 				<unitPattern count="other">{0} 太陽光度</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>公噸</displayName>
 				<unitPattern count="other">{0} 公噸</unitPattern>
 			</unit>
@@ -9605,6 +9670,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 年</unitPattern>
 				<perUnitPattern>每年{0}</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>季</displayName>
+				<unitPattern count="other">{0} 季</unitPattern>
+				<perUnitPattern>每季{0}</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>月</displayName>
 				<unitPattern count="other">{0} 個月</unitPattern>
@@ -9868,7 +9938,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>太陽光度</displayName>
 				<unitPattern count="other">{0} 太陽光度</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>公噸</displayName>
 				<unitPattern count="other">{0} 公噸</unitPattern>
 			</unit>
@@ -10299,6 +10369,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>年</displayName>
 				<unitPattern count="other">{0} 年</unitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>季</displayName>
+				<unitPattern count="other">{0} 季</unitPattern>
+				<perUnitPattern>每季{0}</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>月</displayName>
 				<unitPattern count="other">{0} 個月</unitPattern>
@@ -10631,4 +10706,117 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="tnum">表格編號</featureName>
 		<featureName type="zero">有斜線嘅零</featureName>
 	</typographicNames>
+	<personNames>
+		<foreignSpaceReplacement xml:space="preserve">·</foreignSpaceReplacement>
+		<initialPattern type="initial">{0}</initialPattern>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix}{given2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix}{given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}{given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname}{prefix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix}{given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix}{given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">文傑</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">雅婷</nameField>
+			<nameField type="surname">張</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">家豪</nameField>
+			<nameField type="given2">明德</nameField>
+			<nameField type="surname">林</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">∅∅∅</nameField>
+			<nameField type="given">怡君</nameField>
+			<nameField type="given-informal">小君</nameField>
+			<nameField type="given2">達印</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">∅∅∅</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="suffix">博士</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

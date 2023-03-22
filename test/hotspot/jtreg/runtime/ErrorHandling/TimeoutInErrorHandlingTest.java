@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +27,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -32,7 +37,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 
 /*
- * @test
+ * @test id=default
  * @bug 8166944
  * @summary Hanging Error Reporting steps may lead to torn error logs
  * @modules java.base/jdk.internal.misc
@@ -40,6 +45,16 @@ import jdk.test.lib.process.ProcessTools;
  * @requires (vm.debug == true) & (os.family != "windows")
  * @run driver TimeoutInErrorHandlingTest
  * @author Thomas Stuefe (SAP)
+ */
+
+/*
+ * @test id=with-on-error
+ * @bug 8303861
+ * @summary Error handling step timeouts should never be blocked by OnError etc.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @requires (vm.debug == true) & (os.family != "windows")
+ * @run driver TimeoutInErrorHandlingTest with-on-error
  */
 
 public class TimeoutInErrorHandlingTest {
@@ -70,14 +85,28 @@ public class TimeoutInErrorHandlingTest {
          * little timeout messages to see that repeated timeout handling is basically working.
          */
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-Xmx100M",
-            "-XX:ErrorHandlerTest=14",
-            "-XX:+TestUnresponsiveErrorHandler",
-            "-XX:ErrorLogTimeout=" + ERROR_LOG_TIMEOUT,
-            "-XX:-CreateCoredumpOnCrash",
-            "-version");
+        boolean withOnError = false;
+
+        if (args.length > 0) {
+            switch (args[0]) {
+                case "with-on-error": withOnError = true; break;
+                default: throw new RuntimeException("Invalid argument " + args[1]);
+            }
+        }
+
+        List<String> arguments = new ArrayList<>();
+        Collections.addAll(arguments,
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-Xmx100M",
+                "-XX:ErrorHandlerTest=14",
+                "-XX:+TestUnresponsiveErrorHandler",
+                "-XX:ErrorLogTimeout=" + ERROR_LOG_TIMEOUT,
+                "-XX:-CreateCoredumpOnCrash");
+        if (withOnError) {
+            arguments.add("-XX:OnError=echo hi");
+        }
+        arguments.add("-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(arguments);
 
         OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
 
@@ -91,72 +120,35 @@ public class TimeoutInErrorHandlingTest {
         output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
         output_detail.shouldMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
 
-        // VM should have been aborted by WatcherThread
-        output_detail.shouldMatch(".*timer expired, abort.*");
-
-        // extract hs-err file
-        String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-        if (hs_err_file == null) {
-            if (!verbose) {
-                System.err.println("<begin cmd output>");
-                System.err.println(output_detail.getOutput());
-                System.err.println("<end cmd output>");
-            }
-            throw new RuntimeException("Did not find hs-err file in output.\n");
+        // Unless we specified OnError, VM should have been aborted by WatcherThread
+        if (!withOnError) {
+            output_detail.shouldMatch(".*timer expired, abort.*");
         }
 
-        File f = new File(hs_err_file);
-        if (!f.exists()) {
+        // extract hs-err file
+        File hs_err_file;
+        try {
+            hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
+        } catch (Exception e) {
             if (!verbose) {
                 System.err.println("<begin cmd output>");
                 System.err.println(output_detail.getOutput());
                 System.err.println("<end cmd output>");
             }
-            throw new RuntimeException("hs-err file missing at "
-                + f.getAbsolutePath() + ".\n");
+            throw e;
         }
 
         System.out.println("Found hs_err file. Scanning...");
-
-        FileInputStream fis = new FileInputStream(f);
-        BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-        String line = null;
-
 
         Pattern [] pattern = new Pattern[] {
             Pattern.compile(".*timeout occurred during error reporting in step.*"),
             Pattern.compile(".*timeout occurred during error reporting in step.*")
         };
-        int currentPattern = 0;
 
-        String lastLine = null;
-        StringBuilder saved_hs_err = new StringBuilder();
-        while ((line = br.readLine()) != null) {
-            saved_hs_err.append(line + System.lineSeparator());
-            if (currentPattern < pattern.length) {
-                if (pattern[currentPattern].matcher(line).matches()) {
-                    System.out.println("Found: " + line + ".");
-                    currentPattern ++;
-                }
-            }
-            lastLine = line;
-        }
-        br.close();
-
-        if (verbose) {
-            System.err.println("<begin hs_err contents>");
-            System.err.print(saved_hs_err);
-            System.err.println("<end hs_err contents>");
-        }
-
-        if (currentPattern < pattern.length) {
-            if (!verbose) {
-                System.err.println("<begin hs_err contents>");
-                System.err.print(saved_hs_err);
-                System.err.println("<end hs_err contents>");
-            }
-            throw new RuntimeException("hs-err file incomplete (first missing pattern: " +  currentPattern + ")");
-        }
+        // Note: we *dont* check for the end marker, since the hs-err file will likely not have
+        // one but a global timeout marker. As explained above, we don't check for that one either
+        // since it is too instable.
+        HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, null, false /* check end marker */,true /* verbose */);
 
         System.out.println("OK.");
 

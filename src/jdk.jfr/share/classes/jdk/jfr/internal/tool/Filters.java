@@ -40,7 +40,7 @@ import jdk.jfr.consumer.RecordedEvent;
  */
 public class Filters {
 
-    static Predicate<EventType> createCategoryFilter(String filterText) throws UserSyntaxException {
+    static Predicate<EventType> createCategoryFilter(String filterText, List<EventType> types) throws UserSyntaxException {
         List<String> filters = explodeFilter(filterText);
         Predicate<EventType> f = eventType -> {
             for (String category : eventType.getCategoryNames()) {
@@ -55,10 +55,13 @@ public class Filters {
             }
             return false;
         };
+        if (unknownEventType(f, types)) {
+            System.out.println("Warning, no event type matched category filter: " + filterText);
+        }
         return createCache(f, EventType::getId);
     }
 
-    static Predicate<EventType> createEventTypeFilter(String filterText) throws UserSyntaxException {
+    static Predicate<EventType> createEventTypeFilter(String filterText, List<EventType> types) throws UserSyntaxException {
         List<String> filters = explodeFilter(filterText);
         Predicate<EventType> f = eventType -> {
             for (String filter : filters) {
@@ -73,7 +76,17 @@ public class Filters {
             }
             return false;
         };
+        if (unknownEventType(f, types)) {
+            System.out.println("Warning, no event type matched filter: " + filterText);
+        }
         return createCache(f, EventType::getId);
+    }
+
+    private static boolean unknownEventType(Predicate<EventType> f, List<EventType> types) {
+        if (types.isEmpty()) {
+            return false;
+        }
+        return !types.stream().anyMatch(f);
     }
 
     public static <T> Predicate<T> matchAny(List<Predicate<T>> filters) {

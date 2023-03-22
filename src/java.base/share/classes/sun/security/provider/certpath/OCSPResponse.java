@@ -356,7 +356,7 @@ public final class OCSPResponse {
             try {
                 for (int i = 0; i < derCerts.length; i++) {
                     X509CertImpl cert =
-                        new X509CertImpl(derCerts[i].toByteArray());
+                        X509CertImpl.newX509CertImpl(derCerts[i].toByteArray());
                     certs.add(cert);
 
                     if (debug != null) {

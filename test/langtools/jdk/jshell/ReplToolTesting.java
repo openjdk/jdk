@@ -229,6 +229,11 @@ public class ReplToolTesting {
         test(true, args, tests);
     }
 
+    public void test(String[] args, String expectedErrorOutput,
+                     ReplTest... tests) {
+        test(Locale.ROOT, true, args, expectedErrorOutput, DEFAULT_STARTUP_MESSAGE, tests);
+    }
+
     public void test(boolean isDefaultStartUp, String[] args, ReplTest... tests) {
         test(Locale.ROOT, isDefaultStartUp, args, DEFAULT_STARTUP_MESSAGE, tests);
     }
@@ -238,6 +243,11 @@ public class ReplToolTesting {
     }
 
     public void test(Locale locale, boolean isDefaultStartUp, String[] args, String startUpMessage, ReplTest... tests) {
+        test(locale, isDefaultStartUp, args, "", startUpMessage, tests);
+    }
+
+    public void test(Locale locale, boolean isDefaultStartUp, String[] args,
+                     String expectedErrorOutput, String startUpMessage, ReplTest... tests) {
         this.isDefaultStartUp = isDefaultStartUp;
         initSnippets();
         ReplTest[] wtests = new ReplTest[tests.length + 3];
@@ -246,7 +256,7 @@ public class ReplToolTesting {
         wtests[1] = a -> assertCommand(a, "/debug 0", null);
         System.arraycopy(tests, 0, wtests, 2, tests.length);
         wtests[tests.length + 2] = a -> assertCommand(a, "/exit", null);
-        testRaw(locale, args, wtests);
+        testRaw(locale, args, expectedErrorOutput, wtests);
     }
 
     private void initSnippets() {
@@ -291,10 +301,11 @@ public class ReplToolTesting {
                     .promptCapture(true);
     }
 
-    private void testRaw(Locale locale, String[] args, ReplTest... tests) {
+    private void testRaw(Locale locale, String[] args,
+                         String expectedErrorOutput, ReplTest... tests) {
         testRawInit(tests);
         testRawRun(locale, args);
-        testRawCheck(locale);
+        testRawCheck(locale, expectedErrorOutput);
     }
 
     private void testRawInit(ReplTest... tests) {
@@ -316,7 +327,7 @@ public class ReplToolTesting {
         }
     }
 
-    private void testRawCheck(Locale locale) {
+    private void testRawCheck(Locale locale, String expectedErrorOutput) {
         // perform internal consistency checks on state, if desired
         String cos = getCommandOutput();
         String ceos = getCommandErrorOutput();
@@ -324,7 +335,10 @@ public class ReplToolTesting {
         String ueos = getUserErrorOutput();
         assertTrue((cos.isEmpty() || cos.startsWith("|  Goodbye") || !locale.equals(Locale.ROOT)),
                 "Expected a goodbye, but got: " + cos);
-        assertTrue(ceos.isEmpty(), "Expected empty command error output, got: " + ceos);
+        assertEquals(ceos,
+                     expectedErrorOutput,
+                     "Expected \"" + expectedErrorOutput +
+                     "\" command error output, got: \"" + ceos + "\"");
         assertTrue(uos.isEmpty(), "Expected empty user output, got: " + uos);
         assertTrue(ueos.isEmpty(), "Expected empty user error output, got: " + ueos);
     }

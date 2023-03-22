@@ -328,12 +328,13 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
         private final MethodType transformHelperType(int whichtm) {
             MemberName tm = transformMethods().get(whichtm);
+            MethodType tmt = tm.getMethodType();
             ArrayList<Class<?>> args = new ArrayList<>();
             ArrayList<Class<?>> fields = new ArrayList<>();
-            Collections.addAll(args, tm.getParameterTypes());
+            Collections.addAll(args, tmt.ptypes());
             fields.addAll(fieldTypes());
             List<Class<?>> helperArgs = deriveTransformHelperArguments(tm, whichtm, args, fields);
-            return MethodType.methodType(tm.getReturnType(), helperArgs);
+            return MethodType.methodType(tmt.returnType(), helperArgs);
         }
 
         // Hooks for subclasses:
@@ -432,7 +433,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             final Class<T> topc = topClass();
             if (!topClassIsSuper) {
                 try {
-                    final Constructor<T> con = reflectConstructor(topc, baseConstructorType().parameterArray());
+                    final Constructor<T> con = reflectConstructor(topc, baseConstructorType().ptypes());
                     if (!topc.isInterface() && !Modifier.isPrivate(con.getModifiers())) {
                         topClassIsSuper = true;
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.jndi.ldap;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import javax.naming.spi.*;
 import javax.naming.event.*;
 import javax.naming.ldap.*;
 import javax.naming.ldap.LdapName;
@@ -54,6 +53,8 @@ import com.sun.jndi.toolkit.ctx.*;
 import com.sun.jndi.toolkit.dir.HierMemDirCtx;
 import com.sun.jndi.toolkit.dir.SearchFilter;
 import com.sun.jndi.ldap.ext.StartTlsResponseImpl;
+import com.sun.naming.internal.NamingManagerHelper;
+import com.sun.naming.internal.ObjectFactoriesFilter;
 
 /**
  * The LDAP context implementation.
@@ -1111,8 +1112,8 @@ public final class LdapCtx extends ComponentDirContext
         }
 
         try {
-            return DirectoryManager.getObjectInstance(obj, name,
-                this, envprops, attrs);
+            return NamingManagerHelper.getDirObjectInstance(obj, name, this,
+                    envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
 
         } catch (NamingException e) {
             throw cont.fillInException(e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
-#include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -47,9 +47,9 @@
 
 static char* jstr_to_utf(JNIEnv *env, jstring str, TRAPS) {
 
-  char* utfstr = NULL;
+  char* utfstr = nullptr;
 
-  if (str == NULL) {
+  if (str == nullptr) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
     //throw_new(env,"NullPointerException");
   }
@@ -109,7 +109,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
 
   PerfWrapper("Perf_CreateLong");
 
-  char* name_utf = NULL;
+  char* name_utf = nullptr;
 
   if (units <= 0 || units > PerfData::U_Last) {
     debug_only(warning("unexpected units argument, units = %d", units));
@@ -124,7 +124,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
     name_utf = jstr_to_utf(env, name, CHECK_NULL);
   }
 
-  PerfLong* pl = NULL;
+  PerfLong* pl = nullptr;
 
   // check that the PerfData name doesn't already exist
   if (PerfDataManager::exists(name_utf)) {
@@ -173,7 +173,7 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
   PerfWrapper("Perf_CreateByteArray");
 
   // check for valid byte array objects
-  if (name == NULL || value == NULL) {
+  if (name == nullptr || value == nullptr) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
   }
 
@@ -192,8 +192,8 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
   }
 
   int value_length;
-  char* name_utf = NULL;
-  jbyte* value_local = NULL;
+  char* name_utf = nullptr;
+  jbyte* value_local = nullptr;
 
   ResourceMark rm;
 
@@ -214,7 +214,7 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "PerfByteArray name already exists");
   }
 
-  PerfByteArray* pbv = NULL;
+  PerfByteArray* pbv = nullptr;
 
   if (units == PerfData::U_String) {
 

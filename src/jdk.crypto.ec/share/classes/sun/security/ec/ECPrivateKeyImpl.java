@@ -98,47 +98,38 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
 
     private void makeEncoding(byte[] s) throws InvalidKeyException {
         algid = new AlgorithmId
-        (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
-        try {
-            DerOutputStream out = new DerOutputStream();
-            out.putInteger(1); // version 1
-            byte[] privBytes = s.clone();
-            ArrayUtil.reverse(privBytes);
-            out.putOctetString(privBytes);
-            Arrays.fill(privBytes, (byte)0);
-            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-            key = val.toByteArray();
-            val.clear();
-        } catch (IOException exc) {
-            // should never occur
-            throw new InvalidKeyException(exc);
-        }
+                (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
+        DerOutputStream out = new DerOutputStream();
+        out.putInteger(1); // version 1
+        byte[] privBytes = s.clone();
+        ArrayUtil.reverse(privBytes);
+        out.putOctetString(privBytes);
+        Arrays.fill(privBytes, (byte) 0);
+        DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
+        key = val.toByteArray();
+        val.clear();
     }
 
     private void makeEncoding(BigInteger s) throws InvalidKeyException {
         algid = new AlgorithmId(AlgorithmId.EC_oid,
                 ECParameters.getAlgorithmParameters(params));
-        try {
-            byte[] sArr = s.toByteArray();
-            // convert to fixed-length array
-            int numOctets = (params.getOrder().bitLength() + 7) / 8;
-            byte[] sOctets = new byte[numOctets];
-            int inPos = Math.max(sArr.length - sOctets.length, 0);
-            int outPos = Math.max(sOctets.length - sArr.length, 0);
-            int length = Math.min(sArr.length, sOctets.length);
-            System.arraycopy(sArr, inPos, sOctets, outPos, length);
-            Arrays.fill(sArr, (byte)0);
+        byte[] sArr = s.toByteArray();
+        // convert to fixed-length array
+        int numOctets = (params.getOrder().bitLength() + 7) / 8;
+        byte[] sOctets = new byte[numOctets];
+        int inPos = Math.max(sArr.length - sOctets.length, 0);
+        int outPos = Math.max(sOctets.length - sArr.length, 0);
+        int length = Math.min(sArr.length, sOctets.length);
+        System.arraycopy(sArr, inPos, sOctets, outPos, length);
+        Arrays.fill(sArr, (byte) 0);
 
-            DerOutputStream out = new DerOutputStream();
-            out.putInteger(1); // version 1
-            out.putOctetString(sOctets);
-            Arrays.fill(sOctets, (byte)0);
-            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-            key = val.toByteArray();
-            val.clear();
-        } catch (IOException exc) {
-            throw new AssertionError("Should not happen", exc);
-        }
+        DerOutputStream out = new DerOutputStream();
+        out.putInteger(1); // version 1
+        out.putOctetString(sOctets);
+        Arrays.fill(sOctets, (byte) 0);
+        DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
+        key = val.toByteArray();
+        val.clear();
     }
 
     // see JCA doc

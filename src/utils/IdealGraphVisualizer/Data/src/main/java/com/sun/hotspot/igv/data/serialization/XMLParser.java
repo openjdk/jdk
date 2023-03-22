@@ -23,7 +23,6 @@
  */
 package com.sun.hotspot.igv.data.serialization;
 
-import com.sun.hotspot.igv.data.Properties;
 import java.util.HashMap;
 import java.util.Stack;
 import org.xml.sax.Attributes;
@@ -39,16 +38,10 @@ public class XMLParser implements ContentHandler {
 
     public static class MissingAttributeException extends SAXException {
 
-        private String name;
-
         public MissingAttributeException(String name) {
             super("Missing attribute \"" + name + "\"");
-            this.name = name;
         }
 
-        public String getAttributeName() {
-            return this.getMessage();
-        }
     }
 
     public static class HandoverElementHandler<P> extends ElementHandler<P, P> {
@@ -76,22 +69,18 @@ public class XMLParser implements ContentHandler {
 
     public static class ElementHandler<T, P> {
 
-        private String name;
-        private Stack<T> object = new Stack<>();
+        private final String name;
+        private final Stack<T> object = new Stack<>();
         private Attributes attr;
         private StringBuilder currentText;
         private ParseMonitor monitor;
-        private HashMap<String, ElementHandler<?, ? super T>> hashtable;
-        private boolean needsText;
-        private Stack<ElementHandler<P, ?>> parentElement = new Stack<>();
-        private Stack<P> parentObject = new Stack<>();
+        private final HashMap<String, ElementHandler<?, ? super T>> hashtable;
+        private final boolean needsText;
+        private final Stack<ElementHandler<P, ?>> parentElement = new Stack<>();
+        private final Stack<P> parentObject = new Stack<>();
 
         public ElementHandler(String name) {
             this(name, false);
-        }
-
-        public ElementHandler<P, ?> getParentElement() {
-            return parentElement.peek();
         }
 
         public P getParentObject() {
@@ -141,15 +130,6 @@ public class XMLParser implements ContentHandler {
             return s;
         }
 
-        public void processAttributesAsProperties(Properties p) {
-            int length = attr.getLength();
-            for (int i = 0; i < length; i++) {
-                String val = attr.getValue(i);
-                String localName = attr.getLocalName(i);
-                p.setProperty(val, localName);
-            }
-        }
-
         public void startElement(ElementHandler<P, ?> parentElement, Attributes attr, ParseMonitor monitor) throws SAXException {
             this.currentText = new StringBuilder();
             this.attr = attr;
@@ -179,8 +159,8 @@ public class XMLParser implements ContentHandler {
             currentText.append(c, start, length);
         }
     }
-    private Stack<ElementHandler> stack;
-    private ParseMonitor monitor;
+    private final Stack<ElementHandler> stack;
+    private final ParseMonitor monitor;
 
     public XMLParser(TopElementHandler rootHandler, ParseMonitor monitor) {
         this.stack = new Stack<>();

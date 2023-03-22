@@ -136,11 +136,11 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
-  __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2);
+  __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2, rscratch2);
   __ verify_oop(method_temp);
-  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset())), temp2);
+  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset())), temp2, rscratch2);
   __ verify_oop(method_temp);
-  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset())), temp2);
+  __ load_heap_oop(method_temp, Address(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset())), temp2, rscratch2);
   __ verify_oop(method_temp);
   __ access_load_at(T_ADDRESS, IN_HEAP, method_temp, Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset())), noreg, noreg);
 
@@ -322,8 +322,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ null_check(receiver_reg);
       } else {
         // load receiver klass itself
-        __ null_check(receiver_reg, oopDesc::klass_offset_in_bytes());
-        __ load_klass(temp1_recv_klass, receiver_reg);
+        __ load_klass_check_null(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
@@ -337,7 +336,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
         Label L_ok;
         Register temp2_defc = temp2;
-        __ load_heap_oop(temp2_defc, member_clazz, temp3);
+        __ load_heap_oop(temp2_defc, member_clazz, temp3, rscratch2);
         load_klass_from_Class(_masm, temp2_defc);
         __ verify_klass_ptr(temp2_defc);
         __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, L_ok);
@@ -365,7 +364,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
-      __ load_heap_oop(rmethod, member_vmtarget);
+      __ load_heap_oop(rmethod, member_vmtarget, temp3, rscratch2);
       __ access_load_at(T_ADDRESS, IN_HEAP, rmethod, vmtarget_method, noreg, noreg);
       break;
 
@@ -373,7 +372,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
-      __ load_heap_oop(rmethod, member_vmtarget);
+      __ load_heap_oop(rmethod, member_vmtarget, temp3, rscratch2);
       __ access_load_at(T_ADDRESS, IN_HEAP, rmethod, vmtarget_method, noreg, noreg);
       break;
 
@@ -415,7 +414,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       }
 
       Register temp3_intf = temp3;
-      __ load_heap_oop(temp3_intf, member_clazz);
+      __ load_heap_oop(temp3_intf, member_clazz, temp2, rscratch2);
       load_klass_from_Class(_masm, temp3_intf);
       __ verify_klass_ptr(temp3_intf);
 

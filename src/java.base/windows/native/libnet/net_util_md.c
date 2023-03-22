@@ -126,8 +126,6 @@ DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
     return TRUE;
 }
 
-void platformInit() {}
-
 /*
  * Since winsock doesn't have the equivalent of strerror(errno)
  * use table to lookup error text for the error.

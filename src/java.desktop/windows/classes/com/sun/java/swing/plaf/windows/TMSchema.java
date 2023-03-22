@@ -82,7 +82,7 @@ class TMSchema {
 
 
     /**
-     * An enumeration of the Windows compoent parts
+     * An enumeration of the Windows component parts
      */
     public static enum Part {
         MENU (Control.MENU, 0), // Special case, not in native

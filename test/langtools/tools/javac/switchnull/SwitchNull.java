@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 8262891
  * @summary Verify "case null" behavior.
- * @compile --enable-preview -source ${jdk.version} SwitchNull.java
- * @run main/othervm --enable-preview SwitchNull
+ * @enablePreview
  */
 
 public class SwitchNull {
@@ -93,14 +92,13 @@ public class SwitchNull {
             case C: return 2;
             case null: return -1;
         }
-        throw new AssertionError(String.valueOf(e));
     }
 
     private int switchEnumWithDefault(E e) {
         switch (e) {
             case A: return 0;
-            default: return 1;
             case null: return -1;
+            default: return 1;
         }
     }
 

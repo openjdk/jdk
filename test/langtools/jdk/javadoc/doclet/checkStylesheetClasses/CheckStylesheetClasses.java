@@ -142,6 +142,7 @@ public class CheckStylesheetClasses {
 
         // very JDK specific
         styleSheetNames.remove("module-graph");
+        styleSheetNames.remove("sealed-graph");
 
         boolean ok = check(htmlStyleNames, "HtmlStyle", styleSheetNames, "stylesheet")
                     & check(styleSheetNames, "stylesheet", htmlStyleNames, "HtmlStyle");

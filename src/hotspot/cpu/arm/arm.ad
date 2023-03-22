@@ -59,6 +59,9 @@ source_hpp %{
 // To keep related declarations/definitions/uses close together,
 // we switch between source %{ }% and source_hpp %{ }% freely as needed.
 
+#include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
+
 // Does destination need to be loaded in a register then passed to a
 // branch instruction?
 extern bool maybe_far_call(const CallNode *n);
@@ -236,8 +239,9 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
 
   Register r = as_Register(ra_->get_encode(this));
   CodeSection* consts_section = __ code()->consts();
+  CodeSection* insts_section = __ code()->insts();
   // constants section size is aligned according to the align_at_start settings of the next section
-  int consts_size = CodeSection::align_at_start(consts_section->size(), CodeBuffer::SECT_INSTS);
+  int consts_size = insts_section->align_at_start(consts_section->size());
   assert(constant_table.size() == consts_size, "must be: %d == %d", constant_table.size(), consts_size);
 
   // Materialize the constant table base.
@@ -253,7 +257,7 @@ uint MachConstantBaseNode::size(PhaseRegAlloc*) const {
 #ifndef PRODUCT
 void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   char reg[128];
-  ra_->dump_register(this, reg);
+  ra_->dump_register(this, reg, sizeof(reg));
   st->print("MOV_SLOW    &constanttable,%s\t! constant table base", reg);
 }
 #endif
@@ -285,6 +289,17 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   if (framesize != 0) {
     st->print   ("SUB    R_SP, R_SP, " SIZE_FORMAT,framesize);
   }
+
+  if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+    st->print("ldr t0, [guard]\n\t");
+    st->print("ldr t1, [Rthread, #thread_disarmed_guard_value_offset]\n\t");
+    st->print("cmp t0, t1\n\t");
+    st->print("beq skip\n\t");
+    st->print("blr #nmethod_entry_barrier_stub\n\t");
+    st->print("b skip\n\t");
+    st->print("guard: int\n\t");
+    st->print("skip:\n\t");
+  }
 }
 #endif
 
@@ -315,6 +330,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   __ raw_push(FP, LR);
   if (framesize != 0) {
     __ sub_slow(SP, SP, framesize);
+  }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
   }
 
   // offset from scratch buffer is not valid

@@ -109,7 +109,7 @@ public interface AccessibleText {
     public Rectangle getCharacterBounds(int i);
 
     /**
-     * Returns the number of characters (valid indicies).
+     * Returns the number of characters (valid indices).
      *
      * @return the number of characters
      */

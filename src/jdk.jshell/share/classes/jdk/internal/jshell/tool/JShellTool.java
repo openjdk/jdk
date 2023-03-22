@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3077,7 +3077,8 @@ public class JShellTool implements MessageHandler {
                         path = toPathResolvingUserHome(filename);
                     } catch (InvalidPathException ipe) {
                         try {
-                            url = new URL(filename);
+                            @SuppressWarnings("deprecation")
+                            var _unused = url = new URL(filename);
                             if (url.getProtocol().equalsIgnoreCase("file")) {
                                 path = Paths.get(url.toURI());
                             }
@@ -3089,15 +3090,18 @@ public class JShellTool implements MessageHandler {
                         scanner = new Scanner(new FileReader(path.toString()));
                     } else if ((resource = getResource(filename)) != null) {
                         scanner = new Scanner(new StringReader(resource));
-                    } else {
+                    } else if (interactiveModeBegun) {
                         if (url == null) {
                             try {
-                                url = new URL(filename);
+                                @SuppressWarnings("deprecation")
+                                var _unused = url = new URL(filename);
                             } catch (MalformedURLException mue) {
                                 throw new FileNotFoundException(filename);
                             }
                         }
                         scanner = new Scanner(url.openStream());
+                    } else {
+                        throw new FileNotFoundException(filename);
                     }
                 }
                 try (var scannerIOContext = new ScannerIOContext(scanner)) {

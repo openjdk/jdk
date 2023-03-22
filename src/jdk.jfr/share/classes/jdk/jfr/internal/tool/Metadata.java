@@ -178,7 +178,7 @@ final class Metadata extends Command {
                 foundEventFilter = true;
                 String filterStr = options.remove();
                 warnForWildcardExpansion("--events", filterStr);
-                filters.add(Filters.createEventTypeFilter(filterStr));
+                filters.add(Filters.createEventTypeFilter(filterStr, List.of()));
             }
             if (acceptFilterOption(options, "--categories")) {
                 if (foundCategoryFilter) {
@@ -187,7 +187,7 @@ final class Metadata extends Command {
                 foundCategoryFilter = true;
                 String filterStr = options.remove();
                 warnForWildcardExpansion("--categories", filterStr);
-                filters.add(Filters.createCategoryFilter(filterStr));
+                filters.add(Filters.createCategoryFilter(filterStr, List.of()));
             }
             if (optionCount == options.size()) {
                 // No progress made

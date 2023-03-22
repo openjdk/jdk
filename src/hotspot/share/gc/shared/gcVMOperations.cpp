@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,9 +177,9 @@ void VM_GenCollectForAllocation::doit() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
   _result = gch->satisfy_failed_allocation(_word_size, _tlab);
-  assert(_result == NULL || gch->is_in_reserved(_result), "result not in heap");
+  assert(_result == nullptr || gch->is_in_reserved(_result), "result not in heap");
 
-  if (_result == NULL && GCLocker::is_active_and_needs_gc()) {
+  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }
@@ -199,7 +199,7 @@ VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData
                                                                  uint full_gc_count_before,
                                                                  GCCause::Cause gc_cause)
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
-      _result(NULL), _size(size), _mdtype(mdtype), _loader_data(loader_data) {
+      _result(nullptr), _size(size), _mdtype(mdtype), _loader_data(loader_data) {
   assert(_size != 0, "An allocation should always be requested with this operation.");
   AllocTracer::send_allocation_requiring_gc_event(_size * HeapWordSize, GCId::peek());
 }
@@ -215,7 +215,7 @@ void VM_CollectForMetadataAllocation::doit() {
   // a GC that freed space for the allocation.
   if (!MetadataAllocationFailALot) {
     _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-    if (_result != NULL) {
+    if (_result != nullptr) {
       return;
     }
   }
@@ -225,7 +225,7 @@ void VM_CollectForMetadataAllocation::doit() {
     G1CollectedHeap::heap()->start_concurrent_gc_for_metadata_allocation(_gc_cause);
     // For G1 expand since the collection is going to be concurrent.
     _result = _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
-    if (_result != NULL) {
+    if (_result != nullptr) {
       return;
     }
 
@@ -238,7 +238,7 @@ void VM_CollectForMetadataAllocation::doit() {
   // After a GC try to allocate without expanding.  Could fail
   // and expansion will be tried below.
   _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-  if (_result != NULL) {
+  if (_result != nullptr) {
     return;
   }
 
@@ -248,14 +248,14 @@ void VM_CollectForMetadataAllocation::doit() {
   // This should work unless there really is no more space
   // or a MaxMetaspaceSize has been specified on the command line.
   _result = _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
-  if (_result != NULL) {
+  if (_result != nullptr) {
     return;
   }
 
   // If expansion failed, do a collection clearing soft references.
   heap->collect_as_vm_thread(GCCause::_metadata_GC_clear_soft_refs);
   _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-  if (_result != NULL) {
+  if (_result != nullptr) {
     return;
   }
 
@@ -267,7 +267,7 @@ void VM_CollectForMetadataAllocation::doit() {
 }
 
 VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause)
-    : VM_GC_Operation(gc_count_before, cause), _word_size(word_size), _result(NULL) {
+    : VM_GC_Operation(gc_count_before, cause), _word_size(word_size), _result(nullptr) {
   // Only report if operation was really caused by an allocation.
   if (_word_size != 0) {
     AllocTracer::send_allocation_requiring_gc_event(_word_size * HeapWordSize, GCId::peek());

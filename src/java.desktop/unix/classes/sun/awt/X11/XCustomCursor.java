@@ -51,7 +51,7 @@ public class XCustomCursor extends X11CustomCursor {
         // Fix for bug 4212593 The Toolkit.createCustomCursor does not
         //                     check absence of the image of cursor
         // We use XQueryBestCursor which accepts unsigned ints to obtain
-        // the largest cursor size that could be dislpayed
+        // the largest cursor size that could be displayed
         //Dimension d = new Dimension(Math.abs(preferredWidth), Math.abs(preferredHeight));
         Dimension d;
 

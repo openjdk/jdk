@@ -1,0 +1,3 @@
+T7039014.java:17:5: compiler.err.incompatible.diff.ret.same.type: T7039014.A1<java.lang.String>, m, java.lang.String
+T7039014.java:27:5: compiler.err.incompatible.diff.ret.same.type: T7039014.A2<java.lang.String>, m, java.lang.String
+2 errors

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,12 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
-#include "unittest.hpp"
 
+#include "utilities/vmassert_uninstall.hpp"
 #include <regex>
+#include "utilities/vmassert_reinstall.hpp"
+
+#include "unittest.hpp"
 
 static const char* replace_addr_expr(const char* str)
 {

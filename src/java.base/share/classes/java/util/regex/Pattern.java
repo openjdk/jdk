@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -484,9 +484,15 @@ import jdk.internal.util.regex.Grapheme;
  * <p> The regular expression {@code .} matches any character except a line
  * terminator unless the {@link #DOTALL} flag is specified.
  *
- * <p> By default, the regular expressions {@code ^} and {@code $} ignore
- * line terminators and only match at the beginning and the end, respectively,
- * of the entire input sequence. If {@link #MULTILINE} mode is activated then
+ * <p> If {@link #MULTILINE} mode is not activated, the regular expression
+ * {@code ^} ignores line terminators and only matches at the beginning of
+ * the entire input sequence. The regular expression {@code $} matches at the
+ * end of the entire input sequence, but also matches just before the last line
+ * terminator if this is not followed by any other input character. Other line
+ * terminators are ignored, including the last one if it is followed by other
+ * input characters.
+ *
+ * <p> If {@link #MULTILINE} mode is activated then
  * {@code ^} matches at the beginning of input and after any line terminator
  * except at the end of input. When in {@link #MULTILINE} mode {@code $}
  * matches just before a line terminator or the end of the input sequence.
@@ -910,7 +916,8 @@ public final class Pattern
      * <p> There is no embedded flag character for enabling canonical
      * equivalence.
      *
-     * <p> Specifying this flag may impose a performance penalty.  </p>
+     * <p> Specifying this flag may impose a performance penalty
+     * and a moderate risk of memory exhaustion.</p>
      */
     public static final int CANON_EQ = 0x80;
 
@@ -1089,6 +1096,9 @@ public final class Pattern
      * Compiles the given regular expression into a pattern with the given
      * flags.
      *
+     * <p>Setting {@link #CANON_EQ} among the flags may impose a moderate risk
+     * of memory exhaustion.</p>
+     *
      * @param  regex
      *         The expression to be compiled
      *
@@ -1106,6 +1116,10 @@ public final class Pattern
      *
      * @throws  PatternSyntaxException
      *          If the expression's syntax is invalid
+     *
+     * @implNote If {@link #CANON_EQ} is specified and the number of combining
+     * marks for any character is too large, an {@link java.lang.OutOfMemoryError}
+     * is thrown.
      */
     public static Pattern compile(String regex, int flags) {
         return new Pattern(regex, flags);
@@ -1139,6 +1153,13 @@ public final class Pattern
      *         The character sequence to be matched
      *
      * @return  A new matcher for this pattern
+     *
+     * @implNote When a {@link Pattern} is deserialized, compilation is deferred
+     * until a direct or indirect invocation of this method. Thus, if a
+     * deserialized pattern has {@link #CANON_EQ} among its flags and the number
+     * of combining marks for any character is too large, an
+     * {@link java.lang.OutOfMemoryError} is thrown,
+     * as in {@link #compile(String, int)}.
      */
     public Matcher matcher(CharSequence input) {
         if (!compiled) {
@@ -1612,14 +1633,30 @@ public final class Pattern
             return result;
         }
 
-        int length = 1;
+        /*
+         * Since
+         *      12! =   479_001_600 < Integer.MAX_VALUE
+         *      13! = 6_227_020_800 > Integer.MAX_VALUE
+         * the computation of n! using int arithmetic will overflow iff
+         *      n < 0 or n > 12
+         *
+         * Here, nCodePoints! is computed in the next for-loop below.
+         * As nCodePoints >= 0, the computation overflows iff nCodePoints > 12.
+         * In that case, throw OOME to simulate length > Integer.MAX_VALUE.
+         */
         int nCodePoints = countCodePoints(input);
-        for(int x=1; x<nCodePoints; x++)
-            length = length * (x+1);
+        if (nCodePoints > 12) {
+            throw new OutOfMemoryError("Pattern too complex");
+        }
 
+        /* Compute length = nCodePoints! */
+        int length = 1;
+        for (int x = 2; x <= nCodePoints; ++x) {
+            length *= x;
+        }
         String[] temp = new String[length];
 
-        int combClass[] = new int[nCodePoints];
+        int[] combClass = new int[nCodePoints];
         for(int x=0, i=0; x<nCodePoints; x++) {
             int c = Character.codePointAt(input, i);
             combClass[x] = getClass(c);

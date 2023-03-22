@@ -26,11 +26,10 @@
 #define SHARE_PRIMS_WHITEBOX_HPP
 
 #include "jni.h"
-
-#include "utilities/exceptions.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/symbol.hpp"
+#include "utilities/exceptions.hpp"
 
 #define WB_METHOD_DECLARE(result_type) extern "C" result_type JNICALL
 

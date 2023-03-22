@@ -1334,7 +1334,7 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_CREATE_PRINTED_PIXELS)
         WIN_MSG(WM_AWT_OBJECTLISTCLEANUP)
         default:
-            sprintf(szBuf, "0x%8.8x(%s):Unknown message 0x%8.8x\n",
+            snprintf(szBuf, sizeof(szBuf), "0x%8.8x(%s):Unknown message 0x%8.8x\n",
                 hwnd, szComment, message);
             break;
     }
@@ -2193,7 +2193,7 @@ void AwtComponent::PaintUpdateRgn(const RECT *insets)
         // Fix 4745222: If we don't ValidateRgn,  windows will keep sending
         // WM_PAINT messages until we do. This causes java to go into
         // a tight loop that increases CPU to 100% and starves main
-        // thread which needs to complete initialization, but cant.
+        // thread which needs to complete initialization, but can't.
         ::ValidateRgn(GetHWnd(), NULL);
 
         return;
@@ -2962,7 +2962,7 @@ KeyMapEntry keyMapTable[] = {
 // (see NT4 DDK src/input/inc/vkoem.h for OEM VK_ values).
 struct DynamicKeyMapEntry {
     UINT windowsKey;            // OEM VK codes known in advance
-    UINT javaKey;               // depends on input langauge (kbd layout)
+    UINT javaKey;               // depends on input language (kbd layout)
 };
 
 static DynamicKeyMapEntry dynamicKeyMapTable[] = {
@@ -3099,7 +3099,7 @@ AwtComponent::BuildDynamicKeyMapTable()
     //   1. Map windows VK to ANSI character (cannot map to unicode
     //      directly, since ::ToUnicode is not implemented on win9x)
     //   2. Convert ANSI char to Unicode char
-    //   3. Map Unicode char to Java VK via two auxilary tables.
+    //   3. Map Unicode char to Java VK via two auxiliary tables.
 
     for (DynamicKeyMapEntry *dynamic = dynamicKeyMapTable;
          dynamic->windowsKey != 0;
@@ -3399,7 +3399,7 @@ static void
 resetKbdState( BYTE kstate[256]) {
     BYTE tmpState[256];
     WCHAR wc[2];
-    memmove(tmpState, kstate, sizeof(kstate));
+    memmove(tmpState, kstate, 256 * sizeof(BYTE));
     tmpState[VK_SHIFT] = 0;
     tmpState[VK_CONTROL] = 0;
     tmpState[VK_MENU] = 0;
@@ -4038,7 +4038,7 @@ MsgRouting AwtComponent::WmImeComposition(WORD wChar, LPARAM flags)
             /* Send INPUT_METHOD_TEXT_CHANGED event to the WInputMethod which in turn sends
                the event to AWT EDT.
 
-               The last two paremeters are set to equal since we don't have recommendations for
+               The last two parameters are set to equal since we don't have recommendations for
                the visible position within the current composed text. See details at
                java.awt.event.InputMethodEvent.
             */
@@ -4117,7 +4117,7 @@ void AwtComponent::SendInputMethodEvent(jint id, jstring text,
     }
 
 
-    // attrubute value definition in WInputMethod.java must be equal to that in IMM.H
+    // attribute value definition in WInputMethod.java must be equal to that in IMM.H
     DASSERT(ATTR_INPUT==sun_awt_windows_WInputMethod_ATTR_INPUT);
     DASSERT(ATTR_TARGET_CONVERTED==sun_awt_windows_WInputMethod_ATTR_TARGET_CONVERTED);
     DASSERT(ATTR_CONVERTED==sun_awt_windows_WInputMethod_ATTR_CONVERTED);
@@ -4960,7 +4960,7 @@ AwtComponent* AwtComponent::SearchChild(UINT id) {
     }
     /*
      * DASSERT(FALSE);
-     * This should not be happend if all children are recorded
+     * This should not be happening if all children are recorded
      */
     return NULL;        /* make compiler happy */
 }
@@ -5888,7 +5888,7 @@ void AwtComponent::_NativeHandleEvent(void *param)
 
                 /* Check to see whether the keyCode or modifiers were changed
                    on the keyPressed event, and tweak the following keyTyped
-                   event (if any) accodingly.  */
+                   event (if any) accordingly.  */
                 switch (id) {
                 case java_awt_event_KeyEvent_KEY_PRESSED:
                 {

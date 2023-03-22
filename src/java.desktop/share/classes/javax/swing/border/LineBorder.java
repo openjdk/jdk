@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.beans.ConstructorProperties;
+
+import com.sun.java.swing.SwingUtilities3;
 
 /**
  * A class which implements a line border of arbitrary thickness
@@ -141,6 +143,15 @@ public class LineBorder extends AbstractBorder
      * @param height the height of the painted border
      */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+        SwingUtilities3.paintBorder(c, g,
+                                    x, y,
+                                    width, height,
+                                    this::paintUnscaledBorder);
+    }
+
+    private void paintUnscaledBorder(Component c, Graphics g,
+                                     int w, int h,
+                                     double scaleFactor) {
         if ((this.thickness > 0) && (g instanceof Graphics2D)) {
             Graphics2D g2d = (Graphics2D) g;
 
@@ -150,21 +161,22 @@ public class LineBorder extends AbstractBorder
             Shape outer;
             Shape inner;
 
-            int offs = this.thickness;
+            int offs = this.thickness * (int) scaleFactor;
             int size = offs + offs;
             if (this.roundedCorners) {
                 float arc = .2f * offs;
-                outer = new RoundRectangle2D.Float(x, y, width, height, offs, offs);
-                inner = new RoundRectangle2D.Float(x + offs, y + offs, width - size, height - size, arc, arc);
+                outer = new RoundRectangle2D.Float(0, 0, w, h, offs, offs);
+                inner = new RoundRectangle2D.Float(offs, offs, w - size, h - size, arc, arc);
+            } else {
+                outer = new Rectangle2D.Float(0, 0, w, h);
+                inner = new Rectangle2D.Float(offs, offs, w - size, h - size);
             }
-            else {
-                outer = new Rectangle2D.Float(x, y, width, height);
-                inner = new Rectangle2D.Float(x + offs, y + offs, width - size, height - size);
-            }
+
             Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD);
             path.append(outer, false);
             path.append(inner, false);
             g2d.fill(path);
+
             g2d.setColor(oldColor);
         }
     }
@@ -174,6 +186,8 @@ public class LineBorder extends AbstractBorder
      *
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
+     * @throws NullPointerException if the specified {@code insets}
+     *         is {@code null}
      */
     public Insets getBorderInsets(Component c, Insets insets) {
         insets.set(thickness, thickness, thickness, thickness);

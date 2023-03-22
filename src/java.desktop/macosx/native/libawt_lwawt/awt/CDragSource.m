@@ -556,7 +556,7 @@ static BOOL                sNeedsEnter;
         // Convert drag operation to Java:
         jint dragOp = [DnDUtilities mapNSDragOperationToJava:sDragOperation];
 
-        // Drag success must acount for DragOperationNone:
+        // Drag success must account for DragOperationNone:
         jboolean success = (dragOp != java_awt_dnd_DnDConstants_ACTION_NONE);
 
         // We have a problem here... we don't send DragSource dragEnter/Exit messages outside of our own process

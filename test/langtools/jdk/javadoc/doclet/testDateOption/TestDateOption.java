@@ -49,8 +49,8 @@ public class TestDateOption extends JavadocTester {
      * @throws Exception if the test fails
      */
     public static void main(String... args) throws Exception {
-        TestDateOption tester = new TestDateOption();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestDateOption();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

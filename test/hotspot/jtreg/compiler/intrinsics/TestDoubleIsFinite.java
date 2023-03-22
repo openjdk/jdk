@@ -40,7 +40,7 @@ public class TestDoubleIsFinite extends TestDoubleClassCheck {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"IsFiniteD", ">= 1"}) // At least one IsFiniteD node is generated if intrinsic is used
+    @IR(counts = {IRNode.IS_FINITE_D, ">= 1"}) // At least one IsFiniteD node is generated if intrinsic is used
     public void testIsFinite() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             outputs[i] = Double.isFinite(inputs[i]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 /**
  * A helper class to have events logged to a JDK Event Logger.
@@ -82,11 +82,11 @@ public final class EventHelper {
             "SecurityPropertyModification: key:{0}, value:{1}", key, value);
     }
 
-    public static void logX509ValidationEvent(int anchorCertId,
-                                         int[] certIds) {
+    public static void logX509ValidationEvent(long anchorCertId,
+                                         long[] certIds) {
         assert securityLogger != null;
-        String codes = IntStream.of(certIds)
-                .mapToObj(Integer::toString)
+        String codes = LongStream.of(certIds)
+                .mapToObj(Long::toString)
                 .collect(Collectors.joining(", "));
         securityLogger.log(LOG_LEVEL,
                 "ValidationChain: {0,number,#}, {1}", anchorCertId, codes);

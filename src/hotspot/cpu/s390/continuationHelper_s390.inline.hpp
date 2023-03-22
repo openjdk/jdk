@@ -89,7 +89,7 @@ inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const fr
   return NULL;
 }
 
-inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, intptr_t* sp) {
+inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, const frame& caller) {
   Unimplemented();
 }
 
@@ -118,6 +118,11 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame&
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {
+  Unimplemented();
+  return NULL;
+}
+
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
   Unimplemented();
   return NULL;
 }

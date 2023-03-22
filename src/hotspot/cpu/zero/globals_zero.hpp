@@ -83,7 +83,11 @@ define_pd_global(bool, CompactStrings, true);
           "Use fast method entry code for empty methods")                   \
                                                                             \
   product(bool, UseFastAccessorMethods, true,                               \
-          "Use fast method entry code for accessor methods")
+          "Use fast method entry code for accessor methods")                \
+                                                                            \
+  product(bool, DecodeErrorContext, false, DIAGNOSTIC,                      \
+          "Try to decode the architecture-specific context for better "     \
+          "diagnostics")
 
 // end of ARCH_FLAGS
 

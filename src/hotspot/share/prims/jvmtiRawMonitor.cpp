@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,13 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/threads.hpp"
 
-JvmtiRawMonitor::QNode::QNode(Thread* thread) : _next(NULL), _prev(NULL),
+JvmtiRawMonitor::QNode::QNode(Thread* thread) : _next(nullptr), _prev(nullptr),
                                                 _event(thread->_ParkEvent),
                                                 _notified(0), _t_state(TS_RUN) {
 }
 
 GrowableArray<JvmtiRawMonitor*>* JvmtiPendingMonitors::_monitors =
-  new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JvmtiRawMonitor*>(1, mtServiceability);
+  new (mtServiceability) GrowableArray<JvmtiRawMonitor*>(1, mtServiceability);
 
 void JvmtiPendingMonitors::transition_raw_monitors() {
   assert((Threads::number_of_threads()==1),
@@ -59,12 +59,12 @@ void JvmtiPendingMonitors::transition_raw_monitors() {
 // class JvmtiRawMonitor
 //
 
-JvmtiRawMonitor::JvmtiRawMonitor(const char* name) : _owner(NULL),
+JvmtiRawMonitor::JvmtiRawMonitor(const char* name) : _owner(nullptr),
                                                      _recursions(0),
-                                                     _entry_list(NULL),
-                                                     _wait_set(NULL),
+                                                     _entry_list(nullptr),
+                                                     _wait_set(nullptr),
                                                      _magic(JVMTI_RM_MAGIC),
-                                                     _name(NULL) {
+                                                     _name(nullptr) {
 #ifdef ASSERT
   _name = strcpy(NEW_C_HEAP_ARRAY(char, strlen(name) + 1, mtInternal), name);
 #endif
@@ -138,7 +138,7 @@ void JvmtiRawMonitor::simple_enter(Thread* self) {
     node._next = _entry_list;
     _entry_list = &node;
     OrderAccess::fence();
-    if (_owner == NULL && Atomic::replace_if_null(&_owner, self)) {
+    if (_owner == nullptr && Atomic::replace_if_null(&_owner, self)) {
       _entry_list = node._next;
       RawMonitor_lock->unlock();
       if (self->is_Java_thread()) {
@@ -155,22 +155,22 @@ void JvmtiRawMonitor::simple_enter(Thread* self) {
 
 void JvmtiRawMonitor::simple_exit(Thread* self) {
   guarantee(_owner == self, "invariant");
-  Atomic::release_store(&_owner, (Thread*)NULL);
+  Atomic::release_store(&_owner, (Thread*)nullptr);
   OrderAccess::fence();
   if (self->is_Java_thread()) {
     Continuation::unpin(JavaThread::cast(self));
   }
-  if (_entry_list == NULL) {
+  if (_entry_list == nullptr) {
     return;
   }
 
   RawMonitor_lock->lock_without_safepoint_check();
   QNode* w = _entry_list;
-  if (w != NULL) {
+  if (w != nullptr) {
     _entry_list = w->_next;
   }
   RawMonitor_lock->unlock();
-  if (w != NULL) {
+  if (w != nullptr) {
     guarantee(w ->_t_state == QNode::TS_ENTER, "invariant");
     // Once we set _t_state to TS_RUN the waiting thread can complete
     // simple_enter and 'w' is pointing into random stack space. So we have
@@ -205,12 +205,12 @@ inline void JvmtiRawMonitor::dequeue_waiter(QNode& node) {
     if (node._t_state == QNode::TS_WAIT) {
       // Simple O(n) unlink, but performance isn't critical here.
       QNode* p;
-      QNode* q = NULL;
+      QNode* q = nullptr;
       for (p = _wait_set; p != &node; p = p->_next) {
         q = p;
       }
       guarantee(p == &node, "invariant");
-      if (q == NULL) {
+      if (q == nullptr) {
         guarantee (p == _wait_set, "invariant");
         _wait_set = p->_next;
       } else {
@@ -281,7 +281,7 @@ int JvmtiRawMonitor::simple_wait(Thread* self, jlong millis) {
 
 void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
   guarantee(_owner == self, "invariant");
-  if (_wait_set == NULL) {
+  if (_wait_set == nullptr) {
     return;
   }
 
@@ -292,15 +292,15 @@ void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
   // We use (B), which is crude and results in lots of futile
   // context switching.  In particular (B) induces lots of contention.
 
-  ParkEvent* ev = NULL;       // consider using a small auto array ...
+  ParkEvent* ev = nullptr;       // consider using a small auto array ...
   RawMonitor_lock->lock_without_safepoint_check();
   for (;;) {
     QNode* w = _wait_set;
-    if (w == NULL) break;
+    if (w == nullptr) break;
     _wait_set = w->_next;
-    if (ev != NULL) {
+    if (ev != nullptr) {
       ev->unpark();
-      ev = NULL;
+      ev = nullptr;
     }
     ev = w->_event;
     OrderAccess::loadstore();
@@ -311,7 +311,7 @@ void JvmtiRawMonitor::simple_notify(Thread* self, bool all) {
     }
   }
   RawMonitor_lock->unlock();
-  if (ev != NULL) {
+  if (ev != nullptr) {
     ev->unpark();
   }
   return;
@@ -351,7 +351,7 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
     }
   }
 
-  self->set_current_pending_raw_monitor(NULL);
+  self->set_current_pending_raw_monitor(nullptr);
 
   guarantee(_owner == self, "invariant");
   guarantee(_recursions == 0, "invariant");

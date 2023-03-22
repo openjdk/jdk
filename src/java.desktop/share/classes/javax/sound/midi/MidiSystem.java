@@ -1064,7 +1064,7 @@ public class MidiSystem {
      * Attempts to locate and return a default MidiDevice of the specified type.
      * This method wraps {@link #getDefaultDevice}. It catches the
      * {@code IllegalArgumentException} thrown by {@code getDefaultDevice} and
-     * instead throws a {@code MidiUnavailableException}, with the catched
+     * instead throws a {@code MidiUnavailableException}, with the caught
      * exception chained.
      *
      * @param  deviceClass The requested device type, one of Synthesizer.class,
@@ -1478,7 +1478,7 @@ public class MidiSystem {
                   ! (device instanceof Synthesizer) ) ||
                  ((device instanceof Sequencer) && allowSequencer) ||
                  ((device instanceof Synthesizer) && allowSynthesizer)) {
-                // And of cource, the device has to be able to provide
+                // And of course, the device has to be able to provide
                 // Receivers or Transmitters.
                 if ((deviceClass == Receiver.class &&
                      device.getMaxReceivers() != 0) ||

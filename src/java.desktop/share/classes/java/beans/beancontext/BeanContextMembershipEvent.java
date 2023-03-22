@@ -59,7 +59,7 @@ public class BeanContextMembershipEvent extends BeanContextEvent {
     private static final long serialVersionUID = 3499346510334590959L;
 
     /**
-     * Contruct a BeanContextMembershipEvent
+     * Construct a BeanContextMembershipEvent
      *
      * @param bc        The BeanContext source
      * @param changes   The Children affected
@@ -77,7 +77,7 @@ public class BeanContextMembershipEvent extends BeanContextEvent {
     }
 
     /**
-     * Contruct a BeanContextMembershipEvent
+     * Construct a BeanContextMembershipEvent
      *
      * @param bc        The BeanContext source
      * @param changes   The Children effected

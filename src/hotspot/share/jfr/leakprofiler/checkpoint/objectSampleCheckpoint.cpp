@@ -52,7 +52,7 @@ const int initial_array_size = 64;
 
 template <typename T>
 static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, mtTracing);
+  return new (mtTracing) GrowableArray<T>(size, mtTracing);
 }
 
 static GrowableArray<traceid>* unloaded_thread_id_set = NULL;

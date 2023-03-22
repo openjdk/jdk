@@ -30,10 +30,8 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CRLException;
-import java.security.cert.CertificateException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -122,8 +120,8 @@ public class CRLExtensions {
             Constructor<?> cons = extClass.getConstructor(PARAMS);
             Object[] passed = new Object[] {Boolean.valueOf(ext.isCritical()),
                                             ext.getExtensionValue()};
-            CertAttrSet<?> crlExt = (CertAttrSet<?>)cons.newInstance(passed);
-            if (map.put(crlExt.getName(), (Extension)crlExt) != null) {
+            Extension crlExt = (Extension)cons.newInstance(passed);
+            if (map.put(crlExt.getName(), crlExt) != null) {
                 throw new CRLException("Duplicate extensions not allowed");
             }
         } catch (InvocationTargetException invk) {
@@ -139,38 +137,24 @@ public class CRLExtensions {
      * @param out the DerOutputStream to marshal the contents to.
      * @param isExplicit the tag indicating whether this is an entry
      * extension (false) or a CRL extension (true).
-     * @exception CRLException on encoding errors.
      */
-    public void encode(OutputStream out, boolean isExplicit)
-    throws CRLException {
-        try {
-            DerOutputStream extOut = new DerOutputStream();
-            Collection<Extension> allExts = map.values();
-            Object[] objs = allExts.toArray();
-
-            for (int i = 0; i < objs.length; i++) {
-                if (objs[i] instanceof CertAttrSet)
-                    ((CertAttrSet)objs[i]).encode(extOut);
-                else if (objs[i] instanceof Extension)
-                    ((Extension)objs[i]).encode(extOut);
-                else
-                    throw new CRLException("Illegal extension object");
-            }
-
-            DerOutputStream seq = new DerOutputStream();
-            seq.write(DerValue.tag_Sequence, extOut);
-
-            DerOutputStream tmp = new DerOutputStream();
-            if (isExplicit)
-                tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                             true, (byte)0), seq);
-            else
-                tmp = seq;
-
-            out.write(tmp.toByteArray());
-        } catch (IOException | CertificateException e) {
-            throw new CRLException("Encoding error: " + e.toString());
+    public void encode(DerOutputStream out, boolean isExplicit) {
+        DerOutputStream extOut = new DerOutputStream();
+        for (Extension ext : map.values()) {
+            ext.encode(extOut);
         }
+
+        DerOutputStream seq = new DerOutputStream();
+        seq.write(DerValue.tag_Sequence, extOut);
+
+        DerOutputStream tmp = new DerOutputStream();
+        if (isExplicit)
+            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+                    true, (byte) 0), seq);
+        else
+            tmp = seq;
+
+        out.writeBytes(tmp.toByteArray());
     }
 
     /**
@@ -178,15 +162,14 @@ public class CRLExtensions {
      *
      * @param alias the identifier string for the extension to retrieve.
      */
-    public Extension get(String alias) {
-        X509AttributeName attr = new X509AttributeName(alias);
+    public Extension getExtension(String alias) {
         String name;
-        String id = attr.getPrefix();
-        if (id.equalsIgnoreCase(X509CertImpl.NAME)) { // fully qualified
+        if (alias.startsWith(X509CertImpl.NAME)) {
             int index = alias.lastIndexOf('.');
             name = alias.substring(index + 1);
-        } else
+        } else {
             name = alias;
+        }
         return map.get(name);
     }
 
@@ -194,11 +177,10 @@ public class CRLExtensions {
      * Set the extension value with this alias.
      *
      * @param alias the identifier string for the extension to set.
-     * @param obj the Object to set the extension identified by the
-     *        alias.
+     * @param ext the extension identified by the alias.
      */
-    public void set(String alias, Object obj) {
-        map.put(alias, (Extension)obj);
+    public void setExtension(String alias, Extension ext) {
+        map.put(alias, ext);
     }
 
     /**
@@ -208,14 +190,6 @@ public class CRLExtensions {
      */
     public void delete(String alias) {
         map.remove(alias);
-    }
-
-    /**
-     * Return an enumeration of the extensions.
-     * @return an enumeration of the extensions in this CRL.
-     */
-    public Enumeration<Extension> getElements() {
-        return Collections.enumeration(map.values());
     }
 
     /**
@@ -247,24 +221,17 @@ public class CRLExtensions {
     public boolean equals(Object other) {
         if (this == other)
             return true;
-        if (!(other instanceof CRLExtensions))
-            return false;
-        Collection<Extension> otherC =
-                        ((CRLExtensions)other).getAllExtensions();
-        Object[] objs = otherC.toArray();
-
-        int len = objs.length;
-        if (len != map.size())
+        if (!(other instanceof CRLExtensions otherCX))
             return false;
 
-        Extension otherExt, thisExt;
-        String key = null;
-        for (int i = 0; i < len; i++) {
-            if (objs[i] instanceof CertAttrSet)
-                key = ((CertAttrSet)objs[i]).getName();
-            otherExt = (Extension)objs[i];
-            if (key == null)
-                key = otherExt.getExtensionId().toString();
+        Collection<Extension> otherX = otherCX.getAllExtensions();
+        if (otherX.size() != map.size())
+            return false;
+
+        Extension thisExt;
+        String key;
+        for (Extension otherExt : otherX) {
+            key = otherExt.getName();
             thisExt = map.get(key);
             if (thisExt == null)
                 return false;

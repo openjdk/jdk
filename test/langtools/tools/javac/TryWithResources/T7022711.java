@@ -8,7 +8,7 @@
 import java.io.*;
 
 class T7022711 {
-    public static void main (String args[]) throws Exception {
+    public static void meth() {
         // declared resource
         try (DataInputStream is = new DataInputStream(new FileInputStream("x"))) {
             while (true) {

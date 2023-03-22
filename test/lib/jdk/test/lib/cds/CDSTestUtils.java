@@ -28,7 +28,11 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.CopyOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,7 +44,7 @@ import jtreg.SkippedException;
 // This class contains common test utilities for testing CDS
 public class CDSTestUtils {
     public static final String MSG_RANGE_NOT_WITHIN_HEAP =
-        "UseSharedSpaces: Unable to allocate region, range is not within java heap.";
+        "Unable to allocate region, range is not within java heap.";
     public static final String MSG_RANGE_ALREADT_IN_USE =
         "Unable to allocate region, java heap range is already in use.";
     public static final String MSG_DYNAMIC_NOT_SUPPORTED =
@@ -760,5 +764,21 @@ public class CDSTestUtils {
         }
         System.out.println(" ]");
         return new ProcessBuilder(args);
+    }
+
+    public static Path copyFile(String srcFile, String destDir) throws Exception {
+        int idx = srcFile.lastIndexOf(File.separator);
+        String jarName = srcFile.substring(idx + 1);
+        Path srcPath = Paths.get(jarName);
+        Path newPath = Paths.get(destDir);
+        Path newDir;
+        if (!Files.exists(newPath)) {
+            newDir = Files.createDirectories(newPath);
+        } else {
+            newDir = newPath;
+        }
+        Path destPath = newDir.resolve(jarName);
+        Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
+        return destPath;
     }
 }

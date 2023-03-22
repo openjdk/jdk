@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class Ed25519Operations extends EdECOperations {
             throw exception.apply("Invalid point");
         }
 
-        if (xLSB != x.asBigInteger().mod(BigInteger.valueOf(2)).intValue()) {
+        if (xLSB != (x.asBigInteger().intValue() & 1)) {
             x.setAdditiveInverse();
         }
 
@@ -191,14 +191,14 @@ public class Ed25519Operations extends EdECOperations {
         // x = A = x^2
         p.getY().setSquare();
         // y = B = y^2
-        t2.setValue(p.getX()).setSum(p.getY()).setReduced();
+        t2.setValue(p.getX()).setSum(p.getY());
         // t2 holds H
         p.getZ().setSquare().setProduct(two);
         // z holds C
 
         p.getT().setValue(t2).setDifference(t1);
         // t holds E
-        t1.setValue(p.getX()).setDifference(p.getY()).setReduced();
+        t1.setValue(p.getX()).setDifference(p.getY());
         // t1 holds G
 
         p.getZ().setSum(t1);

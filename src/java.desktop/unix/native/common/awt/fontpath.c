@@ -305,7 +305,7 @@ static char* mergePaths(char **p1, char **p2, char **p3, jboolean noType1) {
  * a set of "known" locations and with the X11 font path, if running in
  * a local X11 environment.
  * The hardwired paths are built into the JDK binary so as new font locations
- * are created on a host plaform for them to be located by the JRE they will
+ * are created on a host platform for them to be located by the JRE they will
  * need to be added ito the host's font configuration database, typically
  * /etc/fonts/local.conf, and to ensure that directory contains a fonts.dir
  * NB: Fontconfig also depends heavily for performance on the host O/S
@@ -1016,7 +1016,7 @@ Java_sun_font_FontConfigManager_getFontConfig
 
         /* fontconfig returned us "nfonts". If we are just getting the
          * first font, we set nfont to zero. Otherwise we use "nfonts".
-         * Next create separate C arrrays of length nfonts for family file etc.
+         * Next create separate C arrays of length nfonts for family file etc.
          * Inspect the returned fonts and the ones we like (adds enough glyphs)
          * are added to the arrays and we increment 'fontCount'.
          */

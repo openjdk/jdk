@@ -1,158 +1,7 @@
-Link Africa/Abidjan Africa/Accra	# Ghana
-Link Africa/Abidjan Africa/Bamako	# Mali
-Link Africa/Abidjan Africa/Banjul	# The Gambia
-Link Africa/Abidjan Africa/Conakry	# Guinea
-Link Africa/Abidjan Africa/Dakar	# Senegal
-Link Africa/Abidjan Africa/Freetown	# Sierra Leone
-Link Africa/Abidjan Africa/Lome		# Togo
-Link Africa/Abidjan Africa/Nouakchott	# Mauritania
-Link Africa/Abidjan Africa/Ouagadougou	# Burkina Faso
-Link Africa/Abidjan Atlantic/Reykjavik	# Iceland
-Link Africa/Abidjan Atlantic/St_Helena	# St Helena
-Link Africa/Nairobi Africa/Addis_Ababa	 # Ethiopia
-Link Africa/Nairobi Africa/Asmara	 # Eritrea
-Link Africa/Nairobi Africa/Dar_es_Salaam # Tanzania
-Link Africa/Nairobi Africa/Djibouti
-Link Africa/Nairobi Africa/Kampala	 # Uganda
-Link Africa/Nairobi Africa/Mogadishu	 # Somalia
-Link Africa/Nairobi Indian/Antananarivo	 # Madagascar
-Link Africa/Nairobi Indian/Comoro
-Link Africa/Nairobi Indian/Mayotte
-Link Africa/Maputo Africa/Blantyre	# Malawi
-Link Africa/Maputo Africa/Bujumbura	# Burundi
-Link Africa/Maputo Africa/Gaborone	# Botswana
-Link Africa/Maputo Africa/Harare	# Zimbabwe
-Link Africa/Maputo Africa/Kigali	# Rwanda
-Link Africa/Maputo Africa/Lubumbashi	# E Dem. Rep. of Congo
-Link Africa/Maputo Africa/Lusaka	# Zambia
-Link Africa/Lagos Africa/Bangui		# Central African Republic
-Link Africa/Lagos Africa/Brazzaville	# Rep. of the Congo
-Link Africa/Lagos Africa/Douala		# Cameroon
-Link Africa/Lagos Africa/Kinshasa	# Dem. Rep. of the Congo (west)
-Link Africa/Lagos Africa/Libreville	# Gabon
-Link Africa/Lagos Africa/Luanda		# Angola
-Link Africa/Lagos Africa/Malabo		# Equatorial Guinea
-Link Africa/Lagos Africa/Niamey		# Niger
-Link Africa/Lagos Africa/Porto-Novo	# Benin
-Link Africa/Johannesburg Africa/Maseru	# Lesotho
-Link Africa/Johannesburg Africa/Mbabane	# Eswatini
-Link Asia/Yangon Indian/Cocos
-Link Asia/Urumqi Antarctica/Vostok
-Link	Asia/Nicosia	Europe/Nicosia
-Link Asia/Kuching Asia/Brunei
-Link Indian/Maldives Indian/Kerguelen
-Link Asia/Qatar Asia/Bahrain
-Link Asia/Riyadh Antarctica/Syowa
-Link Asia/Riyadh Asia/Aden	# Yemen
-Link Asia/Riyadh Asia/Kuwait
-Link Asia/Singapore Asia/Kuala_Lumpur
-Link Asia/Bangkok Asia/Phnom_Penh	# Cambodia
-Link Asia/Bangkok Asia/Vientiane	# Laos
-Link Asia/Bangkok Indian/Christmas
-Link Asia/Dubai Asia/Muscat	# Oman
-Link Asia/Dubai Indian/Mahe
-Link Asia/Dubai Indian/Reunion
-Link Pacific/Guam Pacific/Saipan # N Mariana Is
-Link Pacific/Tarawa Pacific/Funafuti
-Link Pacific/Tarawa Pacific/Majuro
-Link Pacific/Tarawa Pacific/Wake
-Link Pacific/Tarawa Pacific/Wallis
-Link Pacific/Auckland Antarctica/McMurdo
-Link Pacific/Port_Moresby Antarctica/DumontDUrville
-Link Pacific/Port_Moresby Pacific/Chuuk
-Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
-Link Pacific/Guadalcanal Pacific/Pohnpei
-Link	Europe/London	Europe/Jersey
-Link	Europe/London	Europe/Guernsey
-Link	Europe/London	Europe/Isle_of_Man
-Link Europe/Brussels Europe/Amsterdam
-Link Europe/Brussels Europe/Luxembourg
-Link Europe/Prague Europe/Bratislava
-Link	Europe/Helsinki	Europe/Mariehamn
-Link Europe/Paris Europe/Monaco
-Link Europe/Berlin Arctic/Longyearbyen
-Link Europe/Berlin Europe/Copenhagen
-Link Europe/Berlin Europe/Oslo
-Link Europe/Berlin Europe/Stockholm
-Link Europe/Rome Europe/Vatican
-Link Europe/Rome Europe/San_Marino
-Link Europe/Belgrade Europe/Ljubljana	# Slovenia
-Link Europe/Belgrade Europe/Podgorica	# Montenegro
-Link Europe/Belgrade Europe/Sarajevo	# Bosnia and Herzegovina
-Link Europe/Belgrade Europe/Skopje	# North Macedonia
-Link Europe/Belgrade Europe/Zagreb	# Croatia
-Link Europe/Zurich Europe/Busingen
-Link Europe/Zurich Europe/Vaduz
-Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
-Link America/Phoenix America/Creston
-Link America/Toronto America/Nassau
-Link America/Panama America/Atikokan
-Link America/Panama America/Cayman
-Link America/Puerto_Rico America/Anguilla
-Link America/Puerto_Rico America/Antigua
-Link America/Puerto_Rico America/Aruba
-Link America/Puerto_Rico America/Curacao
-Link America/Puerto_Rico America/Blanc-Sablon	# Quebec (Lower North Shore)
-Link America/Puerto_Rico America/Dominica
-Link America/Puerto_Rico America/Grenada
-Link America/Puerto_Rico America/Guadeloupe
-Link America/Puerto_Rico America/Kralendijk	# Caribbean Netherlands
-Link America/Puerto_Rico America/Lower_Princes	# Sint Maarten
-Link America/Puerto_Rico America/Marigot	# St Martin (French part)
-Link America/Puerto_Rico America/Montserrat
-Link America/Puerto_Rico America/Port_of_Spain	# Trinidad & Tobago
-Link America/Puerto_Rico America/St_Barthelemy	# St Barthélemy
-Link America/Puerto_Rico America/St_Kitts	# St Kitts & Nevis
-Link America/Puerto_Rico America/St_Lucia
-Link America/Puerto_Rico America/St_Thomas	# Virgin Islands (US)
-Link America/Puerto_Rico America/St_Vincent
-Link America/Puerto_Rico America/Tortola	# Virgin Islands (UK)
 Link	Asia/Riyadh87	Mideast/Riyadh87
 Link	Asia/Riyadh88	Mideast/Riyadh88
 Link	Asia/Riyadh89	Mideast/Riyadh89
-Link	Africa/Nairobi		Africa/Asmera
-Link	Africa/Abidjan		Africa/Timbuktu
-Link	America/Argentina/Catamarca	America/Argentina/ComodRivadavia
-Link	America/Adak		America/Atka
-Link	America/Argentina/Buenos_Aires	America/Buenos_Aires
-Link	America/Argentina/Catamarca	America/Catamarca
-Link	America/Panama		America/Coral_Harbour
-Link	America/Argentina/Cordoba	America/Cordoba
-Link	America/Tijuana		America/Ensenada
-Link	America/Indiana/Indianapolis	America/Fort_Wayne
-Link	America/Nuuk		America/Godthab
-Link	America/Indiana/Indianapolis	America/Indianapolis
-Link	America/Argentina/Jujuy	America/Jujuy
-Link	America/Indiana/Knox	America/Knox_IN
-Link	America/Kentucky/Louisville	America/Louisville
-Link	America/Argentina/Mendoza	America/Mendoza
-Link	America/Toronto		America/Montreal
-Link	America/Rio_Branco	America/Porto_Acre
-Link	America/Argentina/Cordoba	America/Rosario
-Link	America/Tijuana		America/Santa_Isabel
-Link	America/Denver		America/Shiprock
-Link	America/Puerto_Rico	America/Virgin
-Link	Pacific/Auckland	Antarctica/South_Pole
-Link	Asia/Ashgabat		Asia/Ashkhabad
-Link	Asia/Kolkata		Asia/Calcutta
-Link	Asia/Shanghai		Asia/Chongqing
-Link	Asia/Shanghai		Asia/Chungking
-Link	Asia/Dhaka		Asia/Dacca
-Link	Asia/Shanghai		Asia/Harbin
-Link	Asia/Urumqi		Asia/Kashgar
-Link	Asia/Kathmandu		Asia/Katmandu
-Link	Asia/Macau		Asia/Macao
-Link	Asia/Yangon		Asia/Rangoon
-Link	Asia/Ho_Chi_Minh	Asia/Saigon
-Link	Asia/Jerusalem		Asia/Tel_Aviv
-Link	Asia/Thimphu		Asia/Thimbu
-Link	Asia/Makassar		Asia/Ujung_Pandang
-Link	Asia/Ulaanbaatar	Asia/Ulan_Bator
-Link	Atlantic/Faroe		Atlantic/Faeroe
-Link	Europe/Berlin		Atlantic/Jan_Mayen
-Link	Australia/Sydney	Australia/ACT
-Link	Australia/Sydney	Australia/Canberra
-Link	Australia/Hobart	Australia/Currie
+Link	Australia/Sydney	Australia/ACT	#= Australia/Canberra
 Link	Australia/Lord_Howe	Australia/LHI
 Link	Australia/Sydney	Australia/NSW
 Link	Australia/Darwin	Australia/North
@@ -162,7 +11,7 @@ Link	Australia/Hobart	Australia/Tasmania
 Link	Australia/Melbourne	Australia/Victoria
 Link	Australia/Perth		Australia/West
 Link	Australia/Broken_Hill	Australia/Yancowinna
-Link	America/Rio_Branco	Brazil/Acre
+Link	America/Rio_Branco	Brazil/Acre	#= America/Porto_Acre
 Link	America/Noronha		Brazil/DeNoronha
 Link	America/Sao_Paulo	Brazil/East
 Link	America/Manaus		Brazil/West
@@ -179,12 +28,13 @@ Link	Pacific/Easter		Chile/EasterIsland
 Link	America/Havana		Cuba
 Link	Africa/Cairo		Egypt
 Link	Europe/Dublin		Eire
+Link	Etc/GMT			Etc/GMT+0
+Link	Etc/GMT			Etc/GMT-0
+Link	Etc/GMT			Etc/GMT0
+Link	Etc/GMT			Etc/Greenwich
 Link	Etc/UTC			Etc/UCT
-Link	Europe/London		Europe/Belfast
-Link	Europe/Kyiv		Europe/Kiev
-Link	Europe/Chisinau		Europe/Tiraspol
-Link	Europe/Kyiv		Europe/Uzhgorod
-Link	Europe/Kyiv		Europe/Zaporozhye
+Link	Etc/UTC			Etc/Universal
+Link	Etc/UTC			Etc/Zulu
 Link	Europe/London		GB
 Link	Europe/London		GB-Eire
 Link	Etc/GMT			GMT+0
@@ -192,7 +42,7 @@ Link	Etc/GMT			GMT-0
 Link	Etc/GMT			GMT0
 Link	Etc/GMT			Greenwich
 Link	Asia/Hong_Kong		Hongkong
-Link	Africa/Abidjan		Iceland
+Link	Africa/Abidjan		Iceland	#= Atlantic/Reykjavik
 Link	Asia/Tehran		Iran
 Link	Asia/Jerusalem		Israel
 Link	America/Jamaica		Jamaica
@@ -204,14 +54,8 @@ Link	America/Mazatlan	Mexico/BajaSur
 Link	America/Mexico_City	Mexico/General
 Link	Pacific/Auckland	NZ
 Link	Pacific/Chatham		NZ-CHAT
-Link	America/Denver		Navajo
+Link	America/Denver		Navajo	#= America/Shiprock
 Link	Asia/Shanghai		PRC
-Link	Pacific/Kanton		Pacific/Enderbury
-Link	Pacific/Honolulu	Pacific/Johnston
-Link	Pacific/Guadalcanal	Pacific/Ponape
-Link	Pacific/Pago_Pago	Pacific/Samoa
-Link	Pacific/Port_Moresby	Pacific/Truk
-Link	Pacific/Port_Moresby	Pacific/Yap
 Link	Europe/Warsaw		Poland
 Link	Europe/Lisbon		Portugal
 Link	Asia/Taipei		ROC
@@ -235,3 +79,169 @@ Link	Etc/UTC			UTC
 Link	Etc/UTC			Universal
 Link	Europe/Moscow		W-SU
 Link	Etc/UTC			Zulu
+Link	America/Argentina/Buenos_Aires	America/Buenos_Aires
+Link	America/Argentina/Catamarca	America/Catamarca
+Link	America/Argentina/Cordoba	America/Cordoba
+Link	America/Indiana/Indianapolis	America/Indianapolis
+Link	America/Argentina/Jujuy		America/Jujuy
+Link	America/Indiana/Knox		America/Knox_IN
+Link	America/Kentucky/Louisville	America/Louisville
+Link	America/Argentina/Mendoza	America/Mendoza
+Link	America/Puerto_Rico		America/Virgin	#= America/St_Thomas
+Link	Pacific/Pago_Pago		Pacific/Samoa
+Link	Africa/Abidjan		Africa/Accra
+Link	Africa/Nairobi		Africa/Addis_Ababa
+Link	Africa/Nairobi		Africa/Asmara
+Link	Africa/Abidjan		Africa/Bamako
+Link	Africa/Lagos		Africa/Bangui
+Link	Africa/Abidjan		Africa/Banjul
+Link	Africa/Maputo		Africa/Blantyre
+Link	Africa/Lagos		Africa/Brazzaville
+Link	Africa/Maputo		Africa/Bujumbura
+Link	Africa/Abidjan		Africa/Conakry
+Link	Africa/Abidjan		Africa/Dakar
+Link	Africa/Nairobi		Africa/Dar_es_Salaam
+Link	Africa/Nairobi		Africa/Djibouti
+Link	Africa/Lagos		Africa/Douala
+Link	Africa/Abidjan		Africa/Freetown
+Link	Africa/Maputo		Africa/Gaborone
+Link	Africa/Maputo		Africa/Harare
+Link	Africa/Nairobi		Africa/Kampala
+Link	Africa/Maputo		Africa/Kigali
+Link	Africa/Lagos		Africa/Kinshasa
+Link	Africa/Lagos		Africa/Libreville
+Link	Africa/Abidjan		Africa/Lome
+Link	Africa/Lagos		Africa/Luanda
+Link	Africa/Maputo		Africa/Lubumbashi
+Link	Africa/Maputo		Africa/Lusaka
+Link	Africa/Lagos		Africa/Malabo
+Link	Africa/Johannesburg	Africa/Maseru
+Link	Africa/Johannesburg	Africa/Mbabane
+Link	Africa/Nairobi		Africa/Mogadishu
+Link	Africa/Lagos		Africa/Niamey
+Link	Africa/Abidjan		Africa/Nouakchott
+Link	Africa/Abidjan		Africa/Ouagadougou
+Link	Africa/Lagos		Africa/Porto-Novo
+Link	America/Puerto_Rico	America/Anguilla
+Link	America/Puerto_Rico	America/Antigua
+Link	America/Puerto_Rico	America/Aruba
+Link	America/Panama		America/Atikokan
+Link	America/Puerto_Rico	America/Blanc-Sablon
+Link	America/Panama		America/Cayman
+Link	America/Phoenix		America/Creston
+Link	America/Puerto_Rico	America/Curacao
+Link	America/Puerto_Rico	America/Dominica
+Link	America/Puerto_Rico	America/Grenada
+Link	America/Puerto_Rico	America/Guadeloupe
+Link	America/Puerto_Rico	America/Kralendijk
+Link	America/Puerto_Rico	America/Lower_Princes
+Link	America/Puerto_Rico	America/Marigot
+Link	America/Puerto_Rico	America/Montserrat
+Link	America/Toronto		America/Nassau
+Link	America/Puerto_Rico	America/Port_of_Spain
+Link	America/Puerto_Rico	America/St_Barthelemy
+Link	America/Puerto_Rico	America/St_Kitts
+Link	America/Puerto_Rico	America/St_Lucia
+Link	America/Puerto_Rico	America/St_Thomas
+Link	America/Puerto_Rico	America/St_Vincent
+Link	America/Puerto_Rico	America/Tortola
+Link	Pacific/Port_Moresby	Antarctica/DumontDUrville
+Link	Pacific/Auckland	Antarctica/McMurdo
+Link	Asia/Riyadh		Antarctica/Syowa
+Link	Asia/Urumqi		Antarctica/Vostok
+Link	Europe/Berlin		Arctic/Longyearbyen
+Link	Asia/Riyadh		Asia/Aden
+Link	Asia/Qatar		Asia/Bahrain
+Link	Asia/Kuching		Asia/Brunei
+Link	Asia/Singapore		Asia/Kuala_Lumpur
+Link	Asia/Riyadh		Asia/Kuwait
+Link	Asia/Dubai		Asia/Muscat
+Link	Asia/Bangkok		Asia/Phnom_Penh
+Link	Asia/Bangkok		Asia/Vientiane
+Link	Africa/Abidjan		Atlantic/Reykjavik
+Link	Africa/Abidjan		Atlantic/St_Helena
+Link	Europe/Brussels		Europe/Amsterdam
+Link	Europe/Prague		Europe/Bratislava
+Link	Europe/Zurich		Europe/Busingen
+Link	Europe/Berlin		Europe/Copenhagen
+Link	Europe/London		Europe/Guernsey
+Link	Europe/London		Europe/Isle_of_Man
+Link	Europe/London		Europe/Jersey
+Link	Europe/Belgrade		Europe/Ljubljana
+Link	Europe/Brussels		Europe/Luxembourg
+Link	Europe/Helsinki		Europe/Mariehamn
+Link	Europe/Paris		Europe/Monaco
+Link	Europe/Berlin		Europe/Oslo
+Link	Europe/Belgrade		Europe/Podgorica
+Link	Europe/Rome		Europe/San_Marino
+Link	Europe/Belgrade		Europe/Sarajevo
+Link	Europe/Belgrade		Europe/Skopje
+Link	Europe/Berlin		Europe/Stockholm
+Link	Europe/Zurich		Europe/Vaduz
+Link	Europe/Rome		Europe/Vatican
+Link	Europe/Belgrade		Europe/Zagreb
+Link	Africa/Nairobi		Indian/Antananarivo
+Link	Asia/Bangkok		Indian/Christmas
+Link	Asia/Yangon		Indian/Cocos
+Link	Africa/Nairobi		Indian/Comoro
+Link	Indian/Maldives		Indian/Kerguelen
+Link	Asia/Dubai		Indian/Mahe
+Link	Africa/Nairobi		Indian/Mayotte
+Link	Asia/Dubai		Indian/Reunion
+Link	Pacific/Port_Moresby	Pacific/Chuuk
+Link	Pacific/Tarawa		Pacific/Funafuti
+Link	Pacific/Tarawa		Pacific/Majuro
+Link	Pacific/Pago_Pago	Pacific/Midway
+Link	Pacific/Guadalcanal	Pacific/Pohnpei
+Link	Pacific/Guam		Pacific/Saipan
+Link	Pacific/Tarawa		Pacific/Wake
+Link	Pacific/Tarawa		Pacific/Wallis
+Link	Africa/Abidjan		Africa/Timbuktu
+Link	America/Argentina/Catamarca	America/Argentina/ComodRivadavia
+Link	America/Adak		America/Atka
+Link	America/Panama		America/Coral_Harbour
+Link	America/Tijuana		America/Ensenada
+Link	America/Indiana/Indianapolis	America/Fort_Wayne
+Link	America/Toronto		America/Montreal
+Link	America/Toronto		America/Nipigon
+Link	America/Iqaluit		America/Pangnirtung
+Link	America/Rio_Branco	America/Porto_Acre
+Link	America/Winnipeg	America/Rainy_River
+Link	America/Argentina/Cordoba	America/Rosario
+Link	America/Tijuana		America/Santa_Isabel
+Link	America/Denver		America/Shiprock
+Link	America/Toronto		America/Thunder_Bay
+Link	Pacific/Auckland	Antarctica/South_Pole
+Link	Asia/Shanghai		Asia/Chongqing
+Link	Asia/Shanghai		Asia/Harbin
+Link	Asia/Urumqi		Asia/Kashgar
+Link	Asia/Jerusalem		Asia/Tel_Aviv
+Link	Europe/Berlin		Atlantic/Jan_Mayen
+Link	Australia/Sydney	Australia/Canberra
+Link	Australia/Hobart	Australia/Currie
+Link	Europe/London		Europe/Belfast
+Link	Europe/Chisinau		Europe/Tiraspol
+Link	Europe/Kyiv		Europe/Uzhgorod
+Link	Europe/Kyiv		Europe/Zaporozhye
+Link	Pacific/Kanton		Pacific/Enderbury
+Link	Pacific/Honolulu	Pacific/Johnston
+Link	Pacific/Port_Moresby	Pacific/Yap
+Link	Africa/Nairobi		Africa/Asmera	#= Africa/Asmara
+Link	America/Nuuk		America/Godthab
+Link	Asia/Ashgabat		Asia/Ashkhabad
+Link	Asia/Kolkata		Asia/Calcutta
+Link	Asia/Shanghai		Asia/Chungking	#= Asia/Chongqing
+Link	Asia/Dhaka		Asia/Dacca
+Link	Europe/Istanbul		Asia/Istanbul
+Link	Asia/Kathmandu		Asia/Katmandu
+Link	Asia/Macau		Asia/Macao
+Link	Asia/Yangon		Asia/Rangoon
+Link	Asia/Ho_Chi_Minh	Asia/Saigon
+Link	Asia/Thimphu		Asia/Thimbu
+Link	Asia/Makassar		Asia/Ujung_Pandang
+Link	Asia/Ulaanbaatar	Asia/Ulan_Bator
+Link	Atlantic/Faroe		Atlantic/Faeroe
+Link	Europe/Kyiv		Europe/Kiev
+Link	Asia/Nicosia		Europe/Nicosia
+Link	Pacific/Guadalcanal	Pacific/Ponape	#= Pacific/Pohnpei
+Link	Pacific/Port_Moresby	Pacific/Truk	#= Pacific/Chuuk

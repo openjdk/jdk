@@ -62,16 +62,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<intervalFormats>
 						<intervalFormatFallback draft="contributed">{0} a el {1}</intervalFormatFallback>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
@@ -158,25 +158,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
+							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
 							<datetimeSkeleton draft="contributed">ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a z</pattern>
+							<pattern draft="contributed">h:mm:ss a z</pattern>
 							<datetimeSkeleton draft="contributed">ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a</pattern>
+							<pattern draft="contributed">h:mm:ss a</pattern>
 							<datetimeSkeleton draft="contributed">ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern draft="contributed">h:mm a</pattern>
+							<pattern draft="contributed">h:mm a</pattern>
 							<datetimeSkeleton draft="contributed">ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -198,8 +198,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M" draft="contributed">E d 'de' MMM 'al' E d 'de' MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM/y – MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="y" draft="contributed">MMM 'de' y 'a' MMM 'de' y</greatestDifference>

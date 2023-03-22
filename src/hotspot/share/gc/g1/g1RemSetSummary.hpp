@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,7 @@ class G1RemSetSummary {
   size_t _num_vtimes;
   double* _rs_threads_vtimes;
 
-  double _sampling_task_vtime;
-
   void set_rs_thread_vtime(uint thread, double value);
-  void set_sampling_task_vtime(double value) {
-    _sampling_task_vtime = value;
-  }
 
   // update this summary with current data from various places
   void update();
@@ -60,10 +55,6 @@ public:
   void print_on(outputStream* out, bool show_thread_times);
 
   double rs_thread_vtime(uint thread) const;
-
-  double sampling_task_vtime() const {
-    return _sampling_task_vtime;
-  }
 };
 
 #endif // SHARE_GC_G1_G1REMSETSUMMARY_HPP

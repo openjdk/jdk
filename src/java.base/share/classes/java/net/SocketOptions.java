@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@ public interface SocketOptions {
      * <BR><PRE>
      * SocketImpl s;
      * ...
-     * s.setOption(SO_LINGER, new Integer(10));
+     * s.setOption(SO_LINGER, Integer.valueOf(10));
      *    // OK - set SO_LINGER w/ timeout of 10 sec.
-     * s.setOption(SO_LINGER, new Double(10));
+     * s.setOption(SO_LINGER, Double.valueOf(10));
      *    // ERROR - expects java.lang.Integer
      *</PRE>
      * If the requested option is binary, it can be set using this method by

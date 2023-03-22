@@ -38,17 +38,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">అమ్హారిక్</language>
 			<language type="an">అరగోనిస్</language>
 			<language type="ang">ప్రాచీన ఆంగ్లం</language>
+			<language type="ann">ఒబోలో</language>
 			<language type="anp">ఆంగిక</language>
 			<language type="ar">అరబిక్</language>
 			<language type="ar_001">ఆధునిక ప్రామాణిక అరబిక్</language>
 			<language type="arc">అరామైక్</language>
 			<language type="arn">మపుచే</language>
 			<language type="arp">అరాపాహో</language>
+			<language type="ars">నజ్ది అరబిక్</language>
 			<language type="arw">అరావాక్</language>
 			<language type="arz">ఈజిప్షియన్ అరబిక్</language>
 			<language type="as">అస్సామీస్</language>
 			<language type="asa">అసు</language>
 			<language type="ast">ఆస్టూరియన్</language>
+			<language type="atj">అతికామెక్వ</language>
 			<language type="av">అవారిక్</language>
 			<language type="awa">అవధి</language>
 			<language type="ay">ఐమారా</language>
@@ -83,6 +86,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ca">కాటలాన్</language>
 			<language type="cad">కేడ్డో</language>
 			<language type="car">కేరిబ్</language>
+			<language type="cay">సేయుగా</language>
 			<language type="cch">అట్సామ్</language>
 			<language type="ccp">చక్మా</language>
 			<language type="ce">చెచెన్</language>
@@ -101,13 +105,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ckb">సెంట్రల్ కర్డిష్</language>
 			<language type="ckb" alt="menu">కర్డిష్, సెంట్రల్</language>
 			<language type="ckb" alt="variant">కర్డిష్, సోరానీ</language>
+			<language type="clc">చిల్కటిన్</language>
 			<language type="co">కోర్సికన్</language>
 			<language type="cop">కోప్టిక్</language>
 			<language type="cr">క్రి</language>
+			<language type="crg">మిచిఫ్</language>
 			<language type="crh">క్రిమియన్ టర్కిష్</language>
+			<language type="crj">దక్షిణ తూర్పు క్రీ</language>
+			<language type="crk">ప్లెయిన్స్ క్రీ</language>
+			<language type="crl">ఉత్తర తూర్పు క్రీ</language>
+			<language type="crm">మూస్ క్రీ</language>
+			<language type="crr">కరోలినా అల్గోన్‌క్వియన్</language>
 			<language type="crs">సెసేల్వా క్రియోల్ ఫ్రెంచ్</language>
 			<language type="cs">చెక్</language>
 			<language type="csb">కషుబియన్</language>
+			<language type="csw">స్వాంపీ క్రీ</language>
 			<language type="cu">చర్చ్ స్లావిక్</language>
 			<language type="cv">చువాష్</language>
 			<language type="cy">వెల్ష్</language>
@@ -202,8 +214,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hai">హైడా</language>
 			<language type="hak">హక్కా చైనీస్</language>
 			<language type="haw">హవాయియన్</language>
+			<language type="hax">దక్షిణ హైదా</language>
 			<language type="he">హిబ్రూ</language>
 			<language type="hi">హిందీ</language>
+			<language type="hi_Latn" alt="variant">హింగ్లీష్</language>
 			<language type="hil">హిలిగెనాన్</language>
 			<language type="hit">హిట్టిటే</language>
 			<language type="hmn">మోంగ్</language>
@@ -214,6 +228,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">హైటియన్ క్రియోల్</language>
 			<language type="hu">హంగేరియన్</language>
 			<language type="hup">హుపా</language>
+			<language type="hur">హల్కోమెలెమ్</language>
 			<language type="hy">ఆర్మేనియన్</language>
 			<language type="hz">హెరెరో</language>
 			<language type="ia">ఇంటర్లింగ్వా</language>
@@ -224,6 +239,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ig">ఇగ్బో</language>
 			<language type="ii">శిషువన్ ఈ</language>
 			<language type="ik">ఇనుపైయాక్</language>
+			<language type="ikt">పశ్చిమ కెనేడియన్ ఇన్నూక్‌టిటూట్</language>
 			<language type="ilo">ఐలోకో</language>
 			<language type="inh">ఇంగుష్</language>
 			<language type="io">ఈడో</language>
@@ -250,6 +266,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">కాబువేర్దియను</language>
 			<language type="kfo">కోరో</language>
 			<language type="kg">కోంగో</language>
+			<language type="kgp">కైన్‌గ్యాంగ్</language>
 			<language type="kha">ఖాసి</language>
 			<language type="kho">ఖోటనీస్</language>
 			<language type="khq">కొయరా చీన్నీ</language>
@@ -280,6 +297,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kut">కుటేనై</language>
 			<language type="kv">కోమి</language>
 			<language type="kw">కోర్నిష్</language>
+			<language type="kwk">క్వాక్‌వాలా</language>
 			<language type="ky">కిర్గిజ్</language>
 			<language type="la">లాటిన్</language>
 			<language type="lad">లాడినో</language>
@@ -290,6 +308,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">లేజ్ఘియన్</language>
 			<language type="lg">గాండా</language>
 			<language type="li">లిమ్బర్గిష్</language>
+			<language type="lil">లిలూయెట్</language>
 			<language type="lkt">లకొటా</language>
 			<language type="ln">లింగాల</language>
 			<language type="lo">లావో</language>
@@ -297,6 +316,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">లూసియానా క్రియోల్</language>
 			<language type="loz">లోజి</language>
 			<language type="lrc">ఉత్తర లూరీ</language>
+			<language type="lsm">సామియా</language>
 			<language type="lt">లిథువేనియన్</language>
 			<language type="lu">లూబ-కటాంగ</language>
 			<language type="lua">లుబా-లులువ</language>
@@ -330,6 +350,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mn">మంగోలియన్</language>
 			<language type="mnc">మంచు</language>
 			<language type="mni">మణిపురి</language>
+			<language type="moe">ఇన్ను-ఐమున్</language>
 			<language type="moh">మోహాక్</language>
 			<language type="mos">మోస్సి</language>
 			<language type="mr">మరాఠీ</language>
@@ -377,6 +398,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nzi">జీమా</language>
 			<language type="oc">ఆక్సిటన్</language>
 			<language type="oj">చేవా</language>
+			<language type="ojb">వాయువ్య ఓజిబ్వా</language>
+			<language type="ojc">సెంట్రల్ ఓజిబ్వా</language>
+			<language type="ojs">ఓజి-క్రీ</language>
+			<language type="ojw">పశ్చిమ ఓజిబ్వా</language>
+			<language type="oka">ఒకానగన్</language>
 			<language type="om">ఒరోమో</language>
 			<language type="or">ఒడియా</language>
 			<language type="os">ఒసేటిక్</language>
@@ -392,8 +418,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="peo">ప్రాచీన పర్షియన్</language>
 			<language type="phn">ఫోనికన్</language>
 			<language type="pi">పాలీ</language>
+			<language type="pis">పిజిన్</language>
 			<language type="pl">పోలిష్</language>
 			<language type="pon">పోహ్న్పెయన్</language>
+			<language type="pqm">మలిసీట్-పస్సమాక్వొడ్డీ</language>
 			<language type="prg">ప్రష్యన్</language>
 			<language type="pro">ప్రాచీన ప్రోవెంసాల్</language>
 			<language type="ps">పాష్టో</language>
@@ -444,6 +472,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sid">సిడామో</language>
 			<language type="sk">స్లోవక్</language>
 			<language type="sl">స్లోవేనియన్</language>
+			<language type="slh">దక్షిణ లూషూట్‌సీడ్</language>
 			<language type="sm">సమోవన్</language>
 			<language type="sma">దక్షిణ సామి</language>
 			<language type="smj">లులే సామి</language>
@@ -460,6 +489,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">స్వాతి</language>
 			<language type="ssy">సాహో</language>
 			<language type="st">దక్షిణ సోతో</language>
+			<language type="str">స్ట్రెయిట్స్ సలీష్</language>
 			<language type="su">సండానీస్</language>
 			<language type="suk">సుకుమా</language>
 			<language type="sus">సుసు</language>
@@ -471,6 +501,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="syc">సాంప్రదాయ సిరియాక్</language>
 			<language type="syr">సిరియాక్</language>
 			<language type="ta">తమిళము</language>
+			<language type="tce">దక్షిణ టుట్చోన్</language>
 			<language type="tcy">తుళు</language>
 			<language type="te">తెలుగు</language>
 			<language type="tem">టిమ్నే</language>
@@ -478,7 +509,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ter">టెరెనో</language>
 			<language type="tet">టేటం</language>
 			<language type="tg">తజిక్</language>
+			<language type="tgx">టాగీష్</language>
 			<language type="th">థాయ్</language>
+			<language type="tht">ట్యాల్టాన్</language>
 			<language type="ti">టిగ్రిన్యా</language>
 			<language type="tig">టీగ్రె</language>
 			<language type="tiv">టివ్</language>
@@ -491,12 +524,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tn">స్వానా</language>
 			<language type="to">టాంగాన్</language>
 			<language type="tog">న్యాసా టోన్గా</language>
+			<language type="tok">టోకి పోనా</language>
 			<language type="tpi">టోక్ పిసిన్</language>
 			<language type="tr">టర్కిష్</language>
 			<language type="trv">తరోకో</language>
 			<language type="ts">సోంగా</language>
 			<language type="tsi">శింషీయన్</language>
 			<language type="tt">టాటర్</language>
+			<language type="ttm">ఉత్తర టుట్చోన్</language>
 			<language type="tum">టుంబుకా</language>
 			<language type="tvl">టువాలు</language>
 			<language type="tw">ట్వి</language>
@@ -535,6 +570,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">యెంబా</language>
 			<language type="yi">ఇడ్డిష్</language>
 			<language type="yo">యోరుబా</language>
+			<language type="yrl">నేహ్‌గటు</language>
 			<language type="yue">కాంటనీస్</language>
 			<language type="yue" alt="menu">చైనీస్, కాంటనీస్</language>
 			<language type="za">జువాన్</language>
@@ -554,8 +590,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">జాజా</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">అద్లామ్</script>
 			<script type="Arab">అరబిక్</script>
 			<script type="Arab" alt="variant">పెర్‌సో-అరబిక్</script>
+			<script type="Aran">నాస్టాలిక్</script>
 			<script type="Armi">ఇంపీరియల్ అరామాక్</script>
 			<script type="Armn">అర్మేనియన్</script>
 			<script type="Avst">అవేస్టాన్</script>
@@ -651,6 +689,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Plrd">పోల్లర్డ్ ఫోనెటిక్</script>
 			<script type="Prti">ఇంస్క్రిప్షనాల్ పార్థియన్</script>
 			<script type="Rjng">రేజాంగ్</script>
+			<script type="Rohg">హనీఫీ</script>
 			<script type="Roro">రోంగో రోంగో</script>
 			<script type="Runr">రూనిక్</script>
 			<script type="Samr">సమారిటన్</script>
@@ -909,6 +948,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">నౌరు</territory>
 			<territory type="NU">నియూ</territory>
 			<territory type="NZ">న్యూజిలాండ్</territory>
+			<territory type="NZ" alt="variant">ఆవ్‌టియరోవా న్యూజిలాండ్</territory>
 			<territory type="OM">ఓమన్</territory>
 			<territory type="PA">పనామా</territory>
 			<territory type="PE">పెరూ</territory>
@@ -1044,7 +1084,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="islamic-civil">ఇస్లామిక్-సివిల్ క్యాలెండర్</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">ఇస్లామిక్ క్యాలెండర్ (సౌదీ అరేబియా)</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">ఇస్లామిక్ క్యాలెండర్</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">ఇస్లామిక్ క్యాలెండర్ (ఉమ్ అల్-ఖురా)</type>
+			<type key="calendar" type="islamic-umalqura">ఇస్లామిక్ క్యాలెండర్ (ఉమ్ అల్-ఖురా)</type>
 			<type key="calendar" type="iso8601">ISO-8601 క్యాలెండర్</type>
 			<type key="calendar" type="japanese">జపానీయుల క్యాలెండర్</type>
 			<type key="calendar" type="persian">పర్షియన్ క్యాలెండర్</type>
@@ -1105,6 +1145,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">ఆర్మేనియన్ సంఖ్యలు</type>
 			<type key="numbers" type="armnlow">ఆర్మేనియన్ చిన్నబడి సంఖ్యలు</type>
 			<type key="numbers" type="beng">బెంగాలీ అంకెలు</type>
+			<type key="numbers" type="cakm">చాక్మా అంకెలు</type>
 			<type key="numbers" type="deva">దేవనాగరి అంకెలు</type>
 			<type key="numbers" type="ethi">ఎథియోపిక్ సంఖ్యలు</type>
 			<type key="numbers" type="finance">ఆర్థిక సంఖ్యలు</type>
@@ -1120,6 +1161,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">సాంప్రదాయ చైనీయుల సంఖ్యలు</type>
 			<type key="numbers" type="hantfin">సాంప్రదాయ చైనీయుల ఆర్థిక సంఖ్యలు</type>
 			<type key="numbers" type="hebr">హిబ్రూ సంఖ్యలు</type>
+			<type key="numbers" type="java">జవానీస్ అంకెలు</type>
 			<type key="numbers" type="jpan">జపానీయుల సంఖ్యలు</type>
 			<type key="numbers" type="jpanfin">జపానీయలు ఆర్థిక సంఖ్యలు</type>
 			<type key="numbers" type="khmr">ఖ్మేర్ అంకెలు</type>
@@ -1128,8 +1170,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="latn">పశ్చిమ అంకెలు</type>
 			<type key="numbers" type="mlym">మలయాళం అంకెలు</type>
 			<type key="numbers" type="mong">మంగోలియన్ అంకెలు</type>
+			<type key="numbers" type="mtei">మేటి మయెక్ అంకెలు</type>
 			<type key="numbers" type="mymr">మయన్మార్ అంకెలు</type>
 			<type key="numbers" type="native">స్థానిక అంకెలు</type>
+			<type key="numbers" type="olck">ఓల్ చికి అంకెలు</type>
 			<type key="numbers" type="orya">ఒరియా అంకెలు</type>
 			<type key="numbers" type="roman">రోమన్ సంఖ్యలు</type>
 			<type key="numbers" type="romanlow">రోమన్ చిన్నబడి సంఖ్యలు</type>
@@ -1964,11 +2008,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}కి</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}కి</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2296,90 +2346,90 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">చైత్రం</month>
-							<month type="2" draft="contributed">వైశాఖం</month>
-							<month type="3" draft="contributed">జ్యేష్ఠం</month>
-							<month type="4" draft="contributed">ఆషాఢం</month>
-							<month type="5" draft="contributed">శ్రావణం</month>
-							<month type="6" draft="contributed">భాద్రపదం</month>
-							<month type="7" draft="contributed">ఆశ్వయుజం</month>
-							<month type="8" draft="contributed">కార్తీకం</month>
-							<month type="9" draft="contributed">మార్గశిరం</month>
-							<month type="10" draft="contributed">పుష్యం</month>
-							<month type="11" draft="contributed">మాఘం</month>
-							<month type="12" draft="contributed">ఫల్గుణం</month>
+							<month type="1">చైత్రం</month>
+							<month type="2">వైశాఖం</month>
+							<month type="3">జ్యేష్ఠం</month>
+							<month type="4">ఆషాఢం</month>
+							<month type="5">శ్రావణం</month>
+							<month type="6">భాద్రపదం</month>
+							<month type="7">ఆశ్వయుజం</month>
+							<month type="8">కార్తీకం</month>
+							<month type="9">మార్గశిరం</month>
+							<month type="10">పుష్యం</month>
+							<month type="11">మాఘం</month>
+							<month type="12">ఫాల్గుణం</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">చైత్రం</month>
-							<month type="2" draft="contributed">వైశాఖం</month>
-							<month type="3" draft="contributed">జ్యేష్ఠం</month>
-							<month type="4" draft="contributed">ఆషాఢం</month>
-							<month type="5" draft="contributed">శ్రావణం</month>
-							<month type="6" draft="contributed">భాద్రపదం</month>
-							<month type="7" draft="contributed">ఆశ్వయుజం</month>
-							<month type="8" draft="contributed">కార్తీకం</month>
-							<month type="9" draft="contributed">మార్గశిరం</month>
-							<month type="10" draft="contributed">పుష్యం</month>
-							<month type="11" draft="contributed">మాఘం</month>
-							<month type="12" draft="contributed">ఫల్గుణం</month>
+							<month type="1">చైత్రం</month>
+							<month type="2">వైశాఖం</month>
+							<month type="3">జ్యేష్ఠం</month>
+							<month type="4">ఆషాఢం</month>
+							<month type="5">శ్రావణం</month>
+							<month type="6">భాద్రపదం</month>
+							<month type="7">ఆశ్వయుజం</month>
+							<month type="8">కార్తీకం</month>
+							<month type="9">మార్గశిరం</month>
+							<month type="10">పుష్యం</month>
+							<month type="11">మాఘం</month>
+							<month type="12">ఫాల్గుణం</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">చైత్రం</month>
-							<month type="2" draft="contributed">వైశాఖం</month>
-							<month type="3" draft="contributed">జ్యేష్ఠం</month>
-							<month type="4" draft="contributed">ఆషాఢం</month>
-							<month type="5" draft="contributed">శ్రావణం</month>
-							<month type="6" draft="contributed">భాద్రపదం</month>
-							<month type="7" draft="contributed">ఆశ్వయుజం</month>
-							<month type="8" draft="contributed">కార్తీకం</month>
-							<month type="9" draft="contributed">మార్గశిరం</month>
-							<month type="10" draft="contributed">పుష్యం</month>
-							<month type="11" draft="contributed">మాఘం</month>
-							<month type="12" draft="contributed">ఫల్గుణం</month>
+							<month type="1">చైత్రం</month>
+							<month type="2">వైశాఖం</month>
+							<month type="3">జ్యేష్ఠం</month>
+							<month type="4">ఆషాఢం</month>
+							<month type="5">శ్రావణం</month>
+							<month type="6">భాద్రపదం</month>
+							<month type="7">ఆశ్వయుజం</month>
+							<month type="8">కార్తీకం</month>
+							<month type="9">మార్గశిరం</month>
+							<month type="10">పుష్యం</month>
+							<month type="11">మాఘం</month>
+							<month type="12">ఫాల్గుణం</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1" draft="contributed">1</month>
-							<month type="2" draft="contributed">2</month>
-							<month type="3" draft="contributed">3</month>
-							<month type="4" draft="contributed">4</month>
-							<month type="5" draft="contributed">5</month>
-							<month type="6" draft="contributed">6</month>
-							<month type="7" draft="contributed">7</month>
-							<month type="8" draft="contributed">8</month>
-							<month type="9" draft="contributed">9</month>
-							<month type="10" draft="contributed">10</month>
-							<month type="11" draft="contributed">11</month>
-							<month type="12" draft="contributed">12</month>
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">చైత్రం</month>
-							<month type="2" draft="contributed">వైశాఖం</month>
-							<month type="3" draft="contributed">జ్యేష్ఠం</month>
-							<month type="4" draft="contributed">ఆషాఢం</month>
-							<month type="5" draft="contributed">శ్రావణం</month>
-							<month type="6" draft="contributed">భాద్రపదం</month>
-							<month type="7" draft="contributed">ఆశ్వయుజం</month>
-							<month type="8" draft="contributed">కార్తీకం</month>
-							<month type="9" draft="contributed">మార్గశిరం</month>
-							<month type="10" draft="contributed">పుష్యం</month>
-							<month type="11" draft="contributed">మాఘం</month>
-							<month type="12" draft="contributed">ఫల్గుణం</month>
+							<month type="1">చైత్రం</month>
+							<month type="2">వైశాఖం</month>
+							<month type="3">జ్యేష్ఠం</month>
+							<month type="4">ఆషాఢం</month>
+							<month type="5">శ్రావణం</month>
+							<month type="6">భాద్రపదం</month>
+							<month type="7">ఆశ్వయుజం</month>
+							<month type="8">కార్తీకం</month>
+							<month type="9">మార్గశిరం</month>
+							<month type="10">పుష్యం</month>
+							<month type="11">మాఘం</month>
+							<month type="12">ఫాల్గుణం</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -2388,7 +2438,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="0" draft="contributed">శక</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="contributed">శక</era>
+						<era type="0">శక</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="contributed">శక</era>
@@ -3916,7 +3966,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ఎండర్బెరీ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kanton">
-				<exemplarCity draft="contributed">కాంతోన్</exemplarCity>
+				<exemplarCity>కాంతోన్</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>కిరీటిమాటి</exemplarCity>
@@ -5539,7 +5589,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Yukon">
 				<long>
-					<standard draft="contributed">యుకోన్ సమయం</standard>
+					<standard>యుకోన్ సమయం</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -5679,37 +5729,65 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">¤0వే</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ 0వే</pattern>
 					<pattern type="1000" count="other">¤0వే</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0వే</pattern>
 					<pattern type="10000" count="one">¤00వే</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ 00వే</pattern>
 					<pattern type="10000" count="other">¤00వే</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00వే</pattern>
 					<pattern type="100000" count="one">¤000వే</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ 000వే</pattern>
 					<pattern type="100000" count="other">¤000వే</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000వే</pattern>
 					<pattern type="1000000" count="one">¤0మి</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ 0మి</pattern>
 					<pattern type="1000000" count="other">¤0మి</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0మి</pattern>
 					<pattern type="10000000" count="one">¤00మి</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber">¤ 00మి</pattern>
 					<pattern type="10000000" count="other">¤00మి</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00మి</pattern>
 					<pattern type="100000000" count="one">¤000మి</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ 000మి</pattern>
 					<pattern type="100000000" count="other">¤000మి</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000మి</pattern>
 					<pattern type="1000000000" count="one">¤0బి</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0బి</pattern>
 					<pattern type="1000000000" count="other">¤0బి</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0బి</pattern>
 					<pattern type="10000000000" count="one">¤00బి</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00బి</pattern>
 					<pattern type="10000000000" count="other">¤00బి</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00బి</pattern>
 					<pattern type="100000000000" count="one">¤000బి</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ 000బి</pattern>
 					<pattern type="100000000000" count="other">¤000బి</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000బి</pattern>
 					<pattern type="1000000000000" count="one">¤0ట్రి</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 0ట్రి</pattern>
 					<pattern type="1000000000000" count="other">¤0ట్రి</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0ట్రి</pattern>
 					<pattern type="10000000000000" count="one">¤00ట్రి</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ 00ట్రి</pattern>
 					<pattern type="10000000000000" count="other">¤00ట్రి</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00ట్రి</pattern>
 					<pattern type="100000000000000" count="one">¤000ట్రి</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ 000ట్రి</pattern>
 					<pattern type="100000000000000" count="other">¤000ట్రి</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000ట్రి</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -5719,6 +5797,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -5920,7 +6000,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
-				<displayName>చైనీస్ యూవాన్ (ఆఫ్‌షోర్)</displayName>
+				<displayName>చైనీస్ యువాన్ (ఆఫ్‌షోర్)</displayName>
 				<displayName count="one">చైనీస్ యువాన్ (ఆఫ్‌షోర్)</displayName>
 				<displayName count="other">చైనీస్ యువాన్ (ఆఫ్‌షోర్)</displayName>
 				<symbol>CNH</symbol>
@@ -6277,7 +6357,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LSL">
 				<displayName>లెసోధో లోటి</displayName>
-				<displayName count="one" draft="contributed">లెసోధో లోటిలు</displayName>
+				<displayName count="one">లెసోధో లోటి</displayName>
 				<displayName count="other" draft="contributed">లెసోధో లోటిలు</displayName>
 			</currency>
 			<currency type="LTL">
@@ -6822,11 +6902,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="one">{0} రోజు</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} రోజులు</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}వ కుడి మలుపు తీసుకోండి.</ordinalMinimalPairs>
-			<caseMinimalPairs case="accusative" draft="contributed">{0} వంటకమును వండింది</caseMinimalPairs>
-			<caseMinimalPairs case="dative" draft="contributed">పార్వతి శివుని {0} తపం చేసింది</caseMinimalPairs>
-			<caseMinimalPairs case="instrumental" draft="contributed">{0} చేత రావణుడు సంహరింపబడ్డాడు</caseMinimalPairs>
-			<caseMinimalPairs case="locative" draft="contributed">అన్ని దిక్కుల {0} విష్ణువు ఉన్నాడు</caseMinimalPairs>
-			<caseMinimalPairs case="nominative" draft="contributed">{0} పాఠము చదువుతున్నాడు</caseMinimalPairs>
+			<caseMinimalPairs case="accusative">{0} వంటకమును వండింది</caseMinimalPairs>
+			<caseMinimalPairs case="dative">పార్వతి శివుని {0} తపం చేసింది</caseMinimalPairs>
+			<caseMinimalPairs case="instrumental">{0} చేత రావణుడు సంహరింపబడ్డాడు</caseMinimalPairs>
+			<caseMinimalPairs case="locative">అన్ని దిక్కుల {0} విష్ణువు ఉన్నాడు</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">{0} పాఠము చదువుతున్నాడు</caseMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -7156,6 +7236,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} సంవత్సరాలు</unitPattern>
 				<perUnitPattern>సంవత్సరానికి {0}</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>క్వార్టర్లు</displayName>
+				<unitPattern count="one">{0} క్వార్టర్</unitPattern>
+				<unitPattern count="other">{0} క్వార్టర్లు</unitPattern>
+				<perUnitPattern>{0}/క్వార్టర్</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>నెలలు</displayName>
 				<unitPattern count="one">{0} నెల</unitPattern>
@@ -7284,8 +7370,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName draft="contributed">100 కిలోమీటర్లకు కిలోవాట్-గంట</displayName>
-				<unitPattern count="one" draft="contributed">{0} 100 కిలోమీటర్లకు కిలోవాట్-గంట</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} 100 కిలోమీటర్లకు కిలోవాట్-గంటలు</unitPattern>
+				<unitPattern count="one">{0} 100 కిలోమీటర్లకు కిలోవాట్-గంట</unitPattern>
+				<unitPattern count="other">{0} 100 కిలోమీటర్లకు కిలోవాట్-గంటలు</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>గిగాహెర్ట్‌జ్</displayName>
@@ -7347,9 +7433,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} బిందువు</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
-				<displayName draft="contributed">భూమి వ్యాసార్ధం</displayName>
-				<unitPattern count="one" draft="contributed">{0} భూమి వ్యాసార్ధం</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} భూమి వ్యాసార్ధం</unitPattern>
+				<displayName>భూమి వ్యాసార్ధం</displayName>
+				<unitPattern count="one">{0} భూమి వ్యాసార్ధం</unitPattern>
+				<unitPattern count="other">{0} భూమి వ్యాసార్ధం</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>కిలోమీటర్లు</displayName>
@@ -7432,14 +7518,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ఖగోళ ప్రమాణాలు</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">ఫర్లాంగులు</displayName>
-				<unitPattern count="one" draft="contributed">{0} ఫర్లాంగు</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ఫర్లాంగులు</unitPattern>
+				<displayName>ఫర్లాంగులు</displayName>
+				<unitPattern count="one">{0} ఫర్లాంగు</unitPattern>
+				<unitPattern count="other">{0} ఫర్లాంగులు</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">వ్యామము</displayName>
-				<unitPattern count="one" draft="contributed">{0} వ్యామము</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} వ్యామములు</unitPattern>
+				<displayName>వ్యామము</displayName>
+				<unitPattern count="one">{0} వ్యామము</unitPattern>
+				<unitPattern count="other">{0} వ్యామములు</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>నాటికల్ మైళ్లు</displayName>
@@ -7481,7 +7567,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} సోలార్ ల్యూమినోసిటీ</unitPattern>
 				<unitPattern count="other">{0} సోలార్ ల్యూమినోసైటైస్</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>మెట్రిక్ టన్నులు</displayName>
 				<unitPattern count="one">{0} మెట్రిక్ టన్ను</unitPattern>
 				<unitPattern count="other">{0} మెట్రిక్ టన్నులు</unitPattern>
@@ -7774,9 +7860,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ఎకరా-అడుగులు</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">బుషెల్</displayName>
-				<unitPattern count="one" draft="contributed">{0} బుషెల్</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} బుషెల్‌లు</unitPattern>
+				<displayName>బుషెల్</displayName>
+				<unitPattern count="one">{0} బుషెల్</unitPattern>
+				<unitPattern count="other">{0} బుషెల్‌లు</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>గ్యాలన్లు</displayName>
@@ -7831,14 +7917,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} బారెల్‌లు</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
-				<displayName draft="contributed">డెసర్ట్ స్పూన్</displayName>
-				<unitPattern count="one" draft="contributed">{0} డెసర్ట్ స్పూన్</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} డెసర్ట్ స్పూన్</unitPattern>
+				<displayName>డెసర్ట్ స్పూన్</displayName>
+				<unitPattern count="one">{0} డెసర్ట్ స్పూన్</unitPattern>
+				<unitPattern count="other">{0} డెసర్ట్ స్పూన్</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName draft="contributed">ఇంపీరియల్ డెసర్ట్ స్పూన్</displayName>
-				<unitPattern count="one" draft="contributed">{0} ఇంపీరియల్ డెసర్ట్ స్పూన్</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ఇంపీరియల్ డెసర్ట్ స్పూన్</unitPattern>
+				<displayName>ఇంపీరియల్ డెసర్ట్ స్పూన్</displayName>
+				<unitPattern count="one">{0} ఇంపీరియల్ డెసర్ట్ స్పూన్</unitPattern>
+				<unitPattern count="other">{0} ఇంపీరియల్ డెసర్ట్ స్పూన్</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<displayName draft="contributed">తగ్గించు</displayName>
@@ -7846,14 +7932,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} తగ్గించు</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<displayName draft="contributed">డ్రామ్</displayName>
-				<unitPattern count="one" draft="contributed">{0} డ్రామ్</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} డ్రామ్</unitPattern>
+				<displayName>డ్రామ్</displayName>
+				<unitPattern count="one">{0} డ్రామ్</unitPattern>
+				<unitPattern count="other">{0} డ్రామ్</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
-				<displayName draft="contributed">జిగ్గర్</displayName>
-				<unitPattern count="one" draft="contributed">{0} జిగ్గర్</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} జిగ్గర్</unitPattern>
+				<displayName>జిగ్గర్</displayName>
+				<unitPattern count="one">{0} జిగ్గర్</unitPattern>
+				<unitPattern count="other">{0} జిగ్గర్</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
 				<displayName draft="contributed">చిటిక</displayName>
@@ -8189,6 +8275,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} సం.</unitPattern>
 				<perUnitPattern>{0}/సం.</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>క్వా</displayName>
+				<unitPattern count="one">{0} క్వా</unitPattern>
+				<unitPattern count="other">{0} క్వా</unitPattern>
+				<perUnitPattern>{0}/క్వా</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>నెలలు</displayName>
 				<unitPattern count="one">{0} నె.</unitPattern>
@@ -8441,14 +8533,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">ఫర్లాంగులు</displayName>
-				<unitPattern count="one" draft="contributed">{0} ఫర్</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ఫర్</unitPattern>
+				<displayName>ఫర్లాంగులు</displayName>
+				<unitPattern count="one">{0} ఫర్</unitPattern>
+				<unitPattern count="other">{0} ఫర్</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">వ్యామములు</displayName>
-				<unitPattern count="one" draft="contributed">{0} వ్యా.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} వ్యా.</unitPattern>
+				<displayName>వ్యామములు</displayName>
+				<unitPattern count="one">{0} వ్యా.</unitPattern>
+				<unitPattern count="other">{0} వ్యా.</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>నా.మై.</displayName>
@@ -8486,7 +8578,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>సోలార్ ల్యూమినోసైటైస్</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ట</displayName>
 				<unitPattern count="one">{0} ట</unitPattern>
 				<unitPattern count="other">{0} ట</unitPattern>
@@ -8766,9 +8858,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ఎ.అ.</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="contributed">బుషెల్‌లు</displayName>
-				<unitPattern count="one" draft="contributed">{0} బు.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} బు.</unitPattern>
+				<displayName>బుషెల్‌లు</displayName>
+				<unitPattern count="one">{0} బు.</unitPattern>
+				<unitPattern count="other">{0} బు.</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>గ్యా.</displayName>
@@ -8818,12 +8910,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} బారెల్</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
-				<displayName draft="contributed">డె.స్పూ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} డె.స్పూ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} డె.స్పూ.</unitPattern>
+				<displayName>డె.స్పూ.</displayName>
+				<unitPattern count="one">{0} డె.స్పూ.</unitPattern>
+				<unitPattern count="other">{0} డె.స్పూ.</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName draft="contributed">డె.స్పూ. ఇంపీరియల్</displayName>
+				<displayName>డె.స్పూ. ఇంపీరియల్</displayName>
 				<unitPattern count="one">{0} డె.స్పూ. ఇంపీరియల్</unitPattern>
 				<unitPattern count="other">{0} డె.స్పూ. ఇంపీరియల్</unitPattern>
 			</unit>
@@ -8833,14 +8925,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} తగ్గించు</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<displayName draft="contributed">డ్రామ్ ఫ్లూయిడ్</displayName>
+				<displayName>డ్రామ్ ఫ్లూయిడ్</displayName>
 				<unitPattern count="one">{0} డ్రామ్ ఫ్లూ.</unitPattern>
 				<unitPattern count="other">{0} డ్రామ్ ఫ్లూ.</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
-				<displayName draft="contributed">జిగ్గర్</displayName>
-				<unitPattern count="one" draft="contributed">{0} జిగ్గర్</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} జిగ్గర్</unitPattern>
+				<displayName>జిగ్గర్</displayName>
+				<unitPattern count="one">{0} జిగ్గర్</unitPattern>
+				<unitPattern count="other">{0} జిగ్గర్</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
 				<displayName draft="contributed">చిటిక</displayName>
@@ -8956,8 +9048,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} గు</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0}′</unitPattern>
@@ -8972,7 +9064,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} కి.మీ²</unitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName draft="contributed">హెక్టారు</displayName>
+				<displayName>హెక్టారు</displayName>
 				<unitPattern count="one">{0} హె.</unitPattern>
 				<unitPattern count="other">{0} హె.</unitPattern>
 			</unit>
@@ -9014,7 +9106,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">‱</displayName>
 			</unit>
 			<unit type="concentr-mole">
-				<unitPattern count="one" draft="contributed">{0} మోల్</unitPattern>
+				<unitPattern count="one">{0} మోల్</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} మోల్</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
@@ -9023,25 +9115,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}లీ/100కి.మీ.</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<unitPattern count="one" draft="contributed">{0}మై./గ్యా.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}మై./గ్యా.</unitPattern>
+				<unitPattern count="one">{0}మై./గ్యా.</unitPattern>
+				<unitPattern count="other">{0}మై./గ్యా.</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<unitPattern count="one" draft="contributed">{0}మై/గ.ఇం</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}మై/గ.ఇం</unitPattern>
+				<unitPattern count="one">{0}మై/గ.ఇం</unitPattern>
+				<unitPattern count="other">{0}మై/గ.ఇం</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
-				<unitPattern count="one" draft="contributed">{0} టె.బిట్</unitPattern>
+				<unitPattern count="one">{0} టె.బిట్</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}టె.బిట్లు</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
-				<unitPattern count="one" draft="contributed">{0} మె.బిట్</unitPattern>
+				<unitPattern count="one">{0} మె.బిట్</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}మె.బి.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>సం</displayName>
 				<unitPattern count="one">{0}సం</unitPattern>
 				<unitPattern count="other">{0}సం</unitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<unitPattern count="one">{0}క్వా</unitPattern>
+				<unitPattern count="other">{0}క్వా</unitPattern>
+				<perUnitPattern>{0}/క్వా</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>నెల</displayName>
@@ -9069,13 +9166,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>నిమి</displayName>
 				<unitPattern count="one">{0}ని</unitPattern>
 				<unitPattern count="other">{0}ని</unitPattern>
-				<perUnitPattern draft="contributed">{0}/నిమి.</perUnitPattern>
+				<perUnitPattern>{0}/నిమి.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>సె</displayName>
 				<unitPattern count="one">{0}సె</unitPattern>
 				<unitPattern count="other">{0}సె</unitPattern>
-				<perUnitPattern draft="contributed">{0}/సె</perUnitPattern>
+				<perUnitPattern>{0}/సె</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>మి.సె.</displayName>
@@ -9112,7 +9209,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>కి.మీ</displayName>
 				<unitPattern count="one">{0}కి.మీ</unitPattern>
 				<unitPattern count="other">{0}కి.మీ</unitPattern>
-				<perUnitPattern draft="contributed">{0}/కి.మీ.</perUnitPattern>
+				<perUnitPattern>{0}/కి.మీ.</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>మీటరు</displayName>
@@ -9141,26 +9238,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} పి.మీ</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="contributed">మైళ్లు</displayName>
+				<displayName>మైళ్లు</displayName>
 				<unitPattern count="one">{0} మై</unitPattern>
 				<unitPattern count="other">{0} మై</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName draft="contributed">గజాలు</displayName>
+				<displayName>గజాలు</displayName>
 				<unitPattern count="one">{0} గ.</unitPattern>
 				<unitPattern count="other">{0} గ.</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="contributed">అడుగులు</displayName>
+				<displayName>అడుగులు</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
-				<perUnitPattern draft="contributed">{0}/అ.</perUnitPattern>
+				<perUnitPattern>{0}/అ.</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="contributed">అంగుళాలు</displayName>
+				<displayName>అంగుళాలు</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
-				<perUnitPattern draft="contributed">{0}/అం.</perUnitPattern>
+				<perUnitPattern>{0}/అం.</perUnitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">{0} కాం. సం</unitPattern>
@@ -9169,7 +9266,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-mile-scandinavian">
 				<displayName>స్కాం.మై.</displayName>
 				<unitPattern count="one">{0} స్కాం.మై.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} స్కాం.మై.</unitPattern>
+				<unitPattern count="other">{0} స్కాం.మై.</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>కి.గ్రా</displayName>
@@ -9295,28 +9392,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}లీ</unitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
-				<unitPattern count="one" draft="contributed">{0}గ్యా. ఇం.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}గ్యా. ఇం.</unitPattern>
+				<unitPattern count="one">{0}గ్యా. ఇం.</unitPattern>
+				<unitPattern count="other">{0}గ్యా. ఇం.</unitPattern>
 			</unit>
 			<unit type="volume-quart">
-				<unitPattern count="one" draft="contributed">{0}పావు వం.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}పావు వం.</unitPattern>
+				<unitPattern count="one">{0}పావు వం.</unitPattern>
+				<unitPattern count="other">{0}పావు వం.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<unitPattern count="one" draft="contributed">{0}ద.ఔ.ఇం.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}ద.ఔ.ఇం.</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<unitPattern count="one" draft="contributed">{0}టీ.స్పూ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}టీ.స్పూ.</unitPattern>
+				<unitPattern count="one">{0}టీ.స్పూ.</unitPattern>
+				<unitPattern count="other">{0}టీ.స్పూ.</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<unitPattern count="one" draft="contributed">{0}డె.ఇం.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}డె.ఇం.</unitPattern>
+				<unitPattern count="one">{0}డె.ఇం.</unitPattern>
+				<unitPattern count="other">{0}డె.ఇం.</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<unitPattern count="one" draft="contributed">{0}డ్రా.ఫ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}డ్రా.ఫ.</unitPattern>
+				<unitPattern count="one">{0}డ్రా.ఫ.</unitPattern>
+				<unitPattern count="other">{0}డ్రా.ఫ.</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one" draft="contributed">{0}చతు.ఇం.</unitPattern>
@@ -9562,4 +9659,147 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">సారణిక సంఖ్యలు</featureName>
 		<featureName type="zero">కత్తిరించబడిన సున్నా</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
+		<initialPattern type="initial">{0}.</initialPattern>
+		<initialPattern type="initialSequence">{0} {1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}. {given2-monogram-allCaps}. {surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">రాజశేఖర్</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">రాజశేఖర్</nameField>
+			<nameField type="surname">రెడ్డి</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">సూర్య</nameField>
+			<nameField type="given2">ప్రతాప్</nameField>
+			<nameField type="surname">వర్మ</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">ప్రొ. డా.</nameField>
+			<nameField type="given">సూర్య ప్రతాప్</nameField>
+			<nameField type="given-informal">సంధ్య</nameField>
+			<nameField type="given2">లాస్య ప్రియ</nameField>
+			<nameField type="surname-prefix">శర్మ</nameField>
+			<nameField type="surname-core">చౌదరి</nameField>
+			<nameField type="surname2">శర్మ చౌదరి</nameField>
+			<nameField type="suffix">ఎం. డి. పిహెచ్. డి.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

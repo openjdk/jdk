@@ -589,7 +589,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
     /**
      * This class invokes <code>mapper.damageRange</code> in
      * EventDispatchThread. The only one instance per Highlighter
-     * is cretaed. When a number of ranges should be damaged
+     * is created. When a number of ranges should be damaged
      * it collects them into queue and damages
      * them in consecutive order in <code>run</code>
      * call.

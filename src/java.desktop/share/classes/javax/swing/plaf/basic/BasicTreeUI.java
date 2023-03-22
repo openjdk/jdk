@@ -138,7 +138,7 @@ public class BasicTreeUI extends TreeUI
      * return a FixedHeightLayoutCache instance. */
     protected boolean           largeModel;
 
-    /** Reponsible for telling the TreeState the size needed for a node. */
+    /** Responsible for telling the TreeState the size needed for a node. */
     protected AbstractLayoutCache.NodeDimensions     nodeDimensions;
 
     /** Used to determine what to display. */
@@ -202,7 +202,7 @@ public class BasicTreeUI extends TreeUI
     private boolean lineTypeDashed;
 
     /**
-     * The time factor to treate the series of typed alphanumeric key
+     * The time factor to treat the series of typed alphanumeric key
      * as prefix for first letter navigation.
      */
     private long timeFactor = 1000L;
@@ -857,9 +857,9 @@ public class BasicTreeUI extends TreeUI
         // JTree's original row height is 16.  To correctly display the
         // contents on Linux we should have set it to 18, Windows 19 and
         // Solaris 20.  As these values vary so much it's too hard to
-        // be backward compatable and try to update the row height, we're
-        // therefor NOT going to adjust the row height based on font.  If the
-        // developer changes the font, it's there responsibility to update
+        // be backward compatible and try to update the row height, we're
+        // therefore NOT going to adjust the row height based on font.  If the
+        // developer changes the font, it's their responsibility to update
         // the row height.
 
         setExpandedIcon( (Icon)UIManager.get( "Tree.expandedIcon" ) );
@@ -1176,7 +1176,7 @@ public class BasicTreeUI extends TreeUI
     }
 
     /**
-     * Invoked before unstallation of UI.
+     * Invoked before uninstallation of UI.
      */
     protected void prepareForUIUninstall() {
     }
@@ -3678,10 +3678,10 @@ public class BasicTreeUI extends TreeUI
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         protected Transferable createTransferable(JComponent c) {
@@ -4835,7 +4835,7 @@ public class BasicTreeUI extends TreeUI
                         newIndex = rowCount - 1;
                 }
                 else
-                    /* Aparently people don't like wrapping;( */
+                    /* Apparently people don't like wrapping;( */
                     newIndex = Math.min(rowCount - 1, Math.max
                                         (0, (selIndex + direction)));
                 if(addToSelection && ui.treeSelectionModel.

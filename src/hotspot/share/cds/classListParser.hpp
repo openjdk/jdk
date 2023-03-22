@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@ class Thread;
 class CDSIndyInfo {
   GrowableArray<const char*>* _items;
 public:
-  CDSIndyInfo() : _items(NULL) {}
+  CDSIndyInfo() : _items(nullptr) {}
   void add_item(const char* item) {
-    if (_items == NULL) {
+    if (_items == nullptr) {
       _items = new GrowableArray<const char*>(9);
     }
-    assert(_items != NULL, "sanity");
+    assert(_items != nullptr, "sanity");
     _items->append(item);
   }
   void add_ref_kind(int ref_kind) {
@@ -67,9 +67,16 @@ public:
 };
 
 class ClassListParser : public StackObj {
+public:
+  enum ParseMode {
+    _parse_all,
+    _parse_lambda_forms_invokers_only,
+  };
+
+private:
   // Must be C_HEAP allocated -- we don't want nested resource allocations.
   typedef ResizeableResourceHashtable<int, InstanceKlass*,
-                                      ResourceObj::C_HEAP, mtClassShared> ID2KlassTable;
+                                      AnyObj::C_HEAP, mtClassShared> ID2KlassTable;
 
   enum {
     _unspecified      = -999,
@@ -107,6 +114,7 @@ class ClassListParser : public StackObj {
   bool                _interfaces_specified;
   const char*         _source;
   bool                _lambda_form_line;
+  ParseMode           _parse_mode;
 
   bool parse_int_option(const char* option_name, int* value);
   bool parse_uint_option(const char* option_name, int* value);
@@ -124,14 +132,19 @@ class ClassListParser : public StackObj {
   bool parse_one_line();
   Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
 
-public:
-  ClassListParser(const char* file);
+  ClassListParser(const char* file, ParseMode _parse_mode);
   ~ClassListParser();
+
+public:
+  static int parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
+    ClassListParser parser(classlist_path, parse_mode);
+    return parser.parse(THREAD); // returns the number of classes loaded.
+  }
 
   static bool is_parsing_thread();
   static ClassListParser* instance() {
     assert(is_parsing_thread(), "call this only in the thread that created ClassListParsing::_instance");
-    assert(_instance != NULL, "must be");
+    assert(_instance != nullptr, "must be");
     return _instance;
   }
 

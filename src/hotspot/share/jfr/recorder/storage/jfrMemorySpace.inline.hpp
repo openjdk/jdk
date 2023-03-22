@@ -202,26 +202,31 @@ inline bool JfrMemorySpace< Client, RetrievalPolicy, FreeListType, FullListType,
 
 // allocations are even multiples of the mspace min size
 static inline size_t align_allocation_size(size_t requested_size, size_t min_element_size) {
+  if (requested_size > static_cast<size_t>(min_intx)) {
+    assert(false, "requested size: " SIZE_FORMAT " is too large", requested_size);
+    return 0;
+  }
   u8 alloc_size_bytes = min_element_size;
   while (requested_size > alloc_size_bytes) {
     alloc_size_bytes <<= 1;
   }
-  return (size_t)alloc_size_bytes;
+  assert(alloc_size_bytes <= static_cast<size_t>(min_intx), "invariant");
+  return static_cast<size_t>(alloc_size_bytes);
 }
 
 template <typename Client, template <typename> class RetrievalPolicy, typename FreeListType, typename FullListType, bool epoch_aware>
 inline typename FreeListType::NodePtr JfrMemorySpace<Client, RetrievalPolicy, FreeListType, FullListType, epoch_aware>::allocate(size_t size) {
   const size_t aligned_size_bytes = align_allocation_size(size, _min_element_size);
+  if (aligned_size_bytes == 0) {
+    return NULL;
+  }
   void* const allocation = JfrCHeapObj::new_array<u1>(aligned_size_bytes + sizeof(Node));
   if (allocation == NULL) {
     return NULL;
   }
   NodePtr node = new (allocation) Node();
   assert(node != NULL, "invariant");
-  if (!node->initialize(sizeof(Node), aligned_size_bytes)) {
-    JfrCHeapObj::free(node, aligned_size_bytes + sizeof(Node));
-    return NULL;
-  }
+  node->initialize(sizeof(Node), aligned_size_bytes);
   return node;
 }
 

@@ -239,7 +239,7 @@ public final class Win32FontManager extends SunFontManager {
     }
 
     /* register only TrueType/OpenType fonts
-     * Because these need to be registed just for use when printing,
+     * Because these need to be registered just for use when printing,
      * we defer the actual registration and the static initialiser
      * for the printing class makes the call to registerJREFontsForPrinting()
      */

@@ -24,6 +24,7 @@
 
 package org.openjdk.bench.jdk.incubator.vector;
 
+import java.util.Random;
 import jdk.incubator.vector.*;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
@@ -32,65 +33,630 @@ import org.openjdk.jmh.annotations.*;
 @State(Scope.Thread)
 @Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
 public class VectorFPtoIntCastOperations {
+    @Param({"512", "1024"})
+    static int SIZE;
 
-    FloatVector fvec256;
-    FloatVector fvec512;
-    DoubleVector dvec512;
-
-    static final float [] float_arr = {
-      1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f,
-      9.0f, 10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f
+    static final float [] float_sp_vals = {
+       Float.NaN,
+       Float.POSITIVE_INFINITY,
+       Float.NEGATIVE_INFINITY,
+       0.0f,
+       -0.0f
     };
 
-    static final double [] double_arr = {
-      1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
-      9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0
+    static final double [] double_sp_vals = {
+       Double.NaN,
+       Double.POSITIVE_INFINITY,
+       Double.NEGATIVE_INFINITY,
+       0.0,
+       -0.0
     };
+
+    static float [] float_arr;
+
+    static double [] double_arr;
+
+    static long [] long_res;
+
+    static int [] int_res;
+
+    static short [] short_res;
+
+    static byte [] byte_res;
 
     @Setup(Level.Trial)
     public void BmSetup() {
-        fvec256 = FloatVector.fromArray(FloatVector.SPECIES_256, float_arr, 0);
-        fvec512 = FloatVector.fromArray(FloatVector.SPECIES_512, float_arr, 0);
-        dvec512 = DoubleVector.fromArray(DoubleVector.SPECIES_512, double_arr, 0);
+        Random r = new Random(1024);
+        float_arr = new float[SIZE];
+        double_arr = new double[SIZE];
+        long_res = new long[SIZE];
+        int_res = new int[SIZE * 2];
+        short_res = new short[SIZE * 4];
+        byte_res = new byte[SIZE * 8];
+        for(int i = 0; i < SIZE; i++) {
+            float_arr[i] = SIZE * r.nextFloat();
+            double_arr[i] = SIZE * r.nextDouble();
+        }
+        for(int i = 0 ; i < SIZE; i += 100) {
+            System.arraycopy(float_sp_vals, 0, float_arr, i, float_sp_vals.length);
+            System.arraycopy(double_sp_vals, 0, double_arr, i, double_sp_vals.length);
+        }
+    }
+
+
+    @Benchmark
+    public void microFloat128ToByte128() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
     }
 
     @Benchmark
-    public Vector microFloat2Int() {
-        return fvec512.convertShape(VectorOperators.F2I, IntVector.SPECIES_512, 0);
+    public void microFloat128ToByte256() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 8); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
     }
 
     @Benchmark
-    public Vector microFloat2Long() {
-        return fvec256.convertShape(VectorOperators.F2L, LongVector.SPECIES_512, 0);
+    public void microFloat128ToByte512() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 16); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
     }
 
     @Benchmark
-    public Vector microFloat2Short() {
-        return fvec512.convertShape(VectorOperators.F2S, ShortVector.SPECIES_256, 0);
+    public void microFloat128ToShort128() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
     }
 
     @Benchmark
-    public Vector microFloat2Byte() {
-        return fvec512.convertShape(VectorOperators.F2B, ByteVector.SPECIES_128, 0);
+    public void microFloat128ToShort256() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
     }
 
     @Benchmark
-    public Vector microDouble2Int() {
-        return dvec512.convertShape(VectorOperators.D2I, IntVector.SPECIES_256, 0);
+    public void microFloat128ToShort512() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 8); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
     }
 
     @Benchmark
-    public Vector microDouble2Long() {
-        return dvec512.convertShape(VectorOperators.D2L, LongVector.SPECIES_512, 0);
+    public void microFloat128ToInteger128() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
     }
 
     @Benchmark
-    public Vector microDouble2Short() {
-        return dvec512.convertShape(VectorOperators.D2S, ShortVector.SPECIES_128, 0);
+    public void microFloat128ToInteger256() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
     }
 
     @Benchmark
-    public Vector microDouble2Byte() {
-        return dvec512.convertShape(VectorOperators.D2B, ByteVector.SPECIES_64, 0);
+    public void microFloat128ToInteger512() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat128ToLong128() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat128ToLong256() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat128ToLong512() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_128;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToByte128() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToByte256() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToByte512() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 8); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToShort128() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToShort256() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToShort512() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToInteger128() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToInteger256() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToInteger512() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToLong128() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToLong256() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microFloat256ToLong512() {
+        VectorSpecies<Float> ISPECIES = FloatVector.SPECIES_256;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            FloatVector.fromArray(ISPECIES, float_arr, i)
+                .convertShape(VectorOperators.F2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToByte128() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 8); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToByte256() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 16); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToByte512() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 32); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToShort128() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToShort256() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 8); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToShort512() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 16); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToInteger128() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToInteger256() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToInteger512() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 8); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToLong128() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToLong256() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble128ToLong512() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_128;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToByte128() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToByte256() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 8); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToByte512() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Byte> OSPECIES = ByteVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 16); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2B, OSPECIES, 0)
+                .reinterpretAsBytes()
+                .intoArray(byte_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToShort128() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToShort256() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToShort512() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Short> OSPECIES = ShortVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 8); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2S, OSPECIES, 0)
+                .reinterpretAsShorts()
+                .intoArray(short_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToInteger128() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToInteger256() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToInteger512() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Integer> OSPECIES = IntVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 4); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2I, OSPECIES, 0)
+                .reinterpretAsInts()
+                .intoArray(int_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToLong128() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_128;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToLong256() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_256;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
+    }
+
+    @Benchmark
+    public void microDouble256ToLong512() {
+        VectorSpecies<Double> ISPECIES = DoubleVector.SPECIES_256;
+        VectorSpecies<Long> OSPECIES = LongVector.SPECIES_512;
+        for (int i = 0, j = 0; i < ISPECIES.loopBound(SIZE / 2); i += ISPECIES.length(), j += OSPECIES.length()) {
+            DoubleVector.fromArray(ISPECIES, double_arr, i)
+                .convertShape(VectorOperators.D2L, OSPECIES, 0)
+                .reinterpretAsLongs()
+                .intoArray(long_res, j);
+        }
     }
 }

@@ -117,7 +117,7 @@ final class BidiLine {
            are already set to paragraph level.
            Setting trailingWSStart to pBidi->length will avoid changing the
            level of B chars from 0 to paraLevel in getLevels when
-           orderParagraphsLTR==TRUE
+           orderParagraphsLTR==true
         */
         if (dirProps[start - 1] == BidiBase.B) {
             bidiBase.trailingWSStart = start;   /* currently == bidiBase.length */

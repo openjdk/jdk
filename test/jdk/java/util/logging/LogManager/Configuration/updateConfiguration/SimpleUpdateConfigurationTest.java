@@ -300,7 +300,7 @@ public class SimpleUpdateConfigurationTest {
             storePropertyToFile("config1", props);
 
             // we didn't call updateConfiguration, so just changing the
-            // content of the file should have had no no effect yet.
+            // content of the file should have had no effect yet.
             assertEquals("FINER", manager.getProperty("com.foo.level"),
                 "com.foo.level set to FINER by updateConfiguration");
             assertEquals(Level.FINER, logger.getLevel(),

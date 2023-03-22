@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ OopStorage* OopStorageSet::_storages[all_count] = {};
 OopStorage* OopStorageSet::create_strong(const char* name, MEMFLAGS memflags) {
   static uint registered_strong = 0;
   assert(registered_strong < strong_count, "More registered strong storages than slots");
-  OopStorage* storage = new (memflags) OopStorage(name, memflags);
+  OopStorage* storage = OopStorage::create(name, memflags);
   _storages[strong_start + registered_strong++] = storage;
   return storage;
 }
@@ -42,7 +42,7 @@ OopStorage* OopStorageSet::create_strong(const char* name, MEMFLAGS memflags) {
 OopStorage* OopStorageSet::create_weak(const char* name, MEMFLAGS memflags) {
   static uint registered_weak = 0;
   assert(registered_weak < weak_count, "More registered strong storages than slots");
-  OopStorage* storage = new (memflags) OopStorage(name, memflags);
+  OopStorage* storage = OopStorage::create(name, memflags);
   _storages[weak_start + registered_weak++] = storage;
   return storage;
 }
@@ -86,7 +86,7 @@ template OopStorage* OopStorageSet::get_storage(Id);
 
 void OopStorageSet::verify_initialized(uint index) {
   assert(index < ARRAY_SIZE(_storages), "invalid index");
-  assert(_storages[index] != NULL, "oopstorage_init not yet called");
+  assert(_storages[index] != nullptr, "oopstorage_init not yet called");
 }
 
 #endif // ASSERT

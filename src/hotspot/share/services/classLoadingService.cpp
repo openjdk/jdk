@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,10 @@
 #define HOTSPOT_CLASS_loaded HOTSPOT_CLASS_LOADED
 #define DTRACE_CLASSLOAD_PROBE(type, clss, shared)  \
   {                                                 \
-    char* data = NULL;                              \
+    char* data = nullptr;                           \
     int len = 0;                                    \
     Symbol* name = (clss)->name();                  \
-    if (name != NULL) {                             \
+    if (name != nullptr) {                          \
       data = (char*)name->bytes();                  \
       len = name->utf8_length();                    \
     }                                               \
@@ -64,17 +64,17 @@
 
 #if INCLUDE_MANAGEMENT
 // counters for classes loaded from class files
-PerfCounter*    ClassLoadingService::_classes_loaded_count = NULL;
-PerfCounter*    ClassLoadingService::_classes_unloaded_count = NULL;
-PerfCounter*    ClassLoadingService::_classbytes_loaded = NULL;
-PerfCounter*    ClassLoadingService::_classbytes_unloaded = NULL;
+PerfCounter*    ClassLoadingService::_classes_loaded_count = nullptr;
+PerfCounter*    ClassLoadingService::_classes_unloaded_count = nullptr;
+PerfCounter*    ClassLoadingService::_classbytes_loaded = nullptr;
+PerfCounter*    ClassLoadingService::_classbytes_unloaded = nullptr;
 
 // counters for classes loaded from shared archive
-PerfCounter*    ClassLoadingService::_shared_classes_loaded_count = NULL;
-PerfCounter*    ClassLoadingService::_shared_classes_unloaded_count = NULL;
-PerfCounter*    ClassLoadingService::_shared_classbytes_loaded = NULL;
-PerfCounter*    ClassLoadingService::_shared_classbytes_unloaded = NULL;
-PerfVariable*   ClassLoadingService::_class_methods_size = NULL;
+PerfCounter*    ClassLoadingService::_shared_classes_loaded_count = nullptr;
+PerfCounter*    ClassLoadingService::_shared_classes_unloaded_count = nullptr;
+PerfCounter*    ClassLoadingService::_shared_classbytes_loaded = nullptr;
+PerfCounter*    ClassLoadingService::_shared_classbytes_unloaded = nullptr;
+PerfVariable*   ClassLoadingService::_class_methods_size = nullptr;
 
 void ClassLoadingService::init() {
   EXCEPTION_MARK;
@@ -180,7 +180,7 @@ static size_t compute_class_size(InstanceKlass* k) {
     // FIXME: Need to count the contents of methods
     class_size += k->constants()->size();
     class_size += k->local_interfaces()->size();
-    if (k->transitive_interfaces() != NULL) {
+    if (k->transitive_interfaces() != nullptr) {
       class_size += k->transitive_interfaces()->size();
     }
     // We do not have to count implementors, since we only store one!

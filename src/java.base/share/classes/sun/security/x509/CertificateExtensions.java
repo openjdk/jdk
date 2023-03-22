@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CertificateException;
@@ -39,17 +38,10 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateExtensions implements CertAttrSet<Extension> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions";
-    /**
-     * name
-     */
+public class CertificateExtensions implements DerEncoder {
+
     public static final String NAME = "extensions";
 
     private static final Debug debug = Debug.getInstance("x509");
@@ -106,8 +98,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
 
             Object[] passed = new Object[] {Boolean.valueOf(ext.isCritical()),
                     ext.getExtensionValue()};
-            CertAttrSet<?> certExt = (CertAttrSet<?>) cons.newInstance(passed);
-            if (map.put(certExt.getName(), (Extension)certExt) != null) {
+            Extension certExt = (Extension) cons.newInstance(passed);
+            if (map.put(certExt.getName(), certExt) != null) {
                 throw new IOException("Duplicate extensions not allowed");
             }
         } catch (InvocationTargetException invk) {
@@ -145,11 +137,9 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * the context specific tag as needed in the X.509 v3 certificate.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception CertificateException on encoding errors.
-     * @exception IOException on errors.
      */
-    public void encode(OutputStream out)
-    throws CertificateException, IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         encode(out, false);
     }
 
@@ -158,73 +148,52 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      *
      * @param out the DerOutputStream to marshal the contents to.
      * @param isCertReq if true then no context specific tag is added.
-     * @exception CertificateException on encoding errors.
-     * @exception IOException on errors.
      */
-    public void encode(OutputStream out, boolean isCertReq)
-    throws CertificateException, IOException {
+    public void encode(DerOutputStream out, boolean isCertReq) {
         DerOutputStream extOut = new DerOutputStream();
-        Collection<Extension> allExts = map.values();
-        Object[] objs = allExts.toArray();
-
-        for (int i = 0; i < objs.length; i++) {
-            if (objs[i] instanceof CertAttrSet)
-                ((CertAttrSet)objs[i]).encode(extOut);
-            else if (objs[i] instanceof Extension)
-                ((Extension)objs[i]).encode(extOut);
-            else
-                throw new CertificateException("Illegal extension object");
+        for (Extension ext : map.values()) {
+            ext.encode(extOut);
         }
 
-        DerOutputStream seq = new DerOutputStream();
-        seq.write(DerValue.tag_Sequence, extOut);
-
-        DerOutputStream tmp;
         if (!isCertReq) { // certificate
-            tmp = new DerOutputStream();
-            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)3),
+            DerOutputStream seq = new DerOutputStream();
+            seq.write(DerValue.tag_Sequence, extOut);
+            out.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)3),
                     seq);
-        } else
-            tmp = seq; // pkcs#10 certificateRequest
-
-        out.write(tmp.toByteArray());
-    }
-
-    /**
-     * Set the attribute value.
-     * @param name the extension name used in the cache.
-     * @param obj the object to set.
-     * @exception IOException if the object could not be cached.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (obj instanceof Extension) {
-            map.put(name, (Extension)obj);
         } else {
-            throw new IOException("Unknown extension type.");
+            out.write(DerValue.tag_Sequence, extOut);
         }
     }
 
     /**
-     * Get the attribute value.
-     * @param name the extension name used in the lookup.
-     * @exception IOException if named extension is not found.
+     * Set the extension value.
+     * @param name the extension name used in the cache.
+     * @param ext the extension to set.
      */
-    public Extension get(String name) throws IOException {
-        Extension obj = map.get(name);
-        if (obj == null) {
-            throw new IOException("No extension found with name " + name);
-        }
-        return (obj);
+    public void setExtension(String name, Extension ext) {
+        map.put(name, ext);
     }
 
-    // Similar to get(String), but throw no exception, might return null.
-    // Used in X509CertImpl::getExtension(OID).
-    Extension getExtension(String name) {
+    /**
+     * Get the extension with this alias.
+     *
+     * @param alias the identifier string for the extension to retrieve.
+     *              Could be one of "x509.info.extensions.ExtensionName",
+     *              "ExtensionName", "2.3.4.5".
+     */
+    public Extension getExtension(String alias) {
+        String name;
+        if (alias.startsWith(X509CertImpl.NAME)) {
+            int index = alias.lastIndexOf('.');
+            name = alias.substring(index + 1);
+        } else {
+            name = alias;
+        }
         return map.get(name);
     }
 
     /**
-     * Delete the attribute value.
+     * Delete the extension value.
      * @param name the extension name used in the lookup.
      * @exception IOException if named extension is not found.
      */
@@ -245,13 +214,6 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
         return null;
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<Extension> getElements() {
-        return Collections.enumeration(map.values());
-    }
 
     /**
      * Return a collection view of the extensions.
@@ -264,13 +226,6 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     public Map<String,Extension> getUnparseableExtensions() {
         return (unparseableExtensions == null) ?
                 Collections.emptyMap() : unparseableExtensions;
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return NAME;
     }
 
     /**
@@ -295,24 +250,17 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     public boolean equals(Object other) {
         if (this == other)
             return true;
-        if (!(other instanceof CertificateExtensions))
-            return false;
-        Collection<Extension> otherC =
-                ((CertificateExtensions)other).getAllExtensions();
-        Object[] objs = otherC.toArray();
-
-        int len = objs.length;
-        if (len != map.size())
+        if (!(other instanceof CertificateExtensions otherCX))
             return false;
 
-        Extension otherExt, thisExt;
-        String key = null;
-        for (int i = 0; i < len; i++) {
-            if (objs[i] instanceof CertAttrSet)
-                key = ((CertAttrSet)objs[i]).getName();
-            otherExt = (Extension)objs[i];
-            if (key == null)
-                key = otherExt.getExtensionId().toString();
+        Collection<Extension> otherX = otherCX.getAllExtensions();
+        if (otherX.size() != map.size())
+            return false;
+
+        Extension thisExt;
+        String key;
+        for (Extension otherExt : otherX) {
+            key = otherExt.getName();
             thisExt = map.get(key);
             if (thisExt == null)
                 return false;
@@ -320,7 +268,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
                 return false;
         }
         return this.getUnparseableExtensions().equals(
-                ((CertificateExtensions)other).getUnparseableExtensions());
+                otherCX.getUnparseableExtensions());
     }
 
     /**
@@ -343,5 +291,4 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     public String toString() {
         return map.toString();
     }
-
 }

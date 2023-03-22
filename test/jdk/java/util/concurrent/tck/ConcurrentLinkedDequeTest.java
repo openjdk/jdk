@@ -941,7 +941,7 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
 
     /**
      * Non-traversing Deque operations are linearizable.
-     * https://bugs.openjdk.java.net/browse/JDK-8188900
+     * https://bugs.openjdk.org/browse/JDK-8188900
      * ant -Djsr166.expensiveTests=true -Djsr166.tckTestClass=ConcurrentLinkedDequeTest -Djsr166.methodFilter=testBug8188900 tck
      */
     public void testBug8188900() {
@@ -998,7 +998,7 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
     /**
      * Non-traversing Deque operations (that return null) are linearizable.
      * Don't return null when the deque is observably never empty.
-     * https://bugs.openjdk.java.net/browse/JDK-8189387
+     * https://bugs.openjdk.org/browse/JDK-8189387
      * ant -Djsr166.expensiveTests=true -Djsr166.tckTestClass=ConcurrentLinkedDequeTest -Djsr166.methodFilter=testBug8189387 tck
      */
     public void testBug8189387() {

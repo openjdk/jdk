@@ -836,7 +836,7 @@ abstract class MethodHandleImpl {
         invokeArgs[0] = names[SELECT_ALT];
         names[CALL_TARGET] = new Name(basicType, invokeArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, /*forceInline=*/true, Kind.GUARD);
+        lform = LambdaForm.create(lambdaType.parameterCount(), names, /*forceInline=*/true, Kind.GUARD);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWT, lform);
     }
@@ -912,7 +912,7 @@ abstract class MethodHandleImpl {
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_CATCH]};
         names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.GUARD_WITH_CATCH);
+        lform = LambdaForm.create(lambdaType.parameterCount(), names, Kind.GUARD_WITH_CATCH);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWC, lform);
     }
@@ -1005,7 +1005,8 @@ abstract class MethodHandleImpl {
     }
     static MethodHandle fakeVarHandleInvoke(MemberName method) {
         // TODO caching, is it necessary?
-        MethodType type = MethodType.methodType(method.getReturnType(), UnsupportedOperationException.class,
+        MethodType type = MethodType.methodType(method.getMethodType().returnType(),
+                                                UnsupportedOperationException.class,
                                                 VarHandle.class, Object[].class);
         MethodHandle mh = throwException(type);
         mh = mh.bindTo(new UnsupportedOperationException("cannot reflectively invoke VarHandle"));
@@ -1797,7 +1798,7 @@ abstract class MethodHandleImpl {
             names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
             lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_LOOP,
-                    new LambdaForm(lambdaType.parameterCount(), names, Kind.LOOP));
+                    LambdaForm.create(lambdaType.parameterCount(), names, Kind.LOOP));
         }
 
         // BOXED_ARGS is the index into the names array where the loop idiom starts
@@ -2031,7 +2032,7 @@ abstract class MethodHandleImpl {
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_FINALLY]};
         names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.TRY_FINALLY);
+        lform = LambdaForm.create(lambdaType.parameterCount(), names, Kind.TRY_FINALLY);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_TF, lform);
     }
@@ -2126,7 +2127,7 @@ abstract class MethodHandleImpl {
                     names[CALL_NEW_ARRAY], storeIndex, names[argCursor]);
         }
 
-        LambdaForm lform = new LambdaForm(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
+        LambdaForm lform = LambdaForm.create(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
         if (isSharedLambdaForm) {
             lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_COLLECTOR, lform);
         }
@@ -2251,7 +2252,7 @@ abstract class MethodHandleImpl {
             names[UNBOXED_RESULT] = new Name(invokeBasic, unboxArgs);
         }
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.TABLE_SWITCH);
+        lform = LambdaForm.create(lambdaType.parameterCount(), names, Kind.TABLE_SWITCH);
         LambdaForm prev = TableSwitchCacheKey.CACHE.putIfAbsent(key, lform);
         return prev != null ? prev : lform;
     }

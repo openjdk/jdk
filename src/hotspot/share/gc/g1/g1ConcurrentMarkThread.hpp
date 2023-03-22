@@ -55,10 +55,8 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   // Phases and subphases for the full concurrent marking cycle in order.
   //
-  // All these methods return true if the marking should be aborted. Except
-  // phase_clear_cld_claimed_marks() because we must not abort before
-  // scanning the root regions because of a potential deadlock otherwise.
-  void phase_clear_cld_claimed_marks();
+  // All these methods return true if the marking should be aborted.
+  bool phase_clear_cld_claimed_marks();
   bool phase_scan_root_regions();
 
   bool phase_mark_loop();

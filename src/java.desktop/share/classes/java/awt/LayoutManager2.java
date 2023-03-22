@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 package java.awt;
 
 /**
- * Defines an interface for classes that know how to layout Containers
+ * Defines an interface for classes that know how to layout {@code Container}s
  * based on a layout constraints object.
  *
- * This interface extends the LayoutManager interface to deal with layouts
+ * This interface extends the {@code LayoutManager} interface to deal with layouts
  * explicitly in terms of constraint objects that specify how and where
  * components should be added to the layout.
  * <p>
- * This minimal extension to LayoutManager is intended for tool
- * providers who wish to the creation of constraint-based layouts.
+ * This minimal extension to {@code LayoutManager} is intended for tool
+ * providers who wish to create constraint-based layouts.
  * It does not yet provide full, general support for custom
  * constraint-based layout managers.
  *

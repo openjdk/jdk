@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,26 +31,20 @@ import java.util.*;
  */
 public class Group extends Properties.Entity implements ChangedEventProvider<Group>, Folder, FolderElement {
 
-    private final List<FolderElement> elements;
     private final List<InputGraph> graphs;
-
     private InputMethod method;
-    private transient ChangedEvent<Group> changedEvent;
+    private final transient ChangedEvent<Group> changedEvent;
+    private final ChangedEvent<Group> displayNameChangedEvent = new ChangedEvent<>(this);
+
     private Folder parent;
 
     public Group(Folder parent) {
-        elements = new ArrayList<>();
         graphs = new ArrayList<>();
         changedEvent = new ChangedEvent<>(this);
         this.parent = parent;
 
-        // Ensure that name and type are never null
+        // Ensure that name is never null
         getProperties().setProperty("name", "");
-        getProperties().setProperty("type", "");
-    }
-
-    public void fireChangedEvent() {
-        changedEvent.fire();
     }
 
     public void setMethod(InputMethod method) {
@@ -67,33 +61,38 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     }
 
     @Override
-    public List<FolderElement> getElements() {
-        return Collections.unmodifiableList(elements);
-    }
-
-    public int getGraphsCount() {
-        return elements.size();
+    public void addElement(FolderElement element) {
+        assert element instanceof InputGraph;
+        graphs.add((InputGraph) element);
+        element.setParent(this);
+        getChangedEvent().fire();
     }
 
     @Override
-    public void addElement(FolderElement element) {
-        elements.add(element);
-        if (element instanceof InputGraph) {
-            graphs.add((InputGraph) element);
-        } else {
-
+    public void removeElement(FolderElement element) {
+        assert element instanceof InputGraph;
+        if (graphs.remove((InputGraph) element)) {
+            getChangedEvent().fire();
         }
-        element.setParent(this);
-        changedEvent.fire();
+        for (InputGraph inputGraph : graphs) {
+            assert inputGraph.getDisplayNameChangedEvent() != null;
+            inputGraph.getDisplayNameChangedEvent().fire();
+        }
+    }
+
+    @Override
+    public List<FolderElement> getElements() {
+        return Collections.unmodifiableList(graphs);
+    }
+
+    public List<InputGraph> getGraphs() {
+        return Collections.unmodifiableList(graphs);
     }
 
     public Set<Integer> getAllNodes() {
         Set<Integer> result = new HashSet<>();
-        for (FolderElement e : elements) {
-            if (e instanceof InputGraph) {
-                InputGraph g = (InputGraph) e;
-                result.addAll(g.getNodesAsSet());
-            }
+        for (InputGraph g : graphs) {
+            result.addAll(g.getNodesAsSet());
         }
         return result;
     }
@@ -102,7 +101,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Group ").append(getProperties()).append("\n");
-        for (FolderElement g : elements) {
+        for (FolderElement g : getElements()) {
             sb.append(g.toString());
             sb.append('\n');
         }
@@ -110,18 +109,33 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     }
 
     @Override
+    public ChangedEvent<Group> getDisplayNameChangedEvent() {
+        return displayNameChangedEvent;
+    }
+
+    @Override
+    public void setName(String name) {
+        getProperties().setProperty("name", name);
+        displayNameChangedEvent.fire();
+    }
+
+    @Override
     public String getName() {
         return getProperties().get("name");
     }
 
+    @Override
+    public String getDisplayName() {
+        return (getParent() == null ? "" : getParent().getElements().indexOf(this) + 1 + " - ") + getName();
+    }
+
     public String getType() {
         return getProperties().get("type");
-
     }
 
     InputGraph getPrev(InputGraph graph) {
         InputGraph lastGraph = null;
-        for (FolderElement e : elements) {
+        for (FolderElement e : getElements()) {
             if (e == graph) {
                 return lastGraph;
             }
@@ -134,7 +148,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
 
     InputGraph getNext(InputGraph graph) {
         boolean found = false;
-        for (FolderElement e : elements) {
+        for (FolderElement e : getElements()) {
             if (e == graph) {
                 found = true;
             } else if (found && e instanceof InputGraph) {
@@ -144,35 +158,10 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         return null;
     }
 
-    public InputGraph getLastGraph() {
-        InputGraph lastGraph = null;
-        for (FolderElement e : elements) {
-            if (e instanceof InputGraph) {
-                lastGraph = (InputGraph) e;
-            }
-        }
-        return lastGraph;
-    }
-
     @Override
     public Folder getParent() {
          return parent;
     }
-
-    @Override
-    public void removeElement(FolderElement element) {
-        if (elements.remove(element)) {
-            if (element instanceof InputGraph) {
-                graphs.remove((InputGraph) element);
-            }
-            changedEvent.fire();
-        }
-    }
-
-    public List<InputGraph> getGraphs() {
-        return graphs;
-    }
-
     @Override
     public void setParent(Folder parent) {
         this.parent = parent;

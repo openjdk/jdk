@@ -295,6 +295,10 @@ public class Platform {
             } else if (line.indexOf("flags=0x20002(adhoc,linker-signed)") != -1 ) {
                 hardenedStatusConfirmed = true;
                 isHardened = false;
+                System.out.println("Target JDK is adhoc linker-signed, but not hardened.");
+            } else if (line.indexOf("flags=0x2(adhoc)") != -1 ) {
+                hardenedStatusConfirmed = true;
+                isHardened = false;
                 System.out.println("Target JDK is adhoc signed, but not hardened.");
             } else if (line.indexOf("code object is not signed at all") != -1) {
                 hardenedStatusConfirmed = true;

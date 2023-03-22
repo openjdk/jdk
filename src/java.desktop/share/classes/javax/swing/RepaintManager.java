@@ -122,7 +122,7 @@ public class RepaintManager
     DoubleBufferInfo standardDoubleBuffer;
 
     /**
-     * Object responsible for hanlding core paint functionality.
+     * Object responsible for handling core paint functionality.
      */
     private PaintManager paintManager;
 

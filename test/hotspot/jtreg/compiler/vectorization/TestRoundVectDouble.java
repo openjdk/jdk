@@ -51,7 +51,7 @@ public class TestRoundVectDouble {
   }
 
   @Test
-  @IR(applyIf = {"UseAVX", "3"}, counts = {"RoundVD" , " > 0 "})
+  @IR(applyIf = {"UseAVX", "3"}, counts = {IRNode.ROUND_VD, " > 0 "})
   public void test_round_double(long[] lout, double[] dinp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Math.round(dinp[i]);

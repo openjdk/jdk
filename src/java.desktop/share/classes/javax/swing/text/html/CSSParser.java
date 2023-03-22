@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,29 +28,30 @@ import java.io.*;
 
 /**
  * A CSS parser. This works by way of a delegate that implements the
- * CSSParserCallback interface. The delegate is notified of the following
+ * {@code CSSParserCallback} interface. The delegate is notified of the following
  * events:
  * <ul>
- *   <li>Import statement: <code>handleImport</code>
- *   <li>Selectors <code>handleSelector</code>. This is invoked for each
+ *   <li>Import statement: {@code handleImport}.
+ *   <li>Selectors {@code handleSelector}. This is invoked for each
  *       string. For example if the Reader contained p, bar , a {}, the delegate
  *       would be notified 4 times, for 'p,' 'bar' ',' and 'a'.
- *   <li>When a rule starts, <code>startRule</code>
- *   <li>Properties in the rule via the <code>handleProperty</code>. This
- *       is invoked one per property/value key, eg font size: foo;, would
+ *   <li>When a rule starts, {@code startRule}.
+ *   <li>Properties in the rule via the {@code handleProperty}. This
+ *       is invoked once per property/value key, for example font size: foo;, would
  *       cause the delegate to be notified once with a value of 'font size'.
- *   <li>Values in the rule via the <code>handleValue</code>, this is notified
+ *   <li>Values in the rule via the {@code handleValue}, this is notified
  *       for the total value.
- *   <li>When a rule ends, <code>endRule</code>
+ *   <li>When a rule ends, {@code endRule}.
  * </ul>
  * This will parse much more than CSS 1, and loosely implements the
  * recommendation for <i>Forward-compatible parsing</i> in section
  * 7.1 of the CSS spec found at:
  * <a href=http://www.w3.org/TR/REC-CSS1>http://www.w3.org/TR/REC-CSS1</a>.
- * If an error results in parsing, a RuntimeException will be thrown.
  * <p>
- * This will preserve case. If the callback wishes to treat certain poritions
- * case insensitively (such as selectors), it should use toLowerCase, or
+ * If parsing results in an error, a {@code RuntimeException} will be thrown.
+ * <p>
+ * This will preserve case. If the callback wishes to treat certain portions
+ * case-insensitively (such as selectors), it should use {@code toLowerCase}, or
  * something similar.
  *
  * @author Scott Violet
@@ -118,7 +119,7 @@ class CSSParser {
 
     // The delegate interface.
     static interface CSSParserCallback {
-        /** Called when an @import is encountered. */
+        /** Called when an {@code @import} is encountered. */
         void handleImport(String importString);
         // There is currently no way to distinguish between '"foo,"' and
         // 'foo,'. But this generally isn't valid CSS. If it becomes
@@ -201,7 +202,7 @@ class CSSParser {
      * Parses an @ rule, stopping at a matching brace pair, or ;.
      */
     private void parseAtRule() throws IOException {
-        // PENDING: make this more effecient.
+        // PENDING: make this more efficient.
         boolean        done = false;
         boolean isImport = (tokenBufferLength == 7 &&
                             tokenBuffer[0] == '@' && tokenBuffer[1] == 'i' &&
@@ -360,9 +361,9 @@ class CSSParser {
     }
 
     /**
-     * Parses identifiers until <code>extraChar</code> is encountered,
-     * returning the ending token, which will be IDENTIFIER if extraChar
-     * is found.
+     * Parses identifiers until {@code extraChar} is encountered,
+     * returning the ending token, which will be {@code IDENTIFIER} if
+     * {@code extraChar} is found.
      */
     private int parseIdentifiers(char extraChar,
                                  boolean wantsBlocks) throws IOException {
@@ -508,9 +509,9 @@ class CSSParser {
     }
 
     /**
-     * Gets an identifier, returning true if the length of the string is greater than 0,
-     * stopping when <code>stopChar</code>, whitespace, or one of {}()[] is
-     * hit.
+     * Gets an identifier, returning {@code true} if the length of the string is
+     * greater than 0, stopping when {@code stopChar}, whitespace, or one of
+     * {}()[] is hit.
      */
     // NOTE: this could be combined with readTill, as they contain somewhat
     // similar functionality.
@@ -631,7 +632,7 @@ class CSSParser {
     }
 
     /**
-     * Reads till a <code>stopChar</code> is encountered, escaping characters
+     * Reads till a {@code stopChar} is encountered, escaping characters
      * as necessary.
      */
     private void readTill(char stopChar) throws IOException {

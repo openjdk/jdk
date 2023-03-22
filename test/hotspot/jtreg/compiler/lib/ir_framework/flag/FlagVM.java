@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,19 @@ import java.util.Arrays;
  */
 public class FlagVM {
     public static final String TEST_VM_FLAGS_FILE_PREFIX = "test-vm-flags-pid-";
-    public static final String TEST_VM_FLAGS_FILE_POSTFIX = ".log";
+    public static final String FILE_POSTFIX = ".log";
     public static final String TEST_VM_FLAGS_DELIMITER = " ";
+    public static final String TEST_VM_COMPILE_COMMANDS_PREFIX = "test-vm-compile-commands-pid-";
 
-    private static final String TEST_VM_FLAGS_FILE;
+    public static final String TEST_VM_FLAGS_FILE;
+    public static final String TEST_VM_COMPILE_COMMANDS_FILE;
     private static final WhiteBox WHITE_BOX;
 
     static {
         try {
             WHITE_BOX = WhiteBox.getWhiteBox();
-            TEST_VM_FLAGS_FILE = TEST_VM_FLAGS_FILE_PREFIX + ProcessTools.getProcessId() + TEST_VM_FLAGS_FILE_POSTFIX;
+            TEST_VM_FLAGS_FILE = TEST_VM_FLAGS_FILE_PREFIX + ProcessTools.getProcessId() + FILE_POSTFIX;
+            TEST_VM_COMPILE_COMMANDS_FILE = TEST_VM_COMPILE_COMMANDS_PREFIX + ProcessTools.getProcessId() + FILE_POSTFIX;
         } catch (UnsatisfiedLinkError e) {
             throw new TestFrameworkException("Could not load WhiteBox", e);
         } catch (Exception e) {
@@ -74,10 +77,6 @@ public class FlagVM {
     private static final boolean FLIP_C1_C2 = Boolean.getBoolean("FlipC1C2");
     private static final boolean REQUESTED_VERIFY_IR = Boolean.parseBoolean(System.getProperty("VerifyIR", "true"));
     private static final boolean VERIFY_IR = REQUESTED_VERIFY_IR && USE_COMPILER && !EXCLUDE_RANDOM && !FLIP_C1_C2 && !TEST_C1 && Platform.isServer();
-
-    private static String[] getPrintFlags() {
-        return new String[] {"-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions"};
-    }
 
     /**
      * Main entry point of the flag VM.
@@ -115,22 +114,24 @@ public class FlagVM {
     private static ArrayList<String> setupIrVerificationFlags(Class<?> testClass) {
         ArrayList<String> cmds = new ArrayList<>();
         if (VERIFY_IR) {
-            // Add print flags for IR verification
-            cmds.addAll(Arrays.asList(getPrintFlags()));
-            cmds.add("-XX:+LogCompilation");
-            cmds.add("-XX:CompileCommand=log," + testClass.getCanonicalName() + "::*");
-            addBoolOptionForClass(cmds, testClass, "PrintIdeal");
-            addBoolOptionForClass(cmds, testClass, "PrintOptoAssembly");
-            // Always trap for exception throwing to not confuse IR verification
-            cmds.add("-XX:-OmitStackTraceInFastThrow");
-            cmds.add("-DShouldDoIRVerification=true");
+            addIRVerificationFlags(cmds, testClass);
         } else {
             cmds.add("-DShouldDoIRVerification=false");
         }
         return cmds;
     }
 
-    private static void addBoolOptionForClass(ArrayList<String> cmds, Class<?> testClass, String option) {
-        cmds.add("-XX:CompileCommand=option," + testClass.getCanonicalName() + "::*,bool," + option + ",true");
+    private static void addIRVerificationFlags(ArrayList<String> cmds, Class<?> testClass) {
+        cmds.addAll(Arrays.asList(getPrintFlags()));
+        cmds.add("-XX:+LogCompilation");
+        CompilerDirectivesFlagBuilder compilerDirectivesFlagBuilder = new CompilerDirectivesFlagBuilder(testClass);
+        cmds.addAll(compilerDirectivesFlagBuilder.build());
+        // Always trap for exception throwing to not confuse IR verification
+        cmds.add("-XX:-OmitStackTraceInFastThrow");
+        cmds.add("-DShouldDoIRVerification=true");
+    }
+
+    private static String[] getPrintFlags() {
+        return new String[] {"-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions"};
     }
 }

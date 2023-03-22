@@ -21,8 +21,17 @@
  * questions.
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTException;
+import java.awt.Component;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Scrollbar;
+import java.awt.Toolkit;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 
 /**
  * @test
@@ -32,31 +41,28 @@ import java.awt.event.*;
  */
 
 public final class ScrollbarMouseWheelTest
-        implements MouseWheelListener, WindowListener {
+        implements MouseWheelListener {
 
-    final static String tk = Toolkit.getDefaultToolkit().getClass().getName();
+    final static boolean isWindows =
+            Toolkit.getDefaultToolkit().getClass()
+                    .getName().equals("sun.awt.windows.WToolkit");
+
     final static int REPS = 5;
     // There is a bug on Windows: 4616935.
     // Wheel events comes to every component in the hierarchy so we should
     // check a platform.
     // There are two scrollbars within one Panel and both accept 5 clicks, so
     // Panel would accept 5*2 clicks on Windows.
-    final static int PANEL_REPS = tk.equals("sun.awt.windows.WToolkit")? REPS * 2: REPS;
+    final static int PANEL_REPS = isWindows ? REPS * 2: REPS;
 
     Scrollbar sb1;
     Scrollbar sb2;
     Panel pnl;
-    class Sema {
-        boolean flag;
-        boolean getVal() { return flag;}
-        void setVal(boolean b) { flag = b;}
-    }
-    Sema sema = new Sema();
 
     Robot robot;
 
-    int sb1upevents, sb2upevents, pnlupevents;
-    int sb1downevents, sb2downevents, pnldownevents;
+    volatile int sb1upevents, sb2upevents, pnlupevents;
+    volatile int sb1downevents, sb2downevents, pnldownevents;
 
     public static void main(final String[] args) {
         new ScrollbarMouseWheelTest().test();
@@ -69,15 +75,13 @@ public final class ScrollbarMouseWheelTest
         } catch (AWTException e) {
             System.out.println("Problem creating Robot.  FAIL.");
             throw new RuntimeException("Problem creating Robot.  FAIL.");
-
         }
 
-        robot.setAutoDelay(500);
+        robot.setAutoDelay(250);
         robot.setAutoWaitForIdle(true);
 
         // Show test Frame
         Frame frame = new Frame("ScrollbarMouseWheelTest");
-        frame.addWindowListener(this);
         pnl = new Panel();
         pnl.setLayout(new GridLayout(1, 2));
         pnl.addMouseWheelListener(this);
@@ -92,14 +96,9 @@ public final class ScrollbarMouseWheelTest
         frame.setVisible(true);
         frame.toFront();
 
-        // When Frame is active, start testing (handled in windowActivated())
-        while (true) {
-            synchronized (sema) {
-                if (sema.getVal()) {
-                    break;
-                }
-            }
-        }
+        robot.waitForIdle();
+        robot.delay(1000);
+
         // up on sb1
         testComp(sb1, true);
         // down on sb1
@@ -108,7 +107,11 @@ public final class ScrollbarMouseWheelTest
         testComp(sb2, true);
         // down on sb2
         testComp(sb2, false);
+
+        robot.delay(500);
+
         frame.dispose();
+
         System.out.println("Test done.");
         if (sb1upevents == REPS &&
                 sb2upevents == 0 &&
@@ -166,17 +169,4 @@ public final class ScrollbarMouseWheelTest
             System.out.println("weird wheel rotation");
         }
     }
-
-    public void windowActivated(WindowEvent we) {
-        synchronized (sema) {
-            sema.setVal(true);
-        }
-    }
-
-    public void windowClosed(WindowEvent we) {}
-    public void windowClosing(WindowEvent we) {}
-    public void windowDeactivated(WindowEvent we) {}
-    public void windowDeiconified(WindowEvent we) {}
-    public void windowIconified(WindowEvent we) {}
-    public void windowOpened(WindowEvent we) {}
 }// class ScrollbarMouseWheelTest

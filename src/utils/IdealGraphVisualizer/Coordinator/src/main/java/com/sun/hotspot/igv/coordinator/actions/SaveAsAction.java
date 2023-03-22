@@ -25,19 +25,21 @@
 package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.FolderNode;
-import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import com.sun.hotspot.igv.data.Folder;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.serialization.Printer;
 import com.sun.hotspot.igv.settings.Settings;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.file.Files;
 import javax.swing.Action;
 import javax.swing.JFileChooser;
 import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
-import org.openide.util.actions.CookieAction;
 import org.openide.util.actions.NodeAction;
 
 /**
@@ -52,7 +54,6 @@ public final class SaveAsAction extends NodeAction {
 
     @Override
     protected void performAction(Node[] activatedNodes) {
-        final OutlineTopComponent component = OutlineTopComponent.findInstance();
         GraphDocument doc = new GraphDocument();
         for (Node node : activatedNodes) {
             if (node instanceof FolderNode) {
@@ -84,21 +85,14 @@ public final class SaveAsAction extends NodeAction {
             }
             Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
             try {
-                try (Writer writer = new OutputStreamWriter(new FileOutputStream(file))) {
+                try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()))) {
                     Printer p = new Printer();
                     p.export(writer, doc);
                 }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-
             }
         }
-    }
-
-    protected int mode() {
-        return CookieAction.MODE_SOME;
     }
 
     @Override

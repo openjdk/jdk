@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
  */
 
 import java.lang.ref.Reference;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DynamicCodeGeneratedTest {
     static {
@@ -38,20 +40,28 @@ public class DynamicCodeGeneratedTest {
     }
     public static native void changeEventNotificationMode();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         // Try to enable DynamicCodeGenerated event while it is posted
         // using JvmtiDynamicCodeEventCollector from VtableStubs::find_stub
-        Thread t = new Thread(() -> {
+        Thread threadChangeENM = new Thread(() -> {
             changeEventNotificationMode();
         });
-        t.setDaemon(true);
-        t.start();
+        threadChangeENM.setDaemon(true);
+        threadChangeENM.start();
 
-        for (int i = 0; i < 2000; i++) {
-            new Thread(() -> {
-                String result = "string" + System.currentTimeMillis();
-                Reference.reachabilityFence(result);
-            }).start();
+        for (int i = 0; i < 10; i++) {
+            List<Thread> threads = new ArrayList();
+            for (int j = 0; j < 200; j++) {
+                Thread t = new Thread(() -> {
+                        String result = "string" + System.currentTimeMillis();
+                        Reference.reachabilityFence(result);
+                });
+                threads.add(t);
+                t.start();
+            }
+            for (Thread t: threads) {
+                t.join();
+            }
         }
     }
 }

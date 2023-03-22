@@ -32,7 +32,7 @@
 
 
 // jdk.internal.misc.Signal ///////////////////////////////////////////////////////////
-// Signal code is mostly copied from classic vm, signals_md.c   1.4 98/08/23
+
 /*
  * This function is included primarily as a debugging aid. If Java is
  * running in a console window, then pressing <CTRL-\\> will cause
@@ -41,10 +41,8 @@
  */
 
 JVM_ENTRY_NO_ENV(void*, JVM_RegisterSignal(jint sig, void* handler))
-  // Copied from classic vm
-  // signals_md.c       1.4 98/08/23
   void* newHandler = handler == (void *)2
-                   ? os::user_handler()
+                   ? PosixSignals::user_handler()
                    : handler;
   switch (sig) {
     /* The following are already used by the VM. */
@@ -82,8 +80,8 @@ JVM_ENTRY_NO_ENV(void*, JVM_RegisterSignal(jint sig, void* handler))
       if (PosixSignals::is_sig_ignored(sig)) return (void*)1;
   }
 
-  void* oldHandler = os::signal(sig, newHandler);
-  if (oldHandler == os::user_handler()) {
+  void* oldHandler = PosixSignals::install_generic_signal_handler(sig, newHandler);
+  if (oldHandler == PosixSignals::user_handler()) {
       return (void *)2;
   } else {
       return oldHandler;
@@ -111,6 +109,6 @@ JVM_ENTRY_NO_ENV(jboolean, JVM_RaiseSignal(jint sig))
     return JNI_FALSE;
   }
 
-  os::signal_raise(sig);
+  ::raise(sig);
   return JNI_TRUE;
 JVM_END

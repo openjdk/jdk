@@ -29,8 +29,7 @@
  */
 
 import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
 
@@ -50,11 +49,11 @@ public class TestUnsupportedLinker {
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testNonEmptyVaList() {
-        VaList.make(builder -> builder.addVarg(ValueLayout.JAVA_INT, 42), MemorySession.openImplicit());
+        VaList.make(builder -> builder.addVarg(ValueLayout.JAVA_INT, 42), SegmentScope.auto());
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testUnsafeVaList() {
-        VaList.ofAddress(MemoryAddress.NULL, MemorySession.openImplicit());
+        VaList.ofAddress(0L, SegmentScope.auto());
     }
 }

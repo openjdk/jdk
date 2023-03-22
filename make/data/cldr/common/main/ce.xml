@@ -105,6 +105,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">британин ингалсан</language>
 			<language type="en_GB" alt="short">ингалсан (Британи)</language>
 			<language type="en_US">американ ингалсан</language>
+			<language type="en_US" alt="short">ингалсан (АЦШ)</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испанхойн</language>
 			<language type="es_419">латинан американ испанхойн</language>
@@ -3841,9 +3842,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">

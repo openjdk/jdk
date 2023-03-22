@@ -132,7 +132,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     }
 
     @Override
-    protected void addTableTabs(Table table, String headingKey) {
+    protected void addTableTabs(Table<Element> table, String headingKey) {
         List<String> releases = builder.releases;
         if (!releases.isEmpty()) {
             table.setGridStyle(HtmlStyle.threeColumnReleaseSummary);
