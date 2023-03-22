@@ -3234,7 +3234,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ load_klass_check_null(r0, recv);
+  __ load_klass(r0, recv);
 
   // profile this call
   __ profile_virtual_call(r0, rlocals, r3);
@@ -3322,8 +3322,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   Label notVFinal;
   __ tbz(r3, ConstantPoolCacheEntry::is_vfinal_shift, notVFinal);
 
-  // Get receiver klass into r3 - also a null check
-  __ load_klass_check_null(r3, r2);
+  // Get receiver klass into r3
+  __ load_klass(r3, r2);
 
   Label subtype;
   __ check_klass_subtype(r3, r0, r4, subtype);
@@ -3337,9 +3337,9 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   __ bind(notVFinal);
 
-  // Get receiver klass into r3 - also a null check
+  // Get receiver klass into r3
   __ restore_locals();
-  __ load_klass_check_null(r3, r2);
+  __ load_klass(r3, r2);
 
   Label no_such_method;
 

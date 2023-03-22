@@ -3486,7 +3486,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // Get receiver klass.
-  __ load_klass_check_null(Z_tmp_2, recv, Z_R0_scratch);
+  __ load_klass(Z_tmp_2, recv);
 
   // Profile this call.
   __ profile_virtual_call(Z_tmp_2, Z_ARG4, Z_ARG5);
