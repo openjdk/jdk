@@ -267,7 +267,6 @@ void mutex_init() {
   def(InitCompleted_lock           , nosafepoint);
   def(Notify_lock                  , safepoint, true);
 
-  def(Heap_lock                    , safepoint); // Doesn't safepoint check during termination.
   def(JfieldIdCreation_lock        , safepoint);
 
   def(CompiledIC_lock              , nosafepoint);  // locks VtableStubs_lock, InlineCacheBuffer_lock
@@ -319,6 +318,7 @@ void mutex_init() {
   def(CDSLambda_lock               , nosafepoint);
   def(DumpRegion_lock              , nosafepoint);
   def(ClassListFile_lock           , nosafepoint);
+  def(UnregisteredClassesTable_lock, nosafepoint);
   def(LambdaFormInvokers_lock      , safepoint);
   def(ScratchObjects_lock          , nosafepoint-1); // Holds DumpTimeTable_lock
 #endif // INCLUDE_CDS
