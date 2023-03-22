@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Event field annotation, specifies that the value is a boolean flag, a {@code true} or
- * {@code false} value.
+ * Event field annotation, specifies that the value is a boolean flag, a
+ * {@code true} or {@code false} value.
+ * <p>
+ * The following example shows how the {@code BooleanFlag} annotation can be
+ * used to describe that a setting is a boolean value. This information can be
+ * used by a graphical user interface to display the setting as a checkbox.
+ *
+ * {@snippet class = "Snippets" region = "BooleanFlagOverview"}
  *
  * @since 9
  */

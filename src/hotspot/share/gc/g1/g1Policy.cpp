@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -800,11 +799,9 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _eden_surv_rate_group->start_adding_regions();
 
-  double merge_hcc_time_ms = average_time_ms(G1GCPhaseTimes::MergeHCC);
   if (update_stats) {
     // Update prediction for card merge.
-    size_t const merged_cards_from_log_buffers = p->sum_thread_work_items(G1GCPhaseTimes::MergeHCC, G1GCPhaseTimes::MergeHCCDirtyCards) +
-                                                 p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
+    size_t const merged_cards_from_log_buffers = p->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards);
     // MergeRSCards includes the cards from the Eager Reclaim phase.
     size_t const merged_cards_from_rs = p->sum_thread_work_items(G1GCPhaseTimes::MergeRS, G1GCPhaseTimes::MergeRSCards) +
                                         p->sum_thread_work_items(G1GCPhaseTimes::OptMergeRS, G1GCPhaseTimes::MergeRSCards);
@@ -814,7 +811,6 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     if (total_cards_merged >= G1NumCardsCostSampleThreshold) {
       double avg_time_merge_cards = average_time_ms(G1GCPhaseTimes::MergeER) +
                                     average_time_ms(G1GCPhaseTimes::MergeRS) +
-                                    average_time_ms(G1GCPhaseTimes::MergeHCC) +
                                     average_time_ms(G1GCPhaseTimes::MergeLB) +
                                     average_time_ms(G1GCPhaseTimes::OptMergeRS);
       _analytics->report_cost_per_card_merge_ms(avg_time_merge_cards / total_cards_merged, is_young_only_pause);
@@ -897,36 +893,21 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double logged_cards_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  if (logged_cards_time_goal_ms < merge_hcc_time_ms) {
-    log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
-                                "Logged Cards Scan time goal: %1.2fms Scan HCC time: %1.2fms",
-                                logged_cards_time_goal_ms, merge_hcc_time_ms);
-
-    logged_cards_time_goal_ms = 0;
-  } else {
-    logged_cards_time_goal_ms -= merge_hcc_time_ms;
-  }
-
   double const logged_cards_time_ms = logged_cards_processing_time();
   size_t logged_cards =
     phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB,
                                          G1GCPhaseTimes::MergeLBDirtyCards);
-  size_t hcc_cards =
-    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeHCC,
-                                         G1GCPhaseTimes::MergeHCCDirtyCards);
   bool exceeded_goal = logged_cards_time_goal_ms < logged_cards_time_ms;
   size_t predicted_thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1ConcurrentRefine* cr = _g1h->concurrent_refine();
 
   log_debug(gc, ergo, refine)
-           ("GC refinement: goal: %zu + %zu / %1.2fms, actual: %zu / %1.2fms, HCC: %zu / %1.2fms%s",
+           ("GC refinement: goal: %zu + %zu / %1.2fms, actual: %zu / %1.2fms, %s",
             cr->pending_cards_target(),
             predicted_thread_buffer_cards,
             logged_cards_time_goal_ms,
             logged_cards,
             logged_cards_time_ms,
-            hcc_cards,
-            merge_hcc_time_ms,
             (exceeded_goal ? " (exceeded goal)" : ""));
 
   cr->adjust_after_gc(logged_cards_time_ms,

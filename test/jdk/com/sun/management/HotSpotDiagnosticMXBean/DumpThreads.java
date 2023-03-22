@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm DumpThreads
- * @run testng/othervm -Djdk.trackAllThreads DumpThreads
- * @run testng/othervm -Djdk.trackAllThreads=true DumpThreads
- * @run testng/othervm -Djdk.trackAllThreadds=false DumpThreads
+ * @run junit/othervm DumpThreads
+ * @run junit/othervm -Djdk.trackAllThreads DumpThreads
+ * @run junit/othervm -Djdk.trackAllThreads=true DumpThreads
+ * @run junit/othervm -Djdk.trackAllThreadds=false DumpThreads
  */
 
 import java.lang.management.ManagementFactory;
@@ -47,10 +47,10 @@ import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.HotSpotDiagnosticMXBean.ThreadDumpFormat;
 import jdk.test.lib.threaddump.ThreadDump;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class DumpThreads {
+class DumpThreads {
     private static final boolean TRACK_ALL_THREADS;
     static {
         String s = System.getProperty("jdk.trackAllThreads");
@@ -61,7 +61,7 @@ public class DumpThreads {
      * Thread dump in plain text format.
      */
     @Test
-    public void testPlainText() throws Exception {
+    void testPlainText() throws Exception {
         var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         Path file = genOutputPath("txt");
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -98,7 +98,7 @@ public class DumpThreads {
      * Thread dump in JSON format.
      */
     @Test
-    public void testJson() throws Exception {
+    void testJson() throws Exception {
         var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         Path file = genOutputPath("json");
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -118,7 +118,7 @@ public class DumpThreads {
                 ZonedDateTime.parse(threadDump.time());
 
                 // test threadDump/runtimeVersion
-                assertEquals(threadDump.runtimeVersion(), Runtime.version().toString());
+                assertEquals(Runtime.version().toString(), threadDump.runtimeVersion());
 
                 // test root container
                 var rootContainer = threadDump.rootThreadContainer();
@@ -150,7 +150,7 @@ public class DumpThreads {
      * Test that dumpThreads throws if the output file already exists.
      */
     @Test
-    public void testFileAlreadyExsists() throws Exception {
+    void testFileAlreadyExsists() throws Exception {
         var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         String file = Files.createFile(genOutputPath("txt")).toString();
         assertThrows(FileAlreadyExistsException.class,
@@ -163,7 +163,7 @@ public class DumpThreads {
      * Test that dumpThreads throws if the file path is relative.
      */
     @Test
-    public void testRelativePath() throws Exception {
+    void testRelativePath() throws Exception {
         var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         assertThrows(IllegalArgumentException.class,
                 () -> mbean.dumpThreads("threads.txt", ThreadDumpFormat.TEXT_PLAIN));
@@ -175,7 +175,7 @@ public class DumpThreads {
      * Test that dumpThreads throws with null parameters.
      */
     @Test
-    public void testNull() throws Exception {
+    void testNull() throws Exception {
         var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         assertThrows(NullPointerException.class,
                 () -> mbean.dumpThreads(null, ThreadDumpFormat.TEXT_PLAIN));

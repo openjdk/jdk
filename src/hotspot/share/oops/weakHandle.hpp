@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class OopStorage;
 // processed weakly by GC.  The runtime structures that point to the oop must
 // either peek or resolve the oop, the latter will keep the oop alive for
 // the GC cycle.  The runtime structures that reference the oop must test
-// if the value is NULL.  If it is NULL, it has been cleaned out by GC.
+// if the value is null.  If it is null, it has been cleaned out by GC.
 // This is the vm version of jweak but has different GC lifetimes and policies,
 // depending on the type.
 
@@ -46,21 +46,21 @@ class WeakHandle {
 
   WeakHandle(oop* w) : _obj(w) {}
  public:
-  WeakHandle() : _obj(NULL) {} // needed for init
+  WeakHandle() : _obj(nullptr) {} // needed for init
   WeakHandle(OopStorage* storage, Handle obj);
   WeakHandle(OopStorage* storage, oop obj);
 
   inline oop resolve() const;
   inline oop peek() const;
   void release(OopStorage* storage) const;
-  bool is_null() const { return _obj == NULL; }
+  bool is_null() const { return _obj == nullptr; }
 
   void replace(oop with_obj);
 
   void print() const;
   void print_on(outputStream* st) const;
 
-  bool is_empty() const { return _obj == NULL; }
+  bool is_empty() const { return _obj == nullptr; }
   oop* ptr_raw() const { return _obj; }
 };
 

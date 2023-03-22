@@ -230,6 +230,10 @@ class MemTracker : AllStatic {
 
   static void tuning_statistics(outputStream* out);
 
+  // MallocLimt: Given an allocation size s, check if mallocing this much
+  // under category f would hit either the global limit or the limit for category f.
+  static inline bool check_exceeds_limit(size_t s, MEMFLAGS f);
+
  private:
   static void report(bool summary_only, outputStream* output, size_t scale);
 

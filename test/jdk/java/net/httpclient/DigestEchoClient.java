@@ -507,7 +507,7 @@ public class DigestEchoClient {
                 System.gc();
                 if (queue.remove(100) == ref) break;
             }
-            var error = TRACKER.checkShutdown(500);
+            var error = TRACKER.checkShutdown(900);
             if (error != null) throw error;
         }
         System.out.println("OK");

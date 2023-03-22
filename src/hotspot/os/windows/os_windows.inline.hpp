@@ -57,7 +57,6 @@ inline void os::map_stack_shadow_pages(address sp) {
   }
 }
 
-inline bool os::numa_has_static_binding()   { return true;   }
 inline bool os::numa_has_group_homing()     { return false;  }
 
 // Platform Mutex/Monitor implementation

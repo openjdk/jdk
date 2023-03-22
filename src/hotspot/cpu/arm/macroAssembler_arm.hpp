@@ -55,7 +55,7 @@ class AddressLiteral {
   // creation
   AddressLiteral()
     : _is_lval(false),
-      _target(NULL)
+      _target(nullptr)
   {}
 
   public:
@@ -285,7 +285,7 @@ public:
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // No registers are killed, except temp_regs.
   void check_klass_subtype_fast_path(Register sub_klass,
                                      Register super_klass,
@@ -853,6 +853,7 @@ public:
     // klass oop manipulations if compressed
 
   void load_klass(Register dst_klass, Register src_oop, AsmCondition cond = al);
+  void load_klass_check_null(Register dst_klass, Register src_oop, Register tmp, AsmCondition cond = al);
 
   void store_klass(Register src_klass, Register dst_oop);
 

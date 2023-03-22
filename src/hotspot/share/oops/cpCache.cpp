@@ -59,7 +59,7 @@
 void ConstantPoolCacheEntry::initialize_entry(int index) {
   assert(0 < index && index < 0x10000, "sanity check");
   _indices = index;
-  _f1 = NULL;
+  _f1 = nullptr;
   _f2 = _flags = 0;
   assert(constant_pool_index() == index, "");
 }
@@ -101,7 +101,7 @@ void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
 
 // Sets f1, ordering with previous writes.
 void ConstantPoolCacheEntry::release_set_f1(Metadata* f1) {
-  assert(f1 != NULL, "");
+  assert(f1 != nullptr, "");
   Atomic::release_store(&_f1, f1);
 }
 
@@ -158,12 +158,12 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
                                                        int vtable_index,
                                                        bool sender_is_interface) {
   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
-  assert(method->interpreter_entry() != NULL, "should have been set at this point");
+  assert(method->interpreter_entry() != nullptr, "should have been set at this point");
   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
 
   int byte_no = -1;
   bool change_to_virtual = false;
-  InstanceKlass* holder = NULL;  // have to declare this outside the switch
+  InstanceKlass* holder = nullptr;  // have to declare this outside the switch
   switch (invoke_code) {
     case Bytecodes::_invokeinterface:
       holder = method->method_holder();
@@ -251,7 +251,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
     }
     if (invoke_code == Bytecodes::_invokestatic) {
       assert(method->method_holder()->is_initialized() ||
-             method->method_holder()->is_init_thread(Thread::current()),
+             method->method_holder()->is_init_thread(JavaThread::current()),
              "invalid class initialization state for invoke_static");
 
       if (!VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
@@ -396,7 +396,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
                    (                   1      << is_final_shift            ),
                    adapter->size_of_parameters());
 
-  LogStream* log_stream = NULL;
+  LogStream* log_stream = nullptr;
   LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
   if (lsh_indy.is_enabled()) {
     ResourceMark rm;
@@ -443,7 +443,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   set_bytecode_1(invoke_code);
   NOT_PRODUCT(verify(tty));
 
-  if (log_stream != NULL) {
+  if (log_stream != nullptr) {
     this->print(log_stream, 0, cpool->cache());
   }
 
@@ -483,7 +483,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
   Bytecodes::Code invoke_code = bytecode_1();
   if (invoke_code != (Bytecodes::Code)0) {
     Metadata* f1 = f1_ord();
-    if (f1 != NULL) {
+    if (f1 != nullptr) {
       switch (invoke_code) {
       case Bytecodes::_invokeinterface:
         assert(f1->is_klass(), "");
@@ -521,13 +521,13 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
       break;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
 oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) const {
   if (!has_appendix())
-    return NULL;
+    return nullptr;
   const int ref_index = f2_as_index();
   return cpool->resolved_reference_at(ref_index);
 }
@@ -563,7 +563,7 @@ void ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
     return;
   }
 
-  assert (_f1 != NULL, "should not call with uninteresting entry");
+  assert (_f1 != nullptr, "should not call with uninteresting entry");
 
   if (!(_f1->is_method())) {
     // _f1 is a Klass* for an interface, _f2 is the method
@@ -581,7 +581,7 @@ void ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
 bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
   Method* m = get_interesting_method_entry();
   // return false if m refers to a non-deleted old or obsolete method
-  if (m != NULL) {
+  if (m != nullptr) {
     assert(m->is_valid() && m->is_method(), "m is a valid method");
     return !m->is_old() && !m->is_obsolete(); // old is always set for old and obsolete
   } else {
@@ -592,15 +592,15 @@ bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
 Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
   if (!is_method_entry()) {
     // not a method entry so not interesting by default
-    return NULL;
+    return nullptr;
   }
-  Method* m = NULL;
+  Method* m = nullptr;
   if (is_vfinal()) {
     // virtual and final so _f2 contains method ptr instead of vtable index
     m = f2_as_vfinal_method();
   } else if (is_f1_null()) {
-    // NULL _f1 means this is a virtual entry so also not interesting
-    return NULL;
+    // null _f1 means this is a virtual entry so also not interesting
+    return nullptr;
   } else {
     if (!(_f1->is_method())) {
       // _f1 is a Klass* for an interface
@@ -609,9 +609,9 @@ Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
       m = f1_as_method();
     }
   }
-  assert(m != NULL && m->is_method(), "sanity check");
-  if (m == NULL || !m->is_method()) {
-    return NULL;
+  assert(m != nullptr && m->is_method(), "sanity check");
+  if (m == nullptr || !m->is_method()) {
+    return nullptr;
   }
   return m;
 }
@@ -729,14 +729,14 @@ void ConstantPoolCache::remove_unshareable_info() {
   // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
   // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
   // still pointing to the array allocated inside save_for_archive().
-  assert(_initial_entries != NULL, "archived cpcache must have been initialized");
+  assert(_initial_entries != nullptr, "archived cpcache must have been initialized");
   assert(!ArchiveBuilder::current()->is_in_buffer_space(_initial_entries), "must be");
   for (int i=0; i<length(); i++) {
     // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
     // has finished.
     *entry_at(i) = _initial_entries->at(i);
   }
-  _initial_entries = NULL;
+  _initial_entries = nullptr;
 }
 #endif // INCLUDE_CDS
 
@@ -745,12 +745,12 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   data->remove_handle(_resolved_references);
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
-  set_reference_map(NULL);
+  set_reference_map(nullptr);
 #if INCLUDE_CDS
-  if (_initial_entries != NULL) {
+  if (_initial_entries != nullptr) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-    _initial_entries = NULL;
+    _initial_entries = nullptr;
   }
 #endif
 }
@@ -758,7 +758,7 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
 #if INCLUDE_CDS_JAVA_HEAP
 oop ConstantPoolCache::archived_references() {
   if (_archived_references_index < 0) {
-    return NULL;
+    return nullptr;
   }
   return HeapShared::get_root(_archived_references_index);
 }
@@ -784,7 +784,7 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
   for (int i = 0; i < length(); i++) {
     ConstantPoolCacheEntry* entry = entry_at(i);
     Method* old_method = entry->get_interesting_method_entry();
-    if (old_method == NULL || !old_method->is_old()) {
+    if (old_method == nullptr || !old_method->is_old()) {
       continue; // skip uninteresting entries
     }
     if (old_method->is_deleted()) {
@@ -802,7 +802,7 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
   ResourceMark rm;
   for (int i = 1; i < length(); i++) {
     Method* m = entry_at(i)->get_interesting_method_entry();
-    if (m != NULL && !entry_at(i)->check_no_old_or_obsolete_entries()) {
+    if (m != nullptr && !entry_at(i)->check_no_old_or_obsolete_entries()) {
       log_trace(redefine, class, update, constantpool)
         ("cpcache check found old method entry: class: %s, old: %d, obsolete: %d, method: %s",
          constant_pool()->pool_holder()->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
@@ -814,7 +814,7 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
 
 void ConstantPoolCache::dump_cache() {
   for (int i = 1; i < length(); i++) {
-    if (entry_at(i)->get_interesting_method_entry() != NULL) {
+    if (entry_at(i)->get_interesting_method_entry() != nullptr) {
       entry_at(i)->print(tty, i, this);
     }
   }
