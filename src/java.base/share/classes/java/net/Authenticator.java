@@ -26,6 +26,7 @@
 package java.net;
 
 import sun.net.www.protocol.http.AuthenticatorKeys;
+import sun.net.www.protocol.http.AuthCacheValue;
 
 /**
  * The class Authenticator represents an object that knows how to obtain
@@ -77,7 +78,9 @@ class Authenticator {
     /**
      * Constructor for subclasses to call.
      */
-    public Authenticator() {}
+    public Authenticator() {
+        AuthCacheValue.registerAuthenticator(this);
+    }
 
     /**
      * The type of the entity requesting authentication.

@@ -25,9 +25,12 @@
 
 package sun.net.www.protocol.http;
 
+import java.lang.ref.Cleaner;
+import java.net.Authenticator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Michael McMahon
@@ -36,14 +39,50 @@ public class AuthCacheImpl implements AuthCache {
     // No blocking IO is performed within the synchronized code blocks
     // in this class, so there is no need to convert this class to using
     // java.util.concurrent.locks
-    HashMap<String,LinkedList<AuthCacheValue>> hashtable;
+    final HashMap<String,LinkedList<AuthCacheValue>> hashtable;
+    final Cleaner cleaner;
 
     public AuthCacheImpl () {
         hashtable = new HashMap<String,LinkedList<AuthCacheValue>>();
+        cleaner = Cleaner.create();
     }
 
-    public void setMap (HashMap<String,LinkedList<AuthCacheValue>> map) {
-        hashtable = map;
+    // call to register Authenticator with Cleaner.
+
+    public void registerAuthenticator(Authenticator auth) {
+        cleaner.register(auth, new CleanerAction(AuthenticatorKeys.getKey(auth)));
+    }
+
+    // used for testing
+    public int mapSize() {
+        AtomicInteger count = new AtomicInteger();
+        hashtable.forEach((k,v) -> {
+            count.addAndGet(v == null ? 0: v.size());
+        });
+        return count.get();
+    }
+
+    // Cleaner action run to remove all entries whose key ends with
+    // ;auth=authkey
+    // ie. all entries belonging to the given Authenticator
+
+    class CleanerAction implements Runnable {
+        private final String authkey;
+
+        CleanerAction(String authkey) {
+            this.authkey = ";auth=" + authkey;
+        }
+
+        public void run() {
+            synchronized(AuthCacheImpl.this) {
+                hashtable.forEach((String key,
+                                   LinkedList<AuthCacheValue> list) -> {
+                    if (key.endsWith(authkey)) {
+                        hashtable.remove(key);
+                    }
+                });
+            }
+        }
     }
 
     // put a value in map according to primary key + secondary key which
