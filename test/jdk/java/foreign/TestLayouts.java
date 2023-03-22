@@ -245,7 +245,7 @@ public class TestLayouts {
 
     @Test
     public void testPaddingIllegalBitSize() {
-        for (long bitSize : List.of(-1L, 1L, 7L)) {
+        for (long bitSize : List.of(-8L, -1L, 0L, 1L, 7L)) {
             try {
                 MemoryLayout.paddingLayout(bitSize);
                 fail("bitSize cannot be " + bitSize);
@@ -253,11 +253,6 @@ public class TestLayouts {
                 // Happy path
             }
         }
-    }
-
-    @Test
-    public void testPaddingZeroBitSize() {
-        MemoryLayout.paddingLayout(0);
     }
 
     @Test
