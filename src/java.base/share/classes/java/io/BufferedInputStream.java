@@ -311,7 +311,7 @@ public class BufferedInputStream extends FilterInputStream {
                if there is no mark/reset activity, do not bother to copy the
                bytes into the local buffer.  In this way buffered streams will
                cascade harmlessly. */
-            if (len >= getBufIfOpen().length && markpos == -1) {
+            if (len >= size && markpos == -1) {
                 return getInIfOpen().read(b, off, len);
             }
             fill();
@@ -378,7 +378,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private int implRead(byte[] b, int off, int len) throws IOException {
-        getBufIfOpen(); // Check for closed stream
+        getInIfOpen(); // Check for closed stream
         if ((off | len | (off + len) | (b.length - (off + len))) < 0) {
             throw new IndexOutOfBoundsException();
         } else if (len == 0) {
@@ -425,7 +425,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private long implSkip(long n) throws IOException {
-        getBufIfOpen(); // Check for closed stream
+        InputStream input = getInIfOpen();// Check for closed stream
         if (n <= 0) {
             return 0;
         }
@@ -434,7 +434,7 @@ public class BufferedInputStream extends FilterInputStream {
         if (avail <= 0) {
             // If no mark position set then don't keep in buffer
             if (markpos == -1)
-                return getInIfOpen().skip(n);
+                return input.skip(n);
 
             // Fill in buffer to save bytes for reset
             fill();
@@ -548,7 +548,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private void implReset() throws IOException {
-        getBufIfOpen(); // Cause exception if closed
+        getInIfOpen(); // Cause exception if closed
         if (markpos < 0)
             throw new IOException("Resetting to invalid mark");
         pos = markpos;
