@@ -26,8 +26,9 @@
  * @bug 8074981 8302652
  * @summary Test SuperWord Reduction Perf.
  * @requires vm.compiler2.enabled
+ * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
  * @library /test/lib /
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm -Xbatch -XX:LoopUnrollLimit=250
  *                   -XX:CompileCommand=exclude,compiler.loopopts.superword.ReductionPerf::main
  *                   compiler.loopopts.superword.ReductionPerf
  */
@@ -41,21 +42,22 @@ public class ReductionPerf {
     static Random rand = Utils.getRandomInstance();
 
     public static void main(String args[]) {
-        int iter_warmup = 2_000;
-        int iter_perf   = 5_000;
+        // Please increase iterations for measurement to 2_000 and 100_000.
+        int iter_warmup = 100;
+        int iter_perf   = 1_000;
 
-        float[] aFloat = new float[RANGE];
-        float[] bFloat = new float[RANGE];
-        float[] cFloat = new float[RANGE];
         double[] aDouble = new double[RANGE];
         double[] bDouble = new double[RANGE];
         double[] cDouble = new double[RANGE];
-        long[] aLong = new long[RANGE];
-        long[] bLong = new long[RANGE];
-        long[] cLong = new long[RANGE];
+        float[] aFloat = new float[RANGE];
+        float[] bFloat = new float[RANGE];
+        float[] cFloat = new float[RANGE];
         int[] aInt = new int[RANGE];
         int[] bInt = new int[RANGE];
         int[] cInt = new int[RANGE];
+        long[] aLong = new long[RANGE];
+        long[] bLong = new long[RANGE];
+        long[] cLong = new long[RANGE];
 
         long start, stop;
 
@@ -565,22 +567,22 @@ public class ReductionPerf {
 
     // ------------------- Verification -------------------
 
-    static void verify(String context, float total, float gold) {
-        if (total != gold) {
-            throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
-        }
-    }
     static void verify(String context, double total, double gold) {
         if (total != gold) {
             throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
         }
     }
-    static void verify(String context, long total, long gold) {
+    static void verify(String context, float total, float gold) {
         if (total != gold) {
             throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
         }
     }
     static void verify(String context, int total, int gold) {
+        if (total != gold) {
+            throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
+        }
+    }
+    static void verify(String context, long total, long gold) {
         if (total != gold) {
             throw new RuntimeException("Wrong result for " + context + ": " + total + " != " + gold);
         }
