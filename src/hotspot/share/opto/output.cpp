@@ -1746,6 +1746,11 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   }
 #endif
 
+  if (!cb->finalize_stubs()) {
+    C->record_failure("CodeCache is full");
+    return;
+  }
+
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->emit_stubs(*cb);
   if (C->failing())  return;
