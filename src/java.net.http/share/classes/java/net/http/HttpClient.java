@@ -147,12 +147,14 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * provide a best effort implementation. Failing to close, cancel, or
  * read returned streams to exhaustion, such as streams provided when using
  * {@link BodyHandlers#ofInputStream()}, {@link BodyHandlers#ofLines()}, or
- * {@link BodyHandlers#ofPublisher()}, may prevent an orderly shutdown
- * to eventually complete. Likewise, failing to
+ * {@link BodyHandlers#ofPublisher()}, may prevent requests submitted
+ * before an {@linkplain #shutdown() orderly shutdown}
+ * to run to completion. Likewise, failing to
  * {@linkplain Subscription#request(long) request data} or {@linkplain
  * Subscription#cancel() cancel subscriptions} from a custom {@linkplain
  * java.net.http.HttpResponse.BodySubscriber BodySubscriber} may stop
- * delivery of data and stall an orderly shutdown.
+ * delivery of data and {@linkplain #awaitTermination(Duration) stall an
+ * orderly shutdown}.
  *
  * @since 11
  */
@@ -762,15 +764,15 @@ public abstract class HttpClient implements AutoCloseable {
      * submitted with {@code send} or {@code sendAsync}
      * are run to completion, but no new request will be accepted.
      * Running a request to completion may involve running several
-     * operations in the background, including waiting for responses
-     * to be delivered, which will all have to run to completion until
-     * the request is considered completed.
+     * operations in the background, including {@linkplain ##closing
+     * waiting for responses to be delivered}, which will all have to
+     * run to completion until the request is considered completed.
      *
      * Invocation has no additional effect if already shut down.
      *
      * <p>This method does not wait for previously submitted request
-     * to complete execution.  Use {@link #awaitTermination awaitTermination}
-     * to do that.
+     * to complete execution.  Use {@link #awaitTermination(Duration)
+     * awaitTermination} or {@link #close() close} to do that.
      *
      * @implSpec
      * The default implementation of this method does nothing. Subclasses should
@@ -857,7 +859,8 @@ public abstract class HttpClient implements AutoCloseable {
      * submitted to {@code send} or {@code sendAsync}
      * are run to completion, but no new request will be accepted.
      * Running a request to completion may involve running several
-     * operations in the background, including waiting for responses.
+     * operations in the background, including {@linkplain ##closing
+     * waiting for responses to be delivered}.
      * This method waits until all operations have completed execution
      * and the client has terminated.
      *
