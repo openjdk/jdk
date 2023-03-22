@@ -1084,9 +1084,10 @@ public:
   inline HeapRegion* region_at(uint index) const;
   inline HeapRegion* region_at_or_null(uint index) const;
 
-  // Return the next region (by index) that is part of the same
-  // humongous object that hr is part of.
-  inline HeapRegion* next_region_in_humongous(HeapRegion* hr) const;
+  // Iterate over the regions that the humongous object starting at the given
+  // region and apply the given method with the signature f(HeapRegion*) on them.
+  template <typename Func>
+  void humongous_obj_regions_iterate(HeapRegion* start, const Func& f);
 
   // Calculate the region index of the given address. Given address must be
   // within the heap.
