@@ -24,9 +24,7 @@
 
 // Try to trigger concurrent dynamic-dump-at-exit processing by creating a race
 // between normal VM termination by the last non-daemon thread exiting, and a
-// call to Runtime.halt(). Both these code paths will quickly execute
-// DynamicArchive::prepare_for_dump_at_exit() prior to any shutdown hook
-// processing
+// call to Runtime.halt().
 
 public class ExitRace {
 
@@ -38,7 +36,7 @@ public class ExitRace {
         // have time to become the DestroyJavaVM thread.
         Thread runner = new Thread("Runner") {
                 public void run() {
-                    // This thread will be the one triggers normal VM termination
+                    // This thread will be the one to trigger normal VM termination
                     // when it exits. We first create a daemon thread to call
                     // Runtime.halt() and then wait for it to tell us to exit.
 
