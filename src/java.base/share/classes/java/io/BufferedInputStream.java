@@ -67,6 +67,8 @@ public class BufferedInputStream extends FilterInputStream {
     private static final long BUF_OFFSET
             = U.objectFieldOffset(BufferedInputStream.class, "buf");
 
+    protected static final byte[] CLOSED = new byte[0];
+
     // initialized to null when BufferedInputStream is sub-classed
     private final InternalLock lock;
 
@@ -74,8 +76,6 @@ public class BufferedInputStream extends FilterInputStream {
      * The internal buffer array where the data is stored. When necessary,
      * it may be replaced by another array of
      * a different size.
-     */
-    /*
      * We null this out with a CAS on close(), which is necessary since
      * closes can be asynchronous. We use nullness of buf[] as primary
      * indicator that this stream is closed. (The "in" field is also
@@ -154,6 +154,8 @@ public class BufferedInputStream extends FilterInputStream {
      */
     protected int marklimit;
 
+    private final int size;
+
     /**
      * Check to make sure that underlying input stream has not been
      * nulled out due to close; if not return it;
@@ -171,8 +173,11 @@ public class BufferedInputStream extends FilterInputStream {
      */
     private byte[] getBufIfOpen() throws IOException {
         byte[] buffer = buf;
-        if (buffer == null)
+        if (buffer == CLOSED)
             throw new IOException("Stream closed");
+        if (buffer == null) {
+            buf = buffer = new byte[size];
+        }
         return buffer;
     }
 
@@ -205,8 +210,7 @@ public class BufferedInputStream extends FilterInputStream {
         if (size <= 0) {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
-        buf = new byte[size];
-
+        this.size = size;
         // use monitors when BufferedInputStream is sub-classed
         if (getClass() == BufferedInputStream.class) {
             lock = InternalLock.newLockOrNull();
@@ -577,7 +581,7 @@ public class BufferedInputStream extends FilterInputStream {
     public void close() throws IOException {
         byte[] buffer;
         while ( (buffer = buf) != null) {
-            if (U.compareAndSetReference(this, BUF_OFFSET, buffer, null)) {
+            if (U.compareAndSetReference(this, BUF_OFFSET, buffer, CLOSED)) {
                 InputStream input = in;
                 in = null;
                 if (input != null)
