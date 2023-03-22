@@ -67,6 +67,9 @@ public class BufferedInputStream extends FilterInputStream {
     private static final long BUF_OFFSET
             = U.objectFieldOffset(BufferedInputStream.class, "buf");
 
+    /**
+     * Flag for close state
+     */
     protected static final byte[] CLOSED = new byte[0];
 
     // initialized to null when BufferedInputStream is sub-classed
