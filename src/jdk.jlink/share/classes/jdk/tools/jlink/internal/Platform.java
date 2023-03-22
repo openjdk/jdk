@@ -79,16 +79,9 @@ public record Platform(OperatingSystem os, Architecture arch) {
         x64,
         ARM,
         AARCH64,
-        LOONGARCH64,
-        PPC,
         PPC64,
         PPC64LE,
-        RISCV32,
-        RISCV64,
-        s390,
         s390x,
-        SPARC,
-        SPARCv9,
         UNKNOWN;
     }
 
@@ -119,11 +112,14 @@ public record Platform(OperatingSystem os, Architecture arch) {
     }
 
     /**
-     * @return true is it's a 64-bit platform
+     * @return true if it's a 64-bit platform
      */
     public boolean is64Bit() {
-        return (arch() == Platform.Architecture.x64 ||
-                arch() == Platform.Architecture.AARCH64);
+        return switch (arch) {
+            case x64, AARCH64, PPC64, PPC64LE, s390x -> true;
+            case ARM -> true; // the ARM we support is 64 bit
+            default -> false;
+        };
     }
 
     /**
@@ -180,16 +176,9 @@ public record Platform(OperatingSystem os, Architecture arch) {
             case "amd64", "x86_64" -> Architecture.x64;
             case "arm"             -> Architecture.ARM;
             case "aarch64"         -> Architecture.AARCH64;
-            case "loongarch64"     -> Architecture.LOONGARCH64;
-            case "ppc"             -> Architecture.PPC;
             case "ppc64"           -> Architecture.PPC64;
             case "ppc64le"         -> Architecture.PPC64LE;
-            case "riscv32"         -> Architecture.RISCV32;
-            case "riscv64"         -> Architecture.RISCV64;
-            case "s390"            -> Architecture.s390;
             case "s390x"           -> Architecture.s390x;
-            case "sparc"           -> Architecture.SPARC;
-            case "sparcv9"         -> Architecture.SPARCv9;
             default                -> Architecture.UNKNOWN;
         };
         return arch;
