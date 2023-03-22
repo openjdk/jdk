@@ -27,7 +27,7 @@
  * @test
  * @bug 8304031
  * @summary Testing that primitive class descs are encoded properly as loadable constants.
- * @run testng PrimitiveClassConstantTest
+ * @run junit PrimitiveClassConstantTest
  */
 
 import java.lang.constant.ClassDesc;
@@ -36,13 +36,15 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.function.Supplier;
 import jdk.internal.classfile.Classfile;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
+import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.CD_long;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 
 public final class PrimitiveClassConstantTest {
@@ -54,20 +56,26 @@ public final class PrimitiveClassConstantTest {
         Class<?> a = lookup.defineClass(Classfile.build(ape, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(Supplier.class.describeConstable().orElseThrow());
-            clb.withMethodBody("<init>", MethodTypeDesc.of(CD_void), ACC_PUBLIC, cob -> {
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_Object, "<init>", MethodTypeDesc.of(CD_void));
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cob.return_();
             });
             clb.withMethodBody("get", MethodTypeDesc.of(CD_Object), ACC_PUBLIC, cob -> {
                 cob.constantInstruction(CD_int);
                 cob.areturn();
             });
+            clb.withMethodBody("get2", MethodTypeDesc.of(CD_Class), ACC_PUBLIC, cob -> {
+                Assertions.assertThrows(IllegalArgumentException.class, () -> cob.constantPool().classEntry(CD_long));
+                var t = cob.constantPool().loadableConstantEntry(CD_long);
+                cob.ldc(t);
+                cob.areturn();
+            });
         }));
         Supplier<?> t = (Supplier<?>) lookup.findConstructor(a, MethodType.methodType(void.class))
                 .asType(MethodType.methodType(Supplier.class))
                 .invokeExact();
-        Assert.assertSame(t.get(), int.class);
+        Assertions.assertSame(int.class, t.get());
     }
 
 }
