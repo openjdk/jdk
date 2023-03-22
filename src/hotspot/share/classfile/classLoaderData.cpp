@@ -446,7 +446,8 @@ bool ClassLoaderData::needs_dependency(const Klass* k) {
 
     // K cannot be unloaded before this CLD is unloading if it has the same
     // or a parent class_loader.
-    if (from == to || java_lang_ClassLoader::isAncestor(from, to)) {
+    if (from == to ||
+        (!from_cld->is_boot_class_loader_data() && java_lang_ClassLoader::isAncestor(from, to))) {
       return false;
     }
   }
