@@ -551,19 +551,19 @@ void G1HeapVerifier::prepare_for_verify() {
   }
 }
 
-void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg) {
-  if (should_verify(type) && _g1h->total_collections() >= VerifyGCStartAt) {
+void G1HeapVerifier::verify(VerifyOption vo, const char* msg) {
+  if (_g1h->total_collections() >= VerifyGCStartAt) {
     prepare_for_verify();
     Universe::verify(vo, msg);
   }
 }
 
-void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  verify(type, VerifyOption::G1UseConcMarking, "Before GC");
+void G1HeapVerifier::verify_before_gc() {
+  verify(VerifyOption::G1UseConcMarking, "Before GC");
 }
 
-void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  verify(type, VerifyOption::G1UseConcMarking, "After GC");
+void G1HeapVerifier::verify_after_gc() {
+  verify(VerifyOption::G1UseConcMarking, "After GC");
 }
 
 void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {

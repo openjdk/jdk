@@ -1385,6 +1385,30 @@ class NEONFloatCompareWithZero(TwoRegNEONOp):
                    self._firstSIMDreg.nextReg(),
                    self.arrangement))
 
+class NEONVectorCompare(ThreeRegNEONOp):
+    def __init__(self, args):
+        self._name, self.arrangement, self.condition = args
+        self.insname = self._name + (self.condition).lower()
+
+    def cstr(self):
+        return ("%s(%s, %s, %s, %s, %s);"
+                % ("__ " + self._name,
+                   "Assembler::" + self.condition,
+                   self._firstSIMDreg,
+                   "__ T" + self.arrangement,
+                   self._firstSIMDreg.nextReg(),
+                   self._firstSIMDreg.nextReg().nextReg()))
+
+    def astr(self):
+        return ("%s\t%s.%s, %s.%s, %s.%s"
+                % (self.insname,
+                   self._firstSIMDreg,
+                   self.arrangement,
+                   self._firstSIMDreg.nextReg(),
+                   self.arrangement,
+                   self._firstSIMDreg.nextReg().nextReg(),
+                   self.arrangement))
+
 class SpecialCases(Instruction):
     def __init__(self, data):
         self._name = data[0]
@@ -1693,35 +1717,25 @@ generate(ThreeRegNEONOp,
           ["sminp", "sminp", "2S"], ["sminp", "sminp", "4S"],
           ["fmin", "fmin", "2S"], ["fmin", "fmin", "4S"],
           ["fmin", "fmin", "2D"],
-          ["cmeq", "cmeq", "8B"], ["cmeq", "cmeq", "16B"],
-          ["cmeq", "cmeq", "4H"], ["cmeq", "cmeq", "8H"],
-          ["cmeq", "cmeq", "2S"], ["cmeq", "cmeq", "4S"],
-          ["cmeq", "cmeq", "2D"],
-          ["fcmeq", "fcmeq", "2S"], ["fcmeq", "fcmeq", "4S"],
-          ["fcmeq", "fcmeq", "2D"],
-          ["cmgt", "cmgt", "8B"], ["cmgt", "cmgt", "16B"],
-          ["cmgt", "cmgt", "4H"], ["cmgt", "cmgt", "8H"],
-          ["cmgt", "cmgt", "2S"], ["cmgt", "cmgt", "4S"],
-          ["cmgt", "cmgt", "2D"],
-          ["cmhi", "cmhi", "8B"], ["cmhi", "cmhi", "16B"],
-          ["cmhi", "cmhi", "4H"], ["cmhi", "cmhi", "8H"],
-          ["cmhi", "cmhi", "2S"], ["cmhi", "cmhi", "4S"],
-          ["cmhi", "cmhi", "2D"],
-          ["cmhs", "cmhs", "8B"], ["cmhs", "cmhs", "16B"],
-          ["cmhs", "cmhs", "4H"], ["cmhs", "cmhs", "8H"],
-          ["cmhs", "cmhs", "2S"], ["cmhs", "cmhs", "4S"],
-          ["cmhs", "cmhs", "2D"],
-          ["fcmgt", "fcmgt", "2S"], ["fcmgt", "fcmgt", "4S"],
-          ["fcmgt", "fcmgt", "2D"],
-          ["cmge", "cmge", "8B"], ["cmge", "cmge", "16B"],
-          ["cmge", "cmge", "4H"], ["cmge", "cmge", "8H"],
-          ["cmge", "cmge", "2S"], ["cmge", "cmge", "4S"],
-          ["cmge", "cmge", "2D"],
-          ["fcmge", "fcmge", "2S"], ["fcmge", "fcmge", "4S"],
-          ["fcmge", "fcmge", "2D"],
           ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
           ["facgt", "facgt", "2D"],
           ])
+
+neonVectorCompareInstructionPrefix = ['cm', 'fcm']
+neonIntegerVectorCompareConditions = ['GT', 'GE', 'EQ', 'HI', 'HS']
+neonFloatVectorCompareConditions = ['EQ', 'GT', 'GE']
+neonIntegerArrangement = ['8B', '16B', '4H', '8H', '2S', '4S', '2D']
+neonFloatArrangement = ['2S', '4S', '2D']
+neonVectorCompareArgs = []
+for pre in neonVectorCompareInstructionPrefix:
+    conditions = neonFloatVectorCompareConditions if pre == 'fcm' else neonIntegerVectorCompareConditions
+    arrangements = neonFloatArrangement if pre == 'fcm' else neonIntegerArrangement
+    for condition in conditions:
+        for currentArrangement in arrangements:
+            currentArgs = [pre, currentArrangement, condition]
+            neonVectorCompareArgs.append(currentArgs)
+
+generate(NEONVectorCompare, neonVectorCompareArgs)
 
 generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
 

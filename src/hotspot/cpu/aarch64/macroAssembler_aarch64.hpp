@@ -513,8 +513,15 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
+  void flt_to_flt16(Register dst, FloatRegister src, FloatRegister tmp) {
+    fcvtsh(tmp, src);
+    smov(dst, tmp, H, 0);
+  }
 
-public:
+  void flt16_to_flt(FloatRegister dst, Register src, FloatRegister tmp) {
+    mov(tmp, H, 0, src);
+    fcvths(dst, tmp);
+  }
 
   // Generalized Test Bit And Branch, including a "far" variety which
   // spans more than 32KiB.

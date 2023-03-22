@@ -918,44 +918,28 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 }
 
 void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
-                                     FloatRegister src2, int cond, bool isQ) {
+                                     FloatRegister src2, Condition cond, bool isQ) {
   SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
-  if (bt == T_FLOAT || bt == T_DOUBLE) {
-    switch (cond) {
-      case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
-      case BoolTest::ne: {
-        fcmeq(dst, size, src1, src2);
-        notr(dst, isQ ? T16B : T8B, dst);
-        break;
-      }
-      case BoolTest::ge: fcmge(dst, size, src1, src2); break;
-      case BoolTest::gt: fcmgt(dst, size, src1, src2); break;
-      case BoolTest::le: fcmge(dst, size, src2, src1); break;
-      case BoolTest::lt: fcmgt(dst, size, src2, src1); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
-    }
+  FloatRegister zn = src1, zm = src2;
+  bool needs_negation = false;
+  switch (cond) {
+    case LT: cond = GT; zn = src2; zm = src1; break;
+    case LE: cond = GE; zn = src2; zm = src1; break;
+    case LO: cond = HI; zn = src2; zm = src1; break;
+    case LS: cond = HS; zn = src2; zm = src1; break;
+    case NE: cond = EQ; needs_negation = true; break;
+    default:
+      break;
+  }
+
+  if (is_floating_point_type(bt)) {
+    fcm(cond, dst, size, zn, zm);
   } else {
-    switch (cond) {
-      case BoolTest::eq: cmeq(dst, size, src1, src2); break;
-      case BoolTest::ne: {
-        cmeq(dst, size, src1, src2);
-        notr(dst, isQ ? T16B : T8B, dst);
-        break;
-      }
-      case BoolTest::ge: cmge(dst, size, src1, src2); break;
-      case BoolTest::gt: cmgt(dst, size, src1, src2); break;
-      case BoolTest::le: cmge(dst, size, src2, src1); break;
-      case BoolTest::lt: cmgt(dst, size, src2, src1); break;
-      case BoolTest::uge: cmhs(dst, size, src1, src2); break;
-      case BoolTest::ugt: cmhi(dst, size, src1, src2); break;
-      case BoolTest::ult: cmhi(dst, size, src2, src1); break;
-      case BoolTest::ule: cmhs(dst, size, src2, src1); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
-    }
+    cm(cond, dst, size, zn, zm);
+  }
+
+  if (needs_negation) {
+    notr(dst, isQ ? T16B : T8B, dst);
   }
 }
 
@@ -1125,29 +1109,24 @@ void C2_MacroAssembler::sve_vmask_fromlong(PRegister dst, Register src, BasicTyp
 
 // Clobbers: rflags
 void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
-                                    FloatRegister zn, FloatRegister zm, int cond) {
+                                    FloatRegister zn, FloatRegister zm, Condition cond) {
   assert(pg->is_governing(), "This register has to be a governing predicate register");
   FloatRegister z1 = zn, z2 = zm;
-  // Convert the original BoolTest condition to Assembler::condition.
-  Condition condition;
   switch (cond) {
-    case BoolTest::eq: condition = Assembler::EQ; break;
-    case BoolTest::ne: condition = Assembler::NE; break;
-    case BoolTest::le: z1 = zm; z2 = zn; condition = Assembler::GE; break;
-    case BoolTest::ge: condition = Assembler::GE; break;
-    case BoolTest::lt: z1 = zm; z2 = zn; condition = Assembler::GT; break;
-    case BoolTest::gt: condition = Assembler::GT; break;
+    case LE: z1 = zm; z2 = zn; cond = GE; break;
+    case LT: z1 = zm; z2 = zn; cond = GT; break;
+    case LO: z1 = zm; z2 = zn; cond = HI; break;
+    case LS: z1 = zm; z2 = zn; cond = HS; break;
     default:
-      assert(false, "unsupported compare condition");
-      ShouldNotReachHere();
+      break;
   }
 
   SIMD_RegVariant size = elemType_to_regVariant(bt);
-  if (bt == T_FLOAT || bt == T_DOUBLE) {
-    sve_fcm(condition, pd, size, pg, z1, z2);
+  if (is_floating_point_type(bt)) {
+    sve_fcm(cond, pd, size, pg, z1, z2);
   } else {
     assert(is_integral_type(bt), "unsupported element type");
-    sve_cmp(condition, pd, size, pg, z1, z2);
+    sve_cmp(cond, pd, size, pg, z1, z2);
   }
 }
 
@@ -1979,7 +1958,7 @@ void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, 
 
   fneg(tmp3, T, src);
   dup(tmp2, T, rscratch1);
-  cmhs(tmp3, T, tmp3, tmp2);
+  cm(HS, tmp3, T, tmp3, tmp2);
   // tmp3 is now a set of flags
 
   bif(dst, T16B, tmp1, tmp3);

@@ -223,7 +223,6 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static void setup_app_search_path(JavaThread* current, const char* class_path);)
   CDS_ONLY(static void setup_module_search_path(JavaThread* current, const char* path);)
   static void add_to_app_classpath_entries(JavaThread* current,
-                                           const char* path,
                                            ClassPathEntry* entry,
                                            bool check_for_duplicates);
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
