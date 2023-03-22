@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ public class Resolve {
 
     WriteableScope polymorphicSignatureScope;
 
+    @SuppressWarnings("this-escape")
     protected Resolve(Context context) {
         context.put(resolveKey, this);
         syms = Symtab.instance(context);
@@ -476,7 +477,7 @@ public class Resolve {
          *  and the selection takes place in given class?
          *  @param sym     The symbol with protected access
          *  @param c       The class where the access takes place
-         *  @site          The type of the qualifier
+         *  @param site    The type of the qualifier
          */
         private
         boolean isProtectedAccessible(Symbol sym, ClassSymbol c, Type site) {
@@ -3305,7 +3306,7 @@ public class Resolve {
 
     /**
      * This abstract class embodies the logic that converts one (bound lookup) or two (unbound lookup)
-     * {@code ReferenceLookupResult} objects into a (@code Symbol), which is then regarded as the
+     * {@code ReferenceLookupResult} objects into a {@code Symbol}, which is then regarded as the
      * result of method reference resolution.
      */
     abstract class ReferenceChooser {

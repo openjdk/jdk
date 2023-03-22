@@ -1845,10 +1845,6 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
-
-    case Op_ConvF2HF:
-    case Op_ConvHF2F:
-      return UseZfhmin;
   }
 
   return true; // Per default match rules are supported.
@@ -8178,44 +8174,6 @@ instruct convL2F_reg_reg(fRegF dst, iRegL src) %{
   %}
 
   ins_pipe(fp_l2f);
-%}
-
-// float <-> half float
-
-instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, fRegF tmp) %{
-  predicate(UseZfhmin);
-  match(Set dst (ConvHF2F src));
-  effect(TEMP tmp);
-
-  ins_cost(XFER_COST);
-  format %{ "fmv.h.x $tmp, $src\t#@convHF2F_reg_reg\n\t"
-            "fcvt.s.h $dst, $tmp\t#@convHF2F_reg_reg"
-  %}
-
-  ins_encode %{
-    __ fmv_h_x($tmp$$FloatRegister, $src$$Register);
-    __ fcvt_s_h($dst$$FloatRegister, $tmp$$FloatRegister);
-  %}
-
-  ins_pipe(fp_i2f);
-%}
-
-instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF tmp) %{
-  predicate(UseZfhmin);
-  match(Set dst (ConvF2HF src));
-  effect(TEMP tmp);
-
-  ins_cost(XFER_COST);
-  format %{ "fcvt.h.s $tmp, $src\t#@convF2HF_reg_reg\n\t"
-            "fmv.x.h $dst, $tmp\t#@convF2HF_reg_reg"
-  %}
-
-  ins_encode %{
-    __ fcvt_h_s($tmp$$FloatRegister, $src$$FloatRegister);
-    __ fmv_x_h($dst$$Register, $tmp$$FloatRegister);
-  %}
-
-  ins_pipe(fp_f2i);
 %}
 
 // double <-> int

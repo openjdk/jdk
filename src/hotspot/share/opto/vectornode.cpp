@@ -609,7 +609,7 @@ VectorNode* VectorNode::make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, 
       return new XorVNode(n1, n2, vmask_type);
     default:
       fatal("Unsupported mask vector creation for '%s'", NodeClassNames[vopc]);
-      return NULL;
+      return nullptr;
   }
 }
 
@@ -701,12 +701,12 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
 
   case Op_ExpandV: return new ExpandVNode(n1, n2, vt);
   case Op_CompressV: return new CompressVNode(n1, n2, vt);
-  case Op_CompressM: assert(n1 == NULL, ""); return new CompressMNode(n2, vt);
+  case Op_CompressM: assert(n1 == nullptr, ""); return new CompressMNode(n2, vt);
   case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
   case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -730,7 +730,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -770,7 +770,7 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t, boo
     return new ReplicateDNode(s, vt);
   default:
     fatal("Type '%s' is not supported for vectors", type2name(bt));
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -790,7 +790,7 @@ VectorNode* VectorNode::shift_count(int opc, Node* cnt, uint vlen, BasicType bt)
     return new RShiftCntVNode(cnt, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[opc]);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -898,17 +898,17 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   if (node->is_predicated_vector() || !Matcher::has_predicated_vectors() ||
       !Matcher::match_rule_supported_vector_masked(vopc, vlen, bt) ||
       !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, bt)) {
-    return NULL;
+    return nullptr;
   }
 
-  Node* mask = NULL;
+  Node* mask = nullptr;
   // Generate a vector mask for vector operation whose vector length is lower than the
   // hardware supported max vector length.
   if (vt->length_in_bytes() < (uint)MaxVectorSize) {
     Node* length = gvn->transform(new ConvI2LNode(gvn->makecon(TypeInt::make(vlen))));
     mask = gvn->transform(VectorMaskGenNode::make(length, bt, vlen));
   } else {
-    return NULL;
+    return nullptr;
   }
 
   // Generate the related masked op for vector load/store/load_gather/store_scatter.
@@ -942,7 +942,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (Matcher::vector_needs_partial_operations(this, vect_type())) {
     return try_to_gen_masked_vector(phase, this, vect_type());
   }
-  return NULL;
+  return nullptr;
 }
 
 // Return initial Pack node. Additional operands added with add_opd() calls.
@@ -965,7 +965,7 @@ PackNode* PackNode::make(Node* s, uint vlen, BasicType bt) {
     return new PackDNode(s, vt);
   default:
     fatal("Type '%s' is not supported for vectors", type2name(bt));
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1001,7 +1001,7 @@ PackNode* PackNode::binary_tree_pack(int lo, int hi) {
       return new Pack2DNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
     default:
       fatal("Type '%s' is not supported for vectors", type2name(bt));
-      return NULL;
+      return nullptr;
     }
   }
 }
@@ -1106,7 +1106,7 @@ Node* ExtractNode::make(Node* v, ConINode* pos, BasicType bt) {
   case T_DOUBLE:  return new ExtractDNode(v, pos);
   default:
     assert(false, "wrong type: %s", type2name(bt));
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1287,7 +1287,7 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
   case Op_XorReductionV:  return new XorReductionVNode(ctrl, n1, n2);
   default:
     assert(false, "unknown node: %s", NodeClassNames[vopc]);
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1296,7 +1296,7 @@ Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (Matcher::vector_needs_partial_operations(this, vt)) {
     return VectorNode::try_to_gen_masked_vector(phase, this, vt);
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* VectorLoadMaskNode::Identity(PhaseGVN* phase) {
@@ -1341,7 +1341,7 @@ VectorCastNode* VectorCastNode::make(int vopc, Node* n1, BasicType bt, uint vlen
     case Op_VectorCastF2HF: return new VectorCastF2HFNode(n1, vt);
     default:
       assert(false, "unknown node: %s", NodeClassNames[vopc]);
-      return NULL;
+      return nullptr;
   }
 }
 
@@ -1412,7 +1412,7 @@ Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) 
           return gvn.makecon(TypeLong::MINUS_1);
         default:
           fatal("Missed vector creation for '%s' as the basic type is not correct.", NodeClassNames[vopc]);
-          return NULL;
+          return nullptr;
       }
       break;
     case Op_AddReductionVI: // fallthrough
@@ -1444,7 +1444,7 @@ Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) 
           return gvn.makecon(TypeF::POS_INF);
         case T_DOUBLE:
           return gvn.makecon(TypeD::POS_INF);
-          default: Unimplemented(); return NULL;
+          default: Unimplemented(); return nullptr;
       }
       break;
     case Op_MaxReductionV:
@@ -1461,12 +1461,12 @@ Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) 
           return gvn.makecon(TypeF::NEG_INF);
         case T_DOUBLE:
           return gvn.makecon(TypeD::NEG_INF);
-          default: Unimplemented(); return NULL;
+          default: Unimplemented(); return nullptr;
       }
       break;
     default:
       fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
-      return NULL;
+      return nullptr;
   }
 }
 
@@ -1511,8 +1511,8 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
 
   // Compute shift values for right rotation and
   // later swap them in case of left rotation.
-  Node* shiftRCnt = NULL;
-  Node* shiftLCnt = NULL;
+  Node* shiftRCnt = nullptr;
+  Node* shiftLCnt = nullptr;
   const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
   bool is_binary_vector_op = false;
   if (cnt_type && cnt_type->is_con()) {
@@ -1541,8 +1541,8 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
 
     int subVopc = 0;
     int addVopc = 0;
-    Node* shift_mask_node = NULL;
-    Node* const_one_node = NULL;
+    Node* shift_mask_node = nullptr;
+    Node* const_one_node = nullptr;
 
     assert(cnt->bottom_type()->isa_vect(), "Unexpected shift");
     const Type* elem_ty = Type::get_const_basic_type(bt);
@@ -1590,7 +1590,7 @@ Node* RotateLeftVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
        !Matcher::match_rule_supported_vector(Op_RotateLeftV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), true, vlen, bt, phase);
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1600,7 +1600,7 @@ Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
        !Matcher::match_rule_supported_vector(Op_RotateRightV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), false, vlen, bt, phase);
   }
-  return NULL;
+  return nullptr;
 }
 
 #ifndef PRODUCT
@@ -1663,7 +1663,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* VectorUnboxNode::Identity(PhaseGVN* phase) {
@@ -1721,7 +1721,7 @@ Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
     default:
       assert(false, "Unhandled operation");
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1729,7 +1729,7 @@ Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (Matcher::vector_needs_partial_operations(this, vt)) {
     return VectorNode::try_to_gen_masked_vector(phase, this, vt);
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
@@ -1749,20 +1749,20 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // Different src/dst mask length represents a re-interpretation operation,
       // we can however generate a mask casting operation if length matches.
      Node* src = in(1)->in(1)->in(1);
-     if (dst_type->isa_vectmask() == NULL) {
+     if (dst_type->isa_vectmask() == nullptr) {
        if (src->Opcode() != Op_VectorStoreMask) {
-         return NULL;
+         return nullptr;
        }
        src = src->in(1);
      }
      const TypeVect* src_type = src->bottom_type()->is_vect();
      if (src_type->length() == dst_type->length() &&
-         ((src_type->isa_vectmask() == NULL && dst_type->isa_vectmask() == NULL) ||
+         ((src_type->isa_vectmask() == nullptr && dst_type->isa_vectmask() == nullptr) ||
           (src_type->isa_vectmask() && dst_type->isa_vectmask()))) {
        return new VectorMaskCastNode(src, dst_type);
      }
   }
-  return NULL;
+  return nullptr;
 }
 
 // Generate other vector nodes to implement the masked/non-masked vector negation.
@@ -1774,8 +1774,8 @@ Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) 
   // Transformation for predicated NegVI/L
   if (is_predicated) {
       // (NegVI/L src m) ==> (AddVI/L (XorV src (ReplicateI/L -1) m) (ReplicateI/L 1) m)
-      Node* const_minus_one = NULL;
-      Node* const_one = NULL;
+      Node* const_minus_one = nullptr;
+      Node* const_one = nullptr;
       int add_opc;
       if (bt == T_LONG) {
         const_minus_one = phase->longcon(-1L);
@@ -1799,7 +1799,7 @@ Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) 
   }
 
   // NegVI/L ==> (SubVI/L (ReplicateI/L 0) src)
-  Node* const_zero = NULL;
+  Node* const_zero = nullptr;
   int sub_opc;
   if (bt == T_LONG) {
     const_zero = phase->longcon(0L);
@@ -1825,7 +1825,7 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return degenerate_integral_negate(phase, false);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static Node* reverse_operations_identity(Node* n, Node* in1) {
@@ -1974,9 +1974,9 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     BasicType bt = vect_type()->element_basic_type();
     Node* zero = phase->transform(phase->zerocon(bt));
     return VectorNode::scalar2vector(zero, length(), Type::get_const_basic_type(bt),
-                                     bottom_type()->isa_vectmask() != NULL);
+                                     bottom_type()->isa_vectmask() != nullptr);
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* VectorBlendNode::Identity(PhaseGVN* phase) {
