@@ -475,7 +475,8 @@ void G1ConcurrentMark::reset() {
   _root_regions.reset();
 }
 
-void G1ConcurrentMark::clear_statistics_in_region(uint region_idx) {
+void G1ConcurrentMark::clear_statistics(HeapRegion* r) {
+  uint region_idx = r->hrm_index();
   for (uint j = 0; j < _max_num_tasks; ++j) {
     _tasks[j]->clear_mark_stats_cache(region_idx);
   }
@@ -483,21 +484,9 @@ void G1ConcurrentMark::clear_statistics_in_region(uint region_idx) {
   _region_mark_stats[region_idx].clear();
 }
 
-void G1ConcurrentMark::clear_statistics(HeapRegion* r) {
-  uint const region_idx = r->hrm_index();
-  if (r->is_humongous()) {
-    assert(r->is_starts_humongous(), "Got humongous continues region here");
-    uint const size_in_regions = (uint)_g1h->humongous_obj_size_in_regions(cast_to_oop(r->humongous_start_region()->bottom())->size());
-    for (uint j = region_idx; j < (region_idx + size_in_regions); j++) {
-      clear_statistics_in_region(j);
-    }
-  } else {
-    clear_statistics_in_region(region_idx);
-  }
-}
-
 void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   assert_at_safepoint();
+  assert(r->is_starts_humongous(), "Got humongous continues region here");
 
   // Need to clear mark bit of the humongous object. Doing this unconditionally is fine.
   mark_bitmap()->clear(r->bottom());
@@ -507,7 +496,10 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   }
 
   // Clear any statistics about the region gathered so far.
-  clear_statistics(r);
+  _g1h->humongous_obj_regions_iterate(r,
+                                      [&] (HeapRegion* r) {
+                                        clear_statistics(r);
+                                      });
 }
 
 void G1ConcurrentMark::reset_marking_for_restart() {
@@ -606,7 +598,7 @@ private:
       if (is_clear_concurrent_undo()) {
         // No need to clear bitmaps for empty regions (which includes regions we
         // did not mark through).
-        if (_cm->live_words(r->hrm_index()) == 0) {
+        if (!_cm->contains_live_object(r->hrm_index())) {
           assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
           return r->bottom();
         }
@@ -1109,7 +1101,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
 
       bool selected_for_rebuild;
       if (hr->is_humongous()) {
-        bool const is_live = _cm->live_words(hr->humongous_start_region()->hrm_index()) > 0;
+        bool const is_live = _cm->contains_live_object(hr->humongous_start_region()->hrm_index());
         selected_for_rebuild = tracking_policy->update_humongous_before_rebuild(hr, is_live);
       } else {
         size_t const live_bytes = _cm->live_bytes(hr->hrm_index());
@@ -1121,49 +1113,48 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
       _cm->update_top_at_rebuild_start(hr);
     }
 
-    // Distribute the given words across the humongous object starting with hr and
-    // note end of marking.
-    void distribute_marked_bytes(HeapRegion* hr, size_t marked_words) {
-      uint const region_idx = hr->hrm_index();
+    // Distribute the given marked bytes across the humongous object starting
+    // with hr and note end of marking for these regions.
+    void distribute_marked_bytes(HeapRegion* hr, size_t marked_bytes) {
       size_t const obj_size_in_words = cast_to_oop(hr->bottom())->size();
-      uint const num_regions_in_humongous = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size_in_words);
 
       // "Distributing" zero words means that we only note end of marking for these
       // regions.
-      assert(marked_words == 0 || obj_size_in_words == marked_words,
-             "Marked words should either be 0 or the same as humongous object (" SIZE_FORMAT ") but is " SIZE_FORMAT,
-             obj_size_in_words, marked_words);
+      assert(marked_bytes == 0 || obj_size_in_words * HeapWordSize == marked_bytes,
+             "Marked bytes should either be 0 or the same as humongous object (%zu) but is %zu",
+             obj_size_in_words * HeapWordSize, marked_bytes);
 
-      for (uint i = region_idx; i < (region_idx + num_regions_in_humongous); i++) {
-        HeapRegion* const r = _g1h->region_at(i);
-        size_t const words_to_add = MIN2(HeapRegion::GrainWords, marked_words);
+      auto distribute_bytes = [&] (HeapRegion* r) {
+        size_t const bytes_to_add = MIN2(HeapRegion::GrainBytes, marked_bytes);
 
-        log_trace(gc, marking)("Adding " SIZE_FORMAT " words to humongous region %u (%s)",
-                               words_to_add, i, r->get_type_str());
-        add_marked_bytes_and_note_end(r, words_to_add * HeapWordSize);
-        marked_words -= words_to_add;
-      }
-      assert(marked_words == 0,
-             SIZE_FORMAT " words left after distributing space across %u regions",
-             marked_words, num_regions_in_humongous);
+        log_trace(gc, marking)("Adding %zu bytes to humongous region %u (%s)",
+                               bytes_to_add, r->hrm_index(), r->get_type_str());
+        add_marked_bytes_and_note_end(r, bytes_to_add);
+        marked_bytes -= bytes_to_add;
+      };
+      _g1h->humongous_obj_regions_iterate(hr, distribute_bytes);
+
+      assert(marked_bytes == 0,
+             "%zu bytes left after distributing space across %zu regions",
+             marked_bytes, G1CollectedHeap::humongous_obj_size_in_regions(obj_size_in_words));
     }
 
     void update_marked_bytes(HeapRegion* hr) {
       uint const region_idx = hr->hrm_index();
-      size_t const marked_words = _cm->live_words(region_idx);
+      size_t const marked_bytes = _cm->live_bytes(region_idx);
       // The marking attributes the object's size completely to the humongous starts
       // region. We need to distribute this value across the entire set of regions a
       // humongous object spans.
       if (hr->is_humongous()) {
-        assert(hr->is_starts_humongous() || marked_words == 0,
-               "Should not have marked words " SIZE_FORMAT " in non-starts humongous region %u (%s)",
-               marked_words, region_idx, hr->get_type_str());
+        assert(hr->is_starts_humongous() || marked_bytes == 0,
+               "Should not have live bytes %zu in continues humongous region %u (%s)",
+               marked_bytes, region_idx, hr->get_type_str());
         if (hr->is_starts_humongous()) {
-          distribute_marked_bytes(hr, marked_words);
+          distribute_marked_bytes(hr, marked_bytes);
         }
       } else {
-        log_trace(gc, marking)("Adding " SIZE_FORMAT " words to region %u (%s)", marked_words, region_idx, hr->get_type_str());
-        add_marked_bytes_and_note_end(hr, _cm->live_bytes(region_idx));
+        log_trace(gc, marking)("Adding %zu bytes to region %u (%s)", marked_bytes, region_idx, hr->get_type_str());
+        add_marked_bytes_and_note_end(hr, marked_bytes);
       }
     }
 
@@ -1368,7 +1359,7 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
           _g1h->free_region(hr, _local_cleanup_list);
         }
         hr->clear_cardtable();
-        _g1h->concurrent_mark()->clear_statistics_in_region(hr->hrm_index());
+        _g1h->concurrent_mark()->clear_statistics(hr);
       }
 
       return false;

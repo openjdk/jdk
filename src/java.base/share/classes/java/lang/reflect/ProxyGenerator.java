@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.*;
 import jdk.internal.classfile.attribute.ExceptionsAttribute;
 import jdk.internal.misc.VM;
+import jdk.internal.org.objectweb.asm.Type;
 import sun.security.action.GetBooleanAction;
 
 import java.io.IOException;
@@ -57,7 +58,7 @@ import static jdk.internal.classfile.Classfile.*;
  * "generateProxyClass" method.
  */
 final class ProxyGenerator {
-    private static final int CLASSFILE_VERSION = VM.classFileVersion();
+    private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
 
     private static final ClassDesc
             CD_ClassLoader = ClassDesc.ofInternalName("java/lang/ClassLoader"),

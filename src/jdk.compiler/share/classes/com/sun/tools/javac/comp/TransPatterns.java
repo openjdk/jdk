@@ -179,6 +179,7 @@ public class TransPatterns extends TreeTranslator {
     private Set<JCMethodInvocation> deconstructorCalls;
     private int variableIndex = 0;
 
+    @SuppressWarnings("this-escape")
     protected TransPatterns(Context context) {
         context.put(transPatternsKey, this);
         syms = Symtab.instance(context);
