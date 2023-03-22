@@ -28,6 +28,7 @@ package java.net.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -46,6 +47,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.PushPromiseHandler;
+import java.util.concurrent.Flow.Subscription;
+
 import jdk.internal.net.http.HttpClientBuilderImpl;
 
 /**
@@ -141,7 +144,15 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * The JDK built-in implementation of the {@code HttpClient} overrides
  * {@link #close()}, {@link #shutdown()}, {@link #shutdownNow()},
  * {@link #awaitTermination(Duration)}, and {@link #isTerminated()} to
- * provide a best effort implementation.
+ * provide a best effort implementation. Failing to close, cancel, or
+ * read returned streams to exhaustion, such as streams provided when using
+ * {@link BodyHandlers#ofInputStream()}, {@link BodyHandlers#ofLines()}, or
+ * {@link BodyHandlers#ofPublisher()}, may prevent an orderly shutdown
+ * to eventually complete. Likewise, failing to
+ * {@linkplain Subscription#request(long) request data} or {@linkplain
+ * Subscription#cancel() cancel subscriptions} from a custom {@linkplain
+ * java.net.http.HttpResponse.BodySubscriber BodySubscriber} may stop
+ * delivery of data and stall an orderly shutdown.
  *
  * @since 11
  */
@@ -613,7 +624,7 @@ public abstract class HttpClient implements AutoCloseable {
      * @param responseBodyHandler the response body handler
      * @return the response
      * @throws IOException if an I/O error occurs when sending or receiving, or
-     *         the client is {@linkplain ##closing shutting down}
+     *         the client has {@linkplain ##closing shut down}
      * @throws InterruptedException if the operation is interrupted
      * @throws IllegalArgumentException if the {@code request} argument is not
      *         a request that could have been validly built as specified by {@link
@@ -661,7 +672,7 @@ public abstract class HttpClient implements AutoCloseable {
      * <p> The returned completable future completes exceptionally with:
      * <ul>
      * <li>{@link IOException} - if an I/O error occurs when sending or receiving,
-     *      or the client is {@linkplain ##closing shutting down}.</li>
+     *      or the client has {@linkplain ##closing shut down}.</li>
      * <li>{@link SecurityException} - If a security manager has been installed
      *          and it denies {@link java.net.URLPermission access} to the
      *          URL in the given request, or proxy if one is configured.
@@ -747,9 +758,14 @@ public abstract class HttpClient implements AutoCloseable {
     }
 
     /**
-     * Initiates an orderly shutdown in which previously submitted
-     * operations are run to completion, but no new request will be
-     * accepted.
+     * Initiates an orderly shutdown in which  requests previously
+     * submitted with {@code send} or {@code sendAsync}
+     * are run to completion, but no new request will be accepted.
+     * Running a request to completion may involve running several
+     * operations in the background, including waiting for responses
+     * to be delivered, which will all have to run to completion until
+     * the request is considered completed.
+     *
      * Invocation has no additional effect if already shut down.
      *
      * <p>This method does not wait for previously submitted request
@@ -769,6 +785,8 @@ public abstract class HttpClient implements AutoCloseable {
      * Blocks until all operations have completed execution after a shutdown
      * request, or the {@code duration} elapses, or the current thread is
      * {@linkplain Thread#interrupt() interrupted}, whichever happens first.
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
      *
      * <p> This method does not wait if the duration to wait is less than or
      * equal to zero. In this case, the method just tests if the thread has
@@ -794,7 +812,9 @@ public abstract class HttpClient implements AutoCloseable {
     /**
      * Returns {@code true} if all operations have completed following
      * a shutdown.
-     * Note that {@code isTerminated} is never {@code true} unless
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
+     * <p> Note that {@code isTerminated} is never {@code true} unless
      * either {@code shutdown} or {@code shutdownNow} was called first.
      *
      * @implSpec
@@ -814,6 +834,8 @@ public abstract class HttpClient implements AutoCloseable {
      * This method attempts to initiate an immediate shutdown.
      * An implementation of this method may attempt to
      * interrupt operations that are actively running.
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
      * The behavior of actively running operations when interrupted
      * is undefined. In particular, there is no guarantee that
      * interrupted operations will terminate, or that code waiting
@@ -831,9 +853,13 @@ public abstract class HttpClient implements AutoCloseable {
     }
 
     /**
-     * Initiates an orderly shutdown in which previously submitted operation are
-     * executed, but no new request will be accepted. This method waits until all
-     * operations have completed execution and the client has terminated.
+     * Initiates an orderly shutdown in which  requests previously
+     * submitted to {@code send} or {@code sendAsync}
+     * are run to completion, but no new request will be accepted.
+     * Running a request to completion may involve running several
+     * operations in the background, including waiting for responses.
+     * This method waits until all operations have completed execution
+     * and the client has terminated.
      *
      * <p> If interrupted while waiting, this method may attempt to stop all
      * operations by calling {@link #shutdownNow()}. It then continues to wait
