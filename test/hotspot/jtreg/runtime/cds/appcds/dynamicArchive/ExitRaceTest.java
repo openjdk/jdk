@@ -49,7 +49,6 @@ public class ExitRaceTest extends DynamicArchiveTestBase {
 
         dump(topArchiveName,
              "-Xlog:cds+dynamic=debug",
-             "-XX:-CreateCoredumpOnCrash",
              "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                                 output.shouldHaveExitValue(0)
