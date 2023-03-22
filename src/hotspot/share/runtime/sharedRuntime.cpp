@@ -46,6 +46,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/compiledICHolder.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
@@ -237,12 +238,11 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
-  union { jfloat f; juint i; } xbits, ybits;
-  xbits.f = x;
-  ybits.f = y;
+  juint xbits_i = PrimitiveConversions::cast<juint>(x);
+  juint xbits_i = PrimitiveConversions::cast<juint>(x);
   // x Mod Infinity == x unless x is infinity
-  if (((xbits.i & float_sign_mask) != float_infinity) &&
-       ((ybits.i & float_sign_mask) == float_infinity) ) {
+  if (((xbits_i & float_sign_mask) != float_infinity) &&
+       ((ybits_i & float_sign_mask) == float_infinity) ) {
     return x;
   }
   return ((jfloat)fmod_winx64((double)x, (double)y));
