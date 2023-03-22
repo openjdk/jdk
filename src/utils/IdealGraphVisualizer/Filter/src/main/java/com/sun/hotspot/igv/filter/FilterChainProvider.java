@@ -33,6 +33,7 @@ import javax.swing.JComboBox;
 public interface FilterChainProvider {
 
     FilterChain getFilterChain();
+    FilterChain getAllFiltersOrdered();
 
     FilterChain createNewDefaultFilterChain();
 

@@ -42,6 +42,11 @@ public class FilterChainProviderImplementation implements FilterChainProvider {
     }
 
     @Override
+    public FilterChain getAllFiltersOrdered() {
+        return FilterTopComponent.findInstance().getAllFiltersOrdered();
+    }
+
+    @Override
     public FilterChain createNewDefaultFilterChain() {
         return FilterTopComponent.createNewDefaultFilterChain();
     }

@@ -39,7 +39,7 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
 
     private final List<Filter> filters;
     private final transient ChangedEvent<FilterChain> changedEvent;
-    private String name;
+    private final String name;
 
     private final ChangedListener<Filter> changedListener = new ChangedListener<Filter>() {
         @Override
@@ -55,8 +55,7 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
     }
 
     public FilterChain() {
-        filters = new ArrayList<>();
-        changedEvent = new ChangedEvent<>(this);
+        this("");
     }
 
     @Override
@@ -64,24 +63,10 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
         return changedEvent;
     }
 
-    public void apply(Diagram d) {
-        for (Filter f : filters) {
-            f.apply(d);
-        }
-    }
-
-    public void apply(Diagram d, FilterChain sequence) {
-        List<Filter> applied = new ArrayList<>();
-        for (Filter f : sequence.getFilters()) {
-            if (filters.contains(f)) {
-                f.apply(d);
-                applied.add(f);
-            }
-        }
-
-        for (Filter f : filters) {
-            if (!applied.contains(f)) {
-                f.apply(d);
+    public void applyInOrder(Diagram diagram, FilterChain filterOrder) {
+        for (Filter filter : filterOrder.getFilters()) {
+            if (filters.contains(filter)) {
+                filter.apply(diagram);
             }
         }
     }
@@ -135,10 +120,6 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
     }
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override

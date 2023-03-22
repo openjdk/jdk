@@ -54,6 +54,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private Set<Integer> selectedNodes;
     private FilterChain customFilterChain;
     private FilterChain filterChain;
+    private final FilterChain filtersOrder;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
     private final ChangedEvent<DiagramViewModel> diagramChangedEvent;
@@ -152,6 +153,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         customFilterChain = (provider != null) ? provider.createNewDefaultFilterChain() : new FilterChain();
         filterChain = (provider != null) ? provider.getFilterChain() : customFilterChain;
+        filtersOrder = (provider != null) ? provider.getAllFiltersOrdered() : customFilterChain;
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
@@ -342,7 +344,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
-        filterChain.apply(diagram, filterChain);
+        filterChain.applyInOrder(diagram, filtersOrder);
         if (graph.isDiffGraph()) {
             ColorFilter f = new ColorFilter("");
             f.addRule(stateColorRule("same",    Color.white));

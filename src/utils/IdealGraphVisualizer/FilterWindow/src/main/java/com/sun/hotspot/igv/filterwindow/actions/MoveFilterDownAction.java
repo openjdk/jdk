@@ -41,7 +41,7 @@ public final class MoveFilterDownAction extends CookieAction {
     protected void performAction(Node[] activatedNodes) {
         for (Node n : activatedNodes) {
             Filter c = n.getLookup().lookup(Filter.class);
-            FilterTopComponent.findInstance().getAllFilterChains().moveFilterDown(c);
+            FilterTopComponent.findInstance().getAllFiltersOrdered().moveFilterDown(c);
         }
     }
 
