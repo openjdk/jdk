@@ -151,7 +151,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public DiagramViewModel(InputGraph graph) {
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         customFilterChain = (provider != null) ? provider.createNewDefaultFilterChain() : new FilterChain();
-        filterChain = customFilterChain;
+        filterChain = (provider != null) ? provider.getFilterChain() : customFilterChain;
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
@@ -289,10 +289,24 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         hiddenNodesChangedEvent.fire();
     }
 
+    public void initFiltersFromModel(DiagramViewModel other) {
+        filterChain.getChangedEvent().removeListener(filterChainChangedListener);
+        customFilterChain = new FilterChain(other.getCustomFilterChain().getName());
+        customFilterChain.addFilters(other.getCustomFilterChain().getFilters());
+        if (other.getFilterChain() == other.getCustomFilterChain()) {
+            filterChain = customFilterChain;
+        } else {
+            filterChain = other.getFilterChain();
+        }
+        filterChain.getChangedEvent().addListener(filterChainChangedListener);
+    }
+
     void activateModel() {
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         if (provider != null) {
+            // link the Filters window with this model
             provider.setFilterChainSelectionChangedListener(l -> {
+                // this function is called when user selects a different filter profile for this model
                 filterChain.getChangedEvent().removeListener(filterChainChangedListener);
                 filterChain = provider.getFilterChain();
                 filterChain.getChangedEvent().addListener(filterChainChangedListener);
@@ -302,18 +316,17 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
     }
 
+    // called when the filter in filterChain changed, but not filterChain itself
+    private void filterChanged() {
+        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
+        assert provider == null || (filterChain == provider.getFilterChain());
+        rebuildDiagram();
+        diagramChangedEvent.fire();
+    }
+
     void close() {
         filterChain.getChangedEvent().removeListener(filterChainChangedListener);
         getChangedEvent().fire();
-    }
-
-    private void filterChanged() {
-        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
-        if (provider != null) {
-            filterChain = provider.getFilterChain();
-        }
-        rebuildDiagram();
-        diagramChangedEvent.fire();
     }
 
     private void rebuildDiagram() {
@@ -337,16 +350,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             f.addRule(stateColorRule("new",     Color.green));
             f.addRule(stateColorRule("deleted", Color.red));
             f.apply(diagram);
-        }
-    }
-
-    public void initFiltersFromModel(DiagramViewModel other) {
-        customFilterChain = new FilterChain(other.getCustomFilterChain().getName());
-        customFilterChain.addFilters(other.getCustomFilterChain().getFilters());
-        if (other.getFilterChain() == other.getCustomFilterChain()) {
-            filterChain = customFilterChain;
-        } else {
-            filterChain = other.getFilterChain();
         }
     }
 
