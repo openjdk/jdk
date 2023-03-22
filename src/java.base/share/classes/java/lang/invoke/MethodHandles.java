@@ -712,7 +712,8 @@ public class MethodHandles {
      * (See the Java Virtual Machine Specification, section {@jvms 4.10.1.9}.)
      * <p>
      * The JVM represents constructors and static initializer blocks as internal methods
-     * with special names ({@code "<init>"} and {@code "<clinit>"}).
+     * with special names ({@value ConstantDescs#INIT_NAME} and {@value
+     * ConstantDescs#CLASS_INIT_NAME}).
      * The internal syntax of invocation instructions allows them to refer to such internal
      * methods as if they were normal methods, but the JVM bytecode verifier rejects them.
      * A lookup of such an internal method will produce a {@code NoSuchMethodException}.
@@ -2768,7 +2769,7 @@ assertEquals("[x, y, z]", pb.command().toString());
             if (refc.isArray()) {
                 throw new NoSuchMethodException("no constructor for array class: " + refc.getName());
             }
-            String name = "<init>";
+            String name = ConstantDescs.INIT_NAME;
             MemberName ctor = resolveOrFail(REF_newInvokeSpecial, refc, name, type);
             return getDirectConstructor(refc, ctor);
         }
@@ -2964,7 +2965,8 @@ assertEquals("[x, y, z]", pb.command().toString());
          * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
          * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * <p style="font-size:smaller;">
-         * <em>(Note:  JVM internal methods named {@code "<init>"} are not visible to this API,
+         * <em>(Note:  JVM internal methods named {@value ConstantDescs#INIT_NAME}
+         * are not visible to this API,
          * even though the {@code invokespecial} instruction can refer to them
          * in special circumstances.  Use {@link #findConstructor findConstructor}
          * to access instance initialization methods in a safe manner.)</em>
@@ -4002,7 +4004,7 @@ return mh1;
                 !refc.isInterface() &&
                 refc != lookupClass().getSuperclass() &&
                 refc.isAssignableFrom(lookupClass())) {
-                assert(!method.getName().equals("<init>"));  // not this code path
+                assert(!method.getName().equals(ConstantDescs.INIT_NAME));  // not this code path
 
                 // Per JVMS 6.5, desc. of invokespecial instruction:
                 // If the method is in a superclass of the LC,
