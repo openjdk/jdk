@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,13 +195,13 @@ abstract class AbstractVector<E> extends Vector<E> {
     final AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap) {
         if ((length() & (length() - 1)) != 0) {
             return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, length())))
-                    : shuffleFromOp(i -> i * step + start);
+                        : shuffleFromOp(i -> i * step + start);
         }
 
         AbstractSpecies<?> species = vspecies().asIntegral();
         Vector iota = species.iota();
         iota = iota.lanewise(VectorOperators.MUL, step)
-                .lanewise(VectorOperators.ADD, start);
+                   .lanewise(VectorOperators.ADD, start);
         Vector wrapped = iota.lanewise(VectorOperators.AND, length() - 1);
 
         if (!wrap) {

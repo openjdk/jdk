@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,13 +75,13 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         if (species.asIntegral() == species) {
             return v.castShape(species, 0).toShuffle();
         } else if (species.elementType() == float.class) {
-            return (VectorShuffle<F>)v.castShape(species.asIntegral(), 0)
-                    .reinterpretAsInts()
-                    .toFPShuffle();
+            return (VectorShuffle<F>) v.castShape(species.asIntegral(), 0)
+                                       .reinterpretAsInts()
+                                       .toFPShuffle();
         } else {
-            return (VectorShuffle<F>)v.castShape(species.asIntegral(), 0)
-                    .reinterpretAsLongs()
-                    .toFPShuffle();
+            return (VectorShuffle<F>) v.castShape(species.asIntegral(), 0)
+                                       .reinterpretAsLongs()
+                                       .toFPShuffle();
         }
     }
 
@@ -105,7 +105,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     public final VectorMask<E> laneIsValid() {
         Vector<?> shufvec = this.toBitsVector();
         return shufvec.compare(VectorOperators.GE, 0)
-                .cast(vspecies());
+                      .cast(vspecies());
     }
 
     @ForceInline
@@ -114,8 +114,8 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     public final VectorShuffle<E> rearrange(VectorShuffle<E> shuffle) {
         Vector v = toBitsVector();
         return (VectorShuffle<E>) v.rearrange(shuffle.cast(vspecies().asIntegral()))
-                .toShuffle()
-                .cast(vspecies());
+                                   .toShuffle()
+                                   .cast(vspecies());
     }
 
     @ForceInline
@@ -127,7 +127,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
             v = v.lanewise(VectorOperators.AND, length() - 1);
         } else {
             v = v.blend(v.lanewise(VectorOperators.ADD, length()),
-                    v.compare(VectorOperators.LT, 0));
+                        v.compare(VectorOperators.LT, 0));
         }
         return (VectorShuffle<E>) v.toShuffle().cast(vspecies());
     }
