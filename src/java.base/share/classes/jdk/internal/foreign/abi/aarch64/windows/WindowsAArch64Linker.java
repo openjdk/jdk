@@ -55,6 +55,6 @@ public final class WindowsAArch64Linker extends AbstractLinker {
 
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
-        return  CallArranger.WINDOWS.arrangeUpcall(targetType, function, options);
+        return CallArranger.WINDOWS.arrangeUpcall(targetType, function, options);
     }
 }

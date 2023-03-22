@@ -71,7 +71,7 @@ public class TestTrivial extends NativeTestHelper {
         MethodHandle handle = downcallHandle("with_return_buffer", FunctionDescriptor.of(bigLayout), Linker.Option.isTrivial());
         VarHandle vhX = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("x"));
         VarHandle vhY = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("y"));
-        try (Arena arena  = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment result = (MemorySegment) handle.invokeExact((SegmentAllocator) arena);
             long x = (long) vhX.get(result);
             assertEquals(x, 10);
@@ -86,7 +86,7 @@ public class TestTrivial extends NativeTestHelper {
         MethodHandle handle = downcallHandle("capture_errno", FunctionDescriptor.ofVoid(C_INT), Linker.Option.isTrivial(), ccs);
         StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
         VarHandle errnoHandle = capturedStateLayout.varHandle(MemoryLayout.PathElement.groupElement("errno"));
-        try (Arena arena  = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment captureSeg = arena.allocate(capturedStateLayout);
             handle.invokeExact(captureSeg, 42);
             int capturedErrno = (int) errnoHandle.get(captureSeg);

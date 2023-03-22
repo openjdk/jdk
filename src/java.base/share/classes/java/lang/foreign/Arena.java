@@ -221,7 +221,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      */
     static Arena global() {
         class Holder {
-            final static Arena GLOBAL = MemorySessionImpl.GLOBAL.asArena();
+            static final Arena GLOBAL = MemorySessionImpl.GLOBAL.asArena();
         }
         return Holder.GLOBAL;
     }

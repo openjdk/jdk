@@ -156,7 +156,7 @@ class LibFallback {
      * @throws IllegalStateException if the call to {@code ffi_get_struct_offsets} returns a non-zero status code
      */
     static void getStructOffsets(MemorySegment structType, MemorySegment offsetsOut, FFIABI abi)
-            throws IllegalStateException  {
+            throws IllegalStateException {
         checkStatus(ffi_get_struct_offsets(abi.value(), structType.address(), offsetsOut.address()));
     }
 
