@@ -1381,7 +1381,7 @@ size_t G1Policy::allowed_waste_in_collection_set() const {
 }
 
 static uint divide_and_round_up(size_t dividend, size_t divisor) {
-  return (uint)(dividend + divisor - 1) / divisor;
+  return (uint)((dividend + divisor - 1) / divisor);
 }
 
 uint G1Policy::calc_min_old_cset_length(uint num_marked_regions) const {
@@ -1394,7 +1394,7 @@ uint G1Policy::calc_min_old_cset_length(uint num_marked_regions) const {
   // The calculation is based on the number of marked regions we added
   // to the CSet candidates in the first place, not how many remain, so
   // that the result is the same during all mixed GCs that follow a cycle.
-  const size_t gc_num = MAX2(G1MixedGCCountTarget, (size_t)1);
+  const size_t gc_num = MAX2((size_t)G1MixedGCCountTarget, (size_t)1);
   // Round up to be conservative.
   return divide_and_round_up(num_marked_regions, gc_num);
 }
