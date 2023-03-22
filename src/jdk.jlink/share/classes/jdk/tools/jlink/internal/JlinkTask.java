@@ -365,20 +365,6 @@ public class JlinkTask {
         stack.operate(imageProvider);
     }
 
-    /*
-     * Jlink API entry point.
-     */
-    public static void postProcessImage(ExecutableImage image, List<Plugin> postProcessorPlugins)
-            throws Exception {
-        Objects.requireNonNull(image);
-        Objects.requireNonNull(postProcessorPlugins);
-        PluginsConfiguration config = new PluginsConfiguration(postProcessorPlugins);
-        ImagePluginStack stack = ImagePluginConfiguration.
-                parseConfiguration(config);
-
-        stack.operate((ImagePluginStack stack1) -> image);
-    }
-
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {

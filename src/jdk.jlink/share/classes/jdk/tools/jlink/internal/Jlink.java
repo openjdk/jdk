@@ -300,19 +300,4 @@ public final class Jlink {
             pluginsConfig.getLastSorterPluginName());
     }
 
-    /**
-     * Post process the image with a plugin configuration.
-     *
-     * @param image Existing image.
-     * @param plugins Plugins cannot be null
-     */
-    public void postProcess(ExecutableImage image, List<Plugin> plugins) {
-        Objects.requireNonNull(image);
-        Objects.requireNonNull(plugins);
-        try {
-            JlinkTask.postProcessImage(image, plugins);
-        } catch (Exception ex) {
-            throw new PluginException(ex);
-        }
-    }
 }
