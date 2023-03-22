@@ -2317,6 +2317,41 @@ GetStackTraceClosure::do_thread(Thread *target) {
 
 #ifdef ASSERT
 void
+PrintStackTraceClosure::do_thread_impl(Thread *target) {
+  JavaThread *java_thread = JavaThread::cast(target);
+  Thread *current_thread = Thread::current();
+
+  ResourceMark rm (current_thread);
+  const char* tname = JvmtiTrace::safe_get_thread_name(java_thread);
+  oop t_oop = java_thread->jvmti_vthread();
+  t_oop = t_oop == nullptr ? java_thread->threadObj() : t_oop;
+  bool is_vt_suspended = java_lang_VirtualThread::is_instance(t_oop) && JvmtiVTSuspender::is_vthread_suspended(t_oop);
+
+  log_error(jvmti)("%s(%s) exiting: %d is_susp: %d is_thread_susp: %d is_vthread_susp: %d "
+                   "is_VTMS_transition_disabler: %d, is_in_VTMS_transition = %d\n",
+                   tname, java_thread->name(), java_thread->is_exiting(),
+                   java_thread->is_suspended(), java_thread->is_carrier_thread_suspended(), is_vt_suspended,
+                   java_thread->is_VTMS_transition_disabler(), java_thread->is_in_VTMS_transition());
+
+  if (java_thread->has_last_Java_frame()) {
+    RegisterMap reg_map(java_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
+    ResourceMark rm(current_thread);
+    HandleMark hm(current_thread);
+    javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
+    while (jvf != nullptr) {
+      log_error(jvmti)("  %s:%d",
+                       jvf->method()->external_name(),
+                       jvf->method()->line_number_from_bci(jvf->bci()));
+      jvf = jvf->java_sender();
+    }
+  }
+  log_error(jvmti)("\n");
+}
+
+void
 PrintStackTraceClosure::do_thread(Thread *target) {
   JavaThread *java_thread = JavaThread::cast(target);
   Thread *current_thread = Thread::current();
