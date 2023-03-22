@@ -208,14 +208,12 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   // Check bailouts.  We currently do not perform on stack replacement
   // of loops in catch blocks or loops which branch with a non-empty stack.
   if (sp() != 0) {
-    // Bailout. But we should probably kick into normal compilation?
     C->record_method_not_compilable("OSR starts with non-empty stack");
     return;
   }
   // Do not OSR inside finally clauses:
   if (osr_block->has_trap_at(osr_block->start())) {
     assert(false, "OSR starts with an immediate trap");
-    // Bailout. But we should probably kick into normal compilation?
     C->record_method_not_compilable("OSR starts with an immediate trap");
     return;
   }
