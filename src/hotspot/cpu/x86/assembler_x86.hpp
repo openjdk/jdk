@@ -355,7 +355,7 @@ class AddressLiteral {
   // creation
   AddressLiteral()
     : _is_lval(false),
-      _target(NULL)
+      _target(nullptr)
   {}
 
   public:
@@ -919,7 +919,7 @@ private:
   void init_attributes(void);
 
   void set_attributes(InstructionAttr *attributes) { _attributes = attributes; }
-  void clear_attributes(void) { _attributes = NULL; }
+  void clear_attributes(void) { _attributes = nullptr; }
 
   void set_managed(void) { NOT_LP64(_is_managed = true;) }
   void clear_managed(void) { NOT_LP64(_is_managed = false;) }
@@ -2884,13 +2884,13 @@ public:
       _input_size_in_bits(Assembler::EVEX_NObit),
       _evex_encoding(0),
       _embedded_opmask_register_specifier(0), // hard code k0
-      _current_assembler(NULL) { }
+      _current_assembler(nullptr) { }
 
   ~InstructionAttr() {
-    if (_current_assembler != NULL) {
+    if (_current_assembler != nullptr) {
       _current_assembler->clear_attributes();
     }
-    _current_assembler = NULL;
+    _current_assembler = nullptr;
   }
 
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class Bytes: AllStatic {
   // Efficient reading and writing of unaligned unsigned data in platform-specific byte ordering
   template <typename T>
   static inline T get_native(const void* p) {
-    assert(p != NULL, "null pointer");
+    assert(p != nullptr, "null pointer");
 
     T x;
 
@@ -50,7 +50,7 @@ class Bytes: AllStatic {
 
   template <typename T>
   static inline void put_native(void* p, T x) {
-    assert(p != NULL, "null pointer");
+    assert(p != nullptr, "null pointer");
 
     if (is_aligned(p, sizeof(T))) {
       *(T*)p = x;
