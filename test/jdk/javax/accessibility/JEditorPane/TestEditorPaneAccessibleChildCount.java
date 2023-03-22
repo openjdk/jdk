@@ -112,19 +112,18 @@ public class TestEditorPaneAccessibleChildCount {
 
             SwingUtilities.invokeAndWait(() -> {
                 childCount2 = ac.getAccessibleChildrenCount();
+                if ((childCount1 != childCount2) &&
+                        (childCount1 != 0 && childCount2 != 0)) {
+                    System.out.println("passed");
+                } else {
+                    System.out.println("Test1 html page accessible children" +
+                            " count is: " + childCount1);
+                    System.out.println("Test2 html page accessible children" +
+                            " count is: " + childCount2);
+                    throw new RuntimeException("getAccessibleChildrenCount" +
+                            " returned wrong child count");
+                }
             });
-
-            if ((childCount1 != childCount2) &&
-                    (childCount1 != 0 && childCount2 != 0)) {
-                System.out.println("passed");
-            } else {
-                System.out.println("Test1 html page accessible children" +
-                        " count is: "+ childCount1);
-                System.out.println("Test2 html page accessible children" +
-                        " count is: "+ childCount2);
-                throw new RuntimeException("getAccessibleChildrenCount" +
-                        " returned wrong child count");
-            }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
