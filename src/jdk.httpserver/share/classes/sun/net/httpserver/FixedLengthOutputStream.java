@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import com.sun.net.httpserver.spi.*;
 class FixedLengthOutputStream extends FilterOutputStream
 {
     private long remaining;
-    private boolean eof = false;
     private boolean closed = false;
+    private final boolean zerolength;
     ExchangeImpl t;
 
     FixedLengthOutputStream (ExchangeImpl t, OutputStream src, long len) {
@@ -52,14 +52,14 @@ class FixedLengthOutputStream extends FilterOutputStream
         }
         this.t = t;
         this.remaining = len;
+        zerolength = (len == 0);
     }
 
     public void write (int b) throws IOException {
         if (closed) {
             throw new IOException ("stream closed");
         }
-        eof = (remaining == 0);
-        if (eof) {
+        if (remaining == 0) {
             throw new StreamClosedException();
         }
         out.write(b);
@@ -69,10 +69,6 @@ class FixedLengthOutputStream extends FilterOutputStream
     public void write (byte[]b, int off, int len) throws IOException {
         if (closed) {
             throw new IOException ("stream closed");
-        }
-        eof = (remaining == 0);
-        if (eof) {
-            throw new StreamClosedException();
         }
         if (len > remaining) {
             // stream is still open, caller can retry
@@ -87,12 +83,15 @@ class FixedLengthOutputStream extends FilterOutputStream
             return;
         }
         closed = true;
+        if (zerolength) {
+            // WriteFinishedEvent was sent already; nothing to do
+            return;
+        }
         if (remaining > 0) {
             t.close();
             throw new IOException ("insufficient bytes written to stream");
         }
         flush();
-        eof = true;
         LeftOverInputStream is = t.getOriginalInputStream();
         if (!is.isClosed()) {
             try {
