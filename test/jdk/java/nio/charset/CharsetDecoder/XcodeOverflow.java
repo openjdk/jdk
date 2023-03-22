@@ -24,13 +24,14 @@
 /*
  * @test
  * @bug 8272613
- * @summary Make sure IAE is not thrown on decoder overflow. The test should
- *          either not throw any Throwable, or an OOME with real Java heap
- *          space error (not "exceeds VM limit").
- * @run junit/othervm DecodeOverflow
+ * @summary Make sure IAE is not thrown on `int` overflow, turning negative
+ *          size. The test should either not throw any Throwable, or an OOME
+ *          with real Java heap space error (not "exceeds VM limit").
+ * @run junit/othervm XcodeOverflow
  */
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
@@ -40,7 +41,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.Arguments;
 
-public class DecodeOverflow {
+public class XcodeOverflow {
     private static Stream<Arguments> sizes() {
         return Stream.of(
             // SOFT_MAX_ARRAY_LENGTH: copied from ArraysSupport. No overflow; no OOME.
@@ -53,6 +54,23 @@ public class DecodeOverflow {
 
     @ParameterizedTest
     @MethodSource("sizes")
+    public void testEncodeOverflow(int size) throws CharacterCodingException {
+        try {
+            StandardCharsets.UTF_8
+                    .newEncoder()
+                    .encode(CharBuffer.wrap(new char[size], 0, size));
+            System.out.println("Encoded without error");
+        } catch (OutOfMemoryError oome) {
+            if (oome.getMessage().equals("Java heap space")) {
+                System.out.println("OOME for \"Java heap space\" is thrown correctly during encoding");
+            } else {
+                throw new RuntimeException("Unexpected OOME", oome);
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("sizes")
     public void testDecodeOverflow(int size) throws CharacterCodingException {
         try {
             StandardCharsets.UTF_8
@@ -61,9 +79,9 @@ public class DecodeOverflow {
             System.out.println("Decoded without error");
         } catch (OutOfMemoryError oome) {
             if (oome.getMessage().equals("Java heap space")) {
-                System.out.println("OOME for \"Java heap space\" is thrown correctly");
+                System.out.println("OOME for \"Java heap space\" is thrown correctly during decoding");
             } else {
-                throw oome;
+                throw new RuntimeException("Unexpected OOME", oome);
             }
         }
     }
