@@ -429,6 +429,14 @@ void PEAState::add_new_allocation(Node* obj) {
       return;
     }
 #endif
+    // Opt out all subclasses of Throwable because C2 will not inline all methods of them including <init>.
+    // PEA needs to materialize it at <init>.
+    ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
+    ciEnv* env = ciEnv::current();
+    if (ik->is_subclass_of(env->Throwable_klass())) {
+      return;
+    }
+
     bool result = _state.put(alloc, new VirtualState(nfields));
     assert(result, "the key existed in _state");
     add_alias(alloc, obj);
