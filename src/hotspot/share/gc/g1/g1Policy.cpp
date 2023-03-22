@@ -1380,10 +1380,6 @@ size_t G1Policy::allowed_waste_in_collection_set() const {
   return G1HeapWastePercent * _g1h->capacity() / 100;
 }
 
-static size_t divide_and_round_up(size_t dividend, size_t divisor) {
-  return (dividend + divisor - 1) / divisor;
-}
-
 uint G1Policy::calc_min_old_cset_length(uint num_marked_regions) const {
   // The min old CSet region bound is based on the maximum desired
   // number of mixed GCs after a cycle. I.e., even if some old regions
@@ -1396,7 +1392,7 @@ uint G1Policy::calc_min_old_cset_length(uint num_marked_regions) const {
   // that the result is the same during all mixed GCs that follow a cycle.
   const size_t gc_num = MAX2((size_t)G1MixedGCCountTarget, (size_t)1);
   // Round up to be conservative.
-  return (uint)divide_and_round_up(num_marked_regions, gc_num);
+  return (uint)ceil((double)num_marked_regions / gc_num);
 }
 
 uint G1Policy::calc_max_old_cset_length() const {
