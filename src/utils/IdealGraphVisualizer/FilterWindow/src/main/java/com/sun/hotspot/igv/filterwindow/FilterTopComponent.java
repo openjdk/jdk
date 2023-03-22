@@ -363,10 +363,10 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     }
 
     private FileObject getFileObject(CustomFilter f) {
-        FileObject fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + f.getName());
+        FileObject fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + f.getName() + ".js");
         if (fo == null) {
             try {
-                fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(f.getName());
+                fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(f.getName() + ".js");
             } catch (IOException ex) {
                 Exceptions.printStackTrace(ex);
             }
@@ -389,9 +389,9 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
             try {
                 if (!fileObject.getName().equals(filter.getName())) {
                     FileLock lock = fileObject.lock();
-                    fileObject.move(lock, fileObject.getParent(), filter.getName(), "");
+                    fileObject.move(lock, fileObject.getParent(), filter.getName(), "js");
                     lock.releaseLock();
-                    fileObject = fileObject.getParent().getFileObject(filter.getName());
+                    fileObject = fileObject.getParent().getFileObject(filter.getName() + ".js");
                 }
 
                 FileLock lock = fileObject.lock();
