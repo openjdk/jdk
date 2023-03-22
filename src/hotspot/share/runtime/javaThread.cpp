@@ -2023,9 +2023,7 @@ bool JavaThread::sleep(jlong millis) {
 void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
-  // We could get here with a pending exception, if so clear it now or
-  // it will cause MetaspaceShared::link_shared_classes to
-  // fail for dynamic dump.
+  // We could get here with a pending exception, if so clear it now.
   if (this->has_pending_exception()) {
     this->clear_pending_exception();
   }
