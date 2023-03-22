@@ -260,8 +260,8 @@ import jdk.internal.util.ArraysSupport;
 #end[char]
  * <h2> Optional operations </h2>
  * Methods specified as
- * <i><a href="Buffer.html#read-only-buffers-heading">optional
- * operations</a></i> throw a {@linkplain ReadOnlyBufferException} when invoked
+ * <i>{@linkplain Buffer##read-only-buffers-heading optional
+ * operations}</i> throw a {@linkplain ReadOnlyBufferException} when invoked
  * on a {@linkplain java.nio.Buffer#isReadOnly read-only} $Type$Buffer. The
  * methods {@linkplain #array array} and {@linkplain #arrayOffset arrayOffset}
  * throw an {@linkplain UnsupportedOperationException} if the $Type$Buffer is
