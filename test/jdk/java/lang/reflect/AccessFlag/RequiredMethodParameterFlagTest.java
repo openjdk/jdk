@@ -53,26 +53,30 @@ class RequiredMethodParameterFlagTest {
         return Stream.of(
                 // test for implicit parameters
                 // inner class
-                Arguments.of(Inner.class.getDeclaredConstructors()[0],
+                Arguments.of(Outer.Inner.class.getDeclaredConstructors()[0],
                         List.of(mandated, Set.of())),
-                // anonymous class
-                Arguments.of(Class.forName("RequiredMethodParameterFlagTest$1")
+                // anonymous class extending an inner class
+                Arguments.of(Class.forName("Outer$1")
                                 .getDeclaredConstructors()[0],
                         List.of(mandated, Set.of(), Set.of())),
+                // anonymous class
+                Arguments.of(Class.forName("Outer$2")
+                                .getDeclaredConstructors()[0],
+                        List.of(mandated)),
                 // enum class
-                Arguments.of(MyEnum.class.getDeclaredMethod("valueOf", String.class),
+                Arguments.of(Outer.MyEnum.class.getDeclaredMethod("valueOf", String.class),
                         List.of(mandated)),
                 // record class
-                Arguments.of(MyRecord.class.getDeclaredConstructors()[0],
+                Arguments.of(Outer.MyRecord.class.getDeclaredConstructors()[0],
                         List.of(mandated, mandated)),
                 // local class
-                Arguments.of(Class.forName("RequiredMethodParameterFlagTest$1Task")
+                Arguments.of(Class.forName("Outer$1Task")
                                 .getDeclaredConstructors()[0],
                         List.of(mandated, Set.of(), synthetic)),
                 // test for synthetic parameters
                 // assuming javac creates two synthetic parameters corresponding to
                 // Enum(String name, int ordinal)
-                Arguments.of(MyEnum.class.getDeclaredConstructors()[0],
+                Arguments.of(Outer.MyEnum.class.getDeclaredConstructors()[0],
                         List.of(synthetic, synthetic, Set.of(), Set.of()))
         );
     }
@@ -92,12 +96,16 @@ class RequiredMethodParameterFlagTest {
             assertEquals(expected, found, () -> "Parameter " + index + " in " + method);
         }
     }
+}
 
+class Outer {
     class Inner {
         public Inner(Inner notMandated) {}
     }
 
     Inner anonymousInner = this.new Inner(null) {};
+
+    Object anonymous = new Object() {};
 
     private void instanceMethod(int i) {
         class Task implements Runnable {
@@ -109,7 +117,7 @@ class RequiredMethodParameterFlagTest {
 
             @Override
             public void run() {
-                System.out.println(RequiredMethodParameterFlagTest.this.toString() + (i * j));
+                System.out.println(Outer.this.toString() + (i * j));
             }
         }
 
