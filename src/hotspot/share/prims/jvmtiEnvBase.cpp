@@ -1567,12 +1567,8 @@ JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
   if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     return false; // already enabled
   }
-  int trans_count = JvmtiVTMSTransitionDisabler::VTMS_transition_count();
-  assert(trans_count == 0, "transitions count expected to be zero: %d", trans_count);
-
   VM_InitNotifyJvmtiEventsMode op(true);
   VMThread::execute(&op);
-  // JvmtiVTMSTransitionDisabler disabler;
   return true;
 }
 
