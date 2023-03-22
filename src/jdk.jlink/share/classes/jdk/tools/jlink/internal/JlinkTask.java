@@ -846,14 +846,15 @@ public class JlinkTask {
                     if (targetPlatformVal == null) {
                         // could not determine target platform
                         throw new IOException(
-                                taskHelper.getMessage("err.cannot.determine.target.platform"));
+                                taskHelper.getMessage("err.cannot.determine.target.platform",
+                                        ref.location().map(URI::toString)
+                                                .orElse("java.base module")));
                     }
                     this.targetPlatform = Platform.parsePlatform(targetPlatformVal);
                     this.order = this.targetPlatform.getNativeByteOrder();
                     if (this.order == null) {
-                        // unsupported target platform
                         throw new IOException(
-                                taskHelper.getMessage("err.unsupported.target.platform",
+                                taskHelper.getMessage("err.unknown.target.endianness",
                                         targetPlatformVal));
                     }
                     if (verbose && log != null) {
