@@ -477,7 +477,7 @@ public sealed interface Linker permits AbstractLinker {
      *     <li>The invocation occurs in a thread {@code T} such that {@code A.isAccessibleBy(T) == true}.
      *     Otherwise, the invocation throws {@link WrongThreadException}; and</li>
      *     <li>{@code A} is kept alive during the invocation. For instance, if {@code A} has been obtained using a
-     *     {@linkplain Arena#ofShared()} confined arena}, any attempt to {@linkplain Arena#close() close}
+     *     {@linkplain Arena#ofShared()} shared arena}, any attempt to {@linkplain Arena#close() close}
      *     the shared arena while the downcall method handle is executing will result in an {@link IllegalStateException}.</li>
      *</ul>
      * <p>
