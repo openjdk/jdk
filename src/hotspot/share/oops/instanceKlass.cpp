@@ -2552,7 +2552,7 @@ void InstanceKlass::remove_unshareable_info() {
   // Reset to the 'allocated' state to prevent any premature accessing to
   // a shared class at runtime while the class is still being loaded and
   // restored. A class' init_state is set to 'loaded' at runtime when it's
-  // being added to class hierarchy (see SystemDictionary:::add_to_hierarchy()).
+  // being added to class hierarchy (see InstanceKlass:::add_to_hierarchy()).
   _init_state = allocated;
 
   { // Otherwise this needs to take out the Compile_lock.
@@ -2626,7 +2626,7 @@ void InstanceKlass::init_shared_package_entry() {
 
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain,
                                              PackageEntry* pkg_entry, TRAPS) {
-  // SystemDictionary::add_to_hierarchy() sets the init_state to loaded
+  // InstanceKlass::add_to_hierarchy() sets the init_state to loaded
   // before the InstanceKlass is added to the SystemDictionary. Make
   // sure the current state is <loaded.
   assert(!is_loaded(), "invalid init state");
