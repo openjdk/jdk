@@ -46,8 +46,7 @@ public class HelloWorldAP extends AbstractProcessor {
         boolean ret = true;
         if(!renv.processingOver() && !DONE) {
             msgr.printNote("running process to create HelloWorld.");
-            try {
-                Writer pw = filer.createSourceFile("HelloWorld").openWriter();
+            try (Writer pw = filer.createSourceFile("HelloWorld").openWriter()) {
                 pw.write("public class HelloWorld {\n");
                 pw.write("  public static void main (String argv[]) {\n");
                 pw.write("    System.out.println(\"Hello apt world.\");\n");
@@ -56,13 +55,11 @@ public class HelloWorldAP extends AbstractProcessor {
                 pw.flush();
                 pw.close();
 
-                OutputStream os = filer.createClassFile("HelloWorldAP").openOutputStream();
                 // the easiest way to create a class file is to copy another one
-                InputStream is = getClass().getResourceAsStream("HelloWorldAP.class");
-                copy(is, os);
-                is.close();
-                os.flush();
-                os.close();
+                try (OutputStream os = filer.createClassFile("HelloWorldAP").openOutputStream();
+                     InputStream is = getClass().getResourceAsStream("HelloWorldAP.class")) {
+                    copy(is, os);
+                }
                 DONE=true;
             }
             catch (IOException ioe) {

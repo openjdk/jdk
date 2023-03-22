@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,10 +296,10 @@
   product(ccstrlist, CompileOnly, "",                                       \
           "List of methods (pkg/class.name) to restrict compilation to")    \
                                                                             \
-  product(ccstr, CompileCommandFile, NULL,                                  \
+  product(ccstr, CompileCommandFile, nullptr,                               \
           "Read compiler commands from this file [.hotspot_compiler]")      \
                                                                             \
-  product(ccstr, CompilerDirectivesFile, NULL, DIAGNOSTIC,                  \
+  product(ccstr, CompilerDirectivesFile, nullptr, DIAGNOSTIC,               \
           "Read compiler directives from this file")                        \
                                                                             \
   product(ccstrlist, CompileCommand, "",                                    \
@@ -311,11 +311,11 @@
   product(bool, ReplayReduce, false, EXPERIMENTAL,                          \
           "Enable features to facilitate replay file reduction")            \
                                                                             \
-  product(ccstr, ReplayDataFile, NULL,                                      \
+  product(ccstr, ReplayDataFile, nullptr,                                   \
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-  product(ccstr, InlineDataFile, NULL,                                      \
+  product(ccstr, InlineDataFile, nullptr,                                   \
           "File containing inlining replay information"                     \
           "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
                                                                             \

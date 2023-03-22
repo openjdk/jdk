@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ class VMError : public AllStatic {
   static const char* _message;
   static char        _detail_msg[1024];
 
-  static Thread*     _thread;           // NULL if it's native thread
+  static Thread*     _thread;           // nullptr if it's native thread
 
   // additional info for crashes
   static address     _pc;               // faulting PC
@@ -136,6 +136,8 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
+  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(void* exrecord, void* context);)
+
 public:
 
   // print_source_info: if true, we try to resolve the source information on platforms that support it
@@ -154,22 +156,31 @@ public:
   static void print_vm_info(outputStream* st);
 
   // main error reporting function
+  [[noreturn]]
+  ATTRIBUTE_PRINTF(6, 7)
   static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
-                             void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
+                             void* context, const char* detail_fmt, ...);
 
+  [[noreturn]]
+  ATTRIBUTE_PRINTF(3, 0)
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context,
-                             const char* filename, int lineno, size_t size) ATTRIBUTE_PRINTF(3, 0);
+                             const char* filename, int lineno, size_t size);
 
+  [[noreturn]]
   static void report_and_die(Thread* thread, unsigned int sig, address pc,
                              void* siginfo, void* context);
 
+  [[noreturn]]
+  ATTRIBUTE_PRINTF(6, 0)
   static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, va_list detail_args) ATTRIBUTE_PRINTF(6, 0);
+                             const char* detail_fmt, va_list detail_args);
 
+  [[noreturn]]
+  ATTRIBUTE_PRINTF(6, 0)
   static void report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt,
-                             va_list detail_args) ATTRIBUTE_PRINTF(6, 0);
+                             va_list detail_args);
 
   // reporting OutOfMemoryError
   static void report_java_out_of_memory(const char* message);
@@ -187,8 +198,8 @@ public:
 
   DEBUG_ONLY(static void controlled_crash(int how);)
 
-  // Non-NULL address guaranteed to generate a SEGV mapping error on read, for test purposes.
-  static constexpr intptr_t segfault_address = (1 * K) AIX_ONLY(+ (4 * K));
+  // Non-null address guaranteed to generate a SEGV mapping error on read, for test purposes.
+  static constexpr intptr_t segfault_address = AIX_ONLY(-1) NOT_AIX(1 * K);
 
   // Max value for the ErrorLogPrintCodeLimit flag.
   static const int max_error_log_print_code = 10;

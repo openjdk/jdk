@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,34 +50,27 @@ class ClassesByName2Targ {
         System.out.println("Howdy!");
         try {
 
-            Thread zero = new Thread ("ZERO") {
-                    public void run () {
+            Thread zero = TestScaffold.newThread (() -> {
                         System.setProperty("java.awt.headless", "true");
                         java.awt.Toolkit tk = java.awt.Toolkit.getDefaultToolkit();
+                }, "ZERO");
 
-                    }
-                };
-
-            Thread one = new Thread ("ONE") {
-                    public void run () {
+            Thread one = TestScaffold.newThread (() -> {
                         try {
                             java.security.KeyPairGenerator keyGen =
                                 java.security.KeyPairGenerator.getInstance("DSA", "SUN");
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                    }
-                };
+                }, "ONE");
 
-            Thread two = new Thread ("TWO") {
-                public void run () {
+            Thread two = TestScaffold.newThread (() -> {
                     try {
                         String s = String.format("%02x", 0xff);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                }
-            };
+                }, "TWO");
 
             two.start();
             one.start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ class ZeroStack {
   ZeroStack();
 
   bool needs_setup() const {
-    return _base == NULL;
+    return _base == nullptr;
   }
 
   int suggest_size(Thread *thread) const;
@@ -59,9 +59,9 @@ class ZeroStack {
     assert(!needs_setup(), "not set up");
     assert(_sp == _top, "stuff on stack at teardown");
 
-    _base = NULL;
-    _top  = NULL;
-    _sp   = NULL;
+    _base = nullptr;
+    _top  = nullptr;
+    _sp   = nullptr;
   }
 
   intptr_t *sp() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ class javaVFrame: public vframe {
  public:
   // casting
   static javaVFrame* cast(vframe* vf) {
-    assert(vf == NULL || vf->is_java_frame(), "must be java frame");
+    assert(vf == nullptr || vf->is_java_frame(), "must be java frame");
     return (javaVFrame*) vf;
   }
 
@@ -175,7 +175,7 @@ class interpretedVFrame: public javaVFrame {
 
   // casting
   static interpretedVFrame* cast(vframe* vf) {
-    assert(vf == NULL || vf->is_interpreted_frame(), "must be interpreted frame");
+    assert(vf == nullptr || vf->is_interpreted_frame(), "must be interpreted frame");
     return (interpretedVFrame*) vf;
   }
 
@@ -294,7 +294,7 @@ class vframeStreamCommon : StackObj {
 
   CodeBlob*         cb()         const { return _frame.cb();  }
   CompiledMethod*   nm()         const {
-      assert( cb() != NULL && cb()->is_compiled(), "usage");
+      assert( cb() != nullptr && cb()->is_compiled(), "usage");
       return (CompiledMethod*) cb();
   }
 

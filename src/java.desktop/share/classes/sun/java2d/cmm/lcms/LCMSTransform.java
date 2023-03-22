@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -424,9 +424,9 @@ final class LCMSTransform implements ColorTransform {
     public void colorConvert(Raster src, WritableRaster dst) {
 
         LCMSImageLayout srcIL, dstIL;
-        dstIL = LCMSImageLayout.createImageLayout(dst);
+        dstIL = LCMSImageLayout.createImageLayout(dst, false);
         if (dstIL != null) {
-            srcIL = LCMSImageLayout.createImageLayout(src);
+            srcIL = LCMSImageLayout.createImageLayout(src, false);
             if (srcIL != null) {
                 doTransform(srcIL, dstIL);
                 return;

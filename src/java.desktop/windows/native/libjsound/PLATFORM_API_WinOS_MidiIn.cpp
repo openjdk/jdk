@@ -282,7 +282,7 @@ INT32 MIDI_IN_GetDeviceVersion(INT32 deviceID, char *name, UINT32 nameLength) {
 
     memset(&midiInCaps, 0, sizeof(midiInCaps));
     if (getMidiInCaps(deviceID, &midiInCaps, &err) && (nameLength>7)) {
-        sprintf(name, "%d.%d", (midiInCaps.vDriverVersion & 0xFF00) >> 8, midiInCaps.vDriverVersion & 0xFF);
+        snprintf(name, nameLength + 1, "%d.%d", (midiInCaps.vDriverVersion & 0xFF00) >> 8, midiInCaps.vDriverVersion & 0xFF);
         return MIDI_SUCCESS;
     }
     MIDIIN_CHECK_ERROR;

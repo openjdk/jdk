@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@
           "Address to allocate shared memory region for class data")        \
           range(0, SIZE_MAX)                                                \
                                                                             \
-  product(ccstr, SharedArchiveConfigFile, NULL,                             \
+  product(ccstr, SharedArchiveConfigFile, nullptr,                             \
           "Data to add to the CDS archive file")                            \
                                                                             \
   product(uint, SharedSymbolTableBucketSize, 4,                             \
@@ -67,25 +67,25 @@
   product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
           "Allow Java agent to be run with CDS dumping")                    \
                                                                             \
-  develop(ccstr, ArchiveHeapTestClass, NULL,                                \
+  develop(ccstr, ArchiveHeapTestClass, nullptr,                                \
           "For JVM internal testing only. The static field named "          \
           "\"archivedObjects\" of the specified class is stored in the "    \
           "CDS archive heap")                                               \
                                                                             \
-  product(ccstr, DumpLoadedClassList, NULL,                                 \
+  product(ccstr, DumpLoadedClassList, nullptr,                                 \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
                                                                             \
-  product(ccstr, SharedClassListFile, NULL,                                 \
+  product(ccstr, SharedClassListFile, nullptr,                                 \
           "Override the default CDS class list")                            \
                                                                             \
-  product(ccstr, SharedArchiveFile, NULL,                                   \
+  product(ccstr, SharedArchiveFile, nullptr,                                   \
           "Override the default location of the CDS archive file")          \
                                                                             \
-  product(ccstr, ArchiveClassesAtExit, NULL,                                \
+  product(ccstr, ArchiveClassesAtExit, nullptr,                                \
           "The path and name of the dynamic archive file")                  \
                                                                             \
-  product(ccstr, ExtraSharedClassListFile, NULL,                            \
+  product(ccstr, ExtraSharedClassListFile, nullptr,                            \
           "Extra classlist for building the CDS archive file")              \
                                                                             \
   product(int, ArchiveRelocationMode, 0, DIAGNOSTIC,                        \

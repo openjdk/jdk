@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,58 +162,37 @@ public class AlgorithmId implements Serializable, DerEncoder {
         bytes.putOID(algid);
 
         if (encodedParams == null) {
-            // Changes backed out for compatibility with Solaris
-
-            // Several AlgorithmId should omit the whole parameter part when
-            // it's NULL. They are ---
-            // RFC 3370 2.1: Implementations SHOULD generate SHA-1
-            // AlgorithmIdentifiers with absent parameters.
-            // RFC 3447 C1: When id-sha1, id-sha224, id-sha256, id-sha384 and
-            // id-sha512 are used in an AlgorithmIdentifier the parameters
-            // (which are optional) SHOULD be omitted.
-            // RFC 3279 2.3.2: The id-dsa algorithm syntax includes optional
-            // domain parameters... When omitted, the parameters component
-            // MUST be omitted entirely
-            // RFC 3370 3.1: When the id-dsa-with-sha1 algorithm identifier
-            // is used, the AlgorithmIdentifier parameters field MUST be absent.
-            /*if (
-                algid.equals((Object)SHA_oid) ||
-                algid.equals((Object)SHA224_oid) ||
-                algid.equals((Object)SHA256_oid) ||
-                algid.equals((Object)SHA384_oid) ||
-                algid.equals((Object)SHA512_oid) ||
-                algid.equals((Object)SHA512_224_oid) ||
-                algid.equals((Object)SHA512_256_oid) ||
-                algid.equals((Object)SHA3_224_oid) ||
-                algid.equals((Object)SHA3_256_oid) ||
-                algid.equals((Object)SHA3_384_oid) ||
-                algid.equals((Object)SHA3_512_oid) ||
-                algid.equals((Object)DSA_oid) ||
-                algid.equals((Object)sha1WithDSA_oid)) {
-                ; // no parameter part encoded
-            } else {
-                bytes.putNull();
-            }*/
-            if (algid.equals(RSASSA_PSS_oid) || algid.equals(ed448_oid)
-                    || algid.equals(ed25519_oid)
-                    || algid.equals(x448_oid)
-                    || algid.equals(x25519_oid)
-                    || algid.equals(SHA1withECDSA_oid)
-                    || algid.equals(SHA224withECDSA_oid)
-                    || algid.equals(SHA256withECDSA_oid)
-                    || algid.equals(SHA384withECDSA_oid)
-                    || algid.equals(SHA512withECDSA_oid)) {
-                // RFC 3279 2.2.3: When the ecdsa-with-SHA1 algorithm identifier
-                // appears as the algorithm field in an AlgorithmIdentifier,
-                // the encoding MUST omit the parameters field.
-                // RFC 4055 3.3: when an RSASSA-PSS key does not require
-                // parameter validation, field is absent.
-                // RFC 8410 3: for id-X25519, id-X448, id-Ed25519, and
-                // id-Ed448, the parameters must be absent.
-                // RFC 5758 3.2: the encoding must omit the parameters field
-                // for ecdsa-with-SHA224, ecdsa-with-SHA256, ecdsa-with-SHA384
-                // and ecdsa-with-SHA512.
-            } else {
+            // MessageDigest algorithms usually have a NULL parameters even
+            // if most RFCs suggested absent.
+            // RSA key and signature algorithms requires the NULL parameters
+            // to be present, see A.1 and A.2.4 of RFC 8017.
+            if (algid.equals(RSAEncryption_oid)
+                    || algid.equals(MD2_oid)
+                    || algid.equals(MD5_oid)
+                    || algid.equals(SHA_oid)
+                    || algid.equals(SHA224_oid)
+                    || algid.equals(SHA256_oid)
+                    || algid.equals(SHA384_oid)
+                    || algid.equals(SHA512_oid)
+                    || algid.equals(SHA512_224_oid)
+                    || algid.equals(SHA512_256_oid)
+                    || algid.equals(SHA3_224_oid)
+                    || algid.equals(SHA3_256_oid)
+                    || algid.equals(SHA3_384_oid)
+                    || algid.equals(SHA3_512_oid)
+                    || algid.equals(SHA1withRSA_oid)
+                    || algid.equals(SHA224withRSA_oid)
+                    || algid.equals(SHA256withRSA_oid)
+                    || algid.equals(SHA384withRSA_oid)
+                    || algid.equals(SHA512withRSA_oid)
+                    || algid.equals(SHA512$224withRSA_oid)
+                    || algid.equals(SHA512$256withRSA_oid)
+                    || algid.equals(MD2withRSA_oid)
+                    || algid.equals(MD5withRSA_oid)
+                    || algid.equals(SHA3_224withRSA_oid)
+                    || algid.equals(SHA3_256withRSA_oid)
+                    || algid.equals(SHA3_384withRSA_oid)
+                    || algid.equals(SHA3_512withRSA_oid)) {
                 bytes.putNull();
             }
         } else {
@@ -597,16 +576,16 @@ public class AlgorithmId implements Serializable, DerEncoder {
                     String ostr = alias.substring(index);
                     String stdAlgName = provider.getProperty(alias);
                     if (stdAlgName != null) {
-                        stdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
-                    }
-                    // add the name->oid and oid->name mappings if none exists
-                    if (KnownOIDs.findMatch(stdAlgName) == null) {
-                        // not override earlier entries if it exists
-                        t.putIfAbsent(stdAlgName, ostr);
-                    }
-                    if (KnownOIDs.findMatch(ostr) == null) {
-                        // not override earlier entries if it exists
-                        t.putIfAbsent(ostr, stdAlgName);
+                        String upperStdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
+                        // add the name->oid and oid->name mappings if none exists
+                        if (KnownOIDs.findMatch(upperStdAlgName) == null) {
+                            // do not override earlier entries if it exists
+                            t.putIfAbsent(upperStdAlgName, ostr);
+                        }
+                        if (KnownOIDs.findMatch(ostr) == null) {
+                            // do not override earlier entries if it exists
+                            t.putIfAbsent(ostr, stdAlgName);
+                        }
                     }
                 }
             }
@@ -668,24 +647,30 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier MGF1_oid =
             ObjectIdentifier.of(KnownOIDs.MGF1);
 
-    public static final ObjectIdentifier ed25519_oid =
-            ObjectIdentifier.of(KnownOIDs.Ed25519);
-    public static final ObjectIdentifier ed448_oid =
-            ObjectIdentifier.of(KnownOIDs.Ed448);
-
-    public static final ObjectIdentifier x25519_oid =
-            ObjectIdentifier.of(KnownOIDs.X25519);
-    public static final ObjectIdentifier x448_oid =
-            ObjectIdentifier.of(KnownOIDs.X448);
-
-    public static final ObjectIdentifier SHA1withECDSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA1withECDSA);
-    public static final ObjectIdentifier SHA224withECDSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA224withECDSA);
-    public static final ObjectIdentifier SHA256withECDSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA256withECDSA);
-    public static final ObjectIdentifier SHA384withECDSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA384withECDSA);
-    public static final ObjectIdentifier SHA512withECDSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA512withECDSA);
+    public static final ObjectIdentifier SHA1withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA1withRSA);
+    public static final ObjectIdentifier SHA224withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA224withRSA);
+    public static final ObjectIdentifier SHA256withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA256withRSA);
+    public static final ObjectIdentifier SHA384withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA384withRSA);
+    public static final ObjectIdentifier SHA512withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA512withRSA);
+    public static final ObjectIdentifier SHA512$224withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA512$224withRSA);
+    public static final ObjectIdentifier SHA512$256withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA512$256withRSA);
+    public static final ObjectIdentifier MD2withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.MD2withRSA);
+    public static final ObjectIdentifier MD5withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.MD5withRSA);
+    public static final ObjectIdentifier SHA3_224withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA3_224withRSA);
+    public static final ObjectIdentifier SHA3_256withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA3_256withRSA);
+    public static final ObjectIdentifier SHA3_384withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA3_384withRSA);
+    public static final ObjectIdentifier SHA3_512withRSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA3_512withRSA);
 }

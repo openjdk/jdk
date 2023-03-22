@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "code/codeBlob.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jvm.h"
@@ -1140,7 +1141,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
-  if ((UseAVX > 2) && supports_avx512vl() && supports_avx512bw()) {
+  if (UseAVX >= 2) {
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
       UseBASE64Intrinsics = true;
     }
@@ -1695,12 +1696,25 @@ void VM_Version::get_processor_features() {
       warning("vectorizedMismatch intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
+  if (UseAVX >= 2) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+  } else if (UseVectorizedHashCodeIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic))
+      warning("vectorizedHashCode intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
+  }
 #else
   if (UseVectorizedMismatchIntrinsic) {
     if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
       warning("vectorizedMismatch intrinsic is not available in 32-bit VM");
     }
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+  if (UseVectorizedHashCodeIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+      warning("vectorizedHashCode intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
   }
 #endif // _LP64
 
@@ -3207,3 +3221,19 @@ intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
     }
   }
 }
+
+bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!supports_float16()) {
+      return false;
+    }
+    break;
+  default:
+    break;
+  }
+  return true;
+}
+

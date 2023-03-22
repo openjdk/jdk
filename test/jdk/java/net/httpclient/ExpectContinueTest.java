@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,8 @@
  *          a response code of 417 Expectation Failed, that the client does not hang
  *          indefinitely and closes the connection.
  * @bug 8286171
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @compile HttpServerAdapters.java
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run testng/othervm ExpectContinueTest
  */
 
@@ -67,7 +62,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -88,10 +87,9 @@ public class ExpectContinueTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         InetSocketAddress saHang = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
-        http1TestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        http1TestServer = HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(new GetHandler(), "/http1/get");
         http1TestServer.addHandler(new PostHandler(), "/http1/post");
         getUri = URI.create("http://" + http1TestServer.serverAuthority() + "/http1/get");
@@ -103,8 +101,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
         hangUri = URI.create("http://" + http1HangServer.ia.getCanonicalHostName() + ":" + http1HangServer.port + "/http1/hang");
 
 
-        http2TestServer = HttpTestServer.of(
-                new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(new GetHandler(), "/http2/get");
         http2TestServer.addHandler(new PostHandler(), "/http2/post");
         http2TestServer.addHandler(new PostHandlerCantContinue(), "/http2/hang");
@@ -249,7 +246,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
     @DataProvider(name = "uris")
     public Object[][] urisData() {
         return new Object[][]{
-                { getUri,   postUri, hangUri, HttpClient.Version.HTTP_1_1 },
+                { getUri,   postUri, hangUri, HTTP_1_1 },
                 { h2getUri,  h2postUri, h2hangUri, HttpClient.Version.HTTP_2 }
         };
     }

@@ -237,7 +237,7 @@ int nsk_jvmti_aod_redefineClass(
     {
         char file [1024];
 
-        sprintf(file,"%s/%s.class",
+        snprintf(file, sizeof(file), "%s/%s.class",
                 nsk_aod_getOptionValue(options, PATH_TO_NEW_BYTE_CODE_OPTION),
                 fileName);
         NSK_DISPLAY1("File with new bytecode: '%s'\n", file);

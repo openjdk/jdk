@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,7 +48,7 @@ class ChunkHeaderPool : public CHeapObj<mtMetaspace> {
     Slab* _next;
     int _top;
     Metachunk _elems [SlabCapacity];
-    Slab() : _next(NULL), _top(0) {
+    Slab() : _next(nullptr), _top(0) {
       for (int i = 0; i < SlabCapacity; i++) {
         _elems[i].clear();
       }
@@ -77,11 +77,11 @@ public:
   Metachunk* allocate_chunk_header() {
     DEBUG_ONLY(verify());
 
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     c = _freelist.remove_first();
-    assert(c == NULL || c->is_dead(), "Not a freelist chunk header?");
-    if (c == NULL) {
-      if (_current_slab == NULL ||
+    assert(c == nullptr || c->is_dead(), "Not a freelist chunk header?");
+    if (c == nullptr) {
+      if (_current_slab == nullptr ||
           _current_slab->_top == SlabCapacity) {
         allocate_new_slab();
         assert(_current_slab->_top < SlabCapacity, "Sanity");
@@ -100,12 +100,12 @@ public:
   void return_chunk_header(Metachunk* c) {
     // We only ever should return free chunks, since returning chunks
     // happens only on merging and merging only works with free chunks.
-    assert(c != NULL && c->is_free(), "Sanity");
+    assert(c != nullptr && c->is_free(), "Sanity");
 #ifdef ASSERT
     // In debug, fill dead header with pattern.
     c->zap_header(0xCC);
-    c->set_next(NULL);
-    c->set_prev(NULL);
+    c->set_next(nullptr);
+    c->set_prev(nullptr);
 #endif
     c->set_dead();
     _freelist.add(c);

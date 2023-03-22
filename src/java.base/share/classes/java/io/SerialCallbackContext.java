@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package java.io;
  * Context during upcalls from object stream to class-defined
  * readObject/writeObject methods.
  * Holds object currently being deserialized and descriptor for current class.
- *
+ * <p>
  * This context keeps track of the thread it was constructed on, and allows
  * only a single call of defaultReadObject, readFields, defaultWriteObject
  * or writeFields which must be invoked on the same thread before the class's
@@ -45,29 +45,29 @@ final class SerialCallbackContext {
      */
     private Thread thread;
 
-    public SerialCallbackContext(Object obj, ObjectStreamClass desc) {
+    SerialCallbackContext(Object obj, ObjectStreamClass desc) {
         this.obj = obj;
         this.desc = desc;
         this.thread = Thread.currentThread();
     }
 
-    public Object getObj() throws NotActiveException {
+    Object getObj() throws NotActiveException {
         checkAndSetUsed();
         return obj;
     }
 
-    public ObjectStreamClass getDesc() {
+    ObjectStreamClass getDesc() {
         return desc;
     }
 
-    public void check() throws NotActiveException {
+    void check() throws NotActiveException {
         if (thread != null && thread != Thread.currentThread()) {
             throw new NotActiveException(
                 "expected thread: " + thread + ", but got: " + Thread.currentThread());
         }
     }
 
-    public void checkAndSetUsed() throws NotActiveException {
+    void checkAndSetUsed() throws NotActiveException {
         if (thread != Thread.currentThread()) {
              throw new NotActiveException(
               "not in readObject invocation or fields already read");
@@ -75,7 +75,7 @@ final class SerialCallbackContext {
         thread = null;
     }
 
-    public void setUsed() {
+    void setUsed() {
         thread = null;
     }
 }
