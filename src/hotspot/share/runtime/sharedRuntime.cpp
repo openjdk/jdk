@@ -239,7 +239,7 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
   juint xbits_i = PrimitiveConversions::cast<juint>(x);
-  juint xbits_i = PrimitiveConversions::cast<juint>(x);
+  juint ybits_i = PrimitiveConversions::cast<juint>(y);
   // x Mod Infinity == x unless x is infinity
   if (((xbits_i & float_sign_mask) != float_infinity) &&
        ((ybits_i & float_sign_mask) == float_infinity) ) {
