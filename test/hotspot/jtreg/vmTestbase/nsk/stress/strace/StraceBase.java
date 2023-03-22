@@ -23,6 +23,8 @@
 
 package nsk.stress.strace;
 
+import nsk.share.Log;
+
 public class StraceBase {
 
     private static final String[] EXPECTED_SYSTEM_CLASSES = {
@@ -55,6 +57,18 @@ public class StraceBase {
                 return true;
         }
         return false;
+    }
+
+    static final long waitTime = 2 * 60000;
+
+    private static final Log log = new Log(System.out);
+
+    static void display(String message) {
+        log.display(message);
+    }
+
+    static void complain(String message) {
+        log.complain(message);
     }
 
 }

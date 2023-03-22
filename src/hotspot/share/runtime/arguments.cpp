@@ -70,7 +70,9 @@
 
 #include <limits>
 
-#define DEFAULT_JAVA_LAUNCHER  "generic"
+static const char _default_java_launcher[] = "generic";
+
+#define DEFAULT_JAVA_LAUNCHER _default_java_launcher
 
 char*  Arguments::_jvm_flags_file               = nullptr;
 char** Arguments::_jvm_flags_array              = nullptr;
@@ -96,6 +98,7 @@ size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
+char*  Arguments::_default_shared_archive_path  = nullptr;
 char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
@@ -322,15 +325,15 @@ bool needs_module_property_warning = false;
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
 
-void Arguments::add_init_library(const char* name, char* options) {
+void Arguments::add_init_library(const char* name, const char* options) {
   _libraryList.add(new AgentLibrary(name, options, false, nullptr));
 }
 
-void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
+void Arguments::add_init_agent(const char* name, const char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
 }
 
-void Arguments::add_instrument_agent(const char* name, char* options, bool absolute_path) {
+void Arguments::add_instrument_agent(const char* name, const char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
 }
 
@@ -539,7 +542,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -548,6 +550,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
+  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
@@ -1907,6 +1910,9 @@ void Arguments::process_java_compiler_argument(const char* arg) {
 }
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
+  if (_sun_java_launcher != _default_java_launcher) {
+    os::free(const_cast<char*>(_sun_java_launcher));
+  }
   _sun_java_launcher = os::strdup_check_oom(launcher);
 }
 
@@ -2131,6 +2137,11 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   result = parse_each_vm_init_arg(java_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
+  }
+
+  // Disable CDS for exploded image
+  if (!has_jimage()) {
+    no_shared_spaces("CDS disabled on exploded JDK");
   }
 
   // We need to ensure processor and memory resources have been properly
@@ -2367,6 +2378,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         add_init_library(name, options);
+        FREE_C_HEAP_ARRAY(char, name);
+        FREE_C_HEAP_ARRAY(char, options);
       }
     } else if (match_option(option, "--add-reads=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addreads", tail, addreads_count++)) {
@@ -2437,6 +2450,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         add_init_agent(name, options, is_absolute_path);
+        os::free(name);
+        os::free(options);
       }
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
@@ -2450,6 +2465,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
         add_instrument_agent("instrument", options, false);
+        FREE_C_HEAP_ARRAY(char, options);
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
@@ -3410,19 +3426,20 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
 // Sharing support
 // Construct the path to the archive
 char* Arguments::get_default_shared_archive_path() {
-  char *default_archive_path;
-  char jvm_path[JVM_MAXPATHLEN];
-  os::jvm_path(jvm_path, sizeof(jvm_path));
-  char *end = strrchr(jvm_path, *os::file_separator());
-  if (end != nullptr) *end = '\0';
-  size_t jvm_path_len = strlen(jvm_path);
-  size_t file_sep_len = strlen(os::file_separator());
-  const size_t len = jvm_path_len + file_sep_len + 20;
-  default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-  jio_snprintf(default_archive_path, len,
-               LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
-               jvm_path, os::file_separator());
-  return default_archive_path;
+  if (_default_shared_archive_path == nullptr) {
+    char jvm_path[JVM_MAXPATHLEN];
+    os::jvm_path(jvm_path, sizeof(jvm_path));
+    char *end = strrchr(jvm_path, *os::file_separator());
+    if (end != nullptr) *end = '\0';
+    size_t jvm_path_len = strlen(jvm_path);
+    size_t file_sep_len = strlen(os::file_separator());
+    const size_t len = jvm_path_len + file_sep_len + 20;
+    _default_shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
+    jio_snprintf(_default_shared_archive_path, len,
+                LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
+                jvm_path, os::file_separator());
+  }
+  return _default_shared_archive_path;
 }
 
 int Arguments::num_archives(const char* archive_path) {
@@ -3474,7 +3491,7 @@ void Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
 
-    if (os::same_files((const char*)get_default_shared_archive_path(), ArchiveClassesAtExit)) {
+    if (os::same_files(get_default_shared_archive_path(), ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
         "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_shared_archive_path());
     }
@@ -3574,7 +3591,7 @@ static bool use_vm_log() {
   if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
       PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
       PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
-      PrintAssembly || TraceDeoptimization || TraceDependencies ||
+      PrintAssembly || TraceDeoptimization ||
       (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
     return true;
   }
@@ -3987,10 +4004,9 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     FLAG_SET_DEFAULT(PrintNMTStatistics, false);
   }
 
-  if (TraceDependencies && VerifyDependencies) {
-    if (!FLAG_IS_DEFAULT(TraceDependencies)) {
-      warning("TraceDependencies results may be inflated by VerifyDependencies");
-    }
+  bool trace_dependencies = log_is_enabled(Debug, dependencies);
+  if (trace_dependencies && VerifyDependencies) {
+    warning("dependency logging results may be inflated by VerifyDependencies");
   }
 
   apply_debugger_ergo();
