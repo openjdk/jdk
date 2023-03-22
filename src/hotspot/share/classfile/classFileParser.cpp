@@ -788,6 +788,11 @@ class NameSigHash: public ResourceObj {
   }
 };
 
+using NameSigHashtable = ResourceHashtable<NameSigHash*, int,
+                                           NameSigHash::HASH_ROW_SIZE,
+                                           AnyObj::RESOURCE_AREA, mtInternal,
+                                           &NameSigHash::hash, &NameSigHash::equals>;
+
 // Side-effects: populates the _local_interfaces field
 void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
                                        const int itfs_len,
@@ -853,19 +858,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     // Check if there's any duplicates in interfaces
     ResourceMark rm(THREAD);
     // Set containing interface names
-    ResourceHashtable<NameSigHash*,
-                      int,
-                      NameSigHash::HASH_ROW_SIZE,
-                      AnyObj::RESOURCE_AREA,
-                      mtInternal,
-                      &NameSigHash::hash,
-                      &NameSigHash::equals>* interface_names = new ResourceHashtable<NameSigHash*,
-                                                                                     int,
-                                                                                     NameSigHash::HASH_ROW_SIZE,
-                                                                                     AnyObj::RESOURCE_AREA,
-                                                                                     mtInternal,
-                                                                                     &NameSigHash::hash,
-                                                                                     &NameSigHash::equals>();
+    NameSigHashtable* interface_names = new NameSigHashtable();
     bool dup = true;
     NameSigHash* interface_name = nullptr;
     {
@@ -1600,19 +1593,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     // Check duplicated fields
     ResourceMark rm(THREAD);
     // Set containing name-signature pairs
-    ResourceHashtable<NameSigHash*,
-                      int,
-                      NameSigHash::HASH_ROW_SIZE,
-                      AnyObj::RESOURCE_AREA,
-                      mtInternal,
-                      &NameSigHash::hash,
-                      &NameSigHash::equals>* names_and_sigs = new ResourceHashtable<NameSigHash*,
-                                                                                    int,
-                                                                                    NameSigHash::HASH_ROW_SIZE,
-                                                                                    AnyObj::RESOURCE_AREA,
-                                                                                    mtInternal,
-                                                                                    &NameSigHash::hash,
-                                                                                    &NameSigHash::equals>();
+    NameSigHashtable* names_and_sigs = new NameSigHashtable();
     bool dup = true;
     NameSigHash* name_and_sig = nullptr;
     {
@@ -2858,19 +2839,7 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
       // Check duplicated methods
       ResourceMark rm(THREAD);
       // Set containing name-signature pairs
-      ResourceHashtable<NameSigHash*,
-                        int,
-                        NameSigHash::HASH_ROW_SIZE,
-                        AnyObj::RESOURCE_AREA,
-                        mtInternal,
-                        &NameSigHash::hash,
-                        &NameSigHash::equals>* names_and_sigs = new ResourceHashtable<NameSigHash*,
-                                                                                      int,
-                                                                                      NameSigHash::HASH_ROW_SIZE,
-                                                                                      AnyObj::RESOURCE_AREA,
-                                                                                      mtInternal,
-                                                                                      &NameSigHash::hash,
-                                                                                      &NameSigHash::equals>();
+      NameSigHashtable* names_and_sigs = new NameSigHashtable();
       bool dup = true;
       NameSigHash* name_and_sig = nullptr;
       {
