@@ -36,7 +36,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
-import org.junit.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.Arguments;
@@ -47,7 +46,7 @@ public class XcodeOverflow {
             // SOFT_MAX_ARRAY_LENGTH: copied from ArraysSupport. No overflow; no OOME.
             Arguments.of(Integer.MAX_VALUE - 8),
 
-            // overflow case: OOME w/ "Java heap space" is thrown
+            // overflow case: OOME w/ "Java heap space" is thrown on decoding
             Arguments.of(Integer.MAX_VALUE - 1000000)
         );
     }
