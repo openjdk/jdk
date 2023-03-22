@@ -21,68 +21,75 @@
  * questions.
  */
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.lang.reflect.AccessFlag;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 8292275
  * @summary Test required flags on parameters
  * @compile RequiredMethodParameterFlagTest.java
- * @run main RequiredMethodParameterFlagTest
+ * @run junit RequiredMethodParameterFlagTest
  */
-public class RequiredMethodParameterFlagTest {
-    public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException {
-        boolean errors = false;
+class RequiredMethodParameterFlagTest {
+
+    private static final Set<AccessFlag> CHECKED_FLAGS = Set.of(AccessFlag.MANDATED, AccessFlag.SYNTHETIC);
+
+    static Stream<Arguments> testCases() throws ReflectiveOperationException {
         Set<AccessFlag> mandated = Set.of(AccessFlag.MANDATED);
         Set<AccessFlag> synthetic = Set.of(AccessFlag.SYNTHETIC);
-        // test for implicit parameters
-        Parameter[] parameters = Inner.class.getDeclaredConstructors()[0].getParameters();
-        errors |= assertFlags(mandated, parameters[0]);
-        errors |= assertFlags(Set.of(), parameters[1]);
 
-        parameters = findAnonymous().getDeclaredConstructors()[0].getParameters();
-        errors |= assertFlags(mandated, parameters[0]);
-        errors |= assertFlags(Set.of(), parameters[1]);
-
-        parameters = MyEnum.class.getDeclaredMethod("valueOf", String.class).getParameters();
-        errors |= assertFlags(mandated, parameters[0]);
-
-        parameters = MyRecord.class.getDeclaredConstructors()[0].getParameters();
-        errors |= assertFlags(mandated, parameters[0]);
-        errors |= assertFlags(mandated, parameters[1]);
-
-        // test for synthetic parameters
-        // assuming javac creates two synthetic parameters corresponding to Enum(String name, int ordinal)
-        parameters = MyEnum.class.getDeclaredConstructors()[0].getParameters();
-        errors |= assertFlags(synthetic, parameters[0]);
-        errors |= assertFlags(synthetic, parameters[1]);
-        errors |= assertFlags(Set.of(), parameters[2]);
-        errors |= assertFlags(Set.of(), parameters[3]);
-
-        if (errors) {
-            throw new AssertionError();
-        }
+        return Stream.of(
+                // test for implicit parameters
+                // inner class
+                Arguments.of(Inner.class.getDeclaredConstructors()[0],
+                        List.of(mandated, Set.of())),
+                // anonymous class
+                Arguments.of(Class.forName("RequiredMethodParameterFlagTest$1")
+                                .getDeclaredConstructors()[0],
+                        List.of(mandated, Set.of(), Set.of())),
+                // enum class
+                Arguments.of(MyEnum.class.getDeclaredMethod("valueOf", String.class),
+                        List.of(mandated)),
+                // record class
+                Arguments.of(MyRecord.class.getDeclaredConstructors()[0],
+                        List.of(mandated, mandated)),
+                // local class
+                Arguments.of(Class.forName("RequiredMethodParameterFlagTest$1Task")
+                                .getDeclaredConstructors()[0],
+                        List.of(mandated, Set.of(), synthetic)),
+                // test for synthetic parameters
+                // assuming javac creates two synthetic parameters corresponding to
+                // Enum(String name, int ordinal)
+                Arguments.of(MyEnum.class.getDeclaredConstructors()[0],
+                        List.of(synthetic, synthetic, Set.of(), Set.of()))
+        );
     }
 
-    // returns true on error
-    private static boolean assertFlags(Set<AccessFlag> flags, Parameter parameter) {
-        Set<AccessFlag> accessFlags = parameter.accessFlags();
-        if (!accessFlags.containsAll(flags)) {
-            System.err.println("Required flags not present");
-            System.err.println("Required: " + flags);
-            System.err.println("Actual: " + accessFlags);
-            return true;
-        }
-        return false;
-    }
+    @ParameterizedTest
+    @MethodSource("testCases")
+    public void check(Executable method, List<Set<AccessFlag>> paramFlags) {
+        Parameter[] parameters = method.getParameters();
+        assertEquals(paramFlags.size(), parameters.length, () -> "Parameter count of " + method);
 
-    private static Class<?> findAnonymous() {
-        try {
-            return Class.forName("RequiredMethodParameterFlagTest$1");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Anonymous class missing");
+        for (int i = 0; i < parameters.length; i++) {
+            Set<AccessFlag> expected = new HashSet<>(paramFlags.get(i));
+            expected.retainAll(CHECKED_FLAGS);
+            Set<AccessFlag> found = new HashSet<>(parameters[i].accessFlags());
+            found.retainAll(CHECKED_FLAGS);
+            final int index = i;
+            assertEquals(expected, found, () -> "Parameter " + index + " in " + method);
         }
     }
 
@@ -91,6 +98,23 @@ public class RequiredMethodParameterFlagTest {
     }
 
     Inner anonymousInner = this.new Inner(null) {};
+
+    private void instanceMethod(int i) {
+        class Task implements Runnable {
+            final int j;
+
+            Task(int j) {
+                this.j = j;
+            }
+
+            @Override
+            public void run() {
+                System.out.println(RequiredMethodParameterFlagTest.this.toString() + (i * j));
+            }
+        }
+
+        new Task(5).run();
+    }
 
     enum MyEnum {
         ;
