@@ -543,11 +543,11 @@ public class JlinkTask {
 
 
     private static ImageHelper createImageProvider(JlinkConfiguration config,
-                                                     Path retainModulesPath,
-                                                     boolean ignoreSigning,
-                                                     boolean bindService,
-                                                     boolean verbose,
-                                                     PrintWriter log)
+                                                   Path retainModulesPath,
+                                                   boolean ignoreSigning,
+                                                   boolean bindService,
+                                                   boolean verbose,
+                                                   PrintWriter log)
             throws IOException
     {
         Configuration cf = bindService ? config.resolveAndBind()
