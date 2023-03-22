@@ -386,7 +386,7 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
     return;
   }
 
-  log_debug(cds,dynamic)("Preparing for dynamic dump at exit  in thread %s", current->name());
+  log_info(cds,dynamic)("Preparing for dynamic dump at exit in thread %s", current->name());
 
   MetaspaceShared::link_shared_classes(false/*not from jcmd*/, current);
   if (!current->has_pending_exception()) {
@@ -408,40 +408,16 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   DynamicDumpSharedSpaces = false;  // Just for good measure
 }
 
-void DynamicArchive::prepare_for_dump_at_exit() {
-  EXCEPTION_MARK;
-  ResourceMark rm(THREAD);
-  log_debug(cds,dynamic)("Preparing for dynamic dump in thread %s", THREAD->name());
-  MetaspaceShared::link_shared_classes(false/*not from jcmd*/, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    log_error(cds)("Dynamic dump has failed");
-    log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
-                   java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-    // We cannot continue to dump the archive anymore.
-    DynamicDumpSharedSpaces = false;
-    CLEAR_PENDING_EXCEPTION;
-  }
-}
-
 // This is called by "jcmd VM.cds dynamic_dump"
 void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
   assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
   assert(DynamicDumpSharedSpaces, "already checked by check_for_dynamic_dump() during VM startup");
   MetaspaceShared::link_shared_classes(true/*from jcmd*/, CHECK);
-  dump(archive_name, THREAD);
-}
-
-void DynamicArchive::dump(const char* archive_name, TRAPS) {
   // copy shared path table to saved.
   FileMapInfo::clone_shared_path_table(CHECK);
-
   VM_PopulateDynamicDumpSharedSpace op(archive_name);
   VMThread::execute(&op);
-}
-
-bool DynamicArchive::should_dump_at_vm_exit() {
-  return DynamicDumpSharedSpaces && (ArchiveClassesAtExit != nullptr);
 }
 
 bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
