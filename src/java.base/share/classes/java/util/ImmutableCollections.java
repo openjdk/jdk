@@ -1280,7 +1280,7 @@ class ImmutableCollections {
 
         boolean isJumboEnumSetCompatible() {
             return true;
-        }    
+        }
 
         @Override
         long[] jumboEnumElements() {
