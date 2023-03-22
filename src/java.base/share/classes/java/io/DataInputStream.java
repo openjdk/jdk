@@ -573,7 +573,7 @@ loop:   while (true) {
         byte[] bytearr = null;
         char[] chararr = null;
         if (in instanceof DataInputStream dis) {
-            if (dis.bytearr == null || dis.bytearr.length < utflen){
+            if (dis.bytearr == null || dis.bytearr.length < utflen) {
                 dis.bytearr = new byte[utflen*2];
                 dis.chararr = new char[utflen*2];
             }
