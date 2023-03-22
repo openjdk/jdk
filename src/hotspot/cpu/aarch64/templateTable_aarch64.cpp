@@ -2332,7 +2332,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label resolved;
 
   __ load_resolved_indy_entry(cache, index);
-  // Load-acquire the adapter method
+  // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
   __ lea(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
   __ ldar(method, method);
 
@@ -2348,7 +2348,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
   // Update registers with resolved info
   __ load_resolved_indy_entry(cache, index);
-  // Load-acquire the adapter method
+  // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
   __ lea(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
   __ ldar(method, method);
 
