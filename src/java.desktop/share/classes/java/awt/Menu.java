@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.EventListener;
 import java.util.Vector;
@@ -488,14 +489,14 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     }
 
     synchronized Enumeration<MenuShortcut> shortcuts() {
-        Vector<MenuShortcut> shortcuts = new Vector<>();
+        ArrayList<MenuShortcut> shortcuts = new ArrayList<>();
         int nitems = getItemCount();
         for (int i = 0 ; i < nitems ; i++) {
             MenuItem mi = getItem(i);
-            if (mi instanceof Menu) {
-                Enumeration<MenuShortcut> e = ((Menu)mi).shortcuts();
+            if (mi instanceof Menu menu) {
+                Enumeration<MenuShortcut> e = menu.shortcuts();
                 while (e.hasMoreElements()) {
-                    shortcuts.addElement(e.nextElement());
+                    shortcuts.add(e.nextElement());
                 }
             } else {
                 MenuShortcut ms = mi.getShortcut();
@@ -504,7 +505,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                 }
             }
         }
-        return shortcuts.elements();
+        return Collections.enumeration(shortcuts);
     }
 
     void deleteShortcut(MenuShortcut s) {

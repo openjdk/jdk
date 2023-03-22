@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.EventListener;
 import java.util.Vector;
@@ -339,15 +341,15 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * @since       1.1
      */
     public synchronized Enumeration<MenuShortcut> shortcuts() {
-        Vector<MenuShortcut> shortcuts = new Vector<>();
+        ArrayList<MenuShortcut> shortcuts = new ArrayList<>();
         int nmenus = getMenuCount();
         for (int i = 0 ; i < nmenus ; i++) {
             Enumeration<MenuShortcut> e = getMenu(i).shortcuts();
             while (e.hasMoreElements()) {
-                shortcuts.addElement(e.nextElement());
+                shortcuts.add(e.nextElement());
             }
         }
-        return shortcuts.elements();
+        return Collections.enumeration(shortcuts);
     }
 
     /**
