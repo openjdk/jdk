@@ -9,6 +9,8 @@
 package jdk.internal.org.jline.utils;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class OSUtils {
 
@@ -104,12 +106,6 @@ public class OSUtils {
     }
 
     private static boolean isTestCommandValid(String command) {
-        try {
-            Process p = new ProcessBuilder(command, "-z", "").inheritIO().start();
-            return p.waitFor() == 0;
-        } catch (Throwable unused) {
-            //ignore
-        }
-        return false;
+        return Files.isExecutable(Paths.get(command));
     }
 }
