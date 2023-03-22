@@ -78,6 +78,8 @@
   template(VirtualThreadGetOrSetLocal)            \
   template(VirtualThreadGetCurrentLocation)       \
   template(ChangeSingleStep)                      \
+  template(CountVTMSTransitions)                  \
+  template(InitNotifyJvmtiEventsMode)             \
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \
   template(ReportJavaOutOfMemory)                 \

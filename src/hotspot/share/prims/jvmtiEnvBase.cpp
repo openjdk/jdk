@@ -57,7 +57,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/threadSMR.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmThread.hpp"
@@ -1529,6 +1529,68 @@ JvmtiEnvBase::is_in_thread_list(jint count, const jthread* list, oop jt_oop) {
   return false;
 }
 
+class VM_InitNotifyJvmtiEventsMode : public VM_Operation {
+private:
+  bool _enable;
+
+  int count_transitions() {
+    int count = 0;
+    if (_enable) {
+      for (JavaThread* jt : ThreadsListHandle()) {
+        if (jt->is_in_VTMS_transition()) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+public:
+  VMOp_Type type() const { return VMOp_InitNotifyJvmtiEventsMode; }
+  bool allow_nested_vm_operations() const { return false; }
+  VM_InitNotifyJvmtiEventsMode(bool enable) : _enable(enable) {}
+
+  void doit() {
+    int trans_count = count_transitions();
+
+    JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
+    JvmtiVTMSTransitionDisabler::set_VTMS_transition_count(trans_count);
+  }
+};
+
+// must be called in thread-in-native mode
+bool
+JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
+  if (!Continuations::enabled()) {
+    return false;
+  }
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    return false; // already enabled
+  }
+  int trans_count = JvmtiVTMSTransitionDisabler::VTMS_transition_count();
+  assert(trans_count == 0, "transitions count expected to be zero: %d", trans_count);
+
+  VM_InitNotifyJvmtiEventsMode op(true);
+  VMThread::execute(&op);
+  // JvmtiVTMSTransitionDisabler disabler;
+  return true;
+}
+
+// must be called in thread-in-native mode
+bool
+JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
+  if (!Continuations::enabled()) {
+    return false;
+  }
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    return false; // already disabled
+  }
+  JvmtiVTMSTransitionDisabler disabler(true); // ensure there are no other disablers
+  VM_InitNotifyJvmtiEventsMode op(false);
+  VMThread::execute(&op);
+  return true;
+}
+
 // java_thread - protected by ThreadsListHandle
 jvmtiError
 JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
@@ -2254,6 +2316,19 @@ GetStackTraceClosure::do_thread(Thread *target) {
 }
 
 #ifdef ASSERT
+
+#include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
+
+static void print_native_stack(JavaThread* jt) {
+#define O_BUFLEN 2000
+    static char buf[O_BUFLEN];
+    frame fr = jt->last_frame();
+    tty->print_cr("DBG: ##### NATIVE stacktrace of JavaThread: %p #####\n", (void*)jt);
+    VMError::print_native_stack(tty, fr, jt, true /* print source info */, -1/* max_frames */, buf, sizeof(buf));
+    fflush(0);
+}
+
 void
 PrintStackTraceClosure::do_thread_impl(Thread *target) {
   JavaThread *java_thread = JavaThread::cast(target);
@@ -2298,7 +2373,12 @@ PrintStackTraceClosure::do_thread(Thread *target) {
          java_thread->is_handshake_safe_for(current_thread),
          "call by myself / at safepoint / at handshake");
 
-  PrintStackTraceClosure::do_thread_impl(target);
+  //PrintStackTraceClosure::do_thread_impl(target);
+  if (target->is_Java_thread() && JavaThread::cast(target)->has_last_Java_frame()) {
+    print_native_stack(JavaThread::cast(target));
+  } else {
+    PrintStackTraceClosure::do_thread_impl(target);
+  }
 }
 #endif
 
