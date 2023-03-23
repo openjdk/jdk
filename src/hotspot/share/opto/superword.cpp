@@ -442,8 +442,7 @@ bool SuperWord::is_reduction(const Node* n) {
 
 bool SuperWord::is_reduction_operator(const Node* n) {
   int opc = n->Opcode();
-  return (opc != ReductionNode::opcode(opc, n->bottom_type()->basic_type())
-          || opc == Op_MinD || opc == Op_MinF || opc == Op_MaxD || opc == Op_MaxF);
+  return (opc != ReductionNode::opcode(opc, n->bottom_type()->basic_type()));
 }
 
 bool SuperWord::in_reduction_cycle(const Node* n, uint input) {
