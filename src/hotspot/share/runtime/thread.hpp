@@ -622,7 +622,8 @@ protected:
 #if defined(__APPLE__) && defined(AARCH64)
  private:
   DEBUG_ONLY(bool _wx_init);
-  WXMode _wx_state;
+  // this might also be modified in signal handlers (e.g. ASGCT)
+  volatile WXMode _wx_state;
  public:
   void init_wx();
   WXMode enable_wx(WXMode new_state);
