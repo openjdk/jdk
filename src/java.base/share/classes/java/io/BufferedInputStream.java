@@ -76,6 +76,8 @@ public class BufferedInputStream extends FilterInputStream {
      * The internal buffer array where the data is stored. When necessary,
      * it may be replaced by another array of
      * a different size.
+     */
+    /*
      * We null this out with a CAS on close(), which is necessary since
      * closes can be asynchronous. We use nullness of buf[] as primary
      * indicator that this stream is closed. (The "in" field is also
