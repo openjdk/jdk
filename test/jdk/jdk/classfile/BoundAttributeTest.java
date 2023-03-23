@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
+ * @issue 8304837
  * @summary Testing BoundAttributes
  * @run junit BoundAttributeTest
  */
