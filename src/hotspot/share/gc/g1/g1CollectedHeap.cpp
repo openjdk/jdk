@@ -1260,15 +1260,9 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
     assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
     policy()->record_new_heap_size(num_regions());
   } else {
-    log_debug(gc, ergo, heap)("Did not expand the heap (heap expansion operation failed)");
-
-    // The expansion of the virtual storage space was unsuccessful.
-    // Let's see if it was because we ran out of swap.
-    if (G1ExitOnExpansionFailure &&
-        _hrm.available() >= regions_to_expand) {
-      // We had head room...
-      vm_exit_out_of_memory(aligned_expand_bytes, OOM_MMAP_ERROR, "G1 heap expansion");
-    }
+    bool enough_available = _hrm.available() >= regions_to_expand;
+    log_debug(gc, ergo, heap)("Did not expand the heap (heap expansion operation failed%s)",
+                              enough_available ? ". Potentially out of swap space" : "");
   }
   return expanded_by > 0;
 }
