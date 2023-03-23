@@ -489,6 +489,8 @@ abstract public class TestScaffold extends TargetAdapter {
                     argInfo.targetVMArgs += (args[i] + ' ');
                 }
             } else {
+                // The last argument is classname of target app
+                // It is needed to preserve it and allow wrapper to insert vm args before it
                 if (targetClassName != null) {
                     argInfo.targetAppCommandLine += (targetClassName + ' ');
                 }
@@ -499,7 +501,9 @@ abstract public class TestScaffold extends TargetAdapter {
         if (targetClassName != null) {
             String mainWrapper = System.getProperty("main.wrapper");
             if (mainWrapper != null) {
-                argInfo.targetAppCommandLine += TestScaffold.class.getName() + " " + mainWrapper + " ";
+                // Run "-XX:VMFlags1 -XX:VMFlags2 TestScaffold <main-wrapper-name> TargetClassName"
+                // instead of "-XX:VMFlags1 -XX:VMFlags2 TargetClassName"
+                argInfo.targetAppCommandLine += TestScaffold.class.getName() + ' ' + mainWrapper + ' ';
                 argInfo.targetVMArgs += "--enable-preview ";
             } else if ("true".equals(System.getProperty("test.enable.preview"))) {
                 // the test specified @enablePreview.
