@@ -39,12 +39,16 @@ public class AuthCacheImpl implements AuthCache {
     // No blocking IO is performed within the synchronized code blocks
     // in this class, so there is no need to convert this class to using
     // java.util.concurrent.locks
-    final HashMap<String,LinkedList<AuthCacheValue>> hashtable;
+    HashMap<String,LinkedList<AuthCacheValue>> hashtable;
     final Cleaner cleaner;
 
     public AuthCacheImpl () {
         hashtable = new HashMap<String,LinkedList<AuthCacheValue>>();
         cleaner = Cleaner.create();
+    }
+
+    public void setMap (HashMap<String,LinkedList<AuthCacheValue>> map) {
+        hashtable = map;
     }
 
     // call to register Authenticator with Cleaner.
