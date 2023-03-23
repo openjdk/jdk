@@ -265,12 +265,6 @@ public class JlinkTask {
                 return EXIT_OK;
             }
 
-            if (taskHelper.getExistingImage() != null) {
-                postProcessOnly(taskHelper.getExistingImage());
-                return EXIT_OK;
-            }
-
-
             if (options.modulePath.isEmpty()) {
                 // no --module-path specified - try to set $JAVA_HOME/jmods if that exists
                 Path jmods = getDefaultModulePath();
@@ -369,29 +363,6 @@ public class JlinkTask {
 
         //Ask the stack to proceed;
         stack.operate(imageProvider);
-    }
-
-    /*
-     * Jlink API entry point.
-     */
-    public static void postProcessImage(ExecutableImage image, List<Plugin> postProcessorPlugins)
-            throws Exception {
-        Objects.requireNonNull(image);
-        Objects.requireNonNull(postProcessorPlugins);
-        PluginsConfiguration config = new PluginsConfiguration(postProcessorPlugins);
-        ImagePluginStack stack = ImagePluginConfiguration.
-                parseConfiguration(config);
-
-        stack.operate((ImagePluginStack stack1) -> image);
-    }
-
-    private void postProcessOnly(Path existingImage) throws Exception {
-        PluginsConfiguration config = taskHelper.getPluginsConfig(null, null);
-        ExecutableImage img = DefaultImageBuilder.getExecutableImage(existingImage);
-        if (img == null) {
-            throw taskHelper.newBadArgs("err.existing.image.invalid");
-        }
-        postProcessImage(img, config.getPlugins());
     }
 
     // the token for "all modules on the module path"

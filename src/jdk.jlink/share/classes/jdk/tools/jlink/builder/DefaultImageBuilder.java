@@ -567,9 +567,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Path binDir = root.resolve(BIN_DIRNAME);
         if (Files.exists(binDir.resolve("java")) ||
             Files.exists(binDir.resolve("java.exe"))) {
-            // It may be possible to extract the platform info from the given image.
-            // --post-process-path is a hidden option and pass unknown platform for now.
-            // --generate-cds-archive plugin cannot be used with --post-process-path option.
             return new DefaultExecutableImage(root, retrieveModules(root), Platform.UNKNOWN);
         }
         return null;
