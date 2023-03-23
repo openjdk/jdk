@@ -740,7 +740,7 @@ static markWord read_stable_mark(oop obj) {
 
         // Index into the lock array based on the current object address.
         static_assert(is_power_of_2(ARRAY_SIZE(gInflationLocks)), "must be");
-        size_t ix = (cast_from_oop<intptr_t>(obj) >> 5) & (ARRAY_SIZE(gInflationLocks)-1);
+        size_t ix = (cast_from_oop<intptr_t>(obj) >> 5) & (ARRAY_SIZE(gInflationLocks) - 1);
         int YieldThenBlock = 0;
         assert(ix < ARRAY_SIZE(gInflationLocks), "invariant");
         gInflationLocks[ix].lock();
