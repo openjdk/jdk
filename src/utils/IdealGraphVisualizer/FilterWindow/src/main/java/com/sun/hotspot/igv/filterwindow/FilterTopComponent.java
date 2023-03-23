@@ -88,9 +88,9 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     private static final String GLOBAL_LABEL = "--Global--";
 
 
-    public static FilterChain createNewDefaultFilterChain() {
+    public FilterChain createNewCustomFilterChain() {
         FilterChain newCustomFilterChain = new FilterChain(CUSTOM_LABEL);
-        newCustomFilterChain.addFilters(defaultFilterChain.getFilters());
+        newCustomFilterChain.addFilters(customFilterChain.getFilters());
         return newCustomFilterChain;
     }
 
@@ -118,7 +118,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     }
 
     private FilterTopComponent() {
-        System.out.println("FilterTopComponent");
         filterSettingsChangedEvent = new ChangedEvent<>(this);
         initComponents();
         setName(NbBundle.getMessage(FilterTopComponent.class, "CTL_FilterTopComponent"));
@@ -134,9 +133,10 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("IO", System.out);
 
         initFilters();
-        customFilterChain = createNewDefaultFilterChain();
         comboBox = new JComboBox<>();
         comboBox.setRenderer(new CustomCellRenderer());
+        customFilterChain = new FilterChain(CUSTOM_LABEL);
+        customFilterChain.addFilters(defaultFilterChain.getFilters());
         comboBox.addItem(customFilterChain);
         FilterChain globalFilterChain = new FilterChain(GLOBAL_LABEL);
         globalFilterChain.addFilters(defaultFilterChain.getFilters());

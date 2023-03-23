@@ -35,7 +35,7 @@ public interface FilterChainProvider {
     FilterChain getFilterChain();
     FilterChain getAllFiltersOrdered();
 
-    FilterChain createNewDefaultFilterChain();
+    FilterChain createNewCustomFilterChain();
 
     void setCustomFilterChain(FilterChain filterChain);
 

@@ -47,8 +47,8 @@ public class FilterChainProviderImplementation implements FilterChainProvider {
     }
 
     @Override
-    public FilterChain createNewDefaultFilterChain() {
-        return FilterTopComponent.createNewDefaultFilterChain();
+    public FilterChain createNewCustomFilterChain() {
+        return FilterTopComponent.findInstance().createNewCustomFilterChain();
     }
 
     @Override

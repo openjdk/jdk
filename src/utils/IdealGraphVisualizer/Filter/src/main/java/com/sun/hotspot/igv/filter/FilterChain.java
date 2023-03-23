@@ -87,6 +87,14 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
         return filters.contains(filter);
     }
 
+    public void clearFilters() {
+        for (Filter filter : filters) {
+            filter.getChangedEvent().removeListener(changedListener);
+        }
+        filters.clear();
+        changedEvent.fire();
+    }
+
     public void removeFilter(Filter filter) {
         assert filters.contains(filter);
         filters.remove(filter);
