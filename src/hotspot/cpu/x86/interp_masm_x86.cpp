@@ -268,7 +268,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
     cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     jcc(Assembler::equal, L);
     stop("InterpreterMacroAssembler::call_VM_leaf_base:"
-         " last_sp != NULL");
+         " last_sp != null");
     bind(L);
   }
 #endif
@@ -300,7 +300,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
     cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     jcc(Assembler::equal, L);
     stop("InterpreterMacroAssembler::call_VM_base:"
-         " last_sp != NULL");
+         " last_sp != nullptr");
     bind(L);
   }
 #endif /* ASSERT */
@@ -399,7 +399,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
     movptr(tmp, Address(rthread, JavaThread::jvmti_thread_state_offset()));
     testptr(tmp, tmp);
-    jcc(Assembler::zero, L); // if (thread->jvmti_thread_state() == NULL) exit;
+    jcc(Assembler::zero, L); // if (thread->jvmti_thread_state() == nullptr) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
@@ -1377,7 +1377,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   push(rbx);
 
   get_method(rbx);
-  // Test MDO to avoid the call if it is NULL.
+  // Test MDO to avoid the call if it is null.
   movptr(rax, Address(rbx, in_bytes(Method::method_data_offset())));
   testptr(rax, rax);
   jcc(Assembler::zero, set_mdp);
@@ -1760,7 +1760,7 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Reg
   }
 
   // In the fall-through case, we found no matching item, but we
-  // observed the item[start_row] is NULL.
+  // observed the item[start_row] is null.
 
   // Fill in the item field and increment the count.
   int item_offset = in_bytes(item_offset_fn(start_row));
@@ -1776,13 +1776,13 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Reg
 // Example state machine code for three profile rows:
 //   // main copy of decision tree, rooted at row[1]
 //   if (row[0].rec == rec) { row[0].incr(); goto done; }
-//   if (row[0].rec != NULL) {
+//   if (row[0].rec != nullptr) {
 //     // inner copy of decision tree, rooted at row[1]
 //     if (row[1].rec == rec) { row[1].incr(); goto done; }
-//     if (row[1].rec != NULL) {
+//     if (row[1].rec != nullptr) {
 //       // degenerate decision tree, rooted at row[2]
 //       if (row[2].rec == rec) { row[2].incr(); goto done; }
-//       if (row[2].rec != NULL) { count.incr(); goto done; } // overflow
+//       if (row[2].rec != nullptr) { count.incr(); goto done; } // overflow
 //       row[2].init(rec); goto done;
 //     } else {
 //       // remember row[1] is empty
@@ -1988,7 +1988,7 @@ void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr, Ad
   incrementl(scratch, InvocationCounter::count_increment);
   movl(counter_addr, scratch);
   andl(scratch, mask);
-  if (where != NULL) {
+  if (where != nullptr) {
     jcc(Assembler::zero, *where);
   }
 }
