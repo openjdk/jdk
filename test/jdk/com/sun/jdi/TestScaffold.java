@@ -463,15 +463,7 @@ abstract public class TestScaffold extends TargetAdapter {
 
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();
-        String mainWrapper = System.getProperty("main.wrapper");
-        if ("Virtual".equals(mainWrapper)) {
-            argInfo.targetAppCommandLine = TestScaffold.class.getName() + " " + mainWrapper + " ";
-            argInfo.targetVMArgs += "--enable-preview ";
-        } else if ("true".equals(System.getProperty("test.enable.preview"))) {
-            // the test specified @enablePreview.
-            argInfo.targetVMArgs += "--enable-preview ";
-        }
-
+        String targetClassName = null;
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-connect")) {
                 i++;
@@ -497,8 +489,23 @@ abstract public class TestScaffold extends TargetAdapter {
                     argInfo.targetVMArgs += (args[i] + ' ');
                 }
             } else {
-                argInfo.targetAppCommandLine += (args[i] + ' ');
+                if (targetClassName != null) {
+                    argInfo.targetAppCommandLine += (targetClassName + ' ');
+                }
+                targetClassName = args[i];
             }
+        }
+
+        if (targetClassName != null) {
+            String mainWrapper = System.getProperty("main.wrapper");
+            if (mainWrapper != null) {
+                argInfo.targetAppCommandLine += TestScaffold.class.getName() + " " + mainWrapper + " ";
+                argInfo.targetVMArgs += "--enable-preview ";
+            } else if ("true".equals(System.getProperty("test.enable.preview"))) {
+                // the test specified @enablePreview.
+                argInfo.targetVMArgs += "--enable-preview ";
+            }
+            argInfo.targetAppCommandLine += targetClassName;
         }
         return argInfo;
     }
