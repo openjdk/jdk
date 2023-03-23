@@ -105,15 +105,15 @@ final class ProcessImpl extends Process {
             // Should be value of a LaunchMechanism enum
             LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
             switch (OperatingSystem.current()) {
-                case Linux:
+                case LINUX:
                     return lm;      // All options are valid for Linux
                 case AIX:
-                case MacOS:
+                case MACOS:
                     if (lm != LaunchMechanism.VFORK) {
                         return lm; // All but VFORK are valid
                     }
                     break;
-                case Windows:
+                case WINDOWS:
                     // fall through to throw to Error
             }
         } catch (IllegalArgumentException e) {
@@ -328,8 +328,8 @@ final class ProcessImpl extends Process {
      */
     void initStreams(int[] fds, boolean forceNullOutputStream) throws IOException {
         switch (OperatingSystem.current()) {
-            case Linux:
-            case MacOS:
+            case LINUX:
+            case MACOS:
                 stdin = (fds[0] == -1) ?
                         ProcessBuilder.NullOutputStream.INSTANCE :
                         new ProcessPipeOutputStream(fds[0]);
@@ -460,8 +460,8 @@ final class ProcessImpl extends Process {
 
     private void destroy(boolean force) {
         switch (OperatingSystem.current()) {
-            case Linux:
-            case MacOS:
+            case LINUX:
+            case MACOS:
             case AIX:
                 // There is a risk that pid will be recycled, causing us to
                 // kill the wrong process!  So we only terminate processes

@@ -28,9 +28,9 @@ import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 
 import static jdk.internal.util.OperatingSystem.AIX;
-import static jdk.internal.util.OperatingSystem.Linux;
-import static jdk.internal.util.OperatingSystem.MacOS;
-import static jdk.internal.util.OperatingSystem.Windows;
+import static jdk.internal.util.OperatingSystem.LINUX;
+import static jdk.internal.util.OperatingSystem.MACOS;
+import static jdk.internal.util.OperatingSystem.WINDOWS;
 
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -54,9 +54,9 @@ public class OSTest {
     public void os_nameVsCurrent() {
         String osName = System.getProperty("os.name").substring(0, 3).toLowerCase(Locale.ROOT);
         OperatingSystem os = switch (osName) {
-            case "win" -> Windows;
-            case "lin" -> Linux;
-            case "mac" -> MacOS;
+            case "win" -> WINDOWS;
+            case "lin" -> LINUX;
+            case "mac" -> MACOS;
             case "aix" -> AIX;
             default    -> fail("Unknown os.name: " + osName);
         };
@@ -69,9 +69,9 @@ public class OSTest {
      */
     private static Stream<Arguments> osParams() {
         return Stream.of(
-                Arguments.of(Linux, OperatingSystem.isLinux()),
-                Arguments.of(Windows, OperatingSystem.isWindows()),
-                Arguments.of(MacOS, OperatingSystem.isMacOS()),
+                Arguments.of(LINUX, OperatingSystem.isLinux()),
+                Arguments.of(WINDOWS, OperatingSystem.isWindows()),
+                Arguments.of(MACOS, OperatingSystem.isMacOS()),
                 Arguments.of(AIX, OperatingSystem.isAix())
         );
     }

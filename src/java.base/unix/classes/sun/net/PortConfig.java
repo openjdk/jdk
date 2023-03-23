@@ -43,11 +43,11 @@ public final class PortConfig {
     static {
         jdk.internal.loader.BootLoader.loadLibrary("net");
         switch (OperatingSystem.current()) {
-            case Linux:
+            case LINUX:
                 defaultLower = 32768;
                 defaultUpper = 61000;
                 break;
-            case MacOS:
+            case MACOS:
                 defaultLower = 49152;
                 defaultUpper = 65535;
                 break;

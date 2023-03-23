@@ -43,7 +43,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * Alternatively, compare with the {@linkplain #current() current} operating system.
  * For example,
  * {@snippet lang = "java":
- * if (OperatingSystem.current() == OperatingSystem.Windows) {
+ * if (OperatingSystem.current() == OperatingSystem.WINDOWS) {
  *     // Windows only code.
  * }
  *}
@@ -52,10 +52,10 @@ import jdk.internal.vm.annotation.ForceInline;
  * {@snippet lang = "java":
  * int port() {
  *      return switch(OperatingSystem.current()) {
- *          case Linux->32768;
+ *          case LINUX->32768;
  *          case AIX->32768;
- *          case MacOS->49152;
- *          case Windows->49152;
+ *          case MACOS->49152;
+ *          case WINDOWS->49152;
  *      };
  * }
  *}
@@ -65,15 +65,15 @@ public enum OperatingSystem {
     /**
      * The Linux Operating system.
      */
-    Linux,
+    LINUX,
     /**
      * The Mac OS X Operating system.
      */
-    MacOS,
+    MACOS,
     /**
      * The Windows Operating system.
      */
-    Windows,
+    WINDOWS,
     /**
      * The AIX Operating system.
      */
