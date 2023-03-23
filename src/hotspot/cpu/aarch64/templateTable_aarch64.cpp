@@ -2362,9 +2362,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label L_no_push;
   // Check if there is an appendix
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
-  __ ubfxw(index, index, ResolvedIndyEntry::has_appendix_shift, 1);
-  __ tst(index, index);
-  __ br(Assembler::EQ, L_no_push);
+  __ tbz(index, ResolvedIndyEntry::has_appendix_shift, L_no_push);
 
   // Get appendix
   __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
