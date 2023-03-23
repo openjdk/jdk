@@ -391,7 +391,8 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
       Handle base_oop = JVMCIENV->asConstant(base_object, JVMCI_CHECK_NULL);
       klass = base_oop->klass();
     } else {
-      assert(false, "What types are we actually expecting here?");
+      JVMCI_THROW_MSG_NULL(IllegalArgumentException,
+                           err_msg("Unexpected arguments: %s " JLONG_FORMAT " %s", JVMCIENV->klass_name(base_object), offset, compressed ? "true" : "false"));
     }
   } else if (!compressed) {
     if (base_object.is_non_null()) {
@@ -1694,16 +1695,33 @@ C2V_VMENTRY_0(jint, methodDataProfileDataSize, (JNIEnv* env, jobject, jlong meth
   if (mdo->is_valid(profile_data)) {
     return profile_data->size_in_bytes();
   }
+  // Java code should never directly access the extra data section
+  JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Invalid profile data position %d", position));
+C2V_END
+
+C2V_VMENTRY_0(jint, methodDataExceptionSeen, (JNIEnv* env, jobject, jlong method_data_pointer, jint bci))
+  MethodData* mdo = (MethodData*) method_data_pointer;
+  MutexLocker mu(mdo->extra_data_lock());
   DataLayout* data    = mdo->extra_data_base();
   DataLayout* end   = mdo->extra_data_limit();
   for (;; data = mdo->next_extra(data)) {
     assert(data < end, "moved past end of extra data");
-    profile_data = data->data_in();
-    if (mdo->dp_to_di(profile_data->dp()) == position) {
-      return profile_data->size_in_bytes();
+    int tag = data->tag();
+    switch(tag) {
+      case DataLayout::bit_data_tag: {
+        BitData* bit_data = (BitData*) data->data_in();
+        if (bit_data->bci() == bci) {
+          return bit_data->exception_seen() ? 1 : 0;
+        }
+        break;
+      }
+    case DataLayout::no_tag:
+    case DataLayout::arg_info_data_tag:
+      // An empty slot or ArgInfoData entry marks the end of the trap data
+      return -1;
     }
   }
-  JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Invalid profile data position %d", position));
+  return -1;
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, getInterfaces, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
@@ -2890,6 +2908,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "writeDebugOutput",                             CC "(JIZ)V",                                                                          FN_PTR(writeDebugOutput)},
   {CC "flushDebugOutput",                             CC "()V",                                                                             FN_PTR(flushDebugOutput)},
   {CC "methodDataProfileDataSize",                    CC "(JI)I",                                                                           FN_PTR(methodDataProfileDataSize)},
+  {CC "methodDataExceptionSeen",                      CC "(JI)I",                                                                           FN_PTR(methodDataExceptionSeen)},
   {CC "interpreterFrameSize",                         CC "(" BYTECODE_FRAME ")I",                                                           FN_PTR(interpreterFrameSize)},
   {CC "compileToBytecode",                            CC "(" OBJECTCONSTANT ")V",                                                           FN_PTR(compileToBytecode)},
   {CC "getFlagValue",                                 CC "(" STRING ")" OBJECT,                                                             FN_PTR(getFlagValue)},

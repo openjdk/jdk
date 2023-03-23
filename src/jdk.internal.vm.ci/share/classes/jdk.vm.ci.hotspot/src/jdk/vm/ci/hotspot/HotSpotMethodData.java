@@ -197,16 +197,19 @@ final class HotSpotMethodData {
         return normalDataSize() > 0;
     }
 
+    /**
+     * Return true if there is an extra data section and the first tag is non-zero.
+     */
     public boolean hasExtraData() {
-        return extraDataSize() > 0;
+        return extraDataSize() > 0 && HotSpotMethodDataAccessor.readTag(state.config, this, getExtraDataBeginOffset()) != 0;
     }
 
-    public int getExtraDataBeginOffset() {
+    private int getExtraDataBeginOffset() {
         return normalDataSize();
     }
 
     public boolean isWithin(int position) {
-        return position >= 0 && position < normalDataSize() + extraDataSize();
+        return position >= 0 && position < normalDataSize();
     }
 
     public int getDeoptimizationCount(DeoptimizationReason reason) {
@@ -239,17 +242,6 @@ final class HotSpotMethodData {
         }
 
         return getData(position);
-    }
-
-    public HotSpotMethodDataAccessor getExtraData(int position) {
-        if (position >= normalDataSize() + extraDataSize()) {
-            return null;
-        }
-        HotSpotMethodDataAccessor data = getData(position);
-        if (data != null) {
-            return data;
-        }
-        return data;
     }
 
     public static HotSpotMethodDataAccessor getNoDataAccessor(boolean exceptionPossiblyNotRecorded) {
@@ -344,20 +336,6 @@ final class HotSpotMethodData {
             }
         }
 
-        if (hasExtraData()) {
-            int pos = getExtraDataBeginOffset();
-            HotSpotMethodDataAccessor data;
-            while ((data = getExtraData(pos)) != null) {
-                if (pos == getExtraDataBeginOffset()) {
-                    sb.append(nl).append("--- Extra data:");
-                }
-                int bci = data.getBCI(this, pos);
-                sb.append(String.format("%n%-6d bci: %-6d%-20s", pos, bci, data.getClass().getSimpleName()));
-                sb.append(data.appendTo(new StringBuilder(), this, pos).toString().replace(nl, nlIndent));
-                pos = pos + data.getSize(this, pos);
-            }
-
-        }
         return sb.toString();
     }
 

@@ -924,6 +924,9 @@ final class CompilerToVM {
      */
     native int methodDataProfileDataSize(long metaspaceMethodData, int position);
 
+
+    native int methodDataExceptionSeen(long metaspaceMethodData, int bci);
+
     /**
      * Return the amount of native stack required for the interpreter frames represented by
      * {@code frame}. This is used when emitting the stack banging code to ensure that there is

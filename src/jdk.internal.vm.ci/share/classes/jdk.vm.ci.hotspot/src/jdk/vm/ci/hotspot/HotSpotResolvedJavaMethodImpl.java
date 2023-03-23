@@ -485,7 +485,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             }
         }
 
-        if (methodData == null || (!methodData.hasNormalData() && !methodData.hasExtraData())) {
+        if (methodData == null || !methodData.hasNormalData()) {
             // Be optimistic and return false for exceptionSeen. A methodDataOop is allocated in
             // case of a deoptimization.
             info = DefaultProfilingInfo.get(TriState.FALSE);
