@@ -608,7 +608,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
   }
 
   // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, raw_thread);)
 
   switch (thread->thread_state()) {
   case _thread_new:
