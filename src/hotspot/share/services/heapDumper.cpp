@@ -62,7 +62,7 @@
 
 /*
  * HPROF binary format - description copied from:
- *   src/share/demo/jvmti/hprof/hprof_io.c
+ *   src/share/demo/jvmti/hprof/hprof_io.c (/!\ Outdated link)
  *
  *
  *  header    "JAVA PROFILE 1.0.2" (0-terminated)
@@ -177,7 +177,7 @@
  *
  *               [heap dump sub-records]*
  *
- *                          There are four kinds of heap dump sub-records:
+ *                          There are multiple kinds of heap dump sub-records:
  *
  *               u1         sub-record type
  *
