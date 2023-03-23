@@ -29,6 +29,7 @@
  *          between the packs.
  * @requires vm.compiler2.enabled
  * @requires vm.bits == 64
+ * @requires vm.cpu.features ~= ".*avx2.*" | vm.cpu.features ~= ".*asimd.*"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency
