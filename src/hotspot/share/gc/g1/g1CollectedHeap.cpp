@@ -1255,16 +1255,13 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
     *expand_time_ms = (os::elapsedTime() - expand_heap_start_time_sec) * MILLIUNITS;
   }
 
-  if (expanded_by > 0) {
-    size_t actual_expand_bytes = expanded_by * HeapRegion::GrainBytes;
-    assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
-    policy()->record_new_heap_size(num_regions());
-  } else {
-    bool enough_available = _hrm.available() >= regions_to_expand;
-    log_debug(gc, ergo, heap)("Did not expand the heap (heap expansion operation failed%s)",
-                              enough_available ? ". Potentially out of swap space" : "");
-  }
-  return expanded_by > 0;
+  assert(expanded_by > 0, "must have failed during commit.");
+
+  size_t actual_expand_bytes = expanded_by * HeapRegion::GrainBytes;
+  assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
+  policy()->record_new_heap_size(num_regions());
+
+  return true;
 }
 
 bool G1CollectedHeap::expand_single_region(uint node_index) {

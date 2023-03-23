@@ -1424,14 +1424,14 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, MetaspaceGuardAllocations, false,                           \
           "Metapace allocations are guarded.")                              \
                                                                             \
-  product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
+  product(uintx, MinHeapFreeRatio, 0, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\
           " For most GCs this applies to the old generation. In G1 and"     \
           " ParallelGC it applies to the whole heap.")                      \
           range(0, 100)                                                     \
           constraint(MinHeapFreeRatioConstraintFunc,AfterErgo)              \
                                                                             \
-  product(uintx, MaxHeapFreeRatio, 70, MANAGEABLE,                          \
+  product(uintx, MaxHeapFreeRatio, 5, MANAGEABLE,                          \
           "The maximum percentage of heap free after GC to avoid shrinking."\
           " For most GCs this applies to the old generation. In G1 and"     \
           " ParallelGC it applies to the whole heap.")                      \
