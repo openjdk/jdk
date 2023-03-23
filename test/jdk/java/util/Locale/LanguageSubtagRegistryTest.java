@@ -47,7 +47,7 @@ public class LanguageSubtagRegistryTest {
         "Accept-Language: aam, adp, aeb, ajs, aog, apc, aue, bcg, bic, bpp, cey, cbr, cnp, cqu, crr, csp, csx, dif, dmw, dsz, ehs, ema,"
         + " en-gb-oed, gti, iba, jks, kdz, kjh, kmb, koj, kru, ksp, kwq, kxe, kzk, lgs, lii, lmm, lsb, lsc, lsn, lsv, lsw, lvi, mtm,"
         + " ngv, nns, ola, oyb, pat, phr, plu, pnd, pub, rib, rnb, rsn, scv, snz, sqx, suj, szy, taj, tdg, tjj, tjp, tpn, tvx,"
-        + " umi, uss, uth, ysm, wkr, zko;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
+        + " umi, uss, uth, ysm, zko, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
     private static final List<LanguageRange> EXPECTED_RANGE_LIST = List.of(
             new LanguageRange("aam", 1.0),
             new LanguageRange("aas", 1.0),
@@ -190,9 +190,9 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("uth", 1.0),
             new LanguageRange("ysm", 1.0),
             new LanguageRange("sgn-ysm", 1.0),
-            new LanguageRange("wkr", 1.0),
-            new LanguageRange("zko", 0.9),
-            new LanguageRange("xss", 0.9),
+            new LanguageRange("zko", 1.0),
+            new LanguageRange("xss", 1.0),
+            new LanguageRange("wkr", 0.9),
             new LanguageRange("ar-hyw", 0.8),
             new LanguageRange("yug", 0.5),
             new LanguageRange("yuu", 0.5),
