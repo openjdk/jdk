@@ -228,24 +228,23 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
     Bound* y_bound = _rce->get_bound(y);
     if (x_bound->lower() >= 0 && x_bound->lower_instr() == NULL && y->as_ArrayLength() != NULL) {
       _bound = new Bound(0, NULL, -1, y);
-    } else if (y->type()->as_IntConstant() && y->type()->as_IntConstant()->value() != 0) {
+    } else if (x_bound->has_lower() && x_bound->lower() >= 0 && y->type()->as_IntConstant() &&
+               y->type()->as_IntConstant()->value() != 0 && y->type()->as_IntConstant()->value() != min_jint) {
       // The binary % operator is said to yield the remainder of its operands from an implied division; the
       // left-hand operand is the dividend and the right-hand operand is the divisor.
       //
-      // % operator follows from this rule that the result of the remainder operation can be negative only
+      // It follows from this rule that the result of the remainder operation can be negative only
       // if the dividend is negative, and can be positive only if the dividend is positive. Moreover, the
-      // magnitude of the result is always less than the magnitude of the divisor(See JLS 15.17.3).
+      // magnitude of the result is always less than the magnitude of the divisor (see JLS 15.17.3).
       //
       // So if y is a constant integer and not equal to 0, then we can deduce the bound of remainder operation:
       // x % -y  ==> [0, y - 1] Apply RCE
       // x % y   ==> [0, y - 1] Apply RCE
       // -x % y  ==> [-y + 1, 0]
       // -x % -y ==> [-y + 1, 0]
-      if (x_bound->has_lower() && x_bound->lower() >= 0) {
-        _bound = new Bound(0, NULL, y->type()->as_IntConstant()->value() - 1, NULL);
-      } else {
-        _bound = new Bound();
-      }
+      //
+      // Use the absolute value of y as an upper bound. Skip min_jint because abs(min_jint) is undefined.
+      _bound = new Bound(0, NULL, abs(y->type()->as_IntConstant()->value()) - 1, NULL);
     } else {
       _bound = new Bound();
     }
