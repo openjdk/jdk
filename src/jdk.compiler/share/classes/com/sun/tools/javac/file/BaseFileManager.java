@@ -281,7 +281,9 @@ public abstract class BaseFileManager implements JavaFileManager {
                 return true;
 
             case DETECT_OUTPUT_FILE_CLASHES:
-                outputFilesWritten = new HashSet<>();
+                synchronized (this) {
+                    outputFilesWritten = new HashSet<>();
+                }
                 return true;
 
             default:
@@ -526,27 +528,24 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     /** Record the fact that we have started writing to an output file.
      */
+    // Note: individual files can be accessed concurrently, so we synchronize here
     synchronized void newOutputToPath(Path path) throws IOException {
 
         // Is output file clash detection enabled?
         if (outputFilesWritten == null)
             return;
 
-        // Individual files can be access concurrently, so synchronize here
-        synchronized (this) {
-
-            // Get the "canonical" version of the file's path; we are assuming
-            // here that two clashing files will resolve to the same real path.
-            Path realPath;
-            try {
-                realPath = path.toRealPath();
-            } catch (NoSuchFileException e) {
-                return;         // should never happen except on broken filesystems
-            }
-
-            // Check whether we've already opened this file for output
-            if (!outputFilesWritten.add(realPath))
-                throw new IOException("output file clash: " + path);
+        // Get the "canonical" version of the file's path; we are assuming
+        // here that two clashing files will resolve to the same real path.
+        Path realPath;
+        try {
+            realPath = path.toRealPath();
+        } catch (NoSuchFileException e) {
+            return;         // should never happen except on broken filesystems
         }
+
+        // Check whether we've already opened this file for output
+        if (!outputFilesWritten.add(realPath))
+            throw new IOException("output file clash: " + path);
     }
 }
