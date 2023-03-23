@@ -113,7 +113,7 @@
           "of the optimal occupancy to start marking.")                     \
           range(1, max_intx)                                                \
                                                                             \
-  product(uintx, G1ConfidencePercent, 50,                                   \
+  product(uint, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions")                     \
           range(0, 100)                                                     \
                                                                             \
@@ -319,11 +319,6 @@
           "The percentage of free card set memory that G1 should keep as "  \
           "percentage of the currently used memory.")                       \
           range(0.0, 1.0)                                                   \
-                                                                            \
-  product(bool, G1UsePreventiveGC, false, DIAGNOSTIC,                       \
-          "Allows collections to be triggered proactively based on the      \
-           number of free regions and the expected survival rates in each   \
-           section of the heap.")                                           \
                                                                             \
   product(uint, G1RestoreRetainedRegionChunksPerWorker, 16, DIAGNOSTIC,     \
           "The number of chunks assigned per worker thread for "            \
