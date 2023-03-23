@@ -29,7 +29,7 @@
 
 import javax.swing.text.html.CSS.Attribute;
 
-public class CSSAttributeComplianceTest{
+public class CSSAttributeComplianceTest {
 
     public static void main(String[] argv) {
         String val = Attribute.BACKGROUND_POSITION.getDefaultValue();
