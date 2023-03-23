@@ -1400,16 +1400,9 @@ uint G1Policy::calc_max_old_cset_length() const {
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
   // of them are available.
-
-  const G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  const size_t region_num = g1h->num_regions();
-  const size_t perc = (size_t) G1OldCSetRegionThresholdPercent;
-  size_t result = region_num * perc / 100;
-  // emulate ceiling
-  if (100 * result < region_num * perc) {
-    result += 1;
-  }
-  return (uint) result;
+  double result = (double)_g1h->num_regions() * G1OldCSetRegionThresholdPercent / 100;
+  // Round up to be conservative.
+  return (uint)ceil(result);
 }
 
 void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
