@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 6817009
-   @summary Verifies if AAction.SELECTED_KEY not toggled when using key binding
+ * @key headful
+ * @bug 6817009
+ * @summary Verifies that Action.SELECTED_KEY is not toggled when key binding is used
    @run main TestSelectedKey
  */
 
@@ -93,7 +94,7 @@ public class TestSelectedKey {
         };
         action.addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
-                if(Action.SELECTED_KEY.equals(evt.getPropertyName())) {
+                if (Action.SELECTED_KEY.equals(evt.getPropertyName())) {
                     selected.setText("Toggle me selected: " + evt.getNewValue());
                     toggled = (boolean)evt.getNewValue();
                 }
