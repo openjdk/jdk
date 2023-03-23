@@ -37,9 +37,7 @@ import java.util.zip.*;
  * This class is used to maintain mappings from packages, classes
  * and resources to their enclosing JAR files. Mappings are kept
  * at the package level except for class or resource files that
- * are located at the root directory. URLClassLoader uses the mapping
- * information to determine where to fetch an extension class or
- * resource from.
+ * are located at the root directory.
  *
  * @author Zhenghua Li
  * @since 1.3
