@@ -708,16 +708,14 @@ final class ProcessImpl extends Process {
             int j;
             byte[] a = null;
             synchronized (closeLock) {
-                byte[] buf = this.buf;
-                if (buf == CLOSED || buf == null) // asynchronous close()?
+                if (buf == null) // asynchronous close()?
                     return null; // discard
                 j = in.available();
             }
             while (j > 0) {
                 a = (a == null) ? new byte[j] : Arrays.copyOf(a, n + j);
                 synchronized (closeLock) {
-                    byte[] buf = this.buf;
-                    if (buf == CLOSED || buf == null) // asynchronous close()?
+                    if (buf == null) // asynchronous close()?
                         return null; // discard
                     n += in.read(a, n, j);
                     j = in.available();
