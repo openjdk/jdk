@@ -53,6 +53,7 @@ import java.nio.file.Path;
 
 public class ImplicitParameters extends TestRunner {
     private static final int CHECKED_FLAGS = Flags.MANDATED | Flags.SYNTHETIC;
+    private static final int NO_FLAGS = 0;
 
     public ImplicitParameters() {
         super(System.err);
@@ -70,6 +71,7 @@ public class ImplicitParameters extends TestRunner {
     }
 
     private void compileClasses(Path base) throws IOException {
+        // Keep this in sync with test/jdk/java/lang/reflect/AccessFlag/RequiredMethodParameterFlagTest.java
         String outer = """
                 class Outer {
                     class Inner {
@@ -144,7 +146,7 @@ public class ImplicitParameters extends TestRunner {
     public void testLocalClassConstructor(ClassFile classFile) throws ConstantPoolException {
         for (com.sun.tools.classfile.Method method : classFile.methods) {
             if (method.getName(classFile.constant_pool).equals(ConstantDescs.INIT_NAME)) {
-                checkParameters(method, Flags.MANDATED, 0, Flags.SYNTHETIC);
+                checkParameters(method, Flags.MANDATED, NO_FLAGS, Flags.SYNTHETIC);
                 break;
             }
         }
@@ -153,7 +155,7 @@ public class ImplicitParameters extends TestRunner {
     @Test
     @ClassName("1")
     public void testAnonymousClassExtendingInnerClassConstructor(ClassFile classFile) {
-        checkParameters(classFile.methods[0], Flags.MANDATED, 0, 0);
+        checkParameters(classFile.methods[0], Flags.MANDATED, NO_FLAGS, NO_FLAGS);
     }
 
     @Test
@@ -178,7 +180,7 @@ public class ImplicitParameters extends TestRunner {
     public void testEnumClassConstructor(ClassFile classFile) throws ConstantPoolException {
         for (com.sun.tools.classfile.Method method : classFile.methods) {
             if (method.getName(classFile.constant_pool).equals(ConstantDescs.INIT_NAME)) {
-                checkParameters(method, Flags.SYNTHETIC, Flags.SYNTHETIC, 0, 0);
+                checkParameters(method, Flags.SYNTHETIC, Flags.SYNTHETIC, NO_FLAGS, NO_FLAGS);
                 break;
             }
         }

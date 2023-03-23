@@ -83,7 +83,7 @@ class RequiredMethodParameterFlagTest {
 
     @ParameterizedTest
     @MethodSource("testCases")
-    public void check(Executable method, List<Set<AccessFlag>> paramFlags) {
+    void check(Executable method, List<Set<AccessFlag>> paramFlags) {
         Parameter[] parameters = method.getParameters();
         assertEquals(paramFlags.size(), parameters.length, () -> "Parameter count of " + method);
 
@@ -98,6 +98,7 @@ class RequiredMethodParameterFlagTest {
     }
 }
 
+// keep this in sync with test/langtools/tools/javac/RequiredParameterFlags/ImplicitParameters.java
 class Outer {
     class Inner {
         public Inner(Inner notMandated) {}
