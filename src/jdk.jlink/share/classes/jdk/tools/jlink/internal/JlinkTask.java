@@ -819,8 +819,19 @@ public class JlinkTask {
                     boolean verbose,
                     PrintWriter log) throws IOException {
             if (order != null) {
-                this.targetPlatform = Platform.runtime();
                 this.order = order;
+                String targetPlatformVal = readJavaBaseTargetPlatform(cf);
+                this.targetPlatform = Platform.parsePlatform(targetPlatformVal);
+                // explicit endianness specified, verify it matches the target java.base
+                // platform's endianness
+                ByteOrder targetEndianness = this.targetPlatform.getNativeByteOrder();
+                if (targetEndianness != null && (this.order != targetEndianness)) {
+                    // explicitly specified endianness doesn't match the determined endianness
+                    // of the target platform
+                    throw new IOException(
+                            taskHelper.getMessage("err.target.endianness.mismatch", order,
+                                    targetPlatformVal));
+                }
             } else {
                 Path javaBasePath = modsPaths.get("java.base");
                 assert javaBasePath != null : "java.base module path is missing";
@@ -835,21 +846,7 @@ public class JlinkTask {
                     // this is an attempt to build a cross-platform image. We now attempt to
                     // find the target platform's arch and thus its endianness from the java.base
                     // module's ModuleTarget attribute
-                    Optional<ResolvedModule> javaBase = cf.findModule("java.base");
-                    assert javaBase.isPresent() : "java.base module is missing";
-                    ModuleReference ref = javaBase.get().reference();
-                    String targetPlatformVal = null;
-                    if (ref instanceof ModuleReferenceImpl modRefImpl
-                            && modRefImpl.moduleTarget() != null) {
-                        targetPlatformVal = modRefImpl.moduleTarget().targetPlatform();
-                    }
-                    if (targetPlatformVal == null) {
-                        // could not determine target platform
-                        throw new IOException(
-                                taskHelper.getMessage("err.cannot.determine.target.platform",
-                                        ref.location().map(URI::toString)
-                                                .orElse("java.base module")));
-                    }
+                    String targetPlatformVal = readJavaBaseTargetPlatform(cf);
                     this.targetPlatform = Platform.parsePlatform(targetPlatformVal);
                     this.order = this.targetPlatform.getNativeByteOrder();
                     if (this.order == null) {
@@ -897,6 +894,23 @@ public class JlinkTask {
                 return false;
             }
             return Files.isSameFile(javaBasePath, javaBaseInDefaultPath);
+        }
+
+        // returns the targetPlatform value from the ModuleTarget attribute of the java.base module.
+        // throws IOException if the targetPlatform cannot be determined.
+        private static String readJavaBaseTargetPlatform(Configuration cf) throws IOException {
+            Optional<ResolvedModule> javaBase = cf.findModule("java.base");
+            assert javaBase.isPresent() : "java.base module is missing";
+            ModuleReference ref = javaBase.get().reference();
+            if (ref instanceof ModuleReferenceImpl modRefImpl
+                    && modRefImpl.moduleTarget() != null) {
+                return modRefImpl.moduleTarget().targetPlatform();
+            }
+            // could not determine target platform
+            throw new IOException(
+                    taskHelper.getMessage("err.cannot.determine.target.platform",
+                            ref.location().map(URI::toString)
+                                    .orElse("java.base module")));
         }
 
         private Archive newArchive(String module, Path path) {
