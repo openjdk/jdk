@@ -26,7 +26,6 @@
 package java.lang;
 
 import java.lang.ProcessBuilder.Redirect;
-import jdk.internal.util.OperatingSystem;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -48,6 +47,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
