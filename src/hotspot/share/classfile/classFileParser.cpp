@@ -774,10 +774,6 @@ class NameSigHash: public ResourceObj {
 
   static const int HASH_ROW_SIZE = 256;
 
-  NameSigHash() :
-    _name(nullptr),
-    _sig(nullptr) {}
-
   NameSigHash(Symbol* name, Symbol* sig) :
     _name(name),
     _sig(sig) {}
@@ -1592,8 +1588,8 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     // Set containing name-signature pairs
     NameSigHashtable* names_and_sigs = new NameSigHashtable();
     for (int i = 0; i < _temp_field_info->length(); i++) {
-      NameSigHash name_and_sig = NameSigHash(_temp_field_info->adr_at(i)->name(_cp),
-                                 _temp_field_info->adr_at(i)->signature(_cp));
+      NameSigHash name_and_sig(_temp_field_info->adr_at(i)->name(_cp),
+                               _temp_field_info->adr_at(i)->signature(_cp));
       // If no duplicates, add name/signature in hashtable names_and_sigs.
       if(!names_and_sigs->put(name_and_sig, 0)) {
         classfile_parse_error("Duplicate field name \"%s\" with signature \"%s\" in class file %s",
@@ -2832,7 +2828,7 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
       NameSigHashtable* names_and_sigs = new NameSigHashtable();
       for (int i = 0; i < length; i++) {
         const Method* const m = _methods->at(i);
-        NameSigHash name_and_sig = NameSigHash(m->name(), m->signature());
+        NameSigHash name_and_sig(m->name(), m->signature());
         // If no duplicates, add name/signature in hashtable names_and_sigs.
         if(!names_and_sigs->put(name_and_sig, 0)) {
           classfile_parse_error("Duplicate method name \"%s\" with signature \"%s\" in class file %s",
