@@ -416,10 +416,10 @@ class SuperWord : public ResourceObj {
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
 
-  Node* ctrl(Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
+  const Node* ctrl(const Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
 
   // block accessors
-  bool in_bb(Node* n)      { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _bb; }
+  bool in_bb(const Node* n) { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _bb; }
   int  bb_idx(Node* n)     { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
   void set_bb_idx(Node* n, int i) { _bb_idx.at_put_grow(n->_idx, i); }
 
@@ -515,11 +515,11 @@ private:
   // Reference to the i'th input node of n, commuting the inputs of binary nodes
   // whose edges have been swapped. Assumes n is a commutative operation.
   static Node* original_input(const Node* n, uint i);
-  // Find and mark reductions in a loop. Running mark_reductions(loop) is
-  // similar to querying is_reduction(n) for every n in loop, but stricter in
+  // Find and mark reductions in a loop. Running mark_reductions() is similar to
+  // querying is_reduction(n) for every n in the SuperWord loop, but stricter in
   // that it assumes counted loops and requires that reduction nodes are not
   // used within the loop except by their reduction cycle predecessors.
-  void mark_reductions(IdealLoopTree* loop);
+  void mark_reductions();
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
   // Whether the current loop has any reduction node.

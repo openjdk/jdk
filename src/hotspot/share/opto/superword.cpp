@@ -111,8 +111,14 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     return false; // skip malformed counted loop
   }
 
+  // Initialize simple data used by reduction marking early.
+  set_lpt(lpt);
+  set_lp(cl);
+  // For now, define one block which is the entire loop body.
+  set_bb(cl);
+
   if (SuperWordReductions) {
-    mark_reductions(lpt);
+    mark_reductions();
   }
 
   if (cl->is_rce_post_loop() && is_marked_reduction_loop()) {
@@ -170,12 +176,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   }
 
   init(); // initialize data structures
-
-  set_lpt(lpt);
-  set_lp(cl);
-
-  // For now, define one block which is the entire loop body
-  set_bb(cl);
 
   bool success = true;
   if (do_optimization) {
@@ -474,23 +474,21 @@ Node* SuperWord::original_input(const Node* n, uint i) {
   return n->in(i);
 }
 
-void SuperWord::mark_reductions(IdealLoopTree* loop) {
+void SuperWord::mark_reductions() {
 
   _loop_reductions.clear();
-  const CountedLoopNode* loop_head = loop->_head->as_CountedLoop();
-  const Node* trip_phi = loop_head->phi();
 
   // Iterate through all phi nodes associated to the loop and search for
   // reduction cycles of at most LoopMaxUnroll nodes.
-  for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
-    const Node* phi = loop_head->fast_out(i);
+  for (DUIterator_Fast imax, i = lp()->fast_outs(imax); i < imax; i++) {
+    const Node* phi = lp()->fast_out(i);
     if (!phi->is_Phi()) {
       continue;
     }
     if (phi->outcnt() == 0) {
       continue;
     }
-    if (phi == trip_phi) {
+    if (phi == iv()) {
       continue;
     }
     // The phi's loop-back is considered the first node in the reduction cycle.
@@ -516,11 +514,7 @@ void SuperWord::mark_reductions(IdealLoopTree* loop) {
       PathEnd path =
         find_in_path(
           first, input, LoopMaxUnroll,
-          [&](const Node* n) {
-            Node* ctrl = _phase->get_ctrl(n);
-            return (n->Opcode() == first->Opcode() && ctrl != nullptr &&
-                    loop->is_member(_phase->get_loop(ctrl)));
-          },
+          [&](const Node* n) { return n->Opcode() == first->Opcode() && in_bb(n); },
           [&](const Node* n) { return n == phi; });
       if (path.first != nullptr) {
         reduction_input = input;
@@ -539,7 +533,7 @@ void SuperWord::mark_reductions(IdealLoopTree* loop) {
     for (int i = 0; i < path_nodes; i++) {
       for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
         Node* u = current->fast_out(j);
-        if (!loop->is_member(_phase->get_loop(_phase->ctrl_or_self(u)))) {
+        if (!in_bb(u)) {
           continue;
         }
         if (u == pred) {
@@ -4285,10 +4279,6 @@ void SuperWord::init() {
   _iteration_last.clear();
   _node_info.clear();
   _align_to_ref = nullptr;
-  _lpt = nullptr;
-  _lp = nullptr;
-  _bb = nullptr;
-  _iv = nullptr;
   _race_possible = 0;
   _early_return = false;
   _num_work_vecs = 0;
