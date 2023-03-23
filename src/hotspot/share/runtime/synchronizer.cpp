@@ -245,12 +245,11 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, JavaThread* thr) {
   return 0;
 }
 
-static const int NINFLATIONLOCKS = 256;
-static PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
+static PlatformMutex gInflationLocks[256];
 
 void ObjectSynchronizer::initialize() {
-  for (int i = 0; i < NINFLATIONLOCKS; i++) {
-    gInflationLocks[i] = new PlatformMutex();
+  for (size_t i = 0; i < ARRAY_SIZE(gInflationLocks); i++) {
+    ::new(static_cast<void*>(&gInflationLocks[i])) PlatformMutex();
   }
   // Start the ceiling with the estimate for one thread.
   set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
@@ -740,11 +739,11 @@ static markWord read_stable_mark(oop obj) {
         // then for each thread on the list, set the flag and unpark() the thread.
 
         // Index into the lock array based on the current object address.
-        static_assert(is_power_of_2(NINFLATIONLOCKS), "must be");
-        int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1);
+        static_assert(is_power_of_2(ARRAY_SIZE(gInflationLocks)), "must be");
+        size_t ix = (cast_from_oop<intptr_t>(obj) >> 5) & (ARRAY_SIZE(gInflationLocks)-1);
         int YieldThenBlock = 0;
-        assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
-        gInflationLocks[ix]->lock();
+        assert(ix < ARRAY_SIZE(gInflationLocks), "invariant");
+        gInflationLocks[ix].lock();
         while (obj->mark_acquire() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call current->_ParkEvent->park(1).
@@ -755,7 +754,7 @@ static markWord read_stable_mark(oop obj) {
             os::naked_yield();
           }
         }
-        gInflationLocks[ix]->unlock();
+        gInflationLocks[ix].unlock();
       }
     } else {
       SpinPause();       // SMP-polite spinning
