@@ -25,7 +25,8 @@
  * @test
  * @bug 8303742
  * @summary CompletableFuture.orTimeout can leak memory if completed exceptionally
- * @run junit/othervm -Xmx128m --add-opens java.base/java.util.concurrent=ALL-UNNAMED CompletableFutureOrTimeoutExceptionallyTest
+ * @modules java.base/java.util.concurrent:open
+ * @run junit/othervm -Xmx128m CompletableFutureOrTimeoutExceptionallyTest
  */
 
 import java.time.Duration;
@@ -41,11 +42,13 @@ class CompletableFutureOrTimeoutExceptionallyTest {
     static final BlockingQueue<Runnable> delayerQueue;
     static {
         try {
-            var delayerClass = Class.forName("java.util.concurrent.CompletableFuture$Delayer", true, CompletableFuture.class.getClassLoader());
+            var delayerClass = Class.forName("java.util.concurrent.CompletableFuture$Delayer",
+                                             true,
+                                             CompletableFuture.class.getClassLoader());
             var delayerField = delayerClass.getDeclaredField("delayer");
             delayerField.setAccessible(true);
             delayerQueue = ((ScheduledThreadPoolExecutor)delayerField.get(null)).getQueue();
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             throw new ExceptionInInitializerError(t);
         }
     }
@@ -59,7 +62,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
         var future = new CompletableFuture<>().orTimeout(12, TimeUnit.HOURS);
         assertTrue(delayerQueue.peek() != null);
         future.completeExceptionally(new RuntimeException("This is fine"));
-        while(delayerQueue.peek() != null) {
+        while (delayerQueue.peek() != null) {
             Thread.sleep(100);
         };
     }
@@ -73,7 +76,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
         var future = new CompletableFuture<>().completeOnTimeout(null, 12, TimeUnit.HOURS);
         assertTrue(delayerQueue.peek() != null);
         future.completeExceptionally(new RuntimeException("This is fine"));
-        while(delayerQueue.peek() != null) {
+        while (delayerQueue.peek() != null) {
             Thread.sleep(100);
         };
     }
