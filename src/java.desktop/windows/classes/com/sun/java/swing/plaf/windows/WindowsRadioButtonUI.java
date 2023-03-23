@@ -110,8 +110,7 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
 
 
     protected void paintFocus(Graphics g, Rectangle textRect, Dimension d){
-        g.setColor(getFocusColor());
-        BasicGraphicsUtils.drawDashedRect(g, textRect.x, textRect.y, textRect.width, textRect.height);
+        //do nothing
     }
 
     // ********************************
