@@ -463,8 +463,16 @@ abstract public class TestScaffold extends TargetAdapter {
 
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();
-        String targetClassName = null;
+        // Parse arguments, like java/j* tools command-line arguments
+        // the first argument not-starting with '-' is treated as a classname
+        // the other arguments are split to targetVMArgs targetAppCommandLine correspondingly
+        boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
+            if (classNameParsed) {
+                // once classname is read, treat any other arguments as app arguments
+                argInfo.targetAppCommandLine += (args[i] + ' ');
+                continue;
+            }
             if (args[i].equals("-connect")) {
                 i++;
                 argInfo.connectorSpec = args[i];
@@ -488,29 +496,25 @@ abstract public class TestScaffold extends TargetAdapter {
                     i++;
                     argInfo.targetVMArgs += (args[i] + ' ');
                 }
+            } else if (args[i].startsWith("-")) {
+                argInfo.targetVMArgs += (args[i] + ' ');
             } else {
-                // The last argument is classname of target app
-                // It is needed to preserve it and allow wrapper to insert vm args before it
-                if (targetClassName != null) {
-                    argInfo.targetAppCommandLine += (targetClassName + ' ');
-                }
-                targetClassName = args[i];
+                classNameParsed = true;
+                argInfo.targetAppCommandLine += (args[i] + ' ');
             }
         }
 
-        if (targetClassName != null) {
-            String mainWrapper = System.getProperty("main.wrapper");
-            if (mainWrapper != null) {
-                // Run "-XX:VMFlags1 -XX:VMFlags2 TestScaffold <main-wrapper-name> TargetClassName"
-                // instead of "-XX:VMFlags1 -XX:VMFlags2 TargetClassName"
-                argInfo.targetAppCommandLine += TestScaffold.class.getName() + ' ' + mainWrapper + ' ';
-                argInfo.targetVMArgs += "--enable-preview ";
-            } else if ("true".equals(System.getProperty("test.enable.preview"))) {
-                // the test specified @enablePreview.
-                argInfo.targetVMArgs += "--enable-preview ";
-            }
-            argInfo.targetAppCommandLine += targetClassName;
+        // Need to change args to run wrapper using command like 'TestScaffold Virtual <app-name>'
+        String mainWrapper = System.getProperty("main.wrapper");
+        if (mainWrapper != null && !argInfo.targetAppCommandLine.isEmpty()) {
+            argInfo.targetAppCommandLine = TestScaffold.class.getName() + ' '
+                    + mainWrapper + ' ' + argInfo.targetAppCommandLine;
+            argInfo.targetVMArgs += "--enable-preview ";
+        } else if ("true".equals(System.getProperty("test.enable.preview"))) {
+            // the test specified @enablePreview.
+            argInfo.targetVMArgs += "--enable-preview ";
         }
+
         return argInfo;
     }
 
