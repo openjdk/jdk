@@ -101,6 +101,7 @@ jobs:
 
           - test-name: 'lib-test/tier1'
             test-suite: 'test/lib-test/:tier1'
+            debug-suffix: -debug
 
     steps:
       - name: 'Checkout the JDK source'
