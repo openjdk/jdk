@@ -709,7 +709,9 @@
     <Field type="string" name="commandLine" label="Command Line" />
   </Event>
 
-  <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information" period="endChunk">
+  <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information"
+         description="Characteristics and descriptions of the processor(s) the JVM is running on"
+         period="endChunk">
     <Field type="string" name="cpu" label="Type" />
     <Field type="string" name="description" label="Description" />
     <Field type="uint" name="sockets" label="Sockets" />
@@ -717,14 +719,18 @@
     <Field type="uint" name="hwThreads" label="Hardware Threads" />
   </Event>
 
-  <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter" period="endChunk">
+  <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter"
+         description="Information about the CPU time stamp mechanism / (RD)TSC"
+         period="endChunk">
     <Field type="boolean" name="fastTimeEnabled" label="Fast Time" />
     <Field type="boolean" name="fastTimeAutoEnabled" label="Trusted Platform" />
     <Field type="long" contentType="hertz" name="osFrequency" label="OS Frequency" />
     <Field type="long" contentType="hertz" name="fastTimeFrequency" label="Fast Time Frequency" />
   </Event>
 
-  <Event name="CPULoad" category="Operating System, Processor" label="CPU Load" description="OS CPU Load" period="everyChunk">
+  <Event name="CPULoad" category="Operating System, Processor" label="CPU Load"
+         description="Information about the recent CPU usage of the JVM process"
+         period="everyChunk">
     <Field type="float" contentType="percentage" name="jvmUser" label="JVM User" />
     <Field type="float" contentType="percentage" name="jvmSystem" label="JVM System" />
     <Field type="float" contentType="percentage" name="machineTotal" label="Machine Total" />
