@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class PcDescCache {
   typedef PcDesc* PcDescPtr;
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_pc_descs[0] = NULL); }
+  PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
   void    reset_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
@@ -130,7 +130,7 @@ public:
   PcDesc* find_pc_desc(address pc, bool approximate, const PcDescSearch& search) {
     address base_address = search.code_begin();
     PcDesc* desc = _pc_desc_cache.last_pc_desc();
-    if (desc != NULL && desc->pc_offset() == pc - base_address) {
+    if (desc != nullptr && desc->pc_offset() == pc - base_address) {
       return desc;
     }
     return find_pc_desc_internal(pc, approximate, search);
@@ -140,17 +140,19 @@ public:
 
 class CompiledMethod : public CodeBlob {
   friend class VMStructs;
-
+  friend class DeoptimizationScope;
   void init_defaults();
 protected:
-  enum MarkForDeoptimizationStatus : u1 {
+  enum DeoptimizationStatus : u1 {
     not_marked,
     deoptimize,
     deoptimize_noupdate,
     deoptimize_done
   };
 
-  MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
+  volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
+  // Used to track in which deoptimize handshake this method will be deoptimized.
+  uint64_t                      _deoptimization_generation;
 
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
@@ -173,6 +175,11 @@ protected:
   void* _gc_data;
 
   virtual void flush() = 0;
+
+private:
+  DeoptimizationStatus deoptimization_status() const {
+    return Atomic::load(&_deoptimization_status);
+  }
 
 protected:
   CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled);
@@ -221,8 +228,8 @@ public:
   virtual int osr_entry_bci() const = 0;
   Method* method() const                          { return _method; }
   virtual void print_pcs() = 0;
-  bool is_native_method() const { return _method != NULL && _method->is_native(); }
-  bool is_java_method() const { return _method != NULL && !_method->is_native(); }
+  bool is_native_method() const { return _method != nullptr && _method->is_native(); }
+  bool is_java_method() const { return _method != nullptr && !_method->is_native(); }
 
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }
@@ -236,11 +243,9 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  bool  is_marked_for_deoptimization() const { return _mark_for_deoptimization_status != not_marked; }
-  void  mark_for_deoptimization(bool inc_recompile_counts = true);
-
-  bool  has_been_deoptimized() const { return _mark_for_deoptimization_status == deoptimize_done; }
-  void  mark_deoptimized() { _mark_for_deoptimization_status = deoptimize_done; }
+  bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
+  bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
+  void  set_deoptimized_done();
 
   virtual void  make_deoptimized() { assert(false, "not supported"); };
 
@@ -248,8 +253,8 @@ public:
     // Update recompile counts when either the update is explicitly requested (deoptimize)
     // or the nmethod is not marked for deoptimization at all (not_marked).
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
-    return _mark_for_deoptimization_status != deoptimize_noupdate &&
-           _mark_for_deoptimization_status != deoptimize_done;
+    DeoptimizationStatus status = deoptimization_status();
+    return status != deoptimize_noupdate && status != deoptimize_done;
   }
 
   // tells whether frames described by this nmethod can be deoptimized
@@ -280,6 +285,8 @@ public:
   virtual address consts_end() const = 0;
   bool consts_contains(address addr) const { return consts_begin() <= addr && addr < consts_end(); }
   int consts_size() const { return consts_end() - consts_begin(); }
+
+  virtual int skipped_instructions_size() const = 0;
 
   virtual address stub_begin() const = 0;
   virtual address stub_end() const = 0;

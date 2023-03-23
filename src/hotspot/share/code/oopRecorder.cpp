@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ template <class T> int ValueRecorder<T>::_missed_indexes   = 0;
 
 
 template <class T> ValueRecorder<T>::ValueRecorder(Arena* arena) {
-  _handles  = NULL;
-  _indexes  = NULL;
+  _handles  = nullptr;
+  _indexes  = nullptr;
   _arena    = arena;
   _complete = false;
 }
@@ -54,7 +54,7 @@ template <class T> template <class X>  ValueRecorder<T>::IndexCache<X>::IndexCac
 
 template <class T> int ValueRecorder<T>::size() {
   _complete = true;
-  if (_handles == NULL)  return 0;
+  if (_handles == nullptr)  return 0;
   return _handles->length() * sizeof(T);
 }
 
@@ -65,8 +65,8 @@ template <class T> void ValueRecorder<T>::copy_values_to(nmethod* nm) {
 }
 
 template <class T> void ValueRecorder<T>::maybe_initialize() {
-  if (_handles == NULL) {
-    if (_arena != NULL) {
+  if (_handles == nullptr) {
+    if (_arena != nullptr) {
       _handles  = new(_arena) GrowableArray<T>(_arena, 10, 0, 0);
       _no_finds = new(_arena) GrowableArray<int>(    _arena, 10, 0, 0);
     } else {
@@ -78,8 +78,8 @@ template <class T> void ValueRecorder<T>::maybe_initialize() {
 
 
 template <class T> T ValueRecorder<T>::at(int index) {
-  // there is always a NULL virtually present as first object
-  if (index == null_index)  return NULL;
+  // there is always a nullptr virtually present as first object
+  if (index == null_index)  return nullptr;
   return _handles->at(index - first_index);
 }
 
@@ -95,10 +95,10 @@ template <class T> int ValueRecorder<T>::add_handle(T h, bool make_findable) {
   assert(!(make_findable && !is_real(h)), "nulls are not findable");
   if (make_findable) {
     // This index may be returned from find_index().
-    if (_indexes != NULL) {
+    if (_indexes != nullptr) {
       int* cloc = _indexes->cache_location(h);
       _indexes->set_cache_location_index(cloc, index);
-    } else if (index == index_cache_threshold && _arena != NULL) {
+    } else if (index == index_cache_threshold && _arena != nullptr) {
       _indexes = new(_arena) IndexCache<T>();
       for (int i = 0; i < _handles->length(); i++) {
         // Load the cache with pre-existing elements.
@@ -111,7 +111,7 @@ template <class T> int ValueRecorder<T>::add_handle(T h, bool make_findable) {
   } else if (is_real(h)) {
     // Remember that this index is not to be returned from find_index().
     // This case is rare, because most or all uses of allocate_index pass
-    // an argument of NULL or Universe::non_oop_word.
+    // an argument of nullptr or Universe::non_oop_word.
     // Thus, the expected length of _no_finds is zero.
     _no_finds->append(index);
   }
@@ -124,10 +124,10 @@ template <class T> int ValueRecorder<T>::maybe_find_index(T h) {
   debug_only(_find_index_calls++);
   assert(!_complete, "cannot allocate more elements after size query");
   maybe_initialize();
-  if (h == NULL)  return null_index;
+  if (h == nullptr)  return null_index;
   assert(is_real(h), "must be valid");
-  int* cloc = (_indexes == NULL)? NULL: _indexes->cache_location(h);
-  if (cloc != NULL) {
+  int* cloc = (_indexes == nullptr)? nullptr: _indexes->cache_location(h);
+  if (cloc != nullptr) {
     int cindex = _indexes->cache_location_index(cloc);
     if (cindex == 0) {
       return -1;   // We know this handle is completely new.
@@ -147,7 +147,7 @@ template <class T> int ValueRecorder<T>::maybe_find_index(T h) {
     if (_handles->at(i) == h) {
       int findex = i + first_index;
       if (_no_finds->contains(findex))  continue;  // oops; skip this one
-      if (cloc != NULL) {
+      if (cloc != nullptr) {
         _indexes->set_cache_location_index(cloc, findex);
       }
       debug_only(_missed_indexes++);
@@ -188,7 +188,7 @@ int ObjectLookup::sort_oop_by_address(oop const& a, ObjectEntry const& b) {
 }
 
 int ObjectLookup::find_index(jobject handle, OopRecorder* oop_recorder) {
-  if (handle == NULL) {
+  if (handle == nullptr) {
     return 0;
   }
   oop object = JNIHandles::resolve(handle);
@@ -208,6 +208,6 @@ OopRecorder::OopRecorder(Arena* arena, bool deduplicate): _oops(arena), _metadat
   if (deduplicate) {
     _object_lookup = new ObjectLookup();
   } else {
-    _object_lookup = NULL;
+    _object_lookup = nullptr;
   }
 }

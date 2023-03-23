@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,6 @@
 
 #include "sun_nio_ch_InheritedChannel.h"
 
-static int toInetFamily(SOCKETADDRESS *sa) {
-    return (sa->sa.sa_family == (ipv6_available() ? AF_INET6 : AF_INET));
-}
-
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_InheritedChannel_initIDs(JNIEnv *env, jclass cla)
 {
@@ -58,9 +54,7 @@ Java_sun_nio_ch_InheritedChannel_inetPeerAddress0(JNIEnv *env, jclass cla, jint 
     jint remote_port;
 
     if (getpeername(fd, &sa.sa, &len) == 0) {
-        if (toInetFamily(&sa)) {
-            remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
-        }
+        remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
     }
 
     return remote_ia;
@@ -89,9 +83,7 @@ Java_sun_nio_ch_InheritedChannel_peerPort0(JNIEnv *env, jclass cla, jint fd)
     jint remote_port = -1;
 
     if (getpeername(fd, (struct sockaddr *)&sa.sa, &len) == 0) {
-        if (toInetFamily(&sa)) {
-            NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
-        }
+        NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
     }
 
     return remote_port;

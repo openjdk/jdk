@@ -51,7 +51,7 @@ void JNICALL VMInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr) {
     }
 
     for (i = 0; i < RAW_MONITORS_NUMBER; i++) {
-        sprintf(name, "RawMonitor-%d", i);
+        snprintf(name, sizeof(name), "RawMonitor-%d", i);
         err = jvmti->CreateRawMonitor(name, &monitors[i]);
         if (err != JVMTI_ERROR_NONE) {
             printf("(CreateRawMonitor#%d) unexpected error: %s (%d)\n",
@@ -155,7 +155,7 @@ JNIEXPORT jint JNICALL Java_nsk_jvmti_RawMonitorExit_rawmonexit001_check(JNIEnv 
     }
 
     for (i = 0; i < RAW_MONITORS_NUMBER; i++) {
-        sprintf(name, "RawMonitor-%d", i);
+        snprintf(name, sizeof(name), "RawMonitor-%d", i);
         err = jvmti->CreateRawMonitor(name, &monitors[i]);
         if (err != JVMTI_ERROR_NONE) {
             printf("(CreateRawMonitor#%d) unexpected error: %s (%d)\n",

@@ -791,7 +791,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  __ flush();
   return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
 }
 
@@ -1229,6 +1228,15 @@ static void gen_continuation_yield(MacroAssembler* masm,
     continuation_enter_cleanup(masm);
 
     __ bind(pinned); // pinned -- return to caller
+
+    // handle pending exception thrown by freeze
+    __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+    Label ok;
+    __ cbz(rscratch1, ok);
+    __ leave();
+    __ lea(rscratch1, RuntimeAddress(StubRoutines::forward_exception_entry()));
+    __ br(rscratch1);
+    __ bind(ok);
 
     __ leave();
     __ ret(lr);
@@ -1789,7 +1797,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
       __ sub(swap_reg, sp, swap_reg);
       __ neg(swap_reg, swap_reg);
-      __ ands(swap_reg, swap_reg, 3 - os::vm_page_size());
+      __ ands(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
 
       // Save the test result, for recursive case, the result is zero
       __ str(swap_reg, Address(lock_reg, mark_word_offset));

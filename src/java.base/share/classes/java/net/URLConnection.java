@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.Hashtable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -612,20 +611,20 @@ public abstract class URLConnection {
      * headers. Classes for that connection type can override this method
      * and short-circuit the parsing.
      *
-     * @param   name      the name of the header field.
-     * @param   Default   the default value.
+     * @param   name          the name of the header field.
+     * @param   defaultValue  the default value.
      * @return  the value of the named field, parsed as an integer. The
-     *          {@code Default} value is returned if the field is
+     *          {@code defaultValue} value is returned if the field is
      *          missing or malformed.
      */
-    public int getHeaderFieldInt(String name, int Default) {
+    public int getHeaderFieldInt(String name, int defaultValue) {
         final String value = getHeaderField(name);
         if (value != null) {
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) { }
         }
-        return Default;
+        return defaultValue;
     }
 
     /**
@@ -636,21 +635,21 @@ public abstract class URLConnection {
      * headers. Classes for that connection type can override this method
      * and short-circuit the parsing.
      *
-     * @param   name      the name of the header field.
-     * @param   Default   the default value.
+     * @param   name          the name of the header field.
+     * @param   defaultValue  the default value.
      * @return  the value of the named field, parsed as a long. The
-     *          {@code Default} value is returned if the field is
+     *          {@code defaultValue} value is returned if the field is
      *          missing or malformed.
      * @since 1.7
      */
-    public long getHeaderFieldLong(String name, long Default) {
+    public long getHeaderFieldLong(String name, long defaultValue) {
         final String value = getHeaderField(name);
         if (value != null) {
             try {
                 return Long.parseLong(value);
             } catch (NumberFormatException e) { }
         }
-        return Default;
+        return defaultValue;
     }
 
     /**
@@ -663,21 +662,21 @@ public abstract class URLConnection {
      * headers. Classes for that connection type can override this method
      * and short-circuit the parsing.
      *
-     * @param   name     the name of the header field.
-     * @param   Default   a default value.
+     * @param   name          the name of the header field.
+     * @param   defaultValue  a default value.
      * @return  the value of the field, parsed as a date. The value of the
-     *          {@code Default} argument is returned if the field is
+     *          {@code defaultValue} argument is returned if the field is
      *          missing or malformed.
      */
     @SuppressWarnings("deprecation")
-    public long getHeaderFieldDate(String name, long Default) {
+    public long getHeaderFieldDate(String name, long defaultValue) {
         final String value = getHeaderField(name);
         if (value != null) {
             try {
                 return Date.parse(value);
             } catch (Exception e) { }
         }
-        return Default;
+        return defaultValue;
     }
 
     /**

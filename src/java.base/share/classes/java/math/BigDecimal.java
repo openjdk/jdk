@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3102,9 +3102,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @apiNote
      * Note: this class has a natural ordering that is inconsistent with equals.
      * The behavior of comparing the result of this method for
-     * equality to 0 is analogous to checking the <a
-     * href="{@docRoot}/java.base/java/lang/Double.html#fpNumericalEq">numerical
-     * equality</a> of {@code double} values.
+     * equality to 0 is analogous to checking the {@linkplain
+     * Double##fpNumericalEq numerical equality} of {@code double} values.
      *
      * @param  val {@code BigDecimal} to which this {@code BigDecimal} is
      *         to be compared.
@@ -3197,9 +3196,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * HALF_UP)} which evaluates to 0.7 and <br>
      * {@code new BigDecimal("2.00").divide(BigDecimal.valueOf(3),
      * HALF_UP)} which evaluates to 0.67.
-     * The behavior of this method is analogous to checking the <a
-     * href="{@docRoot}/java.base/java/lang/Double.html#repEquivalence">representation
-     * equivalence</a> of {@code double} values.
+     * The behavior of this method is analogous to checking the
+     * {@linkplain Double##repEquivalence representation equivalence}
+     * of {@code double} values.
      *
      * @param  x {@code Object} to which this {@code BigDecimal} is
      *         to be compared.

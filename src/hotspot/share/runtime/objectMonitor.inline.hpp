@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,13 @@ inline int ObjectMonitor::waiters() const {
 
 inline bool ObjectMonitor::has_owner() const {
   void* owner = owner_raw();
-  return owner != NULL && owner != DEFLATER_MARKER;
+  return owner != nullptr && owner != DEFLATER_MARKER;
 }
 
-// Returns NULL if DEFLATER_MARKER is observed.
+// Returns null if DEFLATER_MARKER is observed.
 inline void* ObjectMonitor::owner() const {
   void* owner = owner_raw();
-  return owner != DEFLATER_MARKER ? owner : NULL;
+  return owner != DEFLATER_MARKER ? owner : nullptr;
 }
 
 inline void* ObjectMonitor::owner_raw() const {
@@ -73,7 +73,7 @@ inline void* ObjectMonitor::owner_raw() const {
 
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
 // This accessor is called when we really need to know if the owner
-// field == DEFLATER_MARKER and any non-NULL value won't do the trick.
+// field == DEFLATER_MARKER and any non-null value won't do the trick.
 inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() const {
   return owner_raw() == DEFLATER_MARKER;
 }
@@ -100,7 +100,7 @@ inline void ObjectMonitor::release_clear_owner(void* old_value) {
   assert(prev == old_value, "unexpected prev owner=" INTPTR_FORMAT
          ", expected=" INTPTR_FORMAT, p2i(prev), p2i(old_value));
 #endif
-  Atomic::release_store(&_owner, (void*)NULL);
+  Atomic::release_store(&_owner, (void*)nullptr);
   log_trace(monitorinflation, owner)("release_clear_owner(): mid="
                                      INTPTR_FORMAT ", old_value=" INTPTR_FORMAT,
                                      p2i(this), p2i(old_value));

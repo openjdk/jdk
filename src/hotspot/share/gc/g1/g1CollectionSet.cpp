@@ -28,7 +28,6 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -59,10 +58,8 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _collection_set_cur_length(0),
   _collection_set_max_length(0),
   _num_optional_regions(0),
-  _bytes_used_before(0),
   _inc_build_state(Inactive),
-  _inc_part_start(0),
-  _inc_bytes_used_before(0) {
+  _inc_part_start(0) {
 }
 
 G1CollectionSet::~G1CollectionSet() {
@@ -114,7 +111,6 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert(_collection_set_cur_length < _collection_set_max_length, "Collection set now larger than maximum size.");
   _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
 
-  _bytes_used_before += hr->used();
   _old_region_length++;
 
   _g1h->old_set_remove(hr);
@@ -132,8 +128,6 @@ void G1CollectionSet::add_optional_region(HeapRegion* hr) {
 void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(_inc_build_state == Inactive, "Precondition");
-
-  _inc_bytes_used_before = 0;
 
   update_incremental_marker();
 }
@@ -199,26 +193,6 @@ void G1CollectionSet::iterate_part_from(HeapRegionClosure* cl,
 void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == Active, "Precondition");
-
-  // This routine is used when:
-  // * adding survivor regions to the incremental cset at the end of an
-  //   evacuation pause or
-  // * adding the current allocation region to the incremental cset
-  //   when it is retired.
-  // Therefore this routine may be called at a safepoint by the
-  // VM thread, or in-between safepoints by mutator threads (when
-  // retiring the current allocation region)
-  // We need to clear and set the cached recorded/cached collection set
-  // information in the heap region here (before the region gets added
-  // to the collection set). An individual heap region's cached values
-  // are calculated, aggregated with the policy collection set info,
-  // and cached in the heap region here (initially) and (subsequently)
-  // by the Young List sampling code.
-  // Ignore calls to this due to retirement during full gc.
-
-  if (!_g1h->collector_state()->in_full_gc()) {
-    _inc_bytes_used_before += hr->used();
-  }
 
   assert(!hr->in_collection_set(), "invariant");
   _g1h->register_young_region_with_region_attr(hr);
@@ -318,8 +292,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
-  size_t pending_cards = _policy->pending_cards_at_gc_start() +
-                         _g1h->hot_card_cache()->num_entries();
+  size_t pending_cards = _policy->pending_cards_at_gc_start();
 
   log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: " SIZE_FORMAT " target pause time: %1.2fms",
                             pending_cards, target_pause_time_ms);
@@ -333,8 +306,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   init_region_lengths(eden_region_length, survivor_region_length);
 
   verify_young_cset_indices();
-
-  _bytes_used_before = _inc_bytes_used_before;
 
   double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards);
   // Base time already includes the whole remembered set related time, so do not add that here

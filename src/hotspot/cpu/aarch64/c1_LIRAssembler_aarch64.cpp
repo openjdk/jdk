@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1814,10 +1814,12 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
 void LIR_Assembler::arith_fpu_implementation(LIR_Code code, int left_index, int right_index, int dest_index, bool pop_fpu_stack) { Unimplemented(); }
 
 
-void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, LIR_Opr dest, LIR_Op* op) {
+void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_Opr dest, LIR_Op* op) {
   switch(code) {
   case lir_abs : __ fabsd(dest->as_double_reg(), value->as_double_reg()); break;
   case lir_sqrt: __ fsqrtd(dest->as_double_reg(), value->as_double_reg()); break;
+  case lir_f2hf: __ flt_to_flt16(dest->as_register(), value->as_float_reg(), tmp->as_float_reg()); break;
+  case lir_hf2f: __ flt16_to_flt(dest->as_float_reg(), value->as_register(), tmp->as_float_reg()); break;
   default      : ShouldNotReachHere();
   }
 }
@@ -3185,7 +3187,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
         __ encode_heap_oop(rscratch2, obj);
         obj = rscratch2;
       }
-      assert_different_registers(obj, addr.base(), tmp, rscratch1, dst);
+      assert_different_registers(obj, addr.base(), tmp, rscratch1);
+      assert_different_registers(dst, addr.base(), tmp, rscratch1);
       __ lea(tmp, addr);
       (_masm->*xchg)(dst, obj, tmp);
       if (is_oop && UseCompressedOops) {

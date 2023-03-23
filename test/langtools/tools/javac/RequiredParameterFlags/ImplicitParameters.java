@@ -46,11 +46,15 @@ import toolbox.ToolBox;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ImplicitParameters extends TestRunner {
+    private static final int CHECKED_FLAGS = Flags.MANDATED | Flags.SYNTHETIC;
+    private static final int NO_FLAGS = 0;
+
     public ImplicitParameters() {
         super(System.err);
     }
@@ -67,6 +71,7 @@ public class ImplicitParameters extends TestRunner {
     }
 
     private void compileClasses(Path base) throws IOException {
+        // Keep this in sync with test/jdk/java/lang/reflect/AccessFlag/RequiredMethodParameterFlagTest.java
         String outer = """
                 class Outer {
                     class Inner {
@@ -75,7 +80,29 @@ public class ImplicitParameters extends TestRunner {
 
                     Inner anonymousInner = this.new Inner(null) {};
 
-                    enum MyEnum {}
+                    Object anonymous = new Object() {};
+
+                    private void instanceMethod(int i) {
+                        class Task implements Runnable {
+                            final int j;
+
+                            Task(int j) {
+                                this.j = j;
+                            }
+
+                            @Override
+                            public void run() {
+                                System.out.println(Outer.this.toString() + (i * j));
+                            }
+                        }
+
+                        new Task(5).run();
+                    }
+
+                    enum MyEnum {
+                        ;
+                        MyEnum(String s, int i) {}
+                    }
 
                     record MyRecord(int a, Object b) {
                         MyRecord {}
@@ -111,21 +138,30 @@ public class ImplicitParameters extends TestRunner {
     @Test
     @ClassName("Inner")
     public void testInnerClassConstructor(ClassFile classFile) {
-        MethodParameters_attribute methodParameters = (MethodParameters_attribute) classFile.methods[0].attributes.get("MethodParameters");
-        Assert.checkNonNull(methodParameters, "MethodParameters attribute must be present");
-        MethodParameters_attribute.Entry[] table = methodParameters.method_parameter_table;
-        Assert.check((table[0].flags & Flags.MANDATED) != 0, "mandated flag must be set for implicit parameter");
-        Assert.check((table[1].flags & Flags.MANDATED) == 0, "mandated flag must not be set for explicit parameter");
+        checkParameters(classFile.methods[0], Flags.MANDATED, 0);
+    }
+
+    @Test
+    @ClassName("1Task")
+    public void testLocalClassConstructor(ClassFile classFile) throws ConstantPoolException {
+        for (com.sun.tools.classfile.Method method : classFile.methods) {
+            if (method.getName(classFile.constant_pool).equals(ConstantDescs.INIT_NAME)) {
+                checkParameters(method, Flags.MANDATED, NO_FLAGS, Flags.SYNTHETIC);
+                break;
+            }
+        }
     }
 
     @Test
     @ClassName("1")
     public void testAnonymousClassExtendingInnerClassConstructor(ClassFile classFile) {
-        MethodParameters_attribute methodParameters = (MethodParameters_attribute) classFile.methods[0].attributes.get("MethodParameters");
-        Assert.checkNonNull(methodParameters, "MethodParameters attribute must be present");
-        MethodParameters_attribute.Entry[] table = methodParameters.method_parameter_table;
-        Assert.check((table[0].flags & Flags.MANDATED) != 0, "mandated flag must be set for implicit parameter");
-        Assert.check((table[1].flags & Flags.MANDATED) == 0, "mandated flag must not be set for explicit parameter");
+        checkParameters(classFile.methods[0], Flags.MANDATED, NO_FLAGS, NO_FLAGS);
+    }
+
+    @Test
+    @ClassName("2")
+    public void testAnonymousClassConstructor(ClassFile classFile) {
+        checkParameters(classFile.methods[0], Flags.MANDATED);
     }
 
     @Test
@@ -133,10 +169,19 @@ public class ImplicitParameters extends TestRunner {
     public void testValueOfInEnum(ClassFile classFile) throws ConstantPoolException {
         for (com.sun.tools.classfile.Method method : classFile.methods) {
             if (method.getName(classFile.constant_pool).equals("valueOf")) {
-                MethodParameters_attribute methodParameters = (MethodParameters_attribute) method.attributes.get("MethodParameters");
-                Assert.checkNonNull(methodParameters, "MethodParameters attribute must be present");
-                MethodParameters_attribute.Entry[] table = methodParameters.method_parameter_table;
-                Assert.check((table[0].flags & Flags.MANDATED) != 0, "mandated flag must be set for implicit parameter");
+                checkParameters(method, Flags.MANDATED);
+                break;
+            }
+        }
+    }
+
+    @Test
+    @ClassName("MyEnum")
+    public void testEnumClassConstructor(ClassFile classFile) throws ConstantPoolException {
+        for (com.sun.tools.classfile.Method method : classFile.methods) {
+            if (method.getName(classFile.constant_pool).equals(ConstantDescs.INIT_NAME)) {
+                checkParameters(method, Flags.SYNTHETIC, Flags.SYNTHETIC, NO_FLAGS, NO_FLAGS);
+                break;
             }
         }
     }
@@ -144,11 +189,24 @@ public class ImplicitParameters extends TestRunner {
     @Test
     @ClassName("MyRecord")
     public void testCompactConstructor(ClassFile classFile) {
-        MethodParameters_attribute methodParameters = (MethodParameters_attribute) classFile.methods[0].attributes.get("MethodParameters");
+        checkParameters(classFile.methods[0], Flags.MANDATED, Flags.MANDATED);
+    }
+
+    private void checkParameters(com.sun.tools.classfile.Method method, int... parametersFlags) {
+        MethodParameters_attribute methodParameters = (MethodParameters_attribute) method.attributes.get("MethodParameters");
         Assert.checkNonNull(methodParameters, "MethodParameters attribute must be present");
         MethodParameters_attribute.Entry[] table = methodParameters.method_parameter_table;
+        Assert.check(table.length == parametersFlags.length, () -> "Expected " + parametersFlags.length
+                + " MethodParameters entries, found " + table.length);
         for (int i = 0; i < methodParameters.method_parameter_table_length; i++) {
-            Assert.check((table[i].flags & Flags.MANDATED) != 0, "mandated flag must be set for implicit parameter");
+            int foundFlags = table[i].flags & CHECKED_FLAGS;
+            int desiredFlags = parametersFlags[i] & CHECKED_FLAGS;
+            Assert.check(foundFlags == desiredFlags, () -> "Expected mandated and synthethic flags to be "
+                    + convertFlags(desiredFlags) + ", found " + convertFlags(foundFlags));
         }
+    }
+
+    private static String convertFlags(int flags) {
+        return ((flags & Flags.MANDATED) == Flags.MANDATED) + " and " + ((flags & Flags.SYNTHETIC) == Flags.SYNTHETIC);
     }
 }

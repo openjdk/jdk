@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8198945 8207018
+ * @bug 8198945 8207018 8207017
  * @summary Invalid RuntimeVisibleTypeAnnotations for annotation on anonymous class type parameter
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -94,11 +94,22 @@ public class AnonymousClassTest {
         new @TA(3) AnonymousClassTest.@TA(4) Inner() {};
     }
 
+    // intance initializer
+    {
+        new @TA(5) Object() {};
+    }
+
+    // static initializer
+    static {
+        new @TA(6) Object() {};
+    }
+
     public static void main(String args[]) throws Exception {
         testAnonymousClassDeclaration();
         testTopLevelMethod();
         testInnerClassMethod();
         testQualifiedSuperType();
+        testInstanceAndClassInit();
     }
 
     static void testAnonymousClassDeclaration() throws Exception {
@@ -163,6 +174,21 @@ public class AnonymousClassTest {
                             .map(a -> annotationDebugString(cf, a))
                             .collect(toSet()));
         }
+    }
+
+    static void testInstanceAndClassInit() throws Exception {
+        ClassFile cf = ClassFile.read(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
+        Method method = findMethod(cf, "<init>");
+        Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
+        assertEquals(
+                Set.of("@LAnonymousClassTest$TA;(5) NEW, offset=4, location=[INNER_TYPE]"),
+                annotations.stream().map(a -> annotationDebugString(cf, a)).collect(toSet()) );
+
+        method = findMethod(cf, "<clinit>");
+        annotations = getRuntimeVisibleTypeAnnotations(method);
+        assertEquals(
+                Set.of("@LAnonymousClassTest$TA;(6) NEW, offset=0, location=[INNER_TYPE]"),
+                annotations.stream().map(a -> annotationDebugString(cf, a)).collect(toSet()) );
     }
 
     // Returns the Method's RuntimeVisibleTypeAnnotations, and asserts that there are no RVTIs

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class Adler32 implements Checksum {
         if (b == null) {
             throw new NullPointerException();
         }
-        Preconditions.checkFromIndexSize(len, off, b.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, b.length, Preconditions.AIOOBE_FORMATTER);
         adler = updateBytes(adler, b, off, len);
     }
 

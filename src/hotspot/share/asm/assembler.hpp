@@ -241,6 +241,19 @@ class AbstractAssembler : public ResourceObj  {
     }
   };
   friend class InstructionMark;
+
+  // count size of instructions which are skipped from inline heuristics
+  class InlineSkippedInstructionsCounter: public StackObj {
+   private:
+    AbstractAssembler* _assm;
+    address _start;
+   public:
+    InlineSkippedInstructionsCounter(AbstractAssembler* assm) : _assm(assm), _start(assm->pc()) {
+    }
+    ~InlineSkippedInstructionsCounter() {
+      _assm->register_skipped(_assm->pc() - _start);
+    }
+  };
 #ifdef ASSERT
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.
@@ -333,9 +346,12 @@ class AbstractAssembler : public ResourceObj  {
   OopRecorder*  oop_recorder() const   { return _oop_recorder; }
   void      set_oop_recorder(OopRecorder* r) { _oop_recorder = r; }
 
+  void   register_skipped(int size) { code_section()->register_skipped(size); }
+
   address       inst_mark() const { return code_section()->mark();       }
   void      set_inst_mark()       {        code_section()->set_mark();   }
   void    clear_inst_mark()       {        code_section()->clear_mark(); }
+
 
   // Constants in code
   void relocate(RelocationHolder const& rspec, int format = 0) {

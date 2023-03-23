@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -185,7 +185,7 @@ int       os::Aix::_extshm = -1;
 static volatile jlong max_real_time = 0;
 
 // Process break recorded at startup.
-static address g_brk_at_startup = NULL;
+static address g_brk_at_startup = nullptr;
 
 // This describes the state of multipage support of the underlying
 // OS. Note that this is of no interest to the outsize world and
@@ -237,7 +237,7 @@ static struct {
 // a specific wish address, e.g. to place the heap in a
 // compressed-oops-friendly way.
 static bool is_close_to_brk(address a) {
-  assert0(g_brk_at_startup != NULL);
+  assert0(g_brk_at_startup != nullptr);
   if (a >= g_brk_at_startup &&
       a < (g_brk_at_startup + MaxExpectedDataSegmentSize)) {
     return true;
@@ -391,8 +391,8 @@ static void query_multipage_support() {
   {
     const int shmid = ::shmget(IPC_PRIVATE, 1, IPC_CREAT | S_IRUSR | S_IWUSR);
     guarantee(shmid != -1, "shmget failed");
-    void* p = ::shmat(shmid, NULL, 0);
-    ::shmctl(shmid, IPC_RMID, NULL);
+    void* p = ::shmat(shmid, nullptr, 0);
+    ::shmctl(shmid, IPC_RMID, nullptr);
     guarantee(p != (void*) -1, "shmat failed");
     g_multipage_support.shmpsize = os::Aix::query_pagesize(p);
     ::shmdt(p);
@@ -461,12 +461,12 @@ static void query_multipage_support() {
       shm_buf.shm_pagesize = pagesize;
       if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
         const int en = errno;
-        ::shmctl(shmid, IPC_RMID, NULL); // As early as possible!
+        ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
         trcVerbose("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
       } else {
         // Attach and double check pageisze.
-        void* p = ::shmat(shmid, NULL, 0);
-        ::shmctl(shmid, IPC_RMID, NULL); // As early as possible!
+        void* p = ::shmat(shmid, nullptr, 0);
+        ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
         guarantee0(p != (void*) -1); // Should always work.
         const size_t real_pagesize = os::Aix::query_pagesize(p);
         if (real_pagesize != pagesize) {
@@ -523,7 +523,7 @@ void os::init_system_properties_values() {
 #endif
 #define EXTENSIONS_DIR  "/lib/ext"
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the trailing null is provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -539,24 +539,24 @@ void os::init_system_properties_values() {
     // Found the full path to libjvm.so.
     // Now cut the path to <java_home>/jre if we can.
     pslash = strrchr(buf, '/');
-    if (pslash != NULL) {
+    if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /libjvm.so.
     }
     pslash = strrchr(buf, '/');
-    if (pslash != NULL) {
+    if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
     Arguments::set_dll_dir(buf);
 
-    if (pslash != NULL) {
+    if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
-      if (pslash != NULL) {
+      if (pslash != nullptr) {
         *pslash = '\0';        // Get rid of /lib.
       }
     }
     Arguments::set_java_home(buf);
     if (!set_boot_path('/', ':')) {
-      vm_exit_during_initialization("Failed setting boot class path.", NULL);
+      vm_exit_during_initialization("Failed setting boot class path.", nullptr);
     }
   }
 
@@ -567,17 +567,18 @@ void os::init_system_properties_values() {
   // Get the user setting of LIBPATH.
   const char *v = ::getenv("LIBPATH");
   const char *v_colon = ":";
-  if (v == NULL) { v = ""; v_colon = ""; }
+  if (v == nullptr) { v = ""; v_colon = ""; }
 
   // Concatenate user and invariant part of ld_library_path.
   // That's +1 for the colon and +1 for the trailing '\0'.
-  char *ld_library_path = NEW_C_HEAP_ARRAY(char, strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1, mtInternal);
-  sprintf(ld_library_path, "%s%s" DEFAULT_LIBPATH, v, v_colon);
+  size_t pathsize = strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1;
+  char *ld_library_path = NEW_C_HEAP_ARRAY(char, pathsize, mtInternal);
+  os::snprintf_checked(ld_library_path, pathsize, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
   FREE_C_HEAP_ARRAY(char, ld_library_path);
 
   // Extensions directories.
-  sprintf(buf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
+  os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -635,7 +636,7 @@ bool os::Aix::get_meminfo(meminfo_t* pmi) {
 
     perfstat_memory_total_t psmt;
     memset (&psmt, '\0', sizeof(psmt));
-    const int rc = libperfstat::perfstat_memory_total(NULL, &psmt, sizeof(psmt), 1);
+    const int rc = libperfstat::perfstat_memory_total(nullptr, &psmt, sizeof(psmt), 1);
     if (rc == -1) {
       trcVerbose("perfstat_memory_total() failed (errno=%d)", errno);
       assert(0, "perfstat_memory_total() failed");
@@ -728,7 +729,7 @@ static void *thread_native_entry(Thread *thread) {
 
   // Note: at this point the thread object may already have deleted itself.
   // Prevent dereferencing it from here on out.
-  thread = NULL;
+  thread = nullptr;
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) kernel_thread_id);
@@ -739,11 +740,11 @@ static void *thread_native_entry(Thread *thread) {
 bool os::create_thread(Thread* thread, ThreadType thr_type,
                        size_t req_stack_size) {
 
-  assert(thread->osthread() == NULL, "caller responsible");
+  assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object.
   OSThread* osthread = new OSThread();
-  if (osthread == NULL) {
+  if (osthread == nullptr) {
     return false;
   }
 
@@ -789,7 +790,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     log_warning(os, thread)("The %sthread stack size specified is invalid: " SIZE_FORMAT "k",
                             (thr_type == compiler_thread) ? "compiler " : ((thr_type == java_thread) ? "" : "VM "),
                             stack_size / K);
-    thread->set_osthread(NULL);
+    thread->set_osthread(nullptr);
     delete osthread;
     return false;
   }
@@ -830,7 +831,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   if (ret != 0) {
     // Need to clean up stuff we've allocated so far.
-    thread->set_osthread(NULL);
+    thread->set_osthread(nullptr);
     delete osthread;
     return false;
   }
@@ -858,7 +859,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   // Allocate the OSThread object
   OSThread* osthread = new OSThread();
 
-  if (osthread == NULL) {
+  if (osthread == nullptr) {
     return false;
   }
 
@@ -905,7 +906,7 @@ void os::pd_start_thread(Thread* thread) {
 
 // Free OS resources related to the OSThread
 void os::free_thread(OSThread* osthread) {
-  assert(osthread != NULL, "osthread not set");
+  assert(osthread != nullptr, "osthread not set");
 
   // We are told to free resources of the argument thread,
   // but we can only really operate on the current thread.
@@ -914,7 +915,7 @@ void os::free_thread(OSThread* osthread) {
 
   // Restore caller's signal mask
   sigset_t sigmask = osthread->caller_sigmask();
-  pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
+  pthread_sigmask(SIG_SETMASK, &sigmask, nullptr);
 
   delete osthread;
 }
@@ -1008,9 +1009,9 @@ bool os::address_is_in_vm(address addr) {
   // Input could be a real pc or a function pointer literal. The latter
   // would be a function descriptor residing in the data segment of a module.
   loaded_module_t lm;
-  if (LoadedLibraries::find_for_text_address(addr, &lm) != NULL) {
+  if (LoadedLibraries::find_for_text_address(addr, &lm)) {
     return lm.is_in_vm;
-  } else if (LoadedLibraries::find_for_data_address(addr, &lm) != NULL) {
+  } else if (LoadedLibraries::find_for_data_address(addr, &lm)) {
     return lm.is_in_vm;
   } else {
     return false;
@@ -1024,22 +1025,22 @@ bool os::address_is_in_vm(address addr) {
 // If the input is a valid AIX function descriptor, it is resolved to the
 //   code entry point.
 // If the input is neither a valid function descriptor nor a valid code pointer,
-//   NULL is returned.
+//   null is returned.
 static address resolve_function_descriptor_to_code_pointer(address p) {
 
-  if (LoadedLibraries::find_for_text_address(p, NULL) != NULL) {
+  if (LoadedLibraries::find_for_text_address(p, nullptr)) {
     // It is a real code pointer.
     return p;
-  } else if (LoadedLibraries::find_for_data_address(p, NULL) != NULL) {
+  } else if (LoadedLibraries::find_for_data_address(p, nullptr)) {
     // Pointer to data segment, potential function descriptor.
     address code_entry = (address)(((FunctionDescriptor*)p)->entry());
-    if (LoadedLibraries::find_for_text_address(code_entry, NULL) != NULL) {
+    if (LoadedLibraries::find_for_text_address(code_entry, nullptr)) {
       // It is a function descriptor.
       return code_entry;
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 bool os::dll_address_to_function_name(address addr, char *buf,
@@ -1049,7 +1050,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     *offset = -1;
   }
   // Buf is not optional, but offset is optional.
-  assert(buf != NULL, "sanity check");
+  assert(buf != nullptr, "sanity check");
   buf[0] = '\0';
 
   // Resolve function ptr literals first.
@@ -1058,7 +1059,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     return false;
   }
 
-  return AixSymbols::get_function_name(addr, buf, buflen, offset, NULL, demangle);
+  return AixSymbols::get_function_name(addr, buf, buflen, offset, nullptr, demangle);
 }
 
 bool os::dll_address_to_library_name(address addr, char* buf,
@@ -1067,7 +1068,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
     *offset = -1;
   }
   // Buf is not optional, but offset is optional.
-  assert(buf != NULL, "sanity check");
+  assert(buf != nullptr, "sanity check");
   buf[0] = '\0';
 
   // Resolve function ptr literals first.
@@ -1092,13 +1093,13 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   if (!filename || strlen(filename) == 0) {
     ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
-    return NULL;
+    return nullptr;
   }
 
   // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
   void * result= ::dlopen(filename, RTLD_LAZY);
-  if (result != NULL) {
-    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
+  if (result != nullptr) {
+    Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
@@ -1106,17 +1107,17 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   } else {
     // error analysis when dlopen fails
     const char* error_report = ::dlerror();
-    if (error_report == NULL) {
+    if (error_report == nullptr) {
       error_report = "dlerror returned no error description";
     }
-    if (ebuf != NULL && ebuflen > 0) {
+    if (ebuf != nullptr && ebuflen > 0) {
       snprintf(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
                filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
-    Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
+    Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
   }
-  return NULL;
+  return nullptr;
 }
 
 void os::print_dll_info(outputStream *st) {
@@ -1329,7 +1330,7 @@ void os::jvm_path(char *buf, jint buflen) {
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
   char* rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
-  assert(rp != NULL, "error in realpath(): maybe the 'path' argument is too long?");
+  assert(rp != nullptr, "error in realpath(): maybe the 'path' argument is too long?");
 
   if (Arguments::sun_java_launcher_is_altjvm()) {
     // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
@@ -1348,19 +1349,19 @@ void os::jvm_path(char *buf, jint buflen) {
     if (strncmp(p, "/jre/lib/", 9) != 0) {
       // Look for JAVA_HOME in the environment.
       char* java_home_var = ::getenv("JAVA_HOME");
-      if (java_home_var != NULL && java_home_var[0] != 0) {
+      if (java_home_var != nullptr && java_home_var[0] != 0) {
         char* jrelib_p;
         int len;
 
         // Check the current module name "libjvm.so".
         p = strrchr(buf, '/');
-        if (p == NULL) {
+        if (p == nullptr) {
           return;
         }
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
         rp = os::Posix::realpath(java_home_var, buf, buflen);
-        if (rp == NULL) {
+        if (rp == nullptr) {
           return;
         }
 
@@ -1381,7 +1382,7 @@ void os::jvm_path(char *buf, jint buflen) {
         } else {
           // Go back to path of .so
           rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
-          if (rp == NULL) {
+          if (rp == nullptr) {
             return;
           }
         }
@@ -1466,7 +1467,7 @@ static vmembk_t* vmembk_find(char* addr) {
       return p;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static void vmembk_remove(vmembk_t* p0) {
@@ -1492,9 +1493,9 @@ static void vmembk_print_on(outputStream* os) {
 }
 
 // Reserve and attach a section of System V memory.
-// If <requested_addr> is not NULL, function will attempt to attach the memory at the given
+// If <requested_addr> is not null, function will attempt to attach the memory at the given
 // address. Failing that, it will attach the memory anywhere.
-// If <requested_addr> is NULL, function will attach the memory anywhere.
+// If <requested_addr> is null, function will attach the memory anywhere.
 static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   trcVerbose("reserve_shmated_memory " UINTX_FORMAT " bytes, wishaddress "
@@ -1502,11 +1503,11 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
-  if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
+  if (requested_addr != nullptr && is_close_to_brk((address)requested_addr)) {
     trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
     // Since we treat an attach to the wrong address as an error later anyway,
-    // we return NULL here
-    return NULL;
+    // we return null here
+    return nullptr;
   }
 
   // For old AS/400's (V5R4 and older) we should not even be here - System V shared memory is not
@@ -1522,7 +1523,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
   if (shmid == -1) {
     trcVerbose("shmget(.., " UINTX_FORMAT ", ..) failed (errno: %d).", size, errno);
-    return NULL;
+    return nullptr;
   }
 
   // Important note:
@@ -1549,7 +1550,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   const int errno_shmat = errno;
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
-  if (::shmctl(shmid, IPC_RMID, NULL) == -1) {
+  if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
     trcVerbose("shmctl(%u, IPC_RMID) failed (%d)\n", shmid, errno);
     assert(false, "failed to remove shared memory segment!");
   }
@@ -1557,7 +1558,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // Handle shmat error. If we failed to attach, just return.
   if (addr == (char*)-1) {
     trcVerbose("Failed to attach segment at " PTR_FORMAT " (%d).", p2i(requested_addr), errno_shmat);
-    return NULL;
+    return nullptr;
   }
 
   // Just for info: query the real page size. In case setting the page size did not
@@ -1571,7 +1572,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
     trcVerbose("shm-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes, " UINTX_FORMAT " %s pages)",
       p2i(addr), p2i(addr + size - 1), size, size/real_pagesize, describe_pagesize(real_pagesize));
   } else {
-    if (requested_addr != NULL) {
+    if (requested_addr != nullptr) {
       trcVerbose("failed to shm-allocate " UINTX_FORMAT " bytes at with address " PTR_FORMAT ".", size, p2i(requested_addr));
     } else {
       trcVerbose("failed to shm-allocate " UINTX_FORMAT " bytes at any address.", size);
@@ -1626,16 +1627,16 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
 
   if (requested_addr && !is_aligned_to(requested_addr, os::vm_page_size()) != 0) {
     trcVerbose("Wish address " PTR_FORMAT " not aligned to page boundary.", p2i(requested_addr));
-    return NULL;
+    return nullptr;
   }
 
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
-  if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
+  if (requested_addr != nullptr && is_close_to_brk((address)requested_addr)) {
     trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
     // Since we treat an attach to the wrong address as an error later anyway,
-    // we return NULL here
-    return NULL;
+    // we return null here
+    return nullptr;
   }
 
   // In 64K mode, we lie and claim the global page size (os::vm_page_size()) is 64K
@@ -1665,7 +1666,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   // SPEC1170 mode active: behaviour like POSIX, MAP_FIXED will clobber existing mappings.
   // SPEC1170 mode not active: behaviour, unlike POSIX, is that no existing mappings will
   // get clobbered.
-  if (requested_addr != NULL) {
+  if (requested_addr != nullptr) {
     if (!os::Aix::xpg_sus_mode()) {  // not SPEC1170 Behaviour
       flags |= MAP_FIXED;
     }
@@ -1676,12 +1677,12 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
 
   if (addr == MAP_FAILED) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
-    return NULL;
-  } else if (requested_addr != NULL && addr != requested_addr) {
+    return nullptr;
+  } else if (requested_addr != nullptr && addr != requested_addr) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
                p2i(requested_addr), size, p2i(addr));
     ::munmap(addr, extra_size);
-    return NULL;
+    return nullptr;
   }
 
   // Handle alignment.
@@ -1760,7 +1761,7 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
                                   const char* mesg) {
-  assert(mesg != NULL, "mesg must be specified");
+  assert(mesg != nullptr, "mesg must be specified");
   if (!pd_commit_memory(addr, size, exec)) {
     // Add extra info in product mode for vm_exit_out_of_memory():
     PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
@@ -1771,10 +1772,10 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 
   assert(is_aligned_to(addr, os::vm_page_size()),
-    "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     p2i(addr), os::vm_page_size());
   assert(is_aligned_to(size, os::vm_page_size()),
-    "size " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "size " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     size, os::vm_page_size());
 
   vmembk_t* const vmi = vmembk_find(addr);
@@ -1806,10 +1807,10 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
-    "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     p2i(addr), os::vm_page_size());
   assert(is_aligned_to(size, os::vm_page_size()),
-    "size " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "size " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     size, os::vm_page_size());
 
   // Dynamically do different things for mmap/shmat.
@@ -1872,7 +1873,7 @@ int os::numa_get_group_id_for_address(const void* address) {
   return 0;
 }
 
-bool os::get_page_info(char *start, page_info* info) {
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
 }
 
@@ -1888,12 +1889,12 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
   if (os::vm_page_size() == 4*K) {
-    return reserve_mmaped_memory(bytes, NULL /* requested_addr */);
+    return reserve_mmaped_memory(bytes, nullptr /* requested_addr */);
   } else {
     if (bytes >= Use64KPagesThreshold) {
-      return reserve_shmated_memory(bytes, NULL /* requested_addr */);
+      return reserve_shmated_memory(bytes, nullptr /* requested_addr */);
     } else {
-      return reserve_mmaped_memory(bytes, NULL /* requested_addr */);
+      return reserve_mmaped_memory(bytes, nullptr /* requested_addr */);
     }
   }
 }
@@ -1968,7 +1969,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
 
-  Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   bool rc = ::mprotect(addr, size, prot) == 0 ? true : false;
 
   if (!rc) {
@@ -2007,7 +2008,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
         // A valid strategy is just to try again. This usually works. :-/
 
         ::usleep(1000);
-        Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+        Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
         if (::mprotect(addr, size, prot) == 0) {
           const bool read_protected_2 =
             (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
@@ -2057,7 +2058,7 @@ void os::large_page_init() {
 
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on AIX.");
-  return NULL;
+  return nullptr;
 }
 
 bool os::pd_release_memory_special(char* base, size_t bytes) {
@@ -2081,14 +2082,14 @@ bool os::can_execute_large_page_memory() {
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
-  char* result = NULL;
+  char* result = nullptr;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
   result = reserve_mmaped_memory(bytes, requested_addr);
 
-  if (result != NULL) {
-    if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
+  if (result != nullptr) {
+    if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == nullptr) {
       vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
     }
   }
@@ -2098,7 +2099,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
-  char* addr = NULL;
+  char* addr = nullptr;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
@@ -2214,7 +2215,7 @@ extern "C" {
   }
 }
 
-static void set_page_size(int page_size) {
+static void set_page_size(size_t page_size) {
   OSInfo::set_vm_page_size(page_size);
   OSInfo::set_vm_allocation_granularity(page_size);
 }
@@ -2428,8 +2429,8 @@ bool os::find(address addr, outputStream* st) {
   st->print(PTR_FORMAT ": ", addr);
 
   loaded_module_t lm;
-  if (LoadedLibraries::find_for_text_address(addr, &lm) != NULL ||
-      LoadedLibraries::find_for_data_address(addr, &lm) != NULL) {
+  if (LoadedLibraries::find_for_text_address(addr, &lm) ||
+      LoadedLibraries::find_for_data_address(addr, &lm)) {
     st->print_cr("%s", lm.path);
     return true;
   }
@@ -2560,7 +2561,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     prot |= PROT_EXEC;
   }
 
-  if (addr != NULL) {
+  if (addr != nullptr) {
     flags |= MAP_FIXED;
   }
 
@@ -2572,7 +2573,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
   char* mapped_address = (char*)::mmap(addr, (size_t)bytes, prot, flags,
                                      fd, file_offset);
   if (mapped_address == MAP_FAILED) {
-    return NULL;
+    return nullptr;
   }
   return mapped_address;
 }
@@ -2930,8 +2931,8 @@ size_t os::current_stack_size() {
 int os::get_core_path(char* buffer, size_t bufferSize) {
   const char* p = get_current_directory(buffer, bufferSize);
 
-  if (p == NULL) {
-    assert(p != NULL, "failed to get current directory");
+  if (p == nullptr) {
+    assert(p != nullptr, "failed to get current directory");
     return 0;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,10 @@
  *          headers directly when connecting with a server over SSL, and
  *          it verifies that the client honor the jdk.http.auth.*.disabledSchemes
  *          net properties.
- * @library /test/lib http2/server
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer DigestEchoClient
  *        ReferenceTracker ProxyAuthDisabledSchemesSSL
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=Basic,Digest
  *          -Djdk.http.auth.tunneling.disabledSchemes=Digest,Basic

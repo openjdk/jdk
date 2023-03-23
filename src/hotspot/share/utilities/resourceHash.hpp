@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include "utilities/numberSeq.hpp"
 #include "utilities/tableStatistics.hpp"
 
+#include <type_traits>
+
 template<typename K, typename V>
 class ResourceHashtableNode : public AnyObj {
 public:
@@ -39,11 +41,11 @@ public:
   ResourceHashtableNode* _next;
 
   ResourceHashtableNode(unsigned hash, K const& key, V const& value) :
-    _hash(hash), _key(key), _value(value), _next(NULL) {}
+    _hash(hash), _key(key), _value(value), _next(nullptr) {}
 
   // Create a node with a default-constructed value.
   ResourceHashtableNode(unsigned hash, K const& key) :
-    _hash(hash), _key(key), _value(), _next(NULL) {}
+    _hash(hash), _key(key), _value(), _next(nullptr) {}
 };
 
 template<
@@ -55,6 +57,10 @@ template<
     bool     (*EQUALS)(K const&, K const&)
     >
 class ResourceHashtableBase : public STORAGE {
+  static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<K>::value,
+                "Destructor for K is only called with C_HEAP");
+  static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<V>::value,
+                "Destructor for V is only called with C_HEAP");
   using Node = ResourceHashtableNode<K, V>;
  private:
   int _number_of_entries;
@@ -74,7 +80,7 @@ class ResourceHashtableBase : public STORAGE {
   Node** lookup_node(unsigned hash, K const& key) {
     unsigned index = hash % table_size();
     Node** ptr = bucket_at(index);
-    while (*ptr != NULL) {
+    while (*ptr != nullptr) {
       Node* node = *ptr;
       if (node->_hash == hash && EQUALS(key, node->_key)) {
         break;
@@ -102,7 +108,7 @@ class ResourceHashtableBase : public STORAGE {
       const unsigned sz = table_size();
       while (bucket < bucket_at(sz)) {
         Node* node = *bucket;
-        while (node != NULL) {
+        while (node != nullptr) {
           Node* cur = node;
           node = node->_next;
           delete cur;
@@ -117,16 +123,16 @@ class ResourceHashtableBase : public STORAGE {
   int number_of_entries() const { return _number_of_entries; }
 
   bool contains(K const& key) const {
-    return get(key) != NULL;
+    return get(key) != nullptr;
   }
 
   V* get(K const& key) const {
     unsigned hv = HASH(key);
     Node const** ptr = lookup_node(hv, key);
-    if (*ptr != NULL) {
+    if (*ptr != nullptr) {
       return const_cast<V*>(&(*ptr)->_value);
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -138,7 +144,7 @@ class ResourceHashtableBase : public STORAGE {
   bool put(K const& key, V const& value) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr != NULL) {
+    if (*ptr != nullptr) {
       (*ptr)->_value = value;
       return false;
     } else {
@@ -160,7 +166,7 @@ class ResourceHashtableBase : public STORAGE {
   V* put_if_absent(K const& key, bool* p_created) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr == NULL) {
+    if (*ptr == nullptr) {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         *ptr = new (MEM_TYPE) Node(hv, key);
       } else {
@@ -182,7 +188,7 @@ class ResourceHashtableBase : public STORAGE {
   V* put_if_absent(K const& key, V const& value, bool* p_created) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr == NULL) {
+    if (*ptr == nullptr) {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         *ptr = new (MEM_TYPE) Node(hv, key, value);
       } else {
@@ -202,7 +208,7 @@ class ResourceHashtableBase : public STORAGE {
     Node** ptr = lookup_node(hv, key);
 
     Node* node = *ptr;
-    if (node != NULL) {
+    if (node != nullptr) {
       *ptr = node->_next;
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         delete node;
@@ -228,12 +234,15 @@ class ResourceHashtableBase : public STORAGE {
   void iterate(Function function) const { // lambda enabled API
     Node* const* bucket = table();
     const unsigned sz = table_size();
-    while (bucket < bucket_at(sz)) {
+    int cnt = _number_of_entries;
+
+    while (cnt > 0 && bucket < bucket_at(sz)) {
       Node* node = *bucket;
-      while (node != NULL) {
+      while (node != nullptr) {
         bool cont = function(node->_key, node->_value);
         if (!cont) { return; }
         node = node->_next;
+        --cnt;
       }
       ++bucket;
     }
@@ -257,7 +266,7 @@ class ResourceHashtableBase : public STORAGE {
     const unsigned sz = table_size();
     for (unsigned index = 0; index < sz; index++) {
       Node** ptr = bucket_at(index);
-      while (*ptr != NULL) {
+      while (*ptr != nullptr) {
         Node* node = *ptr;
         // do_entry must clean up the key and value in Node.
         bool clean = iter->do_entry(node->_key, node->_value);
@@ -283,7 +292,7 @@ class ResourceHashtableBase : public STORAGE {
     while (bucket < bucket_at(sz)) {
       Node* node = *bucket;
       int count = 0;
-      while (node != NULL) {
+      while (node != nullptr) {
         literal_bytes += size_function(node->_key, node->_value);
         count++;
         node = node->_next;
@@ -294,6 +303,12 @@ class ResourceHashtableBase : public STORAGE {
     return TableStatistics(summary, literal_bytes, sizeof(Node*), sizeof(Node));
   }
 
+  // This method calculates the "shallow" size. If you want the recursive size, use statistics_calculate.
+  size_t mem_size() const {
+    return sizeof(*this) +
+      table_size() * sizeof(Node*) +
+      number_of_entries() * sizeof(Node);
+  }
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>

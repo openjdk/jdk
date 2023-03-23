@@ -24,71 +24,60 @@ package com.sun.org.apache.bcel.internal.classfile;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.stream.Stream;
 
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * This class represents a BootstrapMethods attribute.
  *
- * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.23">
- * The class File Format : The BootstrapMethods Attribute</a>
+ * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.23"> The class File Format :
+ *      The BootstrapMethods Attribute</a>
  * @since 6.0
  */
-public class BootstrapMethods extends Attribute {
+public class BootstrapMethods extends Attribute implements Iterable<BootstrapMethod> {
 
-    private BootstrapMethod[] bootstrapMethods;  // TODO this could be made final (setter is not used)
+    private BootstrapMethod[] bootstrapMethods; // TODO this could be made final (setter is not used)
 
     /**
-     * Initialize from another object. Note that both objects use the same
-     * references (shallow copy). Use clone() for a physical copy.
+     * Initialize from another object. Note that both objects use the same references (shallow copy). Use clone() for a
+     * physical copy.
+     *
+     * @param c Source to copy.
      */
     public BootstrapMethods(final BootstrapMethods c) {
         this(c.getNameIndex(), c.getLength(), c.getBootstrapMethods(), c.getConstantPool());
     }
 
-
     /**
-     * @param name_index Index in constant pool to CONSTANT_Utf8
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8
      * @param length Content length in bytes
      * @param bootstrapMethods array of bootstrap methods
-     * @param constant_pool Array of constants
+     * @param constantPool Array of constants
      */
-    public BootstrapMethods(final int name_index, final int length, final BootstrapMethod[] bootstrapMethods, final ConstantPool constant_pool) {
-        super(Const.ATTR_BOOTSTRAP_METHODS, name_index, length, constant_pool);
+    public BootstrapMethods(final int nameIndex, final int length, final BootstrapMethod[] bootstrapMethods, final ConstantPool constantPool) {
+        super(Const.ATTR_BOOTSTRAP_METHODS, nameIndex, length, constantPool);
         this.bootstrapMethods = bootstrapMethods;
     }
 
     /**
      * Construct object from Input stream.
      *
-     * @param name_index Index in constant pool to CONSTANT_Utf8
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8
      * @param length Content length in bytes
      * @param input Input stream
-     * @param constant_pool Array of constants
-     * @throws IOException
+     * @param constantPool Array of constants
+     * @throws IOException if an I/O error occurs.
      */
-    BootstrapMethods(final int name_index, final int length, final DataInput input, final ConstantPool constant_pool) throws IOException {
-        this(name_index, length, (BootstrapMethod[]) null, constant_pool);
+    BootstrapMethods(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        this(nameIndex, length, (BootstrapMethod[]) null, constantPool);
 
-        final int num_bootstrap_methods = input.readUnsignedShort();
-        bootstrapMethods = new BootstrapMethod[num_bootstrap_methods];
-        for (int i = 0; i < num_bootstrap_methods; i++) {
+        final int numBootstrapMethods = input.readUnsignedShort();
+        bootstrapMethods = new BootstrapMethod[numBootstrapMethods];
+        for (int i = 0; i < numBootstrapMethods; i++) {
             bootstrapMethods[i] = new BootstrapMethod(input);
         }
-    }
-
-    /**
-     * @return array of bootstrap method "records"
-     */
-    public final BootstrapMethod[] getBootstrapMethods() {
-        return bootstrapMethods;
-    }
-
-    /**
-     * @param bootstrapMethods the array of bootstrap methods
-     */
-    public final void setBootstrapMethods(final BootstrapMethod[] bootstrapMethods) {
-        this.bootstrapMethods = bootstrapMethods;
     }
 
     /**
@@ -103,14 +92,14 @@ public class BootstrapMethods extends Attribute {
      * @return deep copy of this attribute
      */
     @Override
-    public BootstrapMethods copy(final ConstantPool _constant_pool) {
+    public BootstrapMethods copy(final ConstantPool constantPool) {
         final BootstrapMethods c = (BootstrapMethods) clone();
         c.bootstrapMethods = new BootstrapMethod[bootstrapMethods.length];
 
         for (int i = 0; i < bootstrapMethods.length; i++) {
             c.bootstrapMethods[i] = bootstrapMethods[i].copy();
         }
-        c.setConstantPool(_constant_pool);
+        c.setConstantPool(constantPool);
         return c;
     }
 
@@ -118,16 +107,35 @@ public class BootstrapMethods extends Attribute {
      * Dump bootstrap methods attribute to file stream in binary format.
      *
      * @param file Output file stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     @Override
     public final void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
 
         file.writeShort(bootstrapMethods.length);
-        for (final BootstrapMethod bootstrap_method : bootstrapMethods) {
-            bootstrap_method.dump(file);
+        for (final BootstrapMethod bootstrapMethod : bootstrapMethods) {
+            bootstrapMethod.dump(file);
         }
+    }
+
+    /**
+     * @return array of bootstrap method "records"
+     */
+    public final BootstrapMethod[] getBootstrapMethods() {
+        return bootstrapMethods;
+    }
+
+    @Override
+    public Iterator<BootstrapMethod> iterator() {
+        return Stream.of(bootstrapMethods).iterator();
+    }
+
+    /**
+     * @param bootstrapMethods the array of bootstrap methods
+     */
+    public final void setBootstrapMethods(final BootstrapMethod[] bootstrapMethods) {
+        this.bootstrapMethods = bootstrapMethods;
     }
 
     /**
@@ -143,11 +151,11 @@ public class BootstrapMethods extends Attribute {
             buf.append("\n");
             final int start = buf.length();
             buf.append("  ").append(i).append(": ");
-            final int indent_count = buf.length() - start;
-            final String[] lines = (bootstrapMethods[i].toString(super.getConstantPool())).split("\\r?\\n");
+            final int indentCount = buf.length() - start;
+            final String[] lines = bootstrapMethods[i].toString(super.getConstantPool()).split("\\r?\\n");
             buf.append(lines[0]);
             for (int j = 1; j < lines.length; j++) {
-                buf.append("\n").append("          ".substring(0,indent_count)).append(lines[j]);
+                buf.append("\n").append("          ", 0, indentCount).append(lines[j]);
             }
         }
         return buf.toString();
