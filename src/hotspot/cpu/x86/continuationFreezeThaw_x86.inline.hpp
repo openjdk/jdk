@@ -225,7 +225,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     // ContinuationHelper::InterpretedFrame::frame_bottom
     intptr_t offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
     assert((int)offset == frame::sender_sp_offset + locals - 1, "");
-    // set relativized locals
+    // copy relativized locals from the heap frame
     *f.addr_at(frame::interpreter_frame_locals_offset) = offset;
     return f;
   } else {
