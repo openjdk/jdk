@@ -214,7 +214,8 @@ public class BufferedInputStream extends FilterInputStream {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
         this.size = size;
-        // use monitors when BufferedInputStream is sub-classed
+        // keep using monitors and initializing buf when BufferedInputStream is sub-classed
+        // for compatibility
         if (getClass() == BufferedInputStream.class) {
             lock = InternalLock.newLockOrNull();
             buf = EMPTY;
