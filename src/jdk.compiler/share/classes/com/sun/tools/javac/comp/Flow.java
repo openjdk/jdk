@@ -2856,6 +2856,11 @@ public class Flow {
             int nextadrPrev = nextadr;
             ListBuffer<PendingExit> prevPending = pendingExits;
             try {
+                // JLS 16.1.10: No rule allows V to be definitely unassigned before a lambda
+                // body. This is by design: a variable that was definitely unassigned before the
+                // lambda body may end up being assigned to later on, so we cannot conclude that
+                // the variable will be unassigned when the body is executed.
+                uninits.excludeFrom(firstadr);
                 returnadr = nextadr;
                 pendingExits = new ListBuffer<>();
                 for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
