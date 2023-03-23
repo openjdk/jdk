@@ -257,9 +257,7 @@ public:
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
   // Calculate the minimum number of old regions we'll add to the CSet
-  // during a single mixed GC given the initial number of regions selected during
-  // marking.
-  uint calc_min_old_cset_length(uint num_marked_regions) const;
+  uint calc_min_old_cset_length(uint num_candidate_regions) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
