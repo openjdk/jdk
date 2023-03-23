@@ -67,6 +67,8 @@ public class BufferedInputStream extends FilterInputStream {
     private static final long BUF_OFFSET
             = U.objectFieldOffset(BufferedInputStream.class, "buf");
 
+    private static final byte[] EMPTY = new byte[0];
+
     // initialized to null when BufferedInputStream is sub-classed
     private final InternalLock lock;
 
@@ -173,7 +175,7 @@ public class BufferedInputStream extends FilterInputStream {
         byte[] buffer = buf;
         if (buffer == null)
             throw new IOException("Stream closed");
-        if (buffer.length == 0) {
+        if (buffer == EMPTY) {
             buf = buffer = new byte[size];
         }
         return buffer;
@@ -208,7 +210,7 @@ public class BufferedInputStream extends FilterInputStream {
         if (size <= 0) {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
-        buf = new byte[0];
+        buf = getClass() == BufferedInputStream.class ? EMPTY : new byte[size];
         this.size = size;
         // use monitors when BufferedInputStream is sub-classed
         if (getClass() == BufferedInputStream.class) {
