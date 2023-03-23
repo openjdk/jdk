@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,25 +193,24 @@ public class FileChannelImpl
         threads.signalAndWait();
 
         if (parent != null) {
-
+            //
             // Close the fd via the parent stream's close method.  The parent
             // will reinvoke our close method, which is defined in the
             // superclass AbstractInterruptibleChannel, but the isOpen logic in
             // that method will prevent this method from being reinvoked.
             //
             ((java.io.Closeable)parent).close();
-        } else if (closer != null) {
+        } else { // parent == null hence closer != null
+            //
             // Perform the cleaning action so it is not redone when
             // this channel becomes phantom reachable.
+            //
             try {
                 closer.clean();
             } catch (UncheckedIOException uioe) {
                 throw uioe.getCause();
             }
-        } else {
-            fdAccess.close(fd);
         }
-
     }
 
     public int read(ByteBuffer dst) throws IOException {
