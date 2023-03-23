@@ -352,7 +352,7 @@ public class HtmlOptions extends BaseOptions {
 
                 new Hidden(resources, "--no-external-specs-page") {
                     @Override
-                    public boolean process(String opt,  List<String> args) {
+                    public boolean process(String opt, List<String> args) {
                         noExternalSpecsPage = true;
                         return true;
                     }
