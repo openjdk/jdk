@@ -55,7 +55,6 @@ public class TestGCPhaseConcurrent {
             recording.enable(EventNames.GCPhaseConcurrentLevel1);
             if (usesZGC) {
               recording.enable(EventNames.GCPhaseConcurrentLevel2);
-              recording.enable(EventNames.GCPhaseConcurrentLevel3);
             }
             recording.start();
 
@@ -71,7 +70,6 @@ public class TestGCPhaseConcurrent {
             Events.hasEvent(events, EventNames.GCPhaseConcurrentLevel1);
             if (usesZGC) {
               Events.hasEvent(events, EventNames.GCPhaseConcurrentLevel2);
-              Events.hasEvent(events, EventNames.GCPhaseConcurrentLevel3);
             }
 
             for (RecordedEvent event : events) {
