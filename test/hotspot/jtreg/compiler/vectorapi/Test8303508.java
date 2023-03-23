@@ -25,10 +25,7 @@ package compiler.vectorapi;
 
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.ShortVector;
-import jdk.incubator.vector.Vector;
 import jdk.incubator.vector.VectorSpecies;
-
-import java.util.Arrays;
 
 /*
  * @test
