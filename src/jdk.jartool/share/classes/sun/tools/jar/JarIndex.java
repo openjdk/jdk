@@ -41,11 +41,11 @@ import java.util.zip.*;
  * information to determine where to fetch an extension class or
  * resource from.
  *
- * @author  Zhenghua Li
- * @since   1.3
+ * @author Zhenghua Li
+ * @since 1.3
  */
 
-public class JarIndex {
+class JarIndex {
 
     /**
      * The hash map that maintains mappings from
