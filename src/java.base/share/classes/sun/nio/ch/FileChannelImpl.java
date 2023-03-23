@@ -25,6 +25,7 @@
 
 package sun.nio.ch;
 
+import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -79,7 +80,7 @@ public class FileChannelImpl
     private final boolean readable;
 
     // Required to prevent finalization of creating stream (immutable)
-    private final Object parent;
+    private final Closeable parent;
 
     // The path of the referenced file
     // (null if the parent stream is created with a file descriptor)
@@ -121,7 +122,7 @@ public class FileChannelImpl
     }
 
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
-                            boolean writable, boolean direct, Object parent)
+                            boolean writable, boolean direct, Closeable parent)
     {
         this.fd = fd;
         this.path = path;
@@ -149,7 +150,7 @@ public class FileChannelImpl
     // and RandomAccessFile::getChannel
     public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
-                                   boolean direct, Object parent)
+                                   boolean direct, Closeable parent)
     {
         return new FileChannelImpl(fd, path, readable, writable, direct, parent);
     }
@@ -199,7 +200,7 @@ public class FileChannelImpl
             // superclass AbstractInterruptibleChannel, but the isOpen logic in
             // that method will prevent this method from being reinvoked.
             //
-            ((java.io.Closeable)parent).close();
+            parent.close();
         } else { // parent == null hence closer != null
             //
             // Perform the cleaning action so it is not redone when
