@@ -863,10 +863,9 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     ResourceMark rm(THREAD);
     // Set containing interface names
     ResourceHashtable<Symbol*, int>* interface_names = new ResourceHashtable<Symbol*, int>();
-    Symbol* interface_name;
     for (index = 0; index < itfs_len; index++) {
       const InstanceKlass* const k = _local_interfaces->at(index);
-      interface_name = k->name();
+      Symbol* interface_name = k->name();
       // If no duplicates, add (name, nullptr) in hashtable interface_names.
       if (!interface_names->put(interface_name, 0)) {
         classfile_parse_error("Duplicate interface name \"%s\" in class file %s",
@@ -1592,9 +1591,8 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     ResourceMark rm(THREAD);
     // Set containing name-signature pairs
     NameSigHashtable* names_and_sigs = new NameSigHashtable();
-    NameSigHash name_and_sig;
     for (int i = 0; i < _temp_field_info->length(); i++) {
-      name_and_sig = NameSigHash(_temp_field_info->adr_at(i)->name(_cp),
+      NameSigHash name_and_sig = NameSigHash(_temp_field_info->adr_at(i)->name(_cp),
                                  _temp_field_info->adr_at(i)->signature(_cp));
       // If no duplicates, add name/signature in hashtable names_and_sigs.
       if(!names_and_sigs->put(name_and_sig, 0)) {
@@ -2832,10 +2830,9 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
       ResourceMark rm(THREAD);
       // Set containing name-signature pairs
       NameSigHashtable* names_and_sigs = new NameSigHashtable();
-      NameSigHash name_and_sig;
       for (int i = 0; i < length; i++) {
         const Method* const m = _methods->at(i);
-        name_and_sig = NameSigHash(m->name(), m->signature());
+        NameSigHash name_and_sig = NameSigHash(m->name(), m->signature());
         // If no duplicates, add name/signature in hashtable names_and_sigs.
         if(!names_and_sigs->put(name_and_sig, 0)) {
           classfile_parse_error("Duplicate method name \"%s\" with signature \"%s\" in class file %s",
