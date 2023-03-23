@@ -324,8 +324,7 @@ module java.base {
         java.desktop,
         java.security.jgss,
         jdk.crypto.ec,
-        jdk.incubator.concurrent,
-        jdk.jartool;
+        jdk.incubator.concurrent;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
