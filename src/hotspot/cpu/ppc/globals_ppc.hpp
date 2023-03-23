@@ -36,11 +36,7 @@ define_pd_global(bool, ImplicitNullChecks,    true);  // Generate code for impli
 define_pd_global(bool, TrapBasedNullChecks,   true);
 define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap NULLs passed to check cast.
 
-#if COMPILER2_OR_JVMCI
-define_pd_global(bool, MoveIntrinsicStubsGen, true);
-#else
-define_pd_global(bool, MoveIntrinsicStubsGen, false);
-#endif
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)

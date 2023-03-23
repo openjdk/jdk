@@ -366,8 +366,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseSignumIntrinsic, false, DIAGNOSTIC,                      \
           "Enables intrinsification of Math.signum")                        \
                                                                             \
-  product_pd(bool, MoveIntrinsicStubsGen, DIAGNOSTIC,                       \
-          "Move Compiler Intrinsics stubs generation to compiler thread")   \
+  product_pd(bool, DelayCompilerStubsGeneration, DIAGNOSTIC,                \
+          "Use Compiler thread for compiler's stubs generation")            \
                                                                             \
   product(ccstrlist, DisableIntrinsic, "", DIAGNOSTIC,                      \
          "do not expand intrinsics whose (internal) names appear here")     \

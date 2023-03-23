@@ -409,7 +409,7 @@ void continuation_stubs_init() { StubRoutines::initialize_continuation_stubs(); 
 void final_stubs_init()        { StubRoutines::initialize_final_stubs(); }
 
 void compiler_stubs_init(bool in_compiler_thread) {
-  if (in_compiler_thread && MoveIntrinsicStubsGen) {
+  if (in_compiler_thread && DelayCompilerStubsGeneration) {
     // Temporarily revert state of stubs generation because
     // it is called after final_stubs_init() finished
     // during compiler runtime initialization.
@@ -418,7 +418,7 @@ void compiler_stubs_init(bool in_compiler_thread) {
     StubCodeDesc::unfreeze();
     StubRoutines::initialize_compiler_stubs();
     StubCodeDesc::freeze();
-  } else if (!in_compiler_thread && !MoveIntrinsicStubsGen) {
+  } else if (!in_compiler_thread && !DelayCompilerStubsGeneration) {
     StubRoutines::initialize_compiler_stubs();
   }
 }

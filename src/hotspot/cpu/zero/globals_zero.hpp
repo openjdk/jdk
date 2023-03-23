@@ -35,7 +35,8 @@
 define_pd_global(bool,  ImplicitNullChecks,   true);
 define_pd_global(bool,  TrapBasedNullChecks,  false);
 define_pd_global(bool,  UncommonNullCast,     true);
-define_pd_global(bool,  MoveIntrinsicStubsGen,false); // Don't have intrinsics
+
+define_pd_global(bool,  DelayCompilerStubsGeneration, false); // Don't have compiler's stubs
 
 define_pd_global(uintx, CodeCacheSegmentSize, 64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 define_pd_global(intx,  CodeEntryAlignment,   32);
