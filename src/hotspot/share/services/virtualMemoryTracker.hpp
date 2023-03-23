@@ -32,8 +32,8 @@
 #include "services/nmtCommon.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "memory/arena.hpp"
 #include "utilities/ostream.hpp"
-
 
 /*
  * Virtual memory counter
@@ -284,26 +284,16 @@ typedef LinkedListIterator<CommittedMemoryRegion> CommittedRegionIterator;
 int compare_committed_region(const CommittedMemoryRegion&, const CommittedMemoryRegion&);
 class ReservedMemoryRegion : public VirtualMemoryRegion {
  private:
-  SortedLinkedList<CommittedMemoryRegion, compare_committed_region>
+  SortedLinkedList<CommittedMemoryRegion, compare_committed_region, AnyObj::ARENA>
     _committed_regions;
 
   NativeCallStack  _stack;
   MEMFLAGS         _flag;
 
  public:
-  ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag = mtNone) :
-    VirtualMemoryRegion(base, size), _stack(stack), _flag(flag) { }
 
-
-  ReservedMemoryRegion(address base, size_t size) :
-    VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _flag(mtNone) { }
-
-  // Copy constructor
-  ReservedMemoryRegion(const ReservedMemoryRegion& rr) :
-    VirtualMemoryRegion(rr.base(), rr.size()) {
-    *this = rr;
-  }
+  ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
+  ReservedMemoryRegion(address base, size_t size);
 
   inline void  set_call_stack(const NativeCallStack& stack) { _stack = stack; }
   inline const NativeCallStack* call_stack() const          { return &_stack;  }
@@ -326,6 +316,9 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   CommittedRegionIterator iterate_committed_regions() const {
     return CommittedRegionIterator(_committed_regions.head());
   }
+
+  // Copy constructor
+  ReservedMemoryRegion(const ReservedMemoryRegion& rr);
 
   ReservedMemoryRegion& operator= (const ReservedMemoryRegion& other) {
     set_base(other.base());
@@ -370,6 +363,7 @@ class VirtualMemoryWalker : public StackObj {
 class VirtualMemoryTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
   friend class CommittedVirtualMemoryTest;
+  friend class ReservedMemoryRegion;
 
  public:
   static bool initialize(NMT_TrackingLevel level);
@@ -398,7 +392,8 @@ class VirtualMemoryTracker : AllStatic {
   static void snapshot_thread_stacks();
 
  private:
-  static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
+  static Arena* _backing_arena;
+  static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base, AnyObj::ARENA>* _reserved_regions;
 };
 
 #endif // SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP

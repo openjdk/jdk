@@ -49,7 +49,8 @@ void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
   as_snapshot()->copy_to(s);
 }
 
-SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* VirtualMemoryTracker::_reserved_regions;
+SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base, AnyObj::ARENA>* VirtualMemoryTracker::_reserved_regions;
+Arena* VirtualMemoryTracker::_backing_arena;
 
 int compare_committed_region(const CommittedMemoryRegion& r1, const CommittedMemoryRegion& r2) {
   return r1.compare(r2);
@@ -106,6 +107,25 @@ static bool try_merge_with(LinkedListNode<CommittedMemoryRegion>* node, LinkedLi
   CommittedMemoryRegion* rgn = other->data();
   return try_merge_with(node, rgn->base(), rgn->size(), *rgn->call_stack());
 }
+
+ReservedMemoryRegion::ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack, MEMFLAGS flag) :
+  VirtualMemoryRegion(base, size),
+  _committed_regions(VirtualMemoryTracker::_backing_arena),
+  _stack(stack), _flag(flag) { }
+
+
+ReservedMemoryRegion::ReservedMemoryRegion(address base, size_t size) :
+  VirtualMemoryRegion(base, size),
+  _committed_regions(VirtualMemoryTracker::_backing_arena),
+  _stack(NativeCallStack::empty_stack()), _flag(mtNone) { }
+
+// Copy constructor
+ReservedMemoryRegion::ReservedMemoryRegion(const ReservedMemoryRegion& rr) :
+    VirtualMemoryRegion(rr.base(), rr.size()),
+    _committed_regions(VirtualMemoryTracker::_backing_arena) {
+    *this = rr;
+}
+
 
 bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const NativeCallStack& stack) {
   assert(addr != nullptr, "Invalid address");
@@ -323,8 +343,9 @@ bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   assert(_reserved_regions == nullptr, "only call once");
   if (level >= NMT_summary) {
     VirtualMemorySummary::initialize();
+    _backing_arena = new (mtNMT) Arena{mtNMT, Chunk::size};
     _reserved_regions = new (std::nothrow, mtNMT)
-      SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
+      SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base, AnyObj::ARENA>(_backing_arena);
     return (_reserved_regions != nullptr);
   }
   return true;
@@ -464,10 +485,12 @@ bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
   assert(_reserved_regions != nullptr, "Sanity check");
 
   // uncommit regions within the released region
-  ReservedMemoryRegion backup(*rgn);
+  address base = rgn->base();
+  size_t size = rgn->size();
+  const char* flag_name = rgn->flag_name();
   bool result = rgn->remove_uncommitted_region(rgn->base(), rgn->size());
   log_debug(nmt)("Remove uncommitted region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
-                backup.flag_name(), p2i(backup.base()), backup.size(), (result ? "Succeeded" : "Failed"));
+                flag_name, p2i(base), size, (result ? "Succeeded" : "Failed"));
   if (!result) {
     return false;
   }
@@ -475,7 +498,7 @@ bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
   VirtualMemorySummary::record_released_memory(rgn->size(), rgn->flag());
   result =  _reserved_regions->remove(*rgn);
   log_debug(nmt)("Removed region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") from _resvered_regions %s" ,
-                backup.flag_name(), p2i(backup.base()), backup.size(), (result ? "Succeeded" : "Failed"));
+                flag_name, p2i(base), size, (result ? "Succeeded" : "Failed"));
   return result;
 }
 
