@@ -139,6 +139,13 @@ public:
   inline void mark_block_as_dead();
   inline void revive();
 
+
+  bool is_dead() const { return _canary == _header_canary_dead_mark; }
+  bool is_life() const { return _canary == _header_canary_life_mark; }
+
+  // Used for debugging purposes only. Check header if it could constitute a valid (life or dead) header.
+  inline bool looks_valid() const;
+
   // If block is broken, fill in a short descriptive text in out,
   // an option pointer to the corruption in p_corruption, and return false.
   // Return true if block is fine.

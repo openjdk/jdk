@@ -190,31 +190,67 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
   }
 }
 
-// Given a pointer, if it seems to point to the start of a valid malloced block,
-// print the block. Note that since there is very low risk of memory looking
+// Given a pointer, look for the containing malloc block.
+// Print the block. Note that since there is very low risk of memory looking
 // accidentally like a valid malloc block header (canaries and all) this is not
 // totally failproof. Only use this during debugging or when you can afford
 // signals popping up, e.g. when writing an hs_err file.
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
-  assert(MemTracker::enabled(), "NMT must be enabled");
-  if (os::is_readable_pointer(p)) {
-    const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
-    const MallocHeader* mhdr = malloc_header(p);
-    char msg[256];
-    address p_corrupted;
-    if (os::is_readable_pointer(mhdr) &&
-        mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
-      st->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
-          p2i(p), mhdr->size(), NMTUtil::flag_to_name(mhdr->flags()));
-      if (tracking_level == NMT_detail) {
-        NativeCallStack ncs;
-        if (mhdr->get_stack(ncs)) {
-          ncs.print_on(st);
-          st->cr();
+  if (!MemTracker::enabled()) {
+    return false;
+  }
+  address addr = (address)p;
+
+  // Carefully feel your way upwards and try to find a malloc header. Then check if
+  // we are within the block.
+  const MallocHeader* candidate = (const MallocHeader*)(align_down(addr, 16));
+  const MallocHeader* const last_candidate = candidate - 0x1001; // 4k (incl. header)
+  while(candidate >= last_candidate) {
+    if (!os::is_readable_pointer(candidate)) {
+      break;
+    }
+    if (candidate->looks_valid()) {
+      // fudge factor:
+      // We don't report blocks for which p is clearly out. That would cause us to return true and possibly prevent
+      // subsequent tests of p, see os::print_location(). But if p is just outside of the found block, this may be a
+      // narrow oob error and we'd like to know that.
+      const int fudge = 8;
+      const address start_block = (address)candidate;
+      const address start_payload = (address)(candidate + 1);
+      const address end_payload = start_payload + candidate->size();
+      const address end_payload_plus_fudge = end_payload + fudge;
+      if (addr >= start_block && addr < end_payload_plus_fudge) {
+        const char* where = nullptr;
+        if (addr < start_payload) {
+          where = "into header of";
+        } else if (addr < end_payload) {
+          where = "into";
+        } else {
+          where = "just outside of";
+        }
+        st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size " SIZE_FORMAT ", tag %s",
+                  p2i(p), where,
+                  (candidate->is_dead() ? "dead" : "life"),
+                  p2i(candidate + 1), // lets print the payload start, not the header
+                  candidate->size(), NMTUtil::flag_to_enum_name(candidate->flags()));
+        if (MemTracker::tracking_level() == NMT_detail) {
+          NativeCallStack ncs;
+          if (candidate->get_stack(ncs)) {
+            ncs.print_on(st);
+            st->cr();
+          }
+        }
+        return true;
+        break;
+      } else {
+        // We continue search even if we found a header but were outside of it if the header was dead since
+        // its area may be reused by another, larger block further down.
+        if (candidate->is_life()) {
+          return false;
         }
       }
-      return true;
     }
+    candidate --;
   }
   return false;
 }

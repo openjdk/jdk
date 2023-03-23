@@ -33,6 +33,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "jvm.h"
 #include "logging/logConfiguration.hpp"
+#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.inline.hpp"
@@ -1886,6 +1887,10 @@ void VMError::controlled_crash(int how) {
         ThreadsListHandle tlh2;
         fatal("Force crash with a nested ThreadsListHandle.");
       }
+    }
+    case 18: {
+      char* c = NEW_C_HEAP_ARRAY(char, 100, mtTest);
+      fatal("test " PTR_FORMAT, p2i(c));
     }
     default:
       // If another number is given, give a generic crash.
