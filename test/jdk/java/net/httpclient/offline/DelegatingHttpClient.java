@@ -138,7 +138,7 @@ public class DelegatingHttpClient extends HttpClient {
 
     /**
      * Invokes the default implementation of HttpClient::close
-     * Can be closed by subclasses if necessary.
+     * Can be invoked by subclasses if necessary.
      */
     protected void defaultClose() { super.close();}
 

@@ -56,7 +56,7 @@ import static java.nio.ByteBuffer.wrap;
  * Suitable for testing where network connections are to be avoided.
  * Can delegate to an actual HttpClient created from a supplied
  * HttpClient.Builder if needed, by calling methods on its
- * DelegatingClient super class.
+ * DelegatingHttpClient super class.
  */
 public class FixedResponseHttpClient extends DelegatingHttpClient {
     private final ByteBuffer responseBodyBytes;
