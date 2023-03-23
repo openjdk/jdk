@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,8 +274,6 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm.vector to
         jdk.incubator.vector;
-    exports jdk.internal.util.jar to
-        jdk.jartool;
     exports jdk.internal.util.xml to
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
@@ -316,19 +314,20 @@ module java.base {
     exports sun.reflect.generics.reflectiveObjects to
         java.desktop;
     exports sun.reflect.misc to
-        java.desktop,
-        java.datatransfer,
-        java.management,
-        java.management.rmi,
-        java.rmi,
-        java.sql.rowset;
+            java.desktop,
+            java.datatransfer,
+            java.management,
+            java.management.rmi,
+            java.rmi,
+            java.sql.rowset;
     exports sun.security.action to
-        java.desktop,
-        java.security.jgss,
-        jdk.crypto.ec,
-        jdk.incubator.concurrent;
+            java.desktop,
+            java.security.jgss,
+            jdk.crypto.ec,
+            jdk.incubator.concurrent,
+            jdk.jartool;
     exports sun.security.internal.interfaces to
-        jdk.crypto.cryptoki;
+            jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
         jdk.crypto.cryptoki;
     exports sun.security.jca to

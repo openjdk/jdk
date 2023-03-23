@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8163798 8189611 8211728
  * @summary basic tests for multi-release jar versioned streams
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar java.base/jdk.internal.util.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
  * @run testng TestVersionedStream

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import java.util.concurrent.TimeUnit;
+
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashesBuilder;
@@ -69,14 +69,13 @@ import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 import jdk.internal.opt.CommandLine;
-import jdk.internal.util.jar.JarIndex;
+
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
-import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
+import static sun.tools.jar.JarIndex.INDEX_NAME;
 
 /**
  * This class implements a simple utility for creating files in the JAR
