@@ -196,7 +196,7 @@ static void add_mutex(Mutex* var) {
 }
 
 #define MUTEX_STORAGE_NAME(name) name##_storage
-#define MUTEX_STORAGE(name, type) static alignas(type) uint8_t MUTEX_STORAGE_NAME(name)[sizeof(type)]
+#define MUTEX_STORAGE(name, type) alignas(type) static uint8_t MUTEX_STORAGE_NAME(name)[sizeof(type)]
 #define MUTEX_DEF(name, type, pri, ...) {                                                       \
   assert(name == nullptr, "Mutex/Monitor initialized twice");                                   \
   MUTEX_STORAGE(name, type);                                                                    \
