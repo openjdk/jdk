@@ -31,6 +31,7 @@
 typedef enum {
   NoDetectedVirtualization,
   XenHVM,
+  XenPVHVM, // mix-mode on Linux aarch64
   KVM,
   VMWare,
   HyperV,

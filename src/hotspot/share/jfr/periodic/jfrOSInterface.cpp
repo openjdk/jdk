@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,6 +253,8 @@ const char* JfrOSInterface::virtualization_name() {
   VirtualizationType vrt = VM_Version::get_detected_virtualization();
   if (vrt == XenHVM) {
     return "Xen hardware-assisted virtualization";
+  } else if (vrt == XenPVHVM) {
+    return "Xen optimized paravirtualization";
   } else if (vrt == KVM) {
     return "KVM virtualization";
   } else if (vrt == VMWare) {

@@ -526,17 +526,19 @@ void VM_Version::check_virtualizations() {
   if (check_info_file(pname_file, "KVM", KVM, "VMWare", VMWare)) {
     return;
   }
-  check_info_file(tname_file, "Xen", XenHVM, NULL, NoDetectedVirtualization);
+  check_info_file(tname_file, "Xen", XenPVHVM, NULL, NoDetectedVirtualization);
 #endif
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
 #if defined(LINUX)
-    VirtualizationType vrt = VM_Version::get_detected_virtualization();
-    if (vrt == KVM) {
-      st->print_cr("KVM virtualization detected");
-    } else if (vrt == VMWare) {
-      st->print_cr("VMWare virtualization detected");
-    }
+  VirtualizationType vrt = VM_Version::get_detected_virtualization();
+  if (vrt == KVM) {
+    st->print_cr("KVM virtualization detected");
+  } else if (vrt == VMWare) {
+    st->print_cr("VMWare virtualization detected");
+  } else if (vrt == XenPVHVM) {
+    st->print_cr("Xen virtualization detected");
+  }
 #endif
 }
