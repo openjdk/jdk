@@ -114,31 +114,39 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         descriptor.argumentLayouts().forEach(l -> checkLayoutsRecursive(l, 0, 0));
     }
 
-    private void checkLayoutsRecursive(MemoryLayout layout, long unpaddedOffset , long offset) {
+    private void checkLayoutsRecursive(MemoryLayout layout, long lastUnpaddedOffset , long offset) {
         checkHasNaturalAlignment(layout);
-        checkOffset(layout, unpaddedOffset, offset);
+        checkOffset(layout, lastUnpaddedOffset, offset);
         checkByteOrder(layout);
         if (layout instanceof GroupLayout gl) {
+            checkGroupSize(gl);
             for (MemoryLayout member : gl.memberLayouts()) {
-                checkLayoutsRecursive(member, unpaddedOffset, offset);
+                checkLayoutsRecursive(member, lastUnpaddedOffset, offset);
 
                 if (gl instanceof StructLayout) {
                     offset += member.bitSize();
                     if (!(member instanceof PaddingLayout)) {
-                        unpaddedOffset += member.bitSize();
+                        lastUnpaddedOffset = offset;
                     }
                 }
             }
         } else if (layout instanceof SequenceLayout sl) {
-            checkLayoutsRecursive(sl.elementLayout(), unpaddedOffset, offset);
+            checkLayoutsRecursive(sl.elementLayout(), lastUnpaddedOffset, offset);
+        }
+    }
+
+    // check for trailing padding
+    private static void checkGroupSize(GroupLayout gl) {
+        if (gl.bitSize() % gl.bitAlignment() != 0) {
+            throw new IllegalArgumentException("Layout lacks trailing padding: " + gl);
         }
     }
 
     // checks both that a layout is aligned within the root,
     // and also that there is no excess padding between it and
     // the previous layout
-    private static void checkOffset(MemoryLayout layout, long unpaddedOffset, long offset) {
-        long expectedOffset = Utils.alignUp(unpaddedOffset, layout.bitAlignment());
+    private static void checkOffset(MemoryLayout layout, long lastUnpaddedOffset, long offset) {
+        long expectedOffset = Utils.alignUp(lastUnpaddedOffset, layout.bitAlignment());
         if (expectedOffset != offset) {
             throw new IllegalArgumentException("Layout '" + layout + "'" +
                     " found at unexpected offset: " + offset + " != " + expectedOffset);

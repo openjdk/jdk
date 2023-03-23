@@ -34,6 +34,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
+import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -195,6 +196,10 @@ import java.util.stream.Stream;
  *     <td style="text-align:center;">{@link MemorySegment}</td>
  * </tbody>
  * </table></blockquote>
+ * <p>
+ * Note that due to limited ABI specification coverage, none of the native linker implementations supports
+ * packed structs (those that lack the padding needed to align their fields) or structs with excess padding
+ * (more than is required to align a field) being passed by value.
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *

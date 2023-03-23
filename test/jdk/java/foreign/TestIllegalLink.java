@@ -157,13 +157,15 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             C_CHAR.withName("x"),
-                            C_INT.withName("y"))), // not aligned
+                            C_INT.withName("y"), // not aligned
+                            MemoryLayout.paddingLayout(24))),
                     "unexpected offset"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             ValueLayout.JAVA_INT,
-                            ValueLayout.ADDRESS)), // not aligned
+                            ValueLayout.ADDRESS, // not aligned
+                            MemoryLayout.paddingLayout(32))),
                     "unexpected offset"
             },
             {
@@ -184,6 +186,12 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
                     "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_LONG,
+                            ValueLayout.JAVA_INT)), // missing trailing padding
+                    "Layout lacks trailing padding"
             },
         };
     }
