@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7093691
- * @summary Tests if JComboBox has correct font when disabled/enabled
+ * @summary Tests if JComboBox has correct font color when disabled/enabled
  * @run main/othervm -Dsun.java2d.uiScale=1 DisabledComboBoxFontTestAuto
  */
 
