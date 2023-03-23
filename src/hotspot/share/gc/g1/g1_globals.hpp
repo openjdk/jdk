@@ -233,9 +233,6 @@
           "Will be set ergonomically by default.")                          \
           range(0, (max_jint-1)/wordSize)                                   \
                                                                             \
-  develop(bool, G1VerifyCTCleanup, false,                                   \
-          "Verify card table cleanup.")                                     \
-                                                                            \
   develop(bool, G1ExitOnExpansionFailure, false,                            \
           "Raise a fatal VM exit out of memory failure in the event "       \
           " that heap expansion fails due to running out of swap.")         \
