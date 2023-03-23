@@ -213,13 +213,14 @@ public class BufferedInputStream extends FilterInputStream {
         if (size <= 0) {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
-        buf = getClass() == BufferedInputStream.class ? EMPTY : new byte[size];
         this.size = size;
         // use monitors when BufferedInputStream is sub-classed
         if (getClass() == BufferedInputStream.class) {
             lock = InternalLock.newLockOrNull();
+            buf = EMPTY;
         } else {
             lock = null;
+            buf = new byte[size];
         }
     }
 
