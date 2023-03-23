@@ -168,8 +168,9 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     /**
-     * Check to make sure that buffer has not been nulled out due to
-     * close; if not return it;
+     * Return the buffer if already allocated, or allocate one, or throw {@link IOException} if this stream is closed.
+     * If a caller simply wants to ensure whether this BufferedInputStream is open
+     * they should call {@link #getInIfOpen()} instead.
      */
     private byte[] getBufIfOpen() throws IOException {
         byte[] buffer = buf;
