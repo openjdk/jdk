@@ -117,7 +117,6 @@ public record Platform(OperatingSystem os, Architecture arch) {
     public boolean is64Bit() {
         return switch (arch) {
             case x64, AARCH64, PPC64, PPC64LE, s390x -> true;
-            case ARM -> true; // the ARM we support is 64 bit
             default -> false;
         };
     }
