@@ -25,10 +25,10 @@ package gc.z;
 
 /*
  * @test TestUncommit
- * @requires vm.gc.Z
+ * @requires vm.gc.Z & vm.opt.final.ZGenerational
  * @summary Test ZGC uncommit unused memory
  * @library /test/lib
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit
  */
 
 import java.util.ArrayList;

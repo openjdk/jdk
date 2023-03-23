@@ -62,7 +62,7 @@ typedef ZGranuleMap<ZPage*> ZGranuleMapForPageTable;
 typedef ZGranuleMap<ZForwarding*> ZGranuleMapForForwarding;
 typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwarding;
 
-#define VM_STRUCTS_ZGC(nonstatic_field, volatile_nonstatic_field, static_field)                      \
+#define VM_STRUCTS_Z(nonstatic_field, volatile_nonstatic_field, static_field)                        \
   static_field(ZGlobalsForVMStructs,            _instance_p,          ZGlobalsForVMStructs*)         \
                                                                                                      \
   nonstatic_field(ZGlobalsForVMStructs,         _ZAddressOffsetMask,         uintptr_t*)             \
@@ -107,14 +107,14 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   nonstatic_field(ZForwardingEntry,             _entry,               uint64_t)                      \
   nonstatic_field(ZAttachedArrayForForwarding,  _length,              const size_t)
 
-#define VM_INT_CONSTANTS_ZGC(declare_constant, declare_constant_with_value)                          \
+#define VM_INT_CONSTANTS_Z(declare_constant, declare_constant_with_value)                            \
   declare_constant(ZPageType::small)                                                                 \
   declare_constant(ZPageType::medium)                                                                \
   declare_constant(ZPageType::large)                                                                 \
   declare_constant(ZObjectAlignmentMediumShift)                                                      \
   declare_constant(ZObjectAlignmentLargeShift)
 
-#define VM_LONG_CONSTANTS_ZGC(declare_constant)                                                      \
+#define VM_LONG_CONSTANTS_Z(declare_constant)                                                        \
   declare_constant(ZGranuleSizeShift)                                                                \
   declare_constant(ZPageSizeSmallShift)                                                              \
   declare_constant(ZPageSizeMediumShift)                                                             \
@@ -123,7 +123,7 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   declare_constant(ZAddressOffsetMask)                                                               \
   declare_constant(ZAddressOffsetMax)
 
-#define VM_TYPES_ZGC(declare_type, declare_toplevel_type, declare_integer_type)                      \
+#define VM_TYPES_Z(declare_type, declare_toplevel_type, declare_integer_type)                        \
   declare_toplevel_type(zoffset)                                                                     \
   declare_toplevel_type(zoffset_end)                                                                 \
   declare_toplevel_type(ZGlobalsForVMStructs)                                                        \

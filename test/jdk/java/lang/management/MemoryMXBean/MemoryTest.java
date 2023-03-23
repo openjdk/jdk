@@ -38,7 +38,19 @@
  * @bug     4530538
  * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
  *          MemoryMXBean.getMemoryManager().
- * @requires vm.gc == "Z"
+ * @requires vm.gc == "Z" & !vm.opt.final.ZGenerational
+ * @author  Mandy Chung
+ *
+ * @modules jdk.management
+ * @run main MemoryTest 2 1
+ */
+
+/*
+ * @test
+ * @bug     4530538
+ * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
+ *          MemoryMXBean.getMemoryManager().
+ * @requires vm.gc == "Z" & vm.opt.final.ZGenerational
  * @author  Mandy Chung
  *
  * @modules jdk.management

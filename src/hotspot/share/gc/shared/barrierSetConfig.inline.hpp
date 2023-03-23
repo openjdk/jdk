@@ -40,6 +40,7 @@
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif
 #if INCLUDE_ZGC
+#include "gc/x/xBarrierSet.inline.hpp"
 #include "gc/z/zBarrierSet.inline.hpp"
 #endif
 

@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestSmallHeap
- * @requires vm.gc.Z
+ * @requires vm.gc.Z & vm.opt.final.ZGenerational
  * @summary Test ZGC with small heaps
  * @library / /test/lib
  * @run driver gc.z.TestSmallHeap 8M 16M 32M 64M 128M 256M 512M 1024M
@@ -55,6 +55,7 @@ public class TestSmallHeap {
         for (var maxCapacity: args) {
             ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
                                         "-XX:+UseZGC",
+                                        "-XX:+ZGenerational",
                                         "-Xlog:gc,gc+init,gc+reloc,gc+heap",
                                         "-Xmx" + maxCapacity,
                                         Test.class.getName()))

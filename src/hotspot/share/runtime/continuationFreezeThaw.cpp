@@ -1397,15 +1397,16 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   chunk->set_cont_access<IS_DEST_UNINITIALIZED>(_cont.continuation());
 
 #if INCLUDE_ZGC
- if (UseZGC) {
-    ZStackChunkGCData::initialize(chunk);
+  if (UseZGC) {
+    if (ZGenerational) {
+      ZStackChunkGCData::initialize(chunk);
+    }
     assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
     _barriers = false;
   } else
 #endif
 #if INCLUDE_SHENANDOAHGC
-if (UseShenandoahGC) {
-
+  if (UseShenandoahGC) {
     _barriers = chunk->requires_barriers();
   } else
 #endif

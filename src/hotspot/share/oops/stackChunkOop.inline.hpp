@@ -30,12 +30,14 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetStackChunk.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/smallRegisterMap.inline.hpp"
@@ -86,7 +88,20 @@ inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
   jdk_internal_vm_StackChunk::set_maxThawingSize(this, (jint)value);
 }
 
-inline oop stackChunkOopDesc::cont() const                { return jdk_internal_vm_StackChunk::cont(as_oop()); }
+inline oop stackChunkOopDesc::cont() const                {
+  if (UseZGC && !ZGenerational) {
+    assert(!UseCompressedOops, "Non-generational ZGC does not support compressed oops");
+    // The state of the cont oop is used by XCollectedHeap::requires_barriers,
+    // to determine the age of the stackChunkOopDesc. For that to work, it is
+    // only the GC that is allowed to perform a load barrier on the oop.
+    // This function is used by non-GC code and therfore create a stack-local
+    // copy on the oop and perform the load barrier on that copy instead.
+    oop obj = jdk_internal_vm_StackChunk::cont_raw<oop>(as_oop());
+    obj = (oop)NativeAccess<>::oop_load(&obj);
+    return obj;
+  }
+  return jdk_internal_vm_StackChunk::cont(as_oop());
+}
 inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
 inline void stackChunkOopDesc::set_cont_raw(oop value)    { jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }

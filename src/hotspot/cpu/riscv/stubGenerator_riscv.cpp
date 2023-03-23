@@ -51,9 +51,6 @@
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
-#if INCLUDE_ZGC
-#include "gc/z/zThreadLocalData.hpp"
-#endif
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
@@ -959,7 +956,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // The size of copy32_loop body increases significantly with ZGC GC barriers.
     // Need conditional far branches to reach a point beyond the loop in this case.
-    bool is_far = UseZGC ? true : false;
+    bool is_far = UseZGC && ZGenerational;
 
     __ beqz(count, done, is_far);
     __ slli(cnt, count, exact_log2(granularity));

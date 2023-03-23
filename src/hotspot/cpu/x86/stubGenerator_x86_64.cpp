@@ -44,9 +44,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
 #endif
-#if INCLUDE_ZGC
-#include "gc/z/zThreadLocalData.hpp"
-#endif
 #if INCLUDE_JFR
 #include "jfr/support/jfrIntrinsics.hpp"
 #endif

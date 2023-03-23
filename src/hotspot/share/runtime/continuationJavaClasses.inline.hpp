@@ -85,6 +85,11 @@ inline oop jdk_internal_vm_StackChunk::cont(oop chunk) {
   return chunk->obj_field(_cont_offset);
 }
 
+template<typename P>
+inline oop jdk_internal_vm_StackChunk::cont_raw(oop chunk) {
+  return (oop)RawAccess<>::oop_load(chunk->field_addr<P>(_cont_offset));
+}
+
 inline void jdk_internal_vm_StackChunk::set_cont(oop chunk, oop value) {
   chunk->obj_field_put(_cont_offset, value);
 }

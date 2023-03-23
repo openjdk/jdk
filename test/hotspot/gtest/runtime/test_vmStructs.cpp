@@ -58,7 +58,7 @@ TEST(VMStructs, VMTypes_duplicates)  {
   for (int i = 0; VMStructs::localHotSpotVMTypes[i].typeName != NULL; i++) {
     for (int j = i + 1; VMStructs::localHotSpotVMTypes[j].typeName != NULL; j++) {
       EXPECT_STRNE(VMStructs::localHotSpotVMTypes[i].typeName, VMStructs::localHotSpotVMTypes[j].typeName)
-              << "Duplicate entries on indexes " << i << " and " << j;
+              << "Duplicate entries on indexes " << i << " and " << j << " : " << VMStructs::localHotSpotVMTypes[i].typeName;
     }
   }
 }

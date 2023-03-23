@@ -100,7 +100,7 @@ static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Address
 // Load Pointer
 instruct zLoadP(rRegP dst, memory mem, rFlagsReg cr)
 %{
-  predicate(UseZGC && n->as_Load()->barrier_data() != 0);
+  predicate(UseZGC && ZGenerational && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
   effect(TEMP dst, KILL cr);
 
@@ -119,7 +119,7 @@ instruct zLoadP(rRegP dst, memory mem, rFlagsReg cr)
 // Load Pointer and Null Check
 instruct zLoadPNullCheck(rFlagsReg cr, memory op, immP0 zero)
 %{
-  predicate(UseZGC && n->in(1)->as_Load()->barrier_data() != 0);
+  predicate(UseZGC && ZGenerational && n->in(1)->as_Load()->barrier_data() != 0);
   match(Set cr (CmpP (LoadP op) zero));
 
   ins_cost(500); // XXX
@@ -135,7 +135,7 @@ instruct zLoadPNullCheck(rFlagsReg cr, memory op, immP0 zero)
 // Store Pointer
 instruct zStoreP(memory mem, any_RegP src, rRegP tmp, rFlagsReg cr)
 %{
-  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  predicate(UseZGC && ZGenerational && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP tmp, KILL cr);
 
@@ -151,7 +151,7 @@ instruct zStoreP(memory mem, any_RegP src, rRegP tmp, rFlagsReg cr)
 // Store Null Pointer
 instruct zStorePNull(memory mem, immP0 zero, rRegP tmp, rFlagsReg cr)
 %{
-  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  predicate(UseZGC && ZGenerational && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem zero));
   effect(TEMP tmp, KILL cr);
 
@@ -170,7 +170,7 @@ instruct zStorePNull(memory mem, immP0 zero, rRegP tmp, rFlagsReg cr)
 
 instruct zCompareAndExchangeP(indirect mem, no_rax_RegP newval, rRegP tmp, rax_RegP oldval, rFlagsReg cr) %{
   match(Set oldval (CompareAndExchangeP mem (Binary oldval newval)));
-  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && ZGenerational && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP tmp, KILL cr);
 
   format %{ "lock\n\t"
@@ -193,7 +193,7 @@ instruct zCompareAndExchangeP(indirect mem, no_rax_RegP newval, rRegP tmp, rax_R
 instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_RegP oldval, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
-  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && ZGenerational && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP tmp, KILL oldval, KILL cr);
 
   format %{ "lock\n\t"
@@ -217,7 +217,7 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_
 
 instruct zXChgP(indirect mem, rRegP newval, rRegP tmp, rFlagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
-  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && ZGenerational && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP tmp, KILL cr);
 
   format %{ "xchgq    $newval, $mem" %}

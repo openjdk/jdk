@@ -1017,6 +1017,11 @@ enum LIR_Code {
   , begin_opAssert
     , lir_assert
   , end_opAssert
+#ifdef INCLUDE_ZGC
+  , begin_opXLoadBarrierTest
+    , lir_xloadbarrier_test
+  , end_opXLoadBarrierTest
+#endif
 };
 
 

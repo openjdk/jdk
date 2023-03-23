@@ -69,6 +69,10 @@
   template(ZRelocateStartYoung)                   \
   template(ZRendezvousGCThreads)                  \
   template(ZVerifyOld)                            \
+  template(XMarkStart)                            \
+  template(XMarkEnd)                              \
+  template(XRelocateStart)                        \
+  template(XVerify)                               \
   template(HandshakeAllThreads)                   \
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \

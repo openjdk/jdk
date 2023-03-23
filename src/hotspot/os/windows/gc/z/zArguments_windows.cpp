@@ -25,6 +25,6 @@
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 
-bool ZArguments::is_os_supported() const {
+bool ZArguments::is_os_supported() {
   return ZSyscall::is_supported();
 }

@@ -87,6 +87,10 @@ public class StringTableCleaningTest {
     private static final String zStartSuffix = "Major Collection \\(.*\\)$";
     private static final String zEndSuffix = "Major Collection \\(.*\\) .*->.*$";
 
+    // Suffix for ZGC (non generational).
+    private static final String xStartSuffix = "Garbage Collection (.*)$";
+    private static final String xEndSuffix = "Garbage Collection (.*) .*->.*$";
+
     // Suffix for Shenandoah.
     private static final String shenSuffix = "Concurrent weak roots";
 
@@ -96,7 +100,7 @@ public class StringTableCleaningTest {
         } else if (GC.G1.isSelected()) {
             return gcStartPrefix + g1Suffix;
         } else if (GC.Z.isSelected()) {
-            return zStartPrefix + zStartSuffix;
+            return "(" + zStartPrefix + zStartSuffix + ")|(" + gcStartPrefix + xStartSuffix + ")";
         } else if (GC.Shenandoah.isSelected()) {
             return gcStartPrefix + shenSuffix;
         } else {
@@ -110,7 +114,7 @@ public class StringTableCleaningTest {
         } else if (GC.G1.isSelected()) {
             return gcEndPrefix + g1Suffix;
         } else if (GC.Z.isSelected()) {
-            return gcEndPrefix + zEndSuffix;
+            return gcEndPrefix + "(" + zEndSuffix +  ")|(" + xEndSuffix + ")";
         } else if (GC.Shenandoah.isSelected()) {
             return gcEndPrefix + shenSuffix;
         } else {

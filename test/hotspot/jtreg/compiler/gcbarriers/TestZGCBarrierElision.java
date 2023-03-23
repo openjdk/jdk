@@ -34,7 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *          necessary barriers. The tests use volatile memory accesses and
  *          blackholes to prevent C2 from simply optimizing them away.
  * @library /test/lib /
- * @requires vm.gc.Z
+ * @requires vm.gc.Z & vm.opt.final.ZGenerational
  * @run driver compiler.gcbarriers.TestZGCBarrierElision test-correctness
  */
 
@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @summary Test that the ZGC barrier elision optimization elides unnecessary
  *          barriers following simple allocation and domination rules.
  * @library /test/lib /
- * @requires vm.gc.Z & (vm.simpleArch == "x64" | vm.simpleArch == "aarch64")
+ * @requires vm.gc.Z & vm.opt.final.ZGenerational & (vm.simpleArch == "x64" | vm.simpleArch == "aarch64")
  * @run driver compiler.gcbarriers.TestZGCBarrierElision test-effectiveness
  */
 
