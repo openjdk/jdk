@@ -2232,6 +2232,15 @@ public class Flow {
                         }
                     }
 
+                    // verify all static final fields got initailized
+                    for (int i = firstadr; i < nextadr; i++) {
+                        JCVariableDecl vardecl = vardecls[i];
+                        VarSymbol var = vardecl.sym;
+                        if (var.owner == classDef.sym && var.isStatic()) {
+                            checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
+                        }
+                    }
+
                     // define all the instance fields
                     for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
                         if (l.head.hasTag(VARDEF)) {
@@ -2320,7 +2329,7 @@ public class Flow {
                         for (int i = firstadr; i < nextadr; i++) {
                             JCVariableDecl vardecl = vardecls[i];
                             VarSymbol var = vardecl.sym;
-                            if (var.owner == classDef.sym) {
+                            if (var.owner == classDef.sym && !var.isStatic()) {
                                 // choose the diagnostic position based on whether
                                 // the ctor is default(synthesized) or not
                                 if (isSynthesized && !isCompactOrGeneratedRecordConstructor) {
@@ -2329,7 +2338,6 @@ public class Flow {
                                 } else if (isCompactOrGeneratedRecordConstructor) {
                                     boolean isInstanceRecordField = var.enclClass().isRecord() &&
                                             (var.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0 &&
-                                            !var.isStatic() &&
                                             var.owner.kind == TYP;
                                     if (isInstanceRecordField) {
                                         boolean notInitialized = !inits.isMember(var.adr);
