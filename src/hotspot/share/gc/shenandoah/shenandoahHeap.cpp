@@ -2357,21 +2357,21 @@ uint ShenandoahHeap::max_workers() {
 void ShenandoahHeap::stop() {
   // The shutdown sequence should be able to terminate when GC is running.
 
-  // Step 0a. Stop requesting collections.
-  regulator_thread()->stop();
-
-  // Step 0. Notify policy to disable event recording.
+  // Step 1. Notify policy to disable event recording and prevent visiting gc threads during shutdown
   _shenandoah_policy->record_shutdown();
 
-  // Step 1. Notify control thread that we are in shutdown.
+  // Step 2. Stop requesting collections.
+  regulator_thread()->stop();
+
+  // Step 3. Notify control thread that we are in shutdown.
   // Note that we cannot do that with stop(), because stop() is blocking and waits for the actual shutdown.
   // Doing stop() here would wait for the normal GC cycle to complete, never falling through to cancel below.
   control_thread()->prepare_for_graceful_shutdown();
 
-  // Step 2. Notify GC workers that we are cancelling GC.
+  // Step 4. Notify GC workers that we are cancelling GC.
   cancel_gc(GCCause::_shenandoah_stop_vm);
 
-  // Step 3. Wait until GC worker exits normally.
+  // Step 5. Wait until GC worker exits normally.
   control_thread()->stop();
 }
 
