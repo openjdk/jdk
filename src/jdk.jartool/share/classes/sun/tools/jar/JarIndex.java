@@ -80,19 +80,9 @@ public class JarIndex {
     /**
      * Constructs a new, empty jar index.
      */
-    public JarIndex() {
+    private JarIndex() {
         indexMap = new HashMap<>();
         jarMap = new HashMap<>();
-    }
-
-    /**
-     * Constructs a new index from the specified input stream.
-     *
-     * @param is the input stream containing the index data
-     */
-    public JarIndex(InputStream is) throws IOException {
-        this();
-        read(is);
     }
 
     /**
@@ -104,29 +94,6 @@ public class JarIndex {
         this();
         this.jarFiles = files;
         parseJars(files);
-    }
-
-    /**
-     * Returns the jar index, or <code>null</code> if none.
-     *
-     * @param jar the JAR file to get the index from.
-     * @exception IOException if an I/O error has occurred.
-     */
-    public static JarIndex getJarIndex(JarFile jar) throws IOException {
-        JarIndex index = null;
-        JarEntry e = jar.getJarEntry(INDEX_NAME);
-        // if found, then load the index
-        if (e != null) {
-            index = new JarIndex(jar.getInputStream(e));
-        }
-        return index;
-    }
-
-    /**
-     * Returns the jar files that are defined in this index.
-     */
-    public String[] getJarFiles() {
-        return jarFiles;
     }
 
     /*
@@ -146,23 +113,6 @@ public class JarIndex {
     }
 
     /**
-     * Returns the list of jar files that are mapped to the file.
-     *
-     * @param fileName the key of the mapping
-     */
-    public List<String> get(String fileName) {
-        List<String> jarFiles;
-        if ((jarFiles = indexMap.get(fileName)) == null) {
-            /* try the package name again */
-            int pos;
-            if((pos = fileName.lastIndexOf('/')) != -1) {
-                jarFiles = indexMap.get(fileName.substring(0, pos));
-            }
-        }
-        return jarFiles;
-    }
-
-    /**
      * Add the mapping from the specified file to the specified
      * jar file. If there were no mapping for the package of the
      * specified file before, a new list will be created,
@@ -175,10 +125,10 @@ public class JarIndex {
      * @param jarName the jar file that the file is mapped to
      *
      */
-    public void add(String fileName, String jarName) {
+    private void add(String fileName, String jarName) {
         String packageName;
         int pos;
-        if((pos = fileName.lastIndexOf('/')) != -1) {
+        if ((pos = fileName.lastIndexOf('/')) != -1) {
             packageName = fileName.substring(0, pos);
         } else {
             packageName = fileName;
@@ -269,64 +219,6 @@ public class JarIndex {
                 bw.write("\n");
             }
             bw.flush();
-        }
-    }
-
-
-    /**
-     * Reads the index from the specified InputStream.
-     *
-     * @param is the input stream
-     * @exception IOException if an I/O error has occurred
-     */
-    public void read(InputStream is) throws IOException {
-        BufferedReader br = new BufferedReader
-                (new InputStreamReader(is, StandardCharsets.UTF_8));
-        String line;
-        String currentJar = null;
-
-        /* an ordered list of jar file names */
-        ArrayList<String> jars = new ArrayList<>();
-
-        /* read until we see a .jar line */
-        while((line = br.readLine()) != null && !line.endsWith(".jar"));
-
-        for(;line != null; line = br.readLine()) {
-            if (line.isEmpty())
-                continue;
-
-            if (line.endsWith(".jar")) {
-                currentJar = line;
-                jars.add(currentJar);
-            } else {
-                String name = line;
-                addMapping(name, currentJar);
-            }
-        }
-
-        jarFiles = jars.toArray(new String[jars.size()]);
-    }
-
-    /**
-     * Merges the current index into another index, taking into account
-     * the relative path of the current index.
-     *
-     * @param toIndex The destination index which the current index will
-     *                merge into.
-     * @param path    The relative path of the this index to the destination
-     *                index.
-     *
-     */
-    public void merge(JarIndex toIndex, String path) {
-        for (Map.Entry<String, List<String>> e : indexMap.entrySet()) {
-            String packageName = e.getKey();
-            List<String> from_list = e.getValue();
-            for (String jarName : from_list) {
-                if (path != null) {
-                    jarName = path.concat(jarName);
-                }
-                toIndex.addMapping(packageName, jarName);
-            }
         }
     }
 }
