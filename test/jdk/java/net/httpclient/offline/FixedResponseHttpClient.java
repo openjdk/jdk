@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +54,9 @@ import static java.nio.ByteBuffer.wrap;
 /**
  * An HttpClient that returns a given fixed response.
  * Suitable for testing where network connections are to be avoided.
+ * Can delegate to an actual HttpClient created from a supplied
+ * HttpClient.Builder if needed, by calling methods on its
+ * DelegatingClient super class.
  */
 public class FixedResponseHttpClient extends DelegatingHttpClient {
     private final ByteBuffer responseBodyBytes;
@@ -218,7 +222,7 @@ public class FixedResponseHttpClient extends DelegatingHttpClient {
         publisher.close();
 
         bodySubscriber.getBody().whenComplete((body, throwable) -> {
-                try {
+                    responses.remove(cf);
                     if (body != null)
                         cf.complete(new FixedHttpResponse<>(
                                 responseStatusCode,
@@ -230,10 +234,7 @@ public class FixedResponseHttpClient extends DelegatingHttpClient {
                                 request.version().orElse(Version.HTTP_2)));
                     else
                         cf.completeExceptionally(throwable);
-                } finally {
-                    responses.remove(cf);
                 }
-            }
         );
 
         return cf;
@@ -262,25 +263,33 @@ public class FixedResponseHttpClient extends DelegatingHttpClient {
 
     @Override
     public boolean isTerminated() {
+        // return true if this and the wrapped client are terminated
         synchronized (this) {
             if (!shutdownRequested) return false;
-            return responses.isEmpty();
+            return responses.isEmpty() && super.isTerminated();
         }
     }
 
     @Override
     public void shutdown() {
+        // shutdown the wrapped client
+        super.shutdown();
+        // mark shutdown requested
         shutdownRequested = true;
     }
 
     @Override
     public void shutdownNow() {
-        shutdown();
+        // shutdown the wrapped client now
+        super.shutdownNow();
+        // mark shutdown requested
+        shutdownRequested = true;
+        // cancel all completable futures
         CompletableFuture[] futures;
         synchronized (this) {
             if (responses.isEmpty()) return ;
             futures = responses.toArray(CompletableFuture[]::new);
-            responses.clear();
+            responses.removeAll(Arrays.asList(futures));
         }
         for (var op : futures) {
             op.cancel(true);
@@ -290,23 +299,36 @@ public class FixedResponseHttpClient extends DelegatingHttpClient {
     @Override
     public boolean awaitTermination(Duration duration) throws InterruptedException {
         Objects.requireNonNull(duration);
-        CompletableFuture[] futures;
-        synchronized (this) {
-            if (responses.isEmpty()) return true;
-            futures = responses.toArray(CompletableFuture[]::new);
+        CompletableFuture[] futures = responses.toArray(CompletableFuture[]::new);
+        if (futures.length == 0) {
+            // nothing to do here: wait for the wrapped client
+            return super.awaitTermination(duration) && isTerminated();
         }
+
+        // waits for our own completable futures to get completed
         var all = CompletableFuture.allOf(futures);
         Duration max = Duration.ofMillis(Long.MAX_VALUE);
         long timeout = duration.compareTo(max) > 0 ? Long.MAX_VALUE : duration.toMillis();
         try {
             all.exceptionally((t) -> null).get(timeout, TimeUnit.MILLISECONDS);
         } catch (TimeoutException te) {
-            return false;
+            return isTerminated();
         } catch (InterruptedException ie) {
             throw ie;
         } catch (ExecutionException failed) {
-            return true;
+            return isTerminated();
         }
-        return true;
+        return isTerminated();
+    }
+
+    @Override
+    public void close() {
+        try {
+            // closes this client
+            defaultClose();
+        } finally {
+            // closes the wrapped client (which should already be closed)
+            super.close();
+        }
     }
 }

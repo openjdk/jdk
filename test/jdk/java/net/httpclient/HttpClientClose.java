@@ -125,7 +125,8 @@ public class HttpClientClose implements HttpServerAdapters {
         out.printf("%n---- starting (%s) ----%n", uriString);
         ExecutorService readerService = Executors.newCachedThreadPool();
         Throwable failed = null;
-        try (HttpClient client = HttpClient.newBuilder()
+        HttpClient toCheck = null;
+        try (HttpClient client = toCheck = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
                 .sslContext(sslContext)
@@ -170,6 +171,7 @@ public class HttpClientClose implements HttpServerAdapters {
         }
         if (failed instanceof Exception ex) throw ex;
         if (failed instanceof Error e) throw e;
+        assertTrue(toCheck.isTerminated());
     }
 
     static Throwable cleanup(ExecutorService readerService, Throwable failed) {
