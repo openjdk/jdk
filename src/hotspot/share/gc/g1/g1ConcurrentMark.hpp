@@ -382,10 +382,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // After reclaiming empty regions, update heap sizes.
   void compute_new_sizes();
 
-  // Clear statistics gathered during the concurrent cycle for the given region after
-  // it has been reclaimed.
-  void clear_statistics(HeapRegion* r);
-
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
   void reset_marking_for_restart();
@@ -481,7 +477,7 @@ public:
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
-  void clear_statistics_in_region(uint region_idx);
+  void clear_statistics(HeapRegion* r);
   // Notification for eagerly reclaimed regions to clean up.
   void humongous_object_eagerly_reclaimed(HeapRegion* r);
   // Manipulation of the global mark stack.
