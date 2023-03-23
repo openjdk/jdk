@@ -478,6 +478,11 @@ public abstract class BaseFileManager implements JavaFileManager {
         contentCache.remove(file);
     }
 
+    public synchronized void resetOutputFilesWritten() {
+        if (outputFilesWritten != null)
+            outputFilesWritten.clear();
+    }
+
     protected final Map<JavaFileObject, ContentCacheEntry> contentCache = new HashMap<>();
 
     protected static class ContentCacheEntry {
