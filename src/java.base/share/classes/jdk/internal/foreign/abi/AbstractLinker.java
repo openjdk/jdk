@@ -25,6 +25,7 @@
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.SystemLookup;
+import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
@@ -40,7 +41,9 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.PaddingLayout;
 import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -106,23 +109,39 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     /** {@return byte order used by this linker} */
     protected abstract ByteOrder linkerByteOrder();
 
-    // Current limitation of the implementation:
-    // We don't support packed structs on some platforms,
-    // so reject them here explicitly
     private void checkLayouts(FunctionDescriptor descriptor) {
-        descriptor.returnLayout().ifPresent(this::checkLayoutsRecursive);
-        descriptor.argumentLayouts().forEach(this::checkLayoutsRecursive);
+        descriptor.returnLayout().ifPresent(l -> checkLayoutsRecursive(l, 0, 0));
+        descriptor.argumentLayouts().forEach(l -> checkLayoutsRecursive(l, 0, 0));
     }
 
-    private void checkLayoutsRecursive(MemoryLayout layout) {
+    private void checkLayoutsRecursive(MemoryLayout layout, long unpaddedOffset , long offset) {
         checkHasNaturalAlignment(layout);
+        checkOffset(layout, unpaddedOffset, offset);
         checkByteOrder(layout);
         if (layout instanceof GroupLayout gl) {
             for (MemoryLayout member : gl.memberLayouts()) {
-                checkLayoutsRecursive(member);
+                checkLayoutsRecursive(member, unpaddedOffset, offset);
+
+                if (gl instanceof StructLayout) {
+                    offset += member.bitSize();
+                    if (!(member instanceof PaddingLayout)) {
+                        unpaddedOffset += member.bitSize();
+                    }
+                }
             }
         } else if (layout instanceof SequenceLayout sl) {
-            checkLayoutsRecursive(sl.elementLayout());
+            checkLayoutsRecursive(sl.elementLayout(), unpaddedOffset, offset);
+        }
+    }
+
+    // checks both that a layout is aligned within the root,
+    // and also that there is no excess padding between it and
+    // the previous layout
+    private static void checkOffset(MemoryLayout layout, long unpaddedOffset, long offset) {
+        long expectedOffset = Utils.alignUp(unpaddedOffset, layout.bitAlignment());
+        if (expectedOffset != offset) {
+            throw new IllegalArgumentException("Layout '" + layout + "'" +
+                    " found at unexpected offset: " + offset + " != " + expectedOffset);
         }
     }
 

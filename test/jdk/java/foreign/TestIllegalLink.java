@@ -59,7 +59,7 @@ public class TestIllegalLink extends NativeTestHelper {
             fail("Expected IllegalArgumentException was not thrown");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains(expectedExceptionMessage),
-                    e.getMessage() + " != " + expectedExceptionMessage);
+                    e.getMessage() + " does not contain " + expectedExceptionMessage);
         }
     }
 
@@ -153,6 +153,25 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_INT.withBitAlignment(8)
                             ))),
                     "Layout bit alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            C_CHAR.withName("x"),
+                            C_INT.withName("y"))), // not aligned
+                    "unexpected offset"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_INT,
+                            ValueLayout.ADDRESS)), // not aligned
+                    "unexpected offset"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_INT,
+                            MemoryLayout.paddingLayout(32), // no excess padding
+                            ValueLayout.JAVA_INT)),
+                    "unexpected offset"
             },
             {
                     FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
