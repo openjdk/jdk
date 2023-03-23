@@ -783,7 +783,7 @@ class NameSigHash: public ResourceObj {
     _sig(sig) {}
 
   static unsigned int hash(NameSigHash const& namesig) {
-    return namesig._name->identity_hash() ^ (namesig._sig == nullptr ? 0 : namesig._sig->identity_hash());
+    return namesig._name->identity_hash() ^ namesig._sig->identity_hash();
   }
 
   static bool equals(NameSigHash const& e0, NameSigHash const& e1) {
@@ -862,15 +862,15 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     // Check if there's any duplicates in interfaces
     ResourceMark rm(THREAD);
     // Set containing interface names
-    NameSigHashtable* interface_names = new NameSigHashtable();
-    NameSigHash interface_name;
+    ResourceHashtable<Symbol*, int>* interface_names = new ResourceHashtable<Symbol*, int>();
+    Symbol* interface_name;
     for (index = 0; index < itfs_len; index++) {
       const InstanceKlass* const k = _local_interfaces->at(index);
-      interface_name = NameSigHash(k->name(), nullptr);
+      interface_name = k->name();
       // If no duplicates, add (name, nullptr) in hashtable interface_names.
       if (!interface_names->put(interface_name, 0)) {
         classfile_parse_error("Duplicate interface name \"%s\" in class file %s",
-                               interface_name._name->as_C_string(), THREAD);
+                               interface_name->as_C_string(), THREAD);
       }
     }
   }
@@ -1595,7 +1595,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     NameSigHash name_and_sig;
     for (int i = 0; i < _temp_field_info->length(); i++) {
       name_and_sig = NameSigHash(_temp_field_info->adr_at(i)->name(_cp),
-                                  _temp_field_info->adr_at(i)->signature(_cp));
+                                 _temp_field_info->adr_at(i)->signature(_cp));
       // If no duplicates, add name/signature in hashtable names_and_sigs.
       if(!names_and_sigs->put(name_and_sig, 0)) {
         classfile_parse_error("Duplicate field name \"%s\" with signature \"%s\" in class file %s",
