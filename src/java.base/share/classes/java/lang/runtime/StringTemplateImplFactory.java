@@ -30,10 +30,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatException;
 import java.lang.invoke.StringConcatFactory;
+import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.access.JavaUtilCollectionAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -45,8 +44,6 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class StringTemplateImplFactory {
-
-    private static final JavaUtilCollectionAccess JUCA = SharedSecrets.getJavaUtilCollectionAccess();
 
     /**
      * Private constructor.
@@ -178,8 +175,11 @@ final class StringTemplateImplFactory {
      *
      * @return StringTemplate composed from fragments and values
      */
+
     static StringTemplate newStringTemplate(List<String> fragments, List<?> values) {
-        return new SimpleStringTemplate(List.copyOf(fragments), toList(values.stream().toArray()));
+        @SuppressWarnings("unchecked")
+        List<Object> copy = (List<Object>)values.stream().toList();
+        return new SimpleStringTemplate(List.copyOf(fragments), copy);
     }
 
     /**
@@ -191,7 +191,7 @@ final class StringTemplateImplFactory {
      * @return unmodifiable list.
      */
     private static List<Object> toList(Object[] elements) {
-        return JUCA.listFromTrustedArrayNullsAllowed(elements);
+        return Arrays.stream(elements).toList();
     }
 
 }

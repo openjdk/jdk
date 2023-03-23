@@ -203,8 +203,7 @@ public final class TemplateRuntime {
             Processor<?, ?> processor,
             Object[] values
     ) throws Throwable {
-        List<Object> asList = Collections.unmodifiableList(new ArrayList<>(Arrays.asList(values)));
-        return processor.process(StringTemplate.of(fragments, asList));
+        return processor.process(StringTemplate.of(fragments, Arrays.stream(values).toList()));
     }
 
     /**
