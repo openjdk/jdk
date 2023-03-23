@@ -46,7 +46,10 @@ requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+requires.extraPropDefns.vmOpts = \
+    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
@@ -70,7 +73,8 @@ requires.properties= \
     docker.support \
     release.implementor \
     jdk.containerized \
-    fallbackLinker
+    jdk.foreignLinker \
+    jdk.fallbackLinker
 
 # Minimum jtreg version
 requiredVersion=7.1.1+1

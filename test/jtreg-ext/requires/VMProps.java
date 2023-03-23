@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
@@ -45,6 +46,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jdk.internal.foreign.CABI;
 
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
@@ -125,7 +128,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
-        map.put("fallbackLinker", this::fallbackLinker);
+        map.put("jdk.foreignLinker", this::foreignLinker);
+        map.put("jdk.fallbackLinker", this::fallbacklinker);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -472,7 +476,7 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + Compiler.isC2Enabled();
     }
 
-   /**
+    /**
      * A simple check for docker support
      *
      * @return true if docker is supported in a given environment
@@ -652,10 +656,12 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + result;
     }
 
-    private String fallbackLinker() {
-        boolean flag = !WB.isLinkerSupporter()
-                || "FALLBACK".equals(System.getProperty("jdk.internal.foreign.CABI"));
-        return String.valueOf(flag);
+    private String foreignLinker() {
+        return String.valueOf(CABI.current() != CABI.UNSUPPORTED);
+    }
+
+    private String fallbacklinker() {
+        return String.valueOf(CABI.current() == CABI.FALLBACK);
     }
 
     /**
