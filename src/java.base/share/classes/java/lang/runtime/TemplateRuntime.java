@@ -69,9 +69,9 @@ public final class TemplateRuntime {
     private static final MethodHandle DEFAULT_PROCESS_MH;
 
     /**
-     * {@link MethodHandle} to {@link TemplateRuntime#fromArrays}.
+     * {@link MethodHandle} to {@link TemplateRuntime#newTrustedStringTemplate}.
      */
-    private static final MethodHandle FROM_ARRAYS;
+    private static final MethodHandle NEW_TRUSTED_STRING_TEMPLATE;
 
     /**
      * Initialize {@link MethodHandle MethodHandles}.
@@ -82,10 +82,12 @@ public final class TemplateRuntime {
 
             MethodType mt = MethodType.methodType(Object.class,
                     List.class, Processor.class, Object[].class);
-            DEFAULT_PROCESS_MH = lookup.findStatic(TemplateRuntime.class, "defaultProcess", mt);
+            DEFAULT_PROCESS_MH =
+                lookup.findStatic(TemplateRuntime.class, "defaultProcess", mt);
 
             mt = MethodType.methodType(StringTemplate.class, String[].class, Object[].class);
-            FROM_ARRAYS = lookup.findStatic(TemplateRuntime.class, "fromArrays", mt);
+            NEW_TRUSTED_STRING_TEMPLATE =
+                lookup.findStatic(StringTemplateImplFactory.class, "newTrustedStringTemplate", mt);
         } catch (ReflectiveOperationException ex) {
             throw new AssertionError("string bootstrap fail", ex);
         }
@@ -118,7 +120,7 @@ public final class TemplateRuntime {
         Objects.requireNonNull(name, "name is null");
         Objects.requireNonNull(type, "type is null");
 
-        return new ConstantCallSite(FROM_ARRAYS.asType(type));
+        return new ConstantCallSite(NEW_TRUSTED_STRING_TEMPLATE.asType(type));
     }
 
     /**
@@ -218,19 +220,6 @@ public final class TemplateRuntime {
     ) {
         MethodHandle mh = MethodHandles.insertArguments(DEFAULT_PROCESS_MH, 0, fragments, processor);
         return mh.asCollector(Object[].class, type.parameterCount()).asType(type);
-    }
-
-     /**
-     * Used to create a {@link StringTemplate} when number of value slots exceeds
-     * {@link java.lang.invoke.StringConcatFactory#MAX_INDY_CONCAT_ARG_SLOTS}.
-     *
-     * @param fragments  array of string fragments
-     * @param values     array of values
-     *
-     * @return new {@link StringTemplate}
-     */
-    private static StringTemplate fromArrays(String[] fragments, Object[] values) {
-        return StringTemplateImplFactory.newStringTemplate(fragments, values);
     }
 }
 

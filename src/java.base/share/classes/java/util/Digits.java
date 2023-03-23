@@ -28,6 +28,7 @@ package java.util;
 import java.lang.invoke.MethodHandle;
 
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Digits provides a fast methodology for converting integers and longs to
@@ -65,6 +66,7 @@ sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.O
      * Digits class for decimal digits.
      */
     final class DecimalDigits implements Digits {
+        @Stable
         private static final short[] DIGITS;
 
         /**
@@ -166,6 +168,7 @@ sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.O
      * Digits class for hexadecimal digits.
      */
     final class HexDigits implements Digits {
+        @Stable
         private static final short[] DIGITS;
 
         /**
@@ -225,6 +228,7 @@ sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.O
      * Digits class for octal digits.
      */
     final class OctalDigits implements Digits {
+        @Stable
         private static final short[] DIGITS;
 
         /**

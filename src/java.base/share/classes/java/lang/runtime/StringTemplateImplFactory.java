@@ -154,7 +154,7 @@ final class StringTemplateImplFactory {
      *
      * @return StringTemplate composed from fragments and values
      */
-    static StringTemplate newStringTemplate(String[] fragments, Object[] values) {
+    static StringTemplate newTrustedStringTemplate(String[] fragments, Object[] values) {
         return new SimpleStringTemplate(List.of(fragments), toList(values));
     }
 
@@ -166,7 +166,7 @@ final class StringTemplateImplFactory {
      *
      * @return StringTemplate composed from fragments and values
      */
-    static StringTemplate newStringTemplate(List<String> fragments, Object[] values) {
+    static StringTemplate newTrustedStringTemplate(List<String> fragments, Object[] values) {
         return new SimpleStringTemplate(List.copyOf(fragments), toList(values));
     }
 

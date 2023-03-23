@@ -146,7 +146,7 @@ final class TemplateSupport implements JavaTemplateAccess {
                 combinedValues[valueIndex++] = value;
             }
         }
-        return StringTemplateImplFactory.newStringTemplate(combinedFragments, combinedValues);
+        return StringTemplateImplFactory.newTrustedStringTemplate(combinedFragments, combinedValues);
     }
 
 }

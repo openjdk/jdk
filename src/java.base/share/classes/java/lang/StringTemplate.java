@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import java.lang.Object;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -41,7 +40,6 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * {@link StringTemplate} is the run-time representation of a string template or
  * text block template in a template expression.
- *
  * <p>
  * In the source code of a Java program, a string template or text block template
  * contains an interleaved succession of <em>fragment literals</em> and <em>embedded
@@ -53,7 +51,7 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * {@link StringTemplate} is primarily used in conjunction with a template processor
  * to produce a string or other meaningful value. Evaluation of a template expression
- * first produces an instance of {@link StringTemplate}, representing the template
+ * first produces an instance of {@link StringTemplate}, representing the right hand side
  * of the template expression, and then passes the instance to the template processor
  * given by the template expression.
  * <p>
@@ -66,8 +64,8 @@ import jdk.internal.javac.PreviewFeature;
  * List<String> fragments = st.fragments();
  * List<Object> values = st.values();
  * }
- * The value of {@code fragments} will be equivalent to {@code List.of("", " + ", " = ", "")},
- * which includes the empty first and last fragments. The {@code values} will be the
+ * {@code fragments} will be equivalent to {@code List.of("", " + ", " = ", "")},
+ * which includes the empty first and last fragments. {@code values} will be the
  * equivalent of {@code List.of(10, 20, 30)}.
  * <p>
  * The following code contains a template expression with the same template but with a
@@ -428,7 +426,7 @@ public interface StringTemplate {
      * @implNote {@link StringTemplate#STR} is statically imported implicitly into every
      * Java compilation unit.<p>The result of interpolation is not interned.
      */
-    static final StringProcessor STR = StringTemplate::interpolate;
+    StringProcessor STR = StringTemplate::interpolate;
 
     /**
      * This {@link SimpleProcessor} instance is conventionally used to indicate that the
@@ -446,13 +444,13 @@ public interface StringTemplate {
      * @implNote Unlike {@link StringTemplate#STR}, {@link StringTemplate#RAW} must be
      * statically imported explicitly.
      */
-    static final SimpleProcessor<StringTemplate> RAW = st -> st;
+    SimpleProcessor<StringTemplate> RAW = st -> st;
 
     /**
      * This interface describes the methods provided by a generalized string template processor. The
      * primary method {@link Processor#process(StringTemplate)} is used to validate
      * and compose a result using a {@link StringTemplate StringTemplate's} fragments and values lists.
-     *
+     * <p>
      * For example:
      * {@snippet :
      * class MyProcessor implements Processor<String, IllegalArgumentException> {

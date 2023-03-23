@@ -154,7 +154,7 @@ public final class FormatProcessor implements StringProcessor, Linkage {
     public final String process(StringTemplate stringTemplate) {
         Objects.requireNonNull(stringTemplate);
         String format = stringTemplateFormat(stringTemplate.fragments());
-        Object[] values = stringTemplate.values().toArray(new Object[0]);
+        Object[] values = stringTemplate.values().toArray();
 
         return new Formatter(locale).format(format, values).toString();
     }
