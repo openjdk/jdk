@@ -80,7 +80,7 @@ public class ReflectOutOfMemoryError {
         }
     }
 
-    public static void main(java.lang.String[] unused) {
+    public static void main(java.lang.String[] unused) throws Exception {
         System.out.println("Starting test");
         Class testClass = ReflectOutOfMemoryError.class;
         try {
