@@ -312,7 +312,7 @@ module java.base {
     exports sun.reflect.annotation to
         jdk.compiler;
     exports sun.reflect.generics.reflectiveObjects to
-        java.desktop;
+            java.desktop;
     exports sun.reflect.misc to
             java.desktop,
             java.datatransfer,
@@ -329,7 +329,7 @@ module java.base {
     exports sun.security.internal.interfaces to
             jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
-        jdk.crypto.cryptoki;
+            jdk.crypto.cryptoki;
     exports sun.security.jca to
         java.smartcardio,
         jdk.crypto.ec,
