@@ -312,24 +312,24 @@ module java.base {
     exports sun.reflect.annotation to
         jdk.compiler;
     exports sun.reflect.generics.reflectiveObjects to
-            java.desktop;
+        java.desktop;
     exports sun.reflect.misc to
-            java.desktop,
-            java.datatransfer,
-            java.management,
-            java.management.rmi,
-            java.rmi,
-            java.sql.rowset;
+        java.desktop,
+        java.datatransfer,
+        java.management,
+        java.management.rmi,
+        java.rmi,
+        java.sql.rowset;
     exports sun.security.action to
-            java.desktop,
-            java.security.jgss,
-            jdk.crypto.ec,
-            jdk.incubator.concurrent,
-            jdk.jartool;
+        java.desktop,
+        java.security.jgss,
+        jdk.crypto.ec,
+        jdk.incubator.concurrent,
+        jdk.jartool;
     exports sun.security.internal.interfaces to
-            jdk.crypto.cryptoki;
+        jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
-            jdk.crypto.cryptoki;
+        jdk.crypto.cryptoki;
     exports sun.security.jca to
         java.smartcardio,
         jdk.crypto.ec,
