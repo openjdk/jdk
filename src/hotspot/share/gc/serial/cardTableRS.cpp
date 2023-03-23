@@ -131,7 +131,7 @@ void CardTableRS::verify_used_region_at_save_marks(Space* sp) const {
 }
 #endif
 
-void CardTableRS::update_old_gen_cards(Generation* old_gen, bool is_young_gen_empty) {
+void CardTableRS::maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty) {
   assert(GenCollectedHeap::heap()->is_old_gen(old_gen), "precondition");
 
   if (is_young_gen_empty) {
@@ -140,7 +140,7 @@ void CardTableRS::update_old_gen_cards(Generation* old_gen, bool is_young_gen_em
     MemRegion used_mr = old_gen->used_region();
     MemRegion prev_used_mr = old_gen->prev_used_region();
     if (used_mr.end() < prev_used_mr.end()) {
-      // Shrank; need to clear the previously-used but now-unused parts
+      // Shrunk; need to clear the previously-used but now-unused parts.
       clear_MemRegion(MemRegion(used_mr.end(), prev_used_mr.end()));
     }
     // No idea which card contains old-to-young pointer, so dirtying cards for

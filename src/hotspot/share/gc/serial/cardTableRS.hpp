@@ -63,7 +63,7 @@ public:
 
   void verify();
 
-  void update_old_gen_cards(Generation* old_gen, bool is_young_gen_empty);
+  void maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty);
 
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions

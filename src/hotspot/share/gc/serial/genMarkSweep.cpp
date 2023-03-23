@@ -109,9 +109,12 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
 
   MarkSweep::_string_dedup_requests->flush();
 
-  // Update old-gen cards to maintain old-to-young-pointer invariant
+  // Update old gen cards to maintain old-to-young-pointer invariant: Clear
+  // the old generation card table completely if the young generation had been
+  // completely evacuated, otherwise dirties the whole old generation to
+  // conservatively not loose any old-to-young pointer.
   bool is_young_gen_empty = (gch->young_gen()->used() == 0);
-  gch->rem_set()->update_old_gen_cards(gch->old_gen(), is_young_gen_empty);
+  gch->rem_set()->maintain_old_to_young_invariant(gch->old_gen(), is_young_gen_empty);
 
   gch->prune_scavengable_nmethods();
 
