@@ -771,6 +771,11 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return EnableVectorSupport;
   case vmIntrinsics::_blackhole:
+#if INCLUDE_JVMTI
+  case vmIntrinsics::_notifyJvmtiMount:
+  case vmIntrinsics::_notifyJvmtiUnmount:
+  case vmIntrinsics::_notifyJvmtiHideFrames:
+#endif
     break;
 
   default:

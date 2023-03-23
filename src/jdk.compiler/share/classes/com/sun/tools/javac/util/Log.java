@@ -114,6 +114,7 @@ public class Log extends AbstractLog {
      * A DiagnosticHandler that discards all diagnostics.
      */
     public static class DiscardDiagnosticHandler extends DiagnosticHandler {
+        @SuppressWarnings("this-escape")
         public DiscardDiagnosticHandler(Log log) {
             install(log);
         }
@@ -137,6 +138,7 @@ public class Log extends AbstractLog {
             this(log, null);
         }
 
+        @SuppressWarnings("this-escape")
         public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter) {
             this.filter = filter;
             install(log);
@@ -251,6 +253,7 @@ public class Log extends AbstractLog {
      * it will be used for all output.
      * Otherwise, the log will be initialized to use both streams found in the context.
      */
+    @SuppressWarnings("this-escape")
     protected Log(Context context) {
         this(context, initWriters(context));
     }
@@ -278,6 +281,7 @@ public class Log extends AbstractLog {
     /**
      * Construct a log with all output sent to a single output stream.
      */
+    @SuppressWarnings("this-escape")
     protected Log(Context context, PrintWriter writer) {
         this(context, initWriters(writer, writer));
     }
@@ -287,6 +291,7 @@ public class Log extends AbstractLog {
      * The log will be initialized to use stdOut for normal output, and stdErr
      * for all diagnostic output.
      */
+    @SuppressWarnings("this-escape")
     protected Log(Context context, PrintWriter out, PrintWriter err) {
         this(context, initWriters(out, err));
     }
