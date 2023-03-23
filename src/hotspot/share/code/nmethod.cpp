@@ -2136,7 +2136,9 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, con
 
   if (match_desc(upper, pc_offset, approximate)) {
     assert(upper == linear_search(search, pc_offset, approximate), "search ok");
-    _pc_desc_cache.add_pc_desc(upper);
+    if (!Thread::current_in_asgct()) {
+      _pc_desc_cache.add_pc_desc(upper);
+    }
     return upper;
   } else {
     assert(nullptr == linear_search(search, pc_offset, approximate), "search ok");
