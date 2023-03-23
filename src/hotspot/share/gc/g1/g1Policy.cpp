@@ -1400,7 +1400,7 @@ uint G1Policy::calc_max_old_cset_length() const {
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
   // of them are available.
-  double result = (double)_g1h->num_regions() * (size_t)G1OldCSetRegionThresholdPercent / 100;
+  double result = (double)_g1h->num_regions() * G1OldCSetRegionThresholdPercent / 100;
   // Round up to be conservative.
   return (uint)ceil(result);
 }
