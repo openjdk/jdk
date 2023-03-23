@@ -79,7 +79,7 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureAnd = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnGlobalAccumulator(long[] array) {
@@ -91,7 +91,7 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureAnd = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnPartiallyUnrolledLoop(long[] array) {
@@ -109,7 +109,7 @@ public class TestGeneralizedReductions {
     // If this limitation is overcome in the future, the test case should be
     // turned into a positive one.
     @Test
-    @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureAnd = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         failOn = {IRNode.ADD_REDUCTION_VI})
     private static long testReductionOnPartiallyUnrolledLoopWithSwappedInputs(long[] array) {
@@ -122,7 +122,7 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeatureAnd = {"sse4.1", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureAnd = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true",
                       "UsePopCountInstruction", "true",
                       "LoopMaxUnroll", ">= 8"},
