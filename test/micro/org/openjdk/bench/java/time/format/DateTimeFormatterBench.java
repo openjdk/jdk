@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 
 import java.util.Locale;
@@ -70,6 +71,12 @@ public class DateTimeFormatterBench {
             .append(DateTimeFormatter.ISO_DATE)
             .toFormatter();
 
+    private static final DateTimeFormatter YEAR_FORMATTER = new DateTimeFormatterBuilder()
+            .appendLiteral("Year:")
+            .padNext(5)
+            .appendValue(ChronoField.YEAR)
+            .toFormatter();
+
     @Param({
             "HH:mm:ss",
             "HH:mm:ss.SSS",
@@ -80,7 +87,7 @@ public class DateTimeFormatterBench {
 
     private static Instant[] createInstants() {
         // Various instants during the same day
-        final Instant loInstant = Instant.EPOCH.plus(Duration.ofDays(365*50)); // 2020-01-01
+        final Instant loInstant = Instant.EPOCH.plus(Duration.ofDays(365 * 50)); // 2020-01-01
         final Instant hiInstant = loInstant.plus(Duration.ofDays(1));
         final long maxOffsetNanos = Duration.between(loInstant, hiInstant).toNanos();
         final Random random = new Random(0);
@@ -132,6 +139,11 @@ public class DateTimeFormatterBench {
     @Benchmark
     public String formatWithPadding() {
         return FORMATTER_WITH_PADDING.format(now);
+    }
+
+    @Benchmark
+    public String formatWithZeroPadding() {
+        return YEAR_FORMATTER.format(now);
     }
 
 }
