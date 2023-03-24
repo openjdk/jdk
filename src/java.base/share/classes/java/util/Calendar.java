@@ -2077,14 +2077,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * which a {@link DateFormatSymbols} has names in the given
      * {@code locale}.
      *
-     * <p>This method will return {@code null} over throwing an
-     * {@code IllegalArgumentException} when both of the following conditions are true:
-     * <ol>
-     *     <li>There is no string representation of
-     *     the {@code Calendar} {@code field}.</li>
-     *     <li>The calendar is in non-lenient mode and
-     *     any calendar fields have invalid values.</li>
-     * </ol>
+     * <p>If there is no string representation of the {@code Calendar} {@code field}
+     * and the calendar is in non-lenient mode and any calendar fields have invalid values,
+     * {@code null} is returned. If there is a string representation of the {@code Calendar}
+     * {@code field} and the calendar is in non-lenient mode and any calendar fields
+     * have invalid values, {@code IllegalArgumentException} will be thrown.
      *
      * @param field
      *        the calendar field for which the string representation
@@ -2182,8 +2179,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * <p>Unlike {@link #getDisplayName(int, int, Locale)}, this
      * method will not throw an {@code IllegalArgumentException} if the
      * {@code Calendar} is non-lenient and any of the calendar fields have
-     * invalid values. Instead, this method will return one of the two
-     * possible return values specified.
+     * invalid values. Instead, this method will return either {@code null} or
+     * a {@code Map}.
      *
      * @param field
      *        the calendar field for which the display names are returned
