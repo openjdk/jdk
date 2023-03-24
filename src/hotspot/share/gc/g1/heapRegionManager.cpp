@@ -351,7 +351,7 @@ uint HeapRegionManager::expand_any(uint num_regions, WorkerThreads* pretouch_wor
 
 uint HeapRegionManager::expand_by(uint num_regions, WorkerThreads* pretouch_workers) {
   assert(num_regions > 0, "Must expand at least 1 region");
-  log_info(gc)("expanding");
+
   // First "undo" any requests to uncommit memory concurrently by
   // reverting such regions to being available.
   uint expanded = expand_inactive(num_regions);
