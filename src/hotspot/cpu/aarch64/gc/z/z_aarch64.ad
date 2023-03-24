@@ -176,7 +176,7 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP oldval_tmp, TEMP newval_tmp, KILL cr, TEMP_DEF res);
+  effect(TEMP oldval_tmp, TEMP newval_tmp, TEMP res, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -186,8 +186,8 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $oldval_tmp$$Register);
     z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $oldval_tmp$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                false /* acquire */, true /* release */, false /* weak */, noreg);
     __ cset($res$$Register, Assembler::EQ);
@@ -200,7 +200,7 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP oldval_tmp, TEMP newval_tmp, KILL cr, TEMP_DEF res);
+  effect(TEMP oldval_tmp, TEMP newval_tmp, TEMP res, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -210,8 +210,8 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $oldval_tmp$$Register);
     z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $oldval_tmp$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                true /* acquire */, true /* release */, false /* weak */, noreg);
     __ cset($res$$Register, Assembler::EQ);
@@ -224,7 +224,7 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP oldval_tmp, TEMP newval_tmp, KILL cr, TEMP_DEF res);
+  effect(TEMP oldval_tmp, TEMP newval_tmp, TEMP res, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -234,8 +234,8 @@ instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $oldval_tmp$$Register);
     z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $oldval_tmp$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                false /* acquire */, true /* release */, false /* weak */, $res$$Register);
     z_uncolor(_masm, this, $res$$Register);
@@ -247,7 +247,7 @@ instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
 instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp oldval_tmp, iRegPNoSp newval_tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP oldval_tmp, TEMP newval_tmp, KILL cr, TEMP_DEF res);
+  effect(TEMP oldval_tmp, TEMP newval_tmp, TEMP res, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -257,8 +257,8 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
   ins_encode %{
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $oldval_tmp$$Register);
     z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $oldval_tmp$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
                true /* acquire */, true /* release */, false /* weak */, $res$$Register);
     z_uncolor(_masm, this, $res$$Register);
@@ -270,7 +270,7 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
 instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
   predicate(UseZGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF prev, KILL cr);
+  effect(TEMP prev, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -288,7 +288,7 @@ instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
 instruct zGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
   predicate(UseZGC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF prev, KILL cr);
+  effect(TEMP prev, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
