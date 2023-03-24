@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,24 @@
  */
 
 /* @test
- * @bug 4417152 4481572 6248930 6725399 6884800 8220477 8275149
+ * @bug 4417152 4481572 4670339 6248930 6725399 6884800 8220477 8275149
  * @summary Test Channels basic functionality
+ * @library .. /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main Basic
+ * @key randomness
  */
 
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.nio.channels.*;
+import java.util.Arrays;
+import java.util.Random;
+import jdk.test.lib.RandomFactory;
 
 public class Basic {
+    private static final Random RND = RandomFactory.getRandom();
 
     static String message;
 
@@ -186,6 +194,8 @@ public class Basic {
             readAndCheck(blah);
             blah.delete();
 
+            testNewChannelOutFlush();
+
             testNewChannelWriteAfterClose(blah);
 
             testNewChannelReadAfterClose(blah);
@@ -286,6 +296,32 @@ public class Basic {
             wbc.write(ByteBuffer.wrap(message.getBytes(encoding)));
         wbc.close();
         fos.close();
+    }
+
+    private static void testNewChannelOutFlush() throws Exception {
+        final int size = 8192;
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
+        try (BufferedOutputStream bos = new BufferedOutputStream(baos, size);
+             WritableByteChannel wbc = Channels.newChannel(bos);) {
+            int max = size + 1 + RND.nextInt(size);
+            byte[] expected = new byte[max];
+            RND.nextBytes(expected);
+            int offset = 0;
+            while (offset < max) {
+                int length = 1 + RND.nextInt(max - offset);
+                ByteBuffer buf = ByteBuffer.wrap(expected, offset, length);
+                int n = wbc.write(buf);
+                if (n < 0)
+                    break;
+                offset += n;
+                long baosSize = baos.size();
+                if (baosSize != offset)
+                    throw new RuntimeException(baosSize + " != " + offset);
+            }
+            if (!Arrays.equals(expected, baos.toByteArray()))
+                throw new RuntimeException("Arrays are not equal");
+        }
     }
 
     private static void testNewChannelIn(File blah) throws Exception {

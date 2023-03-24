@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,8 +341,11 @@ public final class Channels {
      * Constructs a channel that writes bytes to the given stream.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
-     * its I/O operations to the given stream.  Closing the channel will in
-     * turn cause the stream to be closed.  </p>
+     * its I/O operations to the given stream.  Upon returning from the
+     * channel's {@linkplain WritableByteChannel#write write} method, the
+     * state of the stream will be as if its {@linkplain OutputStream#flush
+     * flush} method had been invoked.  Closing the channel will in turn cause
+     * the stream to be closed. </p>
      *
      * @param  out
      *         The stream to which bytes are to be written
@@ -395,6 +398,7 @@ public final class Channels {
                     }
                     totalWritten += bytesToWrite;
                 }
+                out.flush();
                 return totalWritten;
             }
         }
