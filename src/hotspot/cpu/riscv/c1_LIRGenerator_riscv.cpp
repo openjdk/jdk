@@ -126,15 +126,15 @@ bool LIRGenerator::can_inline_as_constant(Value v) const {
   if (v->type()->as_IntConstant() != NULL) {
     int value = v->type()->as_IntConstant()->value();
     // "-value" must be defined for value may be used for sub
-    return Assembler::operand_valid_for_add_immediate(value) &&
-           Assembler::operand_valid_for_add_immediate(- value);
+    return Assembler::operand_valid_for_add_sub_immediate(value) &&
+           Assembler::operand_valid_for_add_sub_immediate(- value);
   } else if (v->type()->as_ObjectConstant() != NULL) {
     return v->type()->as_ObjectConstant()->value()->is_null_object();
   } else if (v->type()->as_LongConstant() != NULL) {
     long value = v->type()->as_LongConstant()->value();
     // "-value" must be defined for value may be used for sub
-    return Assembler::operand_valid_for_add_immediate(value) &&
-           Assembler::operand_valid_for_add_immediate(- value);
+    return Assembler::operand_valid_for_add_sub_immediate(value) &&
+           Assembler::operand_valid_for_add_sub_immediate(- value);
   } else if (v->type()->as_FloatConstant() != NULL) {
     return v->type()->as_FloatConstant()->value() == 0.0f;
   } else if (v->type()->as_DoubleConstant() != NULL) {
@@ -152,8 +152,8 @@ bool LIRGenerator::can_inline_as_constant(LIR_Const* c) const {
       default:     return false;
     }
     // "-constant" must be defined for c may be used for sub
-    return Assembler::operand_valid_for_add_immediate(constant) &&
-           Assembler::operand_valid_for_add_immediate(- constant);
+    return Assembler::operand_valid_for_add_sub_immediate(constant) &&
+           Assembler::operand_valid_for_add_sub_immediate(- constant);
   }
   return false;
 }
@@ -411,9 +411,9 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
       if (x->op() == Bytecodes::_lmul ||
           !right.is_constant() ||
           (x->op() == Bytecodes::_ladd &&
-          !Assembler::operand_valid_for_add_immediate(right.get_jlong_constant())) ||
+          !Assembler::operand_valid_for_add_sub_immediate(right.get_jlong_constant())) ||
           (x->op() == Bytecodes::_lsub &&
-          !Assembler::operand_valid_for_add_immediate(-right.get_jlong_constant()))) {
+          !Assembler::operand_valid_for_add_sub_immediate(-right.get_jlong_constant()))) {
             right.load_item();
       } else { // add, sub
         assert(x->op() == Bytecodes::_ladd || x->op() == Bytecodes::_lsub, "expected ladd or lsub");
@@ -474,8 +474,8 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
 
   } else if (x->op() == Bytecodes::_iadd || x->op() == Bytecodes::_isub) {
     if (right.is_constant() &&
-        ((x->op() == Bytecodes::_iadd && !Assembler::operand_valid_for_add_immediate(right.get_jint_constant())) ||
-         (x->op() == Bytecodes::_isub && !Assembler::operand_valid_for_add_immediate(-right.get_jint_constant())))) {
+        ((x->op() == Bytecodes::_iadd && !Assembler::operand_valid_for_add_sub_immediate(right.get_jint_constant())) ||
+         (x->op() == Bytecodes::_isub && !Assembler::operand_valid_for_add_sub_immediate(-right.get_jint_constant())))) {
       right.load_nonconstant();
     } else {
       right.load_item();
@@ -546,8 +546,8 @@ void LIRGenerator::do_LogicOp(LogicOp* x) {
   rlock_result(x);
   ValueTag tag = right.type()->tag();
   if (right.is_constant() &&
-     ((tag == longTag && Assembler::operand_valid_for_add_immediate(right.get_jlong_constant())) ||
-      (tag == intTag && Assembler::operand_valid_for_add_immediate(right.get_jint_constant()))))  {
+     ((tag == longTag && Assembler::operand_valid_for_add_sub_immediate(right.get_jlong_constant())) ||
+      (tag == intTag && Assembler::operand_valid_for_add_sub_immediate(right.get_jint_constant()))))  {
     right.dont_load_item();
   } else {
     right.load_item();
