@@ -35,35 +35,18 @@ import java.util.Properties;
 /**
  * Supported platforms
  */
-public record Platform(OperatingSystem os, Architecture arch) {
-
-    private static final Map<Platform, ByteOrder> endianness;
+public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianness) {
+    private static final Properties KNOWN_ENDIANNESS;
 
     static {
-        Properties p;
+        Properties p = null;
         try (InputStream is = Platform.class.getResourceAsStream("target.properties")) {
             p = new Properties();
             p.load(is);
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
         }
-        Map<Platform, ByteOrder> byteOrders = new HashMap<>();
-        for (String k : p.stringPropertyNames()) {
-            Platform platform = parsePlatform(k);
-            if (platform.os == OperatingSystem.UNKNOWN || platform.arch == Architecture.UNKNOWN) {
-                // skip unknown platform
-                continue;
-            }
-            String v = p.getProperty(k);
-            ByteOrder endian = switch (v.trim().toLowerCase(Locale.ROOT)) {
-                case "little" -> ByteOrder.LITTLE_ENDIAN;
-                case "big" -> ByteOrder.BIG_ENDIAN;
-                default -> throw new ExceptionInInitializerError("Unrecognized endian value '"
-                        + v + "' for arch '" + k + "'");
-            };
-            byteOrders.put(platform, endian);
-        }
-        endianness = byteOrders;
+        KNOWN_ENDIANNESS = p;
     }
 
     public enum OperatingSystem {
@@ -85,7 +68,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
         UNKNOWN;
     }
 
-    public static final Platform UNKNOWN = new Platform(OperatingSystem.UNKNOWN, Architecture.UNKNOWN);
+    public static final Platform UNKNOWN = new Platform(OperatingSystem.UNKNOWN, Architecture.UNKNOWN, null);
 
     /*
      * Returns the {@code Platform} based on the platformString of the form <operating system>-<arch>.
@@ -108,7 +91,20 @@ public record Platform(OperatingSystem os, Architecture arch) {
             os = OperatingSystem.UNKNOWN;
         }
         Architecture arch = toArch(archName);
-        return new Platform(os, arch);
+
+        if (os == OperatingSystem.UNKNOWN || arch == Architecture.UNKNOWN) {
+            return UNKNOWN;
+        }
+        // map the endianness from target.properties
+        // until ModuleTarget attribute is extended to include the endianness
+        String v = KNOWN_ENDIANNESS.getProperty(platformString);
+        ByteOrder endian = switch (v.trim().toLowerCase(Locale.ROOT)) {
+            case "little" -> ByteOrder.LITTLE_ENDIAN;
+            case "big" -> ByteOrder.BIG_ENDIAN;
+            default -> throw new InternalError("Unrecognized endian value '" + platformString + "'");
+        };
+
+        return new Platform(os, arch, endian);
     }
 
     /**
@@ -125,14 +121,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
      * Returns the runtime {@code Platform}.
      */
     public static Platform runtime() {
-        return new Platform(runtimeOS(), runtimeArch());
-    }
-
-    /**
-     * {@return the native {@link ByteOrder} of this {@code Platform} or null if not known}
-     */
-    public ByteOrder getNativeByteOrder() {
-        return endianness.get(this);
+        return new Platform(runtimeOS(), runtimeArch(), ByteOrder.nativeOrder());
     }
 
     /**

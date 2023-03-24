@@ -818,46 +818,24 @@ public class JlinkTask {
                     boolean ignoreSigning,
                     boolean verbose,
                     PrintWriter log) throws IOException {
-            if (order != null) {
-                this.order = order;
-                String targetPlatformVal = readJavaBaseTargetPlatform(cf);
-                this.targetPlatform = Platform.parsePlatform(targetPlatformVal);
-                // explicit endianness specified, verify it matches the target java.base
-                // platform's endianness
-                ByteOrder targetEndianness = this.targetPlatform.getNativeByteOrder();
-                if (targetEndianness != null && (this.order != targetEndianness)) {
-                    // explicitly specified endianness doesn't match the determined endianness
-                    // of the target platform
-                    throw new IOException(
-                            taskHelper.getMessage("err.target.endianness.mismatch", order,
-                                    targetPlatformVal));
-                }
-            } else {
-                Path javaBasePath = modsPaths.get("java.base");
-                assert javaBasePath != null : "java.base module path is missing";
-                if (this.isJavaBaseFromCurrentPlatform(javaBasePath)) {
-                    // this implies that the java.base module used for the target image
-                    // will correspond to the current platform. So this isn't an attempt to
-                    // build a cross-platform image. We use the current platform's endianness
-                    // in this case
-                    this.targetPlatform = Platform.runtime();
-                    this.order = ByteOrder.nativeOrder();
-                } else {
-                    // this is an attempt to build a cross-platform image. We now attempt to
-                    // find the target platform's arch and thus its endianness from the java.base
-                    // module's ModuleTarget attribute
-                    String targetPlatformVal = readJavaBaseTargetPlatform(cf);
-                    this.targetPlatform = Platform.parsePlatform(targetPlatformVal);
-                    this.order = this.targetPlatform.getNativeByteOrder();
-                    if (this.order == null) {
-                        throw new IOException(
-                                taskHelper.getMessage("err.unknown.target.endianness",
-                                        targetPlatformVal));
-                    }
-                    if (verbose && log != null) {
-                        log.format("Cross-platform image generation, using %s for target platform" +
-                                        " %s%n", this.order, targetPlatformVal);
-                    }
+            this.targetPlatform = targetPlatform(cf, modsPaths);
+            this.order = order != null ? order : targetPlatform.endianness();
+            if (this.order == null) {
+                throw new IOException(
+                        taskHelper.getMessage("err.unknown.target.endianness", targetPlatform));
+            }
+
+            if (this.order != targetPlatform.endianness() && targetPlatform.endianness() != null) {
+                // explicitly specified endianness doesn't match the determined endianness
+                // of the target platform
+                throw new IOException(
+                        taskHelper.getMessage("err.target.endianness.mismatch", order, targetPlatform));
+            }
+            if (verbose && log != null) {
+                Platform runtime = Platform.runtime();
+                if (runtime.os() != targetPlatform.os() || runtime.arch() != targetPlatform.arch()) {
+                    log.format("Cross-platform image generation, using %s for target platform %s%n",
+                            this.order, targetPlatform);
                 }
             }
             this.packagedModulesPath = packagedModulesPath;
@@ -878,9 +856,27 @@ public class JlinkTask {
                                 .collect(Collectors.toSet());
         }
 
+        private static Platform targetPlatform(Configuration cf, Map<String, Path> modsPaths) throws IOException {
+            Path javaBasePath = modsPaths.get("java.base");
+            assert javaBasePath != null : "java.base module path is missing";
+            if (isJavaBaseFromCurrentPlatform(javaBasePath)) {
+                // this implies that the java.base module used for the target image
+                // will correspond to the current platform. So this isn't an attempt to
+                // build a cross-platform image. We use the current platform's endianness
+                // in this case
+                return Platform.runtime();
+            } else {
+                // this is an attempt to build a cross-platform image. We now attempt to
+                // find the target platform's arch and thus its endianness from the java.base
+                // module's ModuleTarget attribute
+                String targetPlatformVal = readJavaBaseTargetPlatform(cf);
+                return Platform.parsePlatform(targetPlatformVal);
+            }
+        }
+
         // returns true if the current platform's "jmods" directory is the parent of the
         // passed javaBasePath
-        private boolean isJavaBaseFromCurrentPlatform(Path javaBasePath) throws IOException {
+        private static boolean isJavaBaseFromCurrentPlatform(Path javaBasePath) throws IOException {
             Path currentPlatformJmods = getDefaultModulePath();
             if (currentPlatformJmods == null) {
                 return false;
