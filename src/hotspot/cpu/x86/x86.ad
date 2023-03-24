@@ -2296,6 +2296,15 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
+const int Matcher::superword_max_vector_size(const BasicType bt) {
+  // Limit the max vector size for auto vectorization to 256 bits (32 bytes)
+  // by default on Cascade Lake
+  if (VM_Version::is_default_intel_cascade_lake()) {
+    return MIN2(Matcher::max_vector_size(bt), 32 / type2aelembytes(bt));
+  }
+  return Matcher::max_vector_size(bt);
+}
+
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }

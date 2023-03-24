@@ -257,15 +257,6 @@ public class Helper {
         return jLinkTask.call();
     }
 
-    public Result postProcessImage(Path root, String[] options) {
-        JLinkTask jLinkTask = JImageGenerator.getJLinkTask()
-                .existing(root);
-        for (String option : options) {
-            jLinkTask.option(option);
-        }
-        return jLinkTask.callPostProcess();
-    }
-
     private List<String> getDefaultClasses(String module) {
         return Arrays.asList(module + ".Main", module + ".com.foo.bar.X");
     }
