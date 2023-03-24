@@ -115,7 +115,7 @@ public:
                        G1RedirtyCardsQueueSet* rdcqs,
                        PreservedMarks* preserved_marks,
                        uint worker_id,
-                       uint n_workers,
+                       uint num_workers,
                        size_t young_cset_length,
                        size_t optional_cset_length,
                        G1EvacFailureRegions* evac_failure_regions);
@@ -236,13 +236,13 @@ class G1ParScanThreadStateSet : public StackObj {
   size_t* _surviving_young_words_total;
   size_t _young_cset_length;
   size_t _optional_cset_length;
-  uint _n_workers;
+  uint _num_workers;
   bool _flushed;
   G1EvacFailureRegions* _evac_failure_regions;
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
-                          uint n_workers,
+                          uint num_workers,
                           size_t young_cset_length,
                           size_t optional_cset_length,
                           G1EvacFailureRegions* evac_failure_regions);
