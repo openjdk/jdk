@@ -602,8 +602,6 @@ public class CDSTestUtils {
 
     // ============================= Logging
     public static OutputAnalyzer executeAndLog(ProcessBuilder pb, String logName) throws Exception {
-        ArrayList<String> cmd = pb.commmand();
-        cmd.add()
         long started = System.currentTimeMillis();
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         String logFileNameStem =
