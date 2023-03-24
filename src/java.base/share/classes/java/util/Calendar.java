@@ -1840,7 +1840,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the given calendar field.
      * @return the value for the given calendar field.
      * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
-     *             (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
+     * @throws IllegalArgumentException if this {@code Calendar} is non-lenient and any
+     * of the calendar fields have invalid values.
      * @see #set(int,int)
      * @see #complete()
      */
@@ -1856,6 +1858,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the given calendar field.
      * @return the value for the given calendar field.
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #get(int)
      */
     protected final int internalGet(int field)
@@ -1868,8 +1872,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * not affect any setting state of the field in this
      * {@code Calendar} instance.
      *
-     * @throws IndexOutOfBoundsException if the specified field is out of range
-     *             (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #areFieldsSet
      * @see #isTimeSet
      * @see #areAllFieldsSet
@@ -1887,8 +1891,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the given calendar field.
      * @param value the value to be set for the given calendar field.
      * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
-     *             (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
-     * in non-lenient mode.
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #set(int,int,int)
      * @see #set(int,int,int,int,int)
      * @see #set(int,int,int,int,int,int)
@@ -2030,6 +2033,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * value.
      *
      * @param field the calendar field to be cleared.
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #clear()
      */
     public final void clear(int field)
@@ -2049,6 +2054,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field to test
      * @return {@code true} if the given calendar field has a value set;
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * {@code false} otherwise.
      */
     public final boolean isSet(int field)
@@ -2801,6 +2808,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @param amount the amount of date or time to be added to the field.
+     * @throws IllegalArgumentException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= MILLISECOND</code>) and {@code amount} is
+     * not zero or this {@code Calendar} is non-lenient and any of the calendar fields
+     * have invalid values.
      * @see #roll(int,int)
      * @see #set(int,int)
      */
@@ -2823,6 +2834,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the time field.
      * @param up indicates if the value of the specified time field is to be
      * rolled up or rolled down. Use true if rolling up, false otherwise.
+     * @throws IllegalArgumentException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= MILLISECOND</code>) and {@code amount} is
+     * not zero or this {@code Calendar} is non-lenient and any of the calendar fields
+     * have invalid values.
      * @see Calendar#add(int,int)
      * @see Calendar#set(int,int)
      */
@@ -2842,6 +2857,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @param amount the signed amount to add to the calendar {@code field}.
+     * @throws IllegalArgumentException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= MILLISECOND</code>) and {@code amount} is
+     * not zero or this {@code Calendar} is non-lenient and any of the calendar fields
+     * have invalid values.
      * @since 1.2
      * @see #roll(int,boolean)
      * @see #add(int,int)
@@ -3107,6 +3126,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @return the minimum value for the given calendar field.
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #getMaximum(int)
      * @see #getGreatestMinimum(int)
      * @see #getLeastMaximum(int)
@@ -3124,6 +3145,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @return the maximum value for the given calendar field.
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #getMinimum(int)
      * @see #getGreatestMinimum(int)
      * @see #getLeastMaximum(int)
@@ -3142,6 +3165,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @return the highest minimum value for the given calendar field.
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #getMinimum(int)
      * @see #getMaximum(int)
      * @see #getLeastMaximum(int)
@@ -3164,6 +3189,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @return the lowest maximum value for the given calendar field.
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #getMinimum(int)
      * @see #getMaximum(int)
      * @see #getGreatestMinimum(int)
@@ -3185,6 +3212,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the calendar field
      * @return the minimum of the given calendar field for the time
      * value of this {@code Calendar}
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #getMinimum(int)
      * @see #getMaximum(int)
      * @see #getGreatestMinimum(int)
@@ -3239,6 +3268,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the calendar field
      * @return the maximum of the given calendar field for the time
      * value of this {@code Calendar}
+     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
+     * (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #getMinimum(int)
      * @see #getMaximum(int)
      * @see #getGreatestMinimum(int)
