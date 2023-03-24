@@ -48,11 +48,11 @@ static void test_for_c_heap(size_t sz, ssize_t offset) {
   LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), offset);
   memset(c, 0, sz);
   if (MemTracker::enabled()) {
-    const char* expected_string = "into life malloced block";
+    const char* expected_string = "into live malloced block";
     if (offset < 0) {
-      expected_string = "into header of life malloced block";
+      expected_string = "into header of live malloced block";
     } else if ((size_t)offset >= sz) {
-      expected_string = "just outside of life malloced block";
+      expected_string = "just outside of live malloced block";
     }
     test_pointer(c + offset, true, expected_string);
   } else {
