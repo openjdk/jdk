@@ -791,6 +791,11 @@ public abstract class Charset$Coder$ {
      *          position cannot be mapped to an equivalent $otype$ sequence and
      *          the current unmappable-character action is {@link
      *          CodingErrorAction#REPORT}
+     *
+     * @throws  CharacterCodingException
+     *          If an error other than {@code MalformedInputException} or
+     *          {@code UnmappableCharacterException} occurs during the $coding$
+     *          operation
      */
     public final $Otype$Buffer $code$($Itype$Buffer in)
         throws CharacterCodingException

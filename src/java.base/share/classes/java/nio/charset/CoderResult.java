@@ -251,6 +251,9 @@ public class CoderResult {
     /**
      * Throws an exception appropriate to the result described by this object.
      *
+     * @implNote The default implementation does not throw a
+     *          {@code CharacterCodingException}.
+     *
      * @throws  BufferUnderflowException
      *          If this object is {@link #UNDERFLOW}
      *
@@ -264,6 +267,10 @@ public class CoderResult {
      * @throws  UnmappableCharacterException
      *          If this object represents an unmappable-character error; the
      *          exception's length value will be that of this object
+     *
+     * @throws  CharacterCodingException
+     *          If this object represents a character-coding error other
+     *          than a malformed-input or an unmappable-character error
      */
     public void throwException()
         throws CharacterCodingException
