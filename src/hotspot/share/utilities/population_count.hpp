@@ -123,31 +123,11 @@ struct PopulationCountImpl : public PopulationCountFallbackImpl<T> {};
  *****************************************************************************/
 #elif defined(TARGET_COMPILER_visCPP)
 
-#if defined(AARCH64)
-
-#include <intrin.h>
-
-template <typename T>
-struct PopulationCountImpl {
-  inline unsigned operator()(unsigned int x) const {
-    return (*this)(static_cast<unsigned long>(x));
-  }
-
-  inline unsigned operator()(unsigned long x) const {
-    return _CountOneBits(x);
-  }
-
-  inline unsigned operator()(unsigned __int64 x) const {
-    return _CountOneBits64(x);
-  }
-};
-
-#else
+// _CountOneBits and _CountOneBits64 were not correctly defined for AArch64 until Visual Studio
+// 2022. Currently GHA is using Visual Studio 2019.
 
 template <typename T>
 struct PopulationCountImpl : public PopulationCountFallbackImpl<T> {};
-
-#endif
 
 /*****************************************************************************
  * Unknown toolchain
