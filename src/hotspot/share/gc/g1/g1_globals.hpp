@@ -113,7 +113,7 @@
           "of the optimal occupancy to start marking.")                     \
           range(1, max_intx)                                                \
                                                                             \
-  product(uint, G1ConfidencePercent, 50,                                    \
+  product(uintx, G1ConfidencePercent, 50,                                   \
           "Confidence level for MMU/pause predictions")                     \
           range(0, 100)                                                     \
                                                                             \
