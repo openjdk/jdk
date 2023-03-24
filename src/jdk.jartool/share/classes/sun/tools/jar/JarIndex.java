@@ -76,20 +76,13 @@ class JarIndex {
             "true".equals(System.getProperty("sun.misc.JarIndex.metaInfFilenames"));
 
     /**
-     * Constructs a new, empty jar index.
-     */
-    private JarIndex() {
-        indexMap = new HashMap<>();
-        jarMap = new HashMap<>();
-    }
-
-    /**
      * Constructs a new index for the specified list of jar files.
      *
      * @param files the list of jar files to construct the index from.
      */
     public JarIndex(String[] files) throws IOException {
-        this();
+        this.indexMap = new HashMap<>();
+        this.jarMap = new HashMap<>();
         this.jarFiles = files;
         parseJars(files);
     }
