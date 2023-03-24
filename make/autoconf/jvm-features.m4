@@ -247,9 +247,9 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_CDS],
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_DTRACE],
 [
   JVM_FEATURES_CHECK_AVAILABILITY(dtrace, [
-    AC_MSG_CHECKING([for dtrace tool])
+    AC_MSG_CHECKING([for dtrace tool and platform support])
     if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
-      AC_MSG_RESULT([no])
+      AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU_ARCH])
       AVAILABLE=false
     elif test "x$DTRACE" != "x" && test -x "$DTRACE"; then
       AC_MSG_RESULT([$DTRACE])
