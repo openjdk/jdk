@@ -753,7 +753,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     }
     if (failing())  return;
     if (cg == nullptr) {
-      record_method_not_compilable("cannot parse method");
+      const char* reason = InlineTree::check_can_parse(method());
+      assert(reason != nullptr, "expect reason for parse failure");
+      stringStream ss;
+      ss.print("cannot parse method: %s", reason);
+      record_method_not_compilable(ss.as_string());
       return;
     }
 
@@ -762,7 +766,10 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == nullptr) {
       if (!failure_reason_is(C2Compiler::retry_class_loading_during_parsing())) {
-        record_method_not_compilable("method parse failed");
+        assert(failure_reason() != nullptr, "expect reason for parse failure");
+        stringStream ss;
+        ss.print("method parse failed: %s", failure_reason());
+        record_method_not_compilable(ss.as_string());
       }
       return;
     }
@@ -1703,7 +1710,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       assert(field == nullptr ||
              original_field == nullptr ||
              (field->holder() == original_field->holder() &&
-              field->offset() == original_field->offset() &&
+              field->offset_in_bytes() == original_field->offset_in_bytes() &&
               field->is_static() == original_field->is_static()), "wrong field?");
       // Set field() and is_rewritable() attributes.
       if (field != nullptr)  alias_type(idx)->set_field(field);
@@ -3922,6 +3929,8 @@ bool Compile::final_graph_reshaping() {
   // an infinite loop may have been eliminated by the optimizer,
   // in which case the graph will be empty.
   if (root()->req() == 1) {
+    // Do not compile method that is only a trivial infinite loop,
+    // since the content of the loop may have been eliminated.
     record_method_not_compilable("trivial infinite loop");
     return true;
   }
@@ -3987,8 +3996,11 @@ bool Compile::final_graph_reshaping() {
           }
         }
       }
+
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
+        DEBUG_ONLY( n->dump_bfs(1, 0, "-"); );
+        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
@@ -4007,6 +4019,9 @@ bool Compile::final_graph_reshaping() {
     // must be infinite loops.
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++)
       if (!frc._visited.test(n->fast_out(j)->_idx)) {
+        DEBUG_ONLY( n->fast_out(j)->dump(); );
+        DEBUG_ONLY( n->dump_bfs(1, 0, "-"); );
+        assert(false, "infinite loop");
         record_method_not_compilable("infinite loop");
         return true;            // Found unvisited kid; must be unreach
       }
