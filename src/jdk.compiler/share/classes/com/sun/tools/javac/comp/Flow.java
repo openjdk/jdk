@@ -61,6 +61,7 @@ import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import java.util.Arrays;
 
 /** This pass implements dataflow analysis for Java programs though
  *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
@@ -703,8 +704,7 @@ public class Flow {
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.cases);
-                tree.isExhaustive |= isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
+                tree.isExhaustive |= exhausts(tree.selector, tree.cases);
                 if (!tree.isExhaustive) {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
@@ -738,15 +738,192 @@ public class Flow {
                     }
                 }
             }
-            Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.cases);
+//            Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.cases);
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
-                                isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
+                                exhausts(tree.selector, tree.cases);
             if (!tree.isExhaustive) {
                 log.error(tree, Errors.NotExhaustive);
             }
             alive = prevAlive;
             alive = alive.or(resolveYields(tree, prevPendingExits));
+        }
+
+        sealed interface PatternDescription {
+            public static PatternDescription from(JCPattern pattern) {
+                if (pattern instanceof JCBindingPattern binding) {
+                    return new BindingPattern(binding.type);
+                } else if (pattern instanceof JCRecordPattern record) {
+                    return new RecordPattern(record.type, record.nested.map(PatternDescription::from).toArray(s -> new PatternDescription[s]));
+                } else {
+                    throw Assert.error();
+                }
+            }
+        }
+        record BindingPattern(Type type) implements PatternDescription {}
+        record RecordPattern(Type recordType, PatternDescription... nested) implements PatternDescription {}
+        private boolean exhausts(JCExpression selector, List<JCCase> cases) {
+            List<PatternDescription> patterns = List.nil();
+            for (JCCase c : cases) {
+                for (var l : c.labels) {
+                    if (!(l instanceof JCPatternCaseLabel patternLabel) || !TreeInfo.unguardedCaseLabel(l))
+                        continue;
+                    patterns = patterns.prepend(PatternDescription.from(patternLabel.pat));
+                }
+            }
+            boolean repeat = true;
+            while (repeat) {
+                repeat = false;
+                List<PatternDescription> updatedPatterns;
+                updatedPatterns = reduceBindingPatterns(patterns);
+                if (!(repeat |= updatedPatterns != patterns)) {
+                    updatedPatterns = reduceNestedPatterns(patterns);
+                }
+                if (!(repeat |= updatedPatterns != patterns)) {
+                    updatedPatterns = reduceRecordPatterns(patterns);
+                }
+                repeat |= updatedPatterns != patterns;
+                patterns = updatedPatterns;
+                for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
+                    if (it1.head instanceof BindingPattern bp && bp.type.tsym == selector.type.tsym) {
+                        return true;
+                    }
+                }
+            }
+            for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
+                if (it1.head instanceof BindingPattern bp && bp.type.tsym == selector.type.tsym) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private List<PatternDescription> reduceBindingPatterns(List<PatternDescription> patterns) {
+            //TODO: "viable" permitted subtypes
+            for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
+                if (it1.head instanceof BindingPattern bpOne) {
+                    for (Type sup : types.directSupertypes(bpOne.type)) {
+                        ListBuffer<PatternDescription> bindings = new ListBuffer<>();
+                        ClassSymbol clazz = (ClassSymbol) sup.tsym; //TODO: j.l.Object's supertype!!
+
+                        if (clazz.isSealed()) {
+                            Set<Symbol> permitted = new HashSet<>(clazz.permitted);
+                            permitted.remove(bpOne.type.tsym);
+                            bindings.append(it1.head);
+                            for (var it2 = it1.tail; it2.nonEmpty(); it2 = it2.tail) {
+                                if (it2.head instanceof BindingPattern bpOther && permitted.remove(bpOther.type.tsym)) {
+                                    bindings.append(it2.head);
+                                }
+                            }
+                            if (permitted.isEmpty()) {
+                                for (PatternDescription pd : bindings) {
+                                    patterns = List.filter(patterns, pd);
+                                }
+                                patterns = patterns.prepend(new BindingPattern(clazz.type));
+                                return patterns;
+                            }
+                        }
+                    }
+                }
+            }
+            return patterns;
+        }
+
+        private List<PatternDescription> reduceNestedPatterns(List<PatternDescription> patterns) {
+            for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
+                if (it1.head instanceof RecordPattern rpOne) {
+                    for (int mismatchingCandidate = 0; mismatchingCandidate < rpOne.nested.length; mismatchingCandidate++) {
+                        ListBuffer<RecordPattern> join = new ListBuffer<>();
+
+                        join.append(rpOne);
+
+                        NEXT_PATTERN: for (var it2 = it1.tail; it2.nonEmpty(); it2 = it2.tail) {
+                            if (it2.head instanceof RecordPattern rpOther) {
+                                if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
+                                    for (int i = 0; i < rpOne.nested.length; i++) {
+                                        if (i != mismatchingCandidate && !exactlyMatches(rpOne.nested[i], rpOther.nested[i])) {
+                                            continue NEXT_PATTERN;
+                                        }
+                                    }
+                                    join.append(rpOther);
+                                }
+                            }
+                        }
+
+                        //XXX: may result to more than one!!!
+                        int mismatchingCandidateFin = mismatchingCandidate;
+                        List<PatternDescription> nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(List.collector());
+                        List<PatternDescription> updatedPatterns = reduceBindingPatterns(nestedPatterns);
+
+                        if (nestedPatterns == updatedPatterns) {
+                            updatedPatterns = reduceNestedPatterns(nestedPatterns);
+                        }
+
+                        if (nestedPatterns != updatedPatterns) {
+                            for (RecordPattern rp : join) {
+                                patterns = List.filter(patterns, rp);
+                            }
+                            for (PatternDescription nested : updatedPatterns) {
+                                PatternDescription[] nue = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
+                                nue[mismatchingCandidateFin] = nested;
+                                patterns = patterns.prepend(new RecordPattern(rpOne.recordType, nue));
+                            }
+                            return patterns;
+                        }
+                    }
+                }
+            }
+            return patterns;
+        }
+
+        private boolean exactlyMatches(PatternDescription one, PatternDescription other) {
+            if (one instanceof BindingPattern bpOne && other instanceof BindingPattern bpOther) {
+                return bpOne.type.tsym == bpOther.type.tsym;
+            } else if (one instanceof RecordPattern rpOne && other instanceof RecordPattern rpOther) {
+                if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
+                    for (int i = 0; i < rpOne.nested.length; i++) {
+                        if (!exactlyMatches(rpOne.nested[i], rpOther.nested[i])) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private List<PatternDescription> reduceRecordPatterns(List<PatternDescription> patterns) {
+            NEXT_RECORD: for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
+                if (it1.head instanceof RecordPattern rpOne) {
+                    PatternDescription nue = reduceRecordPattern(rpOne);
+                    if (nue != rpOne) {
+                        patterns = List.filter(patterns, rpOne).prepend(nue);
+                        return patterns;
+                    }
+                }
+            }
+            return patterns;
+        }
+
+        private PatternDescription reduceRecordPattern(PatternDescription pattern) {
+            if (pattern instanceof RecordPattern rpOne) {
+                Symbol[] formalComponents = ((ClassSymbol) rpOne.recordType.tsym).getRecordComponents().map(rc -> rc.type.tsym).toArray(s -> new Symbol[s]);
+                boolean covered = true;
+                for (int i = 0; i < formalComponents.length; i++) {
+                    PatternDescription newNested = reduceRecordPattern(rpOne.nested[i]);
+                    if (newNested != rpOne.nested[i]) {
+                        PatternDescription[] nue = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
+                        nue[i] = newNested;
+                        return new RecordPattern(rpOne.recordType, nue);
+                    }
+
+                    covered &= rpOne.nested[i] instanceof BindingPattern bp && bp.type.tsym == formalComponents[i];
+                }
+                if (covered) {
+                    return new BindingPattern(rpOne.recordType);
+                }
+            }
+            return pattern;
         }
 
         private Set<Symbol> coveredSymbolsForCases(DiagnosticPosition pos,
