@@ -3201,6 +3201,31 @@ public:
   }
 };
 
+// Special closure for enqueuing discovered fields: during enqueue the card table
+// may not be in shape to properly handle normal barrier calls (e.g. card marks
+// in regions that failed evacuation, scribbling of various values by card table
+// scan code). Additionally the regular barrier enqueues into the "global"
+// DCQS, but during GC we need these to-be-refined entries in the GC local queue
+// so that after clearing the card table, the redirty cards phase will properly
+// mark all dirty cards to be picked up by refinement.
+class G1EnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
+  G1CollectedHeap* _g1h;
+  G1ParScanThreadState* _pss;
+
+public:
+  G1EnqueueDiscoveredFieldClosure(G1CollectedHeap* g1h, G1ParScanThreadState* pss) : _g1h(g1h), _pss(pss) { }
+
+  virtual void enqueue(HeapWord* discovered_field_addr, oop value) {
+    assert(_g1h->is_in(discovered_field_addr), PTR_FORMAT " is not in heap ", p2i(discovered_field_addr));
+    // Store the value first, whatever it is.
+    RawAccess<>::oop_store(discovered_field_addr, value);
+    if (value == NULL) {
+      return;
+    }
+    _pss->write_ref_field_post(discovered_field_addr, value);
+  }
+};
+
 // Serial drain queue closure. Called as the 'complete_gc'
 // closure for each discovered list in some of the
 // reference processing phases.
@@ -3245,7 +3270,8 @@ public:
     G1STWIsAliveClosure is_alive(&_g1h);
     G1CopyingKeepAliveClosure keep_alive(&_g1h, _pss.state_for_worker(index));
     G1ParEvacuateFollowersClosure complete_gc(&_g1h, _pss.state_for_worker(index), &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    G1EnqueueDiscoveredFieldClosure enqueue(&_g1h, _pss.state_for_worker(index));
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {

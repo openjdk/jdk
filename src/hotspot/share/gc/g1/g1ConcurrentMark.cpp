@@ -1478,8 +1478,9 @@ public:
     G1CMIsAliveClosure is_alive(&_g1h);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
+    BarrierEnqueueDiscoveredFieldClosure enqueue;
     G1CMDrainMarkingStackClosure complete_gc(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
-    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &complete_gc);
+    _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {
