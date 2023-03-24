@@ -29,276 +29,276 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 
-#define JVM_BYTECODES(XX)                                                                                                        \
-  XX(_fast_agetfield            , "fast_agetfield"            , "bJJ"  , nullptr    , T_OBJECT ,  0, true , _getfield          ) \
-  XX(_fast_bgetfield            , "fast_bgetfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _getfield          ) \
-  XX(_fast_cgetfield            , "fast_cgetfield"            , "bJJ"  , nullptr    , T_CHAR   ,  0, true , _getfield          ) \
-  XX(_fast_dgetfield            , "fast_dgetfield"            , "bJJ"  , nullptr    , T_DOUBLE ,  0, true , _getfield          ) \
-  XX(_fast_fgetfield            , "fast_fgetfield"            , "bJJ"  , nullptr    , T_FLOAT  ,  0, true , _getfield          ) \
-  XX(_fast_igetfield            , "fast_igetfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _getfield          ) \
-  XX(_fast_lgetfield            , "fast_lgetfield"            , "bJJ"  , nullptr    , T_LONG   ,  0, true , _getfield          ) \
-  XX(_fast_sgetfield            , "fast_sgetfield"            , "bJJ"  , nullptr    , T_SHORT  ,  0, true , _getfield          ) \
-                                                                                                                                 \
-  XX(_fast_aputfield            , "fast_aputfield"            , "bJJ"  , nullptr    , T_OBJECT ,  0, true , _putfield          ) \
-  XX(_fast_bputfield            , "fast_bputfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _putfield          ) \
-  XX(_fast_zputfield            , "fast_zputfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _putfield          ) \
-  XX(_fast_cputfield            , "fast_cputfield"            , "bJJ"  , nullptr    , T_CHAR   ,  0, true , _putfield          ) \
-  XX(_fast_dputfield            , "fast_dputfield"            , "bJJ"  , nullptr    , T_DOUBLE ,  0, true , _putfield          ) \
-  XX(_fast_fputfield            , "fast_fputfield"            , "bJJ"  , nullptr    , T_FLOAT  ,  0, true , _putfield          ) \
-  XX(_fast_iputfield            , "fast_iputfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _putfield          ) \
-  XX(_fast_lputfield            , "fast_lputfield"            , "bJJ"  , nullptr    , T_LONG   ,  0, true , _putfield          ) \
-  XX(_fast_sputfield            , "fast_sputfield"            , "bJJ"  , nullptr    , T_SHORT  ,  0, true , _putfield          ) \
-                                                                                                                                 \
-  XX(_fast_aload_0              , "fast_aload_0"              , "b"    , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
-  XX(_fast_iaccess_0            , "fast_iaccess_0"            , "b_JJ" , nullptr    , T_INT    ,  1, true , _aload_0           ) \
-  XX(_fast_aaccess_0            , "fast_aaccess_0"            , "b_JJ" , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
-  XX(_fast_faccess_0            , "fast_faccess_0"            , "b_JJ" , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
-                                                                                                                                 \
-  XX(_fast_iload                , "fast_iload"                , "bi"   , nullptr    , T_INT    ,  1, false, _iload             ) \
-  XX(_fast_iload2               , "fast_iload2"               , "bi_i" , nullptr    , T_INT    ,  2, false, _iload             ) \
-  XX(_fast_icaload              , "fast_icaload"              , "bi_"  , nullptr    , T_INT    ,  0, false, _iload             ) \
-                                                                                                                                 \
-  XX(_fast_invokevfinal         , "fast_invokevfinal"         , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokevirtual     ) \
-  XX(_fast_linearswitch         , "fast_linearswitch"         , ""     , nullptr    , T_VOID   , -1, false, _lookupswitch      ) \
-  XX(_fast_binaryswitch         , "fast_binaryswitch"         , ""     , nullptr    , T_VOID   , -1, false, _lookupswitch      ) \
-                                                                                                                                 \
-  XX(_fast_aldc                 , "fast_aldc"                 , "bj"   , nullptr    , T_OBJECT ,  1, true ,  _ldc              ) \
-  XX(_fast_aldc_w               , "fast_aldc_w"               , "bJJ"  , nullptr    , T_OBJECT ,  1, true ,  _ldc_w            ) \
-                                                                                                                                 \
-  XX(_return_register_finalizer , "return_register_finalizer" , "b"     , nullptr    , T_VOID  ,  0, true , _return            ) \
-                                                                                                                                 \
-  XX(_invokehandle              , "invokehandle"              , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokevirtual     ) \
-                                                                                                                                 \
-  XX(_nofast_getfield           , "nofast_getfield"           , "bJJ"  , nullptr    , T_ILLEGAL,  0, true ,  _getfield         ) \
-  XX(_nofast_putfield           , "nofast_putfield"           , "bJJ"  , nullptr    , T_ILLEGAL, -2, true , _putfield          ) \
-  XX(_nofast_aload_0            , "nofast_aload_0"            , "b"    , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
-  XX(_nofast_iload              , "nofast_iload"              , "bi"   , nullptr    , T_INT    ,  1, false, _iload             ) \
-                                                                                                                                 \
-  XX(_shouldnotreachhere        , "_shouldnotreachhere"       , "b"    , nullptr    , T_VOID   ,  0, false, _shouldnotreachhere)
+#define JVM_BYTECODES_DO(def)                                                                                                     \
+  def(_fast_agetfield            , "fast_agetfield"            , "bJJ"  , nullptr    , T_OBJECT ,  0, true , _getfield          ) \
+  def(_fast_bgetfield            , "fast_bgetfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _getfield          ) \
+  def(_fast_cgetfield            , "fast_cgetfield"            , "bJJ"  , nullptr    , T_CHAR   ,  0, true , _getfield          ) \
+  def(_fast_dgetfield            , "fast_dgetfield"            , "bJJ"  , nullptr    , T_DOUBLE ,  0, true , _getfield          ) \
+  def(_fast_fgetfield            , "fast_fgetfield"            , "bJJ"  , nullptr    , T_FLOAT  ,  0, true , _getfield          ) \
+  def(_fast_igetfield            , "fast_igetfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _getfield          ) \
+  def(_fast_lgetfield            , "fast_lgetfield"            , "bJJ"  , nullptr    , T_LONG   ,  0, true , _getfield          ) \
+  def(_fast_sgetfield            , "fast_sgetfield"            , "bJJ"  , nullptr    , T_SHORT  ,  0, true , _getfield          ) \
+                                                                                                                                  \
+  def(_fast_aputfield            , "fast_aputfield"            , "bJJ"  , nullptr    , T_OBJECT ,  0, true , _putfield          ) \
+  def(_fast_bputfield            , "fast_bputfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _putfield          ) \
+  def(_fast_zputfield            , "fast_zputfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _putfield          ) \
+  def(_fast_cputfield            , "fast_cputfield"            , "bJJ"  , nullptr    , T_CHAR   ,  0, true , _putfield          ) \
+  def(_fast_dputfield            , "fast_dputfield"            , "bJJ"  , nullptr    , T_DOUBLE ,  0, true , _putfield          ) \
+  def(_fast_fputfield            , "fast_fputfield"            , "bJJ"  , nullptr    , T_FLOAT  ,  0, true , _putfield          ) \
+  def(_fast_iputfield            , "fast_iputfield"            , "bJJ"  , nullptr    , T_INT    ,  0, true , _putfield          ) \
+  def(_fast_lputfield            , "fast_lputfield"            , "bJJ"  , nullptr    , T_LONG   ,  0, true , _putfield          ) \
+  def(_fast_sputfield            , "fast_sputfield"            , "bJJ"  , nullptr    , T_SHORT  ,  0, true , _putfield          ) \
+                                                                                                                                  \
+  def(_fast_aload_0              , "fast_aload_0"              , "b"    , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
+  def(_fast_iaccess_0            , "fast_iaccess_0"            , "b_JJ" , nullptr    , T_INT    ,  1, true , _aload_0           ) \
+  def(_fast_aaccess_0            , "fast_aaccess_0"            , "b_JJ" , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
+  def(_fast_faccess_0            , "fast_faccess_0"            , "b_JJ" , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
+                                                                                                                                  \
+  def(_fast_iload                , "fast_iload"                , "bi"   , nullptr    , T_INT    ,  1, false, _iload             ) \
+  def(_fast_iload2               , "fast_iload2"               , "bi_i" , nullptr    , T_INT    ,  2, false, _iload             ) \
+  def(_fast_icaload              , "fast_icaload"              , "bi_"  , nullptr    , T_INT    ,  0, false, _iload             ) \
+                                                                                                                                  \
+  def(_fast_invokevfinal         , "fast_invokevfinal"         , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokevirtual     ) \
+  def(_fast_linearswitch         , "fast_linearswitch"         , ""     , nullptr    , T_VOID   , -1, false, _lookupswitch      ) \
+  def(_fast_binaryswitch         , "fast_binaryswitch"         , ""     , nullptr    , T_VOID   , -1, false, _lookupswitch      ) \
+                                                                                                                                  \
+  def(_fast_aldc                 , "fast_aldc"                 , "bj"   , nullptr    , T_OBJECT ,  1, true ,  _ldc              ) \
+  def(_fast_aldc_w               , "fast_aldc_w"               , "bJJ"  , nullptr    , T_OBJECT ,  1, true ,  _ldc_w            ) \
+                                                                                                                                  \
+  def(_return_register_finalizer , "return_register_finalizer" , "b"     , nullptr    , T_VOID  ,  0, true , _return            ) \
+                                                                                                                                  \
+  def(_invokehandle              , "invokehandle"              , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokevirtual     ) \
+                                                                                                                                  \
+  def(_nofast_getfield           , "nofast_getfield"           , "bJJ"  , nullptr    , T_ILLEGAL,  0, true ,  _getfield         ) \
+  def(_nofast_putfield           , "nofast_putfield"           , "bJJ"  , nullptr    , T_ILLEGAL, -2, true , _putfield          ) \
+  def(_nofast_aload_0            , "nofast_aload_0"            , "b"    , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
+  def(_nofast_iload              , "nofast_iload"              , "bi"   , nullptr    , T_INT    ,  1, false, _iload             ) \
+                                                                                                                                  \
+  def(_shouldnotreachhere        , "_shouldnotreachhere"       , "b"    , nullptr    , T_VOID   ,  0, false, _shouldnotreachhere)
 
-#define BYTECODES(XX) \
-  XX(_nop             , "nop"             , "b"    , nullptr    , T_VOID   ,  0, false, _nop            ) \
-  XX(_aconst_null     , "aconst_null"     , "b"    , nullptr    , T_OBJECT ,  1, false, _aconst_null    ) \
-  XX(_iconst_m1       , "iconst_m1"       , "b"    , nullptr    , T_INT    ,  1, false, _iconst_m1      ) \
-  XX(_iconst_0        , "iconst_0"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_0       ) \
-  XX(_iconst_1        , "iconst_1"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_1       ) \
-  XX(_iconst_2        , "iconst_2"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_2       ) \
-  XX(_iconst_3        , "iconst_3"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_3       ) \
-  XX(_iconst_4        , "iconst_4"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_4       ) \
-  XX(_iconst_5        , "iconst_5"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_5       ) \
-  XX(_lconst_0        , "lconst_0"        , "b"    , nullptr    , T_LONG   ,  2, false, _lconst_0       ) \
-  XX(_lconst_1        , "lconst_1"        , "b"    , nullptr    , T_LONG   ,  2, false, _lconst_1       ) \
-  XX(_fconst_0        , "fconst_0"        , "b"    , nullptr    , T_FLOAT  ,  1, false, _fconst_0       ) \
-  XX(_fconst_1        , "fconst_1"        , "b"    , nullptr    , T_FLOAT  ,  1, false, _fconst_1       ) \
-  XX(_fconst_2        , "fconst_2"        , "b"    , nullptr    , T_FLOAT  ,  1, false, _fconst_2       ) \
-  XX(_dconst_0        , "dconst_0"        , "b"    , nullptr    , T_DOUBLE ,  2, false, _dconst_0       ) \
-  XX(_dconst_1        , "dconst_1"        , "b"    , nullptr    , T_DOUBLE ,  2, false, _dconst_1       ) \
-  XX(_bipush          , "bipush"          , "bc"   , nullptr    , T_INT    ,  1, false, _bipush         ) \
-  XX(_sipush          , "sipush"          , "bcc"  , nullptr    , T_INT    ,  1, false, _sipush         ) \
-  XX(_ldc             , "ldc"             , "bk"   , nullptr    , T_ILLEGAL,  1, true , _ldc            ) \
-  XX(_ldc_w           , "ldc_w"           , "bkk"  , nullptr    , T_ILLEGAL,  1, true , _ldc_w          ) \
-  XX(_ldc2_w          , "ldc2_w"          , "bkk"  , nullptr    , T_ILLEGAL,  2, true , _ldc2_w         ) \
-  XX(_iload           , "iload"           , "bi"   , "wbii"     , T_INT    ,  1, false, _iload          ) \
-  XX(_lload           , "lload"           , "bi"   , "wbii"     , T_LONG   ,  2, false, _lload          ) \
-  XX(_fload           , "fload"           , "bi"   , "wbii"     , T_FLOAT  ,  1, false, _fload          ) \
-  XX(_dload           , "dload"           , "bi"   , "wbii"     , T_DOUBLE ,  2, false, _dload          ) \
-  XX(_aload           , "aload"           , "bi"   , "wbii"     , T_OBJECT ,  1, false, _aload          ) \
-  XX(_iload_0         , "iload_0"         , "b"    , nullptr    , T_INT    ,  1, false, _iload_0        ) \
-  XX(_iload_1         , "iload_1"         , "b"    , nullptr    , T_INT    ,  1, false, _iload_1        ) \
-  XX(_iload_2         , "iload_2"         , "b"    , nullptr    , T_INT    ,  1, false, _iload_2        ) \
-  XX(_iload_3         , "iload_3"         , "b"    , nullptr    , T_INT    ,  1, false, _iload_3        ) \
-  XX(_lload_0         , "lload_0"         , "b"    , nullptr    , T_LONG   ,  2, false, _lload_0        ) \
-  XX(_lload_1         , "lload_1"         , "b"    , nullptr    , T_LONG   ,  2, false, _lload_1        ) \
-  XX(_lload_2         , "lload_2"         , "b"    , nullptr    , T_LONG   ,  2, false, _lload_2        ) \
-  XX(_lload_3         , "lload_3"         , "b"    , nullptr    , T_LONG   ,  2, false, _lload_3        ) \
-  XX(_fload_0         , "fload_0"         , "b"    , nullptr    , T_FLOAT  ,  1, false, _fload_0        ) \
-  XX(_fload_1         , "fload_1"         , "b"    , nullptr    , T_FLOAT  ,  1, false, _fload_1        ) \
-  XX(_fload_2         , "fload_2"         , "b"    , nullptr    , T_FLOAT  ,  1, false, _fload_2        ) \
-  XX(_fload_3         , "fload_3"         , "b"    , nullptr    , T_FLOAT  ,  1, false, _fload_3        ) \
-  XX(_dload_0         , "dload_0"         , "b"    , nullptr    , T_DOUBLE ,  2, false, _dload_0        ) \
-  XX(_dload_1         , "dload_1"         , "b"    , nullptr    , T_DOUBLE ,  2, false, _dload_1        ) \
-  XX(_dload_2         , "dload_2"         , "b"    , nullptr    , T_DOUBLE ,  2, false, _dload_2        ) \
-  XX(_dload_3         , "dload_3"         , "b"    , nullptr    , T_DOUBLE ,  2, false, _dload_3        ) \
-  XX(_aload_0         , "aload_0"         , "b"    , nullptr    , T_OBJECT ,  1, true , _aload_0        ) \
-  XX(_aload_1         , "aload_1"         , "b"    , nullptr    , T_OBJECT ,  1, false, _aload_1        ) \
-  XX(_aload_2         , "aload_2"         , "b"    , nullptr    , T_OBJECT ,  1, false, _aload_2        ) \
-  XX(_aload_3         , "aload_3"         , "b"    , nullptr    , T_OBJECT ,  1, false, _aload_3        ) \
-  XX(_iaload          , "iaload"          , "b"    , nullptr    , T_INT    , -1, true , _iaload         ) \
-  XX(_laload          , "laload"          , "b"    , nullptr    , T_LONG   ,  0, true , _laload         ) \
-  XX(_faload          , "faload"          , "b"    , nullptr    , T_FLOAT  , -1, true , _faload         ) \
-  XX(_daload          , "daload"          , "b"    , nullptr    , T_DOUBLE ,  0, true , _daload         ) \
-  XX(_aaload          , "aaload"          , "b"    , nullptr    , T_OBJECT , -1, true , _aaload         ) \
-  XX(_baload          , "baload"          , "b"    , nullptr    , T_INT    , -1, true , _baload         ) \
-  XX(_caload          , "caload"          , "b"    , nullptr    , T_INT    , -1, true , _caload         ) \
-  XX(_saload          , "saload"          , "b"    , nullptr    , T_INT    , -1, true , _saload         ) \
-  XX(_istore          , "istore"          , "bi"   , "wbii"     , T_VOID   , -1, false, _istore         ) \
-  XX(_lstore          , "lstore"          , "bi"   , "wbii"     , T_VOID   , -2, false, _lstore         ) \
-  XX(_fstore          , "fstore"          , "bi"   , "wbii"     , T_VOID   , -1, false, _fstore         ) \
-  XX(_dstore          , "dstore"          , "bi"   , "wbii"     , T_VOID   , -2, false, _dstore         ) \
-  XX(_astore          , "astore"          , "bi"   , "wbii"     , T_VOID   , -1, false, _astore         ) \
-  XX(_istore_0        , "istore_0"        , "b"    , nullptr    , T_VOID   , -1, false, _istore_0       ) \
-  XX(_istore_1        , "istore_1"        , "b"    , nullptr    , T_VOID   , -1, false, _istore_1       ) \
-  XX(_istore_2        , "istore_2"        , "b"    , nullptr    , T_VOID   , -1, false, _istore_2       ) \
-  XX(_istore_3        , "istore_3"        , "b"    , nullptr    , T_VOID   , -1, false, _istore_3       ) \
-  XX(_lstore_0        , "lstore_0"        , "b"    , nullptr    , T_VOID   , -2, false, _lstore_0       ) \
-  XX(_lstore_1        , "lstore_1"        , "b"    , nullptr    , T_VOID   , -2, false, _lstore_1       ) \
-  XX(_lstore_2        , "lstore_2"        , "b"    , nullptr    , T_VOID   , -2, false, _lstore_2       ) \
-  XX(_lstore_3        , "lstore_3"        , "b"    , nullptr    , T_VOID   , -2, false, _lstore_3       ) \
-  XX(_fstore_0        , "fstore_0"        , "b"    , nullptr    , T_VOID   , -1, false, _fstore_0       ) \
-  XX(_fstore_1        , "fstore_1"        , "b"    , nullptr    , T_VOID   , -1, false, _fstore_1       ) \
-  XX(_fstore_2        , "fstore_2"        , "b"    , nullptr    , T_VOID   , -1, false, _fstore_2       ) \
-  XX(_fstore_3        , "fstore_3"        , "b"    , nullptr    , T_VOID   , -1, false, _fstore_3       ) \
-  XX(_dstore_0        , "dstore_0"        , "b"    , nullptr    , T_VOID   , -2, false, _dstore_0       ) \
-  XX(_dstore_1        , "dstore_1"        , "b"    , nullptr    , T_VOID   , -2, false, _dstore_1       ) \
-  XX(_dstore_2        , "dstore_2"        , "b"    , nullptr    , T_VOID   , -2, false, _dstore_2       ) \
-  XX(_dstore_3        , "dstore_3"        , "b"    , nullptr    , T_VOID   , -2, false, _dstore_3       ) \
-  XX(_astore_0        , "astore_0"        , "b"    , nullptr    , T_VOID   , -1, false, _astore_0       ) \
-  XX(_astore_1        , "astore_1"        , "b"    , nullptr    , T_VOID   , -1, false, _astore_1       ) \
-  XX(_astore_2        , "astore_2"        , "b"    , nullptr    , T_VOID   , -1, false, _astore_2       ) \
-  XX(_astore_3        , "astore_3"        , "b"    , nullptr    , T_VOID   , -1, false, _astore_3       ) \
-  XX(_iastore         , "iastore"         , "b"    , nullptr    , T_VOID   , -3, true , _iastore        ) \
-  XX(_lastore         , "lastore"         , "b"    , nullptr    , T_VOID   , -4, true , _lastore        ) \
-  XX(_fastore         , "fastore"         , "b"    , nullptr    , T_VOID   , -3, true , _fastore        ) \
-  XX(_dastore         , "dastore"         , "b"    , nullptr    , T_VOID   , -4, true , _dastore        ) \
-  XX(_aastore         , "aastore"         , "b"    , nullptr    , T_VOID   , -3, true , _aastore        ) \
-  XX(_bastore         , "bastore"         , "b"    , nullptr    , T_VOID   , -3, true , _bastore        ) \
-  XX(_castore         , "castore"         , "b"    , nullptr    , T_VOID   , -3, true , _castore        ) \
-  XX(_sastore         , "sastore"         , "b"    , nullptr    , T_VOID   , -3, true , _sastore        ) \
-  XX(_pop             , "pop"             , "b"    , nullptr    , T_VOID   , -1, false, _pop            ) \
-  XX(_pop2            , "pop2"            , "b"    , nullptr    , T_VOID   , -2, false, _pop2           ) \
-  XX(_dup             , "dup"             , "b"    , nullptr    , T_VOID   ,  1, false, _dup            ) \
-  XX(_dup_x1          , "dup_x1"          , "b"    , nullptr    , T_VOID   ,  1, false, _dup_x1         ) \
-  XX(_dup_x2          , "dup_x2"          , "b"    , nullptr    , T_VOID   ,  1, false, _dup_x2         ) \
-  XX(_dup2            , "dup2"            , "b"    , nullptr    , T_VOID   ,  2, false, _dup2           ) \
-  XX(_dup2_x1         , "dup2_x1"         , "b"    , nullptr    , T_VOID   ,  2, false, _dup2_x1        ) \
-  XX(_dup2_x2         , "dup2_x2"         , "b"    , nullptr    , T_VOID   ,  2, false, _dup2_x2        ) \
-  XX(_swap            , "swap"            , "b"    , nullptr    , T_VOID   ,  0, false, _swap           ) \
-  XX(_iadd            , "iadd"            , "b"    , nullptr    , T_INT    , -1, false, _iadd           ) \
-  XX(_ladd            , "ladd"            , "b"    , nullptr    , T_LONG   , -2, false, _ladd           ) \
-  XX(_fadd            , "fadd"            , "b"    , nullptr    , T_FLOAT  , -1, false, _fadd           ) \
-  XX(_dadd            , "dadd"            , "b"    , nullptr    , T_DOUBLE , -2, false, _dadd           ) \
-  XX(_isub            , "isub"            , "b"    , nullptr    , T_INT    , -1, false, _isub           ) \
-  XX(_lsub            , "lsub"            , "b"    , nullptr    , T_LONG   , -2, false, _lsub           ) \
-  XX(_fsub            , "fsub"            , "b"    , nullptr    , T_FLOAT  , -1, false, _fsub           ) \
-  XX(_dsub            , "dsub"            , "b"    , nullptr    , T_DOUBLE , -2, false, _dsub           ) \
-  XX(_imul            , "imul"            , "b"    , nullptr    , T_INT    , -1, false, _imul           ) \
-  XX(_lmul            , "lmul"            , "b"    , nullptr    , T_LONG   , -2, false, _lmul           ) \
-  XX(_fmul            , "fmul"            , "b"    , nullptr    , T_FLOAT  , -1, false, _fmul           ) \
-  XX(_dmul            , "dmul"            , "b"    , nullptr    , T_DOUBLE , -2, false, _dmul           ) \
-  XX(_idiv            , "idiv"            , "b"    , nullptr    , T_INT    , -1, true , _idiv           ) \
-  XX(_ldiv            , "ldiv"            , "b"    , nullptr    , T_LONG   , -2, true , _ldiv           ) \
-  XX(_fdiv            , "fdiv"            , "b"    , nullptr    , T_FLOAT  , -1, false, _fdiv           ) \
-  XX(_ddiv            , "ddiv"            , "b"    , nullptr    , T_DOUBLE , -2, false, _ddiv           ) \
-  XX(_irem            , "irem"            , "b"    , nullptr    , T_INT    , -1, true , _irem           ) \
-  XX(_lrem            , "lrem"            , "b"    , nullptr    , T_LONG   , -2, true , _lrem           ) \
-  XX(_frem            , "frem"            , "b"    , nullptr    , T_FLOAT  , -1, false, _frem           ) \
-  XX(_drem            , "drem"            , "b"    , nullptr    , T_DOUBLE , -2, false, _drem           ) \
-  XX(_ineg            , "ineg"            , "b"    , nullptr    , T_INT    ,  0, false, _ineg           ) \
-  XX(_lneg            , "lneg"            , "b"    , nullptr    , T_LONG   ,  0, false, _lneg           ) \
-  XX(_fneg            , "fneg"            , "b"    , nullptr    , T_FLOAT  ,  0, false, _fneg           ) \
-  XX(_dneg            , "dneg"            , "b"    , nullptr    , T_DOUBLE ,  0, false, _dneg           ) \
-  XX(_ishl            , "ishl"            , "b"    , nullptr    , T_INT    , -1, false, _ishl           ) \
-  XX(_lshl            , "lshl"            , "b"    , nullptr    , T_LONG   , -1, false, _lshl           ) \
-  XX(_ishr            , "ishr"            , "b"    , nullptr    , T_INT    , -1, false, _ishr           ) \
-  XX(_lshr            , "lshr"            , "b"    , nullptr    , T_LONG   , -1, false, _lshr           ) \
-  XX(_iushr           , "iushr"           , "b"    , nullptr    , T_INT    , -1, false, _iushr          ) \
-  XX(_lushr           , "lushr"           , "b"    , nullptr    , T_LONG   , -1, false, _lushr          ) \
-  XX(_iand            , "iand"            , "b"    , nullptr    , T_INT    , -1, false, _iand           ) \
-  XX(_land            , "land"            , "b"    , nullptr    , T_LONG   , -2, false, _land           ) \
-  XX(_ior             , "ior"             , "b"    , nullptr    , T_INT    , -1, false, _ior            ) \
-  XX(_lor             , "lor"             , "b"    , nullptr    , T_LONG   , -2, false, _lor            ) \
-  XX(_ixor            , "ixor"            , "b"    , nullptr    , T_INT    , -1, false, _ixor           ) \
-  XX(_lxor            , "lxor"            , "b"    , nullptr    , T_LONG   , -2, false, _lxor           ) \
-  XX(_iinc            , "iinc"            , "bic"  , "wbiicc",    T_VOID   ,  0, false, _iinc           ) \
-  XX(_i2l             , "i2l"             , "b"    , nullptr    , T_LONG   ,  1, false, _i2l            ) \
-  XX(_i2f             , "i2f"             , "b"    , nullptr    , T_FLOAT  ,  0, false, _i2f            ) \
-  XX(_i2d             , "i2d"             , "b"    , nullptr    , T_DOUBLE ,  1, false, _i2d            ) \
-  XX(_l2i             , "l2i"             , "b"    , nullptr    , T_INT    , -1, false, _l2i            ) \
-  XX(_l2f             , "l2f"             , "b"    , nullptr    , T_FLOAT  , -1, false, _l2f            ) \
-  XX(_l2d             , "l2d"             , "b"    , nullptr    , T_DOUBLE ,  0, false, _l2d            ) \
-  XX(_f2i             , "f2i"             , "b"    , nullptr    , T_INT    ,  0, false, _f2i            ) \
-  XX(_f2l             , "f2l"             , "b"    , nullptr    , T_LONG   ,  1, false, _f2l            ) \
-  XX(_f2d             , "f2d"             , "b"    , nullptr    , T_DOUBLE ,  1, false, _f2d            ) \
-  XX(_d2i             , "d2i"             , "b"    , nullptr    , T_INT    , -1, false, _d2i            ) \
-  XX(_d2l             , "d2l"             , "b"    , nullptr    , T_LONG   ,  0, false, _d2l            ) \
-  XX(_d2f             , "d2f"             , "b"    , nullptr    , T_FLOAT  , -1, false, _d2f            ) \
-  XX(_i2b             , "i2b"             , "b"    , nullptr    , T_BYTE   ,  0, false, _i2b            ) \
-  XX(_i2c             , "i2c"             , "b"    , nullptr    , T_CHAR   ,  0, false, _i2c            ) \
-  XX(_i2s             , "i2s"             , "b"    , nullptr    , T_SHORT  ,  0, false, _i2s            ) \
-  XX(_lcmp            , "lcmp"            , "b"    , nullptr    , T_VOID   , -3, false, _lcmp           ) \
-  XX(_fcmpl           , "fcmpl"           , "b"    , nullptr    , T_VOID   , -1, false, _fcmpl          ) \
-  XX(_fcmpg           , "fcmpg"           , "b"    , nullptr    , T_VOID   , -1, false, _fcmpg          ) \
-  XX(_dcmpl           , "dcmpl"           , "b"    , nullptr    , T_VOID   , -3, false, _dcmpl          ) \
-  XX(_dcmpg           , "dcmpg"           , "b"    , nullptr    , T_VOID   , -3, false, _dcmpg          ) \
-  XX(_ifeq            , "ifeq"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifeq           ) \
-  XX(_ifne            , "ifne"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifne           ) \
-  XX(_iflt            , "iflt"            , "boo"  , nullptr    , T_VOID   , -1, false, _iflt           ) \
-  XX(_ifge            , "ifge"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifge           ) \
-  XX(_ifgt            , "ifgt"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifgt           ) \
-  XX(_ifle            , "ifle"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifle           ) \
-  XX(_if_icmpeq       , "if_icmpeq"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmpeq      ) \
-  XX(_if_icmpne       , "if_icmpne"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmpne      ) \
-  XX(_if_icmplt       , "if_icmplt"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmplt      ) \
-  XX(_if_icmpge       , "if_icmpge"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmpge      ) \
-  XX(_if_icmpgt       , "if_icmpgt"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmpgt      ) \
-  XX(_if_icmple       , "if_icmple"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmple      ) \
-  XX(_if_acmpeq       , "if_acmpeq"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_acmpeq      ) \
-  XX(_if_acmpne       , "if_acmpne"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_acmpne      ) \
-  XX(_goto            , "goto"            , "boo"  , nullptr    , T_VOID   ,  0, false, _goto           ) \
-  XX(_jsr             , "jsr"             , "boo"  , nullptr    , T_INT    ,  0, false, _jsr            ) \
-  XX(_ret             , "ret"             , "bi"   , "wbii"     , T_VOID   ,  0, false, _ret            ) \
-  XX(_tableswitch     , "tableswitch"     , ""     , nullptr    , T_VOID   , -1, false, _tableswitch    ) \
-  XX(_lookupswitch    , "lookupswitch"    , ""     , nullptr    , T_VOID   , -1, false, _lookupswitch   ) \
-  XX(_ireturn         , "ireturn"         , "b"    , nullptr    , T_INT    , -1, true , _ireturn        ) \
-  XX(_lreturn         , "lreturn"         , "b"    , nullptr    , T_LONG   , -2, true , _lreturn        ) \
-  XX(_freturn         , "freturn"         , "b"    , nullptr    , T_FLOAT  , -1, true , _freturn        ) \
-  XX(_dreturn         , "dreturn"         , "b"    , nullptr    , T_DOUBLE , -2, true , _dreturn        ) \
-  XX(_areturn         , "areturn"         , "b"    , nullptr    , T_OBJECT , -1, true , _areturn        ) \
-  XX(_return          , "return"          , "b"    , nullptr    , T_VOID   ,  0, true , _return         ) \
-  XX(_getstatic       , "getstatic"       , "bJJ"  , nullptr    , T_ILLEGAL,  1, true , _getstatic      ) \
-  XX(_putstatic       , "putstatic"       , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _putstatic      ) \
-  XX(_getfield        , "getfield"        , "bJJ"  , nullptr    , T_ILLEGAL,  0, true , _getfield       ) \
-  XX(_putfield        , "putfield"        , "bJJ"  , nullptr    , T_ILLEGAL, -2, true , _putfield       ) \
-  XX(_invokevirtual   , "invokevirtual"   , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokevirtual  ) \
-  XX(_invokespecial   , "invokespecial"   , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokespecial  ) \
-  XX(_invokestatic    , "invokestatic"    , "bJJ"  , nullptr    , T_ILLEGAL,  0, true , _invokestatic   ) \
-  XX(_invokeinterface , "invokeinterface" , "bJJ__", nullptr    , T_ILLEGAL, -1, true , _invokeinterface) \
-  XX(_invokedynamic   , "invokedynamic"   , "bJJJJ", nullptr    , T_ILLEGAL,  0, true , _invokedynamic  ) \
-  XX(_new             , "new"             , "bkk"  , nullptr    , T_OBJECT ,  1, true , _new            ) \
-  XX(_newarray        , "newarray"        , "bc"   , nullptr    , T_OBJECT ,  0, true , _newarray       ) \
-  XX(_anewarray       , "anewarray"       , "bkk"  , nullptr    , T_OBJECT ,  0, true , _anewarray      ) \
-  XX(_arraylength     , "arraylength"     , "b"    , nullptr    , T_INT    ,  0, true , _arraylength    ) \
-  XX(_athrow          , "athrow"          , "b"    , nullptr    , T_VOID   , -1, true , _athrow         ) \
-  XX(_checkcast       , "checkcast"       , "bkk"  , nullptr    , T_OBJECT ,  0, true , _checkcast      ) \
-  XX(_instanceof      , "instanceof"      , "bkk"  , nullptr    , T_INT    ,  0, true , _instanceof     ) \
-  XX(_monitorenter    , "monitorenter"    , "b"    , nullptr    , T_VOID   , -1, true , _monitorenter   ) \
-  XX(_monitorexit     , "monitorexit"     , "b"    , nullptr    , T_VOID   , -1, true , _monitorexit    ) \
-  XX(_wide            , "wide"            , ""     , nullptr    , T_VOID   ,  0, false, _wide           ) \
-  XX(_multianewarray  , "multianewarray"  , "bkkc" , nullptr    , T_OBJECT ,  1, true , _multianewarray ) \
-  XX(_ifnull          , "ifnull"          , "boo"  , nullptr    , T_VOID   , -1, false, _ifnull         ) \
-  XX(_ifnonnull       , "ifnonnull"       , "boo"  , nullptr    , T_VOID   , -1, false, _ifnonnull      ) \
-  XX(_goto_w          , "goto_w"          , "boooo", nullptr    , T_VOID   ,  0, false, _goto_w         ) \
-  XX(_jsr_w           , "jsr_w"           , "boooo", nullptr    , T_INT    ,  0, false, _jsr_w          ) \
-  XX(_breakpoint      , "breakpoint"      , ""     , nullptr    , T_VOID   ,  0, true , _breakpoint     ) \
-  JVM_BYTECODES(XX)
+#define BYTECODES_DO(def)                                                                                  \
+  def(_nop             , "nop"             , "b"    , nullptr    , T_VOID   ,  0, false, _nop            ) \
+  def(_aconst_null     , "aconst_null"     , "b"    , nullptr    , T_OBJECT ,  1, false, _aconst_null    ) \
+  def(_iconst_m1       , "iconst_m1"       , "b"    , nullptr    , T_INT    ,  1, false, _iconst_m1      ) \
+  def(_iconst_0        , "iconst_0"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_0       ) \
+  def(_iconst_1        , "iconst_1"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_1       ) \
+  def(_iconst_2        , "iconst_2"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_2       ) \
+  def(_iconst_3        , "iconst_3"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_3       ) \
+  def(_iconst_4        , "iconst_4"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_4       ) \
+  def(_iconst_5        , "iconst_5"        , "b"    , nullptr    , T_INT    ,  1, false, _iconst_5       ) \
+  def(_lconst_0        , "lconst_0"        , "b"    , nullptr    , T_LONG   ,  2, false, _lconst_0       ) \
+  def(_lconst_1        , "lconst_1"        , "b"    , nullptr    , T_LONG   ,  2, false, _lconst_1       ) \
+  def(_fconst_0        , "fconst_0"        , "b"    , nullptr    , T_FLOAT  ,  1, false, _fconst_0       ) \
+  def(_fconst_1        , "fconst_1"        , "b"    , nullptr    , T_FLOAT  ,  1, false, _fconst_1       ) \
+  def(_fconst_2        , "fconst_2"        , "b"    , nullptr    , T_FLOAT  ,  1, false, _fconst_2       ) \
+  def(_dconst_0        , "dconst_0"        , "b"    , nullptr    , T_DOUBLE ,  2, false, _dconst_0       ) \
+  def(_dconst_1        , "dconst_1"        , "b"    , nullptr    , T_DOUBLE ,  2, false, _dconst_1       ) \
+  def(_bipush          , "bipush"          , "bc"   , nullptr    , T_INT    ,  1, false, _bipush         ) \
+  def(_sipush          , "sipush"          , "bcc"  , nullptr    , T_INT    ,  1, false, _sipush         ) \
+  def(_ldc             , "ldc"             , "bk"   , nullptr    , T_ILLEGAL,  1, true , _ldc            ) \
+  def(_ldc_w           , "ldc_w"           , "bkk"  , nullptr    , T_ILLEGAL,  1, true , _ldc_w          ) \
+  def(_ldc2_w          , "ldc2_w"          , "bkk"  , nullptr    , T_ILLEGAL,  2, true , _ldc2_w         ) \
+  def(_iload           , "iload"           , "bi"   , "wbii"     , T_INT    ,  1, false, _iload          ) \
+  def(_lload           , "lload"           , "bi"   , "wbii"     , T_LONG   ,  2, false, _lload          ) \
+  def(_fload           , "fload"           , "bi"   , "wbii"     , T_FLOAT  ,  1, false, _fload          ) \
+  def(_dload           , "dload"           , "bi"   , "wbii"     , T_DOUBLE ,  2, false, _dload          ) \
+  def(_aload           , "aload"           , "bi"   , "wbii"     , T_OBJECT ,  1, false, _aload          ) \
+  def(_iload_0         , "iload_0"         , "b"    , nullptr    , T_INT    ,  1, false, _iload_0        ) \
+  def(_iload_1         , "iload_1"         , "b"    , nullptr    , T_INT    ,  1, false, _iload_1        ) \
+  def(_iload_2         , "iload_2"         , "b"    , nullptr    , T_INT    ,  1, false, _iload_2        ) \
+  def(_iload_3         , "iload_3"         , "b"    , nullptr    , T_INT    ,  1, false, _iload_3        ) \
+  def(_lload_0         , "lload_0"         , "b"    , nullptr    , T_LONG   ,  2, false, _lload_0        ) \
+  def(_lload_1         , "lload_1"         , "b"    , nullptr    , T_LONG   ,  2, false, _lload_1        ) \
+  def(_lload_2         , "lload_2"         , "b"    , nullptr    , T_LONG   ,  2, false, _lload_2        ) \
+  def(_lload_3         , "lload_3"         , "b"    , nullptr    , T_LONG   ,  2, false, _lload_3        ) \
+  def(_fload_0         , "fload_0"         , "b"    , nullptr    , T_FLOAT  ,  1, false, _fload_0        ) \
+  def(_fload_1         , "fload_1"         , "b"    , nullptr    , T_FLOAT  ,  1, false, _fload_1        ) \
+  def(_fload_2         , "fload_2"         , "b"    , nullptr    , T_FLOAT  ,  1, false, _fload_2        ) \
+  def(_fload_3         , "fload_3"         , "b"    , nullptr    , T_FLOAT  ,  1, false, _fload_3        ) \
+  def(_dload_0         , "dload_0"         , "b"    , nullptr    , T_DOUBLE ,  2, false, _dload_0        ) \
+  def(_dload_1         , "dload_1"         , "b"    , nullptr    , T_DOUBLE ,  2, false, _dload_1        ) \
+  def(_dload_2         , "dload_2"         , "b"    , nullptr    , T_DOUBLE ,  2, false, _dload_2        ) \
+  def(_dload_3         , "dload_3"         , "b"    , nullptr    , T_DOUBLE ,  2, false, _dload_3        ) \
+  def(_aload_0         , "aload_0"         , "b"    , nullptr    , T_OBJECT ,  1, true , _aload_0        ) \
+  def(_aload_1         , "aload_1"         , "b"    , nullptr    , T_OBJECT ,  1, false, _aload_1        ) \
+  def(_aload_2         , "aload_2"         , "b"    , nullptr    , T_OBJECT ,  1, false, _aload_2        ) \
+  def(_aload_3         , "aload_3"         , "b"    , nullptr    , T_OBJECT ,  1, false, _aload_3        ) \
+  def(_iaload          , "iaload"          , "b"    , nullptr    , T_INT    , -1, true , _iaload         ) \
+  def(_laload          , "laload"          , "b"    , nullptr    , T_LONG   ,  0, true , _laload         ) \
+  def(_faload          , "faload"          , "b"    , nullptr    , T_FLOAT  , -1, true , _faload         ) \
+  def(_daload          , "daload"          , "b"    , nullptr    , T_DOUBLE ,  0, true , _daload         ) \
+  def(_aaload          , "aaload"          , "b"    , nullptr    , T_OBJECT , -1, true , _aaload         ) \
+  def(_baload          , "baload"          , "b"    , nullptr    , T_INT    , -1, true , _baload         ) \
+  def(_caload          , "caload"          , "b"    , nullptr    , T_INT    , -1, true , _caload         ) \
+  def(_saload          , "saload"          , "b"    , nullptr    , T_INT    , -1, true , _saload         ) \
+  def(_istore          , "istore"          , "bi"   , "wbii"     , T_VOID   , -1, false, _istore         ) \
+  def(_lstore          , "lstore"          , "bi"   , "wbii"     , T_VOID   , -2, false, _lstore         ) \
+  def(_fstore          , "fstore"          , "bi"   , "wbii"     , T_VOID   , -1, false, _fstore         ) \
+  def(_dstore          , "dstore"          , "bi"   , "wbii"     , T_VOID   , -2, false, _dstore         ) \
+  def(_astore          , "astore"          , "bi"   , "wbii"     , T_VOID   , -1, false, _astore         ) \
+  def(_istore_0        , "istore_0"        , "b"    , nullptr    , T_VOID   , -1, false, _istore_0       ) \
+  def(_istore_1        , "istore_1"        , "b"    , nullptr    , T_VOID   , -1, false, _istore_1       ) \
+  def(_istore_2        , "istore_2"        , "b"    , nullptr    , T_VOID   , -1, false, _istore_2       ) \
+  def(_istore_3        , "istore_3"        , "b"    , nullptr    , T_VOID   , -1, false, _istore_3       ) \
+  def(_lstore_0        , "lstore_0"        , "b"    , nullptr    , T_VOID   , -2, false, _lstore_0       ) \
+  def(_lstore_1        , "lstore_1"        , "b"    , nullptr    , T_VOID   , -2, false, _lstore_1       ) \
+  def(_lstore_2        , "lstore_2"        , "b"    , nullptr    , T_VOID   , -2, false, _lstore_2       ) \
+  def(_lstore_3        , "lstore_3"        , "b"    , nullptr    , T_VOID   , -2, false, _lstore_3       ) \
+  def(_fstore_0        , "fstore_0"        , "b"    , nullptr    , T_VOID   , -1, false, _fstore_0       ) \
+  def(_fstore_1        , "fstore_1"        , "b"    , nullptr    , T_VOID   , -1, false, _fstore_1       ) \
+  def(_fstore_2        , "fstore_2"        , "b"    , nullptr    , T_VOID   , -1, false, _fstore_2       ) \
+  def(_fstore_3        , "fstore_3"        , "b"    , nullptr    , T_VOID   , -1, false, _fstore_3       ) \
+  def(_dstore_0        , "dstore_0"        , "b"    , nullptr    , T_VOID   , -2, false, _dstore_0       ) \
+  def(_dstore_1        , "dstore_1"        , "b"    , nullptr    , T_VOID   , -2, false, _dstore_1       ) \
+  def(_dstore_2        , "dstore_2"        , "b"    , nullptr    , T_VOID   , -2, false, _dstore_2       ) \
+  def(_dstore_3        , "dstore_3"        , "b"    , nullptr    , T_VOID   , -2, false, _dstore_3       ) \
+  def(_astore_0        , "astore_0"        , "b"    , nullptr    , T_VOID   , -1, false, _astore_0       ) \
+  def(_astore_1        , "astore_1"        , "b"    , nullptr    , T_VOID   , -1, false, _astore_1       ) \
+  def(_astore_2        , "astore_2"        , "b"    , nullptr    , T_VOID   , -1, false, _astore_2       ) \
+  def(_astore_3        , "astore_3"        , "b"    , nullptr    , T_VOID   , -1, false, _astore_3       ) \
+  def(_iastore         , "iastore"         , "b"    , nullptr    , T_VOID   , -3, true , _iastore        ) \
+  def(_lastore         , "lastore"         , "b"    , nullptr    , T_VOID   , -4, true , _lastore        ) \
+  def(_fastore         , "fastore"         , "b"    , nullptr    , T_VOID   , -3, true , _fastore        ) \
+  def(_dastore         , "dastore"         , "b"    , nullptr    , T_VOID   , -4, true , _dastore        ) \
+  def(_aastore         , "aastore"         , "b"    , nullptr    , T_VOID   , -3, true , _aastore        ) \
+  def(_bastore         , "bastore"         , "b"    , nullptr    , T_VOID   , -3, true , _bastore        ) \
+  def(_castore         , "castore"         , "b"    , nullptr    , T_VOID   , -3, true , _castore        ) \
+  def(_sastore         , "sastore"         , "b"    , nullptr    , T_VOID   , -3, true , _sastore        ) \
+  def(_pop             , "pop"             , "b"    , nullptr    , T_VOID   , -1, false, _pop            ) \
+  def(_pop2            , "pop2"            , "b"    , nullptr    , T_VOID   , -2, false, _pop2           ) \
+  def(_dup             , "dup"             , "b"    , nullptr    , T_VOID   ,  1, false, _dup            ) \
+  def(_dup_x1          , "dup_x1"          , "b"    , nullptr    , T_VOID   ,  1, false, _dup_x1         ) \
+  def(_dup_x2          , "dup_x2"          , "b"    , nullptr    , T_VOID   ,  1, false, _dup_x2         ) \
+  def(_dup2            , "dup2"            , "b"    , nullptr    , T_VOID   ,  2, false, _dup2           ) \
+  def(_dup2_x1         , "dup2_x1"         , "b"    , nullptr    , T_VOID   ,  2, false, _dup2_x1        ) \
+  def(_dup2_x2         , "dup2_x2"         , "b"    , nullptr    , T_VOID   ,  2, false, _dup2_x2        ) \
+  def(_swap            , "swap"            , "b"    , nullptr    , T_VOID   ,  0, false, _swap           ) \
+  def(_iadd            , "iadd"            , "b"    , nullptr    , T_INT    , -1, false, _iadd           ) \
+  def(_ladd            , "ladd"            , "b"    , nullptr    , T_LONG   , -2, false, _ladd           ) \
+  def(_fadd            , "fadd"            , "b"    , nullptr    , T_FLOAT  , -1, false, _fadd           ) \
+  def(_dadd            , "dadd"            , "b"    , nullptr    , T_DOUBLE , -2, false, _dadd           ) \
+  def(_isub            , "isub"            , "b"    , nullptr    , T_INT    , -1, false, _isub           ) \
+  def(_lsub            , "lsub"            , "b"    , nullptr    , T_LONG   , -2, false, _lsub           ) \
+  def(_fsub            , "fsub"            , "b"    , nullptr    , T_FLOAT  , -1, false, _fsub           ) \
+  def(_dsub            , "dsub"            , "b"    , nullptr    , T_DOUBLE , -2, false, _dsub           ) \
+  def(_imul            , "imul"            , "b"    , nullptr    , T_INT    , -1, false, _imul           ) \
+  def(_lmul            , "lmul"            , "b"    , nullptr    , T_LONG   , -2, false, _lmul           ) \
+  def(_fmul            , "fmul"            , "b"    , nullptr    , T_FLOAT  , -1, false, _fmul           ) \
+  def(_dmul            , "dmul"            , "b"    , nullptr    , T_DOUBLE , -2, false, _dmul           ) \
+  def(_idiv            , "idiv"            , "b"    , nullptr    , T_INT    , -1, true , _idiv           ) \
+  def(_ldiv            , "ldiv"            , "b"    , nullptr    , T_LONG   , -2, true , _ldiv           ) \
+  def(_fdiv            , "fdiv"            , "b"    , nullptr    , T_FLOAT  , -1, false, _fdiv           ) \
+  def(_ddiv            , "ddiv"            , "b"    , nullptr    , T_DOUBLE , -2, false, _ddiv           ) \
+  def(_irem            , "irem"            , "b"    , nullptr    , T_INT    , -1, true , _irem           ) \
+  def(_lrem            , "lrem"            , "b"    , nullptr    , T_LONG   , -2, true , _lrem           ) \
+  def(_frem            , "frem"            , "b"    , nullptr    , T_FLOAT  , -1, false, _frem           ) \
+  def(_drem            , "drem"            , "b"    , nullptr    , T_DOUBLE , -2, false, _drem           ) \
+  def(_ineg            , "ineg"            , "b"    , nullptr    , T_INT    ,  0, false, _ineg           ) \
+  def(_lneg            , "lneg"            , "b"    , nullptr    , T_LONG   ,  0, false, _lneg           ) \
+  def(_fneg            , "fneg"            , "b"    , nullptr    , T_FLOAT  ,  0, false, _fneg           ) \
+  def(_dneg            , "dneg"            , "b"    , nullptr    , T_DOUBLE ,  0, false, _dneg           ) \
+  def(_ishl            , "ishl"            , "b"    , nullptr    , T_INT    , -1, false, _ishl           ) \
+  def(_lshl            , "lshl"            , "b"    , nullptr    , T_LONG   , -1, false, _lshl           ) \
+  def(_ishr            , "ishr"            , "b"    , nullptr    , T_INT    , -1, false, _ishr           ) \
+  def(_lshr            , "lshr"            , "b"    , nullptr    , T_LONG   , -1, false, _lshr           ) \
+  def(_iushr           , "iushr"           , "b"    , nullptr    , T_INT    , -1, false, _iushr          ) \
+  def(_lushr           , "lushr"           , "b"    , nullptr    , T_LONG   , -1, false, _lushr          ) \
+  def(_iand            , "iand"            , "b"    , nullptr    , T_INT    , -1, false, _iand           ) \
+  def(_land            , "land"            , "b"    , nullptr    , T_LONG   , -2, false, _land           ) \
+  def(_ior             , "ior"             , "b"    , nullptr    , T_INT    , -1, false, _ior            ) \
+  def(_lor             , "lor"             , "b"    , nullptr    , T_LONG   , -2, false, _lor            ) \
+  def(_ixor            , "ixor"            , "b"    , nullptr    , T_INT    , -1, false, _ixor           ) \
+  def(_lxor            , "lxor"            , "b"    , nullptr    , T_LONG   , -2, false, _lxor           ) \
+  def(_iinc            , "iinc"            , "bic"  , "wbiicc",    T_VOID   ,  0, false, _iinc           ) \
+  def(_i2l             , "i2l"             , "b"    , nullptr    , T_LONG   ,  1, false, _i2l            ) \
+  def(_i2f             , "i2f"             , "b"    , nullptr    , T_FLOAT  ,  0, false, _i2f            ) \
+  def(_i2d             , "i2d"             , "b"    , nullptr    , T_DOUBLE ,  1, false, _i2d            ) \
+  def(_l2i             , "l2i"             , "b"    , nullptr    , T_INT    , -1, false, _l2i            ) \
+  def(_l2f             , "l2f"             , "b"    , nullptr    , T_FLOAT  , -1, false, _l2f            ) \
+  def(_l2d             , "l2d"             , "b"    , nullptr    , T_DOUBLE ,  0, false, _l2d            ) \
+  def(_f2i             , "f2i"             , "b"    , nullptr    , T_INT    ,  0, false, _f2i            ) \
+  def(_f2l             , "f2l"             , "b"    , nullptr    , T_LONG   ,  1, false, _f2l            ) \
+  def(_f2d             , "f2d"             , "b"    , nullptr    , T_DOUBLE ,  1, false, _f2d            ) \
+  def(_d2i             , "d2i"             , "b"    , nullptr    , T_INT    , -1, false, _d2i            ) \
+  def(_d2l             , "d2l"             , "b"    , nullptr    , T_LONG   ,  0, false, _d2l            ) \
+  def(_d2f             , "d2f"             , "b"    , nullptr    , T_FLOAT  , -1, false, _d2f            ) \
+  def(_i2b             , "i2b"             , "b"    , nullptr    , T_BYTE   ,  0, false, _i2b            ) \
+  def(_i2c             , "i2c"             , "b"    , nullptr    , T_CHAR   ,  0, false, _i2c            ) \
+  def(_i2s             , "i2s"             , "b"    , nullptr    , T_SHORT  ,  0, false, _i2s            ) \
+  def(_lcmp            , "lcmp"            , "b"    , nullptr    , T_VOID   , -3, false, _lcmp           ) \
+  def(_fcmpl           , "fcmpl"           , "b"    , nullptr    , T_VOID   , -1, false, _fcmpl          ) \
+  def(_fcmpg           , "fcmpg"           , "b"    , nullptr    , T_VOID   , -1, false, _fcmpg          ) \
+  def(_dcmpl           , "dcmpl"           , "b"    , nullptr    , T_VOID   , -3, false, _dcmpl          ) \
+  def(_dcmpg           , "dcmpg"           , "b"    , nullptr    , T_VOID   , -3, false, _dcmpg          ) \
+  def(_ifeq            , "ifeq"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifeq           ) \
+  def(_ifne            , "ifne"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifne           ) \
+  def(_iflt            , "iflt"            , "boo"  , nullptr    , T_VOID   , -1, false, _iflt           ) \
+  def(_ifge            , "ifge"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifge           ) \
+  def(_ifgt            , "ifgt"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifgt           ) \
+  def(_ifle            , "ifle"            , "boo"  , nullptr    , T_VOID   , -1, false, _ifle           ) \
+  def(_if_icmpeq       , "if_icmpeq"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmpeq      ) \
+  def(_if_icmpne       , "if_icmpne"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmpne      ) \
+  def(_if_icmplt       , "if_icmplt"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmplt      ) \
+  def(_if_icmpge       , "if_icmpge"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmpge      ) \
+  def(_if_icmpgt       , "if_icmpgt"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmpgt      ) \
+  def(_if_icmple       , "if_icmple"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_icmple      ) \
+  def(_if_acmpeq       , "if_acmpeq"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_acmpeq      ) \
+  def(_if_acmpne       , "if_acmpne"       , "boo"  , nullptr    , T_VOID   , -2, false, _if_acmpne      ) \
+  def(_goto            , "goto"            , "boo"  , nullptr    , T_VOID   ,  0, false, _goto           ) \
+  def(_jsr             , "jsr"             , "boo"  , nullptr    , T_INT    ,  0, false, _jsr            ) \
+  def(_ret             , "ret"             , "bi"   , "wbii"     , T_VOID   ,  0, false, _ret            ) \
+  def(_tableswitch     , "tableswitch"     , ""     , nullptr    , T_VOID   , -1, false, _tableswitch    ) \
+  def(_lookupswitch    , "lookupswitch"    , ""     , nullptr    , T_VOID   , -1, false, _lookupswitch   ) \
+  def(_ireturn         , "ireturn"         , "b"    , nullptr    , T_INT    , -1, true , _ireturn        ) \
+  def(_lreturn         , "lreturn"         , "b"    , nullptr    , T_LONG   , -2, true , _lreturn        ) \
+  def(_freturn         , "freturn"         , "b"    , nullptr    , T_FLOAT  , -1, true , _freturn        ) \
+  def(_dreturn         , "dreturn"         , "b"    , nullptr    , T_DOUBLE , -2, true , _dreturn        ) \
+  def(_areturn         , "areturn"         , "b"    , nullptr    , T_OBJECT , -1, true , _areturn        ) \
+  def(_return          , "return"          , "b"    , nullptr    , T_VOID   ,  0, true , _return         ) \
+  def(_getstatic       , "getstatic"       , "bJJ"  , nullptr    , T_ILLEGAL,  1, true , _getstatic      ) \
+  def(_putstatic       , "putstatic"       , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _putstatic      ) \
+  def(_getfield        , "getfield"        , "bJJ"  , nullptr    , T_ILLEGAL,  0, true , _getfield       ) \
+  def(_putfield        , "putfield"        , "bJJ"  , nullptr    , T_ILLEGAL, -2, true , _putfield       ) \
+  def(_invokevirtual   , "invokevirtual"   , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokevirtual  ) \
+  def(_invokespecial   , "invokespecial"   , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokespecial  ) \
+  def(_invokestatic    , "invokestatic"    , "bJJ"  , nullptr    , T_ILLEGAL,  0, true , _invokestatic   ) \
+  def(_invokeinterface , "invokeinterface" , "bJJ__", nullptr    , T_ILLEGAL, -1, true , _invokeinterface) \
+  def(_invokedynamic   , "invokedynamic"   , "bJJJJ", nullptr    , T_ILLEGAL,  0, true , _invokedynamic  ) \
+  def(_new             , "new"             , "bkk"  , nullptr    , T_OBJECT ,  1, true , _new            ) \
+  def(_newarray        , "newarray"        , "bc"   , nullptr    , T_OBJECT ,  0, true , _newarray       ) \
+  def(_anewarray       , "anewarray"       , "bkk"  , nullptr    , T_OBJECT ,  0, true , _anewarray      ) \
+  def(_arraylength     , "arraylength"     , "b"    , nullptr    , T_INT    ,  0, true , _arraylength    ) \
+  def(_athrow          , "athrow"          , "b"    , nullptr    , T_VOID   , -1, true , _athrow         ) \
+  def(_checkcast       , "checkcast"       , "bkk"  , nullptr    , T_OBJECT ,  0, true , _checkcast      ) \
+  def(_instanceof      , "instanceof"      , "bkk"  , nullptr    , T_INT    ,  0, true , _instanceof     ) \
+  def(_monitorenter    , "monitorenter"    , "b"    , nullptr    , T_VOID   , -1, true , _monitorenter   ) \
+  def(_monitorexit     , "monitorexit"     , "b"    , nullptr    , T_VOID   , -1, true , _monitorexit    ) \
+  def(_wide            , "wide"            , ""     , nullptr    , T_VOID   ,  0, false, _wide           ) \
+  def(_multianewarray  , "multianewarray"  , "bkkc" , nullptr    , T_OBJECT ,  1, true , _multianewarray ) \
+  def(_ifnull          , "ifnull"          , "boo"  , nullptr    , T_VOID   , -1, false, _ifnull         ) \
+  def(_ifnonnull       , "ifnonnull"       , "boo"  , nullptr    , T_VOID   , -1, false, _ifnonnull      ) \
+  def(_goto_w          , "goto_w"          , "boooo", nullptr    , T_VOID   ,  0, false, _goto_w         ) \
+  def(_jsr_w           , "jsr_w"           , "boooo", nullptr    , T_INT    ,  0, false, _jsr_w          ) \
+  def(_breakpoint      , "breakpoint"      , ""     , nullptr    , T_VOID   ,  0, true , _breakpoint     ) \
+  JVM_BYTECODES_DO(def)
 
 bool Bytecodes::_is_initialized = false;
 
 const char* const Bytecodes::_name[Bytecodes::number_of_codes] = {
 #define BYTECODE_NAME(code, name, format, wide_format, result_type, depth, can_trap, java_code) name,
-  BYTECODES(BYTECODE_NAME)
+  BYTECODES_DO(BYTECODE_NAME)
 #undef BYTECODE_NAME
 };
 
 const BasicType Bytecodes::_result_type[Bytecodes::number_of_codes] = {
 #define BYTECODE_RESULT_TYPE(code, name, format, wide_format, result_type, depth, can_trap, java_code) result_type,
-  BYTECODES(BYTECODE_RESULT_TYPE)
+  BYTECODES_DO(BYTECODE_RESULT_TYPE)
 #undef BYTECODE_RESULT_TYPE
 };
 
 const s_char Bytecodes::_depth[Bytecodes::number_of_codes] = {
 #define BYTECODE_DEPTH(code, name, format, wide_format, result_type, depth, can_trap, java_code) depth,
-  BYTECODES(BYTECODE_DEPTH)
+  BYTECODES_DO(BYTECODE_DEPTH)
 #undef BYTECODE_DEPTH
 };
 
@@ -321,13 +321,13 @@ struct StringLiteralSize {
 
 const u_char Bytecodes::_lengths[Bytecodes::number_of_codes] = {
 #define BYTECODE_LENGTHS(code, name, format, wide_format, result_type, depth, can_trap, java_code) static_cast<u_char>((STRING_SIZE(wide_format) << 4) | (STRING_SIZE(format) & 0xf)),
-  BYTECODES(BYTECODE_LENGTHS)
+  BYTECODES_DO(BYTECODE_LENGTHS)
 #undef BYTECODE_LENGTHS
 };
 
 const Bytecodes::Code Bytecodes::_java_code[Bytecodes::number_of_codes] = {
 #define BYTECODE_JAVA_CODE(code, name, format, wide_format, result_type, depth, can_trap, java_code) Bytecodes::java_code,
-  BYTECODES(BYTECODE_JAVA_CODE)
+  BYTECODES_DO(BYTECODE_JAVA_CODE)
 #undef BYTECODE_JAVA_CODE
 };
 
@@ -559,7 +559,7 @@ void Bytecodes::initialize() {
          "bytecode lengths mismatch");                                                      \
   assert(_java_code[code] == java_code, "bytecode java_code mismatch");                     \
   def_flags(code, format, wide_format, can_trap, java_code);
-  BYTECODES(BYTECODE)
+  BYTECODES_DO(BYTECODE)
 #undef BYTECODE
 
   // compare can_trap information for each bytecode with the
