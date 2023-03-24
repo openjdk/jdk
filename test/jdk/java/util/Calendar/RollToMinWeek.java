@@ -78,15 +78,27 @@ public class RollToMinWeek {
     // MinWeek = 4 and FirstDayOfWeek = Monday is included in the provider
     private static Stream<Arguments> rollUpCalProvider() {
         ArrayList<Arguments> calList = new ArrayList<Arguments>();
-        for (int weekLength = 1; weekLength <= 7; weekLength++) {
-            for (int firstDay = 1; firstDay <= 7; firstDay++) {
-                // Week 1, Week 2 are all potential dates to roll into
-                String[] validDates = {"Sunday, 6 January 2019", "Sunday, 13 January 2019"};
-                calList.add(Arguments.of(buildCalendar("gregory", firstDay, weekLength,
-                                29, 11, 2019), validDates)
-                        // Roll from week Max to week 1 with non-existent day of week
-                );
+        // Week 1, Week 2 are all potential dates to roll into
+        // Depends on first day of week / min days in week
+        String[][] validDates = {
+                {"Wednesday, 2 January 2019", "Wednesday, 9 January 2019"},
+                {"Thursday, 3 January 2019" , "Thursday, 10 January 2019"},
+                {"Friday, 4 January 2019"   , "Friday, 11 January 2019"},
+                {"Saturday, 5 January 2019" , "Saturday, 12 January 2019"},
+                {"Sunday, 6 January 2019"   , "Sunday, 13 January 2019"},
+                {"Monday, 7 January 2019"   , "Monday, 14 January 2019"},
+                {"Tuesday, 1 January 2019"  , "Tuesday, 8 January 2019"}
+        };
+        int date = 0;
+        // Test all days at the end of the year that roll into week 1
+        for (int dayOfMonth = 25; dayOfMonth <= 31; dayOfMonth++) {
+            for (int weekLength = 1; weekLength <= 7; weekLength++) {
+                for (int firstDay = 1; firstDay <= 7; firstDay++) {
+                    calList.add(Arguments.of(buildCalendar("gregory", firstDay, weekLength,
+                                    dayOfMonth, 11, 2019), validDates[date]));
+                }
             }
+            date++;
         }
         return calList.stream();
     }
