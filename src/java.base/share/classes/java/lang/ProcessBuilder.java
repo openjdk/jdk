@@ -1072,7 +1072,8 @@ public final class ProcessBuilder
      * @throws IOException if an I/O error occurs
      *
      * @implNote
-     * Logging of the command, arguments, directory, stack trace, and process id can be enabled.
+     * In the reference implementation, logging of the command, arguments, directory,
+     * stack trace, and process id can be enabled.
      * The logged information may contain sensitive security information and the potential exposure
      * of the information should be carefully reviewed.
      * Logging of the information is enabled when the logging level of the
@@ -1295,7 +1296,8 @@ public final class ProcessBuilder
      *          If the operating system does not support the creation of processes
      *
      * @implNote
-     * Logging of each process created can be enabled, see {@link ProcessBuilder#start()} for details.
+     * In the reference implementation, logging of each process created can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @throws IOException if an I/O error occurs
      * @since 9
