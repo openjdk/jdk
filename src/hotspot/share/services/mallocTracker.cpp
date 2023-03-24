@@ -230,7 +230,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
         }
         st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size " SIZE_FORMAT ", tag %s",
                   p2i(p), where,
-                  (candidate->is_dead() ? "dead" : "life"),
+                  (candidate->is_dead() ? "dead" : "live"),
                   p2i(candidate + 1), // lets print the payload start, not the header
                   candidate->size(), NMTUtil::flag_to_enum_name(candidate->flags()));
         if (MemTracker::tracking_level() == NMT_detail) {
