@@ -1068,7 +1068,7 @@ void ciEnv::register_method(ciMethod* target,
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
-    // Prevent SystemDictionary::add_to_hierarchy from running
+    // Prevent InstanceKlass::add_to_hierarchy from running
     // and invalidating our dependencies until we install this method.
     // No safepoints are allowed. Otherwise, class redefinition can occur in between.
     MutexLocker ml(Compile_lock);
@@ -1111,10 +1111,6 @@ void ciEnv::register_method(ciMethod* target,
       record_failure("RTM state change invalidated rtm code");
     }
 #endif
-
-    if (!failing()) {
-      code_buffer->finalize_stubs();
-    }
 
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.
