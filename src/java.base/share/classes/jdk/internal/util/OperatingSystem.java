@@ -63,7 +63,7 @@ import jdk.internal.vm.annotation.ForceInline;
 public enum OperatingSystem {
 
     /**
-     * The Linux Operating system.
+     * Operating systems based on the Linux kernel.
      */
     LINUX,
     /**
