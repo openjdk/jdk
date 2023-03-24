@@ -110,8 +110,6 @@ public class ExceptionKeepAlive
                 port1 = t.getRemoteAddress().getPort();
                 System.out.println("First connection on client port = " + port1);
 
-                // close request to enable reuse
-                t.getRequestBody().close();
                 // send response
                 t.sendResponseHeaders(200, -1);
                 // response is completed now; throw exception
