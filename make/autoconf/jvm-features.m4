@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,10 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_DTRACE],
 [
   JVM_FEATURES_CHECK_AVAILABILITY(dtrace, [
     AC_MSG_CHECKING([for dtrace tool])
-    if test "x$DTRACE" != "x" && test -x "$DTRACE"; then
+    if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
+      AC_MSG_RESULT([no])
+      AVAILABLE=false
+    elif test "x$DTRACE" != "x" && test -x "$DTRACE"; then
       AC_MSG_RESULT([$DTRACE])
     else
       AC_MSG_RESULT([no])
