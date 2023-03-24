@@ -320,7 +320,7 @@ struct StringLiteralSize {
 #define STRING_SIZE(string) StringLiteralSize::invoke(string)
 
 const u_char Bytecodes::_lengths[Bytecodes::number_of_codes] = {
-#define BYTECODE_LENGTHS(code, name, format, wide_format, result_type, depth, can_trap, java_code) (STRING_SIZE(wide_format) << 4) | (STRING_SIZE(format) & 0xf),
+#define BYTECODE_LENGTHS(code, name, format, wide_format, result_type, depth, can_trap, java_code) static_cast<u_char>((STRING_SIZE(wide_format) << 4) | (STRING_SIZE(format) & 0xf)),
   BYTECODES(BYTECODE_LENGTHS)
 #undef BYTECODE_LENGTHS
 };
@@ -551,13 +551,13 @@ void Bytecodes::initialize() {
   // Note 1: The result type is T_ILLEGAL for bytecodes where the top of stack
   //         type after execution is not only determined by the bytecode itself.
 
-#define BYTECODE(code, name, format, wide_format, result_type, depth, can_trap, java_code) \
-  assert(strcmp(_name[code], name) == 0, "bytecode name mismatch");                        \
-  assert(_result_type[code] == result_type, "bytecode result_type mismatch");              \
-  assert(_depth[code] == depth, "bytecode depth mismatch");                                \
-  assert(_lengths[code] == (STRING_SIZE(wide_format) << 4) | (STRING_SIZE(format) & 0xF),  \
-         "bytecode lengths mismatch");                                                     \
-  assert(_java_code[code] == java_code, "bytecode java_code mismatch");                    \
+#define BYTECODE(code, name, format, wide_format, result_type, depth, can_trap, java_code)  \
+  assert(strcmp(_name[code], name) == 0, "bytecode name mismatch");                         \
+  assert(_result_type[code] == result_type, "bytecode result_type mismatch");               \
+  assert(_depth[code] == depth, "bytecode depth mismatch");                                 \
+  assert(_lengths[code] == ((STRING_SIZE(wide_format) << 4) | (STRING_SIZE(format) & 0xF)), \
+         "bytecode lengths mismatch");                                                      \
+  assert(_java_code[code] == java_code, "bytecode java_code mismatch");                     \
   def_flags(code, format, wide_format, can_trap, java_code);
   BYTECODES(BYTECODE)
 #undef BYTECODE
