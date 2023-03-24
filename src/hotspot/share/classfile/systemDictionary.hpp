@@ -360,8 +360,6 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-  // Setup link to hierarchy and deoptimize
-  static void add_to_hierarchy(JavaThread* current, InstanceKlass* k);
 protected:
 
   // Basic find on loaded classes

@@ -91,21 +91,34 @@ bool TestIteratorFn::do_bit(size_t offset) {
   return true;
 }
 
-static idx_t compute_expected(idx_t search_start,
-                                         idx_t search_end,
-                                         idx_t left_bit,
-                                         idx_t right_bit) {
-  idx_t expected = search_end;
-  if (search_start <= left_bit) {
-    if (left_bit < search_end) {
-      expected = left_bit;
-    }
-  } else if (search_start <= right_bit) {
-    if (right_bit < search_end) {
-      expected = right_bit;
-    }
+static bool is_bit_in_range(idx_t bit, idx_t beg, idx_t end) {
+  return (beg <= bit) && (bit < end);
+}
+
+static idx_t compute_first_expected(idx_t search_start,
+                                    idx_t search_end,
+                                    idx_t left_bit,
+                                    idx_t right_bit) {
+  if (is_bit_in_range(left_bit, search_start, search_end)) {
+    return left_bit;
+  } else if (is_bit_in_range(right_bit, search_start, search_end)) {
+    return right_bit;
+  } else {
+    return search_end;
   }
-  return expected;
+}
+
+static idx_t compute_last_expected(idx_t search_start,
+                                   idx_t search_end,
+                                   idx_t left_bit,
+                                   idx_t right_bit) {
+  if (is_bit_in_range(right_bit, search_start, search_end)) {
+    return right_bit;
+  } else if (is_bit_in_range(left_bit, search_start, search_end)) {
+    return left_bit;
+  } else {
+    return search_end;
+  }
 }
 
 static void test_search_ranges(BitMap& test_ones,
@@ -126,6 +139,21 @@ static void test_search_ranges(BitMap& test_ones,
   EXPECT_EQ(left, test_zeros.find_first_clear_bit(0));
   EXPECT_EQ(right, test_zeros.find_first_clear_bit(left + 1));
   EXPECT_EQ(BITMAP_SIZE, test_zeros.find_first_clear_bit(right + 1));
+
+  // Test find_last_set_bit with full range of map.
+  EXPECT_EQ(right, test_ones.find_last_set_bit(0));
+  EXPECT_EQ(left, test_ones.find_last_set_bit(0, right));
+  EXPECT_EQ(left, test_ones.find_last_set_bit(0, left));
+
+  // Test find_last_set_bit_aligned_left with full range of map.
+  EXPECT_EQ(right, test_ones.find_last_set_bit_aligned_left(0, BITMAP_SIZE));
+  EXPECT_EQ(left, test_ones.find_last_set_bit_aligned_left(0, right));
+  EXPECT_EQ(left, test_ones.find_last_set_bit_aligned_left(0, left));
+
+  // Test find_last_clear_bit with full range of map.
+  EXPECT_EQ(right, test_zeros.find_last_clear_bit(0));
+  EXPECT_EQ(left, test_zeros.find_last_clear_bit(0, right));
+  EXPECT_EQ(left, test_zeros.find_last_clear_bit(0, left));
 
   // Check that iterate invokes the closure function on left and right values.
   TestIteratorFn test_iteration(0, BITMAP_SIZE, left, right);
@@ -165,28 +193,49 @@ static void test_search_ranges(BitMap& test_ones,
           }
 
           bool aligned_right = search_offsets[o_end] == 0;
+          bool aligned_left = search_offsets[o_start] == 0;
           ASSERT_LE(start, end);       // test bug if fail
           ASSERT_LT(end, BITMAP_SIZE); // test bug if fail
 
-          idx_t expected = compute_expected(start, end, left, right);
+          idx_t first_expected = compute_first_expected(start, end, left, right);
+          idx_t last_expected = compute_last_expected(start, end, left, right);
 
-          EXPECT_EQ(expected, test_ones.find_first_set_bit(start, end));
-          EXPECT_EQ(expected, test_zeros.find_first_clear_bit(start, end));
+          EXPECT_EQ(first_expected, test_ones.find_first_set_bit(start, end));
+          EXPECT_EQ(first_expected, test_zeros.find_first_clear_bit(start, end));
           if (aligned_right) {
             EXPECT_EQ(
-              expected,
+              first_expected,
               test_ones.find_first_set_bit_aligned_right(start, end));
           }
 
-          idx_t start2 = MIN2(expected + 1, end);
-          idx_t expected2 = compute_expected(start2, end, left, right);
+          EXPECT_EQ(last_expected, test_ones.find_last_set_bit(start, end));
+          EXPECT_EQ(last_expected, test_zeros.find_last_clear_bit(start, end));
+          if (aligned_left) {
+            EXPECT_EQ(
+              last_expected,
+              test_ones.find_last_set_bit_aligned_left(start, end));
+          }
 
-          EXPECT_EQ(expected2, test_ones.find_first_set_bit(start2, end));
-          EXPECT_EQ(expected2, test_zeros.find_first_clear_bit(start2, end));
+          idx_t start2 = MIN2(first_expected + 1, end);
+          idx_t first_expected2 = compute_first_expected(start2, end, left, right);
+
+          idx_t end2 = MAX2(start, last_expected);
+          idx_t last_expected2 = compute_last_expected(start, end2, left, right);
+
+          EXPECT_EQ(first_expected2, test_ones.find_first_set_bit(start2, end));
+          EXPECT_EQ(first_expected2, test_zeros.find_first_clear_bit(start2, end));
           if (aligned_right) {
             EXPECT_EQ(
-              expected2,
+              first_expected2,
               test_ones.find_first_set_bit_aligned_right(start2, end));
+          }
+
+          EXPECT_EQ(last_expected2, test_ones.find_last_set_bit(start, end2));
+          EXPECT_EQ(last_expected2, test_zeros.find_last_clear_bit(start, end2));
+          if (aligned_left) {
+            EXPECT_EQ(
+              last_expected2,
+              test_ones.find_last_set_bit_aligned_left(start, end2));
           }
         }
       }
