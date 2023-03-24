@@ -72,9 +72,13 @@ static void test_magic_int_divide(jint dividend, jint divisor) {
   jlong magic_const;
   jint shift;
   magic_int_divide_constants(divisor, magic_const, shift);
-  ASSERT_EQ(dividend / divisor,
-            java_shift_right(java_multiply(dividend, magic_const), shift) & 0xFFFFFFFFL
-              - (dividend < 0 ? -1L : 0L));
+  jint result = jint(java_shift_right(java_multiply(jlong(dividend), magic_const), shift + 32));
+  if (divisor < 0) {
+    result = java_subtract(java_shift_right(dividend, 31), result);
+  } else {
+    result = java_subtract(result, java_shift_right(dividend, 31));
+  }
+  ASSERT_EQ(divisor == -1 ? java_subtract(0, dividend) : (dividend / divisor), result);
 }
 
 static void test_magic_int_unsigned_divide_down(juint dividend, juint divisor) {
@@ -82,7 +86,7 @@ static void test_magic_int_unsigned_divide_down(juint dividend, juint divisor) {
   jint shift;
   magic_int_unsigned_divide_constants_down(divisor, magic_const, shift);
   ASSERT_EQ(dividend / divisor,
-            java_shift_right_unsigned(java_multiply(dividend, magic_const), shift) & 0xFFFFFFFFL);
+            juint(java_shift_right_unsigned(java_multiply(jlong(dividend), magic_const), shift + 32)));
 }
 
 static void test_magic_int_unsigned_divide_up(juint dividend, juint divisor) {
@@ -90,10 +94,44 @@ static void test_magic_int_unsigned_divide_up(juint dividend, juint divisor) {
   jint shift;
   magic_int_unsigned_divide_constants_up(divisor, magic_const, shift);
   ASSERT_EQ(dividend / divisor,
-            java_shift_right_unsigned(java_multiply(dividend + 1L, magic_const), shift) & 0xFFFFFFFFL);
+            juint(java_shift_right_unsigned(java_multiply(jlong(dividend) + 1L, magic_const), shift + 32)));
 }
 
-TEST_VM(utilities, javaArithmetic) {
+static void test_magic_long_divide(jlong dividend, jlong divisor) {
+  jlong magic_const;
+  jint shift;
+  magic_long_divide_constants(divisor, magic_const, shift);
+  jlong result = multiply_high_signed(dividend, magic_const);
+  if (magic_const < 0) {
+    result += dividend;
+  }
+  result = java_shift_right(result, shift);
+  if (divisor < 0) {
+    result = java_subtract(java_shift_right(dividend, 63), result);
+  } else {
+    result = java_subtract(result, java_shift_right(dividend, 63));
+  }
+  ASSERT_EQ(divisor == -1 ? java_subtract(0L, dividend) : (dividend / divisor), result);
+}
+
+static void test_magic_long_unsigned_divide(julong dividend, julong divisor) {
+  jlong magic_const;
+  jint shift;
+  bool magic_const_ovf;
+  magic_long_unsigned_divide_constants(divisor, magic_const, shift, magic_const_ovf);
+  jlong result = multiply_high_unsigned(dividend, magic_const);
+  if (!magic_const_ovf || shift == 0) {
+    result = java_shift_right_unsigned(result, shift);
+  } else {
+    jlong diff = java_subtract(dividend, result);
+    diff = java_shift_right_unsigned(diff, 1);
+    diff = java_add(diff, result);
+    result = java_shift_right_unsigned(diff, shift - 1);
+  }
+  ASSERT_EQ(dividend / divisor, result);
+}
+
+static void test_hardcoded_coefs() {
   // These numbers are taken from the output of gcc 12.2 or msvc 19.33
   test_magic_int_divide_coefs(3, 1431655766, 0);
   test_magic_int_divide_coefs(5, 1717986919, 1);
@@ -163,4 +201,14 @@ TEST_VM(utilities, javaArithmetic) {
   test_magic_long_unsigned_divide_coefs(4294967295, -9223372034707292159, 31, false);
   test_magic_long_unsigned_divide_coefs(4292967297, 8593932156542825, 32, true);
   test_magic_long_unsigned_divide_coefs(9223372036854775807, 3, 63, true);
+}
+
+static jint int_division_operands[] = {1, 2, 3, 4, -1, -2, -3, -4, }
+
+static void test_specific_cases() {
+
+}
+
+TEST(utilities, javaArithmetic) {
+  
 }

@@ -151,7 +151,7 @@ SATURATED_INTEGER_OP(+, saturated_add, uint, uint)
 #undef SATURATED_INTEGER_OP
 
 // Taken from rom section 8-2 of Henry S. Warren, Jr., Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
-inline uint64_t multiply_high_unsigned(const uint64_t x, const uint64_t y) {
+inline constexpr uint64_t multiply_high_unsigned(const uint64_t x, const uint64_t y) {
   const uint64_t x1 = x >> 32u;
   const uint64_t x2 = x & 0xFFFFFFFF;
   const uint64_t y1 = y >> 32u;
@@ -167,7 +167,7 @@ inline uint64_t multiply_high_unsigned(const uint64_t x, const uint64_t y) {
 
 // Taken from java.lang.Math::multiplyHigh which uses the technique from section 8-2 of Henry S. Warren, Jr.,
 // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174 but adapted for signed longs.
-inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
+inline constexpr int64_t multiply_high_signed(const int64_t x, const int64_t y) {
   const jlong x1 = java_shift_right((jlong)x, 32);
   const jlong x2 = x & 0xFFFFFFFF;
   const jlong y1 = java_shift_right((jlong)y, 32);
