@@ -65,7 +65,7 @@ class JarIndex {
     /**
      * The index file name.
      */
-    public static final String INDEX_NAME = "META-INF/INDEX.LIST";
+    static final String INDEX_NAME = "META-INF/INDEX.LIST";
 
     /**
      * true if, and only if, sun.misc.JarIndex.metaInfFilenames is set to true.
