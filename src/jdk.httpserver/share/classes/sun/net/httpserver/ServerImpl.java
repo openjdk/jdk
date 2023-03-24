@@ -878,7 +878,6 @@ class ServerImpl {
             sendReply (
                 code, true, "<h1>"+code+Code.msg(code)+"</h1>"+message
             );
-            closeConnection(connection);
         }
 
         void sendReply (
