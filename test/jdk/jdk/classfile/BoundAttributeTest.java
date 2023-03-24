@@ -23,6 +23,12 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8304837
+ * @summary Testing BoundAttributes
+ * @run junit BoundAttributeTest
+ */
 import jdk.internal.classfile.Attributes;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
@@ -41,12 +47,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/*
- * @test
- * @issue 8304837
- * @summary Testing BoundAttributes
- * @run junit BoundAttributeTest
- */
 class BoundAttributeTest {
 
     @Test
