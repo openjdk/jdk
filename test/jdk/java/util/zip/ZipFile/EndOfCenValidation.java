@@ -35,6 +35,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -108,8 +109,7 @@ public class EndOfCenValidation {
         Path zip = zipWithModifiedEndRecord(size, true, 0, CEN_TOO_LARGE_ZIP);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
-            try (ZipFile zf = new ZipFile(zip.toFile())) {
-            }
+            new ZipFile(zip.toFile());
         });
 
         assertEquals(ex.getMessage(), INVALID_CEN_SIZE_TOO_LARGE);
@@ -127,8 +127,7 @@ public class EndOfCenValidation {
         Path zip = zipWithModifiedEndRecord(size, false, 0, INVALID_CEN_SIZE);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
-            try (ZipFile zf = new ZipFile(zip.toFile())) {
-            }
+            new ZipFile(zip.toFile());
         });
 
         assertEquals(ex.getMessage(), INVALID_CEN_BAD_SIZE);
@@ -147,8 +146,7 @@ public class EndOfCenValidation {
         Path zip = zipWithModifiedEndRecord(size, true, 100, BAD_CEN_OFFSET_ZIP);
 
         ZipException ex = expectThrows(ZipException.class, () -> {
-            try (ZipFile zf = new ZipFile(zip.toFile())) {
-            }
+            new ZipFile(zip.toFile());
         });
 
         assertEquals(ex.getMessage(), INVALID_CEN_BAD_OFFSET);
@@ -174,11 +172,8 @@ public class EndOfCenValidation {
                                           int cenOffAdjust,
                                           Path zip) throws IOException {
 
-        Files.deleteIfExists(zip);
-
         // A byte buffer for reading the EOC
-        ByteBuffer buffer = ByteBuffer.wrap(Arrays.copyOf(zipBytes, zipBytes.length))
-                .order(ByteOrder.LITTLE_ENDIAN);
+        ByteBuffer buffer = ByteBuffer.wrap(zipBytes.clone()).order(ByteOrder.LITTLE_ENDIAN);
 
         // Offset of the EOC record
         int eocOff = buffer.limit() - ENDHDR;
@@ -194,6 +189,9 @@ public class EndOfCenValidation {
             int currentCenOff = buffer.getInt(offOffset);
             buffer.putInt(offOffset, currentCenOff + cenOffAdjust);
         }
+
+        // When creating a sparse file, the file must not already exit
+        Files.deleteIfExists(zip);
 
         // Open a FileChannel for writing a sparse file
         EnumSet<StandardOpenOption> options = EnumSet.of(StandardOpenOption.CREATE_NEW,
@@ -211,18 +209,23 @@ public class EndOfCenValidation {
                 channel.position(channel.position() + injectBytes);
             }
             // Write the modified EOC
-            channel.write(buffer.slice(buffer.limit()-ENDHDR, ENDHDR));
+            channel.write(buffer.slice(buffer.limit() - ENDHDR, ENDHDR));
         }
         return zip;
     }
 
-    // Produce a byte array of a ZIP with a single entry
+    /**
+     * Produce a byte array of a ZIP with a single entry
+     *
+     * @throws IOException
+     */
     private byte[] templateZip() throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        try (ZipOutputStream zout = new ZipOutputStream(bout)) {
-            zout.putNextEntry(new ZipEntry("duke.txt"));
+        try (ZipOutputStream zo = new ZipOutputStream(bout)) {
+            ZipEntry entry = new ZipEntry("duke.txt");
+            zo.putNextEntry(entry);
+            zo.write("duke".getBytes(StandardCharsets.UTF_8));
         }
-        byte[] zipBytes = bout.toByteArray();
-        return zipBytes;
+        return bout.toByteArray();
     }
 }
