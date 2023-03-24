@@ -33,7 +33,6 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 
