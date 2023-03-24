@@ -232,7 +232,7 @@ public class PoolReader {
                 try {
                     return names.fromUtf(poolbuf.elems, offset + 2, len, utf8validation);
                 } catch (InvalidUtfException e) {
-                    if (Source.DEFAULT == Source.JDK21) {
+                    if (reader == null || reader.warnOnIllegalUtf8) {
                         if (reader != null) {
                             reader.log.warning(Warnings.InvalidUtf8InClassfile(
                                 reader.currentClassFile, Fragments.BadUtf8ByteSequenceAt(e.getOffset())));

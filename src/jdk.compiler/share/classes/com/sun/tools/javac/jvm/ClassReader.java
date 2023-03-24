@@ -120,6 +120,10 @@ public class ClassReader {
      */
     boolean lintClassfile;
 
+    /** Switch: warn (instead of error) on illegal UTF-8
+     */
+    boolean warnOnIllegalUtf8;
+
     /** Switch: preserve parameter names from the variable table.
      */
     public boolean saveParameterNames;
@@ -286,6 +290,7 @@ public class ClassReader {
         allowModules     = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
+        warnOnIllegalUtf8 = Feature.WARN_ON_ILLEGAL_UTF8.allowedInSource(source);
 
         saveParameterNames = options.isSet(PARAMETERS);
 
@@ -781,7 +786,7 @@ public class ClassReader {
         try {
             return names.fromUtf(buf, off, len, utf8validation);
         } catch (InvalidUtfException e) {
-            if (Source.DEFAULT == Source.JDK21) {
+            if (warnOnIllegalUtf8) {
                 log.warning(Warnings.InvalidUtf8InClassfile(currentClassFile,
                     Fragments.BadUtf8ByteSequenceAt(sigp)));
                 return names.fromUtfLax(buf, off, len);
@@ -1244,7 +1249,7 @@ public class ClassReader {
                     try {
                         return names.fromUtf(buf, 0, buf.length, utf8validation);
                     } catch (InvalidUtfException e) {
-                        if (Source.DEFAULT == Source.JDK21) {
+                        if (warnOnIllegalUtf8) {
                             log.warning(Warnings.InvalidUtf8InClassfile(currentClassFile,
                                 Fragments.BadUtf8ByteSequenceAt(e.getOffset())));
                             return names.fromUtfLax(buf, 0, buf.length);
