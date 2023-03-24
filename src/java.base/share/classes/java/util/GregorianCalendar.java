@@ -1308,10 +1308,14 @@ public class GregorianCalendar extends Calendar {
                         }
                     }
                     int newWeekOfYear = getRolledValue(woy, amount, min, max);
-                    // Make sure that the (potential) minimum week has the
-                    // current DAY_OF_WEEK
-                    if (newWeekOfYear == 1 && isInvalidWeek1()) {
-                        newWeekOfYear+=1;
+                    // Final check to ensure that the first week has the
+                    // current DAY_OF_WEEK. Only make a check for
+                    // rolling up into week 1, as the existing checks
+                    // sufficiently handle rolling down into week 1.
+                    if (newWeekOfYear == 1 && (isInvalidWeek1())) {
+                        if (amount > 0) {
+                            newWeekOfYear++;
+                        }
                     }
                     set(field, newWeekOfYear);
                     return;
@@ -3000,6 +3004,29 @@ public class GregorianCalendar extends Calendar {
         // If the week is minimum, check if the DAY_OF_WEEK does not exist
         return isMinWeek(daysInFirstWeek) &&
                 dayNotInMinWeek(internalGet(DAY_OF_WEEK), jan1Dow, getFirstDayOfWeek() - 1);
+    }
+
+    private int getDaysInLastWeek(int dec31dow) {
+        int daysInLastWeek;
+        if (getFirstDayOfWeek() <= dec31dow) {
+            // Add wrap around days
+            daysInLastWeek = dec31dow - getFirstDayOfWeek() + 1;
+        } else {
+            daysInLastWeek = (7 - getFirstDayOfWeek()) + dec31dow;
+        }
+        return daysInLastWeek;
+    }
+
+    // revisit the logic here
+    private boolean isInvalidWeekMax() {
+        // Calculate the DAY_OF_WEEK for Jan 1 of the current YEAR
+        long dec31Fd =  gcal.getFixedDate(internalGet(YEAR), 12, 31, null);
+        int dec31dow = BaseCalendar.getDayOfWeekFromFixedDate(dec31Fd);
+        int daysInLastWeek = getDaysInLastWeek(dec31dow);
+
+        // If the week is minimum, check if the DAY_OF_WEEK does not exist
+        return isMinWeek(daysInLastWeek) &&
+                dayNotInMinWeek(internalGet(DAY_OF_WEEK), getFirstDayOfWeek() - 1, dec31dow);
     }
 
     /**
