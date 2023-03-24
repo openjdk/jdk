@@ -2121,6 +2121,9 @@ public class BasicTableUI extends TableUI
     private void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {
         int draggedColumnIndex = viewIndexForColumn(draggedColumn);
 
+        if (draggedColumnIndex == -1) {
+            return;
+        }
         Rectangle minCell = table.getCellRect(rMin, draggedColumnIndex, true);
         Rectangle maxCell = table.getCellRect(rMax, draggedColumnIndex, true);
 

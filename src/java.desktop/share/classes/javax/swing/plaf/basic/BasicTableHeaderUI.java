@@ -699,21 +699,24 @@ public class BasicTableHeaderUI extends TableHeaderUI {
         // Paint the dragged column if we are dragging.
         if (draggedColumn != null) {
             int draggedColumnIndex = viewIndexForColumn(draggedColumn);
-            Rectangle draggedCellRect = header.getHeaderRect(draggedColumnIndex);
+            if (draggedColumnIndex != -1) {
+                Rectangle draggedCellRect = header.getHeaderRect(draggedColumnIndex);
 
-            // Draw a gray well in place of the moving column.
-            g.setColor(header.getParent().getBackground());
-            g.fillRect(draggedCellRect.x, draggedCellRect.y,
-                               draggedCellRect.width, draggedCellRect.height);
+                // Draw a gray well in place of the moving column.
+                g.setColor(header.getParent().getBackground());
+                g.fillRect(draggedCellRect.x, draggedCellRect.y,
+                        draggedCellRect.width, draggedCellRect.height);
 
-            draggedCellRect.x += header.getDraggedDistance();
+                draggedCellRect.x += header.getDraggedDistance();
 
-            // Fill the background.
-            g.setColor(header.getBackground());
-            g.fillRect(draggedCellRect.x, draggedCellRect.y,
-                       draggedCellRect.width, draggedCellRect.height);
+                // Fill the background.
+                g.setColor(header.getBackground());
+                g.fillRect(draggedCellRect.x, draggedCellRect.y,
+                        draggedCellRect.width, draggedCellRect.height);
 
-            paintCell(g, draggedCellRect, draggedColumnIndex);
+                paintCell(g, draggedCellRect, draggedColumnIndex);
+            }
+
         }
 
         // Remove all components in the rendererPane.
@@ -721,6 +724,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
     }
 
     private Component getHeaderRenderer(int columnIndex) {
+
         TableColumn aColumn = header.getColumnModel().getColumn(columnIndex);
         TableCellRenderer renderer = aColumn.getHeaderRenderer();
         if (renderer == null) {
