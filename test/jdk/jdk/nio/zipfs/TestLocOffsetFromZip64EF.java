@@ -29,12 +29,16 @@ import org.testng.annotations.Test;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -111,6 +115,8 @@ public class TestLocOffsetFromZip64EF {
      */
     @Test(dataProvider = "zipInfoTimeMap")
     public void walkZipFSTest(final Map<String, String> env) throws IOException {
+        Set<String> entries = new HashSet<>();
+
         try (FileSystem fs =
                      FileSystems.newFileSystem(Paths.get(ZIP_FILE_NAME), env)) {
             for (Path root : fs.getRootDirectories()) {
@@ -118,6 +124,7 @@ public class TestLocOffsetFromZip64EF {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes
                             attrs) throws IOException {
+                        entries.add(file.getFileName().toString());
                         System.out.println(Files.readAttributes(file,
                                 BasicFileAttributes.class).toString());
                         return FileVisitResult.CONTINUE;
@@ -125,6 +132,8 @@ public class TestLocOffsetFromZip64EF {
                 });
             }
         }
+        // Sanity check that ZIP file had the expected entries
+        assertEquals(entries, Set.of("entry", "entry2", "entry3"));
     }
 
     /**
@@ -136,6 +145,10 @@ public class TestLocOffsetFromZip64EF {
         try (ZipFile zip = new ZipFile(ZIP_FILE_NAME)) {
             zip.stream().forEach(z -> System.out.printf("%s, %s, %s%n",
                     z.getName(), z.getMethod(), z.getLastModifiedTime()));
+
+            // Sanity check that ZIP file had the expected entries
+            assertEquals(zip.stream().map(ZipEntry::getName).collect(Collectors.toSet()),
+                    Set.of("entry", "entry2", "entry3"));
         }
     }
 
@@ -174,6 +187,12 @@ public class TestLocOffsetFromZip64EF {
             e2.setSize(0);
             e2.setCrc(0);
             zo.putNextEntry(e2);
+
+            // For good measure, add a third, DEFLATED entry with some content
+            ZipEntry e3 = new ZipEntry("entry3");
+            e3.setMethod(ZipEntry.DEFLATED);
+            zo.putNextEntry(e3);
+            zo.write("Hello".getBytes(StandardCharsets.UTF_8));
 
             zo.closeEntry(); // At this point, all LOC headers are written.
 
@@ -222,9 +241,8 @@ public class TestLocOffsetFromZip64EF {
 
         ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
 
-        // Skip past two Local Headers to find the offset of the first CEN
-        int secondLoc = skipLoc(buffer, 0);
-        int cenOff = skipLoc(buffer, secondLoc);
+        // Look up CEN offset from the End of central directory header
+        int cenOff = getCenOffet(buffer);
 
         // Read name, extra field and comment lengths from CEN
         short nlen = buffer.getShort(cenOff + ZipFile.CENNAM);
@@ -247,15 +265,9 @@ public class TestLocOffsetFromZip64EF {
     }
 
     /**
-     * Return the offset of the header following the Local Header starting at off
+     * Look up the CEN offset field from the End of central directory header
      */
-    private static int skipLoc(ByteBuffer buffer, int off) {
-        // Local header name length
-        short nlenLoc = buffer.getShort(off + ZipFile.LOCNAM);
-        // Local header extra field length
-        short elenLoc = buffer.getShort(off + ZipFile.LOCEXT);
-
-        // Offset of the next header
-        return off + ZipFile.LOCHDR + nlenLoc + elenLoc;
+    private static int getCenOffet(ByteBuffer buffer) {
+        return buffer.getInt(buffer.capacity() - ZipFile.ENDHDR + ZipFile.ENDOFF);
     }
 }
