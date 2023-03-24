@@ -23,8 +23,10 @@
 
 /*
  * @test
- * @bug 6518816
+ * @bug 8304818
  * @modules java.base/sun.net.www.protocol.http
+ * @library /test/lib
+ * @build jdk.test.lib.util.ForceGC
  * @run main/othervm AuthCache
  */
 
@@ -34,11 +36,13 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.lang.ref.PhantomReference;
 import java.net.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import sun.net.www.protocol.http.AuthCacheValue;
+import jdk.test.lib.util.ForceGC;
 
 public class AuthCache {
     static class ClientAuth extends Authenticator {
@@ -114,6 +118,7 @@ public class AuthCache {
      */
     public static void main(String[] args) throws IOException {
         var clauth1 = new ClientAuth("r1", "user1", "pass1");
+        PhantomReference<Authenticator> ref = new PhantomReference<>(clauth1, null);
         var clauth2 = new ClientAuth("r2", "user2", "pass2");
         var server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         var ctx1 = server.createContext("/path1", handler);
@@ -131,9 +136,8 @@ public class AuthCache {
         sendRequest(url1, url2, clauth1, clauth2, false, false);
         checkCacheSize(4);
         clauth1 = null;
-        System.gc();
+        ForceGC.wait(() -> ref.refersTo(null));
         delay(1);
-        System.gc();
         checkCacheSize(2);
         clauth1 = new ClientAuth("r1", "user1", "pass1");
         sendRequest(url1, url2, clauth1, clauth2, true, false);
