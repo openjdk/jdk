@@ -466,41 +466,49 @@ abstract public class TestScaffold extends TargetAdapter {
         // Parse arguments, like java/j* tools command-line arguments
         // the first argument not-starting with '-' is treated as a classname
         // the other arguments are split to targetVMArgs targetAppCommandLine correspondingly
+        // The example of args for line '@run driver Frames2Test -Xss4M' is  '-Xss4M' 'Frames2Targ'.
+        // The result without any wrapper enabled:
+        // argInfo.targetAppCommandLine : Frames2Targ
+        // argInfo.targetVMArgs : -Xss4M
+        // The result with wrapper enabled:
+        // argInfo.targetAppCommandLine : TestScaffold Virtual Frames2Targ
+        // argInfo.targetVMArgs : -Xss4M --enable-preview
         boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
+            String arg = args[i].trim();
             if (classNameParsed) {
                 // once classname is read, treat any other arguments as app arguments
-                argInfo.targetAppCommandLine += (args[i] + ' ');
+                argInfo.targetAppCommandLine += (arg + ' ');
                 continue;
             }
-            if (args[i].equals("-connect")) {
+            if (arg.equals("-connect")) {
                 i++;
                 argInfo.connectorSpec = args[i];
-            } else if (args[i].equals("-trace")) {
+            } else if (arg.equals("-trace")) {
                 i++;
                 argInfo.traceFlags = Integer.decode(args[i]).intValue();
-            } else if (args[i].equals("-redefstart")) {
+            } else if (arg.equals("-redefstart")) {
                 redefineAtStart = true;
-            } else if (args[i].equals("-redefevent")) {
+            } else if (arg.equals("-redefevent")) {
                 redefineAtEvents = true;
-            } else if (args[i].equals("-redefasync")) {
+            } else if (arg.equals("-redefasync")) {
                 redefineAsynchronously = true;
-            } else if (args[i].startsWith("-J")) {
-                argInfo.targetVMArgs += (args[i].substring(2) + ' ');
+            } else if (arg.startsWith("-J")) {
+                argInfo.targetVMArgs += (arg.substring(2) + ' ');
 
                 /*
                  * classpath can span two arguments so we need to handle
                  * it specially.
                  */
-                if (args[i].equals("-J-classpath")) {
+                if (arg.equals("-J-classpath")) {
                     i++;
                     argInfo.targetVMArgs += (args[i] + ' ');
                 }
-            } else if (args[i].startsWith("-")) {
-                argInfo.targetVMArgs += (args[i] + ' ');
+            } else if (arg.startsWith("-")) {
+                argInfo.targetVMArgs += (arg + ' ');
             } else {
                 classNameParsed = true;
-                argInfo.targetAppCommandLine += (args[i] + ' ');
+                argInfo.targetAppCommandLine += (arg + ' ');
             }
         }
 
@@ -514,7 +522,6 @@ abstract public class TestScaffold extends TargetAdapter {
             // the test specified @enablePreview.
             argInfo.targetVMArgs += "--enable-preview ";
         }
-
         return argInfo;
     }
 
