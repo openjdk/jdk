@@ -33,6 +33,17 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms3g -Xmx3g -Xmn2g -Xlog:gc TestJNICriticalStressTest 30 4 1 G1
  */
 
+ /*
+ * @test Parallel Full GC execution when JNICritical is active
+ * @bug 8057586
+ * @requires vm.gc.Parallel
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -Xms3g -Xmx3g -Xmn2g -Xlog:gc TestJNICriticalStressTest 30 4 1 Parallel
+ */
+
 import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
