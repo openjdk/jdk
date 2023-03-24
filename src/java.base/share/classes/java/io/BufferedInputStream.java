@@ -175,13 +175,25 @@ public class BufferedInputStream extends FilterInputStream {
      * they should call {@link #getInIfOpen()} instead.
      */
     private byte[] getBufIfOpen() throws IOException {
-        byte[] buffer = buf;
-        if (buffer == null)
-            throw new IOException("Stream closed");
-        if (buffer == EMPTY) {
-            buf = buffer = new byte[size];
-        }
-        return buffer;
+        byte[] allocated = null;
+        do {
+            byte[] buffer = buf;
+            if (buffer == null) {
+                throw new IOException("Stream closed");
+            }
+            if (buffer == EMPTY) {
+                if (allocated == null) {
+                    allocated = new byte[size];
+                }
+                // defend against asynchronous close
+                if (U.compareAndSetReference(this, BUF_OFFSET, EMPTY, allocated)) {
+                    return allocated;
+                } else{
+                    continue;
+                }
+            }
+            return buffer;
+        } while (true);
     }
 
     /**
