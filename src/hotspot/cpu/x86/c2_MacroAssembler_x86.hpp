@@ -133,6 +133,7 @@ public:
   XMMRegister get_lane(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex);
   void get_elem(BasicType typ, Register dst, XMMRegister src, int elemindex);
   void get_elem(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex, XMMRegister vtmp = xnoreg);
+  void movsxl(BasicType typ, Register dst);
 
   // vector test
   void vectortest(BasicType bt, XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes);

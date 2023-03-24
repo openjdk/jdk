@@ -86,6 +86,7 @@ void PhaseCFG::build_dominator_tree() {
     // such dead loops (as was done for the NTarjan code farther below).
     // Since this situation is so unlikely, instead I've decided to bail out.
     // CNC 7/24/2001
+    assert(false, "unreachable loop");
     C->record_method_not_compilable("unreachable loop");
     return;
   }
