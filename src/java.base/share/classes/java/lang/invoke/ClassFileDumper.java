@@ -77,7 +77,9 @@ final class ClassFileDumper {
      */
     public static ClassFileDumper getInstance(String key) {
         Objects.requireNonNull(key);
-        if (!DUMPER_MAP.containsKey(key)) {
+
+        var dumper = DUMPER_MAP.get(key);
+        if (dumper == null) {
             String path = GetPropertyAction.privilegedGetProperty(key);
             Path dir;
             if (path == null || path.trim().isEmpty()) {
@@ -85,9 +87,11 @@ final class ClassFileDumper {
             } else {
                 dir = validateDumpDir(Path.of(path.trim()));
             }
-            DUMPER_MAP.putIfAbsent(key, new ClassFileDumper(key, dir));
+            var newDumper = new ClassFileDumper(key, dir);
+            var v = DUMPER_MAP.putIfAbsent(key, newDumper);
+            dumper = v != null ? v : newDumper;
         }
-        return DUMPER_MAP.get(key);
+        return dumper;
     }
 
     /**
@@ -103,13 +107,16 @@ final class ClassFileDumper {
     public static ClassFileDumper getInstance(String key, Path path) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(path);
-        if (!DUMPER_MAP.containsKey(key)) {
-            boolean enabled = GetBooleanAction.privilegedGetProperty(key);
-            Path dir = enabled ? validateDumpDir(path) : null;
-            DUMPER_MAP.putIfAbsent(key, new ClassFileDumper(key, dir));
-        }
 
         var dumper = DUMPER_MAP.get(key);
+        if (dumper == null) {
+            boolean enabled = GetBooleanAction.privilegedGetProperty(key);
+            Path dir = enabled ? validateDumpDir(path) : null;
+            var newDumper = new ClassFileDumper(key, dir);
+            var v = DUMPER_MAP.putIfAbsent(key, newDumper);
+            dumper = v != null ? v : newDumper;
+        }
+
         if (dumper.isEnabled() && !path.equals(dumper.dumpPath())) {
             throw new IllegalArgumentException("mismatched dump path for " + key);
         }
