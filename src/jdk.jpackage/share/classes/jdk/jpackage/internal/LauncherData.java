@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -358,7 +360,7 @@ final class LauncherData {
             // of `release` file.
 
             final Path releaseFile;
-            if (!Platform.isMac()) {
+            if (!OperatingSystem.isMacOS()) {
                 releaseFile = cookedRuntime.resolve("release");
             } else {
                 // On Mac `cookedRuntime` can be runtime root or runtime home.

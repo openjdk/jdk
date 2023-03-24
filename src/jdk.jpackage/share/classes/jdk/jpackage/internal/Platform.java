@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,49 +26,16 @@
 package jdk.jpackage.internal;
 
 import java.util.regex.Pattern;
+import jdk.internal.util.OperatingSystem;
 
 /**
- * Platform
- *
- * Use <code>Platform</code> to detect the operating system
- * that is currently running.
- *
- * Example:
- *
- *  Platform platform = Platform.getPlatform();
- *
- *  switch(platform) {
- *    case Platform.MAC: {
- *      // Do something
- *      break;
- *    }
- *    case Platform.WINDOWS:
- *    case Platform.LINUX: {
- *      // Do something else
- *    }
- *  }
- *
+ * Platform - Utility methods not replaced by jdk.internal.util.OperatingSystem.
  */
-enum Platform {UNKNOWN, WINDOWS, LINUX, MAC;
-    private static final Platform platform;
+class Platform {
     private static final int majorVersion;
     private static final int minorVersion;
 
     static {
-        String os = System.getProperty("os.name").toLowerCase();
-
-        if (os.indexOf("win") >= 0) {
-            platform = Platform.WINDOWS;
-        }
-        else if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0) {
-            platform = Platform.LINUX;
-        }
-        else if (os.indexOf("mac") >= 0) {
-            platform = Platform.MAC;
-        }
-        else {
-            platform = Platform.UNKNOWN;
-        }
 
         String version = System.getProperty("os.version");
         String[] parts = version.split(Pattern.quote("."));
@@ -91,10 +58,6 @@ enum Platform {UNKNOWN, WINDOWS, LINUX, MAC;
 
     private Platform() {}
 
-    static Platform getPlatform() {
-        return platform;
-    }
-
     static int getMajorVersion() {
         return majorVersion;
     }
@@ -103,20 +66,16 @@ enum Platform {UNKNOWN, WINDOWS, LINUX, MAC;
         return minorVersion;
     }
 
-    static boolean isWindows() {
-        return getPlatform() == WINDOWS;
+    static boolean isWindows() { // Used by tests
+        return OperatingSystem.isWindows();
     }
 
-    static boolean isMac() {
-        return getPlatform() == MAC;
+    static boolean isMac() { // Used by tests
+        return OperatingSystem.isMacOS();
     }
 
-    static boolean isArmMac() {
-        return (isMac() && "aarch64".equals(System.getProperty("os.arch")));
-    }
-
-    static boolean isLinux() {
-        return getPlatform() == LINUX;
+    static boolean isLinux() { // Used by tests
+        return OperatingSystem.isLinux();
     }
 
     static RuntimeException throwUnknownPlatformError() {

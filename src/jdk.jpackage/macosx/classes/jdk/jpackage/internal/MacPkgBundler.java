@@ -25,6 +25,9 @@
 
 package jdk.jpackage.internal;
 
+import jdk.internal.util.Architecture;
+import jdk.internal.util.OperatingSystem;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -318,7 +321,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             xml.writeAttribute("customize", "never");
             xml.writeAttribute("require-scripts", "false");
             xml.writeAttribute("hostArchitectures",
-                    Platform.isArmMac() ? "arm64" : "x86_64");
+                    (OperatingSystem.isMacOS() && Architecture.isAARCH64()) ? "arm64" : "x86_64");
             xml.writeEndElement(); // </options>
             xml.writeStartElement("choices-outline");
             xml.writeStartElement("line");
