@@ -3861,6 +3861,8 @@ void TemplateTable::multianewarray() {
 }
 
 void TemplateTable::arraylength() {
+  assert(arrayOopDesc::length_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+         "Doesn't need explicit null check");
   transition(atos, itos);
 
   __ verify_oop(R17_tos);

@@ -2069,6 +2069,8 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
 }
 
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
+  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+         "Doesn't need explicit null check");
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
   if (UseCompressedClassPointers) {

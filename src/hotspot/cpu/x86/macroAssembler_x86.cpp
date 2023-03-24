@@ -5121,6 +5121,8 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 }
 
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
+  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+         "Doesn't need explicit null check");
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
 #ifdef _LP64

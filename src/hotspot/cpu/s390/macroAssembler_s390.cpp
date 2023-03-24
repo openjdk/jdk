@@ -3632,6 +3632,8 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass(Register klass, Address mem) {
+  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+         "Doesn't need explicit null check");
   if (UseCompressedClassPointers) {
     z_llgf(klass, mem);
     // Attention: no null check here!
@@ -3642,6 +3644,8 @@ void MacroAssembler::load_klass(Register klass, Address mem) {
 }
 
 void MacroAssembler::load_klass(Register klass, Register src_oop) {
+  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+         "Doesn't need explicit null check");
   if (UseCompressedClassPointers) {
     z_llgf(klass, oopDesc::klass_offset_in_bytes(), src_oop);
     // Attention: no null check here!

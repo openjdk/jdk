@@ -1653,6 +1653,8 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
 
 
 void MacroAssembler::load_klass(Register dst_klass, Register src_oop, AsmCondition cond) {
+  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+         "Doesn't need explicit null check");
   ldr(dst_klass, Address(src_oop, oopDesc::klass_offset_in_bytes()), cond);
 }
 
