@@ -89,9 +89,12 @@ public abstract class BaseFileManager implements JavaFileManager {
         options = Options.instance(context);
         classLoaderClass = options.get("procloader");
 
-        // Avoid initializing Lint
+        // Detect Lint options, but use Options.isLintSet() to avoid initializing the Lint class
         boolean warn = options.isLintSet("path");
         locations.update(log, warn, FSInfo.instance(context));
+        synchronized (this) {
+            outputFilesWritten = options.isLintSet("output-file-clash") ? new HashSet<>() : null;
+        }
 
         // Setting this option is an indication that close() should defer actually closing
         // the file manager until after a specified period of inactivity.
@@ -278,12 +281,6 @@ public abstract class BaseFileManager implements JavaFileManager {
             case MULTIRELEASE:
                 multiReleaseValue = value;
                 locations.setMultiReleaseValue(value);
-                return true;
-
-            case DETECT_OUTPUT_FILE_CLASHES:
-                synchronized (this) {
-                    outputFilesWritten = new HashSet<>();
-                }
                 return true;
 
             default:

@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8287885 8296656 7016187
- * @summary Verify proper function of the "--detect-output-file-clashes" compiler flag
+ * @summary Verify proper function of the "output-file-clash" lint flag
  * @requires os.family == "mac"
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -118,8 +118,8 @@ public class OutputFileClashTest extends TestRunner {
         tb.createDirectories(classes);
         Path headers = base.resolve("headers");
         tb.createDirectories(headers);
-        List<String> log = new JavacTask(tb)
-                .options("-XDrawDiagnostics", "--detect-output-file-clashes")
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics", "-Xlint:output-file-clash")
                 .outdir(classes)
                 .headerdir(headers)
                 .files(findJavaFiles(src))

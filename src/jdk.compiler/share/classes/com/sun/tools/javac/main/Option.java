@@ -613,8 +613,6 @@ public enum Option {
         }
     },
 
-    DETECT_OUTPUT_FILE_CLASHES("--detect-output-file-clashes", "opt.detect.output.file.clashes", EXTENDED, FILEMANAGER),
-
     /* This is a back door to the compiler's option table.
      * -XDx=y sets the option x to the value y.
      * -XDx sets the option x to the value x.
