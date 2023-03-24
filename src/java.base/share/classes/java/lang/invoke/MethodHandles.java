@@ -2545,9 +2545,9 @@ public class MethodHandles {
         }
 
         // A default dumper for writing generated classes to disk, for debugging purposes
-        // To enable, set -Djava.lang.invoke.dumpClasses=<path>
+        // To enable, set -Djava.lang.invoke.Lookup.dumpClasses=<path>
         private static final ClassFileDumper DEFAULT_DUMPER =
-                ClassFileDumper.getInstance("java.lang.invoke.dumpClasses");
+                ClassFileDumper.getInstance("java.lang.invoke.Lookup.dumpClasses");
 
         private ProtectionDomain lookupClassProtectionDomain() {
             ProtectionDomain pd = cachedProtectionDomain;
