@@ -278,8 +278,42 @@ private:
     Node* _data;
   };
 
+  class TypeUpdate : public ResourceObj {
+  private:
+    class Entry {
+    public:
+      Entry(Node* node, const Type* before, const Type* after)
+              : _node(node), _before(before), _after(after) {
+      }
+      Entry()
+              : _node(nullptr), _before(nullptr), _after(nullptr) {
+      }
+
+      Node* _node;
+      const Type* _before;
+      const Type* _after;
+    };
+    GrowableArray<Entry> _updates;
+  public:
+    int length() const {
+      return _updates.length();
+    }
+
+    Node* node_at(int i) const {
+      return _updates.at(i)._node;
+    }
+
+    bool contains(Node* n) const {
+      return _updates.find((void*)n, [](void* n, Entry e) { return e._node == (Node*) n; }) != -1;
+    }
+
+    void push_node(Node* node) {
+      _updates.push(Entry(node, nullptr, nullptr));
+    }
+  };
+
   ResizeableResourceHashtable<ControlDataPair, const Type*, AnyObj::RESOURCE_AREA, mtInternal, ControlDataPair::hash, ControlDataPair::equals> _types;
-  using Updates = ResizeableResourceHashtable<Node*, GrowableArray<Node*>*, AnyObj::RESOURCE_AREA, mtInternal>;
+  using Updates = ResizeableResourceHashtable<Node*, TypeUpdate*, AnyObj::RESOURCE_AREA, mtInternal>;
   Updates* _updates;
 
   static bool track_type(const Node* n) {
@@ -350,8 +384,8 @@ private:
     }
   }
 
-  void set_type(Node* n, const Type* t, int rpo) {
-    set_type(_current_ctrl, n, t);
+  void set_type(Node* n, const Type* t, const Type* old_t, int rpo) {
+    set_type(_current_ctrl, n, t, old_t);
     PhaseTransform::set_type(n, t);
     _current_types = _current_types->set_type(n, t, rpo);
   }
@@ -367,12 +401,12 @@ private:
     {
       Node* ctrl = _current_ctrl;
       while (!_phase->is_dominator(ctrl, c)) {
-        GrowableArray<Node*>** updates_ptr = _updates->get(ctrl);
+        TypeUpdate** updates_ptr = _updates->get(ctrl);
         Node* dom = _phase->idom(ctrl);
         if (updates_ptr != nullptr) {
-          GrowableArray<Node*>* updates = *updates_ptr;
+          TypeUpdate* updates = *updates_ptr;
           for (int i = 0; i < updates->length(); ++i) {
-            Node* n = updates->at(i);
+            Node* n = updates->node_at(i);
             _types_clone.map(n->_idx, get_type(dom, n));
           }
         }
@@ -382,11 +416,11 @@ private:
         Node* idom = _phase->idom(c);
         ctrl = idom;
         while (!_phase->is_dominator(ctrl, _current_ctrl)) {
-          GrowableArray<Node*>** updates_ptr = _updates->get(ctrl);
+          TypeUpdate** updates_ptr = _updates->get(ctrl);
           if (updates_ptr != nullptr) {
-            GrowableArray<Node*>* updates = *updates_ptr;
+            TypeUpdate* updates = *updates_ptr;
             for (int i = 0; i < updates->length(); ++i) {
-              Node* n = updates->at(i);
+              Node* n = updates->node_at(i);
 //            tty->print("XXX %d", ctrl->_idx); n->dump();
 //            get_type(c, n)->dump(); tty->cr();
               _types_clone.map(n->_idx, get_type(idom, n));
@@ -394,11 +428,11 @@ private:
           }
           ctrl = _phase->idom(ctrl);
         }
-        GrowableArray<Node*>** updates_ptr = _updates->get(c);
+        TypeUpdate** updates_ptr = _updates->get(ctrl);
         if (updates_ptr != nullptr) {
-          GrowableArray<Node*>* updates = *updates_ptr;
+          TypeUpdate* updates = *updates_ptr;
           for (int i = 0; i < updates->length(); ++i) {
-            Node* n = updates->at(i);
+            Node* n = updates->node_at(i);
 //            tty->print("XXX %d", ctrl->_idx); n->dump();
 //            get_type(c, n)->dump(); tty->cr();
             _types_clone.map(n->_idx, get_type(c, n));
@@ -502,18 +536,18 @@ public:
 //          continue;
 //        }
 
-        GrowableArray<Node*>** updates_ptr = _updates->get(c);
-        GrowableArray<Node*>* updates = nullptr;
+        TypeUpdate** updates_ptr = _updates->get(c);
+        TypeUpdate* updates = nullptr;
         if (updates_ptr != nullptr) {
           updates = *updates_ptr;
           assert(iterations > 0, "");
-          *updates_ptr = new GrowableArray<Node*>();
+          *updates_ptr = new TypeUpdate();
         }
 
         types.trunc_to(0);
         if (updates != nullptr) {
           for (int j = 0; j < updates->length(); ++j) {
-            Node* n = updates->at(j);
+            Node* n = updates->node_at(j);
             types.push(get_type(c, n));
           }
         }
@@ -526,11 +560,11 @@ public:
             Node* in = c->in(1);
             Node* ctrl = in;
             while(ctrl != dom) {
-              GrowableArray<Node*>** updates_ptr = _updates->get(ctrl);
+              TypeUpdate** updates_ptr = _updates->get(ctrl);
               if (updates_ptr != nullptr) {
-                GrowableArray<Node*>* updates = *updates_ptr;
+                TypeUpdate* updates = *updates_ptr;
                 for (int j = 0; j < updates->length(); ++j) {
-                  Node* n = updates->at(j);
+                  Node* n = updates->node_at(j);
                   const Type* t = get_type(in, n);
                   const Type* current_type = get_type(dom, n);
                   uint k = 2;
@@ -554,7 +588,7 @@ public:
                     t = t->filter(current_type);
 
                     if (t != current_type) {
-                      set_type(c, n, t);
+                      set_type(c, n, t, current_type);
                       _wq2.push(n);
                     }
                   }
@@ -671,7 +705,7 @@ public:
               assert(narrows_type(length_type, narrow_length_type), "");
               if (narrow_length_type != length_type) {
                 types_at_c = types_at_c->set_type(length, narrow_length_type, rpo);
-                set_type(c, length, narrow_length_type);
+                set_type(c, length, narrow_length_type, length_type);
                 enqueue_uses(length, c);
               }
             }
@@ -712,25 +746,26 @@ public:
 #ifdef ASSERT
             assert(narrows_type(PhaseTransform::type(n), t), "");
 #endif
-            set_type(n, t, rpo);
+            set_type(n, t, PhaseTransform::type(n), rpo);
             enqueue_uses(n, c);
           }
         }
         if (updates != nullptr) {
-          GrowableArray<Node*>* new_updates = *updates_ptr;
+          TypeUpdate* new_updates = *updates_ptr;
           int dups = 0;
           for (int j = 0; j < updates->length(); ++j) {
-            Node* n = updates->at(j);
+            Node* n = updates->node_at(j);
             if (get_type(c, n) != types.at(j)) {
               progress2 = true;
             }
             if (!new_updates->contains(n)) {
               const Type* t = PhaseTransform::type(n);
-              if (get_type(c, n) != t) {
+              const Type* old_t = get_type(c, n);
+              if (old_t != t) {
 //                tty->print("XXX updating at"); c->dump();
 //                n->dump();
 //                tty->print("with "); t->dump(); tty->cr();
-                set_type(c, n, t);
+                set_type(c, n, t, old_t);
               }
             } else {
               dups++;
@@ -740,7 +775,7 @@ public:
             progress2 = true;
           }
         } else {
-          GrowableArray<Node*>** updates_ptr = _updates->get(c);
+          TypeUpdate** updates_ptr = _updates->get(c);
           progress2 = progress2 || (updates_ptr != nullptr);
         }
         if (types_at_c != _current_types) {
@@ -844,7 +879,7 @@ public:
     sync_from_tree(C->root());
   }
 
-  void set_type(Node* c, Node* n, const Type* t) {
+  void set_type(Node* c, Node* n, const Type* t, const Type* old_t) {
     if (!UseNewCode2) {
       return;
     }
@@ -862,16 +897,16 @@ public:
   }
 
   void record_update(Node* c, Node* n) {
-    GrowableArray<Node*>* updates;
-    GrowableArray<Node*>** updates_ptr = _updates->get(c);
+    TypeUpdate* updates;
+    TypeUpdate** updates_ptr = _updates->get(c);
     if (updates_ptr == nullptr) {
-      updates = new GrowableArray<Node*>();
+      updates = new TypeUpdate();
       _updates->put(c, updates);
     } else {
       updates = *updates_ptr;
     }
     if (!updates->contains(n)) {
-      updates->push(n);
+      updates->push_node(n);
     }
   }
 
@@ -937,7 +972,7 @@ public:
         _conditions.set(c->_idx);
 #endif
         types_at_c = types_at_c->set_type(n, new_n_t, rpo);
-        set_type(c, n, new_n_t);
+        set_type(c, n, new_n_t, n_t);
         enqueue_uses(n, c);
       }
       if (n->Opcode() == Op_ConvL2I) {
@@ -959,7 +994,7 @@ public:
 //            new_in_t->dump(); tty->cr();
 //            tty->print_cr("XXXX");
             types_at_c = types_at_c->set_type(in, new_in_t, rpo);
-            set_type(c, in, new_in_t);
+            set_type(c, in, new_in_t, in_t);
             enqueue_uses(in, c);
           }
         }
