@@ -56,10 +56,12 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -548,6 +550,6 @@ public abstract class BaseFileManager implements JavaFileManager {
 
         // Check whether we've already opened this file for output
         if (!outputFilesWritten.add(realPath))
-            throw new IOException("output file clash: " + path);
+            log.warning(LintCategory.OUTPUT_FILE_CLASH, Warnings.OutputFileClash(path));
     }
 }

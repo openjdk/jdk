@@ -78,7 +78,7 @@ public class OutputFileClashTest extends TestRunner {
                     }
                 }
                 """,
-            "^Test\\.java:(3:9|6:9): compiler\\.err\\.class\\.cant\\.write: (ABC|Abc), output file clash: .*Test\\$1(ABC|Abc)\\.class$");
+            "- compiler.warn.output.file.clash: .*Test\\$1(ABC|Abc)\\.class");
     }
 
     @Test
@@ -92,7 +92,7 @@ public class OutputFileClashTest extends TestRunner {
                     }
                 }
                 """,
-            "Test\\.java:(3:9|4:10): compiler\\.err\\.class\\.cant\\.write: Test\\.Annotation\\.(foo|Foo), output file clash: .*Test\\$Annotation\\$(foo|Foo)\\.class$");
+            "- compiler.warn.output.file.clash: .*Test\\$Annotation\\$(foo|Foo)\\.class");
     }
 
     @Test
@@ -106,7 +106,7 @@ public class OutputFileClashTest extends TestRunner {
                     }
                 }
                 """,
-            "Test\\.java:(2:5|4:5): compiler\\.err\\.class\\.cant\\.write: Test.Caf.*, output file clash: .*Test\\$Caf.*\\.class$");
+            "- compiler.warn.output.file.clash: .*Test\\$Caf.*\\.class");
     }
 
     private void testClash(Path base, String javaSource, String regex) throws Exception {
@@ -119,7 +119,7 @@ public class OutputFileClashTest extends TestRunner {
         Path headers = base.resolve("headers");
         tb.createDirectories(headers);
         List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
-                .options("-XDrawDiagnostics", "-Xlint:output-file-clash")
+                .options("-XDrawDiagnostics", "-Werror", "-Xlint:output-file-clash")
                 .outdir(classes)
                 .headerdir(headers)
                 .files(findJavaFiles(src))
