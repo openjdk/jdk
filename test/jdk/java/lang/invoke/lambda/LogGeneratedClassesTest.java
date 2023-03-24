@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8023524
+ * @bug 8023524 8304846
  * @summary tests logging generated classes for lambda
  * @library /java/nio/file
  * @modules jdk.compiler
@@ -134,7 +134,7 @@ public class LogGeneratedClassesTest extends LUtils {
                         99,
                         (p, a) -> p.startsWith(Paths.get("dump/com/example"))
                                 && a.isRegularFile()).count(),
-                2, "Two lambda captured");
+                      2, "Two lambda captured");
         tr.assertZero("Should still return 0");
     }
 
@@ -146,11 +146,13 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djava.security.manager=allow",
                                "-Djdk.internal.lambda.dumpProxyClasses=notExist",
                                "com.example.TestLambda");
-        assertEquals(tr.testOutput.stream()
-                                  .filter(s -> s.startsWith("WARNING"))
-                                  .filter(s -> s.contains("does not exist"))
-                                  .count(),
-                     1, "only show error once");
+        // The dump directory will be created if not exist
+        assertEquals(Files.find(
+                        Paths.get("notExist"),
+                        99,
+                        (p, a) -> p.startsWith(Paths.get("notExist/com/example"))
+                                && a.isRegularFile()).count(),
+                    2, "Two lambda captured");
         tr.assertZero("Should still return 0");
     }
 
@@ -163,11 +165,10 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.internal.lambda.dumpProxyClasses=file",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
-                                  .filter(s -> s.startsWith("WARNING"))
-                                  .filter(s -> s.contains("not a directory"))
+                                  .filter(s -> s.contains("Path file is not a directory - dumping disabled"))
                                   .count(),
                      1, "only show error once");
-        tr.assertZero("Should still return 0");
+        assertTrue(tr.exitValue !=0);
     }
 
     private static boolean isWriteableDirectory(Path p) {
@@ -222,11 +223,10 @@ public class LogGeneratedClassesTest extends LUtils {
                                    "-Djdk.internal.lambda.dumpProxyClasses=readOnly",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
-                                      .filter(s -> s.startsWith("WARNING"))
-                                      .filter(s -> s.contains("not writable"))
+                                      .filter(s -> s.contains("Directory readOnly is not writable - dumping disabled"))
                                       .count(),
                          1, "only show error once");
-            tr.assertZero("Should still return 0");
+            assertTrue(tr.exitValue != 0);
         } finally {
             TestUtil.removeAll(Paths.get("readOnly"));
         }
@@ -254,7 +254,7 @@ public class LogGeneratedClassesTest extends LUtils {
                     if (filter.test(p)) {
                         System.out.println("accepted: " + p.toString());
                     } else {
-                        System.out.println("filetered out: " + p.toString());
+                        System.out.println("filtered out: " + p.toString());
                     }
                  });
         }

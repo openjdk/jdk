@@ -30,6 +30,7 @@ import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.reflect.ClassFileFormatVersion;
+import java.nio.file.Path;
 import java.util.Properties;
 
 import static java.lang.invoke.LambdaForm.basicTypeSignature;
@@ -49,7 +50,6 @@ class MethodHandleStatics {
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
     static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
     static final boolean DEBUG_METHOD_HANDLE_NAMES;
-    static final boolean DUMP_CLASS_FILES;
     static final boolean TRACE_INTERPRETER;
     static final boolean TRACE_METHOD_LINKAGE;
     static final boolean TRACE_RESOLVE;
@@ -62,13 +62,14 @@ class MethodHandleStatics {
     static final boolean VAR_HANDLE_GUARDS;
     static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
+    static final ClassFileDumper DUMP_CLASS_FILES;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
         DEBUG_METHOD_HANDLE_NAMES = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.DEBUG_NAMES"));
-        DUMP_CLASS_FILES = Boolean.parseBoolean(
-                props.getProperty("java.lang.invoke.MethodHandle.DUMP_CLASS_FILES"));
+        DUMP_CLASS_FILES = ClassFileDumper.getInstance("java.lang.invoke.MethodHandle.DUMP_CLASS_FILES",
+                                                       Path.of("DUMP_CLASS_FILES"));
         TRACE_INTERPRETER = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.TRACE_INTERPRETER"));
         TRACE_METHOD_LINKAGE = Boolean.parseBoolean(
@@ -107,7 +108,7 @@ class MethodHandleStatics {
     /*non-public*/
     static boolean debugEnabled() {
         return (DEBUG_METHOD_HANDLE_NAMES |
-                DUMP_CLASS_FILES |
+                DUMP_CLASS_FILES.isEnabled() |
                 TRACE_INTERPRETER |
                 TRACE_METHOD_LINKAGE |
                 LOG_LF_COMPILATION_FAILURE);

@@ -29,13 +29,11 @@ import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.*;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
-import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
 
 import java.io.FilePermission;
 import java.io.Serializable;
 import java.lang.constant.ConstantDescs;
-import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -89,7 +87,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final AtomicInteger counter = new AtomicInteger();
 
     // For dumping generated classes to disk, for debugging purposes
-    private static final ProxyClassesDumper dumper;
+    private static final ClassFileDumper dumper;
 
     private static final boolean disableEagerInitialization;
 
@@ -98,9 +96,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     static {
         final String dumpProxyClassesKey = "jdk.internal.lambda.dumpProxyClasses";
-        String dumpPath = GetPropertyAction.privilegedGetProperty(dumpProxyClassesKey);
-        dumper = (null == dumpPath) ? null : ProxyClassesDumper.getInstance(dumpPath);
-
+        dumper = ClassFileDumper.getInstance(dumpProxyClassesKey);
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
 
@@ -363,32 +359,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         final byte[] classBytes = cw.toByteArray();
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
-            Lookup lookup = null;
-            try {
-                if (useImplMethodHandle) {
-                    lookup = caller.defineHiddenClassWithClassData(classBytes, implementation, !disableEagerInitialization,
-                                                                   NESTMATE, STRONG);
-                } else {
-                    lookup = caller.defineHiddenClass(classBytes, !disableEagerInitialization, NESTMATE, STRONG);
-                }
-                return lookup.lookupClass();
-            } finally {
-                // If requested, dump out to a file for debugging purposes
-                if (dumper != null) {
-                    String name;
-                    if (lookup != null) {
-                        String definedName = lookup.lookupClass().getName();
-                        int suffixIdx = definedName.lastIndexOf('/');
-                        assert suffixIdx != -1;
-                        name = lambdaClassName + '.' + definedName.substring(suffixIdx + 1);
-                    } else {
-                        name = lambdaClassName + ".failed-" + counter.incrementAndGet();
-                    }
-                    doDump(name, classBytes);
-                }
-            }
-        } catch (IllegalAccessException e) {
-            throw new LambdaConversionException("Exception defining lambda proxy class", e);
+            var classdata = useImplMethodHandle? implementation : null;
+            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, Set.of(NESTMATE, STRONG), dumper)
+                         .defineClass(!disableEagerInitialization, classdata);
+
         } catch (Throwable t) {
             throw new InternalError(t);
         }
