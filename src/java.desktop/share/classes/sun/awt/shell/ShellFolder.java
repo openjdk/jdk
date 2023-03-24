@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import javax.swing.SwingConstants;
-import sun.awt.OSInfo;
+
+import jdk.internal.util.OperatingSystem;
 
 /**
  * @author Michael Martak
@@ -293,7 +294,7 @@ public abstract class ShellFolder extends File {
      */
     public static File getNormalizedFile(File f) throws IOException {
         File canonical = f.getCanonicalFile();
-        if (f.equals(canonical) || OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
+        if (f.equals(canonical) || OperatingSystem.isWindows()) {
             // path of f doesn't contain symbolic links
             return canonical;
         }

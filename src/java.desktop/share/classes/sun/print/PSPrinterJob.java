@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Properties;
 
+import jdk.internal.util.OperatingSystem;
 import sun.awt.CharsetString;
 import sun.awt.FontConfiguration;
 import sun.awt.PlatformFont;
@@ -344,8 +345,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                             new java.security.PrivilegedAction<Object>() {
             public Object run() {
                 mFontProps = initProps();
-                String osName = System.getProperty("os.name");
-                isMac = osName.startsWith("Mac");
+                isMac = OperatingSystem.isMacOS();
                 return null;
             }
         });
@@ -1623,8 +1623,8 @@ public class PSPrinterJob extends RasterPrinterJob {
             ncomps+=1; // for jobsheet
         }
 
-        String osname = System.getProperty("os.name");
-        if (osname.equals("Linux") || osname.contains("OS X")) {
+        if (OperatingSystem.isLinux() ||
+                OperatingSystem.isMacOS()) {
             execCmd = new String[ncomps];
             execCmd[n++] = "/usr/bin/lpr";
             if ((pFlags & PRINTER) != 0) {
