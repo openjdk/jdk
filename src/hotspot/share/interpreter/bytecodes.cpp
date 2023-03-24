@@ -444,9 +444,9 @@ void Bytecodes::def_flags(Code code, const char* format, const char* wide_format
   if (java_code != code)  bc_flags |= _bc_can_rewrite;
   _flags[(u1)code+0*(1<<BitsPerByte)] = compute_flags(format,      bc_flags);
   _flags[(u1)code+1*(1<<BitsPerByte)] = compute_flags(wide_format, bc_flags);
-  assert(is_defined(code)      == (format != nullptr),  "");
+  assert(is_defined(code)      == (format != nullptr),      "");
   assert(wide_is_defined(code) == (wide_format != nullptr), "");
-  assert(length_for(code)      == len, "");
+  assert(length_for(code)      == len,  "");
   assert(wide_length_for(code) == wlen, "");
 }
 
