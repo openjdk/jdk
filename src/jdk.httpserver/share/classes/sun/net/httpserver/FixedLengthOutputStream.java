@@ -27,6 +27,8 @@ package sun.net.httpserver;
 
 import java.io.*;
 import java.net.*;
+import java.util.Objects;
+
 import com.sun.net.httpserver.*;
 import com.sun.net.httpserver.spi.*;
 
@@ -42,7 +44,6 @@ class FixedLengthOutputStream extends FilterOutputStream
 {
     private long remaining;
     private boolean closed = false;
-    private final boolean zerolength;
     ExchangeImpl t;
 
     FixedLengthOutputStream (ExchangeImpl t, OutputStream src, long len) {
@@ -52,7 +53,6 @@ class FixedLengthOutputStream extends FilterOutputStream
         }
         this.t = t;
         this.remaining = len;
-        zerolength = (len == 0);
     }
 
     public void write (int b) throws IOException {
@@ -67,6 +67,10 @@ class FixedLengthOutputStream extends FilterOutputStream
     }
 
     public void write (byte[]b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
+            return;
+        }
         if (closed) {
             throw new IOException ("stream closed");
         }
@@ -83,10 +87,6 @@ class FixedLengthOutputStream extends FilterOutputStream
             return;
         }
         closed = true;
-        if (zerolength) {
-            // WriteFinishedEvent was sent already; nothing to do
-            return;
-        }
         if (remaining > 0) {
             t.close();
             throw new IOException ("insufficient bytes written to stream");
