@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -114,6 +114,9 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
+static const int upcall_stub_code_base_size = 2048;
+static const int upcall_stub_size_per_arg = 16;
+
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                                        BasicType* in_sig_bt, int total_in_args,
                                        BasicType* out_sig_bt, int total_out_args,
@@ -124,7 +127,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
-  CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
+  int code_size = upcall_stub_code_base_size + (total_in_args * upcall_stub_size_per_arg);
+  CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
 
   Register shuffle_reg = x9;
   JavaCallingConvention out_conv;
@@ -342,6 +346,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 #else // PRODUCT
   const char* name = "upcall_stub";
 #endif // PRODUCT
+
+  buffer.log_section_sizes(name);
 
   UpcallStub* blob
     = UpcallStub::create(name,

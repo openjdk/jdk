@@ -28,6 +28,7 @@ import com.sun.source.util.Plugin;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -54,6 +55,8 @@ public class DependTest {
         test.testRecords();
         test.testImports();
         test.testModifiers();
+        test.testPrimitiveTypeChanges();
+        test.testWithErrors();
     }
 
     public void testMethods() throws Exception {
@@ -302,6 +305,27 @@ public class DependTest {
                        "package test; public record Test (int x, int y) {" +
                                "public Test (int x, int y, int z) { this(x, y); } }",  // additional ctr
                        true);
+        doOrdinaryTest("package test; public record Test (int x) { }",
+                       "package test; public record Test (long x) { unresolved f; }", //erroneous record member, should not crash
+                       false);
+    }
+
+    public void testPrimitiveTypeChanges() throws Exception {
+        doOrdinaryTest("package test; public record Test (int x) { }",
+                       "package test; public record Test (long x) { }",
+                       true);
+        doOrdinaryTest("package test; public record Test (int x) { }",
+                       "package test; public record Test (Integer x) { }",
+                       true);
+        doOrdinaryTest("package test; public record Test (Integer x) { }",
+                       "package test; public record Test (int x) { }",
+                       true);
+    }
+
+    public void testWithErrors() throws Exception {
+        doOrdinaryTest("package test; public record Test (int x) { }",
+                       "package test; public record Test (long x) { static unresolved f; }",
+                       false); //the API change should not be recorded for code with errors
     }
 
     private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -310,6 +334,7 @@ public class DependTest {
     private Path scratchClasses;
     private Path apiHash;
     private Path treeHash;
+    private Path modifiedFiles;
 
     private void setupClass() throws IOException {
         depend = Paths.get(Depend.class.getProtectionDomain().getCodeSource().getLocation().getPath());
@@ -328,6 +353,7 @@ public class DependTest {
 
         apiHash = scratch.resolve("api");
         treeHash = scratch.resolve("tree");
+        modifiedFiles = scratch.resolve("modified-files");
     }
 
     private void doOrdinaryTest(String codeBefore, String codeAfter, boolean hashChangeExpected) throws Exception {
@@ -335,11 +361,16 @@ public class DependTest {
     }
 
     private void doOrdinaryTest(String codeBefore, String codeAfter, boolean apiHashChangeExpected, boolean treeHashChangeExpected) throws Exception {
+        try (Writer out = Files.newBufferedWriter(modifiedFiles)) {
+            out.append("module-info.java\n");
+            out.append("test.Test.java\n");
+        }
         List<String> options =
                 Arrays.asList("-d", scratchClasses.toString(),
                               "-processorpath", depend.toString() + File.pathSeparator + scratchServices.toString(),
-                              "-Xplugin:depend " + apiHash.toString() + " " + treeHash.toString(),
-                              "-XDmodifiedInputs=build-all");
+                              "-Xplugin:depend " + apiHash.toString(),
+                              "-XDinternalAPIPath=" + treeHash.toString(),
+                              "-XDmodifiedInputs=" + modifiedFiles.toString());
         List<TestJavaFileObject> beforeFiles =
                 Arrays.asList(new TestJavaFileObject("module-info", "module m { exports test; }"),
                               new TestJavaFileObject("test.Test", codeBefore));
@@ -369,11 +400,19 @@ public class DependTest {
     }
 
     private void doModuleTest(String codeBefore, String codeAfter, boolean apiHashChangeExpected, boolean treeHashChangeExpected) throws Exception {
+        try (Writer out = Files.newBufferedWriter(modifiedFiles)) {
+            out.append("module-info.java\n");
+            out.append("test.Test1.java\n");
+            out.append("test.Test2.java\n");
+            out.append("test.TestImpl1.java\n");
+            out.append("test.TestImpl2.java\n");
+        }
         List<String> options =
                 Arrays.asList("-d", scratchClasses.toString(),
                               "-processorpath", depend.toString() + File.pathSeparator + scratchServices.toString(),
                               "-Xplugin:depend " + apiHash.toString() + " " + treeHash.toString(),
-                              "-XDmodifiedInputs=build-all");
+                              "-XDinternalAPIPath=" + treeHash.toString(),
+                              "-XDmodifiedInputs=" + modifiedFiles.toString());
         List<TestJavaFileObject> beforeFiles =
                 Arrays.asList(new TestJavaFileObject("module-info", codeBefore),
                               new TestJavaFileObject("test.Test1", "package test; public interface Test1 {}"),
@@ -406,16 +445,23 @@ public class DependTest {
 
     private static final class TestJavaFileObject extends SimpleJavaFileObject {
 
+        private final String className;
         private final String code;
 
         public TestJavaFileObject(String className, String code) throws URISyntaxException {
             super(new URI("mem:/" + className.replace('.', '/') + ".java"), Kind.SOURCE);
+            this.className = className;
             this.code = code;
         }
 
         @Override
         public CharSequence getCharContent(boolean arg0) throws IOException {
             return code;
+        }
+
+        @Override
+        public String getName() {
+            return className + ".java";
         }
 
     }

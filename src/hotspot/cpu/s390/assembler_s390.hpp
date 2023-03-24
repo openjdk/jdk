@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -843,6 +843,10 @@ class Assembler : public AbstractAssembler {
 #define CY_ZOPC     (unsigned long)(227L << 40 | 89L)
 #define CGF_ZOPC    (unsigned long)(227L << 40 | 48L)
 #define CG_ZOPC     (unsigned long)(227L << 40 | 32L)
+// MI, signed
+#define CHHSI_ZOPC  (unsigned long)(0xe5L << 40 | 0x54L << 32)
+#define CHSI_ZOPC   (unsigned long)(0xe5L << 40 | 0x5cL << 32)
+#define CGHSI_ZOPC  (unsigned long)(0xe5L << 40 | 0x58L << 32)
 // RR, unsigned
 #define CLR_ZOPC    (unsigned  int)(21 << 8)
 #define CLGFR_ZOPC  (unsigned  int)(185 << 24 | 49 << 16)
@@ -855,6 +859,10 @@ class Assembler : public AbstractAssembler {
 #define CLY_ZOPC    (unsigned long)(227L << 40 | 85L)
 #define CLGF_ZOPC   (unsigned long)(227L << 40 | 49L)
 #define CLG_ZOPC    (unsigned long)(227L << 40 | 33L)
+// MI, unsigned
+#define CLHHSI_ZOPC (unsigned long)(0xe5L << 40 | 0x55L << 32)
+#define CLFHSI_ZOPC (unsigned long)(0xe5L << 40 | 0x5dL << 32)
+#define CLGHSI_ZOPC (unsigned long)(0xe5L << 40 | 0x59L << 32)
 // RI, unsigned
 #define TMHH_ZOPC   (unsigned  int)(167 << 24 | 2 << 16)
 #define TMHL_ZOPC   (unsigned  int)(167 << 24 | 3 << 16)
@@ -1060,6 +1068,7 @@ class Assembler : public AbstractAssembler {
 #define MVI_ZOPC    (unsigned  int)(0x92  << 24)
 #define MVIY_ZOPC   (unsigned long)(0xebL << 40 | 0x52L)
 #define MVC_ZOPC    (unsigned long)(0xd2L << 40)
+#define MVCIN_ZOPC  (unsigned long)(0xe8L << 40)
 #define MVCL_ZOPC   (unsigned  int)(0x0e  <<  8)
 #define MVCLE_ZOPC  (unsigned  int)(0xa8  << 24)
 
@@ -1708,21 +1717,21 @@ class Assembler : public AbstractAssembler {
 
   // unsigned immediate, in low bits, nbits long
   static long uimm(long x, int nbits) {
-    assert(Immediate::is_uimm(x, nbits), "unsigned constant out of range");
+    assert(Immediate::is_uimm(x, nbits), "unsigned immediate " INTPTR_FORMAT " out of range (%d bits)", x, nbits);
     return x & fmask(nbits - 1, 0);
   }
 
   // Cast '1' to long to avoid sign extension if nbits = 32.
   // signed immediate, in low bits, nbits long
   static long simm(long x, int nbits) {
-    assert(Immediate::is_simm(x, nbits), "value out of range");
+    assert(Immediate::is_simm(x, nbits), "signed immediate " INTPTR_FORMAT " out of range (%d bits)", x, nbits);
     return x & fmask(nbits - 1, 0);
   }
 
   static long imm(int64_t x, int nbits) {
     // Assert that x can be represented with nbits bits ignoring the sign bits,
     // i.e. the more higher bits should all be 0 or 1.
-    assert((x >> nbits) == 0 || (x >> nbits) == -1, "value out of range");
+    assert((x >> nbits) == 0 || (x >> nbits) == -1, "signed immediate " INTPTR_FORMAT " out of range (%d bits)", x, nbits);
     return x & fmask(nbits-1, 0);
   }
 
@@ -1734,7 +1743,7 @@ class Assembler : public AbstractAssembler {
   // contents of the DH field to the left of the contents of
   // the DL field.
   static long simm20(int64_t ui20) {
-    assert(Immediate::is_simm(ui20, 20), "value out of range");
+    assert(Immediate::is_simm(ui20, 20), "signed displacement (disp20) " INTPTR_FORMAT " out of range", ui20);
     return ( ((ui20        & 0xfffL) << (48-32)) |  // DL
             (((ui20 >> 12) &  0xffL) << (48-40)));  // DH
   }
@@ -1847,6 +1856,10 @@ class Assembler : public AbstractAssembler {
    //inline void z_cgf(Register r1,int64_t d2, Register x2, Register b2);// compare (r1, *(d2_uimm12+x2+b2)) ; int64 <--> int32
   inline void z_cg(  Register r1, const Address &a);                     // compare (r1, *(a))               ; int64
   inline void z_cg(  Register r1, int64_t d2, Register x2, Register b2); // compare (r1, *(d2_imm20+x2+b2))  ; int64
+   // compare memory - immediate
+  inline void z_chhsi(int64_t d1, Register b1, int64_t i2);              // compare (*d1(b1), i2_imm16)      ; int16
+  inline void z_chsi( int64_t d1, Register b1, int64_t i2);              // compare (*d1(b1), i2_imm16)      ; int32
+  inline void z_cghsi(int64_t d1, Register b1, int64_t i2);              // compare (*d1(b1), i2_imm16)      ; int64
 
    // compare logical instructions
    // compare register
@@ -1862,6 +1875,10 @@ class Assembler : public AbstractAssembler {
   inline void z_cly(  Register r1, const Address& a);                    // compare (r1, *(a))               ; uint32
   inline void z_clg(  Register r1, const Address &a);                    // compare (r1, *(a)                ; uint64
   inline void z_clg(  Register r1, int64_t d2, Register x2, Register b2);// compare (r1, *(d2_imm20+x2+b2)   ; uint64
+   // compare memory - immediate
+  inline void z_clhhsi(int64_t d1, Register b1, int64_t i2);             // compare (*d1(b1), i2_imm16)      ; uint16
+  inline void z_clfhsi(int64_t d1, Register b1, int64_t i2);             // compare (*d1(b1), i2_imm16)      ; uint32
+  inline void z_clghsi(int64_t d1, Register b1, int64_t i2);             // compare (*d1(b1), i2_imm16)      ; uint64
 
   // test under mask
   inline void z_tmll(Register r1, int64_t i2);           // test under mask, see docu
@@ -2435,6 +2452,7 @@ class Assembler : public AbstractAssembler {
 
   inline void z_mvc(const Address& d, const Address& s, int64_t l);               // move l bytes
   inline void z_mvc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2); // move l+1 bytes
+  inline void z_mvcin(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2); // move l+1 bytes
   inline void z_mvcle(Register r1, Register r3, int64_t d2, Register b2=Z_R0);    // move region of memory
 
   inline void z_stfle(int64_t d2, Register b2);                            // store facility list extended

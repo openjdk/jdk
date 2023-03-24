@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,7 @@ public final class AnnotationElement {
      *         it exists, else {@code null}
      */
     public final <A> A getAnnotation(Class<? extends Annotation> annotationType) {
-        Objects.requireNonNull(annotationType);
+        Objects.requireNonNull(annotationType, "annotationType");
         return type.getAnnotation(annotationType);
     }
 

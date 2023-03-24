@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,17 +301,16 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                 new Callable<T>() {
                     public T call() throws Exception {
                         setState(StateValue.STARTED);
-                        return doInBackground();
+                        try {
+                            return doInBackground();
+                        } finally {
+                            doneEDT();
+                            setState(StateValue.DONE);
+                        }
                     }
                 };
 
-        future = new FutureTask<T>(callable) {
-                       @Override
-                       protected void done() {
-                           doneEDT();
-                           setState(StateValue.DONE);
-                       }
-                   };
+       future = new FutureTask<T>(callable);
 
        state = StateValue.PENDING;
        propertyChangeSupport = new SwingWorkerPropertyChangeSupport(this);

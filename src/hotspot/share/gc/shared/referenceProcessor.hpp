@@ -400,7 +400,7 @@ public:
   void set_is_subject_to_discovery_closure(BoolObjectClosure* cl) { _is_subject_to_discovery = cl; }
 
   // start and stop weak ref discovery
-  void enable_discovery(bool check_no_refs = true);
+  void enable_discovery();
   void disable_discovery()  { _discovering_refs = false; }
   bool discovery_enabled()  { return _discovering_refs;  }
 
@@ -445,9 +445,6 @@ class SpanSubjectToDiscoveryClosure : public BoolObjectClosure {
 
 public:
   SpanSubjectToDiscoveryClosure() : BoolObjectClosure(), _span() { }
-  SpanSubjectToDiscoveryClosure(MemRegion span) : BoolObjectClosure(), _span(span) { }
-
-  MemRegion span() const { return _span; }
 
   void set_span(MemRegion mr) {
     _span = mr;
@@ -473,28 +470,6 @@ public:
 
   ~ReferenceProcessorSubjectToDiscoveryMutator() {
     _rp->set_is_subject_to_discovery_closure(_saved_cl);
-  }
-};
-
-// A utility class to temporarily mutate the span of the
-// given ReferenceProcessor in the scope that contains it.
-class ReferenceProcessorSpanMutator : StackObj {
-  ReferenceProcessor* _rp;
-  SpanSubjectToDiscoveryClosure _discoverer;
-  BoolObjectClosure* _old_discoverer;
-
-public:
-  ReferenceProcessorSpanMutator(ReferenceProcessor* rp,
-                                MemRegion span):
-    _rp(rp),
-    _discoverer(span),
-    _old_discoverer(rp->is_subject_to_discovery_closure()) {
-
-    rp->set_is_subject_to_discovery_closure(&_discoverer);
-  }
-
-  ~ReferenceProcessorSpanMutator() {
-    _rp->set_is_subject_to_discovery_closure(_old_discoverer);
   }
 };
 
