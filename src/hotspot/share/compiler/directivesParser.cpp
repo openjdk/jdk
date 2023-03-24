@@ -318,39 +318,31 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
         char* s = NEW_C_HEAP_ARRAY(char, v->str.length+1,  mtCompiler);
         strncpy(s, v->str.start, v->str.length + 1);
         s[v->str.length] = '\0';
-        (set->*test)((void *)&s);
-
-        bool valid = true;
+        (set->*test)((void *)&s);  // Takes ownership.
 
         if (strncmp(option_key->name, "ControlIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, false/*disabled_all*/);
 
-          valid = validator.is_valid();
-          if (!valid) {
+          if (!validator.is_valid()) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in ControlIntrinsic: %s", validator.what());
+            return false;
           }
         } else if (strncmp(option_key->name, "DisableIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, true/*disabled_all*/);
 
-          valid = validator.is_valid();
-          if (!valid) {
+          if (!validator.is_valid()) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
+            return false;
           }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
           uint64_t mask = 0;
           PhaseNameValidator validator(s, mask);
 
-          valid = validator.is_valid();
-          if (!valid) {
+          if (!validator.is_valid()) {
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
-          } else {
-            set->set_ideal_phase_mask(mask);
+            return false;
           }
-        }
-
-        FREE_C_HEAP_ARRAY(char, s);
-        if (!valid) {
-          return false;
+          set->set_ideal_phase_mask(mask);
         }
       }
       break;
