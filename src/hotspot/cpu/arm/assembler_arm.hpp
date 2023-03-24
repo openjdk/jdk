@@ -294,19 +294,16 @@ class VFP {
   class double_num : public fpnum {
    public:
     double_num(double v) {
-      _num.val = v;
+      _num_bits = PrimitiveConversions::cast<unsigned long long>(v);
     }
 
-    virtual unsigned int f_hi4() const { return (_num.bits << 12) >> (48+12); }
-    virtual bool f_lo_is_null() const { return (_num.bits & ((1LL << 48) - 1)) == 0; }
-    virtual int e() const { return ((_num.bits << 1) >> (52+1)) - 1023; }
-    virtual unsigned int s() const { return _num.bits >> 63; }
+    virtual unsigned int f_hi4() const { return (_num_bits << 12) >> (48+12); }
+    virtual bool f_lo_is_null() const { return (_num_bits & ((1LL << 48) - 1)) == 0; }
+    virtual int e() const { return ((_num_bits << 1) >> (52+1)) - 1023; }
+    virtual unsigned int s() const { return _num_bits >> 63; }
 
    private:
-    union {
-      double val;
-      unsigned long long bits;
-    } _num;
+    unsigned long long _num_bits;
   };
 };
 #endif
