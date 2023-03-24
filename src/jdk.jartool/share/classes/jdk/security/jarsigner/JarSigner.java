@@ -25,8 +25,6 @@
 
 package jdk.security.jarsigner;
 
-import com.sun.jarsigner.ContentSigner;
-import com.sun.jarsigner.ContentSignerParameters;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.security.pkcs.PKCS7;
@@ -62,6 +60,8 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+
+import static sun.security.util.SignatureFileVerifier.isInMetaInf;
 
 /**
  * An immutable utility class to sign a jar file.
@@ -121,8 +121,6 @@ public final class JarSigner {
         String tSADigestAlg;
         boolean sectionsonly = false;
         boolean internalsf = false;
-        String altSignerPath;
-        String altSigner;
 
         /**
          * Creates a {@code JarSigner.Builder} object with
@@ -389,12 +387,6 @@ public final class JarSigner {
                 case "sectionsonly":
                     this.sectionsonly = parseBoolean("sectionsonly", value);
                     break;
-                case "altsignerpath":
-                    altSignerPath = value;
-                    break;
-                case "altsigner":
-                    altSigner = value;
-                    break;
                 default:
                     throw new UnsupportedOperationException(
                             "Unsupported key " + key);
@@ -475,8 +467,6 @@ public final class JarSigner {
         }
     }
 
-    private static final String META_INF = "META-INF/";
-
     // All fields in Builder are duplicated here as final. Those not
     // provided but has a default value will be filled with default value.
 
@@ -502,11 +492,6 @@ public final class JarSigner {
     private final String tSADigestAlg;
     private final boolean sectionsonly; // do not "sign" the whole manifest
     private final boolean internalsf; // include the .SF inside the PKCS7 block
-
-    @Deprecated(since="16", forRemoval=true)
-    private final String altSignerPath;
-    @Deprecated(since="16", forRemoval=true)
-    private final String altSigner;
     private boolean extraAttrsDetected;
 
     private JarSigner(JarSigner.Builder builder) {
@@ -549,15 +534,6 @@ public final class JarSigner {
         this.tSAPolicyID = builder.tSAPolicyID;
         this.sectionsonly = builder.sectionsonly;
         this.internalsf = builder.internalsf;
-        this.altSigner = builder.altSigner;
-        this.altSignerPath = builder.altSignerPath;
-
-        // altSigner cannot support modern algorithms like RSASSA-PSS and EdDSA
-        if (altSigner != null
-                && !sigalg.toUpperCase(Locale.ENGLISH).contains("WITH")) {
-            throw new IllegalArgumentException(
-                    "Customized ContentSigner is not supported for " + sigalg);
-        }
     }
 
     /**
@@ -658,10 +634,6 @@ public final class JarSigner {
                 return Boolean.toString(internalsf);
             case "sectionsonly":
                 return Boolean.toString(sectionsonly);
-            case "altsignerpath":
-                return altSignerPath;
-            case "altsigner":
-                return altSigner;
             default:
                 throw new UnsupportedOperationException(
                         "Unsupported key " + key);
@@ -688,7 +660,8 @@ public final class JarSigner {
             throw new AssertionError(asae);
         }
 
-        ZipOutputStream zos = new ZipOutputStream(os);
+        ZipOutputStream zos = new ZipOutputStream(
+                (os instanceof BufferedOutputStream) ? os : new BufferedOutputStream(os));
 
         Manifest manifest = new Manifest();
         byte[] mfRawBytes = null;
@@ -731,7 +704,7 @@ public final class JarSigner {
              enum_.hasMoreElements(); ) {
             ZipEntry ze = enum_.nextElement();
 
-            if (ze.getName().startsWith(META_INF)) {
+            if (isInMetaInf(ze.getName())) {
                 // Store META-INF files in vector, so they can be written
                 // out first
                 mfFiles.addElement(ze);
@@ -853,46 +826,27 @@ public final class JarSigner {
         sf.write(baos);
         byte[] content = baos.toByteArray();
 
-        if (altSigner == null) {
-            Function<byte[], PKCS9Attributes> timestamper = null;
-            if (tsaUrl != null) {
-                timestamper = s -> {
-                    try {
-                        // Timestamp the signature
-                        HttpTimestamper tsa = new HttpTimestamper(tsaUrl);
-                        byte[] tsToken = PKCS7.generateTimestampToken(
-                                tsa, tSAPolicyID, tSADigestAlg, s);
+        Function<byte[], PKCS9Attributes> timestamper = null;
+        if (tsaUrl != null) {
+            timestamper = s -> {
+                try {
+                    // Timestamp the signature
+                    HttpTimestamper tsa = new HttpTimestamper(tsaUrl);
+                    byte[] tsToken = PKCS7.generateTimestampToken(
+                            tsa, tSAPolicyID, tSADigestAlg, s);
 
-                        return new PKCS9Attributes(new PKCS9Attribute[]{
-                                new PKCS9Attribute(
-                                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID,
-                                        tsToken)});
-                    } catch (IOException | CertificateException e) {
-                        throw new RuntimeException(e);
-                    }
-                };
-            }
-            // We now create authAttrs in block data, so "direct == false".
-            block = PKCS7.generateNewSignedData(sigalg, sigProvider, privateKey, certChain,
-                    content, internalsf, false, timestamper);
-        } else {
-            Signature signer = SignatureUtil.fromKey(sigalg, privateKey, sigProvider);
-            signer.update(content);
-            byte[] signature = signer.sign();
-
-            @SuppressWarnings("removal")
-            ContentSignerParameters params =
-                    new JarSignerParameters(null, tsaUrl, tSAPolicyID,
-                            tSADigestAlg, signature,
-                            signer.getAlgorithm(), certChain, content, zipFile);
-            @SuppressWarnings("removal")
-            ContentSigner signingMechanism = loadSigningMechanism(altSigner, altSignerPath);
-            block = signingMechanism.generateSignedData(
-                    params,
-                    !internalsf,
-                    params.getTimestampingAuthority() != null
-                            || params.getTimestampingAuthorityCertificate() != null);
+                    return new PKCS9Attributes(new PKCS9Attribute[]{
+                            new PKCS9Attribute(
+                                    PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID,
+                                    tsToken)});
+                } catch (IOException | CertificateException e) {
+                    throw new RuntimeException(e);
+                }
+            };
         }
+        // We now create authAttrs in block data, so "direct == false".
+        block = PKCS7.generateNewSignedData(sigalg, sigProvider, privateKey, certChain,
+                content, internalsf, false, timestamper);
 
         String sfFilename = sf.getMetaName();
         String bkFilename = sf.getBlockName(privateKey);
@@ -959,7 +913,7 @@ public final class JarSigner {
              enum_.hasMoreElements(); ) {
             ZipEntry ze = enum_.nextElement();
 
-            if (!ze.getName().startsWith(META_INF)) {
+            if (!isInMetaInf(ze.getName())) {
                 if (handler != null) {
                     if (manifest.getAttributes(ze.getName()) != null) {
                         handler.accept("signing", ze.getName());
@@ -973,6 +927,7 @@ public final class JarSigner {
         zipFile.close();
         zos.close();
     }
+
 
     private void writeEntry(ZipFile zf, ZipOutputStream os, ZipEntry ze)
             throws IOException {
@@ -1099,44 +1054,6 @@ public final class JarSigner {
         return base64Digests;
     }
 
-    /*
-     * Try to load the specified signing mechanism.
-     * The URL class loader is used.
-     */
-    @SuppressWarnings("removal")
-    private ContentSigner loadSigningMechanism(String signerClassName,
-                                               String signerClassPath) {
-
-        // If there is no signerClassPath provided, search from here
-        if (signerClassPath == null) {
-            signerClassPath = ".";
-        }
-
-        // construct class loader
-        String cpString;   // make sure env.class.path defaults to dot
-
-        // do prepends to get correct ordering
-        cpString = PathList.appendPath(
-                System.getProperty("env.class.path"), null);
-        cpString = PathList.appendPath(
-                System.getProperty("java.class.path"), cpString);
-        cpString = PathList.appendPath(signerClassPath, cpString);
-        URL[] urls = PathList.pathToURLs(cpString);
-        ClassLoader appClassLoader = new URLClassLoader(urls);
-
-        try {
-            // attempt to find signer
-            Class<?> signerClass = appClassLoader.loadClass(signerClassName);
-            Object signer = signerClass.getDeclaredConstructor().newInstance();
-            return (ContentSigner) signer;
-        } catch (ClassNotFoundException|InstantiationException|
-                IllegalAccessException|ClassCastException|
-                NoSuchMethodException| InvocationTargetException e) {
-            throw new IllegalArgumentException(
-                    "Invalid altSigner or altSignerPath", e);
-        }
-    }
-
     static class SignatureFile {
 
         /**
@@ -1222,83 +1139,6 @@ public final class JarSigner {
         public String getBlockName(PrivateKey privateKey) {
             String type = SignatureFileVerifier.getBlockExtension(privateKey);
             return getBaseSignatureFilesName(baseName) + type;
-        }
-    }
-
-    @SuppressWarnings("removal")
-    @Deprecated(since="16", forRemoval=true)
-    class JarSignerParameters implements ContentSignerParameters {
-
-        private String[] args;
-        private URI tsa;
-        private byte[] signature;
-        private String signatureAlgorithm;
-        private X509Certificate[] signerCertificateChain;
-        private byte[] content;
-        private ZipFile source;
-        private String tSAPolicyID;
-        private String tSADigestAlg;
-
-        JarSignerParameters(String[] args, URI tsa,
-                            String tSAPolicyID, String tSADigestAlg,
-                            byte[] signature, String signatureAlgorithm,
-                            X509Certificate[] signerCertificateChain,
-                            byte[] content, ZipFile source) {
-
-            Objects.requireNonNull(signature);
-            Objects.requireNonNull(signatureAlgorithm);
-            Objects.requireNonNull(signerCertificateChain);
-
-            this.args = args;
-            this.tsa = tsa;
-            this.tSAPolicyID = tSAPolicyID;
-            this.tSADigestAlg = tSADigestAlg;
-            this.signature = signature;
-            this.signatureAlgorithm = signatureAlgorithm;
-            this.signerCertificateChain = signerCertificateChain;
-            this.content = content;
-            this.source = source;
-        }
-
-        public String[] getCommandLine() {
-            return args;
-        }
-
-        public URI getTimestampingAuthority() {
-            return tsa;
-        }
-
-        public X509Certificate getTimestampingAuthorityCertificate() {
-            // We don't use this param. Always provide tsaURI.
-            return null;
-        }
-
-        public String getTSAPolicyID() {
-            return tSAPolicyID;
-        }
-
-        public String getTSADigestAlg() {
-            return tSADigestAlg;
-        }
-
-        public byte[] getSignature() {
-            return signature;
-        }
-
-        public String getSignatureAlgorithm() {
-            return signatureAlgorithm;
-        }
-
-        public X509Certificate[] getSignerCertificateChain() {
-            return signerCertificateChain;
-        }
-
-        public byte[] getContent() {
-            return content;
-        }
-
-        public ZipFile getSource() {
-            return source;
         }
     }
 }

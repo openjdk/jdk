@@ -244,18 +244,6 @@ void Stack<E, F>::zap_segment(E* seg, bool zap_link_field) const
 #endif
 
 template <class E, MEMFLAGS F>
-E* ResourceStack<E, F>::alloc(size_t bytes)
-{
-  return (E*) resource_allocate_bytes(bytes);
-}
-
-template <class E, MEMFLAGS F>
-void ResourceStack<E, F>::free(E* addr, size_t bytes)
-{
-  resource_free_bytes(Thread::current(), (char*) addr, bytes);
-}
-
-template <class E, MEMFLAGS F>
 void StackIterator<E, F>::sync()
 {
   _full_seg_size = _stack._full_seg_size;

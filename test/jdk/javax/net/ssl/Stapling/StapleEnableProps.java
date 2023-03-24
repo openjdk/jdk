@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -696,11 +696,9 @@ public class StapleEnableProps {
         rootOcsp.start();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
-            Thread.sleep(50);
-        }
-        if (!rootOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        boolean readyStatus = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!readyStatus) {
+            throw new RuntimeException("Server not ready");
         }
 
         rootOcspPort = rootOcsp.getPort();
@@ -749,11 +747,9 @@ public class StapleEnableProps {
         intOcsp.start();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !intOcsp.isServerReady()); i++) {
-            Thread.sleep(50);
-        }
-        if (!intOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
+        readyStatus = intOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!readyStatus) {
+            throw new RuntimeException("Server not ready");
         }
 
         intOcspPort = intOcsp.getPort();

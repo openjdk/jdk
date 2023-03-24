@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,7 +75,7 @@ frame os::current_frame() {
   //     set the sp to a close approximation of the real value in
   //     order to allow this step to complete.
   //   - Step 120 (printing native stack) tries to walk the stack.
-  //     The frame we create has a NULL pc, which is ignored as an
+  //     The frame we create has a null pc, which is ignored as an
   //     invalid frame.
   frame dummy = frame();
   dummy.set_sp((intptr_t *) current_stack_pointer());
@@ -92,7 +92,7 @@ char* os::non_memory_address_word() {
 
 address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
@@ -103,7 +103,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
                                      intptr_t** ret_sp,
                                      intptr_t** ret_fp) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 frame os::fetch_frame_from_context(const void* ucVoid) {
@@ -114,7 +114,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  if (info != NULL && thread != NULL) {
+  if (info != nullptr && thread != nullptr) {
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
       address addr = (address) info->si_addr;

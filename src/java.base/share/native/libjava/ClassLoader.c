@@ -185,7 +185,6 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     if (name != NULL) {
         utfName = getUTF(env, name, buf, sizeof(buf));
         if (utfName == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
             return result;
         }
         fixClassname(utfName);
@@ -196,7 +195,6 @@ Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
     if (source != NULL) {
         utfSource = getUTF(env, source, sourceBuf, sizeof(sourceBuf));
         if (utfSource == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
             goto free_utfName;
         }
     } else {
@@ -301,7 +299,6 @@ Java_java_lang_ClassLoader_findBootstrapClass(JNIEnv *env, jclass dummy,
 
     clname = getUTF(env, classname, buf, sizeof(buf));
     if (clname == NULL) {
-        JNU_ThrowOutOfMemoryError(env, NULL);
         return NULL;
     }
     fixClassname(clname);

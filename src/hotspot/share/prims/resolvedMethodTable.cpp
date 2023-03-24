@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ class ResolvedMethodTableConfig : public AllStatic {
 
   static uintx get_hash(Value const& value, bool* is_dead) {
     oop val_oop = value.peek();
-    if (val_oop == NULL) {
+    if (val_oop == nullptr) {
       *is_dead = true;
       return 0;
     }
@@ -92,7 +92,7 @@ class ResolvedMethodTableConfig : public AllStatic {
   }
 };
 
-static ResolvedMethodTableHash* _local_table           = NULL;
+static ResolvedMethodTableHash* _local_table           = nullptr;
 static size_t                   _current_size          = (size_t)1 << ResolvedMethodTableSizeLog;
 
 volatile bool            ResolvedMethodTable::_has_work              = false;
@@ -128,7 +128,7 @@ class ResolvedMethodTableLookup : StackObj {
   }
   bool equals(WeakHandle* value, bool* is_dead) {
     oop val_oop = value->peek();
-    if (val_oop == NULL) {
+    if (val_oop == nullptr) {
       // dead oop, mark this hash dead for cleaning
       *is_dead = true;
       return false;
@@ -152,7 +152,7 @@ public:
   ResolvedMethodGet(Thread* thread, const Method* method) : _thread(thread), _method(method) {}
   void operator()(WeakHandle* val) {
     oop result = val->resolve();
-    assert(result != NULL, "Result should be reachable");
+    assert(result != nullptr, "Result should be reachable");
     _return = Handle(_thread, result);
     log_get();
   }
@@ -305,7 +305,7 @@ struct ResolvedMethodTableDeleteCheck : StackObj {
   bool operator()(WeakHandle* val) {
     ++_item;
     oop tmp = val->peek();
-    if (tmp == NULL) {
+    if (tmp == nullptr) {
       ++_count;
       return true;
     } else {
@@ -342,7 +342,7 @@ public:
   AdjustMethodEntries(bool* trace_name_printed) : _trace_name_printed(trace_name_printed) {};
   bool operator()(WeakHandle* entry) {
     oop mem_name = entry->peek();
-    if (mem_name == NULL) {
+    if (mem_name == nullptr) {
       // Removed
       return true;
     }
@@ -384,7 +384,7 @@ class VerifyResolvedMethod : StackObj {
  public:
   bool operator()(WeakHandle* val) {
     oop obj = val->peek();
-    if (obj != NULL) {
+    if (obj != nullptr) {
       Method* method = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(obj);
       guarantee(method->is_method(), "Must be");
       guarantee(!method->is_old(), "Must be");

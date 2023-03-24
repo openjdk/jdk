@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -290,7 +290,16 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
   return &unextended_sp()[index];
 }
 
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  ptr_at_put(interpreter_frame_locals_offset, (intptr_t) (locs - fp()));
+}
+
 // sender_sp
+
 intptr_t* frame::interpreter_frame_sender_sp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   return (intptr_t*) at(interpreter_frame_sender_sp_offset);
@@ -498,7 +507,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
   if (m->max_locals() > 0) {
-    address locals = (address) *interpreter_frame_locals_addr();
+    address locals = (address)interpreter_frame_locals();
     if (!thread->is_in_stack_range_incl(locals, (address)fp())) {
       return false;
     }

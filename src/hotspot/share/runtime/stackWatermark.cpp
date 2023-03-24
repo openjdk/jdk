@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,9 +161,9 @@ void StackWatermarkFramesIterator::next() {
 StackWatermark::StackWatermark(JavaThread* jt, StackWatermarkKind kind, uint32_t epoch) :
     _state(StackWatermarkState::create(epoch, true /* is_done */)),
     _watermark(0),
-    _next(NULL),
+    _next(nullptr),
     _jt(jt),
-    _iterator(NULL),
+    _iterator(nullptr),
     _lock(Mutex::stackwatermark, "StackWatermark_lock"),
     _kind(kind),
     _linked_watermarks() {
@@ -216,7 +216,7 @@ void StackWatermark::start_processing_impl(void* context) {
     _iterator->process_one(context);
     _iterator->process_one(context);
   } else {
-    _iterator = NULL;
+    _iterator = nullptr;
   }
   update_watermark();
 }
@@ -228,7 +228,7 @@ void StackWatermark::yield_processing() {
 
 void StackWatermark::update_watermark() {
   assert(_lock.owned_by_self(), "invariant");
-  if (_iterator != NULL && _iterator->has_next()) {
+  if (_iterator != nullptr && _iterator->has_next()) {
     assert(_iterator->callee() != 0, "sanity");
     Atomic::release_store(&_watermark, _iterator->callee());
     Atomic::release_store(&_state, StackWatermarkState::create(epoch_id(), false /* is_done */)); // release watermark w.r.t. epoch
@@ -243,9 +243,9 @@ void StackWatermark::update_watermark() {
 void StackWatermark::process_one() {
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   if (!processing_started()) {
-    start_processing_impl(NULL /* context */);
+    start_processing_impl(nullptr /* context */);
   } else if (!processing_completed()) {
-    _iterator->process_one(NULL /* context */);
+    _iterator->process_one(nullptr /* context */);
     update_watermark();
   }
 }
@@ -299,7 +299,7 @@ void StackWatermark::process_linked_watermarks() {
 
   // Finish processing all linked stack watermarks
   for (StackWatermark* watermark : _linked_watermarks) {
-    watermark->finish_processing(NULL /* context */);
+    watermark->finish_processing(nullptr /* context */);
   }
 }
 
@@ -316,7 +316,7 @@ void StackWatermark::start_processing() {
   if (!processing_started_acquire()) {
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     if (!processing_started()) {
-      start_processing_impl(NULL /* context */);
+      start_processing_impl(nullptr /* context */);
     }
   }
 }

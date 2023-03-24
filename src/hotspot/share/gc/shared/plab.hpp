@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,14 +84,14 @@ public:
   // If an allocation of the given "word_sz" can be satisfied within the
   // buffer, do the allocation, returning a pointer to the start of the
   // allocated block.  If the allocation request cannot be satisfied,
-  // return NULL.
+  // return null.
   HeapWord* allocate(size_t word_sz) {
     HeapWord* res = _top;
     if (pointer_delta(_end, _top) >= word_sz) {
       _top = _top + word_sz;
       return res;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 

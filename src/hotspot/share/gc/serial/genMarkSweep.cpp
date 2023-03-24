@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -41,7 +42,6 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -63,7 +63,7 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs) {
+void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
@@ -72,11 +72,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
     assert(clear_all_softrefs, "Policy should have been checked earlier");
   }
 #endif
-
-  // hook up weak ref data so it can be used during Mark-Sweep
-  assert(ref_processor() == NULL, "no stomping");
-  assert(rp != NULL, "should be non-NULL");
-  set_ref_processor(rp);
 
   gch->trace_heap_before_gc(_gc_tracer);
 
@@ -133,9 +128,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   gch->prune_scavengable_nmethods();
 
-  // refs processing: clean slate
-  set_ref_processor(NULL);
-
   // Update heap occupancy information which is used as
   // input to soft ref clearing policy at the next gc.
   Universe::heap()->update_capacity_and_used_at_gc();
@@ -153,7 +145,7 @@ void GenMarkSweep::allocate_stacks() {
 
   // $$$ To cut a corner, we'll only use the first scratch block, and then
   // revert to malloc.
-  if (scratch != NULL) {
+  if (scratch != nullptr) {
     _preserved_count_max =
       scratch->num_words * HeapWordSize / sizeof(PreservedMark);
   } else {
@@ -182,10 +174,12 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
 
+  ref_processor()->start_discovery(clear_all_softrefs);
+
   {
     StrongRootsScope srs(0);
 
-    CLDClosure* weak_cld_closure = ClassUnloading ? NULL : &follow_cld_closure;
+    CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
     MarkingCodeBlobClosure mark_code_closure(&follow_root_closure, !CodeBlobToOopClosure::FixRelocations, true);
     gch->process_roots(GenCollectedHeap::SO_None,
                        &follow_root_closure,

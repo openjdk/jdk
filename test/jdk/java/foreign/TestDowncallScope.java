@@ -25,6 +25,7 @@
  * @test
  * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
@@ -62,8 +63,8 @@ public class TestDowncallScope extends TestDowncallBase {
         List<Consumer<Object>> checks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow(fName);
         FunctionDescriptor descriptor = function(ret, paramTypes, fields);
-        Object[] args = makeArgs(paramTypes, fields, checks);
         try (Arena arena = Arena.openShared()) {
+            Object[] args = makeArgs(arena, descriptor, checks);
             boolean needsScope = descriptor.returnLayout().map(GroupLayout.class::isInstance).orElse(false);
             SegmentAllocator allocator = needsScope ?
                     SegmentAllocator.nativeAllocator(arena.scope()) :
@@ -83,8 +84,8 @@ public class TestDowncallScope extends TestDowncallBase {
         return function(ret, params, fields, List.of());
     }
 
-    static Object[] makeArgs(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks) throws ReflectiveOperationException {
-        return makeArgs(params, fields, checks, List.of());
+    static Object[] makeArgs(Arena arena, FunctionDescriptor descriptor, List<Consumer<Object>> checks) {
+        return makeArgs(arena, descriptor, checks, 0);
     }
 
 }

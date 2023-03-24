@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import nsk.share.jdi.*;
  */
 public class invokemethod010t {
     static Log log;
-    private invokemethod010Thr thrs[] =
-        new invokemethod010Thr[invokemethod010.THRDS_NUM-1];
+    private invokemethod010Thr thrs010[] = new invokemethod010Thr[invokemethod010.THRDS_NUM-1];
+    private Thread thrs[] = new Thread[invokemethod010.THRDS_NUM-1];
     private IOPipe pipe;
 
     public static void main(String args[]) {
@@ -87,8 +87,8 @@ public class invokemethod010t {
         Object readyObj = new Object();
 
         for (int i=0; i < invokemethod010.THRDS_NUM-1; i++) {
-            thrs[i] = new invokemethod010Thr(readyObj,
-                invokemethod010.DEBUGGEE_THRDS[i+1]);
+            thrs010[i] = new invokemethod010Thr(readyObj, invokemethod010.DEBUGGEE_THRDS[i+1]);
+            thrs[i] = JDIThreadFactory.newThread(thrs010[i]);
             thrs[i].setDaemon(true);
             log.display("Debuggee: starting thread #"
                 + i + " \"" + thrs[i].getName() + "\" ...");
@@ -111,7 +111,7 @@ public class invokemethod010t {
 
     private void killThreads(int waitTime) {
         for (int i=0; i < invokemethod010.THRDS_NUM-1 ; i++) {
-            thrs[i].doExit = true;
+            thrs010[i].doExit = true;
             try {
                 thrs[i].join(waitTime);
                 log.display("Debuggee: thread #"
@@ -127,7 +127,7 @@ public class invokemethod010t {
     * This is an auxiliary thread class used to check the flag
     * ObjectReference.INVOKE_SINGLE_THREADED in the debugger.
     */
-    class invokemethod010Thr extends Thread {
+    class invokemethod010Thr extends NamedTask {
         volatile boolean doExit = false;
         private Object readyObj;
 
@@ -181,11 +181,15 @@ class invokemethod010tDummyClass {
     volatile boolean isInvoked = false;
 
     long longMeth(long l) throws InterruptedException {
+        /*
+         * WARNING: Since this method is called using INVOKE_SINGLE_THREADED, we need to
+         * be careful not to do anything that might block on another thread. That includes
+         * calling Thread.sleep(), which can be a problem for virtual threads.
+         */
         invokemethod010t.log.display("invokemethod010tDummyClass: longMeth: going to loop");
         isInvoked = true;
         while(!doExit) {
             l--; l++;
-            Thread.currentThread().sleep(400);
         }
         invokemethod010t.log.display("invokemethod010tDummyClass: longMeth: exiting");
         isInvoked = false;

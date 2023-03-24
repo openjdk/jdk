@@ -243,6 +243,7 @@ util_initialize(JNIEnv *env)
         }
         localSystemThreadGroup = groups[0];
         saveGlobalRef(env, localSystemThreadGroup, &(gdata->systemThreadGroup));
+        jvmtiDeallocate(groups);
 
         /* Get some basic Java property values we will need at some point */
         gdata->property_java_version

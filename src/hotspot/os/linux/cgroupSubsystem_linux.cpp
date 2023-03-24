@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@
 static const char* cg_controller_name[] = { "cpu", "cpuset", "cpuacct", "memory", "pids" };
 
 CgroupSubsystem* CgroupSubsystemFactory::create() {
-  CgroupV1MemoryController* memory = NULL;
-  CgroupV1Controller* cpuset = NULL;
-  CgroupV1Controller* cpu = NULL;
-  CgroupV1Controller* cpuacct = NULL;
-  CgroupV1Controller* pids = NULL;
+  CgroupV1MemoryController* memory = nullptr;
+  CgroupV1Controller* cpuset = nullptr;
+  CgroupV1Controller* cpu = nullptr;
+  CgroupV1Controller* cpuacct = nullptr;
+  CgroupV1Controller* pids = nullptr;
   CgroupInfo cg_infos[CG_INFO_LENGTH];
   u1 cg_type_flags = INVALID_CGROUPS_GENERIC;
   const char* proc_cgroups = "/proc/cgroups";
@@ -54,7 +54,7 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
 
   if (!valid_cgroup) {
     // Could not detect cgroup type
-    return NULL;
+    return nullptr;
   }
   assert(is_valid_cgroup(&cg_type_flags), "Expected valid cgroup type");
 
@@ -128,7 +128,7 @@ void CgroupSubsystemFactory::set_controller_paths(CgroupInfo* cg_infos,
                                                   const char* name,
                                                   char* mount_path,
                                                   char* root_path) {
-  if (cg_infos[controller]._mount_path != NULL) {
+  if (cg_infos[controller]._mount_path != nullptr) {
     // On some systems duplicate controllers get mounted in addition to
     // the main cgroup controllers most likely under /sys/fs/cgroup. In that
     // case pick the one under /sys/fs/cgroup and discard others.
@@ -154,9 +154,9 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
                                             const char* proc_self_cgroup,
                                             const char* proc_self_mountinfo,
                                             u1* flags) {
-  FILE *mntinfo = NULL;
-  FILE *cgroups = NULL;
-  FILE *cgroup = NULL;
+  FILE *mntinfo = nullptr;
+  FILE *cgroups = nullptr;
+  FILE *cgroup = nullptr;
   char buf[MAXPATHLEN+1];
   char *p;
   bool is_cgroupsV2;
@@ -174,13 +174,13 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
    * controllers must have hierarchy ID 0 and the unified controller mounted.
    */
   cgroups = os::fopen(proc_cgroups, "r");
-  if (cgroups == NULL) {
+  if (cgroups == nullptr) {
     log_debug(os, container)("Can't open %s, %s", proc_cgroups, os::strerror(errno));
     *flags = INVALID_CGROUPS_GENERIC;
     return false;
   }
 
-  while ((p = fgets(buf, MAXPATHLEN, cgroups)) != NULL) {
+  while ((p = fgets(buf, MAXPATHLEN, cgroups)) != nullptr) {
     char name[MAXPATHLEN+1];
     int  hierarchy_id;
     int  enabled;
@@ -242,7 +242,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
    *    the host mount point to the local one via /proc/self/mountinfo below.
    */
   cgroup = os::fopen(proc_self_cgroup, "r");
-  if (cgroup == NULL) {
+  if (cgroup == nullptr) {
     log_debug(os, container)("Can't open %s, %s",
                              proc_self_cgroup, os::strerror(errno));
     cleanup(cg_infos);
@@ -250,7 +250,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     return false;
   }
 
-  while ((p = fgets(buf, MAXPATHLEN, cgroup)) != NULL) {
+  while ((p = fgets(buf, MAXPATHLEN, cgroup)) != nullptr) {
     char *controllers;
     char *token;
     char *hierarchy_id_str;
@@ -263,11 +263,11 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     controllers = strsep(&p, ":");
     cgroup_path = strsep(&p, "\n");
 
-    if (controllers == NULL) {
+    if (controllers == nullptr) {
       continue;
     }
 
-    while (!is_cgroupsV2 && (token = strsep(&controllers, ",")) != NULL) {
+    while (!is_cgroupsV2 && (token = strsep(&controllers, ",")) != nullptr) {
       if (strcmp(token, "memory") == 0) {
         assert(hierarchy_id == cg_infos[MEMORY_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for memory");
         cg_infos[MEMORY_IDX]._cgroup_path = os::strdup(cgroup_path);
@@ -293,7 +293,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         continue;
       }
       for (int i = 0; i < CG_INFO_LENGTH; i++) {
-        assert(cg_infos[i]._cgroup_path == NULL, "cgroup path must only be set once");
+        assert(cg_infos[i]._cgroup_path == nullptr, "cgroup path must only be set once");
         cg_infos[i]._cgroup_path = os::strdup(cgroup_path);
       }
     }
@@ -303,7 +303,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   // Find various mount points by reading /proc/self/mountinfo
   // mountinfo format is documented at https://www.kernel.org/doc/Documentation/filesystems/proc.txt
   mntinfo = os::fopen(proc_self_mountinfo, "r");
-  if (mntinfo == NULL) {
+  if (mntinfo == nullptr) {
       log_debug(os, container)("Can't open %s, %s",
                                proc_self_mountinfo, os::strerror(errno));
       cleanup(cg_infos);
@@ -313,7 +313,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
 
   bool cgroupv2_mount_point_found = false;
   bool any_cgroup_mounts_found = false;
-  while ((p = fgets(buf, MAXPATHLEN, mntinfo)) != NULL) {
+  while ((p = fgets(buf, MAXPATHLEN, mntinfo)) != nullptr) {
     char tmp_fs_type[MAXPATHLEN+1];
     char tmproot[MAXPATHLEN+1];
     char tmpmount[MAXPATHLEN+1];
@@ -352,7 +352,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         // Skip cgroup2 fs lines on hybrid or unified hierarchy.
         continue;
       }
-      while ((token = strsep(&cptr, ",")) != NULL) {
+      while ((token = strsep(&cptr, ",")) != nullptr) {
         if (strcmp(token, "memory") == 0) {
           any_cgroup_mounts_found = true;
           set_controller_paths(cg_infos, MEMORY_IDX, token, tmpmount, tmproot);
@@ -437,7 +437,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
 };
 
 void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
-  assert(cg_infos != NULL, "Invariant");
+  assert(cg_infos != nullptr, "Invariant");
   for (int i = 0; i < CG_INFO_LENGTH; i++) {
     os::free(cg_infos[i]._name);
     os::free(cg_infos[i]._cgroup_path);
@@ -557,7 +557,7 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
 }
 
 jlong CgroupSubsystem::limit_from_str(char* limit_str) {
-  if (limit_str == NULL) {
+  if (limit_str == nullptr) {
     return OSCONTAINER_ERROR;
   }
   // Unlimited memory in cgroups is the literal string 'max' for

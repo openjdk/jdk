@@ -31,9 +31,6 @@ public:
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
 
-  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
-  static int entry_barrier_stub_size();
-
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
@@ -136,6 +133,7 @@ public:
   XMMRegister get_lane(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex);
   void get_elem(BasicType typ, Register dst, XMMRegister src, int elemindex);
   void get_elem(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex, XMMRegister vtmp = xnoreg);
+  void movsxl(BasicType typ, Register dst);
 
   // vector test
   void vectortest(BasicType bt, XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes);

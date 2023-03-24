@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,13 @@
 #include "runtime/osThread.hpp"
 
 void OSThread::pd_initialize() {
-  set_thread_handle(NULL);
-  set_thread_id(NULL);
-  set_interrupt_event(NULL);
+  set_thread_handle(nullptr);
+  set_thread_id(0);
+  set_interrupt_event(nullptr);
 }
 
 void OSThread::pd_destroy() {
-  if (_interrupt_event != NULL) {
+  if (_interrupt_event != nullptr) {
     CloseHandle(_interrupt_event);
   }
 }

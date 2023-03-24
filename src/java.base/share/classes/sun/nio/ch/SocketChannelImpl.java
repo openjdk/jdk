@@ -272,8 +272,8 @@ class SocketChannelImpl
 
             if (isNetSocket()) {
                 if (name == StandardSocketOptions.IP_TOS) {
-                    // special handling for IP_TOS
-                    Net.setSocketOption(fd, family, name, value);
+                    // maps to IPV6_TCLASS and/or IP_TOS
+                    Net.setIpSocketOption(fd, family, name, value);
                     return this;
                 }
                 if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {

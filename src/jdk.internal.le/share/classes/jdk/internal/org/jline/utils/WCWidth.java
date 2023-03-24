@@ -70,6 +70,7 @@ public final class WCWidth {
                                 (ucs >= 0xfe30 && ucs <= 0xfe6f) || /* CJK Compatibility Forms */
                                 (ucs >= 0xff00 && ucs <= 0xff60) || /* Fullwidth Forms */
                                 (ucs >= 0xffe0 && ucs <= 0xffe6) ||
+                                (ucs >= 0x1f000 && ucs <= 0x1feee) ||
                                 (ucs >= 0x20000 && ucs <= 0x2fffd) ||
                                 (ucs >= 0x30000 && ucs <= 0x3fffd))) ? 1 : 0);
     }
@@ -123,8 +124,8 @@ public final class WCWidth {
             new Interval( 0x10A01, 0x10A03 ), new Interval( 0x10A05, 0x10A06 ), new Interval( 0x10A0C, 0x10A0F ),
             new Interval( 0x10A38, 0x10A3A ), new Interval( 0x10A3F, 0x10A3F ), new Interval( 0x1D167, 0x1D169 ),
             new Interval( 0x1D173, 0x1D182 ), new Interval( 0x1D185, 0x1D18B ), new Interval( 0x1D1AA, 0x1D1AD ),
-            new Interval( 0x1D242, 0x1D244 ), new Interval( 0xE0001, 0xE0001 ), new Interval( 0xE0020, 0xE007F ),
-            new Interval( 0xE0100, 0xE01EF )
+            new Interval( 0x1D242, 0x1D244 ), new Interval( 0x1F3FB, 0x1F3FF ), new Interval( 0xE0001, 0xE0001 ),
+            new Interval( 0xE0020, 0xE007F ), new Interval( 0xE0100, 0xE01EF )
     };
 
     private static class Interval {
