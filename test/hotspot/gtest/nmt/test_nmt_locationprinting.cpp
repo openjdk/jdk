@@ -62,12 +62,6 @@ static void test_for_c_heap(size_t sz, ssize_t offset) {
   FREE_C_HEAP_ARRAY(char, c);
 }
 
-TEST_VM(NMT, barrierrr) {
-  for (size_t i = 0; i < os::vm_page_size(); i ++) {
-    test_for_c_heap(os::vm_page_size(), i);
-  }
-
-}
 TEST_VM(NMT, location_printing_cheap_1) { test_for_c_heap(2 * K, 0); }              // start of payload
 TEST_VM(NMT, location_printing_cheap_2) { test_for_c_heap(2 * K, -7); }             // into header
 TEST_VM(NMT, location_printing_cheap_3) { test_for_c_heap(2 * K, K + 1); }          // into payload

@@ -243,9 +243,9 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
         return true;
         break;
       } else {
-        // We continue search even if we found a header but were outside of it if the header was dead since
-        // its area may be reused by another, larger block further down.
-        if (candidate->is_life()) {
+        // Break if we found a live header but the pointer had not been nearby. If this was a dead header, it may be
+        // a remnant from an older freed block, so continue searching.
+        if (candidate->is_live()) {
           return false;
         }
       }

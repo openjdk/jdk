@@ -141,7 +141,7 @@ public:
 
 
   bool is_dead() const { return _canary == _header_canary_dead_mark; }
-  bool is_life() const { return _canary == _header_canary_life_mark; }
+  bool is_live() const { return _canary == _header_canary_life_mark; }
 
   // Used for debugging purposes only. Check header if it could constitute a valid (life or dead) header.
   inline bool looks_valid() const;

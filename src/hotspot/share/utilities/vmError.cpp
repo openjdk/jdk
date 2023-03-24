@@ -1888,10 +1888,6 @@ void VMError::controlled_crash(int how) {
         fatal("Force crash with a nested ThreadsListHandle.");
       }
     }
-    case 18: {
-      char* c = NEW_C_HEAP_ARRAY(char, 100, mtTest);
-      fatal("test " PTR_FORMAT, p2i(c));
-    }
     default:
       // If another number is given, give a generic crash.
       fatal("Crashing with number %d", how);
