@@ -207,7 +207,7 @@ static void add_mutex(Mutex* var) {
 
 // Specify relative ranked lock
 #ifdef ASSERT
-#define MUTEX_DEFL(name, type, held_lock, ...) MUTEX_DEF(name, type, (held_lock)->rank()-1, ##__VA_ARGS__)
+#define MUTEX_DEFL(name, type, held_lock, ...) MUTEX_DEF(name, type, (held_lock)->rank() - 1, ##__VA_ARGS__)
 #else
 #define MUTEX_DEFL(name, type, held_lock, ...) MUTEX_DEFN(name, type, safepoint, ##__VA_ARGS__)
 #endif
