@@ -28,7 +28,7 @@
 
 template <>
 size_t WorkerDataArray<size_t>::uninitialized() {
-  return (size_t)-1;
+  return SIZE_MAX;
 }
 
 template <>

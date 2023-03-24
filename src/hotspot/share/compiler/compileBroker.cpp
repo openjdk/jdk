@@ -2277,7 +2277,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     DirectivesStack::release(directive);
 
     if (!ci_env.failing() && !task->is_success()) {
-      //assert(false, "compiler should always document failure");
+      assert(ci_env.failure_reason() != nullptr, "expect failure reason");
+      assert(false, "compiler should always document failure: %s", ci_env.failure_reason());
       // The compiler elected, without comment, not to register a result.
       // Do not attempt further compilations of this method.
       ci_env.record_method_not_compilable("compile failed");

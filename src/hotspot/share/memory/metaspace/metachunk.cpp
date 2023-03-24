@@ -303,7 +303,7 @@ void Metachunk::print_on(outputStream* st) const {
             "level " CHKLVL_FORMAT " (" SIZE_FORMAT " words), "
             "used " SIZE_FORMAT " words, committed " SIZE_FORMAT " words.",
             p2i(this), get_state_char(), p2i(base()), level(),
-            (chunklevel::is_valid_level(level()) ? chunklevel::word_size_for_level(level()) : (size_t)-1),
+            (chunklevel::is_valid_level(level()) ? chunklevel::word_size_for_level(level()) : SIZE_MAX),
             used_words(), committed_words());
 }
 

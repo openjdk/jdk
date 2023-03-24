@@ -70,6 +70,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -488,50 +489,6 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   return superk;
 }
 
-// We only get here if this thread finds that another thread
-// has already claimed the placeholder token for the current operation,
-// but that other thread either never owned or gave up the
-// object lock
-// Waits on SystemDictionary_lock to indicate placeholder table updated
-// On return, caller must recheck placeholder table state
-//
-// We only get here if
-//  1) custom classLoader, i.e. not bootstrap classloader
-//  2) custom classLoader has broken the class loader objectLock
-//     so another thread got here in parallel
-//
-// lockObject must be held.
-// Complicated dance due to lock ordering:
-// Must first release the classloader object lock to
-// allow initial definer to complete the class definition
-// and to avoid deadlock
-// Reclaim classloader lock object with same original recursion count
-// Must release SystemDictionary_lock after notify, since
-// class loader lock must be claimed before SystemDictionary_lock
-// to prevent deadlocks
-//
-// The notify allows applications that did an untimed wait() on
-// the classloader object lock to not hang.
-static void double_lock_wait(JavaThread* thread, Handle lockObject) {
-  assert_lock_strong(SystemDictionary_lock);
-
-  assert(EnableWaitForParallelLoad,
-         "Only called when enabling legacy parallel class loading logic "
-         "for non-parallel capable class loaders");
-  assert(lockObject() != nullptr, "lockObject must be non-null");
-  bool calledholdinglock
-      = ObjectSynchronizer::current_thread_holds_lock(thread, lockObject);
-  assert(calledholdinglock, "must hold lock for notify");
-  assert(!is_parallelCapable(lockObject), "lockObject must not be parallelCapable");
-  // These don't throw exceptions.
-  ObjectSynchronizer::notifyall(lockObject, thread);
-  intx recursions = ObjectSynchronizer::complete_exit(lockObject, thread);
-  SystemDictionary_lock->wait();
-  SystemDictionary_lock->unlock();
-  ObjectSynchronizer::reenter(lockObject, recursions, thread);
-  SystemDictionary_lock->lock();
-}
-
 // If the class in is in the placeholder table, class loading is in progress.
 // For cases where the application changes threads to load classes, it
 // is critical to ClassCircularity detection that we try loading
@@ -553,20 +510,17 @@ static void handle_parallel_super_load(Symbol* name,
 }
 
 // Bootstrap and non-parallel capable class loaders use the LOAD_INSTANCE placeholder to
-// wait for parallel class loading and to check for circularity error for Xcomp when loading
-// signature classes.
-// parallelCapable class loaders do NOT wait for parallel loads to complete
+// wait for parallel class loading and/or to check for circularity error for Xcomp when loading.
 static bool needs_load_placeholder(Handle class_loader) {
   return class_loader.is_null() || !is_parallelCapable(class_loader);
 }
 
-// For bootstrap and non-parallelCapable class loaders, check and wait for
-// another thread to complete loading this class.
-InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
-                                                         Symbol* name,
-                                                         ClassLoaderData* loader_data,
-                                                         Handle lockObject,
-                                                         bool* throw_circularity_error) {
+// Check for other threads loading this class either to throw CCE or wait in the case of the boot loader.
+static InstanceKlass* handle_parallel_loading(JavaThread* current,
+                                              Symbol* name,
+                                              ClassLoaderData* loader_data,
+                                              bool must_wait_for_class_loading,
+                                              bool* throw_circularity_error) {
   PlaceholderEntry* oldprobe = PlaceholderTable::get_entry(name, loader_data);
   if (oldprobe != nullptr) {
     // -Xcomp calls load_signature_classes which might result in loading
@@ -576,32 +530,15 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
       log_circularity_error(name, oldprobe);
       *throw_circularity_error = true;
       return nullptr;
-    } else {
+    } else if (must_wait_for_class_loading) {
       // Wait until the first thread has finished loading this class. Also wait until all the
       // threads trying to load its superclass have removed their placeholders.
       while (oldprobe != nullptr &&
              (oldprobe->instance_load_in_progress() || oldprobe->super_load_in_progress())) {
 
-        // We only get here if the application has released the
-        // classloader lock when another thread was in the middle of loading a
-        // superclass/superinterface for this class, and now
-        // this thread is also trying to load this class.
-        // To minimize surprises, the first thread that started to
-        // load a class should be the one to complete the loading
-        // with the classfile it initially expected.
-        // This logic has the current thread wait once it has done
-        // all the superclass/superinterface loading it can, until
-        // the original thread completes the class loading or fails
-        // If it completes we will use the resulting InstanceKlass
-        // which we will find below in the systemDictionary.
-
-        if (lockObject.is_null()) {
-          SystemDictionary_lock->wait();
-        } else if (EnableWaitForParallelLoad) {
-          double_lock_wait(current, lockObject);
-        } else {
-          return nullptr;
-        }
+        // LOAD_INSTANCE placeholders are used to implement parallel capable class loading
+        // for the bootclass loader.
+        SystemDictionary_lock->wait();
 
         // Check if classloading completed while we were waiting
         InstanceKlass* check = loader_data->dictionary()->find_class(current, name);
@@ -708,7 +645,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     bool load_placeholder_added = false;
 
     // Add placeholder entry to record loading instance class
-    // Four cases:
     // case 1. Bootstrap classloader
     //    This classloader supports parallelism at the classloader level
     //    but only allows a single thread to load a class/classloader pair.
@@ -717,20 +653,16 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     //    These class loaders lock a per-class object lock when ClassLoader.loadClass()
     //    is called. A LOAD_INSTANCE placeholder isn't used for mutual exclusion.
     // case 3. traditional classloaders that rely on the classloader object lock
-    //    There should be no need for need for LOAD_INSTANCE, except:
-    // case 4. traditional class loaders that break the classloader object lock
-    //    as a legacy deadlock workaround. Detection of this case requires that
-    //    this check is done while holding the classloader object lock,
-    //    and that lock is still held when calling classloader's loadClass.
-    //    For these classloaders, we ensure that the first requestor
-    //    completes the load and other requestors wait for completion.
+    //    There should be no need for need for LOAD_INSTANCE for mutual exclusion,
+    //    except the LOAD_INSTANCE placeholder is used to detect CCE for -Xcomp.
+    //    TODO: should also be used to detect CCE for parallel capable class loaders but it's not.
     {
       MutexLocker mu(THREAD, SystemDictionary_lock);
       if (needs_load_placeholder(class_loader)) {
         loaded_class = handle_parallel_loading(THREAD,
                                                name,
                                                loader_data,
-                                               lockObject,
+                                               class_loader.is_null(),
                                                &throw_circularity_error);
       }
 
@@ -741,8 +673,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
         if (check != nullptr) {
           loaded_class = check;
         } else if (needs_load_placeholder(class_loader)) {
-          // Add the LOAD_INSTANCE token. Threads will wait on loading to complete for this thread,
-          // and check for ClassCircularityError with -Xcomp.
+          // Add the LOAD_INSTANCE token. Threads will wait on loading to complete for this thread.
           PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(name, loader_data,
                                                                       PlaceholderTable::LOAD_INSTANCE,
                                                                       nullptr,
@@ -899,12 +830,9 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
     k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
   }
 
-  {
-    MutexLocker mu_r(THREAD, Compile_lock);
-    // Add to class hierarchy, and do possible deoptimizations.
-    add_to_hierarchy(k);
-    // But, do not add to dictionary.
-  }
+  // Add to class hierarchy, and do possible deoptimizations.
+  add_to_hierarchy(THREAD, k);
+  // But, do not add to dictionary.
 
   k->link_class(CHECK_NULL);
 
@@ -1489,13 +1417,11 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
     JavaCalls::call(&result, m, &args, CHECK);
   }
 
-  // Add the new class. We need recompile lock during update of CHA.
+  // Add to class hierarchy, and do possible deoptimizations.
+  add_to_hierarchy(THREAD, k);
+
   {
     MutexLocker mu_r(THREAD, Compile_lock);
-
-    // Add to class hierarchy, and do possible deoptimizations.
-    add_to_hierarchy(k);
-
     // Add to systemDictionary - so other classes can see it.
     // Grabs and releases SystemDictionary_lock
     update_dictionary(THREAD, k, loader_data);
@@ -1612,28 +1538,44 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
 
 // ----------------------------------------------------------------------------
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
-// is held, to ensure that the compiler is not using the class hierarchy, and that deoptimization will kick in
-// before a new class is used.
+// is grabbed, to ensure that the compiler is not using the class hierarchy.
 
-void SystemDictionary::add_to_hierarchy(InstanceKlass* k) {
+void SystemDictionary::add_to_hierarchy(JavaThread* current, InstanceKlass* k) {
   assert(k != nullptr, "just checking");
-  if (Universe::is_fully_initialized()) {
-    assert_locked_or_safepoint(Compile_lock);
+  assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
+
+  // In case we are not using CHA based vtables we need to make sure the loaded
+  // deopt is completed before anyone links this class.
+  // Linking is done with _init_monitor held, by loading and deopting with it
+  // held we make sure the deopt is completed before linking.
+  if (!UseVtableBasedCHA) {
+    k->init_monitor()->lock();
   }
 
-  k->set_init_state(InstanceKlass::loaded);
-  // make sure init_state store is already done.
-  // The compiler reads the hierarchy outside of the Compile_lock.
-  // Access ordering is used to add to hierarchy.
+  DeoptimizationScope deopt_scope;
+  {
+    MutexLocker ml(current, Compile_lock);
 
-  // Link into hierarchy.
-  k->append_to_sibling_list();                    // add to superklass/sibling list
-  k->process_interfaces();                        // handle all "implements" declarations
+    k->set_init_state(InstanceKlass::loaded);
+    // make sure init_state store is already done.
+    // The compiler reads the hierarchy outside of the Compile_lock.
+    // Access ordering is used to add to hierarchy.
 
-  // Now flush all code that depended on old class hierarchy.
-  // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
-  if (Universe::is_fully_initialized()) {
-    CodeCache::flush_dependents_on(k);
+    // Link into hierarchy.
+    k->append_to_sibling_list();                    // add to superklass/sibling list
+    k->process_interfaces();                        // handle all "implements" declarations
+
+    // Now mark all code that depended on old class hierarchy.
+    // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
+    if (Universe::is_fully_initialized()) {
+      CodeCache::mark_dependents_on(&deopt_scope, k);
+    }
+  }
+  // Perform the deopt handshake outside Compile_lock.
+  deopt_scope.deoptimize_marked();
+
+  if (!UseVtableBasedCHA) {
+    k->init_monitor()->unlock();
   }
 }
 
