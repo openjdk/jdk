@@ -479,7 +479,7 @@ void SuperWord::mark_reductions() {
   _loop_reductions.clear();
 
   // Iterate through all phi nodes associated to the loop and search for
-  // reduction cycles of at most LoopMaxUnroll nodes.
+  // reduction cycles in the basic block.
   for (DUIterator_Fast imax, i = lp()->fast_outs(imax); i < imax; i++) {
     const Node* phi = lp()->fast_out(i);
     if (!phi->is_Phi()) {
@@ -504,16 +504,15 @@ void SuperWord::mark_reductions() {
     // To contain the number of searched paths, assume that all nodes in a
     // reduction cycle are connected via the same edge index, modulo swapped
     // inputs. This assumption is realistic because reduction cycles usually
-    // consist of nodes cloned by loop unrolling. To further bound the search,
-    // constrain the size of reduction cycles to LoopMaxUnroll.
+    // consist of nodes cloned by loop unrolling.
     int reduction_input = -1;
     int path_nodes = -1;
     for (uint input = 1; input < first->req(); input++) {
-      // Test whether there is a reduction path of at most LoopMaxUnroll nodes
-      // from 'first' to the phi node following edge index 'input'.
+      // Test whether there is a reduction path in the basic block from 'first'
+      // to the phi node following edge index 'input'.
       PathEnd path =
         find_in_path(
-          first, input, LoopMaxUnroll,
+          first, input, lpt()->_body.size(),
           [&](const Node* n) { return n->Opcode() == first->Opcode() && in_bb(n); },
           [&](const Node* n) { return n == phi; });
       if (path.first != nullptr) {
