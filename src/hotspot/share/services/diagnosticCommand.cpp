@@ -800,7 +800,8 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
   if (str != NULL) {
       char* out = java_lang_String::as_utf8_string(str);
       if (out) {
-          output()->print_cr("%s", out);
+          // Avoid using print_cr() because length maybe longer than O_BUFLEN
+          output()->print_raw_cr(out);
           return;
       }
   }
