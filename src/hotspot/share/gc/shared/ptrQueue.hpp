@@ -40,7 +40,7 @@
 
 class BufferNode;
 class PtrQueueSet;
-class PtrQueue {
+class PtrQueue : public CHeapObj<mtGC> {
   friend class VMStructs;
 
   NONCOPYABLE(PtrQueue);
@@ -199,7 +199,7 @@ public:
 // A PtrQueueSet represents resources common to a set of pointer queues.
 // In particular, the individual queues allocate buffers from this shared
 // set, and return completed buffers to the set.
-class PtrQueueSet {
+class PtrQueueSet : public CHeapObj<mtGC> {
   BufferNode::Allocator* _allocator;
 
   NONCOPYABLE(PtrQueueSet);

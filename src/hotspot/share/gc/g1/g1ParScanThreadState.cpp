@@ -59,15 +59,15 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            PreservedMarks* preserved_marks,
                                            uint worker_id,
                                            uint num_workers,
-                                           size_t young_cset_length,
-                                           size_t optional_cset_length,
+                                           G1CollectionSet* collection_set,
                                            G1EvacFailureRegions* evac_failure_regions)
   : _g1h(g1h),
+    _collection_set(collection_set),
     _task_queue(g1h->task_queue(worker_id)),
     _rdc_local_qset(rdcqs),
     _ct(g1h->card_table()),
-    _closures(NULL),
-    _plab_allocator(NULL),
+    _closures(nullptr),
+    _plab_allocator(nullptr),
     _age_table(false),
     _tenuring_threshold(g1h->policy()->tenuring_threshold()),
     _scanner(g1h, this),
@@ -76,16 +76,16 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
     _stack_trim_lower_threshold(GCDrainStackTargetSize),
     _trim_ticks(),
-    _surviving_young_words_base(NULL),
-    _surviving_young_words(NULL),
-    _surviving_words_length(young_cset_length + 1),
+    _surviving_young_words_base(nullptr),
+    _surviving_young_words(nullptr),
+    _surviving_words_length(_collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
     _partial_array_stepper(num_workers),
     _string_dedup_requests(),
-    _max_num_optional_regions(optional_cset_length),
+    _max_num_optional_regions(_collection_set->optional_region_length()),
     _numa(g1h->numa()),
-    _obj_alloc_stat(NULL),
+    _obj_alloc_stat(nullptr),
     EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
@@ -104,7 +104,9 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
-  _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
+  _closures = G1EvacuationRootClosures::create_root_closures(_g1h,
+                                                             this,
+                                                             collection_set->only_contains_young_regions());
 
   _oops_into_optional_regions = new G1OopStarChunkedList[_max_num_optional_regions];
 
@@ -569,8 +571,7 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
                                _preserved_marks_set.get(worker_id),
                                worker_id,
                                _num_workers,
-                               _young_cset_length,
-                               _optional_cset_length,
+                               _collection_set,
                                _evac_failure_regions);
   }
   return _states[worker_id];
@@ -621,7 +622,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
   oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
-  if (forward_ptr == NULL) {
+  if (forward_ptr == nullptr) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
@@ -676,38 +677,36 @@ void G1ParScanThreadState::initialize_numa_stats() {
 }
 
 void G1ParScanThreadState::flush_numa_stats() {
-  if (_obj_alloc_stat != NULL) {
+  if (_obj_alloc_stat != nullptr) {
     uint node_index = _numa->index_of_current_thread();
     _numa->copy_statistics(G1NUMAStats::LocalObjProcessAtCopyToSurv, node_index, _obj_alloc_stat);
   }
 }
 
 void G1ParScanThreadState::update_numa_stats(uint node_index) {
-  if (_obj_alloc_stat != NULL) {
+  if (_obj_alloc_stat != nullptr) {
     _obj_alloc_stat[node_index]++;
   }
 }
 
 G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                                                  uint num_workers,
-                                                 size_t young_cset_length,
-                                                 size_t optional_cset_length,
+                                                 G1CollectionSet* collection_set,
                                                  G1EvacFailureRegions* evac_failure_regions) :
     _g1h(g1h),
+    _collection_set(collection_set),
     _rdcqs(G1BarrierSet::dirty_card_queue_set().allocator()),
     _preserved_marks_set(true /* in_c_heap */),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, num_workers, mtGC)),
-    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length + 1, mtGC)),
-    _young_cset_length(young_cset_length),
-    _optional_cset_length(optional_cset_length),
+    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
     _evac_failure_regions(evac_failure_regions) {
   _preserved_marks_set.init(num_workers);
   for (uint i = 0; i < num_workers; ++i) {
-    _states[i] = NULL;
+    _states[i] = nullptr;
   }
-  memset(_surviving_young_words_total, 0, (young_cset_length + 1) * sizeof(size_t));
+  memset(_surviving_young_words_total, 0, (collection_set->young_region_length() + 1) * sizeof(size_t));
 }
 
 G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {

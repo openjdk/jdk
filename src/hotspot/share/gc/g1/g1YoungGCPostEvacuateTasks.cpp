@@ -81,21 +81,14 @@ public:
   }
 
   void do_work(uint worker_id) override {
-
-    class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
-    public:
-      G1MonotonicArenaMemoryStats _total;
-
-      bool do_heap_region(HeapRegion* r) override {
-        _total.add(r->rem_set()->card_set_memory_stats());
-        return false;
-      }
-    } cl;
-
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    g1h->collection_set()->candidates()->iterate(&cl);
-    g1h->set_collection_set_candidates_stats(cl._total);
+    G1MonotonicArenaMemoryStats _total;
+    G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
+    for (HeapRegion* r : *candidates) {
+      _total.add(r->rem_set()->card_set_memory_stats());
+    }
+    g1h->set_collection_set_candidates_stats(_total);
   }
 };
 
@@ -357,7 +350,6 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
   };
 
 public:
-
   ClearRetainedRegionBitmaps(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionBitmaps),
     _evac_failure_regions(evac_failure_regions),
@@ -558,7 +550,7 @@ class FreeCSetClosure : public HeapRegionClosure {
 
     G1GCPhaseTimes* p = _g1h->phase_times();
     assert(!r->is_pinned(), "Unexpected pinned region at index %u", r->hrm_index());
-    assert(r->in_collection_set(), "bad CS");
+    assert(r->in_collection_set(), "bad collection set");
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                       _worker_id,

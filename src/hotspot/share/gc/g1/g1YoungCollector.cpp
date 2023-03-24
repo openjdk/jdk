@@ -268,7 +268,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
   evacuation_info->set_collection_set_regions(collection_set()->region_length() +
-                                            collection_set()->optional_region_length());
+                                              collection_set()->optional_region_length());
 
   concurrent_mark()->verify_no_collection_set_oops();
 
@@ -1014,7 +1014,7 @@ void G1YoungCollector::collect() {
   G1YoungGCJFRTracerMark jtm(gc_timer_stw(), gc_tracer_stw(), _gc_cause);
   // JStat/MXBeans
   G1YoungGCMonitoringScope ms(monitoring_support(),
-                              collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
+                              !collection_set()->candidates()->is_empty() /* all_memory_pools_affected */);
   // Create the heap printer before internal pause timing to have
   // heap information printed as last part of detailed GC log.
   G1HeapPrinterMark hpm(_g1h);
@@ -1043,8 +1043,7 @@ void G1YoungCollector::collect() {
 
     G1ParScanThreadStateSet per_thread_states(_g1h,
                                               workers()->active_workers(),
-                                              collection_set()->young_region_length(),
-                                              collection_set()->optional_region_length(),
+                                              collection_set(),
                                               &_evac_failure_regions);
 
     bool may_do_optional_evacuation = collection_set()->optional_region_length() != 0;

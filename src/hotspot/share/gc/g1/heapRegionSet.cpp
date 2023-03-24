@@ -32,7 +32,7 @@ uint FreeRegionList::_unrealistically_long_length = 0;
 
 #ifndef PRODUCT
 void HeapRegionSetBase::verify_region(HeapRegion* hr) {
-  assert(hr->containing_set() == this, "Inconsistent containing set for %u", hr->hrm_index());
+  assert(hr->containing_set() == this, "Inconsistent containing set for %u %s %s", hr->hrm_index(), hr->containing_set() != nullptr ? hr->containing_set()->name() : "null", this != nullptr ? name() : "null");
   assert(!hr->is_young(), "Adding young region %u", hr->hrm_index()); // currently we don't use these sets for young regions
   assert(_checker == NULL || _checker->is_correct_type(hr), "Wrong type of region %u (%s) and set %s",
          hr->hrm_index(), hr->get_type_str(), name());

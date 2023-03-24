@@ -31,37 +31,6 @@
 #include "runtime/atomic.hpp"
 #include "utilities/quickSort.hpp"
 
-// Order regions according to GC efficiency. This will cause regions with a lot
-// of live objects and large remembered sets to end up at the end of the array.
-// Given that we might skip collecting the last few old regions, if after a few
-// mixed GCs the remaining have reclaimable bytes under a certain threshold, the
-// hope is that the ones we'll skip are ones with both large remembered sets and
-// a lot of live objects, not the ones with just a lot of live objects if we
-// ordered according to the amount of reclaimable bytes per region.
-static int order_regions(HeapRegion* hr1, HeapRegion* hr2) {
-  // Make sure that NULL entries are moved to the end.
-  if (hr1 == NULL) {
-    if (hr2 == NULL) {
-      return 0;
-    } else {
-      return 1;
-    }
-  } else if (hr2 == NULL) {
-    return -1;
-  }
-
-  double gc_eff1 = hr1->gc_efficiency();
-  double gc_eff2 = hr2->gc_efficiency();
-
-  if (gc_eff1 > gc_eff2) {
-    return -1;
-  } if (gc_eff1 < gc_eff2) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
 // Determine collection set candidates: For all regions determine whether they
 // should be a collection set candidates, calculate their efficiency, sort and
 // return them as G1CollectionSetCandidates instance.
@@ -70,6 +39,8 @@ static int order_regions(HeapRegion* hr1, HeapRegion* hr2) {
 // copied into the G1CollectionSetCandidates instance; the caller will be the new
 // owner of this object.
 class G1BuildCandidateRegionsTask : public WorkerTask {
+
+  using CandidateInfo = G1CollectionCandidateList::CandidateInfo;
 
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention
@@ -82,7 +53,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     uint const _max_size;
     uint const _chunk_size;
 
-    HeapRegion** _data;
+    CandidateInfo* _data;
 
     uint volatile _cur_claim_idx;
 
@@ -99,15 +70,15 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     G1BuildCandidateArray(uint max_num_regions, uint chunk_size, uint num_workers) :
       _max_size(required_array_size(max_num_regions, chunk_size, num_workers)),
       _chunk_size(chunk_size),
-      _data(NEW_C_HEAP_ARRAY(HeapRegion*, _max_size, mtGC)),
+      _data(NEW_C_HEAP_ARRAY(CandidateInfo, _max_size, mtGC)),
       _cur_claim_idx(0) {
       for (uint i = 0; i < _max_size; i++) {
-        _data[i] = NULL;
+        _data[i] = CandidateInfo();
       }
     }
 
     ~G1BuildCandidateArray() {
-      FREE_C_HEAP_ARRAY(HeapRegion*, _data);
+      FREE_C_HEAP_ARRAY(CandidateInfo, _data);
     }
 
     // Claim a new chunk, returning its bounds [from, to[.
@@ -123,25 +94,63 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     // Set element in array.
     void set(uint idx, HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
-      assert(_data[idx] == NULL, "Value must not have been set.");
-      _data[idx] = hr;
+      assert(_data[idx]._r == nullptr, "Value must not have been set.");
+      _data[idx] = CandidateInfo(hr, hr->calc_gc_efficiency());
     }
 
-    void sort_and_copy_into(HeapRegion** dest, uint num_regions) {
+    void sort_by_efficiency() {
       if (_cur_claim_idx == 0) {
         return;
       }
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
-        assert(_data[i] == NULL, "must be");
+        assert(_data[i]._r == nullptr, "must be");
       }
-      QuickSort::sort(_data, _cur_claim_idx, order_regions, true);
-      for (uint i = num_regions; i < _max_size; i++) {
-        assert(_data[i] == NULL, "must be");
-      }
-      for (uint i = 0; i < num_regions; i++) {
-        dest[i] = _data[i];
+      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionCandidateList::order_regions);
+      for (uint i = _cur_claim_idx; i < _max_size; i++) {
+        assert(_data[i]._r == nullptr, "must be");
       }
     }
+
+    // Early prune (remove) regions meeting the G1HeapWastePercent criteria. That
+    // is, either until only the minimum amount of old collection set regions are
+    // available (for forward progress in evacuation) or the waste accumulated by the
+    // removed regions is above the maximum allowed waste.
+    void prune(uint num_candidates, uint& num_pruned, size_t& wasted_bytes) {
+      G1Policy* p = G1CollectedHeap::heap()->policy();
+
+      uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
+      num_pruned = 0;
+      wasted_bytes = 0;
+
+      if (min_old_cset_length >= num_candidates) {
+        // We take all of the candidate regions to provide some forward progress.
+        return;
+      }
+
+      size_t allowed_waste = p->allowed_waste_in_collection_set();
+      uint max_to_prune = num_candidates - min_old_cset_length;
+
+      while (true) {
+        HeapRegion* r = _data[num_candidates - num_pruned - 1]._r;
+        size_t const reclaimable = r->reclaimable_bytes();
+        if (num_pruned >= max_to_prune ||
+            wasted_bytes + reclaimable > allowed_waste) {
+          break;
+        }
+        r->rem_set()->clear(true /* cardset_only */);
+
+        wasted_bytes += reclaimable;
+        num_pruned++;
+      }
+
+      log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
+                                num_pruned,
+                                num_candidates,
+                                wasted_bytes,
+                                allowed_waste);
+    }
+
+    CandidateInfo* array() const { return _data; }
   };
 
   // Per-region closure. In addition to determining whether a region should be
@@ -162,7 +171,8 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       }
       assert(_cur_chunk_idx < _cur_chunk_end, "Must be");
 
-      hr->calc_gc_efficiency();
+//      log_debug(gc, ergo, cset)("Adding region %u to candidates %s pinned %d live-bytes %zu complete %d retained %d",
+//                                hr->hrm_index(), hr->get_short_type_str(), hr->is_pinned(), hr->live_bytes(), hr->rem_set()->is_complete(), hr->is_collection_set_candidate());
       _array->set(_cur_chunk_idx, hr);
 
       _cur_chunk_idx++;
@@ -187,9 +197,9 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       // before we fill them up).
       if (should_add(r) && !G1CollectedHeap::heap()->is_old_gc_alloc_region(r)) {
         add_region(r);
-      } else if (r->is_old()) {
-        // Keep remembered sets for humongous regions, otherwise clean out remembered
-        // sets for old regions.
+      } else if (r->is_old() && !r->is_collection_set_candidate()) {
+        // Keep remembered sets for humongous regions and regions in the collection
+        // set candidates, otherwise clean them out.
         r->rem_set()->clear(true /* only_cardset */);
       } else {
         assert(!r->is_old() || !r->rem_set()->is_tracked(),
@@ -236,12 +246,16 @@ public:
     update_totals(cl.regions_added(), cl.reclaimable_bytes_added());
   }
 
-  G1CollectionSetCandidates* get_sorted_candidates() {
-    HeapRegion** regions = NEW_C_HEAP_ARRAY(HeapRegion*, _num_regions_added, mtGC);
-    _result.sort_and_copy_into(regions, _num_regions_added);
-    return new G1CollectionSetCandidates(regions,
-                                         _num_regions_added,
-                                         _reclaimable_bytes_added);
+  void sort_and_prune_into(G1CollectionSetCandidates* candidates) {
+    _result.sort_by_efficiency();
+
+    uint num_pruned;
+    size_t pruned_wasted_bytes;
+    
+    _result.prune(_num_regions_added, num_pruned, pruned_wasted_bytes);
+    candidates->merge_candidates_from_marking(_result.array(),
+                                              _num_regions_added - num_pruned,
+                                              _reclaimable_bytes_added - pruned_wasted_bytes);
   }
 };
 
@@ -257,69 +271,13 @@ bool G1CollectionSetChooser::should_add(HeapRegion* hr) {
          hr->rem_set()->is_complete();
 }
 
-// Closure implementing early pruning (removal) of regions meeting the
-// G1HeapWastePercent criteria. That is, either until _max_pruned regions were
-// removed (for forward progress in evacuation) or the waste accumulated by the
-// removed regions is above max_wasted.
-class G1PruneRegionClosure : public HeapRegionClosure {
-  uint _num_pruned;
-  size_t _cur_wasted;
-
-  uint const _max_pruned;
-  size_t const _max_wasted;
-
-public:
-  G1PruneRegionClosure(uint max_pruned, size_t max_wasted) :
-    _num_pruned(0), _cur_wasted(0), _max_pruned(max_pruned), _max_wasted(max_wasted) { }
-
-  virtual bool do_heap_region(HeapRegion* r) {
-    size_t const reclaimable = r->reclaimable_bytes();
-    if (_num_pruned >= _max_pruned ||
-        _cur_wasted + reclaimable > _max_wasted) {
-      return true;
-    }
-    r->rem_set()->clear(true /* cardset_only */);
-    _cur_wasted += reclaimable;
-    _num_pruned++;
-    return false;
-  }
-
-  uint num_pruned() const { return _num_pruned; }
-  size_t wasted() const { return _cur_wasted; }
-};
-
-void G1CollectionSetChooser::prune(G1CollectionSetCandidates* candidates) {
-  G1Policy* p = G1CollectedHeap::heap()->policy();
-
-  uint min_old_cset_length = p->calc_min_old_cset_length(candidates->num_regions());
-  uint num_candidates = candidates->num_regions();
-
-  if (min_old_cset_length < num_candidates) {
-    size_t allowed_waste = p->allowed_waste_in_collection_set();
-
-    G1PruneRegionClosure prune_cl(num_candidates - min_old_cset_length,
-                                  allowed_waste);
-    candidates->iterate_backwards(&prune_cl);
-
-    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
-                              prune_cl.num_pruned(),
-                              candidates->num_regions(),
-                              prune_cl.wasted(),
-                              allowed_waste);
-
-    candidates->remove_from_end(prune_cl.num_pruned(), prune_cl.wasted());
-  }
-}
-
-G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkerThreads* workers, uint max_num_regions) {
+void G1CollectionSetChooser::build(WorkerThreads* workers, uint max_num_regions, G1CollectionSetCandidates* candidates) {
   uint num_workers = workers->active_workers();
   uint chunk_size = calculate_work_chunk_size(num_workers, max_num_regions);
 
   G1BuildCandidateRegionsTask cl(max_num_regions, chunk_size, num_workers);
   workers->run_task(&cl, num_workers);
 
-  G1CollectionSetCandidates* result = cl.get_sorted_candidates();
-  prune(result);
-  result->verify();
-  return result;
+  cl.sort_and_prune_into(candidates);
+  candidates->verify();
 }

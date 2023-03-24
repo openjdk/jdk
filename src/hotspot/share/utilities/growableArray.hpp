@@ -341,6 +341,14 @@ public:
 template<typename E>
 const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
 
+template <typename E>
+class GrowableArrayFromArray : public GrowableArrayView<E> {
+public:
+
+  GrowableArrayFromArray<E>(E* data, int len) :
+    GrowableArrayView<E>(data, len, len) {}
+};
+
 // GrowableArrayWithAllocator extends the "view" with
 // the capability to grow and deallocate the data array.
 //
