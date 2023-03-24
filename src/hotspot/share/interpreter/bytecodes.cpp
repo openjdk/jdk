@@ -331,7 +331,7 @@ const Bytecodes::Code Bytecodes::_java_code[Bytecodes::number_of_codes] = {
 #undef BYTECODE_JAVA_CODE
 };
 
-unsigned short Bytecodes::_flags[(1<<BitsPerByte)*2];
+jchar Bytecodes::_flags[(1<<BitsPerByte)*2];
 
 #ifdef ASSERT
 bool Bytecodes::check_method(const Method* method, address bcp) {
