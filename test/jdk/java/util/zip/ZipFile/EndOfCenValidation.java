@@ -49,7 +49,7 @@ import java.util.zip.ZipOutputStream;
 import static org.testng.Assert.*;
 
 /**
- * This test augments {@link TestTooManyEntries}. It creates sparse ZIPs where the
+ * This test augments {@link TestTooManyEntries}. It creates sparse ZIPs where
  * the CEN size is inflated to the desired value. This helps this test run
  * fast with much less resources.
  *
