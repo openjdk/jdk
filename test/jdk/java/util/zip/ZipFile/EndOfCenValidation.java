@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8272746
- * @summary Verify that ZipFile rejects files with CEN sizes exceeding the limit
+ * @summary Verify that ZipFile rejects files with CEN sizes exceeding the implementation limit
  * @run testng/othervm EndOfCenValidation
  */
 
@@ -54,8 +54,8 @@ import static org.testng.Assert.*;
  * fast with much less resources.
  *
  * While the CEN in these files are zero-filled and the produced ZIPs are technically
- * invalid, the CEN is never actually read by ZipFile since it does END
- * record validation before reading the CEN.
+ * invalid, the CEN is never actually read by ZipFile since it does
+ * 'End of central directory record' (END header) validation before reading the CEN.
  */
 public class EndOfCenValidation {
 
@@ -63,7 +63,7 @@ public class EndOfCenValidation {
     public static final Path CEN_TOO_LARGE_ZIP = Path.of("cen-size-too-large.zip");
     public static final Path INVALID_CEN_SIZE = Path.of("invalid-zen-size.zip");
     public static final Path BAD_CEN_OFFSET_ZIP = Path.of("bad-cen-offset.zip");
-    // Some ZipFile constants for manipulating the END header
+    // Some ZipFile constants for manipulating the 'End of central directory record' (END header)
     private static final int ENDHDR = ZipFile.ENDHDR; // End of central directory record size
     private static final int ENDSIZ = ZipFile.ENDSIZ; // Offset of CEN size field within ENDHDR
     private static final int ENDOFF = ZipFile.ENDOFF; // Offset of CEN offset field within ENDHDR
@@ -101,8 +101,8 @@ public class EndOfCenValidation {
     }
 
     /**
-     * Validates that an END header with a CEN length
-     * exceeding {@link #MAX_CEN_SIZE} limit is rejected
+     * Validates that an 'End of central directory record' (END header) with a CEN
+     * length exceeding {@link #MAX_CEN_SIZE} limit is rejected
      * @throws IOException if an error occurs
      */
     @Test
@@ -119,8 +119,9 @@ public class EndOfCenValidation {
     }
 
     /**
-     * Validate that an END header where the value of the CEN size
-     * field exceeds the position of the END header is rejected.
+     * Validate that an 'End of central directory record' (END header)
+     * where the value of the CEN size field exceeds the position of
+     * the END header is rejected.
      * @throws IOException if an error occurs
      */
     @Test
@@ -138,8 +139,9 @@ public class EndOfCenValidation {
     }
 
     /**
-     * Validate that an END header where the value of the CEN offset field is
-     * larger than the position of the END header minus the CEN size is rejected
+     * Validate that an 'End of central directory record' (the END header)
+     * where the value of the CEN offset field is larger than the position
+     * of the END header minus the CEN size is rejected
      * @throws IOException if an error occurs
      */
     @Test
@@ -158,7 +160,7 @@ public class EndOfCenValidation {
 
     /**
      * Create an ZIP file with a single entry, then modify the CEN size
-     * in the END header to the given size.
+     * in the 'End of central directory record' (END header)  to the given size.
      *
      * The CEN is optionally "inflated" with trailing zero bytes such that
      * its actual size matches the one stated in the END header.
