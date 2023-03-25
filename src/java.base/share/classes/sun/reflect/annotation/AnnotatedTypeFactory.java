@@ -39,6 +39,18 @@ import static sun.reflect.annotation.TypeAnnotation.*;
 
 public final class AnnotatedTypeFactory {
     /**
+     * Creates a simple AnnotatedType without generics or type annotations. This usually
+     * corresponds to implicit elements, such as synthetic or mandated method parameters.
+     *
+     * @param type the base type
+     * @return the created dummy type
+     */
+    public static AnnotatedType simple(Class<?> type) {
+        return new AnnotatedTypeBaseImpl(type, LocationInfo.BASE_LOCATION, EMPTY_TYPE_ANNOTATION_ARRAY,
+                EMPTY_TYPE_ANNOTATION_ARRAY, null);
+    }
+
+    /**
      * Create an AnnotatedType.
      *
      * @param type the type this AnnotatedType corresponds to
@@ -122,8 +134,7 @@ public final class AnnotatedTypeFactory {
     }
 
     static final TypeAnnotation[] EMPTY_TYPE_ANNOTATION_ARRAY = new TypeAnnotation[0];
-    static final AnnotatedType EMPTY_ANNOTATED_TYPE = new AnnotatedTypeBaseImpl(null, LocationInfo.BASE_LOCATION,
-            EMPTY_TYPE_ANNOTATION_ARRAY, EMPTY_TYPE_ANNOTATION_ARRAY, null);
+    static final AnnotatedType EMPTY_ANNOTATED_TYPE = simple(null);
     static final AnnotatedType[] EMPTY_ANNOTATED_TYPE_ARRAY = new AnnotatedType[0];
 
     /*
@@ -201,8 +212,7 @@ public final class AnnotatedTypeFactory {
 
             LocationInfo outerLoc = getLocation().popLocation((byte)1);
             if (outerLoc == null) {
-              return buildAnnotatedType(owner, LocationInfo.BASE_LOCATION,
-                      EMPTY_TYPE_ANNOTATION_ARRAY, EMPTY_TYPE_ANNOTATION_ARRAY, getDecl());
+              return simple(owner);
             }
             TypeAnnotation[]all = getTypeAnnotations();
             List<TypeAnnotation> l = new ArrayList<>(all.length);
@@ -503,12 +513,7 @@ public final class AnnotatedTypeFactory {
         @Override
         public AnnotatedType[] getAnnotatedUpperBounds() {
             if (!hasUpperBounds()) {
-                return new AnnotatedType[] { buildAnnotatedType(Object.class,
-                        LocationInfo.BASE_LOCATION,
-                        EMPTY_TYPE_ANNOTATION_ARRAY,
-                        EMPTY_TYPE_ANNOTATION_ARRAY,
-                        null)
-                };
+                return new AnnotatedType[] { simple(Object.class) };
             }
             return getAnnotatedBounds(getWildcardType().getUpperBounds());
         }

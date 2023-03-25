@@ -862,5 +862,5 @@ public class AnnotationParser {
         return annotations.values().toArray(EMPTY_ANNOTATION_ARRAY);
     }
 
-    static Annotation[] getEmptyAnnotationArray() { return EMPTY_ANNOTATION_ARRAY; }
+    public static Annotation[] getEmptyAnnotationArray() { return EMPTY_ANNOTATION_ARRAY; }
 }

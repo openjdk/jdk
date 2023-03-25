@@ -31,14 +31,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
+import sun.reflect.annotation.AnnotatedTypeFactory;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
-import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.TypeAnnotation;
+import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 import sun.reflect.generics.repository.ConstructorRepository;
 
@@ -320,46 +322,14 @@ public abstract sealed class Executable extends AccessibleObject
      * information for all parameters, including synthetic parameters.
      */
     Type[] getAllGenericParameterTypes() {
-        final boolean genericInfo = hasGenericInformation();
-
-        // Easy case: we don't have generic parameter information.  In
-        // this case, we just return the result of
-        // getParameterTypes().
-        if (!genericInfo) {
+        if (!hasGenericInformation()) {
             return getParameterTypes();
-        } else {
-            final boolean realParamData = hasRealParameterData();
-            final Type[] genericParamTypes = getGenericParameterTypes();
-            final Type[] nonGenericParamTypes = getSharedParameterTypes();
-            // If we have real parameter data, then we use the
-            // synthetic and mandate flags to our advantage.
-            if (realParamData) {
-                final Type[] out = new Type[nonGenericParamTypes.length];
-                final Parameter[] params = getParameters();
-                int fromidx = 0;
-                for (int i = 0; i < out.length; i++) {
-                    final Parameter param = params[i];
-                    if (param.isSynthetic() || param.isImplicit()) {
-                        // If we hit a synthetic or mandated parameter,
-                        // use the non generic parameter info.
-                        out[i] = nonGenericParamTypes[i];
-                    } else {
-                        // Otherwise, use the generic parameter info.
-                        out[i] = genericParamTypes[fromidx];
-                        fromidx++;
-                    }
-                }
-                return out;
-            } else {
-                // Otherwise, use the non-generic parameter data.
-                // Without method parameter reflection data, we have
-                // no way to figure out which parameters are
-                // synthetic/mandated, thus, no way to match up the
-                // indexes.
-                return genericParamTypes.length == nonGenericParamTypes.length ?
-                    genericParamTypes : getParameterTypes();
-            }
         }
+        var genericParameterTypes = getGenericParameterTypes();
+        var attempt = mapParameters(genericParameterTypes, e -> e);
+        return attempt != null ? attempt : genericParameterTypes.length == getSharedParameterTypes().length ?
+                genericParameterTypes : getParameterTypes();
+
     }
 
     /**
@@ -383,18 +353,6 @@ public abstract sealed class Executable extends AccessibleObject
         // with it.  Since parameters are immutable, we can
         // shallow-copy.
         return parameterData().parameters.clone();
-    }
-
-    private Parameter[] synthesizeAllParams() {
-        final int realparams = getParameterCount();
-        final Parameter[] out = new Parameter[realparams];
-        for (int i = 0; i < realparams; i++)
-            // TODO: is there a way to synthetically derive the
-            // modifiers?  Probably not in the general case, since
-            // we'd have no way of knowing about them, but there
-            // may be specific cases.
-            out[i] = new Parameter("arg" + i, 0, this, i);
-        return out;
     }
 
     private void verifyParameters(final Parameter[] parameters) {
@@ -421,9 +379,8 @@ public abstract sealed class Executable extends AccessibleObject
         }
     }
 
-
     boolean hasRealParameterData() {
-        return parameterData().isReal;
+        return parameterData().mappings != null;
     }
 
     private ParameterData parameterData() {
@@ -441,20 +398,87 @@ public abstract sealed class Executable extends AccessibleObject
             throw new MalformedParametersException("Invalid constant pool index");
         }
 
+        final int len = getParameterCount();
         // If we get back nothing, then synthesize parameters
         if (tmp == null) {
-            tmp = synthesizeAllParams();
-            parameterData = new ParameterData(tmp, false);
+            tmp = new Parameter[len];
+            for (int i = 0; i < len; i++)
+                // TODO: is there a way to synthetically derive the
+                // modifiers?  Probably not in the general case, since
+                // we'd have no way of knowing about them, but there
+                // may be specific cases.
+                tmp[i] = new Parameter("arg" + i, 0, this, i);
+            parameterData = new ParameterData(tmp, null);
         } else {
             verifyParameters(tmp);
-            parameterData = new ParameterData(tmp, true);
+            int[] mapping = new int[len];
+            int i = 0;
+            for (int j = 0; j < len; j++) {
+                var p = tmp[j];
+                if (!p.isImplicit() && !p.isSynthetic()) {
+                    mapping[i++] = j;
+                }
+            }
+            parameterData = new ParameterData(tmp, i == len
+                    ? ParameterData.TRIVIAL_MAPPINGS
+                    : Arrays.copyOf(mapping, i));
         }
         return this.parameterData = parameterData;
     }
 
     private transient @Stable ParameterData parameterData;
 
-    record ParameterData(@Stable Parameter[] parameters, boolean isReal) {}
+    private record ParameterData(@Stable Parameter[] parameters, @Stable int[] mappings) {
+        private static final int[] TRIVIAL_MAPPINGS = new int[0];
+    }
+
+    // try to match up the explicit array with the implicit array by MethodParameters, return null on failure
+    // to match
+    <T> T[] mapParameters(final T[] explicit, Function<Class<?>, T> implicitMapper) {
+        // declaration in source index -> formal index
+        // empty if there's no mandated/synthetic params, i.e. 1-on-1 mapping
+        final int[] mappings = parameterData().mappings;
+        final Class<?>[] nonGenericParamTypes = getSharedParameterTypes();
+        final int totalLength = nonGenericParamTypes.length;
+
+        if (mappings == null) {
+            // no real parameter data, but can still safely return if length is compatible
+            return explicit.length == totalLength ? explicit : null;
+        }
+
+        final int mappingsLength = mappings == ParameterData.TRIVIAL_MAPPINGS ? totalLength : mappings.length;
+
+        if (explicit.length != mappingsLength) {
+            // Parameter mapping invalid, no way to match up the indexes.
+            return null;
+        }
+
+        // Parameter mapping is valid
+        if (mappingsLength == totalLength) {
+            // trivial case
+            return explicit;
+        }
+
+        @SuppressWarnings("unchecked")
+        final T[] out = (T[]) Array.newInstance(explicit.getClass().componentType(), totalLength);
+        int j = 0;
+        for (int i = 0; i < mappingsLength; i++) {
+            final int t = mappings[i];
+            while (j < t) {
+                out[j] = implicitMapper.apply(nonGenericParamTypes[j]);
+                j++;
+            }
+            out[j] = explicit[i];
+            j++;
+        }
+
+        while (j < totalLength) {
+            out[j] = implicitMapper.apply(nonGenericParamTypes[j]);
+            j++;
+        }
+
+        return out;
+    }
 
     private native Parameter[] getParameters0();
     native byte[] getTypeAnnotationBytes0();
@@ -569,19 +593,29 @@ public abstract sealed class Executable extends AccessibleObject
 
     Annotation[][] sharedGetParameterAnnotations(Class<?>[] parameterTypes,
                                                  byte[] parameterAnnotations) {
+
         int numParameters = parameterTypes.length;
-        if (parameterAnnotations == null)
-            return new Annotation[numParameters][0];
+        if (parameterAnnotations == null) {
+            var ret = new Annotation[numParameters][];
+            Arrays.fill(ret, AnnotationParser.getEmptyAnnotationArray());
+            return ret;
+        }
 
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
+        var attempt = mapParameters(result, e -> AnnotationParser.getEmptyAnnotationArray());
+        if (attempt != null) {
+            return attempt;
+        }
+
+        // Old routine, used for class files without MethodParameters attribute
         if (result.length != numParameters &&
             handleParameterNumberMismatch(result.length, parameterTypes)) {
             Annotation[][] tmp = new Annotation[numParameters][];
             // Shift annotations down to account for any implicit leading parameters
             System.arraycopy(result, 0, tmp, numParameters - result.length, result.length);
             for (int i = 0; i < numParameters - result.length; i++) {
-                tmp[i] = new Annotation[0];
+                tmp[i] = AnnotationParser.getEmptyAnnotationArray();
             }
             result = tmp;
         }
@@ -755,13 +789,27 @@ public abstract sealed class Executable extends AccessibleObject
      * {@code Executable}
      */
     public AnnotatedType[] getAnnotatedParameterTypes() {
-        return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
+        if (hasRealParameterData()) {
+            var unmapped = TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
+                    SharedSecrets.getJavaLangAccess().
+                            getConstantPool(getDeclaringClass()),
+                    this,
+                    getDeclaringClass(),
+                    getGenericParameterTypes(),
+                    TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
+
+            var attempt = mapParameters(unmapped, AnnotatedTypeFactory::simple);
+            if (attempt != null)
+                return attempt;
+        }
+        return TypeAnnotationParser.buildAnnotatedTypesWithHeuristics(getTypeAnnotationBytes0(),
                 SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
                 getAllGenericParameterTypes(),
-                TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
+                TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER,
+                true);
     }
 
     /**
