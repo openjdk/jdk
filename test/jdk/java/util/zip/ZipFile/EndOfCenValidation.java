@@ -136,6 +136,7 @@ public class EndOfCenValidation {
     /**
      * Validate that an END header where the value of the CEN offset field is
      * larger than the position of the END header minus the CEN size is rejected
+     * @throws IOException
      */
     @Test
     public void shouldRejectInvalidCenOffset() throws IOException {
@@ -215,6 +216,8 @@ public class EndOfCenValidation {
 
     /**
      * Produce a byte array of a ZIP with a single entry
+     *
+     * @throws IOException
      */
     private byte[] templateZip() throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
