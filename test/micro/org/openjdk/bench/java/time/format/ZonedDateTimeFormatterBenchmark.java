@@ -52,8 +52,4 @@ public class ZonedDateTimeFormatterBenchmark {
         return ZonedDateTime.parse(TEXT, df);
     }
 
-    @Benchmark
-    public DateTimeFormatter dateTimeFormatter() {
-        return new DateTimeFormatterBuilder().appendPattern("yyyy:MM:dd:HH:mm:v").toFormatter();
-    }
 }
