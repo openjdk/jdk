@@ -82,6 +82,7 @@ public class EndOfCenValidation {
 
     /**
      * Create a valid ZIP file, used as a template
+     * @throws IOException if an error occurs
      */
     @BeforeTest
     public void setup() throws IOException {
@@ -90,6 +91,7 @@ public class EndOfCenValidation {
 
     /**
      * Delete big files after test, in case the file system did not support sparse files.
+     * @throws IOException if an error occurs
      */
     @AfterTest
     public void cleanup() throws IOException {
@@ -101,6 +103,7 @@ public class EndOfCenValidation {
     /**
      * Validates that an END header with a CEN length
      * exceeding {@link #MAX_CEN_SIZE} limit is rejected
+     * @throws IOException if an error occurs
      */
     @Test
     public void shouldRejectTooLargeCenSize() throws IOException {
@@ -118,6 +121,7 @@ public class EndOfCenValidation {
     /**
      * Validate that an END header where the value of the CEN size
      * field exceeds the position of the END header is rejected.
+     * @throws IOException if an error occurs
      */
     @Test
     public void shouldRejectInvalidCenSize() throws IOException {
@@ -136,7 +140,7 @@ public class EndOfCenValidation {
     /**
      * Validate that an END header where the value of the CEN offset field is
      * larger than the position of the END header minus the CEN size is rejected
-     * @throws IOException
+     * @throws IOException if an error occurs
      */
     @Test
     public void shouldRejectInvalidCenOffset() throws IOException {
@@ -166,6 +170,7 @@ public class EndOfCenValidation {
      * @param cenSize the CEN size to put in the END record
      * @param inflateCen if true, zero-pad the CEN to the desired size
      * @param cenOffAdjust Adjust the CEN offset field of the END record with this amount
+     * @throws IOException if an error occurs
      */
     private Path zipWithModifiedEndRecord(int cenSize,
                                           boolean inflateCen,
@@ -217,7 +222,7 @@ public class EndOfCenValidation {
     /**
      * Produce a byte array of a ZIP with a single entry
      *
-     * @throws IOException
+     * @throws IOException if an error occurs
      */
     private byte[] templateZip() throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
