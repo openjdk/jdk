@@ -327,8 +327,7 @@ public abstract sealed class Executable extends AccessibleObject
         }
         var genericParameterTypes = getGenericParameterTypes();
         var attempt = mapParameters(genericParameterTypes, e -> e);
-        return attempt != null ? attempt : genericParameterTypes.length == getSharedParameterTypes().length ?
-                genericParameterTypes : getParameterTypes();
+        return attempt != null ? attempt : getParameterTypes();
 
     }
 
@@ -433,7 +432,7 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     // try to match up the explicit array with the implicit array by MethodParameters, return null on failure
-    // to match
+    // to match. Will always succeed if explicit.length == getSharedParameterTypes().length.
     <T> T[] mapParameters(final T[] explicit, Function<Class<?>, T> implicitMapper) {
         // declaration in source index -> formal index
         // empty if there's no mandated/synthetic params, i.e. 1-on-1 mapping
@@ -609,8 +608,7 @@ public abstract sealed class Executable extends AccessibleObject
         }
 
         // Old routine, used for class files without MethodParameters attribute
-        if (result.length != numParameters &&
-            handleParameterNumberMismatch(result.length, parameterTypes)) {
+        if (handleParameterNumberMismatch(result.length, parameterTypes)) {
             Annotation[][] tmp = new Annotation[numParameters][];
             // Shift annotations down to account for any implicit leading parameters
             System.arraycopy(result, 0, tmp, numParameters - result.length, result.length);
