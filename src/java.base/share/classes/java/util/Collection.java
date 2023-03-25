@@ -121,8 +121,9 @@ import java.util.stream.StreamSupport;
  * Other examples of view collections include collections that provide a
  * different representation of the same elements, for example, as
  * provided by {@link List#subList List.subList},
- * {@link NavigableSet#subSet NavigableSet.subSet}, or
- * {@link Map#entrySet Map.entrySet}.
+ * {@link NavigableSet#subSet NavigableSet.subSet},
+ * {@link Map#entrySet Map.entrySet}, or
+ * {@link SequencedCollection#reversed SequencedCollection.reversed}.
  * Any changes made to the backing collection are visible in the view collection.
  * Correspondingly, any changes made to the view collection &mdash; if changes
  * are permitted &mdash; are written through to the backing collection.
@@ -202,7 +203,8 @@ import java.util.stream.StreamSupport;
  * serializability of such collections is described in the specification of the method
  * that creates them, or in some other suitable place. In cases where the serializability
  * of a collection is not specified, there is no guarantee about the serializability of such
- * collections. In particular, many <a href="#view">view collections</a> are not serializable.
+ * collections. In particular, many <a href="#view">view collections</a> are not serializable,
+ * even if the original collection is serializable.
  *
  * <p>A collection implementation that implements the {@code Serializable} interface cannot
  * be guaranteed to be serializable. The reason is that in general, collections

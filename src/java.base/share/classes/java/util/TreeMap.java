@@ -99,6 +99,10 @@ import java.util.function.Function;
  * of the time of the call. They do <em>not</em> support mutation of the
  * underlying map via the optional {@link Map.Entry#setValue setValue} method.
  *
+ * <p>The {@link #putFirst putFirst} and {@link #putLast putLast} methods of this class
+ * throw {@code UnsupportedOperationException}. The encounter order of mappings is determined
+ * by the comparison method; therefore, explicit positioning is not supported.
+ *
  * <p>This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.

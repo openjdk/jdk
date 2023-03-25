@@ -37,11 +37,11 @@ import java.util.function.Function;
  * {@code HashMap} in that it maintains a doubly-linked list running through all of
  * its entries.  This linked list defines the encounter order (the order of iteration),
  * which is normally the order in which keys were inserted into the map
- * (<i>insertion-order</i>).  Note that insertion order is not affected
- * if a key is <i>re-inserted</i> into the map.  (A key {@code k} is
- * reinserted into a map {@code m} if {@code m.put(k, v)} is invoked when
+ * (<i>insertion-order</i>).  Note that encounter order is not affected
+ * if a key is <i>re-inserted</i> into the map with the {@code put} method. (A key
+ * {@code k} is reinserted into a map {@code m} if {@code m.put(k, v)} is invoked when
  * {@code m.containsKey(k)} would return {@code true} immediately prior to
- * the invocation.) Ordering of existing keys can be changed through use of
+ * the invocation.) The encounter order of existing keys can be changed by using
  * the {@link #putFirst putFirst} and {@link #putLast putLast} methods.
  *
  * <p>This implementation spares its clients from the unspecified, generally
@@ -83,8 +83,8 @@ import java.util.function.Function;
  * use of the {@link #firstEntry firstEntry} and {@link #pollFirstEntry pollFirstEntry}
  * methods.
  *
- * <p>This class provides all of the optional {@code Map} operations, and
- * permits null elements.  Like {@code HashMap}, it provides constant-time
+ * <p>This class provides all of the optional {@code Map} and {@code SequencedMap} operations,
+ * and it permits null elements.  Like {@code HashMap}, it provides constant-time
  * performance for the basic operations ({@code add}, {@code contains} and
  * {@code remove}), assuming the hash function disperses elements
  * properly among the buckets.  Performance is likely to be just slightly
@@ -375,6 +375,10 @@ public class LinkedHashMap<K,V>
 
     /**
      * {@inheritDoc}
+     * <p>
+     * If this map already contains a mapping for this key, the mapping is relocated if necessary
+     * so that it is first in encounter order.
+     *
      * @since 21
      */
     public V putFirst(K k, V v) {
@@ -388,6 +392,10 @@ public class LinkedHashMap<K,V>
 
     /**
      * {@inheritDoc}
+     * <p>
+     * If this map already contains a mapping for this key, the mapping is relocated if necessary
+     * so that it is last in encounter order.
+     *
      * @since 21
      */
     public V putLast(K k, V v) {

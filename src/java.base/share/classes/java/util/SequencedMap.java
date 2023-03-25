@@ -221,10 +221,10 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     }
 
     /**
-     * Inserts this mapping into the map if it is not already present, or replaces the value
-     * of a mapping if it is already present (optional operation).
-     * After this operation completes normally, the given mapping will present in this map,
-     * and it will be the first mapping in this map's encounter order.
+     * Inserts the given mapping into the map if it is not already present, or replaces the
+     * value of a mapping if it is already present (optional operation). After this operation
+     * completes normally, the given mapping will be present in this map, and it will be the
+     * first mapping in this map's encounter order.
      *
      * @implSpec The implementation in this class always throws
      * {@code UnsupportedOperationException}.
@@ -240,10 +240,10 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     }
 
     /**
-     * Inserts this mapping into the map if it is not already present, or replaces the value
-     * of a mapping if it is already present (optional operation).
-     * After this operation completes normally, the given mapping will present in this map,
-     * and it will be the last mapping in this map's encounter order.
+     * Inserts the given mapping into the map if it is not already present, or replaces the
+     * value of a mapping if it is already present (optional operation). After this operation
+     * completes normally, the given mapping will be present in this map, and it will be the
+     * last mapping in this map's encounter order.
      *
      * @implSpec The implementation in this class always throws
      * {@code UnsupportedOperationException}.

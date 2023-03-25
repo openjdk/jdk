@@ -61,28 +61,16 @@ package java.util;
  * methods, allow convenient iteration, searching, copying, and streaming of the elements of
  * this collection in either forward order or reverse order.
  * <p>
- * A collection's reverse-ordered view is generally not serializable, even if the original
- * collection is serializable.
- * <p>
  * This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @apiNote
- * This interface does not impose new requirements on the {@code equals} and {@code hashCode}
- * methods, because requirements imposed by sub-interfaces such as {@link List} and
- * {@link SequencedSet} would be in conflict. See the specifications for
+ * This interface does not impose any requirements on the {@code equals} and {@code hashCode}
+ * methods, because requirements imposed by sub-interfaces {@link List} and {@link SequencedSet}
+ * (which inherits requirements from {@link Set}) would be in conflict. See the specifications for
  * {@link Collection#equals Collection.equals} and {@link Collection#hashCode Collection.hashCode}
  * for further information.
- * <p>
- * The positioned {@code add}, {@code get}, and {@code remove} methods were promoted from
- * existing methods of the {@link Deque} interface.
- * <p>
- * Overrides of the {@link #reversed reversed} method are specified on several subtypes to
- * have a covariant return type that is that subtype. For example, the
- * {@link List#reversed List.reversed} method returns a {@code List} instead of a
- * {@code SequencedCollection}. This allows those subtypes to have the same repertoire
- * of operations on the reverse-ordered view as on the original.
  *
  * @param <E> the type of elements in this collection
  * @since 21

@@ -372,11 +372,12 @@ public class Collections {
      * @apiNote
      * This method mutates the specified list in-place. To obtain a
      * reversed-ordered view of a list without mutating it, use the
-     * {@link List#reversed List::reversed} method.
+     * {@link List#reversed List.reversed} method.
      *
      * @param  list the list whose elements are to be reversed.
      * @throws UnsupportedOperationException if the specified list or
      *         its list-iterator does not support the {@code set} operation.
+     * @see    List#reversed List.reversed
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void reverse(List<?> list) {
@@ -5528,6 +5529,14 @@ public class Collections {
      *
      * The returned comparator is serializable.
      *
+     * @apiNote
+     * This method returns a {@code Comparator} that is suitable for sorting
+     * elements in reverse order. To obtain a reverse-ordered <i>view</i> of a
+     * sequenced collection, use the {@link SequencedCollection#reversed
+     * SequencedCollection.reversed} method. Or, to obtain a reverse-ordered
+     * <i>view</i> of a sequenced map, use the {@link SequencedMap#reversed
+     * SequencedMap.reversed} method.
+     *
      * @param  <T> the class of the objects compared by the comparator
      * @return A comparator that imposes the reverse of the <i>natural
      *         ordering</i> on a collection of objects that implement
@@ -5573,6 +5582,14 @@ public class Collections {
      *
      * <p>The returned comparator is serializable (assuming the specified
      * comparator is also serializable or {@code null}).
+     *
+     * @apiNote
+     * This method returns a {@code Comparator} that is suitable for sorting
+     * elements in reverse order. To obtain a reverse-ordered <i>view</i> of a
+     * sequenced collection, use the {@link SequencedCollection#reversed
+     * SequencedCollection.reversed} method. Or, to obtain a reverse-ordered
+     * <i>view</i> of a sequenced map, use the {@link SequencedMap#reversed
+     * SequencedMap.reversed} method.
      *
      * @param <T> the class of the objects compared by the comparator
      * @param cmp a comparator who's ordering is to be reversed by the returned

@@ -73,6 +73,10 @@ package java.util;
  * exception for its correctness:   <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
  *
+ * <p>The {@link #addFirst addFirst} and {@link #addLast addLast} methods of this class
+ * throw {@code UnsupportedOperationException}. The encounter order of elements is determined
+ * by the comparison method; therefore, explicit positioning is not supported.
+ *
  * <p>This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.

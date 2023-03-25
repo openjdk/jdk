@@ -31,12 +31,12 @@ package java.util;
  * {@code HashSet} in that it maintains a doubly-linked list running through
  * all of its entries.  This linked list defines the encounter order (iteration
  * order), which is the order in which elements were inserted into the set
- * (<i>insertion-order</i>).  Note that insertion order is <i>not</i> affected
- * if an element is <i>re-inserted</i> into the set.  (An element {@code e}
- * is reinserted into a set {@code s} if {@code s.add(e)} is invoked when
- * {@code s.contains(e)} would return {@code true} immediately prior to the
- * invocation.) Ordering of elements already in the set can be changed through
- * use of the {@link #addFirst addFirst} and {@link #addLast addLast} methods.
+ * (<i>insertion-order</i>). Note that encounter order is <i>not</i> affected
+ * if an element is <i>re-inserted</i> into the set with the {@code add} method.
+ * (An element {@code e} is reinserted into a set {@code s} if {@code s.add(e)} is
+ * invoked when {@code s.contains(e)} would return {@code true} immediately prior to
+ * the invocation.) The encounter order of elements already in the set can be changed
+ * by using the {@link #addFirst addFirst} and {@link #addLast addLast} methods.
  *
  * <p>This implementation spares its clients from the unspecified, generally
  * chaotic ordering provided by {@link HashSet}, without incurring the
@@ -54,8 +54,8 @@ package java.util;
  * the copy.  (Clients generally appreciate having things returned in the same
  * order they were presented.)
  *
- * <p>This class provides all of the optional {@code Set} operations, and
- * permits null elements.  Like {@code HashSet}, it provides constant-time
+ * <p>This class provides all of the optional {@link Set} and {@link SequencedSet}
+ * operations, and it permits null elements. Like {@code HashSet}, it provides constant-time
  * performance for the basic operations ({@code add}, {@code contains} and
  * {@code remove}), assuming the hash function disperses elements
  * properly among the buckets.  Performance is likely to be just slightly
@@ -229,6 +229,10 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
+     * <p>
+     * If this set already contains the element, it is relocated if necessary so that it is
+     * first in encounter order.
+     *
      * @since 21
      */
     public void addFirst(E e) {
@@ -237,6 +241,10 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
+     * <p>
+     * If this set already contains the element, it is relocated if necessary so that it is
+     * last in encounter order.
+     *
      * @since 21
      */
     public void addLast(E e) {
