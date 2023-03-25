@@ -280,7 +280,9 @@ public final class DateTimeFormatterBuilder {
      * Constructs a new instance of the builder.
      */
     public DateTimeFormatterBuilder() {
-        this(null, false);
+        super();
+        parent = null;
+        optional = false;
     }
 
     /**
