@@ -6095,3 +6095,14 @@ void C2_MacroAssembler::rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XM
   evpshufb(dst, ktmp, xtmp3, shuffle, true, vlen_enc);
 }
 
+void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst,
+                                                   XMMRegister shuffle, XMMRegister src, int vlen_enc) {
+  if (vlen_enc == AVX_128bit) {
+    vpermilps(dst, src, shuffle, vlen_enc);
+  } else if (bt == T_INT) {
+    vpermd(dst, shuffle, src, vlen_enc);
+  } else {
+    assert(bt == T_FLOAT, "");
+    vpermps(dst, shuffle, src, vlen_enc);
+  }
+}
