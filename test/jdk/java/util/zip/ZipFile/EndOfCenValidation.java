@@ -99,8 +99,8 @@ public class EndOfCenValidation {
     }
 
     /**
-     * Validates that an end of central directory record with
-     * a CEN length exceeding {@link #MAX_CEN_SIZE} limit is rejected
+     * Validates that an END header with a CEN length
+     * exceeding {@link #MAX_CEN_SIZE} limit is rejected
      */
     @Test
     public void shouldRejectTooLargeCenSize() throws IOException {
@@ -116,8 +116,8 @@ public class EndOfCenValidation {
     }
 
     /**
-     * Validate that an end of central directory record with a
-     * CEN size which exceeds the position of the EOC record is rejected.
+     * Validate that an END header where the value of the CEN size
+     * field exceeds the position of the END header is rejected.
      */
     @Test
     public void shouldRejectInvalidCenSize() throws IOException {
@@ -134,8 +134,8 @@ public class EndOfCenValidation {
     }
 
     /**
-     * Validate that an end of central directory record with a CEN offset which
-     * is larger than the EOC position minus the CEN size is rejected
+     * Validate that an END header where the value of the CEN offset field is
+     * larger than the position of the END header minus the CEN size is rejected
      * @throws IOException
      */
     @Test
@@ -154,10 +154,10 @@ public class EndOfCenValidation {
 
     /**
      * Create an ZIP file with a single entry, then modify the CEN size
-     * in the End of central directory record to the given size.
+     * in the END header to the given size.
      *
      * The CEN is optionally "inflated" with trailing zero bytes such that
-     * its actual size matches the one stated in the Eoc record.
+     * its actual size matches the one stated in the END header.
      *
      * The CEN offset is optiontially adjusted by the given amount
      *
@@ -172,20 +172,20 @@ public class EndOfCenValidation {
                                           int cenOffAdjust,
                                           Path zip) throws IOException {
 
-        // A byte buffer for reading the EOC
+        // A byte buffer for reading the END
         ByteBuffer buffer = ByteBuffer.wrap(zipBytes.clone()).order(ByteOrder.LITTLE_ENDIAN);
 
-        // Offset of the EOC record
-        int eocOff = buffer.limit() - ENDHDR;
+        // Offset of the END header
+        int endOffset = buffer.limit() - ENDHDR;
 
         // Modify the CEN size
-        int sizeOffset = eocOff + ENDSIZ;
+        int sizeOffset = endOffset + ENDSIZ;
         int currentCenSize = buffer.getInt(sizeOffset);
         buffer.putInt(sizeOffset, cenSize);
 
         // Optionally modify the CEN offset
         if (cenOffAdjust != 0) {
-            int offOffset = eocOff + ENDOFF;
+            int offOffset = endOffset + ENDOFF;
             int currentCenOff = buffer.getInt(offOffset);
             buffer.putInt(offOffset, currentCenOff + cenOffAdjust);
         }
@@ -200,15 +200,15 @@ public class EndOfCenValidation {
 
         try (FileChannel channel = FileChannel.open(zip, options)) {
 
-            // Write everything up to EOC
+            // Write everything up to END
             channel.write(buffer.slice(0, buffer.limit() - ENDHDR));
 
             if (inflateCen) {
-                // Inject "empty bytes" to make the actual CEN size match the EOC
+                // Inject "empty bytes" to make the actual CEN size match the END
                 int injectBytes = cenSize - currentCenSize;
                 channel.position(channel.position() + injectBytes);
             }
-            // Write the modified EOC
+            // Write the modified END
             channel.write(buffer.slice(buffer.limit() - ENDHDR, ENDHDR));
         }
         return zip;
