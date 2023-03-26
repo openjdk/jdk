@@ -313,7 +313,7 @@ static void test_division() {
     operands.push_back(twoPowI - 1);
   }
 
-  juint current_size = operands.size();
+  juint current_size = juint(operands.size());
   for (juint i = 0; i < current_size; i++) {
     for (juint j = 0; j <= i; j++) {
       operands.push_back(java_multiply(operands.at(i), operands.at(j)));
