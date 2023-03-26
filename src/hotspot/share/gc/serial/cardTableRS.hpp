@@ -63,6 +63,10 @@ public:
 
   void verify();
 
+  // Update old gen cards to maintain old-to-young-pointer invariant: Clear
+  // the old generation card table completely if the young generation had been
+  // completely evacuated, otherwise dirties the whole old generation to
+  // conservatively not loose any old-to-young pointer.
   void maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty);
 
   // Iterate over the portion of the card-table which covers the given
