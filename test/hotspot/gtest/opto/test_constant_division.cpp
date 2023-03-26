@@ -73,9 +73,7 @@ static void test_magic_long_unsigned_divide_coefs(julong divisor, jlong expected
 }
 
 template <class T>
-static void test_divide(T dividend, T divisor) {
-  static_assert(false, "only specializations");
-}
+static void test_divide(T dividend, T divisor) {}
 
 template <>
 void test_divide<jint>(jint dividend, jint divisor) {
@@ -138,7 +136,7 @@ void test_divide<juint>(juint dividend, juint divisor) {
   if (magic_const > max_juint) {
     magic_int_unsigned_divide_constants_up(divisor, magic_const, shift);
     // This case guarantee shift < 32 so we do not need to special case like above
-    juint result = java_shift_right_unsigned(java_multiply(jlong(dividend) + 1L, magic_const), shift + 32);
+    juint result = java_shift_right_unsigned(java_multiply(jlong(dividend) + 1, magic_const), shift + 32);
     ASSERT_EQ(expected, result);
   }
 }
@@ -149,18 +147,18 @@ void test_divide<jlong>(jlong dividend, jlong divisor) {
     return;
   }
 
-  jlong expected = divisor == -1 ? java_subtract(0L, dividend) : (dividend / divisor);
+  jlong expected = divisor == -1 ? java_subtract(jlong(0), dividend) : (dividend / divisor);
 
-  jlong abs_divisor = divisor > 0 ? divisor : java_subtract(0L, divisor);
+  jlong abs_divisor = divisor > 0 ? divisor : java_subtract(jlong(0), divisor);
   if (abs_divisor > 0 && is_power_of_2(abs_divisor)) {
     jint l = log2i_exact(abs_divisor);
     if (dividend > 0 || (dividend & (abs_divisor - 1)) == 0) {
       jlong result = java_shift_right(dividend, l);
-      ASSERT_EQ(expected, divisor > 0 ? result : java_subtract(0L, result));
+      ASSERT_EQ(expected, divisor > 0 ? result : java_subtract(jlong(0), result));
     }
     jlong rounded_dividend = java_add(dividend, java_shift_right_unsigned(java_shift_right(dividend, 63), 64 - l));
     jlong result = java_shift_right(rounded_dividend, l);
-    ASSERT_EQ(expected, divisor > 0 ? result : java_subtract(0L, result));
+    ASSERT_EQ(expected, divisor > 0 ? result : java_subtract(jlong(0), result));
   }
 
   jlong magic_const;
