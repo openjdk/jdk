@@ -73,7 +73,9 @@ static void test_magic_long_unsigned_divide_coefs(julong divisor, jlong expected
 }
 
 template <class T>
-static void test_divide(T dividend, T divisor);
+static void test_divide(T dividend, T divisor) {
+  static_assert(false, "only specializations");
+}
 
 template <>
 void test_divide<jint>(jint dividend, jint divisor) {
