@@ -613,7 +613,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Annotation[][] getParameterAnnotations() {
-        return sharedGetParameterAnnotations(parameterTypes, parameterAnnotations);
+        return sharedGetParameterAnnotations(parameterAnnotations);
     }
 
     @Override

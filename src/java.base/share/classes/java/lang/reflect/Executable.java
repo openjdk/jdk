@@ -320,15 +320,17 @@ public abstract sealed class Executable extends AccessibleObject
     /**
      * Behaves like {@code getGenericParameterTypes}, but returns type
      * information for all parameters, including synthetic parameters.
+     * Returns value of {@link #getSharedParameterTypes()} if there is
+     * no generic information or if the generic parameter types is invalid.
      */
     Type[] getAllGenericParameterTypes() {
         if (!hasGenericInformation()) {
-            return getParameterTypes();
+            return getSharedParameterTypes();
         }
-        var genericParameterTypes = getGenericParameterTypes();
-        var attempt = mapParameters(genericParameterTypes, e -> e);
-        return attempt != null ? attempt : getParameterTypes();
-
+        var genericParameterTypes = getGenericInfo().getParameterTypes();
+        var attempt = mapParameters(genericParameterTypes, e -> e, false);
+        // attempt == null -> MethodParameters and Signature disagreement, happens on old compiler
+        return attempt != null ? attempt : getSharedParameterTypes();
     }
 
     /**
@@ -379,7 +381,7 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     boolean hasRealParameterData() {
-        return parameterData().mappings != null;
+        return parameterData().mappings != ParameterData.NO_REAL_DATA;
     }
 
     private ParameterData parameterData() {
@@ -402,12 +404,8 @@ public abstract sealed class Executable extends AccessibleObject
         if (tmp == null) {
             tmp = new Parameter[len];
             for (int i = 0; i < len; i++)
-                // TODO: is there a way to synthetically derive the
-                // modifiers?  Probably not in the general case, since
-                // we'd have no way of knowing about them, but there
-                // may be specific cases.
                 tmp[i] = new Parameter("arg" + i, 0, this, i);
-            parameterData = new ParameterData(tmp, null);
+            parameterData = new ParameterData(tmp, ParameterData.NO_REAL_DATA);
         } else {
             verifyParameters(tmp);
             int[] mapping = new int[len];
@@ -429,20 +427,71 @@ public abstract sealed class Executable extends AccessibleObject
 
     private record ParameterData(@Stable Parameter[] parameters, @Stable int[] mappings) {
         private static final int[] TRIVIAL_MAPPINGS = new int[0];
+        private static final int[] NO_REAL_DATA = new int[0];
     }
 
-    // try to match up the explicit array with the implicit array by MethodParameters, return null on failure
-    // to match. Will always succeed if explicit.length == getSharedParameterTypes().length.
-    <T> T[] mapParameters(final T[] explicit, Function<Class<?>, T> implicitMapper) {
+    private static final Type[] INVALID_ANNOTATED_TYPE_BASE = new Type[0];
+    private transient @Stable Type[] annotatedTypeBase;
+
+    /**
+     * Return an array of explicit-only parameter types that type annotations can build on.
+     */
+    private Type[] sharedAnnotatedTypeBase() {
+        var annotatedTypeBase = this.annotatedTypeBase;
+        if (annotatedTypeBase != null) {
+            return annotatedTypeBase;
+        }
+
+        if (!hasGenericInformation()) {
+            return this.annotatedTypeBase = computeExplicitParameterTypes();
+        }
+
+        if (getAllGenericParameterTypes() == getSharedParameterTypes()) {
+            // Signature and MethodParameters information in disagreement
+            return this.annotatedTypeBase = INVALID_ANNOTATED_TYPE_BASE;
+        }
+
+        return this.annotatedTypeBase = getGenericInfo().getParameterTypes();
+    }
+
+    // Computes the explicit parameter types. Useful when there is no Signature
+    // but synthetic or mandated parameters are present in MethodParameters
+    private Class<?>[] computeExplicitParameterTypes() {
+        int[] mappings = parameterData().mappings;
+        var sharedParamTypes = getSharedParameterTypes();
+        if (mappings.length == 0) {
+            return sharedParamTypes;
+        }
+
+        var explicitParameterTypes = new Class<?>[mappings.length];
+        for (int i = 0; i < mappings.length; i++) {
+            explicitParameterTypes[i] = sharedParamTypes[mappings[i]];
+        }
+
+        return explicitParameterTypes;
+    }
+
+    /**
+     * Converts information from explicit parameters to information about all parameters,
+     * using information from MethodParameters attribute. Returns null if parameter
+     * mapping failed due to lack of MethodParameters or conflict with MethodParameters.
+     *
+     * @param <T> the type of information
+     * @param explicit information from explicit parameters
+     * @param implicitMapper generates information for implicit parameters
+     * @param freshCopy if true, will copy explicit information on return to avoid leaks
+     * @return information about all parameters, null if parameter mapping failed.
+     */
+    <T> T[] mapParameters(final T[] explicit, Function<Class<?>, T> implicitMapper, boolean freshCopy) {
         // declaration in source index -> formal index
         // empty if there's no mandated/synthetic params, i.e. 1-on-1 mapping
         final int[] mappings = parameterData().mappings;
-        final Class<?>[] nonGenericParamTypes = getSharedParameterTypes();
-        final int totalLength = nonGenericParamTypes.length;
+        final Class<?>[] allParams = getSharedParameterTypes();
+        final int totalLength = allParams.length;
 
-        if (mappings == null) {
+        if (!hasRealParameterData()) {
             // no real parameter data, but can still safely return if length is compatible
-            return explicit.length == totalLength ? explicit : null;
+            return explicit.length == totalLength ? (freshCopy ? explicit.clone() : explicit) : null;
         }
 
         final int mappingsLength = mappings == ParameterData.TRIVIAL_MAPPINGS ? totalLength : mappings.length;
@@ -455,7 +504,7 @@ public abstract sealed class Executable extends AccessibleObject
         // Parameter mapping is valid
         if (mappingsLength == totalLength) {
             // trivial case
-            return explicit;
+            return freshCopy ? explicit.clone() : explicit;
         }
 
         @SuppressWarnings("unchecked")
@@ -464,7 +513,7 @@ public abstract sealed class Executable extends AccessibleObject
         for (int i = 0; i < mappingsLength; i++) {
             final int t = mappings[i];
             while (j < t) {
-                out[j] = implicitMapper.apply(nonGenericParamTypes[j]);
+                out[j] = implicitMapper.apply(allParams[j]);
                 j++;
             }
             out[j] = explicit[i];
@@ -472,7 +521,7 @@ public abstract sealed class Executable extends AccessibleObject
         }
 
         while (j < totalLength) {
-            out[j] = implicitMapper.apply(nonGenericParamTypes[j]);
+            out[j] = implicitMapper.apply(allParams[j]);
             j++;
         }
 
@@ -590,9 +639,8 @@ public abstract sealed class Executable extends AccessibleObject
      */
     public abstract Annotation[][] getParameterAnnotations();
 
-    Annotation[][] sharedGetParameterAnnotations(Class<?>[] parameterTypes,
-                                                 byte[] parameterAnnotations) {
-
+    Annotation[][] sharedGetParameterAnnotations(byte[] parameterAnnotations) {
+        var parameterTypes = getSharedParameterTypes();
         int numParameters = parameterTypes.length;
         if (parameterAnnotations == null) {
             var ret = new Annotation[numParameters][];
@@ -602,7 +650,7 @@ public abstract sealed class Executable extends AccessibleObject
 
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
-        var attempt = mapParameters(result, e -> AnnotationParser.getEmptyAnnotationArray());
+        var attempt = mapParameters(result, e -> AnnotationParser.getEmptyAnnotationArray(), false);
         if (attempt != null) {
             return attempt;
         }
@@ -787,18 +835,21 @@ public abstract sealed class Executable extends AccessibleObject
      * {@code Executable}
      */
     public AnnotatedType[] getAnnotatedParameterTypes() {
-        if (hasRealParameterData()) {
+        var annotatedTypeBase = sharedAnnotatedTypeBase();
+        if (annotatedTypeBase != INVALID_ANNOTATED_TYPE_BASE) {
             var unmapped = TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
                     SharedSecrets.getJavaLangAccess().
                             getConstantPool(getDeclaringClass()),
                     this,
                     getDeclaringClass(),
-                    getGenericParameterTypes(),
+                    annotatedTypeBase,
                     TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
 
-            var attempt = mapParameters(unmapped, AnnotatedTypeFactory::simple);
+            var attempt = mapParameters(unmapped, AnnotatedTypeFactory::simple, false);
             if (attempt != null)
                 return attempt;
+            assert false : "annotated type base should have been validated";
+            // Fallback to old routine
         }
         return TypeAnnotationParser.buildAnnotatedTypesWithHeuristics(getTypeAnnotationBytes0(),
                 SharedSecrets.getJavaLangAccess().
