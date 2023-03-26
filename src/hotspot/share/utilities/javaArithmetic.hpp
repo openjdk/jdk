@@ -152,30 +152,30 @@ SATURATED_INTEGER_OP(+, saturated_add, uint, uint)
 
 // Taken from rom section 8-2 of Henry S. Warren, Jr., Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
 inline constexpr uint64_t multiply_high_unsigned(const uint64_t x, const uint64_t y) {
-  const uint64_t x1 = x >> 32u;
-  const uint64_t x2 = x & 0xFFFFFFFF;
-  const uint64_t y1 = y >> 32u;
-  const uint64_t y2 = y & 0xFFFFFFFF;
-  const uint64_t z2 = x2 * y2;
-  const uint64_t t = x1 * y2 + (z2 >> 32u);
-  uint64_t z1 = t & 0xFFFFFFFF;
-  const uint64_t z0 = t >> 32u;
+  const julong x1 = java_shift_right_unsigned(jlong(x), 32);
+  const julong x2 = juint(x);
+  const julong y1 = java_shift_right_unsigned(jlong(y), 32);
+  const julong y2 = juint(y);
+  const julong z2 = x2 * y2;
+  const julong t = x1 * y2 + java_shift_right_unsigned(jlong(z2), 32);
+  julong z1 = juint(t);
+  const julong z0 = java_shift_right_unsigned(jlong(t), 32);
   z1 += x2 * y1;
 
-  return x1 * y1 + z0 + (z1 >> 32u);
+  return x1 * y1 + z0 + java_shift_right_unsigned(jlong(z1), 32);
 }
 
 // Taken from java.lang.Math::multiplyHigh which uses the technique from section 8-2 of Henry S. Warren, Jr.,
 // Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174 but adapted for signed longs.
 inline constexpr int64_t multiply_high_signed(const int64_t x, const int64_t y) {
   const jlong x1 = java_shift_right((jlong)x, 32);
-  const jlong x2 = x & 0xFFFFFFFF;
+  const jlong x2 = juint(x);
   const jlong y1 = java_shift_right((jlong)y, 32);
-  const jlong y2 = y & 0xFFFFFFFF;
+  const jlong y2 = juint(y);
 
   const uint64_t z2 = x2 * y2;
-  const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
-  int64_t z1 = t & 0xFFFFFFFF;
+  const int64_t t = x1 * y2 + java_shift_right_unsigned(jlong(z2), 32); // Unsigned shift
+  int64_t z1 = juint(t);
   const int64_t z0 = java_shift_right((jlong)t, 32);
   z1 += x2 * y1;
 

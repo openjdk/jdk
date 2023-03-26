@@ -23,8 +23,12 @@
  */
 
 #include "precompiled.hpp"
+
+#include <vector>
+
 #include "unittest.hpp"
 #include "utilities/javaArithmetic.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 static void test_magic_int_divide_coefs(jint divisor, jlong expected_magic_const, jint expected_shift) {
   jlong magic_const;
@@ -68,39 +72,98 @@ static void test_magic_long_unsigned_divide_coefs(julong divisor, jlong expected
   ASSERT_EQ(expected_ovf, ovf);
 }
 
-static void test_magic_int_divide(jint dividend, jint divisor) {
+template <class T>
+static void test_divide(T dividend, T divisor);
+
+template <>
+void test_divide<jint>(jint dividend, jint divisor) {
+  if (divisor == 0 || divisor == 1 || divisor == -1 || divisor == min_jint) {
+    return;
+  }
+
+  jint expected = divisor == -1 ? java_subtract(0, dividend) : (dividend / divisor);
+
+  jint abs_divisor = divisor > 0 ? divisor : java_subtract(0, divisor);
+  if (is_power_of_2(abs_divisor)) {
+    jint l = log2i_exact(abs_divisor);
+    if (dividend > 0 || (dividend & (abs_divisor - 1)) == 0) {
+      jint result = java_shift_right(dividend, l);
+      ASSERT_EQ(expected, divisor > 0 ? result : java_subtract(0, result));
+    }
+    jint rounded_dividend = java_add(dividend, java_shift_right_unsigned(java_shift_right(dividend, 31), 32 - l));
+    jint result = java_shift_right(rounded_dividend, l);
+    ASSERT_EQ(expected, divisor > 0 ? result : java_subtract(0, result));
+  }
+
   jlong magic_const;
   jint shift;
-  magic_int_divide_constants(divisor, magic_const, shift);
+  magic_int_divide_constants(abs_divisor, magic_const, shift);
   jint result = jint(java_shift_right(java_multiply(jlong(dividend), magic_const), shift + 32));
   if (divisor < 0) {
     result = java_subtract(java_shift_right(dividend, 31), result);
   } else {
     result = java_subtract(result, java_shift_right(dividend, 31));
   }
-  ASSERT_EQ(divisor == -1 ? java_subtract(0, dividend) : (dividend / divisor), result);
+  ASSERT_EQ(expected, result);
 }
 
-static void test_magic_int_unsigned_divide_down(juint dividend, juint divisor) {
+template <>
+void test_divide<juint>(juint dividend, juint divisor) {
+  if (divisor == 0 || divisor == 1) {
+    return;
+  }
+
+  juint expected = dividend / divisor;
+
+  if (is_power_of_2(divisor)) {
+    jint l = log2i_exact(divisor);
+    juint result = java_shift_right_unsigned(jint(dividend), l);
+    ASSERT_EQ(expected, result);
+  }
+
   jlong magic_const;
   jint shift;
   magic_int_unsigned_divide_constants_down(divisor, magic_const, shift);
-  ASSERT_EQ(dividend / divisor,
-            juint(java_shift_right_unsigned(java_multiply(jlong(dividend), magic_const), shift + 32)));
+  if (julong(magic_const) <= max_julong / dividend) {
+    if (shift == 32) {
+      juint result = 0;
+      ASSERT_EQ(expected, result);
+    } else {
+      juint result = java_shift_right_unsigned(java_multiply(jlong(dividend), magic_const), shift + 32);
+      ASSERT_EQ(expected, result);
+    }
+  }
+  if (magic_const > max_juint) {
+    magic_int_unsigned_divide_constants_up(divisor, magic_const, shift);
+    // This case guarantee shift < 32 so we do not need to special case like above
+    juint result = java_shift_right_unsigned(java_multiply(jlong(dividend) + 1L, magic_const), shift + 32);
+    ASSERT_EQ(expected, result);
+  }
 }
 
-static void test_magic_int_unsigned_divide_up(juint dividend, juint divisor) {
-  jlong magic_const;
-  jint shift;
-  magic_int_unsigned_divide_constants_up(divisor, magic_const, shift);
-  ASSERT_EQ(dividend / divisor,
-            juint(java_shift_right_unsigned(java_multiply(jlong(dividend) + 1L, magic_const), shift + 32)));
-}
+template <>
+void test_divide<jlong>(jlong dividend, jlong divisor) {
+  if (divisor == 0 || divisor == -1 || divisor == 1 || divisor == min_jlong) {
+    return;
+  }
 
-static void test_magic_long_divide(jlong dividend, jlong divisor) {
+  jlong expected = divisor == -1 ? java_subtract(0L, dividend) : (dividend / divisor);
+
+  jlong abs_divisor = divisor > 0 ? divisor : java_subtract(0L, divisor);
+  if (abs_divisor > 0 && is_power_of_2(abs_divisor)) {
+    jint l = log2i_exact(abs_divisor);
+    if (dividend > 0 || (dividend & (abs_divisor - 1)) == 0) {
+      jlong result = java_shift_right(dividend, l);
+      ASSERT_EQ(expected, divisor > 0 ? result : java_subtract(0L, result));
+    }
+    jlong rounded_dividend = java_add(dividend, java_shift_right_unsigned(java_shift_right(dividend, 63), 64 - l));
+    jlong result = java_shift_right(rounded_dividend, l);
+    ASSERT_EQ(expected, divisor > 0 ? result : java_subtract(0L, result));
+  }
+
   jlong magic_const;
   jint shift;
-  magic_long_divide_constants(divisor, magic_const, shift);
+  magic_long_divide_constants(abs_divisor, magic_const, shift);
   jlong result = multiply_high_signed(dividend, magic_const);
   if (magic_const < 0) {
     result += dividend;
@@ -111,24 +174,51 @@ static void test_magic_long_divide(jlong dividend, jlong divisor) {
   } else {
     result = java_subtract(result, java_shift_right(dividend, 63));
   }
-  ASSERT_EQ(divisor == -1 ? java_subtract(0L, dividend) : (dividend / divisor), result);
+  ASSERT_EQ(expected, result);
 }
 
-static void test_magic_long_unsigned_divide(julong dividend, julong divisor) {
+template <>
+void test_divide<julong>(julong dividend, julong divisor) {
+  if (divisor == 0 || divisor == 1) {
+    return;
+  }
+
+  julong expected = dividend / divisor;
+
+  if (is_power_of_2(divisor)) {
+    jint l = log2i_exact(divisor);
+    julong result = java_shift_right_unsigned(jlong(dividend), l);
+    ASSERT_EQ(expected, result);
+  }
+
   jlong magic_const;
   jint shift;
   bool magic_const_ovf;
   magic_long_unsigned_divide_constants(divisor, magic_const, shift, magic_const_ovf);
-  jlong result = multiply_high_unsigned(dividend, magic_const);
-  if (!magic_const_ovf || shift == 0) {
-    result = java_shift_right_unsigned(result, shift);
+  jlong mul_hi = multiply_high_unsigned(dividend, magic_const);
+  if (!magic_const_ovf) {
+    julong result = java_shift_right_unsigned(mul_hi, shift);
+    ASSERT_EQ(expected, result);
   } else {
-    jlong diff = java_subtract(dividend, result);
+    if (dividend <= julong(min_jlong) || shift == 0) {
+      if (shift == 64) {
+        julong result = 0;
+        ASSERT_EQ(expected, result);
+      } else {
+        jlong mul_hi_corrected = java_add(mul_hi, dividend);
+        julong result = java_shift_right_unsigned(mul_hi_corrected, shift);
+        ASSERT_EQ(expected, result);
+      }
+    }
+
+    jlong diff = java_subtract(dividend, mul_hi);
     diff = java_shift_right_unsigned(diff, 1);
-    diff = java_add(diff, result);
-    result = java_shift_right_unsigned(diff, shift - 1);
+    diff = java_add(diff, mul_hi);
+    // shift <= 64 so we do not need to special case like above
+    julong result = java_shift_right_unsigned(diff, shift - 1);
+    ASSERT_EQ(expected, result);
   }
-  ASSERT_EQ(dividend / divisor, result);
+  
 }
 
 static void test_hardcoded_coefs() {
@@ -203,12 +293,45 @@ static void test_hardcoded_coefs() {
   test_magic_long_unsigned_divide_coefs(9223372036854775807, 3, 63, true);
 }
 
-static jint int_division_operands[] = {1, 2, 3, 4, -1, -2, -3, -4, }
+template <class T>
+static void test_division() {
+  using U = std::make_unsigned_t<T>;
+  constexpr T min_value = std::numeric_limits<T>::min();
+  constexpr T max_value = std::numeric_limits<T>::max();
+  std::vector<T> operands;
 
-static void test_specific_cases() {
+  operands.push_back(0);
+  operands.push_back(1); operands.push_back(2); operands.push_back(3);
+  operands.push_back(-1); operands.push_back(-2); operands.push_back(-3);
+  operands.push_back(min_value); operands.push_back(min_value + 1); operands.push_back(min_value + 2);
+  operands.push_back(max_value); operands.push_back(max_value - 1); operands.push_back(max_value - 2);
 
+  for (juint i = 2; i < sizeof(T) * 8 - 2; i += 4) {
+    T twoPowI = java_shift_left(T(1), i);
+    operands.push_back(twoPowI);
+    operands.push_back(twoPowI + 1);
+    operands.push_back(twoPowI - 1);
+  }
+
+  juint current_size = operands.size();
+  for (juint i = 0; i < current_size; i++) {
+    for (juint j = 0; j <= i; j++) {
+      operands.push_back(java_multiply(operands.at(i), operands.at(j)));
+    }
+  }
+
+  for (juint i = 0; i < operands.size(); i++) {
+    for (juint j = 0; j < operands.size(); j++) {
+      T dividend = operands.at(i);
+      T divisor = operands.at(j);
+      test_divide<T>(dividend, divisor);
+      test_divide<U>(dividend, divisor);
+    }
+  }
 }
 
-TEST(utilities, javaArithmetic) {
-  
+TEST(opto, divide_by_constants) {
+  test_hardcoded_coefs();
+  test_division<jint>();
+  test_division<jlong>();
 }

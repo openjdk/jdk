@@ -185,18 +185,24 @@ static Node* transform_int_udivide( PhaseGVN* phase, Node* dividend, juint divis
     }
     if (julong(magic_const) <= max_julong / max_dividend) {
       // No overflow here, just do the transformation
-      Node* magic = phase->longcon(magic_const);
+      if (shift_const == 32) {
+        q = phase->intcon(0);
+      } else {
+        Node* magic = phase->longcon(magic_const);
 
-      // Compute the high half of the dividend x magic multiplication
-      Node* mul_hi = phase->transform(new MulLNode(dividend_long, magic));
+        // Compute the high half of the dividend x magic multiplication
+        Node* mul_hi = phase->transform(new MulLNode(dividend_long, magic));
 
-      // Merge the shifts together.
-      mul_hi = phase->transform(new URShiftLNode(mul_hi, phase->intcon(N + shift_const)));
-      q = new ConvL2INode(mul_hi);
+        // Merge the shifts together.
+        mul_hi = phase->transform(new URShiftLNode(mul_hi, phase->intcon(N + shift_const)));
+        q = new ConvL2INode(mul_hi);
+      }
     } else {
       // Original plan fails, rounding down of 1/divisor does not work, change
       // to rounding up, now it is guaranteed to not overflow, according to
       // N-Bit Unsigned Division Via N-Bit Multiply-Add by Arch D. Robison
+
+      // This case guarantees shift_const < 32 so we do not bother checking
       magic_int_unsigned_divide_constants_up(divisor, magic_const, shift_const);
       assert(magic_const >= 0 && magic_const <= jlong(max_juint), "sanity");
       Node* magic = phase->longcon(magic_const);
@@ -454,10 +460,14 @@ static Node* transform_long_udivide( PhaseGVN* phase, Node* dividend, julong div
 
       // Just do the minimum for now
       if (max_dividend <= julong(min_jlong) || shift_const == 0) {
-        // Add back the dividend
-        mul_hi = phase->transform(new AddLNode(mul_hi, dividend));
-        // Shift the result
-        q = new URShiftLNode(mul_hi, phase->intcon(shift_const));
+        if (shift_const == 64) {
+          q = phase->longcon(0);
+        } else {
+          // Add back the dividend
+          mul_hi = phase->transform(new AddLNode(mul_hi, dividend));
+          // Shift the result
+          q = new URShiftLNode(mul_hi, phase->intcon(shift_const));
+        }
       } else {
         // q = floor((x * c) / 2**(64 + m)) = floor(((x * (c - 2**64)) / 2**64 + x) / 2**m)
         //
@@ -468,6 +478,8 @@ static Node* transform_long_udivide( PhaseGVN* phase, Node* dividend, julong div
         //       = floor((x - mul_hi) / 2 + mul_hi)
         //       = floor((x - mul_hi) / 2) + mul_hi
         // Since x > mul_hi, this operation can be done precisely using Z/2**64Z arithmetic
+
+        // This case may overflow so we cannot fast path for shift_const = 64
         Node* diff = phase->transform(new SubLNode(dividend, mul_hi));
         diff = phase->transform(new URShiftLNode(diff, phase->intcon(1)));
         Node* p = phase->transform(new AddLNode(diff, mul_hi));

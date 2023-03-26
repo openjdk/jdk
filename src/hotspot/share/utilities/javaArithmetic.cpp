@@ -32,7 +32,7 @@
 //
 // Borrowed almost verbatim from Hacker's Delight by Henry S. Warren, Jr. with
 // minor type name and parameter changes.
-
+//
 void magic_int_divide_constants(jint d, jlong& M, jint& s) {
   assert(d > 1, "sanity");
   int32_t p;
@@ -66,6 +66,9 @@ void magic_int_divide_constants(jint d, jlong& M, jint& s) {
 
   M = q2 + 1;             // Magic number and
   s = p - 32;             // shift amount to return.
+
+  assert(M < java_shift_left(jlong(1), 32), "");
+  assert(s < 32, "");
 }
 
 //---------------magic_int_unsigned_divide_constants_down----------------------
@@ -109,6 +112,9 @@ void magic_int_unsigned_divide_constants_down(juint d, jlong& M, jint& s) {
   } while (p < 64 && (q1 < delta || (q1 == delta && r1 == 0)));
   M = q2 + 1; // Magic number
   s = p - 32; // and shift amount to return
+
+  assert(M < java_shift_left(jlong(1), 33), "");
+  assert(s < 33, "");
 }
 
 //-----------------magic_int_unsigned_divide_constants_up----------------------
@@ -129,6 +135,9 @@ void magic_int_unsigned_divide_constants_up(juint d, jlong& M, jint& s) {
   julong r = ((t + 1) * julong(d)) & julong(max_juint);
   assert(r > (julong(1) << s), "Should call down first since it is more efficient");
 #endif
+
+  assert(M < java_shift_left(jlong(1), 32), "");
+  assert(s < 32, "");
 }
 
 //---------------------magic_long_divide_constants-----------------------------
@@ -171,6 +180,8 @@ void magic_long_divide_constants(jlong d, jlong& M, jint& s) {
 
   M = q2 + 1;
   s = p - 64;             // shift amount to return.
+
+  assert(s < 64, "");
 }
 
 //-----------------magic_long_unsigned_divide_constants------------------------
@@ -220,4 +231,6 @@ void magic_long_unsigned_divide_constants(julong d, jlong& M, jint& s, bool& mag
   } while (p < 128 && (q1 < delta || (q1 == delta && r1 == 0)));
   M = q2 + 1;             // Magic number
   s = p - 64;             // and shift amount to return
+
+  assert(s < 65, "");
 }
