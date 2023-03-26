@@ -92,7 +92,9 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
-  static bool vector_size_supported(BasicType bt, uint vlen);
+
+  // Limits on vector size (number of elements) for auto-vectorization.
+  static bool vector_size_supported_superword(const BasicType bt, int size);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);

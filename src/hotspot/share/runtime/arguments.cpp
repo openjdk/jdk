@@ -70,7 +70,9 @@
 
 #include <limits>
 
-#define DEFAULT_JAVA_LAUNCHER  "generic"
+static const char _default_java_launcher[] = "generic";
+
+#define DEFAULT_JAVA_LAUNCHER _default_java_launcher
 
 char*  Arguments::_jvm_flags_file               = nullptr;
 char** Arguments::_jvm_flags_array              = nullptr;
@@ -323,15 +325,15 @@ bool needs_module_property_warning = false;
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
 
-void Arguments::add_init_library(const char* name, char* options) {
+void Arguments::add_init_library(const char* name, const char* options) {
   _libraryList.add(new AgentLibrary(name, options, false, nullptr));
 }
 
-void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
+void Arguments::add_init_agent(const char* name, const char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
 }
 
-void Arguments::add_instrument_agent(const char* name, char* options, bool absolute_path) {
+void Arguments::add_instrument_agent(const char* name, const char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
 }
 
@@ -540,7 +542,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -549,6 +550,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
+  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
@@ -556,8 +558,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
 
-  { "G1ConcRSLogCacheSize",    JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "G1ConcRSHotCardLimit",   JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1UsePreventiveGC",            JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(22) },
+  { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1908,6 +1911,9 @@ void Arguments::process_java_compiler_argument(const char* arg) {
 }
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
+  if (_sun_java_launcher != _default_java_launcher) {
+    os::free(const_cast<char*>(_sun_java_launcher));
+  }
   _sun_java_launcher = os::strdup_check_oom(launcher);
 }
 
@@ -2132,6 +2138,11 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   result = parse_each_vm_init_arg(java_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
+  }
+
+  // Disable CDS for exploded image
+  if (!has_jimage()) {
+    no_shared_spaces("CDS disabled on exploded JDK");
   }
 
   // We need to ensure processor and memory resources have been properly
@@ -2368,6 +2379,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         add_init_library(name, options);
+        FREE_C_HEAP_ARRAY(char, name);
+        FREE_C_HEAP_ARRAY(char, options);
       }
     } else if (match_option(option, "--add-reads=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addreads", tail, addreads_count++)) {
@@ -2438,6 +2451,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         add_init_agent(name, options, is_absolute_path);
+        os::free(name);
+        os::free(options);
       }
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
@@ -2451,6 +2466,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
         add_instrument_agent("instrument", options, false);
+        FREE_C_HEAP_ARRAY(char, options);
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
@@ -3576,7 +3592,7 @@ static bool use_vm_log() {
   if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
       PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
       PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
-      PrintAssembly || TraceDeoptimization || TraceDependencies ||
+      PrintAssembly || TraceDeoptimization ||
       (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
     return true;
   }
@@ -3989,10 +4005,9 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     FLAG_SET_DEFAULT(PrintNMTStatistics, false);
   }
 
-  if (TraceDependencies && VerifyDependencies) {
-    if (!FLAG_IS_DEFAULT(TraceDependencies)) {
-      warning("TraceDependencies results may be inflated by VerifyDependencies");
-    }
+  bool trace_dependencies = log_is_enabled(Debug, dependencies);
+  if (trace_dependencies && VerifyDependencies) {
+    warning("dependency logging results may be inflated by VerifyDependencies");
   }
 
   apply_debugger_ergo();

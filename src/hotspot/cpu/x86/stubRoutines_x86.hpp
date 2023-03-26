@@ -32,8 +32,13 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum platform_dependent_constants {
-  code_size1 = 20000 LP64_ONLY(+10000),                    // simply increase if too small (assembler will crash if too small)
-  code_size2 = 35300 LP64_ONLY(+45000) WINDOWS_ONLY(+2048) // simply increase if too small (assembler will crash if too small)
+  // simply increase sizes if too small (assembler will crash if too small)
+  _initial_stubs_code_size      = 20000 WINDOWS_ONLY(+1000),
+  _continuation_stubs_code_size =  1000 LP64_ONLY(+1000),
+  // AVX512 intrinsics add more code in 64-bit VM,
+  // Windows have more code to save/restore registers
+  _compiler_stubs_code_size     = 20000 LP64_ONLY(+30000) WINDOWS_ONLY(+2000),
+  _final_stubs_code_size        = 10000 LP64_ONLY(+20000) WINDOWS_ONLY(+2000)
 };
 
 class x86 {

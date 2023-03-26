@@ -258,6 +258,7 @@ public class ClassReader {
     }
 
     /** Construct a new class reader. */
+    @SuppressWarnings("this-escape")
     protected ClassReader(Context context) {
         context.put(classReaderKey, this);
         annotate = Annotate.instance(context);
