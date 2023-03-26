@@ -244,7 +244,9 @@ class CLDScanClosure: public CLDClosure {
 class IsAliveClosure: public BoolObjectClosure {
   HeapWord*         _young_gen_end;
 public:
-  IsAliveClosure(DefNewGeneration* g): _young_gen_end(g->reserved().end()) {}
+  void init(DefNewGeneration* g) {
+    _young_gen_end = g->reserved().end();
+  }
 
   bool do_object_b(oop p) {
     return cast_from_oop<HeapWord*>(p) >= _young_gen_end || p->is_forwarded();
@@ -323,6 +325,8 @@ public:
     guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
   }
 };
+
+IsAliveClosure DefNewGeneration::_is_alive_closure;
 
 DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,
@@ -621,12 +625,12 @@ void DefNewGeneration::ref_processor_init() {
   assert(_ref_processor == nullptr, "a reference processor already exists");
   assert(!_reserved.is_empty(), "empty generation?");
   _span_based_discoverer.set_span(_reserved);
-  static IsAliveClosure is_alive_closure(this);
+  _is_alive_closure.init(this);
   _ref_processor = new ReferenceProcessor(&_span_based_discoverer,
                                           1,                        // mt processing degree
                                           1,                        // mt discovery degree
                                           false,                    // concurrent_discovery
-                                          &is_alive_closure);
+                                          &_is_alive_closure);
 }
 
 size_t DefNewGeneration::capacity() const {
@@ -754,9 +758,6 @@ void DefNewGeneration::collect(bool   full,
 
   heap->trace_heap_before_gc(_gc_tracer);
 
-  // These can be shared for all code paths
-  IsAliveClosure is_alive(this);
-
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
   // The preserved marks should be empty at the start of the GC.
@@ -793,7 +794,7 @@ void DefNewGeneration::collect(bool   full,
     KeepAliveClosure keep_alive(this);
     ReferenceProcessor* rp = ref_processor();
     ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
-    SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);
+    SerialGCRefProcProxyTask task(_is_alive_closure, keep_alive, evacuate_followers);
     const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);
     _gc_tracer->report_gc_reference_stats(stats);
     _gc_tracer->report_tenuring_threshold(tenuring_threshold());
@@ -803,7 +804,7 @@ void DefNewGeneration::collect(bool   full,
 
   {
     AdjustWeakRootClosure cl{this};
-    WeakProcessor::weak_oops_do(&is_alive, &cl);
+    WeakProcessor::weak_oops_do(&_is_alive_closure, &cl);
   }
 
   // Verify that the usage of keep_alive didn't copy any objects.

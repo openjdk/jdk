@@ -39,12 +39,12 @@
 
 class ContiguousSpace;
 class CSpaceCounters;
-class OldGenScanClosure;
-class YoungGenScanClosure;
 class DefNewTracer;
-class ScanWeakRefClosure;
+class IsAliveClosure;
+class OldGenScanClosure;
 class SerialHeap;
 class STWGCTimer;
+class YoungGenScanClosure;
 
 // DefNewGeneration is a young generation containing eden, from- and
 // to-space.
@@ -59,6 +59,8 @@ class DefNewGeneration: public Generation {
   size_t      _pretenure_size_threshold_words;
 
   // ("Weak") Reference processing support
+
+  static IsAliveClosure _is_alive_closure;
   SpanSubjectToDiscoveryClosure _span_based_discoverer;
   ReferenceProcessor* _ref_processor;
 
