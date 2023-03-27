@@ -218,7 +218,6 @@ void test_divide<julong>(julong dividend, julong divisor) {
     julong result = java_shift_right_unsigned(diff, shift - 1);
     ASSERT_EQ(expected, result);
   }
-  
 }
 
 static void test_hardcoded_coefs() {
