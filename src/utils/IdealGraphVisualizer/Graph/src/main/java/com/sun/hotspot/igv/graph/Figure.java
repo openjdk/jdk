@@ -41,6 +41,7 @@ public class Figure extends Properties.Entity implements Vertex {
     public static final int TOP_CFG_HEIGHT = 7;
     public static final int BOTTOM_CFG_HEIGHT = 6;
     public static final int WARNING_WIDTH = 16;
+    public static final double BOLD_LINE_FACTOR = 1.05;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
     private final InputNode inputNode;
@@ -123,7 +124,7 @@ public class Figure extends Properties.Entity implements Vertex {
                     max = cur;
                 }
             }
-            widthCash = max + INSET;
+            widthCash = (int)(max * BOLD_LINE_FACTOR) + INSET;
             if (getWarning() != null) {
                 widthCash += WARNING_WIDTH;
             }
