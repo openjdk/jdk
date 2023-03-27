@@ -304,9 +304,11 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
 
 void PhaseVector::expand_vbox_node(VectorBoxNode* vec_box) {
   if (vec_box->outcnt() > 0) {
+    VectorSet visited;
     Node* vbox = vec_box->in(VectorBoxNode::Box);
     Node* vect = vec_box->in(VectorBoxNode::Value);
-    Node* result = expand_vbox_node_helper(vbox, vect, vec_box->box_type(), vec_box->vec_type());
+    Node* result = expand_vbox_node_helper(vbox, vect, vec_box->box_type(),
+                                           vec_box->vec_type(), visited);
     C->gvn_replace_by(vec_box, result);
     C->print_method(PHASE_EXPAND_VBOX, 3, vec_box);
   }
@@ -316,12 +318,22 @@ void PhaseVector::expand_vbox_node(VectorBoxNode* vec_box) {
 Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
                                            Node* vect,
                                            const TypeInstPtr* box_type,
-                                           const TypeVect* vect_type) {
+                                           const TypeVect* vect_type,
+                                           VectorSet &visited) {
+  // JDK-8304948 shows an example that there may be a circle in the graph
+  // after the transformation of Phi:
+  // Phi (VectorBox VectorBox) => VectorBox (Phi Phi)
+  if (visited.test_set(vbox->_idx)) {
+    assert(vbox->is_Phi(), "not a phi");
+    return vbox; // already visited
+  }
+
   if (vbox->is_Phi() && vect->is_Phi()) {
     assert(vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
     Node* new_phi = new PhiNode(vbox->as_Phi()->region(), box_type);
     for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i), box_type, vect_type);
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i),
+                                              box_type, vect_type, visited);
       new_phi->set_req(i, new_box);
     }
     new_phi = C->initial_gvn()->transform(new_phi);
@@ -336,7 +348,8 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     // move up and are guaranteed to dominate.
     Node* new_phi = new PhiNode(vbox->as_Phi()->region(), box_type);
     for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect, box_type, vect_type);
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect,
+                                              box_type, vect_type, visited);
       new_phi->set_req(i, new_box);
     }
     new_phi = C->initial_gvn()->transform(new_phi);
