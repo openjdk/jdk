@@ -25,7 +25,10 @@
 
 package sun.invoke;
 
-import java.lang.invoke.MethodHandle;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Private API used inside of java.lang.invoke.MethodHandles.
@@ -35,14 +38,12 @@ import java.lang.invoke.MethodHandle;
  * to {@code asInstance}.
  * This allows applications to repeatedly convert between method handles
  * and SAM objects, without the risk of creating unbounded delegation chains.
+ * <p>
+ * Classes annotated with this annotation should define private methods
+ * getWrapperInstanceTarget ()MethodHandle and getWrapperInstanceType ()Class.
  */
-public interface WrapperInstance {
-    /** Produce or recover a target method handle which is behaviorally
-     *  equivalent to the SAM method of this object.
-     */
-    public MethodHandle getWrapperInstanceTarget();
-    /** Recover the SAM type for which this object was created.
-     */
-    public Class<?> getWrapperInstanceType();
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface WrapperInstance {
 }
 
