@@ -339,7 +339,7 @@ class Bytecodes: AllStatic {
   };
 
  private:
-  static bool              _is_initialized;
+  static       bool        _is_initialized;
   static const char* const _name       [number_of_codes];
   static const BasicType   _result_type[number_of_codes];
   static const s_char      _depth      [number_of_codes];
