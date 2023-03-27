@@ -103,6 +103,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.parentSize = 0;
         this.parentBsmSize = 0;
         this.options = options;
+        this.doneFullScan = true;
     }
 
     public SplitConstantPool(ClassReader parent) {
@@ -368,8 +369,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
-        var ce = tryFindUtf8(AbstractPoolEntry.hashString(s.hashCode()), s);
-        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s)) : ce;
+        int hash = AbstractPoolEntry.hashString(s.hashCode());
+        var ce = tryFindUtf8(hash, s);
+        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s, hash)) : ce;
     }
 
     AbstractPoolEntry.Utf8EntryImpl maybeCloneUtf8Entry(Utf8Entry entry) {

@@ -163,6 +163,10 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s) {
+            this(cpm, index, s, hashString(s.hashCode()));
+        }
+
+        Utf8EntryImpl(ConstantPool cpm, int index, String s, int hash) {
             super(cpm, Classfile.TAG_UTF8, index, 0);
             this.rawBytes = null;
             this.offset = 0;
@@ -170,7 +174,7 @@ public abstract sealed class AbstractPoolEntry {
             this.state = State.STRING;
             this.stringValue = s;
             this.charLen = s.length();
-            this.hash = hashString(s.hashCode());
+            this.hash = hash;
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, Utf8EntryImpl u) {
