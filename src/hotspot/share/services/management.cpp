@@ -1121,7 +1121,7 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
   // in the ThreadSnapshot are marked and adjusted during GC.
   ThreadDumpResult dump_result(num_threads);
 
-  if (maxDepth == 0) {
+  if (!UseFastLocking && maxDepth == 0) {
     // No stack trace to dump so we do not need to stop the world.
     // Since we never do the VM op here we must set the threads list.
     dump_result.set_t_list();
