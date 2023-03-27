@@ -211,13 +211,18 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         public void filteredChanged(SelectionCoordinator coordinator) {
             if (model.getGlobalSelection()) {
                 Set<Integer> ids = coordinator.getSelectedObjects();
-                Set<Figure> selectedFigures = new HashSet<>();
+                Set<Object> selectedObjects = new HashSet<>();
                 for (Figure figure : getModel().getDiagram().getFigures()) {
                     if (ids.contains(figure.getInputNode().getId())) {
-                        selectedFigures.add(figure);
+                        selectedObjects.add(figure);
+                    }
+                    for (Slot slot : figure.getSlots()) {
+                        if (!Collections.disjoint(slot.getSource().getSourceNodesAsSet(), ids)) {
+                            selectedObjects.add(slot);
+                        }
                     }
                 }
-                setObjectSelection(selectedFigures);
+                setObjectSelection(selectedObjects);
                 centerSelectedFigures();
                 validateAll();
             }
