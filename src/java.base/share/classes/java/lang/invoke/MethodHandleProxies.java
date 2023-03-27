@@ -244,36 +244,30 @@ public class MethodHandleProxies {
                 resultClass = lookup.lookupClass();
                 ctor = lookup.findConstructor(resultClass, MT_void_MethodHandleArray)
                         .asType(MT_Object_MethodHandleArray);
-                getType = lookup.findVirtual(resultClass, WRAPPER_INSTANCE_TYPE_NAME, MT_Class)
-                        .asType(MT_Class_Object);
                 getTarget = lookup.findVirtual(resultClass, WRAPPER_INSTANCE_TARGET_NAME, MT_MethodHandle)
                         .asType(MT_MethodHandle_Object);
             } catch (IllegalAccessException | NoSuchMethodException e) {
                 throw new InternalError("Cannot define class for interface " + intfc.getName(), e);
             }
-            return new ImplementationInfo(types, resultClass, ctor, getTarget, getType);
+            return new ImplementationInfo(types, resultClass, intfc, ctor, getTarget);
         }
     };
 
     // all mh have the proxy type changed to object
-    private record ImplementationInfo(@Stable MethodType[] types, Class<?> resultClass,
-                                      MethodHandle ctor, MethodHandle getTarget, MethodHandle getType) {}
+    private record ImplementationInfo(@Stable MethodType[] types, Class<?> resultClass, Class<?> ifaceClass,
+                                      MethodHandle ctor, MethodHandle getTarget) {}
 
     private static final ClassDesc CD_RuntimeException = desc(RuntimeException.class);
     private static final ClassDesc CD_Error = desc(Error.class);
     private static final List<ClassDesc> DEFAULT_RETHROWNS = List.of(CD_RuntimeException, CD_Error);
     private static final ClassDesc CD_WrapperInstance = desc(WrapperInstance.class);
     private static final String WRAPPER_INSTANCE_TARGET_NAME = "getWrapperInstanceTarget";
-    private static final String WRAPPER_INSTANCE_TYPE_NAME = "getWrapperInstanceType";
     private static final MethodType MT_MethodHandle = MethodType.methodType(MethodHandle.class);
     private static final MethodType MT_MethodHandle_Object = MethodType.methodType(MethodHandle.class, Object.class);
     private static final MethodType MT_void_MethodHandleArray = MethodType.methodType(void.class, MethodHandle[].class);
     private static final MethodType MT_Object_MethodHandleArray = MethodType.methodType(Object.class, MethodHandle[].class);
-    private static final MethodType MT_Class = MethodType.methodType(Class.class);
-    private static final MethodType MT_Class_Object = MethodType.methodType(Class.class, Object.class);
     private static final MethodTypeDesc MTD_MethodHandle = desc(MT_MethodHandle);
     private static final MethodTypeDesc MTD_void_MethodHandleArray = desc(MT_void_MethodHandleArray);
-    private static final MethodTypeDesc MTD_Class = desc(MT_Class);
     private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
     private static final MethodTypeDesc MTD_int_Object = MethodTypeDesc.of(CD_int, CD_Object);
     private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
@@ -326,9 +320,6 @@ public class MethodHandleProxies {
             clb.withMethodBody(WRAPPER_INSTANCE_TARGET_NAME, MTD_MethodHandle, ACC_PRIVATE, cob -> cob
                     .aload(0)
                     .getfield(proxyDesc, TARGET_FIELD_NAME, CD_MethodHandle)
-                    .areturn());
-            clb.withMethodBody(WRAPPER_INSTANCE_TYPE_NAME, MTD_Class, ACC_PRIVATE, cob -> cob
-                    .constantInstruction(ifaceDesc)
                     .areturn());
 
             // object methods
@@ -442,12 +433,7 @@ public class MethodHandleProxies {
      * @throws IllegalArgumentException if the reference x is not to a wrapper instance
      */
     public static Class<?> wrapperInstanceType(Object x) {
-        var t = ensureWrapperInstance(x);
-        try {
-            return (Class<?>) t.getType.invokeExact(x);
-        } catch (Throwable ex) {
-            throw new InternalError("Cannot invoke wrapperInstanceType", ex);
-        }
+        return ensureWrapperInstance(x).ifaceClass;
     }
 
     private static ClassDesc desc(Class<?> cl) {
