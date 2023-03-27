@@ -2808,10 +2808,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @param amount the amount of date or time to be added to the field.
-     * @throws IllegalArgumentException if the specified field is out of range
-     * (<code>field &lt; 0 || field &gt;= MILLISECOND</code>) and {@code amount} is
-     * not zero or this {@code Calendar} is non-lenient and any of the calendar fields
-     * have invalid values.
+     * @throws    IllegalArgumentException if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown,
+     * or if any calendar fields have out-of-range values in
+     * non-lenient mode.
      * @see #roll(int,int)
      * @see #set(int,int)
      */
@@ -2834,10 +2834,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the time field.
      * @param up indicates if the value of the specified time field is to be
      * rolled up or rolled down. Use true if rolling up, false otherwise.
-     * @throws IllegalArgumentException if the specified field is out of range
-     * (<code>field &lt; 0 || field &gt;= MILLISECOND</code>) and {@code amount} is
-     * not zero or this {@code Calendar} is non-lenient and any of the calendar fields
-     * have invalid values.
+     * @throws    IllegalArgumentException if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown,
+     * or if any calendar fields have out-of-range values in
+     * non-lenient mode.
      * @see Calendar#add(int,int)
      * @see Calendar#set(int,int)
      */
@@ -2857,10 +2857,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @param amount the signed amount to add to the calendar {@code field}.
-     * @throws IllegalArgumentException if the specified field is out of range
-     * (<code>field &lt; 0 || field &gt;= MILLISECOND</code>) and {@code amount} is
-     * not zero or this {@code Calendar} is non-lenient and any of the calendar fields
-     * have invalid values.
+     * @throws    IllegalArgumentException if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown,
+     * or if any calendar fields have out-of-range values in
+     * non-lenient mode.
      * @since 1.2
      * @see #roll(int,boolean)
      * @see #add(int,int)
