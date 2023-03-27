@@ -77,8 +77,11 @@ public class bug8303904 extends JDialog {
                 }
 
                 try {
-                    // these test the same thing in different ways. If second one (testPixelColor)
-                    // is the more important integration-type test
+                    // these methods test the same thing in different ways. The second one (testPixelColor)
+                    // is the more important integration-type test. If the first test passes
+                    // and the second test fails: that may indicate we're not waiting long enough
+                    // during setup and the pixels just aren't ready for the Robot to grab yet.
+
                     testImageTransparency();
                     testPixelColor();
                 } finally {
