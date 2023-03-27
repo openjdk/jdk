@@ -90,7 +90,7 @@ class ClassHierarchyInfoTest {
     @Test
     void testProvideCustomClassStreamResolver() throws Exception {
         var fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        transformAndVerify(ClassHierarchyResolver.ofCached(classDesc -> {
+        transformAndVerify(ClassHierarchyResolver.ofParsing(classDesc -> {
             try {
                 return Files.newInputStream(fs.getPath("modules/java.base/" + Util.toInternalName(classDesc) + ".class"));
             } catch (IOException ioe) {
@@ -100,22 +100,27 @@ class ClassHierarchyInfoTest {
     }
 
     @Test
-    void testClassLoaderResolver() throws Exception {
-        transformAndVerify(ClassHierarchyResolver.of(ClassLoader.getSystemClassLoader()));
+    void testClassLoaderParsingResolver() throws Exception {
+        transformAndVerify(ClassHierarchyResolver.ofParsing(ClassLoader.getSystemClassLoader()));
+    }
+
+    @Test
+    void testClassLoaderReflectionResolver() throws Exception {
+        transformAndVerify(ClassHierarchyResolver.ofReflection(ClassLoader.getSystemClassLoader()));
     }
 
     @Test
     void testLookupResolver() throws Exception {
         // A lookup must be able to access all the classes involved in the class file generation
         var privilegedLookup = MethodHandles.privateLookupIn(HashMap.class, MethodHandles.lookup());
-        transformAndVerify(ClassHierarchyResolver.of(privilegedLookup));
+        transformAndVerify(ClassHierarchyResolver.ofReflection(privilegedLookup));
     }
 
     @Test
     void testLookupResolver_IllegalAccess() throws Exception {
         // A lookup from this test class, cannot access nested classes in HashMap
         var lookup = MethodHandles.lookup();
-        assertThrows(IllegalArgumentException.class, () -> transformAndVerify(ClassHierarchyResolver.of(lookup)));
+        assertThrows(IllegalArgumentException.class, () -> transformAndVerify(ClassHierarchyResolver.ofReflection(lookup)));
     }
 
     void transformAndVerify(ClassHierarchyResolver res) throws Exception {

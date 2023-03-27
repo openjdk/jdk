@@ -28,8 +28,12 @@ import java.io.InputStream;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
 import jdk.internal.classfile.impl.Util;
 
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
@@ -47,13 +51,14 @@ public interface ClassHierarchyResolver {
      * as the {@code ClassStreamResolver}
      */
     ClassHierarchyResolver DEFAULT_CLASS_HIERARCHY_RESOLVER
-            = new ClassHierarchyImpl.CachedClassHierarchyResolver(
-            new Function<ClassDesc, InputStream>() {
+            = ofCached(ofParsing(ClassLoader.getSystemClassLoader())
+                    .orElse(ofReflection(ClassLoader.getSystemClassLoader())),
+            new Supplier<Map<ClassDesc, ClassHierarchyInfo>>() {
                 @Override
-                public InputStream apply(ClassDesc classDesc) {
-                    return ClassLoader.getSystemResourceAsStream(Util.toInternalName(classDesc) + ".class");
+                public Map<ClassDesc, ClassHierarchyInfo> get() {
+                    return new ConcurrentHashMap<>();
                 }
-            }).orElse(of(ClassLoader.getSystemClassLoader()));
+            });
 
     /**
      * {@return the {@link ClassHierarchyInfo} for a given class name, or null
@@ -91,14 +96,68 @@ public interface ClassHierarchyResolver {
     }
 
     /**
-     * Returns a {@linkplain  ClassHierarchyResolver} that extracts class hierarchy
-     * information from classfiles located by a mapping function
+     * Returns a ClassHierarchyResolver that caches class hierarchy information from another
+     * resolver. The returned resolver will not update if delegate resolver returns differently.
+     * The returned resolver is not thread-safe.
+     * {@snippet file="PackageSnippets.java" region="lookup-class-hierarchy-resolver"}
+     *
+     * @param delegate the resolver to pull information from
+     * @return the ClassHierarchyResolver
+     */
+    static ClassHierarchyResolver ofCached(ClassHierarchyResolver delegate) {
+        class Factory implements Supplier<Map<ClassDesc, ClassHierarchyInfo>> {
+            static final Factory INSTANCE = new Factory();
+
+            @Override
+            public Map<ClassDesc, ClassHierarchyInfo> get() {
+                return new HashMap<>();
+            }
+        }
+        return ofCached(delegate, Factory.INSTANCE);
+    }
+
+    /**
+     * Returns a ClassHierarchyResolver that caches class hierarchy information from another
+     * resolver. The returned resolver will not update if delegate resolver returns differently.
+     * The thread safety of the returned resolver depends on the thread safety of the map
+     * returned by the {@code cacheFactory}.
+     *
+     * @param delegate the resolver to pull information from
+     * @param cacheFactory the factory for the cache
+     * @return the ClassHierarchyResolver
+     */
+    static ClassHierarchyResolver ofCached(ClassHierarchyResolver delegate,
+                                           Supplier<Map<ClassDesc, ClassHierarchyInfo>> cacheFactory) {
+        return new ClassHierarchyImpl.CachedClassHierarchyResolver(delegate, cacheFactory.get());
+    }
+
+    /**
+     * Returns a {@linkplain ClassHierarchyResolver} that extracts class hierarchy
+     * information from classfiles located by a mapping function. The mapping function
+     * should return null if it cannot provide a mapping for a classfile. Any IOException
+     * from the provided input stream is rethrown as an UncheckedIOException.
      *
      * @param classStreamResolver maps class descriptors to classfile input streams
      * @return the {@linkplain ClassHierarchyResolver}
      */
-    static ClassHierarchyResolver ofCached(Function<ClassDesc, InputStream> classStreamResolver) {
-        return new ClassHierarchyImpl.CachedClassHierarchyResolver(classStreamResolver);
+    static ClassHierarchyResolver ofParsing(Function<ClassDesc, InputStream> classStreamResolver) {
+        return new ClassHierarchyImpl.ParsingClassHierarchyResolver(classStreamResolver);
+    }
+
+    /**
+     * Returns a {@linkplain ClassHierarchyResolver} that extracts class hierarchy
+     * information from classfiles located by a class loader.
+     *
+     * @param loader the class loader, to find class files
+     * @return the {@linkplain ClassHierarchyResolver}
+     */
+    static ClassHierarchyResolver ofParsing(ClassLoader loader) {
+        return ofParsing(new Function<ClassDesc, InputStream>() {
+            @Override
+            public InputStream apply(ClassDesc classDesc) {
+                return loader.getResourceAsStream(Util.toInternalName(classDesc) + ".class");
+            }
+        });
     }
 
     /**
@@ -121,7 +180,7 @@ public interface ClassHierarchyResolver {
      * @param loader the class loader
      * @return the class hierarchy resolver
      */
-    static ClassHierarchyResolver of(ClassLoader loader) {
+    static ClassHierarchyResolver ofReflection(ClassLoader loader) {
         return new ClassHierarchyImpl.ReflectionClassHierarchyResolver() {
             @Override
             protected Class<?> resolve(ClassDesc cd) {
@@ -143,7 +202,7 @@ public interface ClassHierarchyResolver {
      * @param lookup the lookup, must be able to access classes to resolve
      * @return the class hierarchy resolver
      */
-    static ClassHierarchyResolver of(MethodHandles.Lookup lookup) {
+    static ClassHierarchyResolver ofReflection(MethodHandles.Lookup lookup) {
         return new ClassHierarchyImpl.ReflectionClassHierarchyResolver() {
             @Override
             protected Class<?> resolve(ClassDesc cd) {
