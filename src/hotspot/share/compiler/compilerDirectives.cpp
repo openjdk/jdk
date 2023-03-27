@@ -602,7 +602,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
 
 #define copy_string_members_definition(name, type, dvalue, cc_flag)          \
   if (src->name##Option != nullptr && src->_modified[name##Index]) {         \
-    set->name##option = os::strdup_check_oom(src->name##Option, mtCompiler); \
+    set->name##Option = os::strdup_check_oom(src->name##Option, mtCompiler); \
   } else {                                                                   \
     set->name##Option = src->name##Option;                                   \
   }
