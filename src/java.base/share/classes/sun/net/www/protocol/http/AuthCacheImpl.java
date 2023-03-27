@@ -28,6 +28,7 @@ package sun.net.www.protocol.http;
 import java.lang.ref.Cleaner;
 import java.net.Authenticator;
 import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -78,13 +79,14 @@ public class AuthCacheImpl implements AuthCache {
         }
 
         public void run() {
-            synchronized(AuthCacheImpl.this) {
-                hashtable.forEach((String key,
-                                   LinkedList<AuthCacheValue> list) -> {
+            synchronized (AuthCacheImpl.this) {
+                var keys = hashtable.keySet().iterator();
+                while (keys.hasNext()) {
+                    String key = keys.next();
                     if (key.endsWith(authkey)) {
-                        hashtable.remove(key);
+                        keys.remove();
                     }
-                });
+                }
             }
         }
     }
