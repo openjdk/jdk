@@ -27,9 +27,9 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
-#include "metaprogramming/primitiveConversions.hpp"
 #include "immediate_aarch64.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 
 #ifndef PRODUCT
 const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
