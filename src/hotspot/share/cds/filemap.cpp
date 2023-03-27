@@ -1764,12 +1764,17 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
 
 void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
   assert(_file_open, "must be");
-  ssize_t n = os::write(_fd, buffer, (unsigned int)nbytes);
-  if (n < 0 || (size_t)n != nbytes) {
-    // If the shared archive is corrupted, close it and remove it.
-    close();
-    remove(_full_path);
-    fail_stop("Unable to write to shared archive file.");
+  ssize_t size = (ssize_t)nbytes;
+  while (size > 0) {
+    ssize_t n = os::write(_fd, buffer, (unsigned int)size);
+    if (n < 0) {
+      // If the shared archive is corrupted, close it and remove it.
+      close();
+      remove(_full_path);
+      fail_stop("Unable to write to shared archive file.");
+    }
+    buffer = (const void *)((const char *)buffer + n);
+    size -= n;
   }
   _file_offset += nbytes;
 }
