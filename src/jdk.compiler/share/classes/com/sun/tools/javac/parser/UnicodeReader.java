@@ -113,7 +113,7 @@ public class UnicodeReader {
      * @param array   array containing contents of source.
      * @param length  length of meaningful content in buffer.
      */
-    protected  UnicodeReader(Log log, char[] array, int length) {
+    protected UnicodeReader(Log log, char[] array, int length) {
         this(log, array, 0, length);
     }
 

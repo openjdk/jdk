@@ -1195,9 +1195,6 @@ public class JavaTokenizer extends UnicodeReader {
     protected static class BasicComment extends PositionTrackingReader implements Comment {
         /**
          * Style of comment
-         * LINE starting with //
-         * BLOCK starting with /*
-         * JAVADOC starting with /**
          */
         CommentStyle cs;
 
@@ -1245,9 +1242,6 @@ public class JavaTokenizer extends UnicodeReader {
 
         /**
          * Return style of comment.
-         * LINE starting with //
-         * BLOCK starting with /*
-         * JAVADOC starting with /**
          *
          * @return style of comment.
          */
@@ -1308,7 +1302,7 @@ public class JavaTokenizer extends UnicodeReader {
         }
 
         /**
-         * Trim the first part of the Javadoc comment.
+         * Trim the first part of the JavaDoc comment.
          *
          * @param line line reader
          *
