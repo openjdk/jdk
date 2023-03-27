@@ -36,6 +36,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/movenode.hpp"
@@ -2537,6 +2538,8 @@ bool SuperWord::output() {
     }
   }
 
+  Node_List unordered_reductions;
+
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
@@ -2664,6 +2667,9 @@ bool SuperWord::output() {
         if (node_isa_reduction) {
           const Type *arith_type = n->bottom_type();
           vn = ReductionNode::make(opc, nullptr, in1, in2, arith_type->basic_type());
+          if (vn->is_UnorderedReduction()) {
+            unordered_reductions.push(vn);
+          }
           if (in2->is_Load()) {
             vlen_in_bytes = in2->as_LoadVector()->memory_size();
           } else {
@@ -2877,8 +2883,137 @@ bool SuperWord::output() {
   if (do_reserve_copy()) {
     make_reversable.use_new();
   }
+
+  for (uint i = 0; i < unordered_reductions.size(); i++) {
+    UnorderedReductionNode* ur = unordered_reductions.at(i)->as_UnorderedReduction();
+    move_unordered_reduction_out_of_loop(ur);
+  }
+
   NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("\n Final loop after SuperWord"); print_loop(true);})
   return true;
+}
+
+// Having a ReductionNode in the loop is expensive. It needs to recursively
+// fold together the vector values, for every vectorized loop iteration. If
+// we encounter the following pattern, we can move the UnorderedReduction
+// outside the loop.
+//
+// CountedLoop     init
+//          |        |
+//          +------+ | +---------------+
+//                 | | |               |
+//                PhiNode (s)  Vector  |
+//                  |            |     |
+//               UnorderedReduction    |
+//                       |             |
+//                       +-------------+
+//
+// We patch the graph to look like this:
+//
+// CountedLoop   neutral_vector
+//         |         |
+//         +-------+ | +---------------+
+//                 | | |               |
+//                PhiNode (v)  Vector  |
+//                   |           |     |
+//      init       VectorAccumulator   |
+//        |          |     |           |
+//     UnorderedReduction  +-----------+
+//
+// We turned the scalar (s) Phi into a vectorized one (v). In the loop, we
+// use a vector_accumulator, which does the same reduction, but only element
+// wise. This is a single operation, rather than many for the ReductionNode.
+// We can then reduce that vector_accumulator after the loop, and also reduce
+// the init value into it.
+// We can not do this with all reductions. Some reductions do not allow the
+// reordering of operations (for example float addition).
+void SuperWord::move_unordered_reduction_out_of_loop(UnorderedReductionNode* ur) {
+  Compile* C = _phase->C;
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  Node* ctrl = ur->in(0);
+  Node* in1  = ur->in(1);
+  Node* in2  = ur->in(2);
+
+  // Expect no ctrl for ur
+  if (ctrl != nullptr) {
+    return;
+  }
+
+  // Expect data loop over backedge of Phi in cl
+  if (in1 == nullptr || !in1->is_Phi() || in1->in(2) != ur || in1->outcnt() != 1 ||
+      in1->in(0) != cl) {
+    return;
+  }
+
+  // Expect all uses to be outside the loop, except Phi
+  PhiNode* phi = in1->as_Phi();
+  for (DUIterator_Fast kmax, k = ur->fast_outs(kmax); k < kmax; k++) {
+    Node* use = ur->fast_out(k);
+    if (use != phi && _phase->ctrl_or_self(use) == cl) {
+      return;
+    }
+  }
+
+  // Expect input vector inside loop
+  if (!in2->is_Vector() || _phase->get_ctrl(in2) != cl) {
+    return;
+  }
+  VectorNode* vector = in2->as_Vector();
+
+  // Determine types
+  BasicType bt = ur->vect_type()->element_basic_type();
+  const Type* bt_t = Type::get_const_basic_type(bt);
+
+  // Create vector of neutral elements (zero for add, one for mul, etc)
+  Node* neutral_scalar = ReductionNode::make_reduction_input_from_vector_opc(_igvn, ur->Opcode(), bt);
+  _phase->set_ctrl(neutral_scalar, C->root());
+  VectorNode* neutral_vector = VectorNode::scalar2vector(neutral_scalar, vector->length(), bt_t);
+  _igvn.register_new_node_with_optimizer(neutral_vector);
+  _phase->set_ctrl(neutral_vector, C->root());
+  const TypeVect* vec_t = neutral_vector->vect_type();
+
+  // Build vector Phi
+  Node* vector_phi = new PhiNode(cl, vec_t);
+  _igvn.register_new_node_with_optimizer(vector_phi);
+  C->copy_node_notes_to(vector_phi, phi);
+  _phase->set_ctrl(vector_phi, cl);
+
+  // Start loop with neutral element
+  vector_phi->set_req(1, neutral_vector);
+
+  // In each iteration, do vector accumulation
+  VectorNode* vector_accumulator = ur->make_normal_vector_op(vector_phi, vector, vec_t);
+  _igvn.register_new_node_with_optimizer(vector_accumulator);
+  C->copy_node_notes_to(vector_accumulator, ur);
+  _phase->set_ctrl(vector_accumulator, cl);
+
+  // And feed that into the vector Phi for the next iteration
+  vector_phi->set_req(2, vector_accumulator);
+
+  // After the loop, we can reduce the init and vector_accumulator
+  Node* init = phi->in(1);
+  ur->set_req_X(1, init, &_igvn);
+  ur->set_req_X(2, vector_accumulator, &_igvn);
+
+  // Cut output to old Phi, so that we only have outputs outside the loop
+  phi->set_req_X(2, C->top(), &_igvn);
+
+  // Update control to outside the loop
+  Node* new_ctrl = _phase->get_late_ctrl(ur, cl);
+  _phase->set_ctrl(ur, new_ctrl);
+  assert(new_ctrl != nullptr && new_ctrl != cl, "new control of ur must be outside loop");
+  assert(phi->outcnt() == 0, "scalar phi is unused");
+
+#ifdef ASSERT
+  if (TraceNewVectors) {
+    tty->print("new Vector node: ");
+    neutral_vector->dump();
+    tty->print("new Vector node: ");
+    vector_phi->dump();
+    tty->print("new Vector node: ");
+    vector_accumulator->dump();
+  }
+#endif
 }
 
 //-------------------------create_post_loop_vmask-------------------------

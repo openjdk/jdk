@@ -191,7 +191,9 @@ class ReductionNode : public Node {
  public:
   ReductionNode(Node *ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2),
                _bottom_type(Type::get_const_basic_type(in1->bottom_type()->basic_type())),
-               _vect_type(in2->bottom_type()->is_vect()) {}
+               _vect_type(in2->bottom_type()->is_vect()) {
+    init_class_id(Class_Reduction);
+  }
 
   static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
@@ -223,9 +225,9 @@ class ReductionNode : public Node {
 // Order of reduction does not matter. Example int add. Not true for float add.
 class UnorderedReductionNode : public ReductionNode {
 public:
-  UnorderedReductionNode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
-  // Reduction loops can move this more expensive node outside the loop.
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  UnorderedReductionNode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {
+    init_class_id(Class_UnorderedReduction);
+  }
 
   virtual VectorNode* make_normal_vector_op(Node* in1, Node* in2, const TypeVect* vt) = 0;
 };

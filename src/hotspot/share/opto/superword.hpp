@@ -557,6 +557,8 @@ class SuperWord : public ResourceObj {
 
   // Convert packs into vector node operations
   bool output();
+  // Move UnorderedReduction out of loop if possible
+  void move_unordered_reduction_out_of_loop(UnorderedReductionNode* ur);
   // Create vector mask for post loop vectorization
   Node* create_post_loop_vmask();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
