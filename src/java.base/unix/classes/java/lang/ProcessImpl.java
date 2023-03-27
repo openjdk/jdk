@@ -94,7 +94,6 @@ final class ProcessImpl extends Process {
      * {@return the default or requested launch mechanism}
      * @throws Error if the requested launch mechanism is not found or valid
      */
-    @SuppressWarnings("removal")
     private static LaunchMechanism launchMechanism() {
         String s = GetPropertyAction.privilegedGetProperty("jdk.lang.Process.launchMechanism");
         if (s == null) {
