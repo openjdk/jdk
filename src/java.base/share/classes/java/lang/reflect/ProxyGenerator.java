@@ -86,8 +86,6 @@ final class ProxyGenerator {
             MTD_Object_Object_Method_ObjectArray = MethodTypeDesc.of(CD_Object, CD_Object, CD_Method, CD_Object.arrayType()),
             MTD_String = MethodTypeDesc.of(CD_String);
 
-    private static final String NAME_CTOR = "<init>";
-    private static final String NAME_CLINIT = "<clinit>";
     private static final String NAME_LOOKUP_ACCESSOR = "proxyClassLookup";
 
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
@@ -544,10 +542,10 @@ final class ProxyGenerator {
      * Generate the constructor method for the proxy class.
      */
     private void generateConstructor(ClassBuilder clb) {
-        clb.withMethodBody(NAME_CTOR, MTD_void_InvocationHandler, ACC_PUBLIC, cob -> cob
+        clb.withMethodBody(INIT_NAME, MTD_void_InvocationHandler, ACC_PUBLIC, cob -> cob
                .aload(cob.receiverSlot())
                .aload(cob.parameterSlot(0))
-               .invokespecial(CD_Proxy, NAME_CTOR, MTD_void_InvocationHandler)
+               .invokespecial(CD_Proxy, INIT_NAME, MTD_void_InvocationHandler)
                .return_());
     }
 
@@ -555,7 +553,7 @@ final class ProxyGenerator {
      * Generate the static initializer method for the proxy class.
      */
     private void generateStaticInitializer(ClassBuilder clb) {
-        clb.withMethodBody(NAME_CLINIT, MTD_void, ACC_STATIC, cob -> cob
+        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> cob
                 // Put ClassLoader at local variable index 0, used by
                 // Class.forName(String, boolean, ClassLoader) calls
                 .constantInstruction(classDesc)
@@ -574,14 +572,14 @@ final class ProxyGenerator {
                             .dup_x1()
                             .swap()
                             .invokevirtual(CD_Throwable, "getMessage", MTD_String)
-                            .invokespecial(CD_NoSuchMethodError, NAME_CTOR, MTD_void_String)
+                            .invokespecial(CD_NoSuchMethodError, INIT_NAME, MTD_void_String)
                             .athrow())
                     .catching(CD_ClassNotFoundException, cnfb -> cnfb
                             .new_(CD_NoClassDefFoundError)
                             .dup_x1()
                             .swap()
                             .invokevirtual(CD_Throwable, "getMessage", MTD_String)
-                            .invokespecial(CD_NoClassDefFoundError, NAME_CTOR, MTD_void_String)
+                            .invokespecial(CD_NoClassDefFoundError, INIT_NAME, MTD_void_String)
                             .athrow())));
     }
 
@@ -610,7 +608,7 @@ final class ProxyGenerator {
                             .dup()
                             .aload(cob.parameterSlot(0))
                             .invokevirtual(CD_MethodHandles_Lookup, "toString", MTD_String)
-                            .invokespecial(CD_IllegalAccessException, NAME_CTOR, MTD_void_String)
+                            .invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String)
                             .athrow()));
     }
 
@@ -708,7 +706,7 @@ final class ProxyGenerator {
                                     .new_(CD_UndeclaredThrowableException)
                                     .dup_x1()
                                     .swap()
-                                    .invokespecial(CD_UndeclaredThrowableException, NAME_CTOR, MTD_void_Throwable)
+                                    .invokespecial(CD_UndeclaredThrowableException, INIT_NAME, MTD_void_Throwable)
                                     .athrow());
                         }
                     }));
