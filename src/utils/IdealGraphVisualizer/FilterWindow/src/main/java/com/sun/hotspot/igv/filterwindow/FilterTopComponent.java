@@ -451,7 +451,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
             map.put(displayName, cf);
 
             String after = (String) fo.getAttribute(AFTER_ID);
-            System.out.println(displayName + " after " + after);
             afterMap.put(cf, after);
 
             Boolean enabled = (Boolean) fo.getAttribute(ENABLED_ID);
@@ -628,8 +627,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
             order.add(name);
         }
         allFiltersOrdered.sortBy(order);
-
-        System.out.println("readExternal");
     }
 
     public CustomFilter findFilter(String name) {
