@@ -282,11 +282,8 @@ DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _di
   _ideal_phase_name_mask = 0;
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
-  compilerdirectives_common_string_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
-  compilerdirectives_c2_string_flags(init_defaults_definition)
   compilerdirectives_c1_flags(init_defaults_definition)
-  compilerdirectives_c1_string_flags(init_defaults_definition)
 #undef init_defaults_definition
   memset(_modified, 0, sizeof(_modified));
   _intrinsic_control_words.fill_in(/*default value*/TriBool());
@@ -407,16 +404,9 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     // inline and dontinline (including exclude) are implemented in the directiveset accessors
 #define init_default_cc(name, type, dvalue, cc_flag) { type v; if (!_modified[name##Index] && CompileCommand::cc_flag != CompileCommand::Unknown && CompilerOracle::has_option_value(method, CompileCommand::cc_flag, v) && v != this->name##Option) { set.cloned()->name##Option = v; } }
     compilerdirectives_common_flags(init_default_cc)
-    compilerdirectives_common_string_flags(init_default_cc)
     compilerdirectives_c2_flags(init_default_cc)
-    compilerdirectives_c2_string_flags(init_default_cc)
     compilerdirectives_c1_flags(init_default_cc)
-    compilerdirectives_c1_string_flags(init_default_cc)
 #undef init_default_cc
-
-#define init_string_default_cc(name, type, dvalue, cc_flag) {}
-
-#undef init_string_default_cc
 
     // Parse PrintIdealPhaseName and create an efficient lookup mask
 #ifndef PRODUCT
@@ -595,13 +585,13 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
   }
 
   #define copy_members_definition(name, type, dvalue, cc_flag) set->name##Option = src->name##Option;
-    compilerdirectives_common_flags(copy_members_definition)
-    compilerdirectives_c2_flags(copy_members_definition)
-    compilerdirectives_c1_flags(copy_members_definition)
+    compilerdirectives_common_other_flags(copy_members_definition)
+    compilerdirectives_c2_other_flags(copy_members_definition)
+    compilerdirectives_c1_other_flags(copy_members_definition)
   #undef copy_members_definition
 
 #define copy_string_members_definition(name, type, dvalue, cc_flag)          \
-  if (src->name##Option != nullptr && src->_modified[name##Index]) {         \
+  if (src->_modified[name##Index]) {                                         \
     set->name##Option = os::strdup_check_oom(src->name##Option, mtCompiler); \
   } else {                                                                   \
     set->name##Option = src->name##Option;                                   \

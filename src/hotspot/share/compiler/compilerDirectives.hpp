@@ -35,7 +35,7 @@
 #include "utilities/tribool.hpp"
 
   //      Directives flag name,    type, default value, compile command name
-  #define compilerdirectives_common_flags(cflags) \
+  #define compilerdirectives_common_other_flags(cflags) \
     cflags(Enable,                  bool, false, Unknown) \
     cflags(Exclude,                 bool, false, Unknown) \
     cflags(BreakAtExecute,          bool, false, BreakAtExecute) \
@@ -53,18 +53,25 @@
     cflags(RepeatCompilation,       intx, RepeatCompilation, RepeatCompilation)
 #define compilerdirectives_common_string_flags(cflags)                           \
   cflags(DisableIntrinsic,        ccstrlist, DisableIntrinsic, DisableIntrinsic) \
-  cflags(ControlIntrinsic,        ccstrlist, ControlIntrinsic, ControlIntrinsic) \
+  cflags(ControlIntrinsic,        ccstrlist, ControlIntrinsic, ControlIntrinsic)
+#define compilerdirectives_common_flags(cflags) \
+  compilerdirectives_common_other_flags(cflags) \
+  compilerdirectives_common_string_flags(cflags)
 
 #ifdef COMPILER1
-  #define compilerdirectives_c1_flags(cflags)
+  #define compilerdirectives_c1_other_flags(cflags)
   #define compilerdirectives_c1_string_flags(cflags)
 #else
-  #define compilerdirectives_c1_flags(cflags)
+  #define compilerdirectives_c1_other_flags(cflags)
   #define compilerdirectives_c1_string_flags(cflags)
 #endif
 
+#define compilerdirectives_c1_flags(cflags) \
+  compilerdirectives_c1_other_flags(cflags) \
+  compilerdirectives_c1_string_flags(cflags)
+
 #ifdef COMPILER2
-  #define compilerdirectives_c2_flags(cflags) \
+  #define compilerdirectives_c2_other_flags(cflags) \
     cflags(BlockLayoutByFrequency,  bool, BlockLayoutByFrequency,  BlockLayoutByFrequency) \
     cflags(PrintOptoAssembly,       bool, PrintOptoAssembly, PrintOptoAssembly) \
     cflags(PrintIntrinsics,         bool, PrintIntrinsics, PrintIntrinsics) \
@@ -82,9 +89,13 @@ NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLeve
 #define compilerdirectives_c2_string_flags(cflags) \
 NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase))
 #else
-  #define compilerdirectives_c2_flags(cflags)
+  #define compilerdirectives_c2_other_flags(cflags)
   #define compilerdirectives_c2_string_flags(cflags)
 #endif
+
+#define compilerdirectives_c2_flags(cflags) \
+  compilerdirectives_c2_other_flags(cflags) \
+  compilerdirectives_c2_string_flags(cflags)
 
 class AbstractCompiler;
 class CompilerDirectives;
@@ -140,11 +151,8 @@ public:
   typedef enum {
 #define enum_of_flags(name, type, dvalue, cc_flag) name##Index,
     compilerdirectives_common_flags(enum_of_flags)
-    compilerdirectives_common_string_flags(enum_of_flags)
     compilerdirectives_c2_flags(enum_of_flags)
-    compilerdirectives_c2_string_flags(enum_of_flags)
     compilerdirectives_c1_flags(enum_of_flags)
-    compilerdirectives_c1_string_flags(enum_of_flags)
 #undef enum_of_flags
     number_of_flags
   } flags;
@@ -154,18 +162,15 @@ public:
  public:
 #define flag_store_definition(name, type, dvalue, cc_flag) type name##Option;
   compilerdirectives_common_flags(flag_store_definition)
-  compilerdirectives_common_string_flags(flag_store_definition)
   compilerdirectives_c2_flags(flag_store_definition)
-  compilerdirectives_c2_string_flags(flag_store_definition)
   compilerdirectives_c1_flags(flag_store_definition)
-  compilerdirectives_c1_string_flags(flag_store_definition)
 #undef flag_store_definition
 
 // Casting to get the same function signature for all setters. Used from parser.
 #define set_function_definition(name, type, dvalue, cc_flag) void set_##name(void* value) { type val = *(type*)value; name##Option = val; _modified[name##Index] = true; }
-  compilerdirectives_common_flags(set_function_definition)
-  compilerdirectives_c2_flags(set_function_definition)
-  compilerdirectives_c1_flags(set_function_definition)
+  compilerdirectives_common_other_flags(set_function_definition)
+  compilerdirectives_c2_other_flags(set_function_definition)
+  compilerdirectives_c1_other_flags(set_function_definition)
 #undef set_function_definition
 
 // Casting to get the same function signature for all setters. Used from parser.
@@ -201,11 +206,8 @@ void print(outputStream* st) {
     st->print("  ");
 #define print_function_definition(name, type, dvalue, cc_flag) print_##type(st, #name, this->name##Option, true);
     compilerdirectives_common_flags(print_function_definition)
-    compilerdirectives_common_string_flags(print_function_definition)
     compilerdirectives_c2_flags(print_function_definition)
-    compilerdirectives_c2_string_flags(print_function_definition)
     compilerdirectives_c1_flags(print_function_definition)
-    compilerdirectives_c1_string_flags(print_function_definition)
 #undef print_function_definition
     st->cr();
   }
