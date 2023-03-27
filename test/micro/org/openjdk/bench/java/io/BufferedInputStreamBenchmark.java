@@ -39,7 +39,11 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 2)
 @State(Scope.Benchmark)
 public class BufferedInputStreamBenchmark {
-    private final int size = 1024;
+
+    //read less or more than internal buffer size of 8192 bytes
+    @Param({"1024", "16384"})
+    private int size;
+
     private ByteArrayInputStream bais;
 
     @Setup(Level.Iteration)
@@ -49,6 +53,15 @@ public class BufferedInputStreamBenchmark {
         bais = new ByteArrayInputStream(bytes);
     }
 
+    /**
+     * Read all bytes from an instance of {@link BufferedInputStream}
+     * <p>
+     * This benchmark demonstrates lazy instantiation of inner {@code byte[]},
+     * which is not created when we call {@code InputStream.readAllBytes()}
+     * <p>
+     * @see <a href="https://bugs.openjdk.org/browse/JDK-8304745">JDK-8304745</a>
+     * @see <a href="https://github.com/openjdk/jdk/pull/13150">Pull request for JDK-8304745</a>
+     */
     @Benchmark
     public byte[] readAllBytes() throws Exception {
         bais.reset();
@@ -57,6 +70,16 @@ public class BufferedInputStreamBenchmark {
         }
     }
 
+    /**
+     * Read all bytes from an instance of {@link BufferedInputStream}
+     * wrapping another instance of {@link BufferedInputStream}.
+     * <p>
+     * This benchmark demonstrates lazy instantiation of inner {@code byte[]},
+     * which is not created when we call {@code InputStream.readAllBytes()}
+     * <p>
+     * @see <a href="https://bugs.openjdk.org/browse/JDK-8304745">JDK-8304745</a>
+     * @see <a href="https://github.com/openjdk/jdk/pull/13150">Pull request for JDK-8304745</a>
+     */
     @Benchmark
     public byte[] readAllBytesCascade() throws Exception {
         bais.reset();
