@@ -233,9 +233,6 @@
           "Will be set ergonomically by default.")                          \
           range(0, (max_jint-1)/wordSize)                                   \
                                                                             \
-  develop(bool, G1VerifyCTCleanup, false,                                   \
-          "Verify card table cleanup.")                                     \
-                                                                            \
   product(uintx, G1MaxNewSizePercent, 60, EXPERIMENTAL,                     \
           "Percentage (0-100) of the heap size to use as default "          \
           " maximum young gen size.")                                       \
