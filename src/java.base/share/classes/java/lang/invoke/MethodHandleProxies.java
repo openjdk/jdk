@@ -26,9 +26,7 @@
 package java.lang.invoke;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import jdk.internal.classfile.Annotation;
@@ -193,7 +191,7 @@ public class MethodHandleProxies {
         }
 
         // We will just define the class as hidden under the interface
-        var ifaceInfo = setupInterface(intfc);
+        var ifaceInfo = INTERFACE_INFOS.get(intfc);
         MethodHandle[] mhs = new MethodHandle[ifaceInfo.methods.size() + 1];
         mhs[0] = target;
         for (var info : ifaceInfo.methods) {
@@ -203,8 +201,7 @@ public class MethodHandleProxies {
         var bytes = spinTargetDedicatedProxyClass(ifaceInfo);
         Object proxy;
         try {
-            var lookup = new MethodHandles.Lookup(intfc)
-                    .defineHiddenClassWithClassData(bytes, List.of(mhs), true);
+            var lookup = ifaceInfo.lookup.defineHiddenClassWithClassData(bytes, List.of(mhs), true);
             proxy = lookup.findConstructor(lookup.lookupClass(), MT_void)
                     .asType(MT_Object)
                     .invokeExact();
@@ -215,28 +212,31 @@ public class MethodHandleProxies {
         return intfc.cast(proxy);
     }
 
+    private static final ClassValue<InterfaceInfo> INTERFACE_INFOS = new ClassValue<>() {
+        @Override
+        protected InterfaceInfo computeValue(Class<?> intfc) {
+            final List<Method> methods = getSingleNameMethods(intfc);
+            if (methods == null)
+                throw newIllegalArgumentException("not a single-method interface", intfc.getName());
+            List<MethodInfo> infos = new ArrayList<>(methods.size());
+            for (int i = 0; i < methods.size(); i++) {
+                Method sm = methods.get(i);
+                MethodType mt = MethodType.methodType(sm.getReturnType(), sm.getParameterTypes());
+                var thrown = sm.getExceptionTypes();
+                if (thrown.length == 0) {
+                    infos.add(new MethodInfo(i + 1, mt, desc(mt), DEFAULT_RETHROWNS));
+                } else {
+                    infos.add(new MethodInfo(i + 1, mt, desc(mt), Stream.concat(Stream.of(RuntimeException.class, Error.class),
+                            Arrays.stream(thrown)).map(MethodHandleProxies::desc).distinct().toList()));
+                }
+            }
+            return new InterfaceInfo(new MethodHandles.Lookup(intfc), desc(intfc), methods.get(0).getName(), infos);
+        }
+    };
+
     record MethodInfo(int classDataIndex, MethodType mt, MethodTypeDesc desc, List<ClassDesc> rethrowns) {}
     // information about an interface. maybe we will cache in a classvalue one day
-    record InterfaceInfo(ClassDesc cd, String name, List<MethodInfo> methods) {}
-
-    private static InterfaceInfo setupInterface(Class<?> intfc) {
-        final List<Method> methods = getSingleNameMethods(intfc);
-        if (methods == null)
-            throw newIllegalArgumentException("not a single-method interface", intfc.getName());
-        List<MethodInfo> infos = new ArrayList<>(methods.size());
-        for (int i = 0; i < methods.size(); i++) {
-            Method sm = methods.get(i);
-            MethodType mt = MethodType.methodType(sm.getReturnType(), sm.getParameterTypes());
-            var thrown = sm.getExceptionTypes();
-            if (thrown.length == 0) {
-                infos.add(new MethodInfo(i + 1, mt, desc(mt), DEFAULT_RETHROWNS));
-            } else {
-                infos.add(new MethodInfo(i + 1, mt, desc(mt), Stream.concat(Stream.of(RuntimeException.class, Error.class),
-                        Arrays.stream(thrown)).map(MethodHandleProxies::desc).distinct().toList()));
-            }
-        }
-        return new InterfaceInfo(desc(intfc), methods.get(0).getName(), infos);
-    }
+    record InterfaceInfo(MethodHandles.Lookup lookup, ClassDesc cd, String name, List<MethodInfo> methods) {}
 
     private static final MethodType MT_void = MethodType.methodType(void.class);
     private static final MethodType MT_Object = MethodType.genericMethodType(0);
@@ -247,9 +247,7 @@ public class MethodHandleProxies {
     private static final String WRAPPER_INSTANCE_TARGET_NAME = "getWrapperInstanceTarget";
     private static final String WRAPPER_INSTANCE_TYPE_NAME = "getWrapperInstanceType";
     private static final MethodType MT_MethodHandle = MethodType.methodType(MethodHandle.class);
-    private static final MethodType MT_MethodHandle_Object = MethodType.methodType(MethodHandle.class, Object.class);
     private static final MethodType MT_Class = MethodType.methodType(Class.class);
-    private static final MethodType MT_Class_Object = MethodType.methodType(Class.class, Object.class);
     private static final MethodTypeDesc MTD_MethodHandle = desc(MT_MethodHandle);
     private static final MethodTypeDesc MTD_Class = desc(MT_Class);
     private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
@@ -259,8 +257,6 @@ public class MethodHandleProxies {
     private static final MethodTypeDesc MTD_boolean_Object = MethodTypeDesc.of(CD_boolean, CD_Object);
     private static final ClassDesc CD_System = desc(System.class);
     private static final ClassDesc CD_Objects = desc(Objects.class);
-    private static final DirectMethodHandleDesc MHD_MethodHandle_asType = MethodHandleDesc.ofMethod(
-            DirectMethodHandleDesc.Kind.VIRTUAL, CD_MethodHandle, "asType", MethodTypeDesc.of(CD_MethodHandle, CD_MethodType));
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
 
@@ -362,9 +358,8 @@ public class MethodHandleProxies {
         var t = ensureWrapperInstance(x);
         try {
             return (MethodHandle) new MethodHandles.Lookup(t)
-                    .findVirtual(t, WRAPPER_INSTANCE_TARGET_NAME, MT_MethodHandle)
-                    .asType(MT_MethodHandle_Object)
-                    .invokeExact(x);
+                    .bind(x, WRAPPER_INSTANCE_TARGET_NAME, MT_MethodHandle)
+                    .invokeExact();
         } catch (Throwable ex) {
             throw new InternalError("Cannot obtain wrapper instance target", ex);
         }
@@ -382,9 +377,8 @@ public class MethodHandleProxies {
         var t = ensureWrapperInstance(x);
         try {
             return (Class<?>) new MethodHandles.Lookup(t)
-                    .findVirtual(t, WRAPPER_INSTANCE_TYPE_NAME, MT_Class)
-                    .asType(MT_Class_Object)
-                    .invokeExact(x);
+                    .bind(x, WRAPPER_INSTANCE_TYPE_NAME, MT_Class)
+                    .invokeExact();
         } catch (Throwable ex) {
             throw new InternalError("Cannot obtain wrapper instance type", ex);
         }
