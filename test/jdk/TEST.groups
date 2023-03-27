@@ -218,7 +218,6 @@ jdk_security2 = \
 jdk_security3 = \
     javax/security  \
     -javax/security/auth/kerberos \
-    com/sun/jarsigner \
     com/sun/security \
     -com/sun/security/jgss \
     com/sun/org/apache/xml/internal/security \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ class SimpleHttpTransactionHandler implements HttpHandler
         try {
             String path = trans.getRequestURI().getPath();
             if (path.equals("/firstCall")) {
-                port1 = trans.getLocalAddress().getPort();
+                port1 = trans.getRemoteAddress().getPort();
                 System.out.println("First connection on client port = " + port1);
 
                 byte[] responseBody = new byte[RESPONSE_DATA_LENGTH];
@@ -180,7 +180,7 @@ class SimpleHttpTransactionHandler implements HttpHandler
                     pw.print(responseBody);
                 }
             } else if (path.equals("/secondCall")) {
-                int port2 = trans.getLocalAddress().getPort();
+                int port2 = trans.getRemoteAddress().getPort();
                 System.out.println("Second connection on client port = " + port2);
 
                 if (port1 != port2)

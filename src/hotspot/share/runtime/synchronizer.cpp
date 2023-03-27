@@ -576,42 +576,6 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
 }
 
 // -----------------------------------------------------------------------------
-// Class Loader  support to workaround deadlocks on the class loader lock objects
-// Also used by GC
-// complete_exit()/reenter() are used to wait on a nested lock
-// i.e. to give up an outer lock completely and then re-enter
-// Used when holding nested locks - lock acquisition order: lock1 then lock2
-//  1) complete_exit lock1 - saving recursion count
-//  2) wait on lock2
-//  3) when notified on lock2, unlock lock2
-//  4) reenter lock1 with original recursion count
-//  5) lock lock2
-// NOTE: must use heavy weight monitor to handle complete_exit/reenter()
-intx ObjectSynchronizer::complete_exit(Handle obj, JavaThread* current) {
-  // The ObjectMonitor* can't be async deflated until ownership is
-  // dropped inside exit() and the ObjectMonitor* must be !is_busy().
-  ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_vm_internal);
-  intx recur_count = monitor->complete_exit(current);
-  current->dec_held_monitor_count(recur_count + 1);
-  return recur_count;
-}
-
-// NOTE: must use heavy weight monitor to handle complete_exit/reenter()
-void ObjectSynchronizer::reenter(Handle obj, intx recursions, JavaThread* current) {
-  // An async deflation can race after the inflate() call and before
-  // reenter() -> enter() can make the ObjectMonitor busy. reenter() ->
-  // enter() returns false if we have lost the race to async deflation
-  // and we simply try again.
-  while (true) {
-    ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_vm_internal);
-    if (monitor->reenter(recursions, current)) {
-      current->inc_held_monitor_count(recursions + 1);
-      return;
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
 // JNI locks on java objects
 // NOTE: must use heavy weight monitor to handle jni monitor enter
 void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {

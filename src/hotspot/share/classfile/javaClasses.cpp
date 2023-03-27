@@ -50,6 +50,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -861,12 +862,29 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
       // update all the static field offsets to included the size.
-      for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
-        if (fs.access_flags().is_static()) {
-          int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
-          fs.set_offset(real_offset);
+
+      // Unfortunately, the FieldInfo stream is encoded with UNSIGNED5 which doesn't allow
+      // content updates. So the FieldInfo stream has to be decompressed into a temporary array,
+      // static fields offsets are updated in this array before reencoding everything into
+      // a new UNSIGNED5 stream, and substitute it to the old FieldInfo stream.
+
+      int java_fields;
+      int injected_fields;
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      GrowableArray<FieldInfo>* fields =
+        FieldInfoStream::create_FieldInfoArray(ik->fieldinfo_stream(),
+                                               &java_fields, &injected_fields);
+      for (int i = 0; i < fields->length(); i++) {
+        FieldInfo* fi = fields->adr_at(i);
+        if (fi->access_flags().is_static()) {
+          fi->set_offset(fi->offset() + InstanceMirrorKlass::offset_of_static_fields());
         }
       }
+      Array<u1>* old_stream = ik->fieldinfo_stream();
+      assert(fields->length() == (java_fields + injected_fields), "Must be");
+      Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, k->class_loader_data(), CHECK);
+      ik->set_fieldinfo_stream(new_fis);
+      MetadataFactory::free_array<u1>(k->class_loader_data(), old_stream);
     }
   }
 
@@ -1915,32 +1933,21 @@ void java_lang_ThreadGroup::serialize_offsets(SerializeClosure* f) {
 
 // java_lang_VirtualThread
 
-int java_lang_VirtualThread::static_notify_jvmti_events_offset;
 int java_lang_VirtualThread::static_vthread_scope_offset;
 int java_lang_VirtualThread::_carrierThread_offset;
 int java_lang_VirtualThread::_continuation_offset;
 int java_lang_VirtualThread::_state_offset;
 
 #define VTHREAD_FIELDS_DO(macro) \
-  macro(static_notify_jvmti_events_offset, k, "notifyJvmtiEvents",  bool_signature,              true);  \
   macro(static_vthread_scope_offset,       k, "VTHREAD_SCOPE",      continuationscope_signature, true);  \
   macro(_carrierThread_offset,             k, "carrierThread",      thread_signature,            false); \
   macro(_continuation_offset,              k, "cont",               continuation_signature,      false); \
   macro(_state_offset,                     k, "state",              int_signature,               false)
 
-static bool vthread_notify_jvmti_events = JNI_FALSE;
 
 void java_lang_VirtualThread::compute_offsets() {
   InstanceKlass* k = vmClasses::VirtualThread_klass();
   VTHREAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-void java_lang_VirtualThread::init_static_notify_jvmti_events() {
-  if (vthread_notify_jvmti_events) {
-    InstanceKlass* ik = vmClasses::VirtualThread_klass();
-    oop base = ik->static_field_base_raw();
-    base->release_bool_field_put(static_notify_jvmti_events_offset, vthread_notify_jvmti_events);
-  }
 }
 
 bool java_lang_VirtualThread::is_instance(oop obj) {
@@ -1994,15 +2001,6 @@ void java_lang_VirtualThread::serialize_offsets(SerializeClosure* f) {
    VTHREAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
-
-bool java_lang_VirtualThread::notify_jvmti_events() {
-  return vthread_notify_jvmti_events == JNI_TRUE;
-}
-
-void java_lang_VirtualThread::set_notify_jvmti_events(bool enable) {
-  vthread_notify_jvmti_events = enable;
-}
-
 
 // java_lang_Throwable
 
@@ -2740,49 +2738,57 @@ void java_lang_Throwable::get_stack_trace_elements(int depth, Handle backtrace,
   }
 }
 
-Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) {
-  // Call to JVM to fill in the stack trace and clear declaringClassObject to
-  // not keep classes alive in the stack trace.
-  // call this:  public StackTraceElement[] getStackTrace()
+Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Handle throwable) {
+  // Creates an ExceptionInInitializerError to be recorded as the initialization error when class initialization
+  // failed due to the passed in 'throwable'. We cannot save 'throwable' directly due to issues with keeping alive
+  // all objects referenced via its stacktrace. So instead we save a new EIIE instance, with the same message and
+  // symbolic stacktrace of 'throwable'.
   assert(throwable.not_null(), "shouldn't be");
 
+  // Now create the message from the original exception and thread name.
+  Symbol* message = java_lang_Throwable::detail_message(throwable());
+  ResourceMark rm(current);
+  stringStream st;
+  st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
+             message == nullptr ? "" : ":");
+  if (message == nullptr) {
+    st.print("[in thread \"%s\"]", current->name());
+  } else {
+    st.print("%s [in thread \"%s\"]", message->as_C_string(), current->name());
+  }
+
+  Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
+  Handle init_error = Exceptions::new_exception(current, exception_name, st.as_string());
+  // If new_exception returns a different exception while creating the exception,
+  // abandon the attempt to save the initialization error and return null.
+  if (init_error->klass()->name() != exception_name) {
+    log_info(class, init)("Exception thrown while saving initialization exception %s",
+                        init_error->klass()->external_name());
+    return Handle();
+  }
+
+  // Call to java to fill in the stack trace and clear declaringClassObject to
+  // not keep classes alive in the stack trace.
+  // call this:  public StackTraceElement[] getStackTrace()
   JavaValue result(T_ARRAY);
   JavaCalls::call_virtual(&result, throwable,
                           vmClasses::Throwable_klass(),
                           vmSymbols::getStackTrace_name(),
                           vmSymbols::getStackTrace_signature(),
-                          CHECK_NH);
-  Handle stack_trace(THREAD, result.get_oop());
-  assert(stack_trace->is_objArray(), "Should be an array");
-
-  // Throw ExceptionInInitializerError as the cause with this exception in
-  // the message and stack trace.
-
-  // Now create the message with the original exception and thread name.
-  Symbol* message = java_lang_Throwable::detail_message(throwable());
-  ResourceMark rm(THREAD);
-  stringStream st;
-  st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
-             message == nullptr ? "" : ":");
-  if (message == nullptr) {
-    st.print("[in thread \"%s\"]", THREAD->name());
+                          current);
+  if (!current->has_pending_exception()){
+    Handle stack_trace(current, result.get_oop());
+    assert(stack_trace->is_objArray(), "Should be an array");
+    java_lang_Throwable::set_stacktrace(init_error(), stack_trace());
+    // Clear backtrace because the stacktrace should be used instead.
+    set_backtrace(init_error(), nullptr);
   } else {
-    st.print("%s [in thread \"%s\"]", message->as_C_string(), THREAD->name());
+    log_info(class, init)("Exception thrown while getting stack trace for initialization exception %s",
+                        init_error->klass()->external_name());
+    current->clear_pending_exception();
   }
 
-  Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
-  Handle h_cause = Exceptions::new_exception(THREAD, exception_name, st.as_string());
-
-  // If new_exception returns a different exception while creating the exception, return null.
-  if (h_cause->klass()->name() != exception_name) {
-    log_info(class, init)("Exception thrown while saving initialization exception %s",
-                          h_cause->klass()->external_name());
-    return Handle();
-  }
-  java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
-  // Clear backtrace because the stacktrace should be used instead.
-  set_backtrace(h_cause(), nullptr);
-  return h_cause;
+  return init_error;
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
@@ -5337,7 +5343,7 @@ void JavaClasses::check_offsets() {
 int InjectedField::compute_offset() {
   InstanceKlass* ik = InstanceKlass::cast(klass());
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-    if (!may_be_java && !fs.access_flags().is_internal()) {
+    if (!may_be_java && !fs.field_flags().is_injected()) {
       // Only look at injected fields
       continue;
     }
@@ -5361,6 +5367,5 @@ int InjectedField::compute_offset() {
 void javaClasses_init() {
   JavaClasses::compute_offsets();
   JavaClasses::check_offsets();
-  java_lang_VirtualThread::init_static_notify_jvmti_events();
   FilteredFieldsMap::initialize();  // must be done after computing offsets.
 }

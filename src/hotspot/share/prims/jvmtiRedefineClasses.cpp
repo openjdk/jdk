@@ -3547,32 +3547,48 @@ void VM_RedefineClasses::set_new_constant_pool(
   int i;  // for portability
 
   // update each field in klass to use new constant pool indices as needed
-  for (JavaFieldStream fs(scratch_class); !fs.done(); fs.next()) {
-    jshort cur_index = fs.name_index();
+  int java_fields;
+  int injected_fields;
+  bool update_required = false;
+  GrowableArray<FieldInfo>* fields = FieldInfoStream::create_FieldInfoArray(scratch_class->fieldinfo_stream(), &java_fields, &injected_fields);
+  for (int i = 0; i < java_fields; i++) {
+    FieldInfo* fi = fields->adr_at(i);
+    jshort cur_index = fi->name_index();
     jshort new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("field-name_index change: %d to %d", cur_index, new_index);
-      fs.set_name_index(new_index);
+      fi->set_name_index(new_index);
+      update_required = true;
     }
-    cur_index = fs.signature_index();
+    cur_index = fi->signature_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("field-signature_index change: %d to %d", cur_index, new_index);
-      fs.set_signature_index(new_index);
+      fi->set_signature_index(new_index);
+      update_required = true;
     }
-    cur_index = fs.initval_index();
+    cur_index = fi->initializer_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("field-initval_index change: %d to %d", cur_index, new_index);
-      fs.set_initval_index(new_index);
+      fi->set_initializer_index(new_index);
+      update_required = true;
     }
-    cur_index = fs.generic_signature_index();
+    cur_index = fi->generic_signature_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("field-generic_signature change: %d to %d", cur_index, new_index);
-      fs.set_generic_signature_index(new_index);
+      fi->set_generic_signature_index(new_index);
+      update_required = true;
     }
-  } // end for each field
+  }
+  if (update_required) {
+    Array<u1>* old_stream = scratch_class->fieldinfo_stream();
+    assert(fields->length() == (java_fields + injected_fields), "Must be");
+    Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, scratch_class->class_loader_data(), CHECK);
+    scratch_class->set_fieldinfo_stream(new_fis);
+    MetadataFactory::free_array<u1>(scratch_class->class_loader_data(), old_stream);
+  }
 
   // Update constant pool indices in the inner classes info to use
   // new constant indices as needed. The inner classes info is a
@@ -4098,22 +4114,18 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
 
-  bool deopt_needed;
+  DeoptimizationScope deopt_scope;
 
   // This is the first redefinition, mark all the nmethods for deoptimization
   if (!JvmtiExport::all_dependencies_are_recorded()) {
+    CodeCache::mark_all_nmethods_for_evol_deoptimization(&deopt_scope);
     log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
-    CodeCache::mark_all_nmethods_for_evol_deoptimization();
-    deopt_needed = true;
   } else {
-    int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
-    log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
-    deopt_needed = (deopt != 0);
+    CodeCache::mark_dependents_for_evol_deoptimization(&deopt_scope);
+    log_debug(redefine, class, nmethod)("Marked dependent nmethods for deopt");
   }
 
-  if (deopt_needed) {
-    CodeCache::flush_evol_dependents();
-  }
+  deopt_scope.deoptimize_marked();
 
   // From now on we know that the dependency information is complete
   JvmtiExport::set_all_dependencies_are_recorded(true);
