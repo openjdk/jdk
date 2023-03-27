@@ -37,6 +37,7 @@ import java.util.Properties;
  */
 public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianness) {
     private static final Properties KNOWN_ENDIANNESS;
+    private static final String ENDIANNESS_KEY_SUFFIX = ".endianness";
 
     static {
         Properties p = null;
@@ -46,7 +47,18 @@ public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianne
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
         }
-        KNOWN_ENDIANNESS = p;
+        Properties endianness = new Properties();
+        for (String key : p.stringPropertyNames()) {
+            if (key.endsWith(ENDIANNESS_KEY_SUFFIX)) {
+                String val = p.getProperty(key);
+                String platform = key.substring(0, key.indexOf(ENDIANNESS_KEY_SUFFIX));
+                if (platform.isEmpty()) {
+                    throw new InternalError("Incorrect key '" + key + "'");
+                }
+                endianness.put(platform, val);
+            }
+        }
+        KNOWN_ENDIANNESS = endianness;
     }
 
     public enum OperatingSystem {
