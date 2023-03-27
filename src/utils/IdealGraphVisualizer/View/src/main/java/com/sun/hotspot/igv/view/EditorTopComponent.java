@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
+import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.util.StringUtils;
@@ -71,10 +72,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
-
-    public EditorTopComponent(InputGraph graph) {
-        this(new DiagramViewModel(graph));
-    }
 
     public EditorTopComponent(DiagramViewModel diagramViewModel) {
         initComponents();
@@ -416,20 +413,23 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
     @Override
     public TopComponent cloneComponent() {
-        DiagramViewModel model = new DiagramViewModel(getModel().getFirstGraph());
-        if (getModel().getGraph().isDiffGraph()) {
-            model.setPositions(getModel().getFirstPosition(), getModel().getSecondPosition());
-        }
-        model.setHiddenNodes(new HashSet<>(getModel().getHiddenNodes()));
-        model.setShowCFG(getModel().getShowCFG());
-        model.setShowSea(getModel().getShowSea());
-        model.setShowBlocks(getModel().getShowBlocks());
-        model.setShowNodeHull(getModel().getShowNodeHull());
-        model.setShowEmptyBlocks(getModel().getShowEmptyBlocks());
-        model.setHideDuplicates(getModel().getHideDuplicates());
-        model.initFiltersFromModel(getModel());
+        DiagramViewModel model = new DiagramViewModel(getModel());
+        model.setGlobalSelection(false, false);
         EditorTopComponent etc = new EditorTopComponent(model);
+
+        Set<InputNode> selectedNodes = new HashSet<>();
+        for (Figure figure : getModel().getSelectedFigures()) {
+            selectedNodes.add(figure.getInputNode());
+        }
+        etc.addSelectedNodes(selectedNodes, false);
+        model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
         etc.resetUndoRedo();
+
+        int currentZoomLevel = scene.getZoomPercentage();
+        SwingUtilities.invokeLater(() -> {
+            etc.centerSelectedNodes();
+            etc.setZoomLevel(currentZoomLevel);
+        });
         return etc;
     }
 

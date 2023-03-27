@@ -187,10 +187,12 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     }
 
     public void selectFilterChain(FilterChain filterChain) {
+        comboBox.removeActionListener(comboBoxSelectionChangedListener);
         comboBox.setSelectedItem(filterChain);
         if (comboBox.getSelectedIndex() < 0) {
             comboBox.setSelectedIndex(0);
         }
+        comboBox.addActionListener(comboBoxSelectionChangedListener);
     }
 
     public void setCustomFilterChain(FilterChain filterChain) {
