@@ -382,17 +382,18 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   ResourceMark rm(current);
   HandleMark hm(current);
 
-  if (!(DynamicDumpSharedSpaces && archive_name != nullptr)) {
+  if (!DynamicDumpSharedSpaces || archive_name == nullptr) {
     return;
   }
 
-  log_info(cds,dynamic)("Preparing for dynamic dump at exit in thread %s", current->name());
+  log_info(cds, dynamic)("Preparing for dynamic dump at exit in thread %s", current->name());
 
-  MetaspaceShared::link_shared_classes(false/*not from jcmd*/, current);
-  if (!current->has_pending_exception()) {
+  JavaThread* THREAD = current; // For TRAPS processing related to link_shared_classes
+  MetaspaceShared::link_shared_classes(false/*not from jcmd*/, THREAD);
+  if (!HAS_PENDING_EXCEPTION) {
     // copy shared path table to saved.
     FileMapInfo::clone_shared_path_table(current);
-    if (!current->has_pending_exception()) {
+    if (!HAS_PENDING_EXCEPTION) {
       VM_PopulateDynamicDumpSharedSpace op(archive_name);
       VMThread::execute(&op);
       return;
@@ -404,7 +405,7 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   log_error(cds)("Dynamic dump has failed");
   log_error(cds)("%s: %s", ex->klass()->external_name(),
                  java_lang_String::as_utf8_string(java_lang_Throwable::message(ex)));
-  current->clear_pending_exception();
+  CLEAR_PENDING_EXCEPTION;
   DynamicDumpSharedSpaces = false;  // Just for good measure
 }
 
