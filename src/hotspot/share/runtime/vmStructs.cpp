@@ -1764,6 +1764,8 @@
   declare_c2_type(CompressVNode, VectorNode)                              \
   declare_c2_type(CompressMNode, VectorNode)                              \
   declare_c2_type(ExpandVNode, VectorNode)                                \
+  declare_c2_type(CompressBitsVNode, VectorNode)                          \
+  declare_c2_type(ExpandBitsVNode, VectorNode)                            \
   declare_c2_type(MulReductionVDNode, ReductionNode)                      \
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
