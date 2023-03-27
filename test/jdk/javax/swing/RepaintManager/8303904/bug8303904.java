@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.Objects;
 public class bug8303904 extends JDialog {
     static bug8303904 dialog;
     static boolean testCompleted = false;
+    static boolean testFailed = false;
 
     public static void main(String[] args) {
         System.setProperty("swing.volatileImageBufferEnabled", "false");
@@ -67,8 +68,43 @@ public class bug8303904 extends JDialog {
         }
 
         SwingUtilities.invokeLater(new Runnable() {
+            int ctr = 0;
             @Override
             public void run() {
+                if (ctr++ < 10_000) {
+                    SwingUtilities.invokeLater(this);
+                    return;
+                }
+
+                try {
+                    // these test the same thing in different ways. If second one (testPixelColor)
+                    // is the more important integration-type test
+                    testImageTransparency();
+                    testPixelColor();
+                } finally {
+                    testCompleted = true;
+                }
+            }
+
+            /**
+             * This tests the transparency of {@link Component#createImage(int, int)}
+             */
+            private void testImageTransparency() {
+                System.out.println("dialog.getGraphicsConfiguration() = " + dialog.getGraphicsConfiguration());
+                System.out.println("dialog.getBackground().getAlpha() = " + dialog.getBackground().getAlpha());
+                System.out.println("dialog.isOpaque = " + dialog.isOpaque());
+                BufferedImage img = (BufferedImage) dialog.createImage(300, 300);
+                System.out.println("dialog.createImage produced " + img);
+                if (img.getTransparency() != Transparency.TRANSLUCENT) {
+                    System.err.println("dialog.createImage(..) should return a translucent image");
+                    testFailed = true;
+                }
+            }
+
+            /**
+             * This uses a Robot to grab the actual pixel color.
+             */
+            private void testPixelColor() {
                 Robot robot = null;
                 try {
                     robot = new Robot();
@@ -76,13 +112,11 @@ public class bug8303904 extends JDialog {
                     Color c = robot.getPixelColor(p.x + 7, p.y + 7);
                     if (c.getRed() < 200 || c.getGreen() < 200 || c.getBlue() < 200) {
                         System.err.println("The top-left corner of the dialog should be near white, but it was " + c);
-                        System.exit(1);
+                        testFailed = true;
                     }
                 } catch (AWTException e) {
                     e.printStackTrace();
-                    System.exit(1);
-                } finally {
-                    testCompleted = true;
+                    testFailed = true;
                 }
             }
         });
@@ -90,9 +124,12 @@ public class bug8303904 extends JDialog {
 
         while (!testCompleted) {
             try {
-                Thread.sleep(5);
+                Thread.sleep(50);
             } catch (InterruptedException e) {}
         }
+
+        if (testFailed)
+            System.exit(1);
     }
 
     JTextPane instructions = new JTextPane();
