@@ -400,7 +400,10 @@ public class X11GraphicsConfig extends GraphicsConfiguration
                                         int width, int height)
     {
         // As of 1.7 we no longer create pmoffscreens here...
-        ColorModel model = getColorModel(Transparency.OPAQUE);
+        int transparency = Transparency.OPAQUE;
+        if (target instanceof Window window && !window.isOpaque())
+            transparency = Transparency.TRANSLUCENT;
+        ColorModel model = getColorModel(transparency);
         WritableRaster wr =
             model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,

@@ -240,7 +240,10 @@ public final class GLXGraphicsConfig
     public Image createAcceleratedImage(Component target,
                                         int width, int height)
     {
-        ColorModel model = getColorModel(Transparency.OPAQUE);
+        int transparency = Transparency.OPAQUE;
+        if (target instanceof Window window && !window.isOpaque())
+            transparency = Transparency.TRANSLUCENT;
+        ColorModel model = getColorModel(transparency);
         WritableRaster wr =
             model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,
