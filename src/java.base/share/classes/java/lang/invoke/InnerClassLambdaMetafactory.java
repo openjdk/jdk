@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.*;
+import jdk.internal.util.ClassFileDumper;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
 import sun.security.action.GetBooleanAction;

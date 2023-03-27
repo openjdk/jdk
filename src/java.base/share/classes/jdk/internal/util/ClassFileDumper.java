@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.invoke;
+package jdk.internal.util;
 
 import jdk.internal.misc.VM;
 import sun.security.action.GetBooleanAction;
@@ -43,13 +43,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Helper class to log normal and hidden classes defined via Lookup API
+ * Helper class to log normal and hidden classes defined via Lookup::defineClass
+ * and Lookup::defineHiddenClass API
  *
  * @implNote
  * <p> Because this class is called by MethodHandleStatics, LambdaForms generation
  * and LambdaMetafactory, make use of lambda lead to recursive calls cause stack overflow.
  */
-final class ClassFileDumper {
+public final class ClassFileDumper {
     private static final char[] HEX = {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
@@ -162,11 +163,12 @@ final class ClassFileDumper {
                         Path dir = file.getParent();
                         Files.createDirectories(dir);
                         Files.write(file, classBytes);
-                    } catch (Exception ignore) {
+                    } catch (Exception ex) {
                         if (VM.isModuleSystemInited()) {
                             // log only when lambda is ready to use
                             System.getLogger(ClassFileDumper.class.getName())
-                                  .log(System.Logger.Level.WARNING, "Exception writing to path at " + file.toString());
+                                  .log(System.Logger.Level.WARNING, "Exception writing to " +
+                                          file.toString() + " " + ex.getMessage());
                         }
                         // simply don't care if this operation failed
                     }
@@ -187,13 +189,13 @@ final class ClassFileDumper {
                         try {
                             Files.createDirectory(path);
                         } catch (IOException ex) {
-                            throw new UncheckedIOException("Fail to create " + path + " - dumping disabled", ex);
+                            throw new UncheckedIOException("Fail to create " + path, ex);
                         }
                     }
                     if (!Files.isDirectory(path)) {
-                        throw new IllegalArgumentException("Path " + path + " is not a directory" + " - dumping disabled");
+                        throw new IllegalArgumentException("Path " + path + " is not a directory");
                     } else if (!Files.isWritable(path)) {
-                        throw new IllegalArgumentException("Directory " + path + " is not writable" + " - dumping disabled");
+                        throw new IllegalArgumentException("Directory " + path + " is not writable");
                     }
                     return path;
                 }

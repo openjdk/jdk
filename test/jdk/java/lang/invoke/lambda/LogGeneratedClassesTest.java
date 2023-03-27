@@ -175,7 +175,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
-                                  .filter(s -> s.contains("is not a directory - dumping disabled"))
+                                  .filter(s -> s.contains("is not a directory"))
                                   .count(),
                      1, "only show error once");
         assertTrue(tr.exitValue !=0);
@@ -237,7 +237,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                    "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
-                                      .filter(s -> s.contains("is not writable - dumping disabled"))
+                                      .filter(s -> s.contains("is not writable"))
                                       .count(),
                          1, "only show error once");
             assertTrue(tr.exitValue != 0);

@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ClassFileDumper;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.reflect.ClassFileFormatVersion;
