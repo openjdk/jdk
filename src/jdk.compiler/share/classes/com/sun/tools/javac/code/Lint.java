@@ -100,6 +100,7 @@ public class Lint
 
     private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
 
+    @SuppressWarnings("this-escape")
     protected Lint(Context context) {
         // initialize values according to the lint options
         Options options = Options.instance(context);
@@ -305,6 +306,11 @@ public class Lint
          * Warn about issues relating to use of text blocks
          */
         TEXT_BLOCKS("text-blocks"),
+
+        /**
+         * Warn about possible 'this' escapes before subclass instance is fully initialized.
+         */
+        THIS_ESCAPE("this-escape"),
 
         /**
          * Warn about issues relating to use of try blocks (i.e. try-with-resources)
