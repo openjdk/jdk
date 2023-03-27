@@ -165,7 +165,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
      * @param targetPlatform target platform of the image
      * @throws IOException
      * @throws NullPointerException If any of the params is null
-     * @since 21
      */
     public DefaultImageBuilder(Path root, Map<String, String> launchers, Platform targetPlatform)
             throws IOException {
