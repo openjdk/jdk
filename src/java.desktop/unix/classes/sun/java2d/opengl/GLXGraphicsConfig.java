@@ -34,6 +34,7 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.Transparency;
+import java.awt.Window;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;

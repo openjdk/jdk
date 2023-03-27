@@ -35,6 +35,7 @@ import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Transparency;
+import java.awt.Window;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
