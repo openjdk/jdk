@@ -2215,6 +2215,9 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
   }
 }
 
+// The xmethod register is input and overwritten to be the adapter method for the
+// indy call. Return address (ra) is set to the return address for the adapter and
+// an appendix may be pushed to the stack. Registers x10-x13 are clobbered.
 void TemplateTable::load_invokedynamic_entry(Register method) {
   // setup registers
   const Register appendix = x10;
@@ -2232,15 +2235,14 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
   // Compare the method to zero
-  __ andr(t0, method, method);
-  __ bnez(t0, resolved);
+  __ bnez(method, resolved);
 
   Bytecodes::Code code = bytecode();
 
   // Call to the interpreter runtime to resolve invokedynamic
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mv(method, code); // this is essentially Bytecodes::_invokedynamic
-  __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
+  __ call_VM(noreg, entry, method);
   // Update registers with resolved info
   __ load_resolved_indy_entry(cache, index);
   __ membar(MacroAssembler::AnyAny);
@@ -2248,8 +2250,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
 #ifdef ASSERT
-  __ andr(t0, method, method);
-  __ bnez(t0, resolved);
+  __ bnez(method, resolved);
   __ stop("Should be resolved by now");
 #endif // ASSERT
   __ bind(resolved);
@@ -2257,9 +2258,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label L_no_push;
   // Check if there is an appendix
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
-  __ slli(index, index, XLEN - (ResolvedIndyEntry::has_appendix_shift + 1));
-  __ srli(index, index, XLEN - 1);
-  __ andr(t0, index, index);
+  __ andi(t0, index, 1UL << ResolvedIndyEntry::has_appendix_shift);
   __ beqz(t0, L_no_push);
 
   // Get appendix
@@ -2277,8 +2276,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // compute return type
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())));
   // load return address
-  // Return address is loaded into link register(lr) and not pushed to the stack
-  // like x86
+  // Return address is loaded into ra and not pushed to the stack like x86
   {
     const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     __ mv(t0, table_addr);

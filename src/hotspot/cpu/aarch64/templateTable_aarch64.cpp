@@ -2340,8 +2340,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ ldar(method, method);
 
   // Compare the method to zero
-  __ tst(method, method);
-  __ br(Assembler::NE, resolved);
+  __ cbnz(method, resolved);
 
   Bytecodes::Code code = bytecode();
 
@@ -2356,8 +2355,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ ldar(method, method);
 
 #ifdef ASSERT
-  __ tst(method, method);
-  __ br(Assembler::NE, resolved);
+  __ cbnz(method, resolved);
   __ stop("Should be resolved by now");
 #endif // ASSERT
   __ bind(resolved);

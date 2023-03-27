@@ -449,11 +449,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ shadd(esp, cache, esp, t0, 3);
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(x11, x12, 1, index_size);
-    __ ld(x11, Address(x11, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-    __ andi(x11, x11, ConstantPoolCacheEntry::parameter_size_mask);
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+    __ ld(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andi(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
 
-    __ shadd(esp, x11, esp, t0, 3);
+    __ shadd(esp, cache, esp, t0, 3);
   }
 
   // Restore machine SP
