@@ -35,9 +35,8 @@
 #include "memory/arena.hpp"
 #include "utilities/ostream.hpp"
 
-/*
- * Virtual memory counter
- */
+
+// Virtual memory counter
 class VirtualMemory {
  private:
   size_t     _reserved;
