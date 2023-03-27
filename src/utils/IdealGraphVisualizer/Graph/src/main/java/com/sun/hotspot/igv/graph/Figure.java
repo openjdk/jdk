@@ -340,15 +340,14 @@ public class Figure extends Properties.Entity implements Vertex {
                     }
                     inputLabel = nodeTinyLabel;
                 }
-                if (inputLabel != null) {
-                    int gapSize = is.gapSize();
-                    if (gapSize == 1) {
-                        inputs.add("_");
-                    } else if (gapSize > 1) {
-                        inputs.add("…");
-                    }
-                    inputs.add(inputLabel);
+                assert(inputLabel != null);
+                int gapSize = is.gapSize();
+                if (gapSize == 1) {
+                    inputs.add("_");
+                } else if (gapSize > 1) {
+                    inputs.add("…");
                 }
+                inputs.add(inputLabel);
             }
             inputList += String.join("  ", inputs);
             if (result.size() == 1) {
