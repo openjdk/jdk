@@ -75,20 +75,20 @@ public class EditableComboBoxPopupPos {
                     panel.setLayout(gridLayout);
                     String[] comboStrings = {"One", "Two", "Three"};
 
-                    cb1 = new JComboBox(comboStrings);
+                    cb1 = new JComboBox<>(comboStrings);
                     cb1.setEditable(true);
                     cb1.setBorder(BorderFactory.createTitledBorder(
                             "Editable JComboBox"));
 
-                    cb2 = new JComboBox(comboStrings);
+                    cb2 = new JComboBox<>(comboStrings);
                     cb2.setEditable(true);
 
-                    cb3 = new JComboBox(comboStrings);
+                    cb3 = new JComboBox<>(comboStrings);
                     cb3.setEditable(false);
                     cb3.setBorder(BorderFactory.createTitledBorder(
                             "Non-editable JComboBox"));
 
-                    cb4 = new JComboBox(comboStrings);
+                    cb4 = new JComboBox<>(comboStrings);
                     cb4.setEditable(false);
 
                     panel.add(cb1);
@@ -141,6 +141,10 @@ public class EditableComboBoxPopupPos {
                     cb4Str = cb4.getSelectedItem().toString();
                 });
 
+                if (cb1Str == null || cb2Str == null
+                        || cb3Str == null || cb4Str == null) {
+                    throw new RuntimeException("Null ComboBox String");
+                }
                 checkSelection(cb1Str, cb2Str, cb3Str, cb4Str);
             } finally {
                 SwingUtilities.invokeAndWait(() -> frame.dispose());
@@ -191,7 +195,7 @@ public class EditableComboBoxPopupPos {
             }
         } else {
             robot.mouseMove(p.x + width - BUTTON_OFFSET,
-                    p.y + (height / 2) + POPUP_OFFSET);
+                    p.y + (height / 2));
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
