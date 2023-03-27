@@ -47,7 +47,7 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
 
   bool d_pos = divisor >= 0;
   jint d = d_pos ? divisor : -divisor;
-  const int N = 32;
+  constexpr int N = 32;
 
   // Result
   Node* q = nullptr;
@@ -117,9 +117,10 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
 
     jlong magic_const;
     jint shift_const;
-    magic_int_divide_constants(juint(d), magic_const, shift_const);
+    magic_int_divide_constants(d, magic_const, shift_const);
     // magic_const should be a u32
-    assert(magic_const >= jlong(0) && magic_const <= jlong(max_juint), "sanity");
+    assert(magic_const >= 0 && magic_const <= jlong(max_juint), "sanity");
+    assert(shift_const >= 0 && shift_const < 32, "sanity");
     Node* magic = phase->longcon(magic_const);
     Node* dividend_long = phase->transform(new ConvI2LNode(dividend));
 
@@ -153,7 +154,7 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
 // Return NULL if no transformation occurs.
 static Node* transform_int_udivide( PhaseGVN* phase, Node* dividend, juint divisor ) {
   assert(divisor > 1, "invalid constant divisor");
-  const int N = 32;
+  constexpr int N = 32;
 
   // Result
   Node* q = NULL;
@@ -174,6 +175,7 @@ static Node* transform_int_udivide( PhaseGVN* phase, Node* dividend, juint divis
     jint shift_const;
     magic_int_unsigned_divide_constants_down(divisor, magic_const, shift_const);
     assert(magic_const >= 0 && magic_const <= 0x1FFFFFFFFL, "sanity");
+    assert(shift_const >= 0 && shift_const < 33, "sanity");
 
     // magic_const is u33, max_abs_dividend is u32, so we must check for overflow
     const TypeInt* dividend_type = phase->type(dividend)->is_int();
@@ -201,10 +203,9 @@ static Node* transform_int_udivide( PhaseGVN* phase, Node* dividend, juint divis
       // Original plan fails, rounding down of 1/divisor does not work, change
       // to rounding up, now it is guaranteed to not overflow, according to
       // N-Bit Unsigned Division Via N-Bit Multiply-Add by Arch D. Robison
-
-      // This case guarantees shift_const < 32 so we do not bother checking
       magic_int_unsigned_divide_constants_up(divisor, magic_const, shift_const);
       assert(magic_const >= 0 && magic_const <= jlong(max_juint), "sanity");
+      assert(shift_const >= 0 && shift_const < 32, "sanity");
       Node* magic = phase->longcon(magic_const);
 
       // Compute the high half of the dividend x magic multiplication
@@ -307,7 +308,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 
   bool d_pos = divisor >= 0;
   jlong d = d_pos ? divisor : -divisor;
-  const int N = 64;
+  constexpr int N = 64;
 
   // Result
   Node *q = nullptr;
@@ -378,6 +379,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     jlong magic_const;
     jint shift_const;
     magic_long_divide_constants(d, magic_const, shift_const);
+    assert(shift_const >= 0 && shift_const < 64, "sanity");
     // Compute the high half of the dividend x magic multiplication
     Node *mul_hi = phase->transform(long_by_long_mulhi(phase, dividend, magic_const));
 
@@ -417,7 +419,6 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 // Return NULL if no transformation occurs.
 static Node* transform_long_udivide( PhaseGVN* phase, Node* dividend, julong divisor ) {
   assert(divisor > 1, "invalid constant divisor");
-  const int N = 32;
 
   // Result
   Node* q = NULL;
@@ -439,13 +440,13 @@ static Node* transform_long_udivide( PhaseGVN* phase, Node* dividend, julong div
     jint shift_const;
     bool magic_const_ovf;
     magic_long_unsigned_divide_constants(divisor, magic_const, shift_const, magic_const_ovf);
+    assert(shift_const >= 0 && shift_const < 65, "sanity");
 
     Node* magic = phase->longcon(magic_const);
-    // Compute the high half of the dividend x magic multiplication
     Node* mul_hi = phase->transform(new UMulHiLNode(dividend, magic));
 
     if (!magic_const_ovf) {
-      // No overflow here, just shift the result
+      assert(shift_const < 64, "sanity");
       q = new URShiftLNode(mul_hi, phase->intcon(shift_const));
     } else {
       // If the multiplication does not overflow 128-bit unsigned int, we can
@@ -463,9 +464,7 @@ static Node* transform_long_udivide( PhaseGVN* phase, Node* dividend, julong div
         if (shift_const == 64) {
           q = phase->longcon(0);
         } else {
-          // Add back the dividend
           mul_hi = phase->transform(new AddLNode(mul_hi, dividend));
-          // Shift the result
           q = new URShiftLNode(mul_hi, phase->intcon(shift_const));
         }
       } else {
@@ -478,8 +477,6 @@ static Node* transform_long_udivide( PhaseGVN* phase, Node* dividend, julong div
         //       = floor((x - mul_hi) / 2 + mul_hi)
         //       = floor((x - mul_hi) / 2) + mul_hi
         // Since x > mul_hi, this operation can be done precisely using Z/2**64Z arithmetic
-
-        // This case may overflow so we cannot fast path for shift_const = 64
         Node* diff = phase->transform(new SubLNode(dividend, mul_hi));
         diff = phase->transform(new URShiftLNode(diff, phase->intcon(1)));
         Node* p = phase->transform(new AddLNode(diff, mul_hi));
