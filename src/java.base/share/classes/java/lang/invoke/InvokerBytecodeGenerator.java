@@ -34,11 +34,7 @@ import jdk.internal.org.objectweb.asm.Type;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
-import sun.reflect.misc.ReflectUtil;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -125,7 +121,7 @@ class InvokerBytecodeGenerator {
             name = invokerName.substring(0, p);
             invokerName = invokerName.substring(p + 1);
         }
-        if (dumpClassEnabled()) {
+        if (dumper().isEnabled()) {
             name = makeDumpableClassName(name);
         }
         this.name = name;
@@ -173,20 +169,8 @@ class InvokerBytecodeGenerator {
     }
 
     /** instance counters for dumped classes */
-    private static final HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS;
-
-    static {
-        if (dumpClassEnabled()) {
-            DUMP_CLASS_FILES_COUNTERS = new HashMap<>();
-            System.out.println("Dumping class files to " + DUMP_CLASS_FILES.dumpPath() + "/...");
-        } else {
-            DUMP_CLASS_FILES_COUNTERS = null;
-        }
-    }
-
-    private static boolean dumpClassEnabled() {
-        return DUMP_CLASS_FILES.isEnabled();
-    }
+    private static final HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS =
+            dumper().isEnabled() ?  new HashMap<>(): null;
 
     private static String makeDumpableClassName(String className) {
         Integer ctr;
@@ -233,7 +217,7 @@ class InvokerBytecodeGenerator {
 
         // unique static variable name
         String name;
-        if (dumpClassEnabled()) {
+        if (dumper().isEnabled()) {
             Class<?> c = arg.getClass();
             while (c.isArray()) {
                 c = c.getComponentType();
@@ -261,7 +245,7 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
-        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of(), DUMP_CLASS_FILES)
+        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of(), dumper())
                                       .defineClass(true, classDataValues());
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }
@@ -1933,7 +1917,7 @@ class InvokerBytecodeGenerator {
      * for debugging purposes.
      */
     private void bogusMethod(Object os) {
-        if (dumpClassEnabled()) {
+        if (dumper().isEnabled()) {
             mv = cw.visitMethod(Opcodes.ACC_STATIC, "dummy", "()V", null, null);
             mv.visitLdcInsn(os.toString());
             mv.visitInsn(Opcodes.POP);

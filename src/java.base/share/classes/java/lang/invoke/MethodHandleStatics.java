@@ -68,8 +68,7 @@ class MethodHandleStatics {
         Properties props = GetPropertyAction.privilegedGetProperties();
         DEBUG_METHOD_HANDLE_NAMES = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.DEBUG_NAMES"));
-        DUMP_CLASS_FILES = ClassFileDumper.getInstance("java.lang.invoke.MethodHandle.DUMP_CLASS_FILES",
-                                                       Path.of("DUMP_CLASS_FILES"));
+
         TRACE_INTERPRETER = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.TRACE_INTERPRETER"));
         TRACE_METHOD_LINKAGE = Boolean.parseBoolean(
@@ -97,6 +96,9 @@ class MethodHandleStatics {
         MAX_ARITY = Integer.parseInt(
                 props.getProperty("java.lang.invoke.MethodHandleImpl.MAX_ARITY", "255"));
 
+        DUMP_CLASS_FILES = ClassFileDumper.getInstance("jdk.invoke.MethodHandle.dumpMethodHandleInternals",
+                Path.of("DUMP_METHOD_HANDLE_INTERNALS"));
+
         if (CUSTOMIZE_THRESHOLD < -1 || CUSTOMIZE_THRESHOLD > 127) {
             throw newInternalError("CUSTOMIZE_THRESHOLD should be in [-1...127] range");
         }
@@ -112,6 +114,10 @@ class MethodHandleStatics {
                 TRACE_INTERPRETER |
                 TRACE_METHOD_LINKAGE |
                 LOG_LF_COMPILATION_FAILURE);
+    }
+
+    static ClassFileDumper dumper() {
+        return DUMP_CLASS_FILES;
     }
 
     /**

@@ -51,6 +51,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class LogGeneratedClassesTest extends LUtils {
+    static final Path DUMP_LAMBDA_PROXY_CLASS_FILES = Path.of("DUMP_LAMBDA_PROXY_CLASS_FILES");
     String longFQCN;
 
     @BeforeClass
@@ -93,20 +94,14 @@ public class LogGeneratedClassesTest extends LUtils {
         test = new File("LongPackageName.java");
         createFile(test, scratch);
         compile("-d", ".", test.getName());
-
-        // create target
-        Files.createDirectory(Paths.get("dump"));
-        Files.createDirectories(Paths.get("dumpLong/com/example/nonsense"));
-        Files.createFile(Paths.get("dumpLong/com/example/nonsense/nonsense"));
-        Files.createFile(Paths.get("file"));
     }
 
     @AfterClass
     public void cleanup() throws IOException {
         Files.delete(Paths.get("TestLambda.java"));
         Files.delete(Paths.get("LongPackageName.java"));
-        Files.delete(Paths.get("file"));
-        TestUtil.removeAll(Paths.get("com"));
+        TestUtil.removeAll(DUMP_LAMBDA_PROXY_CLASS_FILES);
+        TestUtil.removeAll(Paths.get("notDir"));
         TestUtil.removeAll(Paths.get("dump"));
         TestUtil.removeAll(Paths.get("dumpLong"));
     }
@@ -122,17 +117,20 @@ public class LogGeneratedClassesTest extends LUtils {
 
     @Test
     public void testLogging() throws IOException {
-        assertTrue(Files.exists(Paths.get("dump")));
+        Path testDir = Path.of("dump");
+        Path dumpDir = testDir.resolve(DUMP_LAMBDA_PROXY_CLASS_FILES);
+        Files.createDirectory(testDir);
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
-                               "-cp", ".",
+                               "-cp", "..",
+                               "-Duser.dir=" + testDir.toAbsolutePath(),
                                "-Djava.security.manager=allow",
-                               "-Djdk.internal.lambda.dumpProxyClasses=dump",
+                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                                "com.example.TestLambda");
         // 2 our own class files. We don't care about the others
         assertEquals(Files.find(
-                        Paths.get("dump"),
+                        dumpDir,
                         99,
-                        (p, a) -> p.startsWith(Paths.get("dump/com/example"))
+                        (p, a) -> p.startsWith(dumpDir.resolve("com/example"))
                                 && a.isRegularFile()).count(),
                       2, "Two lambda captured");
         tr.assertZero("Should still return 0");
@@ -140,17 +138,24 @@ public class LogGeneratedClassesTest extends LUtils {
 
     @Test
     public void testDumpDirNotExist() throws IOException {
-        assertFalse(Files.exists(Paths.get("notExist")));
+        Path testDir = Path.of("NotExist");
+        Path dumpDir = testDir.resolve(DUMP_LAMBDA_PROXY_CLASS_FILES);
+        Files.createDirectory(testDir);
+        TestUtil.removeAll(dumpDir);
+
+        assertFalse(Files.exists(dumpDir));
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
-                               "-cp", ".",
+                               "-cp", "..",
+                               "-Duser.dir=" + testDir.toAbsolutePath(),
                                "-Djava.security.manager=allow",
-                               "-Djdk.internal.lambda.dumpProxyClasses=notExist",
+                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                                "com.example.TestLambda");
+
         // The dump directory will be created if not exist
         assertEquals(Files.find(
-                        Paths.get("notExist"),
+                        dumpDir,
                         99,
-                        (p, a) -> p.startsWith(Paths.get("notExist/com/example"))
+                        (p, a) -> p.startsWith(dumpDir.resolve("com/example"))
                                 && a.isRegularFile()).count(),
                     2, "Two lambda captured");
         tr.assertZero("Should still return 0");
@@ -158,14 +163,19 @@ public class LogGeneratedClassesTest extends LUtils {
 
     @Test
     public void testDumpDirIsFile() throws IOException {
-        assertTrue(Files.isRegularFile(Paths.get("file")));
+        Path testDir = Path.of("notDir");
+        Path dumpFile = testDir.resolve(DUMP_LAMBDA_PROXY_CLASS_FILES);
+        Files.createDirectory(testDir);
+        Files.createFile(dumpFile);
+        assertTrue(Files.isRegularFile(dumpFile));
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
-                               "-cp", ".",
+                               "-cp", "..",
+                               "-Duser.dir=" + testDir.toAbsolutePath(),
                                "-Djava.security.manager=allow",
-                               "-Djdk.internal.lambda.dumpProxyClasses=file",
+                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
-                                  .filter(s -> s.contains("Path file is not a directory - dumping disabled"))
+                                  .filter(s -> s.contains("is not a directory - dumping disabled"))
                                   .count(),
                      1, "only show error once");
         assertTrue(tr.exitValue !=0);
@@ -207,49 +217,57 @@ public class LogGeneratedClassesTest extends LUtils {
             return;
         }
 
-        Files.createDirectory(Paths.get("readOnly"),
+        Path testDir = Path.of("readOnly");
+        Path dumpDir = testDir.resolve(DUMP_LAMBDA_PROXY_CLASS_FILES);
+        Files.createDirectory(testDir);
+        Files.createDirectory(dumpDir,
                               asFileAttribute(fromString("r-xr-xr-x")));
         try {
-            if (isWriteableDirectory(Paths.get("readOnly"))) {
+            if (isWriteableDirectory(dumpDir)) {
                 // Skipping the test: it's allowed to write into read-only directory
                 // (e.g. current user is super user).
-                System.out.println("WARNING: readOnly directory is writeable. Skipping testDumpDirNotWritable test.");
+                System.out.println("WARNING: The dump directory is writeable. Skipping testDumpDirNotWritable test.");
                 return;
             }
 
             TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
-                                   "-cp", ".",
+                                   "-cp", "..",
+                                   "-Duser.dir=" + testDir.toAbsolutePath(),
                                    "-Djava.security.manager=allow",
-                                   "-Djdk.internal.lambda.dumpProxyClasses=readOnly",
+                                   "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
-                                      .filter(s -> s.contains("Directory readOnly is not writable - dumping disabled"))
+                                      .filter(s -> s.contains("is not writable - dumping disabled"))
                                       .count(),
                          1, "only show error once");
             assertTrue(tr.exitValue != 0);
         } finally {
-            TestUtil.removeAll(Paths.get("readOnly"));
+            TestUtil.removeAll(testDir);
         }
     }
 
     @Test
     public void testLoggingException() throws IOException {
-        assertTrue(Files.exists(Paths.get("dumpLong")));
+        Path testDir = Path.of("dumpLong");
+        Path dumpDir = testDir.resolve(DUMP_LAMBDA_PROXY_CLASS_FILES);
+        Files.createDirectories(dumpDir.resolve("com/example/nonsense"));
+        Files.createFile(dumpDir.resolve("com/example/nonsense/nonsense"));
         TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
-                               "-cp", ".",
-                                "-Djava.security.manager=allow",
-                               "-Djdk.internal.lambda.dumpProxyClasses=dumpLong",
+                               "-cp", "..",
+                               "-Duser.dir=" + testDir.toAbsolutePath(),
+                               "-Djava.security.manager=allow",
+                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                                longFQCN);
         assertEquals(tr.testOutput.stream()
                                   .filter(s -> s.startsWith("WARNING: Exception"))
                                   .count(),
                      2, "show error each capture");
-        // dumpLong/com/example/nonsense/nonsense
-        Path dumpPath = Paths.get("dumpLong/com/example/nonsense");
+        // dumpLong/DUMP_LAMBDA_PROXY_CLASS_FILES/com/example/nonsense/nonsense
+        Path dumpPath = dumpDir.resolve("com/example/nonsense");
         Predicate<Path> filter = p -> p.getParent() == null || dumpPath.startsWith(p) || p.startsWith(dumpPath);
         boolean debug = true;
         if (debug) {
-           Files.walk(Paths.get("dumpLong"))
+           Files.walk(dumpDir)
                 .forEachOrdered(p -> {
                     if (filter.test(p)) {
                         System.out.println("accepted: " + p.toString());
@@ -258,7 +276,7 @@ public class LogGeneratedClassesTest extends LUtils {
                     }
                  });
         }
-        assertEquals(Files.walk(Paths.get("dumpLong"))
+        assertEquals(Files.walk(dumpDir)
                 .filter(filter)
                 .count(), 5, "Two lambda captured failed to log");
         tr.assertZero("Should still return 0");

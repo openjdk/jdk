@@ -567,7 +567,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         Class<? extends T> generateConcreteSpeciesCode(String className, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             byte[] classFile = generateConcreteSpeciesCodeFile(className, speciesData);
             var lookup = new MethodHandles.Lookup(topClass);
-            Class<?> speciesCode = lookup.makeClassDefiner(classBCName(className), classFile, DUMP_CLASS_FILES)
+            Class<?> speciesCode = lookup.makeClassDefiner(classBCName(className), classFile, dumper())
                                          .defineClass(false);
             return speciesCode.asSubclass(topClass());
         }

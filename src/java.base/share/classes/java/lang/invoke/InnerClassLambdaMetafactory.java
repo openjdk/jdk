@@ -31,15 +31,12 @@ import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
 import sun.security.action.GetBooleanAction;
 
-import java.io.FilePermission;
 import java.io.Serializable;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.PropertyPermission;
 import java.util.Set;
 
 import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
@@ -87,7 +84,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final AtomicInteger counter = new AtomicInteger();
 
     // For dumping generated classes to disk, for debugging purposes
-    private static final ClassFileDumper dumper;
+    private static final ClassFileDumper lambdaProxyClassFileDumper;
 
     private static final boolean disableEagerInitialization;
 
@@ -95,8 +92,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final ConstantDynamic implMethodCondy;
 
     static {
-        final String dumpProxyClassesKey = "jdk.internal.lambda.dumpProxyClasses";
-        dumper = ClassFileDumper.getInstance(dumpProxyClassesKey);
+        // To dump the lambda proxy classes, set this system property:
+        //    -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true
+        final String dumpProxyClassesKey = "jdk.invoke.LambdaMetafactory.dumpProxyClassFiles";
+        lambdaProxyClassFileDumper = ClassFileDumper.getInstance(dumpProxyClassesKey, Path.of("DUMP_LAMBDA_PROXY_CLASS_FILES"));
+
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
 
@@ -360,26 +360,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
             var classdata = useImplMethodHandle? implementation : null;
-            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, Set.of(NESTMATE, STRONG), dumper)
+            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, Set.of(NESTMATE, STRONG), lambdaProxyClassFileDumper)
                          .defineClass(!disableEagerInitialization, classdata);
 
         } catch (Throwable t) {
             throw new InternalError(t);
         }
-    }
-
-    @SuppressWarnings("removal")
-    private void doDump(final String className, final byte[] classBytes) {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Void run() {
-                dumper.dumpClass(className, classBytes);
-                return null;
-            }
-        }, null,
-        new FilePermission("<<ALL FILES>>", "read, write"),
-        // createDirectories may need it
-        new PropertyPermission("user.dir", "read"));
     }
 
     /**

@@ -1103,7 +1103,7 @@ abstract class MethodHandleImpl {
                 }
                 name = name.replace('.', '/');
                 Class<?> invokerClass = new Lookup(targetClass)
-                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, Set.of(NESTMATE), DUMP_CLASS_FILES)
+                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, Set.of(NESTMATE), dumper())
                         .defineClass(true, targetClass);
                 assert checkInjectedInvoker(targetClass, invokerClass);
                 return invokerClass;

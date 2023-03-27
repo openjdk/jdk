@@ -55,6 +55,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
+import java.nio.file.Path;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2237,6 +2238,20 @@ public class MethodHandles {
                        .defineClassAsLookup(initialize, classData);
         }
 
+        // A default dumper for writing class files passed to Lookup::defineClass
+        // and Lookup::defineHiddenClass to disk for debugging purposes.  To enable,
+        // set -Djdk.invoke.MethodHandle.dumpHiddenClassFiles=true
+        //
+        // This default dumper does not dump hidden classes defined by LambdaMetafactory
+        // and LambdaForms and method handle internals.  They are dumped via
+        // different ClassFileDumpers.
+        private static ClassFileDumper defaultDumper() {
+            return DEFAULT_DUMPER;
+        }
+
+        private static final ClassFileDumper DEFAULT_DUMPER = ClassFileDumper.getInstance(
+                "jdk.invoke.MethodHandle.dumpClassFiles", Path.of("DUMP_CLASS_FILES"));
+
         static class ClassFile {
             final String name;  // internal name
             final int accessFlags;
@@ -2341,7 +2356,7 @@ public class MethodHandles {
          */
         private ClassDefiner makeClassDefiner(byte[] bytes) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return new ClassDefiner(this, cf, STRONG_LOADER_LINK, DEFAULT_DUMPER);
+            return new ClassDefiner(this, cf, STRONG_LOADER_LINK, defaultDumper());
         }
 
         /**
@@ -2374,7 +2389,7 @@ public class MethodHandles {
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, Set.of(), false, DEFAULT_DUMPER);
+            return makeHiddenClassDefiner(cf, Set.of(), false, defaultDumper());
         }
 
         /**
@@ -2397,7 +2412,7 @@ public class MethodHandles {
                                             Set<ClassOption> options,
                                             boolean accessVmAnnotations) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, options, accessVmAnnotations, DEFAULT_DUMPER);
+            return makeHiddenClassDefiner(cf, options, accessVmAnnotations, defaultDumper());
         }
 
         /**
@@ -2411,7 +2426,7 @@ public class MethodHandles {
          */
         ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options) {
             // skip name and access flags validation
-            return makeHiddenClassDefiner(name, bytes, options, DEFAULT_DUMPER);
+            return makeHiddenClassDefiner(name, bytes, options, defaultDumper());
         }
 
         /**
@@ -2518,7 +2533,6 @@ public class MethodHandles {
                         } else {
                             name += ".failed-" + dumper.incrementAndGetCounter();
                         }
-                        System.out.println("dump: " + dumper.pathname(name));
                         dumper.dumpClass(name, bytes);
                     }
                 }
@@ -2543,11 +2557,6 @@ public class MethodHandles {
                 return (classFlags & NESTMATE_CLASS) != 0;
             }
         }
-
-        // A default dumper for writing generated classes to disk, for debugging purposes
-        // To enable, set -Djava.lang.invoke.Lookup.dumpClasses=<path>
-        private static final ClassFileDumper DEFAULT_DUMPER =
-                ClassFileDumper.getInstance("java.lang.invoke.Lookup.dumpClasses");
 
         private ProtectionDomain lookupClassProtectionDomain() {
             ProtectionDomain pd = cachedProtectionDomain;
