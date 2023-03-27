@@ -50,6 +50,7 @@ import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
 import java.awt.Transparency;
+import java.awt.Window;
 
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
@@ -256,7 +257,10 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     public Image createAcceleratedImage(Component target,
                                         int width, int height)
     {
-        ColorModel model = getColorModel(Transparency.OPAQUE);
+        int transparency = Transparency.OPAQUE;
+        if (target instanceof Window window && !window.isOpaque())
+            transparency = Transparency.TRANSLUCENT;
+        ColorModel model = getColorModel(transparency);
         WritableRaster wr = model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,
                 model.isAlphaPremultiplied());
