@@ -355,7 +355,11 @@ final class UnixFileSystem extends FileSystem {
 
     @Override
     public int getNameMax(String path) {
-        return (int)Math.min(getNameMax0(path), Integer.MAX_VALUE);
+        long nameMax = getNameMax0(path);
+        if (nameMax > Integer.MAX_VALUE) {
+            nameMax = Integer.MAX_VALUE;
+        }
+        return (int)nameMax;
     }
 
     @Override
