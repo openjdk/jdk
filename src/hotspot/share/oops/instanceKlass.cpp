@@ -647,10 +647,15 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_transitive_interfaces(nullptr);
   set_local_interfaces(nullptr);
 
-  if (fields() != nullptr && !fields()->is_shared()) {
-    MetadataFactory::free_array<jushort>(loader_data, fields());
+  if (fieldinfo_stream() != nullptr && !fieldinfo_stream()->is_shared()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_stream());
   }
-  set_fields(nullptr, 0);
+  set_fieldinfo_stream(nullptr);
+
+  if (fields_status() != nullptr && !fields_status()->is_shared()) {
+    MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
+  }
+  set_fields_status(nullptr);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
@@ -1393,6 +1398,18 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
   return i;
 }
 
+instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
+  Klass* k = java_lang_Class::as_Klass(java_class);
+  if (k == nullptr) {
+    ResourceMark rm(THREAD);
+    THROW_(vmSymbols::java_lang_InstantiationException(), nullptr);
+  }
+  InstanceKlass* ik = cast(k);
+  ik->check_valid_for_instantiation(false, CHECK_NULL);
+  ik->initialize(CHECK_NULL);
+  return ik->allocate_instance(THREAD);
+}
+
 instanceHandle InstanceKlass::allocate_instance_handle(TRAPS) {
   return instanceHandle(THREAD, allocate_instance(THREAD));
 }
@@ -1519,6 +1536,16 @@ void InstanceKlass::mask_for(const methodHandle& method, int bci,
 bool InstanceKlass::contains_field_offset(int offset) {
   fieldDescriptor fd;
   return find_field_from_offset(offset, false, &fd);
+}
+
+FieldInfo InstanceKlass::field(int index) const {
+  for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+    if (fs.index() == index) {
+      return fs.to_FieldInfo();
+    }
+  }
+  fatal("Field not found");
+  return FieldInfo();
 }
 
 bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
@@ -2437,8 +2464,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_default_vtable_indices);
   }
 
-  // _fields might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
-  it->push(&_fields, MetaspaceClosure::_writable);
+  it->push(&_fieldinfo_stream);
+  // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
+  it->push(&_fields_status, MetaspaceClosure::_writable);
 
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();

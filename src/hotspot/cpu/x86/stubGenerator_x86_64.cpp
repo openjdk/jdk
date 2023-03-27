@@ -459,7 +459,7 @@ address StubGenerator::generate_catch_exception() {
   __ movl(Address(r15_thread, Thread::exception_line_offset()), (int)  __LINE__);
 
   // complete return to VM
-  assert(StubRoutines::_call_stub_return_address != NULL,
+  assert(StubRoutines::_call_stub_return_address != nullptr,
          "_call_stub_return_address must have been generated before");
   __ jump(RuntimeAddress(StubRoutines::_call_stub_return_address));
 
@@ -1091,7 +1091,7 @@ address StubGenerator::generate_verify_oop() {
 
   // make sure object is 'reasonable'
   __ testptr(rax, rax);
-  __ jcc(Assembler::zero, exit); // if obj is NULL it is OK
+  __ jcc(Assembler::zero, exit); // if obj is null it is OK
 
    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
    bs_asm->check_oop(_masm, rax, c_rarg2, c_rarg3, error);
@@ -4085,7 +4085,7 @@ void StubGenerator::generate_all() {
   }
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != NULL) {
+  if (bs_nm != nullptr) {
     StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
   }
 #ifdef COMPILER2
@@ -4112,13 +4112,13 @@ void StubGenerator::generate_all() {
   }
 
   // Get svml stub routine addresses
-  void *libjsvml = NULL;
+  void *libjsvml = nullptr;
   char ebuf[1024];
   char dll_name[JVM_MAXPATHLEN];
   if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "jsvml")) {
     libjsvml = os::dll_load(dll_name, ebuf, sizeof ebuf);
   }
-  if (libjsvml != NULL) {
+  if (libjsvml != nullptr) {
     // SVML method naming convention
     //   All the methods are named as __jsvml_op<T><N>_ha_<VV>
     //   Where:
@@ -4182,7 +4182,7 @@ void StubGenerator::generate_all() {
 }
 
 void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == NULL) {
+  if (UnsafeCopyMemory::_table == nullptr) {
     UnsafeCopyMemory::create_table(16);
   }
   StubGenerator g(code, phase);
