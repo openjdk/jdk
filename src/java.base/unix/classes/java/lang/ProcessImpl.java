@@ -92,7 +92,7 @@ final class ProcessImpl extends Process {
 
     /**
      * {@return the default or requested launch mechanism}
-     * @throw Error if the requested launch mechanism is not found or valid
+     * @throws Error if the requested launch mechanism is not found or valid
      */
     @SuppressWarnings("removal")
     private static LaunchMechanism launchMechanism() {
