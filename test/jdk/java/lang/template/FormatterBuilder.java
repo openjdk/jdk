@@ -28,8 +28,6 @@
  * @enablePreview true
  */
 
-import java.lang.StringTemplate;
-import java.lang.StringTemplate.StringProcessor;
 import java.util.FormatProcessor;
 import java.util.Objects;
 import java.util.Locale;
@@ -52,7 +50,7 @@ public class FormatterBuilder {
         }
     }
 
-    static void suite(StringProcessor fmt) {
+    static void suite(FormatProcessor fmt) {
         Object nullObject = null;
         test(String.format("%b", false), fmt."%b\{false}");
         test(String.format("%b", true), fmt."%b\{true}");

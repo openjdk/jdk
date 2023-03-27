@@ -375,7 +375,7 @@ public class Basic {
     /*
      * Processor tests.
      */
-    public static final SimpleProcessor<StringTemplate> STRINGIFY = st -> {
+    public static final Processor<StringTemplate, RuntimeException> STRINGIFY = st -> {
         List<Object> values = st.values()
                 .stream()
                 .map(v -> (Object)String.valueOf(v))
@@ -384,7 +384,7 @@ public class Basic {
         return StringTemplate.of(st.fragments(), values);
     };
 
-    public static final SimpleProcessor<StringTemplate> UPPER = st -> {
+    public static final Processor<StringTemplate, RuntimeException> UPPER = st -> {
         List<String> fragments = st.fragments()
                 .stream()
                 .map(String::toUpperCase)
@@ -393,7 +393,7 @@ public class Basic {
         return StringTemplate.of(fragments, st.values());
     };
 
-    public static final StringProcessor CHAIN = st -> {
+    public static final Processor<String, RuntimeException> CHAIN = st -> {
         st = STRINGIFY.process(st);
         st = UPPER.process(st);
         return STR.process(st);
@@ -460,11 +460,11 @@ public class Basic {
     static Processor<String, RuntimeException> processor1 =
         st -> st.interpolate();
 
-    static SimpleProcessor<String> processor2 = st -> st.interpolate();
+    static Processor<String, RuntimeException> processor2 = st -> st.interpolate();
 
-    static StringProcessor processor3 = st -> st.interpolate();
+    static Processor<String, RuntimeException> processor3 = st -> st.interpolate();
 
-    static StringProcessor processor4 = st ->
+    static Processor<String, RuntimeException> processor4 = st ->
         StringTemplate.interpolate(st.fragments(), st.values());
 
 

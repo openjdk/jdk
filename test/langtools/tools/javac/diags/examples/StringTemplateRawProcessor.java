@@ -25,16 +25,15 @@
  // key: compiler.note.preview.recompile
  // key: compiler.misc.unexpected.ret.val
  // key: compiler.err.prob.found.req
- // key: compiler.err.cant.resolve.location
  // key: compiler.err.processor.type.cannot.be.a.raw.type
- // key: compiler.misc.location
  // options: --enable-preview -source 21
 
 import java.lang.*;
+import java.lang.StringTemplate.Processor;
 
 class StringTemplateRawProcessor {
     void m() {
-        SimpleProcessor processor = ts -> ts.interpolate();
+        Processor processor = ts -> ts.interpolate();
         try {
             int x = 10, y = 20;
             return processor."\{x} + \{y} = \{x + y}";

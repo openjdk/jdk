@@ -122,11 +122,9 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
      * @param <K> the type of keys maintained by the new map
      * @param <V> the type of mapped values
      */
-    @SuppressWarnings("unchecked")
     static <K, V> ReferencedKeyMap<K, V>
-    create(boolean isSoft, Supplier<Map<?, ?>> supplier) {
-        return new ReferencedKeyMap<K, V>(isSoft,
-                (Map<ReferenceKey<K>, V>)supplier.get());
+    create(boolean isSoft, Supplier<Map<ReferenceKey<K>, V>> supplier) {
+        return new ReferencedKeyMap<K, V>(isSoft, supplier.get());
     }
 
     /**
@@ -140,11 +138,9 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
      * @param <K> the type of keys maintained by the new map
      * @param <V> the type of mapped values
      */
-    @SuppressWarnings("unchecked")
     static <K, V> ReferencedKeyMap<K, V>
-    create(Supplier<Map<?, ?>> supplier) {
-        return new ReferencedKeyMap<K, V>(false,
-                (Map<ReferenceKey<K>, V>)supplier.get());
+    create(Supplier<Map<ReferenceKey<K>, V>> supplier) {
+        return new ReferencedKeyMap<K, V>(false, supplier.get());
     }
 
     /**

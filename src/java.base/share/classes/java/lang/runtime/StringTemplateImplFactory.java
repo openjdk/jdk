@@ -82,7 +82,7 @@ final class StringTemplateImplFactory {
      * Create a new {@link StringTemplateImpl} constructor.
      *
      * @param fragments  string template fragments
-     * @param type       method type
+     * @param type       values types with StringTemplate return
      *
      * @return {@link MethodHandle} that can construct a {@link StringTemplateImpl} with arguments
      * used as values.

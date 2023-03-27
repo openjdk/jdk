@@ -367,7 +367,7 @@ final class Carriers {
          * Cache mapping {@link MethodType} to previously defined {@link CarrierElements}.
          */
         private static Map<MethodType, CarrierElements>
-                methodTypeCache = ReferencedKeyMap.create(() -> new ConcurrentHashMap<>());
+                methodTypeCache = ReferencedKeyMap.create(ConcurrentHashMap::new);
 
         /**
          * Permute a raw constructor and component accessor {@link MethodHandle MethodHandles} to
@@ -418,7 +418,7 @@ final class Carriers {
          * @param objectCount     slot count required for objects
          */
         protected CarrierObject(int primitiveCount, int objectCount) {
-            this.primitives = createPrimitivesArray(primitiveCount );
+            this.primitives = createPrimitivesArray(primitiveCount);
             this.objects = createObjectsArray(objectCount);
         }
 
@@ -773,7 +773,7 @@ final class Carriers {
          * @throws NullPointerException is ptypes is null
          * @throws IllegalArgumentException if number of component slots exceeds maximum
          */
-        static CarrierElements of(Class < ? >...ptypes) {
+        static CarrierElements of(Class<?>...ptypes) {
             Objects.requireNonNull(ptypes, "ptypes must not be null");
             return of(methodType(Object.class, ptypes));
         }

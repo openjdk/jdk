@@ -46,7 +46,7 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 interface ReferenceKey<T> {
     /**
-     * {@return the value of the unwrapped key.}
+     * {@return the value of the unwrapped key}
      */
     T get();
 

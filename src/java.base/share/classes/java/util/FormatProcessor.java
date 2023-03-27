@@ -28,14 +28,14 @@ package java.util;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.StringTemplate.Processor;
 import java.lang.StringTemplate.Processor.Linkage;
-import java.lang.StringTemplate.StringProcessor;
 import java.util.regex.Matcher;
 
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This {@link StringProcessor} constructs a {@link String} result using
+ * This {@link Processor} constructs a {@link String} result using
  * {@link Formatter} specifications and values found in the {@link StringTemplate}.
  * Unlike {@link Formatter}, {@link FormatProcessor} uses the value from the
  * embedded expression that immediately follows, without whitespace, the
@@ -92,10 +92,10 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 21
  *
- * @see StringProcessor
+ * @see Processor
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-public final class FormatProcessor implements StringProcessor, Linkage {
+public final class FormatProcessor implements Processor<String, RuntimeException>, Linkage {
     /**
      * {@link Locale} used to format
      */

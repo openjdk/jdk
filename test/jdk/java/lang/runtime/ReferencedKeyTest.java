@@ -53,7 +53,7 @@ public class ReferencedKeyTest {
         }
     }
 
-    static void  mapTest(boolean isSoft, Supplier<Map<?, ?>> supplier) {
+    static void  mapTest(boolean isSoft, Supplier<Map<ReferenceKey<Long>, String>> supplier) {
         Map<Long, String> map = ReferencedKeyMap.create(isSoft, supplier);
         populate(map);
         collect();

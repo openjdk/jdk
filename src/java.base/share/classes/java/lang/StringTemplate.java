@@ -101,8 +101,6 @@ import jdk.internal.javac.PreviewFeature;
  * {@link StringTemplate#of(List, List)} can be used to construct a {@link StringTemplate}.
  *
  * @see Processor
- * @see SimpleProcessor
- * @see StringProcessor
  * @see java.util.FormatProcessor
  *
  * @implNote Implementations of {@link StringTemplate} must minimally implement the
@@ -408,7 +406,7 @@ public interface StringTemplate {
     }
 
     /**
-     * This {@link StringProcessor} instance is conventionally used for the string interpolation
+     * This {@link Processor} instance is conventionally used for the string interpolation
      * of a supplied {@link StringTemplate}.
      * <p>
      * For better visibility and when practical, it is recommended that users use the
@@ -426,10 +424,10 @@ public interface StringTemplate {
      * @implNote {@link StringTemplate#STR} is statically imported implicitly into every
      * Java compilation unit.<p>The result of interpolation is not interned.
      */
-    StringProcessor STR = StringTemplate::interpolate;
+    Processor<String, RuntimeException> STR = StringTemplate::interpolate;
 
     /**
-     * This {@link SimpleProcessor} instance is conventionally used to indicate that the
+     * This {@link Processor} instance is conventionally used to indicate that the
      * processing of the {@link StringTemplate} is to be deferred to a later time. Deferred
      * processing can be resumed by invoking the
      * {@link StringTemplate#process(Processor)} or
@@ -444,7 +442,7 @@ public interface StringTemplate {
      * @implNote Unlike {@link StringTemplate#STR}, {@link StringTemplate#RAW} must be
      * statically imported explicitly.
      */
-    SimpleProcessor<StringTemplate> RAW = st -> st;
+    Processor<StringTemplate, RuntimeException> RAW = st -> st;
 
     /**
      * This interface describes the methods provided by a generalized string template processor. The
@@ -513,45 +511,21 @@ public interface StringTemplate {
      *     return StringTemplate.interpolate(fragments, values);
      * };
      * }
-     * The {@link FunctionalInterface} {@link SimpleProcessor} is supplied to avoid
-     * the use of checked exceptions;
-     * {@snippet :
-     * SimpleProcessor<String> processor = st -> {
-     *     List<String> fragments = st.fragments();
-     *     List<Object> values = st.values();
-     *     // check or manipulate the fragments and/or values
-     *     ...
-     *     return StringTemplate.interpolate(fragments, values);
-     * };
-     * }
-     * The {@link FunctionalInterface} {@link StringProcessor} is supplied if
-     * the processor returns {@link String};
-     * {@snippet :
-     * StringProcessor processor = st -> {
-     *     List<String> fragments = st.fragments();
-     *     List<Object> values = st.values();
-     *     // check or manipulate the fragments and/or values
-     *     ...
-     *     return StringTemplate.interpolate(fragments, values);
-     * };
-     * }
      * The {@link StringTemplate#interpolate()} method is available for those processors
      * that just need to work with the string interpolation;
      * {@snippet :
-     * StringProcessor processor = StringTemplate::interpolate;
+     * Processor<String, RuntimeException> processor = StringTemplate::interpolate;
      * }
      * or simply transform the string interpolation into something other than
      * {@link String};
      * {@snippet :
-     * SimpleProcessor<JSONObject> jsonProcessor = st -> new JSONObject(st.interpolate());
+     * Processor<JSONObject, RuntimeException> jsonProcessor = st -> new JSONObject(st.interpolate());
      * }
      * @implNote The Java compiler automatically imports {@link StringTemplate#STR}
      *
      * @param <R>  Processor's process result type
      * @param <E>  Exception thrown type
      *
-     * @see SimpleProcessor
-     * @see StringProcessor
      * @see StringTemplate
      * @see java.util.FormatProcessor
      *
@@ -574,6 +548,35 @@ public interface StringTemplate {
          * @throws E exception thrown by the template processor when validation fails
          */
         R process(StringTemplate stringTemplate) throws E;
+
+        /**
+         * This factory method can be used to create a {@link Processor} containing a
+         * {@link Processor#process} method derived from a lambda expression. As an example;
+         * {@snippet :
+         * Processor<String, RuntimeException> mySTR = Processor.of(StringTemplate::interpolate);
+         * int x = 10;
+         * int y = 20;
+         * String str = mySTR."\{x} + \{y} = \{x + y}";
+         * }
+         * The result type of the constructed {@link Processor} may be derived from
+         * the lambda expression, thus this method may be used in a var
+         * statement. For example, {@code mySTR} from above can also be declared using;
+         * {@snippet :
+         * var mySTR = Processor.of(StringTemplate::interpolate);
+         * }
+         * {@link RuntimeException} is the assumed exception thrown type.
+         *
+         * @param process a function that takes a {@link StringTemplate} as an argument
+         *                and returns the inferred result type
+         *
+         * @return a {@link Processor}
+         *
+         * @param <R>  Processor's process result type
+         * @param <E>  Exception thrown type
+         */
+        static <R, E extends Throwable> Processor<R, E> of(Function<StringTemplate, R> process) {
+            return process::apply;
+        }
 
         /**
          * Built-in policies using this additional interface have the flexibility to
@@ -605,86 +608,6 @@ public interface StringTemplate {
              */
             MethodHandle linkage(List<String> fragments, MethodType type);
         }
-    }
-
-    /**
-     * This interface is used to implement template processors that do not throw checked
-     * exceptions. Any implementation must supply a
-     * {@link SimpleProcessor#process(StringTemplate)} method that constructs a result
-     * from the information provided by the supplied {@link StringTemplate} instance.
-     * <p>
-     * For example:
-     * {@snippet :
-     * SimpleProcessor<Integer> processor = st -> {
-     *     String interpolation = st.interpolate();
-     *     return Integer.valueOf(interpolation);
-     * };
-     * }
-     *
-     * @param <R>  Processor's process result type.
-     *
-     * @see Processor
-     * @see StringProcessor
-     * @see StringTemplate
-     *
-     * @since 21
-     *
-     * @implNote It is recommended that {@link StringProcessor} be used instead of
-     * {@code SimpleProcessor<String>} when the result type is {@link String}.
-     *
-     * @jls 15.8.6 Process Template Expressions
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    @FunctionalInterface
-    public interface SimpleProcessor<R> extends Processor<R, RuntimeException> {
-        /**
-         * Constructs a result based on the template fragments and values in the
-         * supplied {@link StringTemplate stringTemplate} instance.
-         *
-         * @param stringTemplate  a {@link StringTemplate} instance
-         *
-         * @return constructed object of type R
-         */
-        @Override
-        R process(StringTemplate stringTemplate);
-    }
-
-    /**
-     * This interface is used to implement template processors that only produce {@link String}
-     * results. Any implementation must supply a
-     * {@link StringProcessor#process(StringTemplate)} method that constructs a result
-     * from the information provided by the supplied {@link StringTemplate} instance.
-     * <p>
-     * For example:
-     * {@snippet :
-     * StringProcessor processor = st -> st.interpolate().toUpperCase();
-     * }
-     *
-     * @see Processor
-     * @see SimpleProcessor
-     * @see StringTemplate
-     *
-     * @since 21
-     *
-     * @implNote Implementations using {@link StringProcessor} are equivalent to implementations using
-     * {@code TemplateProcessor<String>} or {@code ValidatingProcessor<String, RuntimeException>}.
-     * However, StringProcessor is cleaner and easier to understand.
-     *
-     * @jls 15.8.6 Process Template Expressions
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    @FunctionalInterface
-    public interface StringProcessor extends SimpleProcessor<String> {
-        /**
-         * Constructs a {@link String} based on the template fragments and values in the
-         * supplied {@code stringTemplate} object.
-         *
-         * @param stringTemplate  a {@link StringTemplate} instance
-         *
-         * @return constructed {@link String}
-         */
-        @Override
-        String process(StringTemplate stringTemplate);
     }
 
 }
