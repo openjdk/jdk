@@ -27,6 +27,7 @@
  * @summary Make sure IAE is not thrown on `int` overflow, turning negative
  *          size. The test should either not throw any Throwable, or an OOME
  *          with real Java heap space error (not "exceeds VM limit").
+ * @requires sun.arch.data.model == "64"
  * @run junit/othervm XcodeOverflow
  */
 
