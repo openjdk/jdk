@@ -74,7 +74,6 @@ final class ProxyGenerator {
 
     private static final MethodTypeDesc
             MTD_boolean = MethodTypeDesc.of(CD_boolean),
-            MTD_void = MethodTypeDesc.of(CD_void),
             MTD_void_InvocationHandler = MethodTypeDesc.of(CD_void, CD_InvocationHandler),
             MTD_void_String = MethodTypeDesc.of(CD_void, CD_String),
             MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable),
@@ -724,7 +723,7 @@ final class ProxyGenerator {
          */
         private void codeWrapArgument(CodeBuilder cob, Class<?> type, int slot) {
             if (type.isPrimitive()) {
-                cob.loadInstruction(TypeKind.fromDescriptor(type.descriptorString()).asLoadable(), slot);
+                cob.loadInstruction(TypeKind.from(type).asLoadable(), slot);
                 PrimitiveTypeInfo prim = PrimitiveTypeInfo.get(type);
                 cob.invokestatic(prim.wrapperClass, "valueOf", prim.wrapperValueOf);
             } else {
@@ -743,7 +742,7 @@ final class ProxyGenerator {
 
                 cob.typeCheckInstruction(Opcode.CHECKCAST, prim.wrapperClass)
                    .invokevirtual(prim.wrapperClass, prim.unwrapMethodName, prim.unwrapMethodType)
-                   .returnInstruction(TypeKind.fromDescriptor(type.descriptorString()).asLoadable());
+                   .returnInstruction(TypeKind.from(type).asLoadable());
             } else {
                 cob.checkcast(toClassDesc(type))
                    .areturn();
