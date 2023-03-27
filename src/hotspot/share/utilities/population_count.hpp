@@ -83,8 +83,8 @@ struct PopulationCountFallbackImpl {
 
 // Unlike GCC, Clang is willing to inline the generic implementation of __builtin_popcount when
 // architecture support is unavailable in -O2. This ensures we avoid the function call to libgcc.
-// Clang is able to recognize the fallback implementation as byteswapping, but not on every
-// architecture unlike GCC. This suggests the optimization pass for GCC that recognizes byteswapping
+// Clang is able to recognize the fallback implementation as popcount, but not on every
+// architecture unlike GCC. This suggests the optimization pass for GCC that recognizes popcount
 // is architecture agnostic, while for Clang it is not.
 
 template <typename T>
@@ -109,9 +109,8 @@ struct PopulationCountImpl {
 // regardless of optimization options, even when the generic implementation is, for example, less
 // than 20 instructions. GCC is however able to recognize the fallback as popcount regardless of
 // architecture and appropriately replaces the code in -O2 with the appropriate
-// architecture-specific byteswap instruction, if available. If it is not available, GCC emits the
-// exact same implementation that underpins its __builtin_bswap in libgcc as there is really only
-// one way to implement it, as we have in fallback.
+// architecture-specific popcount instruction, if available. If it is not available, GCC emits the
+// exact same implementation that underpins its __builtin_popcount.
 
 template <typename T>
 struct PopulationCountImpl : public PopulationCountFallbackImpl<T> {};
