@@ -48,6 +48,7 @@ import jdk.internal.classfile.attribute.StackMapTableAttribute;
 import jdk.internal.classfile.Attributes;
 import jdk.internal.classfile.components.ClassPrinter;
 import jdk.internal.classfile.attribute.CodeAttribute;
+import static jdk.internal.classfile.impl.Util.findParams;
 
 /**
  * StackMapGenerator is responsible for stack map frames generation.
@@ -155,7 +156,6 @@ import jdk.internal.classfile.attribute.CodeAttribute;
 
 public final class StackMapGenerator {
 
-    private static final String OBJECT_INITIALIZER_NAME = "<init>";
     private static final int FLAG_THIS_UNINIT = 0x01;
     private static final int FRAME_DEFAULT_CAPACITY = 10;
     private static final int T_BOOLEAN = 4, T_LONG = 11;
@@ -184,7 +184,7 @@ public final class StackMapGenerator {
 
     private final Type thisType;
     private final String methodName;
-    private final MethodTypeDesc methodDesc;
+    private final String methodDesc;
     private final ByteBuffer bytecode;
     private final SplitConstantPool cp;
     private final boolean isStatic;
@@ -205,26 +205,22 @@ public final class StackMapGenerator {
      * @param labelContext <code>LableContext</code> instance used to resolve or patch <code>ExceptionHandler</code>
      * labels to bytecode offsets (or vice versa)
      * @param thisClass class to generate stack maps for
-     * @param methodName method name to generate stack maps for
-     * @param methodDesc method descriptor to generate stack maps for
-     * @param isStatic information whether the method is static
+     * @param methodInfo method info to generate stack maps for
      * @param bytecode R/W <code>ByteBuffer</code> wrapping method bytecode, the content is altered in case <code>Generator</code> detects  and patches dead code
      * @param cp R/W <code>ConstantPoolBuilder</code> instance used to resolve all involved CP entries and also generate new entries referenced from the generted stack maps
      * @param handlers R/W <code>ExceptionHandler</code> list used to detect mandatory frame offsets as well as to determine stack maps in exception handlers
      * and also to be altered when dead code is detected and must be excluded from exception handlers
      */
     public StackMapGenerator(LabelContext labelContext,
-                     ClassDesc thisClass,
-                     String methodName,
-                     MethodTypeDesc methodDesc,
-                     boolean isStatic,
+                     ClassEntry thisClass,
+                     MethodInfo methodInfo,
                      ByteBuffer bytecode,
                      SplitConstantPool cp,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
-        this.thisType = Type.referenceType(thisClass);
-        this.methodName = methodName;
-        this.methodDesc = methodDesc;
-        this.isStatic = isStatic;
+        this.thisType = Type.referenceType(thisClass.asSymbol());
+        this.methodName = methodInfo.methodName().stringValue();
+        this.methodDesc = methodInfo.methodType().stringValue();
+        this.isStatic = (methodInfo.methodFlags() & Classfile.ACC_STATIC) != 0;
         this.bytecode = bytecode;
         this.cp = cp;
         this.labelContext = labelContext;
@@ -253,8 +249,17 @@ public final class StackMapGenerator {
     }
 
     private Frame getFrame(int offset) {
-        for (var f : frames) {
-            if (f.offset == offset) return f;
+        int low = 0;
+        int high = frames.size() - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            var f = frames.get(mid);
+            if (f.offset < offset)
+                low = mid + 1;
+            else if (f.offset > offset)
+                high = mid - 1;
+            else
+                return f;
         }
         return null;
     }
@@ -792,7 +797,7 @@ public final class StackMapGenerator {
         int bci = bcs.bci;
         currentFrame.decStack(nargs);
         if (opcode != Classfile.INVOKESTATIC && opcode != Classfile.INVOKEDYNAMIC) {
-            if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
+            if (INIT_NAME.equals(invokeMethodName)) {
                 Type type = currentFrame.popStack();
                 if (type == Type.UNITIALIZED_THIS_TYPE) {
                     if (inTryBlock) {
@@ -826,7 +831,7 @@ public final class StackMapGenerator {
 
     private void processAnewarray(int index) {
         currentFrame.popStack();
-        currentFrame.pushStack(cpIndexToType(index, cp).toArray());
+        currentFrame.pushStack(Type.toArray(cpIndexToType(index, cp)));
     }
 
     /**
@@ -843,16 +848,16 @@ public final class StackMapGenerator {
      * @param offset bytecode offset where the error occured
      */
     private void generatorError(String msg, int offset) {
-        var sb = new StringBuilder("%s at bytecode offset %d of method %s(%s)".formatted(
+        var sb = new StringBuilder("%s at bytecode offset %d of method %s%s".formatted(
                 msg,
                 offset,
                 methodName,
-                methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
+                methodDesc.substring(0, methodDesc.indexOf(')') + 1)));
         //try to attach debug info about corrupted bytecode to the message
         try {
             cp.options.generateStackmaps = false;
             var clb = new DirectClassBuilder(cp, cp.classEntry(ClassDesc.of("FakeClass")));
-            clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
+            clb.withMethod(methodName, MethodTypeDesc.ofDescriptor(methodDesc), isStatic ? ACC_STATIC : 0, mb ->
                     ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
                         @Override
                         public void writeBody(BufWriter b) {
@@ -961,7 +966,7 @@ public final class StackMapGenerator {
         int flags;
         int frameMaxStack = 0, frameMaxLocals = 0;
         boolean dirty = false;
-        boolean localsChanged = true;
+        boolean localsChanged = false;
 
         private final ClassHierarchyImpl classHierarchy;
 
@@ -991,19 +996,21 @@ public final class StackMapGenerator {
         }
 
         Frame pushStack(ClassDesc desc) {
-            return switch (desc.descriptorString()) {
-                case "J" ->
+            return switch (desc.descriptorString().charAt(0)) {
+                case 'J' ->
                     pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-                case "D" ->
+                case 'D' ->
                     pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-                case "I", "Z", "B", "C", "S" ->
+                case 'I', 'Z', 'B', 'C', 'S' ->
                     pushStack(Type.INTEGER_TYPE);
-                case "F" ->
+                case 'F' ->
                     pushStack(Type.FLOAT_TYPE);
-                case "V" ->
+                case 'V' ->
                     this;
-                default ->
+                case '[', 'L' ->
                     pushStack(Type.referenceType(desc));
+                default ->
+                    throw new IllegalArgumentException("Unknown descriptor " + desc.descriptorString());
             };
         }
 
@@ -1038,13 +1045,13 @@ public final class StackMapGenerator {
         void initializeObject(Type old_object, Type new_object) {
             int i;
             for (i = 0; i < localsSize; i++) {
-                if (locals[i].equals(old_object)) {
+                if (old_object.equals(locals[i])) {
                     locals[i] = new_object;
                     localsChanged = true;
                 }
             }
             for (i = 0; i < stackSize; i++) {
-                if (stack[i].equals(old_object)) {
+                if (old_object.equals(stack[i])) {
                     stack[i] = new_object;
                 }
             }
@@ -1057,13 +1064,9 @@ public final class StackMapGenerator {
             if (index >= frameMaxLocals) frameMaxLocals = index + 1;
             if (locals == null) {
                 locals = new Type[index + FRAME_DEFAULT_CAPACITY];
-                Arrays.fill(locals, Type.TOP_TYPE);
-                localsChanged = true;
             } else if (index >= locals.length) {
                 int current = locals.length;
                 locals = Arrays.copyOf(locals, index + FRAME_DEFAULT_CAPACITY);
-                Arrays.fill(locals, current, locals.length, Type.TOP_TYPE);
-                localsChanged = true;
             }
             return this;
         }
@@ -1072,59 +1075,67 @@ public final class StackMapGenerator {
             if (index >= frameMaxStack) frameMaxStack = index + 1;
             if (stack == null) {
                 stack = new Type[index + FRAME_DEFAULT_CAPACITY];
-                Arrays.fill(stack, Type.TOP_TYPE);
             } else if (index >= stack.length) {
                 int current = stack.length;
                 stack = Arrays.copyOf(stack, index + FRAME_DEFAULT_CAPACITY);
-                Arrays.fill(stack, current, stack.length, Type.TOP_TYPE);
             }
         }
 
         private void setLocalRawInternal(int index, Type type) {
             checkLocal(index);
+            localsChanged |= !Objects.equals(type, locals[index]);
             locals[index] = type;
-            localsChanged = true;
         }
 
-        void setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
+        void setLocalsFromArg(String name, String methodDesc, boolean isStatic, Type thisKlass) {
             localsSize = 0;
             if (!isStatic) {
                 localsSize++;
-                if (OBJECT_INITIALIZER_NAME.equals(name) && !CD_Object.equals(thisKlass.sym)) {
+                if (INIT_NAME.equals(name) && !CD_Object.equals(thisKlass.sym)) {
                     setLocal(0, Type.UNITIALIZED_THIS_TYPE);
                     flags |= FLAG_THIS_UNINIT;
                 } else {
                     setLocalRawInternal(0, thisKlass);
                 }
             }
-            for (int i = 0; i < methodDesc.parameterCount(); i++) {
-                var desc = methodDesc.parameterType(i);
-                if (desc.isClassOrInterface() || desc.isArray()) {
-                    setLocalRawInternal(localsSize++, Type.referenceType(desc));
-                } else switch (desc.descriptorString()) {
-                    case "J" -> {
+            if (methodDesc.charAt(0) != '(') throw new IllegalArgumentException("Invalid method type decriptor " + methodDesc);
+            for (int i = 1; i < methodDesc.length(); ++i) {
+                switch (methodDesc.charAt(i)) {
+                    case '[', 'L' -> {
+                        int s = i;
+                        while (methodDesc.charAt(i) == '[') i++;
+                        if (methodDesc.charAt(i) == 'L') {
+                            while (methodDesc.charAt(++i) != ';')
+                                ;
+                        }
+                        setLocalRawInternal(localsSize++, Type.referenceType(ClassDesc.ofDescriptor(methodDesc.substring(s, i + 1))));
+                    }
+                    case 'J' -> {
                         setLocalRawInternal(localsSize++, Type.LONG_TYPE);
                         setLocalRawInternal(localsSize++, Type.LONG2_TYPE);
                     }
-                    case "D" -> {
+                    case 'D' -> {
                         setLocalRawInternal(localsSize++, Type.DOUBLE_TYPE);
                         setLocalRawInternal(localsSize++, Type.DOUBLE2_TYPE);
                     }
-                    case "I", "Z", "B", "C", "S" ->
+                    case 'I', 'Z', 'B', 'C', 'S' ->
                         setLocalRawInternal(localsSize++, Type.INTEGER_TYPE);
-                    case "F" ->
+                    case 'F' ->
                         setLocalRawInternal(localsSize++, Type.FLOAT_TYPE);
-                    default -> throw new AssertionError("Should not reach here");
+                    case ')' ->
+                        i = methodDesc.length();
+                    default ->
+                        throw new IllegalArgumentException("Invalid method type decriptor " + methodDesc);
                 }
             }
         }
 
         void copyFrom(Frame src) {
-            if (locals != null && src.localsSize < locals.length) Arrays.fill(locals, src.localsSize, locals.length, Type.TOP_TYPE);
+            if (locals != null && src.localsSize < locals.length) Arrays.fill(locals, src.localsSize, locals.length, null);
             localsSize = src.localsSize;
             checkLocal(src.localsSize - 1);
             if (src.localsSize > 0) System.arraycopy(src.locals, 0, locals, 0, src.localsSize);
-            if (stack != null && src.stackSize < stack.length) Arrays.fill(stack, src.stackSize, stack.length, Type.TOP_TYPE);
+            if (stack != null && src.stackSize < stack.length) Arrays.fill(stack, src.stackSize, stack.length, null);
             stackSize = src.stackSize;
             checkStack(src.stackSize - 1);
             if (src.stackSize > 0) System.arraycopy(src.stack, 0, stack, 0, src.stackSize);
@@ -1170,10 +1181,10 @@ public final class StackMapGenerator {
         void setLocal(int index, Type type) {
             Type old = getLocalRawInternal(index);
             if (old == Type.DOUBLE_TYPE || old == Type.LONG_TYPE) {
-                setLocalRawInternal(index + 1, Type.TOP_TYPE);
+                setLocalRawInternal(index + 1, null);
             }
             if (old == Type.DOUBLE2_TYPE || old == Type.LONG2_TYPE) {
-                setLocalRawInternal(index - 1, Type.TOP_TYPE);
+                setLocalRawInternal(index - 1, null);
             }
             setLocalRawInternal(index, type);
             if (index >= localsSize) {
@@ -1184,11 +1195,11 @@ public final class StackMapGenerator {
         void setLocal2(int index, Type type1, Type type2) {
             Type old = getLocalRawInternal(index + 1);
             if (old == Type.DOUBLE_TYPE || old == Type.LONG_TYPE) {
-                setLocalRawInternal(index + 2, Type.TOP_TYPE);
+                setLocalRawInternal(index + 2, null);
             }
             old = getLocalRawInternal(index);
             if (old == Type.DOUBLE2_TYPE || old == Type.LONG2_TYPE) {
-                setLocalRawInternal(index - 1, Type.TOP_TYPE);
+                setLocalRawInternal(index - 1, null);
             }
             setLocalRawInternal(index, type1);
             setLocalRawInternal(index + 1, type2);
@@ -1199,7 +1210,7 @@ public final class StackMapGenerator {
 
         private void merge(Type me, Type[] toTypes, int i, Frame target) {
             var to = toTypes[i];
-            var newTo = to.mergeFrom(me, classHierarchy);
+            var newTo = Type.mergeFrom(to, me, classHierarchy);
             if (to != newTo && !to.equals(newTo)) {
                 toTypes[i] = newTo;
                 target.dirty = true;
@@ -1207,11 +1218,12 @@ public final class StackMapGenerator {
         }
 
         private static int trimAndCompress(Type[] types, int count) {
-            while (count > 0 && types[count - 1] == Type.TOP_TYPE) count--;
+            while (count > 0 && types[count - 1] == null) count--;
             int compressed = 0;
             for (int i = 0; i < count; i++) {
-                if (!types[i].isCategory2_2nd()) {
-                    types[compressed++] = types[i];
+                var t = types[i];
+                if (t == null || !t.isCategory2_2nd()) {
+                    types[compressed++] = t;
                 }
             }
             return compressed;
@@ -1238,7 +1250,7 @@ public final class StackMapGenerator {
                     } else {   //chop, same extended or append frame
                         out.writeU1(251 + diffLocalsSize);
                         out.writeU2(offsetDelta);
-                        for (int i=commonLocalsSize; i<localsSize; i++) locals[i].writeTo(out, cp);
+                        for (int i=commonLocalsSize; i<localsSize; i++) Type.writeTo(locals[i], out, cp);
                     }
                     return;
                 }
@@ -1249,24 +1261,23 @@ public final class StackMapGenerator {
                     out.writeU1(247);
                     out.writeU2(offsetDelta);
                 }
-                stack[0].writeTo(out, cp);
+                Type.writeTo(stack[0], out, cp);
                 return;
             }
             //full frame
             out.writeU1(255);
             out.writeU2(offsetDelta);
             out.writeU2(localsSize);
-            for (int i=0; i<localsSize; i++) locals[i].writeTo(out, cp);
+            for (int i=0; i<localsSize; i++) Type.writeTo(locals[i], out, cp);
             out.writeU2(stackSize);
-            for (int i=0; i<stackSize; i++) stack[i].writeTo(out, cp);
+            for (int i=0; i<stackSize; i++) Type.writeTo(stack[i], out, cp);
         }
     }
 
     private static record Type(int tag, ClassDesc sym, int bci) {
 
         //singleton types
-        static final Type TOP_TYPE = simpleType(ITEM_TOP),
-                NULL_TYPE = simpleType(ITEM_NULL),
+        static final Type NULL_TYPE = simpleType(ITEM_NULL),
                 INTEGER_TYPE = simpleType(ITEM_INTEGER),
                 FLOAT_TYPE = simpleType(ITEM_FLOAT),
                 LONG_TYPE = simpleType(ITEM_LONG),
@@ -1328,28 +1339,28 @@ public final class StackMapGenerator {
             return tag == ITEM_OBJECT && sym.isArray();
         }
 
-        Type mergeFrom(Type from, ClassHierarchyImpl context) {
-            if (this == TOP_TYPE || this == from || equals(from)) {
-                return this;
+        static Type mergeFrom(Type thisType, Type from, ClassHierarchyImpl context) {
+            if (thisType == null || thisType == from || thisType.equals(from)) {
+                return thisType;
             } else {
-                return switch (tag) {
+                return switch (thisType.tag) {
                     case ITEM_BOOLEAN, ITEM_BYTE, ITEM_CHAR, ITEM_SHORT ->
-                        from == INTEGER_TYPE ? this : TOP_TYPE;
+                        from == INTEGER_TYPE ? thisType : null;
                     default ->
-                        isReference() && from.isReference() ? mergeReferenceFrom(from, context) : TOP_TYPE;
+                        thisType.isReference() && from != null && from.isReference() ? mergeReferenceFrom(thisType, from, context) : null;
                 };
             }
         }
 
-        Type mergeComponentFrom(Type from, ClassHierarchyImpl context) {
-            if (this == TOP_TYPE || this == from || equals(from)) {
-                return this;
+        static Type mergeComponentFrom(Type thisType, Type from, ClassHierarchyImpl context) {
+            if (thisType == null || thisType == from || thisType.equals(from)) {
+                return thisType;
             } else {
-                return switch (tag) {
+                return switch (thisType.tag) {
                     case ITEM_BOOLEAN, ITEM_BYTE, ITEM_CHAR, ITEM_SHORT ->
-                        TOP_TYPE;
+                        null;
                     default ->
-                        isReference() && from.isReference() ? mergeReferenceFrom(from, context) : TOP_TYPE;
+                        thisType.isReference() && from != null && from.isReference() ? mergeReferenceFrom(thisType, from, context) : null;
                 };
             }
         }
@@ -1357,37 +1368,37 @@ public final class StackMapGenerator {
         private static final ClassDesc CD_Cloneable = ClassDesc.of("java.lang.Cloneable");
         private static final ClassDesc CD_Serializable = ClassDesc.of("java.io.Serializable");
 
-        private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
+        static private Type mergeReferenceFrom(Type thisType, Type from, ClassHierarchyImpl context) {
             if (from == NULL_TYPE) {
-                return this;
-            } else if (this == NULL_TYPE) {
+                return thisType;
+            } else if (thisType == NULL_TYPE) {
                 return from;
-            } else if (sym.equals(from.sym)) {
-                return this;
-            } else if (isObject()) {
-                if (CD_Object.equals(sym)) {
-                    return this;
+            } else if (thisType.sym.equals(from.sym)) {
+                return thisType;
+            } else if (thisType.isObject()) {
+                if (CD_Object.equals(thisType.sym)) {
+                    return thisType;
                 }
-                if (context.isInterface(sym)) {
-                    if (!from.isArray() || CD_Cloneable.equals(sym) || CD_Serializable.equals(sym)) {
-                        return this;
+                if (context.isInterface(thisType.sym)) {
+                    if (!from.isArray() || CD_Cloneable.equals(thisType.sym) || CD_Serializable.equals(thisType.sym)) {
+                        return thisType;
                     }
                 } else if (from.isObject()) {
-                    var anc = context.commonAncestor(sym, from.sym);
-                    return anc == null ? this : Type.referenceType(anc);
+                    var anc = context.commonAncestor(thisType.sym, from.sym);
+                    return anc == null ? thisType : Type.referenceType(anc);
                 }
-            } else if (isArray() && from.isArray()) {
-                Type compThis = getComponent();
+            } else if (thisType.isArray() && from.isArray()) {
+                Type compThis = thisType.getComponent();
                 Type compFrom = from.getComponent();
-                if (compThis != TOP_TYPE && compFrom != TOP_TYPE) {
-                    return  compThis.mergeComponentFrom(compFrom, context).toArray();
+                if (compThis != null && compFrom != null) {
+                    return  Type.toArray(mergeComponentFrom(compThis, compFrom, context));
                 }
             }
             return OBJECT_TYPE;
         }
 
-        Type toArray() {
-            return switch (tag) {
+        static Type toArray(Type t) {
+            return t == null ? OBJECT_TYPE : switch (t.tag) {
                 case ITEM_BOOLEAN -> BOOLEAN_ARRAY_TYPE;
                 case ITEM_BYTE -> BYTE_ARRAY_TYPE;
                 case ITEM_CHAR -> CHAR_ARRAY_TYPE;
@@ -1396,7 +1407,7 @@ public final class StackMapGenerator {
                 case ITEM_LONG -> LONG_ARRAY_TYPE;
                 case ITEM_FLOAT -> FLOAT_ARRAY_TYPE;
                 case ITEM_DOUBLE -> DOUBLE_ARRAY_TYPE;
-                case ITEM_OBJECT -> Type.referenceType(sym.arrayType());
+                case ITEM_OBJECT -> Type.referenceType(t.sym.arrayType());
                 default -> OBJECT_TYPE;
             };
         }
@@ -1414,21 +1425,25 @@ public final class StackMapGenerator {
                         case 'J' -> Type.LONG_TYPE;
                         case 'F' -> Type.FLOAT_TYPE;
                         case 'D' -> Type.DOUBLE_TYPE;
-                        default -> Type.TOP_TYPE;
+                        default -> null;
                     };
                 }
                 return Type.referenceType(comp);
             }
-            return Type.TOP_TYPE;
+            return null;
         }
 
-        void writeTo(BufWriter bw, ConstantPoolBuilder cp) {
-            bw.writeU1(tag);
-            switch (tag) {
-                case ITEM_OBJECT ->
-                    bw.writeU2(cp.classEntry(sym).index());
-                case ITEM_UNINITIALIZED ->
-                    bw.writeU2(bci);
+        static void writeTo(Type t, BufWriter bw, ConstantPoolBuilder cp) {
+            if (t == null) {
+                bw.writeU1(ITEM_TOP);
+            } else {
+                bw.writeU1(t.tag);
+                switch (t.tag) {
+                    case ITEM_OBJECT ->
+                        bw.writeU2(cp.classEntry(t.sym).index());
+                    case ITEM_UNINITIALIZED ->
+                        bw.writeU2(t.bci);
+                }
             }
         }
     }

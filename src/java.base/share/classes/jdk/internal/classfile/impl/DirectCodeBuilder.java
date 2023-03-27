@@ -326,10 +326,8 @@ public final class DirectCodeBuilder
                     //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                     // patches dead bytecode blocks and removes them from exception table
                     StackMapGenerator gen = new StackMapGenerator(DirectCodeBuilder.this,
-                                                  buf.thisClass().asSymbol(),
-                                                  methodInfo.methodName().stringValue(),
-                                                  MethodTypeDesc.ofDescriptor(methodInfo.methodType().stringValue()),
-                                                  (methodInfo.methodFlags() & Classfile.ACC_STATIC) != 0,
+                                                  buf.thisClass(),
+                                                  methodInfo,
                                                   bytecodesBufWriter.asByteBuffer().slice(0, codeLength),
                                                   constantPool,
                                                   handlers);
