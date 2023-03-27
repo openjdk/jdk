@@ -141,13 +141,9 @@ public class EditableComboBoxPopupPos {
                     cb4Str = cb4.getSelectedItem().toString();
                 });
 
-                if (cb1Str == null || cb2Str == null
-                        || cb3Str == null || cb4Str == null) {
-                    throw new RuntimeException("Null ComboBox String");
-                }
                 checkSelection(cb1Str, cb2Str, cb3Str, cb4Str);
             } finally {
-                SwingUtilities.invokeAndWait(() -> frame.dispose());
+                if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
             }
         }
     }
