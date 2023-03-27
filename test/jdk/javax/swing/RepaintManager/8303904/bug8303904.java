@@ -98,7 +98,7 @@ public class bug8303904 extends JDialog {
     JTextPane instructions = new JTextPane();
 
     public bug8303904() {
-        instructions.setText("Instructions\n\nLook at this window. This test passes if both of these conditions are met:\n\n1. The window does NOT have a black border.\n2. Toggling the checkbox does NOT affect text antialiasing on a high resolution monitor.");
+        instructions.setText("Instructions\n\nLook at this window. This test passes if the window does NOT have a black border.");
         instructions.setBorder(new EmptyBorder(10,10,10,10));
         instructions.setOpaque(false);
         instructions.setEditable(false);
