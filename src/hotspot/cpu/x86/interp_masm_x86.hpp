@@ -179,7 +179,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void empty_expression_stack() {
     movptr(rsp, Address(rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    // NULL last_sp until next java call
+    // null last_sp until next java call
     movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     NOT_LP64(empty_FPU_stack());
   }

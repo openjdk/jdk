@@ -771,52 +771,27 @@ class NameSigHash: public ResourceObj {
  public:
   const Symbol*       _name;       // name
   const Symbol*       _sig;        // signature
-  NameSigHash*  _next;             // Next entry in hash table
-};
 
-static const int HASH_ROW_SIZE = 256;
+  static const int HASH_ROW_SIZE = 256;
 
-static unsigned int hash(const Symbol* name, const Symbol* sig) {
-  unsigned int raw_hash = 0;
-  raw_hash += ((unsigned int)(uintptr_t)name) >> (LogHeapWordSize + 2);
-  raw_hash += ((unsigned int)(uintptr_t)sig) >> LogHeapWordSize;
+  NameSigHash(Symbol* name, Symbol* sig) :
+    _name(name),
+    _sig(sig) {}
 
-  return (raw_hash + (unsigned int)(uintptr_t)name) % HASH_ROW_SIZE;
-}
-
-
-static void initialize_hashtable(NameSigHash** table) {
-  memset((void*)table, 0, sizeof(NameSigHash*) * HASH_ROW_SIZE);
-}
-// Return false if the name/sig combination is found in table.
-// Return true if no duplicate is found. And name/sig is added as a new entry in table.
-// The old format checker uses heap sort to find duplicates.
-// NOTE: caller should guarantee that GC doesn't happen during the life cycle
-// of table since we don't expect Symbol*'s to move.
-static bool put_after_lookup(const Symbol* name, const Symbol* sig, NameSigHash** table) {
-  assert(name != nullptr, "name in constant pool is null");
-
-  // First lookup for duplicates
-  int index = hash(name, sig);
-  NameSigHash* entry = table[index];
-  while (entry != nullptr) {
-    if (entry->_name == name && entry->_sig == sig) {
-      return false;
-    }
-    entry = entry->_next;
+  static unsigned int hash(NameSigHash const& namesig) {
+    return namesig._name->identity_hash() ^ namesig._sig->identity_hash();
   }
 
-  // No duplicate is found, allocate a new entry and fill it.
-  entry = new NameSigHash();
-  entry->_name = name;
-  entry->_sig = sig;
+  static bool equals(NameSigHash const& e0, NameSigHash const& e1) {
+    return (e0._name == e1._name) &&
+          (e0._sig  == e1._sig);
+  }
+};
 
-  // Insert into hash table
-  entry->_next = table[index];
-  table[index] = entry;
-
-  return true;
-}
+using NameSigHashtable = ResourceHashtable<NameSigHash, int,
+                                           NameSigHash::HASH_ROW_SIZE,
+                                           AnyObj::RESOURCE_AREA, mtInternal,
+                                           &NameSigHash::hash, &NameSigHash::equals>;
 
 // Side-effects: populates the _local_interfaces field
 void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
@@ -882,27 +857,16 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
 
     // Check if there's any duplicates in interfaces
     ResourceMark rm(THREAD);
-    NameSigHash** interface_names = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD,
-                                                                 NameSigHash*,
-                                                                 HASH_ROW_SIZE);
-    initialize_hashtable(interface_names);
-    bool dup = false;
-    const Symbol* name = nullptr;
-    {
-      debug_only(NoSafepointVerifier nsv;)
-      for (index = 0; index < itfs_len; index++) {
-        const InstanceKlass* const k = _local_interfaces->at(index);
-        name = k->name();
-        // If no duplicates, add (name, nullptr) in hashtable interface_names.
-        if (!put_after_lookup(name, nullptr, interface_names)) {
-          dup = true;
-          break;
-        }
+    // Set containing interface names
+    ResourceHashtable<Symbol*, int>* interface_names = new ResourceHashtable<Symbol*, int>();
+    for (index = 0; index < itfs_len; index++) {
+      const InstanceKlass* const k = _local_interfaces->at(index);
+      Symbol* interface_name = k->name();
+      // If no duplicates, add (name, nullptr) in hashtable interface_names.
+      if (!interface_names->put(interface_name, 0)) {
+        classfile_parse_error("Duplicate interface name \"%s\" in class file %s",
+                               interface_name->as_C_string(), THREAD);
       }
-    }
-    if (dup) {
-      classfile_parse_error("Duplicate interface name \"%s\" in class file %s",
-                             name->as_C_string(), THREAD);
     }
   }
 }
@@ -1621,27 +1585,16 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
   if (_need_verify && length > 1) {
     // Check duplicated fields
     ResourceMark rm(THREAD);
-    NameSigHash** names_and_sigs = NEW_RESOURCE_ARRAY_IN_THREAD(
-      THREAD, NameSigHash*, HASH_ROW_SIZE);
-    initialize_hashtable(names_and_sigs);
-    bool dup = false;
-    const Symbol* name = nullptr;
-    const Symbol* sig = nullptr;
-    {
-      debug_only(NoSafepointVerifier nsv;)
-      for (int i = 0; i < _temp_field_info->length(); i++) {
-        name = _temp_field_info->adr_at(i)->name(_cp);
-        sig = _temp_field_info->adr_at(i)->signature(_cp);
-        // If no duplicates, add name/signature in hashtable names_and_sigs.
-        if (!put_after_lookup(name, sig, names_and_sigs)) {
-          dup = true;
-          break;
-        }
+    // Set containing name-signature pairs
+    NameSigHashtable* names_and_sigs = new NameSigHashtable();
+    for (int i = 0; i < _temp_field_info->length(); i++) {
+      NameSigHash name_and_sig(_temp_field_info->adr_at(i)->name(_cp),
+                               _temp_field_info->adr_at(i)->signature(_cp));
+      // If no duplicates, add name/signature in hashtable names_and_sigs.
+      if(!names_and_sigs->put(name_and_sig, 0)) {
+        classfile_parse_error("Duplicate field name \"%s\" with signature \"%s\" in class file %s",
+                               name_and_sig._name->as_C_string(), name_and_sig._sig->as_klass_external_name(), THREAD);
       }
-    }
-    if (dup) {
-      classfile_parse_error("Duplicate field name \"%s\" with signature \"%s\" in class file %s",
-                             name->as_C_string(), sig->as_klass_external_name(), THREAD);
     }
   }
 }
@@ -2871,28 +2824,16 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
     if (_need_verify && length > 1) {
       // Check duplicated methods
       ResourceMark rm(THREAD);
-      NameSigHash** names_and_sigs = NEW_RESOURCE_ARRAY_IN_THREAD(
-        THREAD, NameSigHash*, HASH_ROW_SIZE);
-      initialize_hashtable(names_and_sigs);
-      bool dup = false;
-      const Symbol* name = nullptr;
-      const Symbol* sig = nullptr;
-      {
-        debug_only(NoSafepointVerifier nsv;)
-        for (int i = 0; i < length; i++) {
-          const Method* const m = _methods->at(i);
-          name = m->name();
-          sig = m->signature();
-          // If no duplicates, add name/signature in hashtable names_and_sigs.
-          if (!put_after_lookup(name, sig, names_and_sigs)) {
-            dup = true;
-            break;
-          }
+      // Set containing name-signature pairs
+      NameSigHashtable* names_and_sigs = new NameSigHashtable();
+      for (int i = 0; i < length; i++) {
+        const Method* const m = _methods->at(i);
+        NameSigHash name_and_sig(m->name(), m->signature());
+        // If no duplicates, add name/signature in hashtable names_and_sigs.
+        if(!names_and_sigs->put(name_and_sig, 0)) {
+          classfile_parse_error("Duplicate method name \"%s\" with signature \"%s\" in class file %s",
+                                 name_and_sig._name->as_C_string(), name_and_sig._sig->as_klass_external_name(), THREAD);
         }
-      }
-      if (dup) {
-        classfile_parse_error("Duplicate method name \"%s\" with signature \"%s\" in class file %s",
-                               name->as_C_string(), sig->as_klass_external_name(), THREAD);
       }
     }
   }

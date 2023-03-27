@@ -357,7 +357,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \
-  product(bool, UseVectorizedHashCodeIntrinsic, false, DIAGNOSTIC,           \
+  product(bool, UseVectorizedHashCodeIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedHashCode()") \
                                                                             \
   product(bool, UseCopySignIntrinsic, false, DIAGNOSTIC,                    \
@@ -365,6 +365,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseSignumIntrinsic, false, DIAGNOSTIC,                      \
           "Enables intrinsification of Math.signum")                        \
+                                                                            \
+  product_pd(bool, DelayCompilerStubsGeneration, DIAGNOSTIC,                \
+          "Use Compiler thread for compiler's stubs generation")            \
                                                                             \
   product(ccstrlist, DisableIntrinsic, "", DIAGNOSTIC,                      \
          "do not expand intrinsics whose (internal) names appear here")     \
@@ -852,9 +855,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceInlineCacheClearing, false,                            \
           "Trace clearing of inline caches in nmethods")                    \
-                                                                            \
-  develop(bool, TraceDependencies, false,                                   \
-          "Trace dependencies")                                             \
                                                                             \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
