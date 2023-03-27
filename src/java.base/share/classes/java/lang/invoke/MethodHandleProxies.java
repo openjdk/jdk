@@ -210,7 +210,7 @@ public class MethodHandleProxies {
         return intfc.cast(proxy);
     }
 
-    record LocalMethodInfo(String fieldName, MethodType mt, MethodTypeDesc desc, List<ClassDesc> thrown) {}
+    private record LocalMethodInfo(String fieldName, MethodType mt, MethodTypeDesc desc, List<ClassDesc> thrown) {}
 
     private static final ClassValue<ImplementationInfo> IMPLEMENTATION_INFOS = new ClassValue<>() {
         @Override
@@ -256,8 +256,8 @@ public class MethodHandleProxies {
     };
 
     // all mh have the proxy type changed to object
-    record ImplementationInfo(@Stable MethodType[] types, Class<?> resultClass,
-                              MethodHandle ctor, MethodHandle getTarget, MethodHandle getType) {}
+    private record ImplementationInfo(@Stable MethodType[] types, Class<?> resultClass,
+                                      MethodHandle ctor, MethodHandle getTarget, MethodHandle getType) {}
 
     private static final ClassDesc CD_RuntimeException = desc(RuntimeException.class);
     private static final ClassDesc CD_Error = desc(Error.class);
