@@ -26,7 +26,6 @@
 AC_DEFUN([BPERF_CHECK_CORES],
 [
   AC_MSG_CHECKING([for number of cores])
-  NUM_CORES=0
 
   if test -f /proc/cpuinfo; then
     # Looks like a Linux (or cygwin) system
@@ -38,10 +37,7 @@ AC_DEFUN([BPERF_CHECK_CORES],
     # Looks like a MacOSX system
     NUM_CORES=`/usr/sbin/sysctl -n hw.ncpu`
   elif test "x$OPENJDK_BUILD_OS" = xaix ; then
-    NUM_LCPU=`lparstat -m 2> /dev/null | $GREP -o "lcpu=[[0-9]]*" | $CUT -d "=" -f 2`
-    if test -n "$NUM_LCPU"; then
-      NUM_CORES=$NUM_LCPU
-    fi
+    NUM_CORES=`lparstat -m 2> /dev/null | $GREP -o "lcpu=[[0-9]]*" | $CUT -d "=" -f 2`
   elif test -n "$NUMBER_OF_PROCESSORS"; then
     # On windows, look in the env
     NUM_CORES=$NUMBER_OF_PROCESSORS

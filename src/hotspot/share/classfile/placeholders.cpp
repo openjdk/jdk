@@ -191,7 +191,11 @@ bool PlaceholderEntry::remove_seen_thread(JavaThread* thread, PlaceholderTable::
 }
 
 
-// Placeholder methods
+void PlaceholderEntry::set_supername(Symbol* supername) {
+  assert_locked_or_safepoint(SystemDictionary_lock);
+  assert(_supername == nullptr || _supername->refcount() > 1, "must be referenced also by the loader");
+  _supername = supername;
+}
 
 // Placeholder objects represent classes currently being loaded.
 // All threads examining the placeholder table must hold the
@@ -272,7 +276,6 @@ PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
 
 
 // placeholder is used to track class loading internal states
-// placeholder existence now for loading superclass/superinterface
 // superthreadQ tracks class circularity, while loading superclass/superinterface
 // loadInstanceThreadQ tracks load_instance_class calls
 // definer() tracks the single thread that owns define token
@@ -283,21 +286,21 @@ PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
 // On removal: if definer and all queues empty, remove entry
 // Note: you can be in both placeholders and systemDictionary
 // Therefore - must always check SD first
-// Ignores the case where entry is not found
 void PlaceholderTable::find_and_remove(Symbol* name, ClassLoaderData* loader_data,
                                        classloadAction action,
                                        JavaThread* thread) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   PlaceholderEntry* probe = get_entry(name, loader_data);
-  if (probe != nullptr) {
-    log(name, probe, "find_and_remove", action);
-    probe->remove_seen_thread(thread, action);
-    // If no other threads using this entry, and this thread is not using this entry for other states
-    if ((probe->superThreadQ() == nullptr) && (probe->loadInstanceThreadQ() == nullptr)
-        && (probe->defineThreadQ() == nullptr) && (probe->definer() == nullptr)) {
-      probe->clear_supername();
-      remove_entry(name, loader_data);
-    }
+  assert(probe != nullptr, "must find an entry");
+  log(name, probe, "find_and_remove", action);
+  probe->remove_seen_thread(thread, action);
+  if (probe->superThreadQ() == nullptr) {
+    probe->set_supername(nullptr);
+  }
+  // If no other threads using this entry, and this thread is not using this entry for other states
+  if ((probe->superThreadQ() == nullptr) && (probe->loadInstanceThreadQ() == nullptr)
+      && (probe->defineThreadQ() == nullptr) && (probe->definer() == nullptr)) {
+    remove_entry(name, loader_data);
   }
 }
 

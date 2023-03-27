@@ -240,12 +240,18 @@ public class SequenceInputStream extends InputStream {
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         if (getClass() == SequenceInputStream.class) {
-            long c = 0;
+            long transferred = 0;
             while (in != null) {
-                c += in.transferTo(out);
+                if (transferred < Long.MAX_VALUE) {
+                    try {
+                        transferred = Math.addExact(transferred, in.transferTo(out));
+                    } catch (ArithmeticException ignore) {
+                        return Long.MAX_VALUE;
+                    }
+                }
                 nextStream();
             }
-            return c;
+            return transferred;
         } else {
             return super.transferTo(out);
         }

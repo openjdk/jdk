@@ -63,13 +63,11 @@ TEST_VM(PlaceholderTable, supername) {
     PlaceholderTable::find_and_add(D, loader_data, super_action, interf, T2);
     PlaceholderTable::find_and_remove(D, loader_data, super_action, T2);
 
-    ASSERT_EQ(interf->refcount(), 3) << "supername isn't replaced until super set";
+    ASSERT_EQ(interf->refcount(), 1) << "supername is replaced with null";
 
     // Add placeholder to the table for loading A and super, and D also loading super
     PlaceholderTable::find_and_add(A, loader_data, super_action, super, THREAD);
     PlaceholderTable::find_and_add(D, loader_data, super_action, super, T2);
-
-    ASSERT_EQ(interf->refcount(), 1) << "now should be one";
 
     // Another thread comes in and finds A loading Super
     PlaceholderEntry* placeholder = PlaceholderTable::get_entry(A, loader_data);

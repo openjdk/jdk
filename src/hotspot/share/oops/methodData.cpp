@@ -126,8 +126,8 @@ void ProfileData::print_data_on(outputStream* st, const MethodData* md) const {
 }
 
 void ProfileData::print_shared(outputStream* st, const char* name, const char* extra) const {
-  st->print("bci: %d", bci());
-  st->fill_to(tab_width_one);
+  st->print("bci: %d ", bci());
+  st->fill_to(tab_width_one + 1);
   st->print("%s", name);
   tab(st);
   int trap = trap_state();

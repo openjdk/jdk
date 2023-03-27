@@ -26,13 +26,5 @@
 # -parameters provides method's parameters information in class file,
 # JVMCI compilers make use of that information for various sanity checks.
 # Don't use Indy strings concatenation to have good JVMCI startup performance.
-# The exports are needed since JVMCI is dynamically exported (see
-# jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
 
 JAVAC_FLAGS += -parameters -XDstringConcat=inline
-
-## WORKAROUND jdk.internal.vm.ci source structure issue
-JVMCI_MODULESOURCEPATH := $(MODULESOURCEPATH) \
-	$(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
-		$(wildcard $(TOPDIR)/src/$(MODULE)/share/classes/*/src)))
-MODULESOURCEPATH := $(call PathList, $(JVMCI_MODULESOURCEPATH))

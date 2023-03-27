@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,16 @@ void G1FullCollector::set_compaction_top(HeapRegion* r, HeapWord* value) {
 
 HeapWord* G1FullCollector::compaction_top(HeapRegion* r) const {
   return Atomic::load(&_compaction_tops[r->hrm_index()]);
+}
+
+void G1FullCollector::set_has_compaction_targets() {
+  if (!_has_compaction_targets) {
+    _has_compaction_targets = true;
+  }
+}
+
+bool G1FullCollector::has_compaction_targets() const {
+  return _has_compaction_targets;
 }
 
 #endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP

@@ -723,7 +723,7 @@
 
   <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Native Memory Usage Per Type"
     description="Native memory usage for a given memory type in the JVM" period="everyChunk">
-    <Field type="string" name="type" label="Memory Type" description="Type used for the native memory allocation" />
+    <Field type="NMTType" name="type" label="Memory Type" description="Type used for the native memory allocation" />
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this type" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this type" />
   </Event>
@@ -1376,6 +1376,10 @@
 
   <Type name="ChunkHeader" label="Chunk Header">
     <Field type="byte" array="true" name="payload" label="Payload" />
+  </Type>
+
+  <Type name="NMTType" label="Native Memory Tracking Type">
+    <Field type="string" name="name" label="Name" />
   </Type>
 
   <Relation name="JavaMonitorAddress"/>

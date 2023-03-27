@@ -39,6 +39,7 @@
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+class DeoptimizationScope;
 class klassItable;
 class RecordComponent;
 
@@ -226,15 +227,15 @@ class InstanceKlass: public Klass {
   // _misc_flags right now.
   bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
 
-  ClassState      _init_state;              // state of class
+  volatile ClassState _init_state;          // state of class
 
   u1              _reference_type;          // reference type
 
   // State is set while executing, eventually atomically to not disturb other state
   InstanceKlassFlags _misc_flags;
 
-  Monitor*        _init_monitor;         // mutual exclusion to _init_state and _init_thread.
-  Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recursive initialization)
+  Monitor*             _init_monitor;       // mutual exclusion to _init_state and _init_thread.
+  JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
@@ -511,7 +512,7 @@ public:
   bool is_not_initialized() const          { return init_state() <  being_initialized; }
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
-  bool is_init_thread(Thread *thread)      { return thread == _init_thread; }
+  bool is_init_thread(JavaThread *thread)  { return thread == Atomic::load(&_init_thread); }
   ClassState  init_state() const           { return Atomic::load(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
@@ -861,7 +862,7 @@ public:
 
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
-  int  mark_dependent_nmethods(KlassDepChange& changes);
+  void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
 
@@ -870,7 +871,7 @@ public:
   void set_osr_nmethods_head(nmethod* h)     { _osr_nmethods_head = h; };
   void add_osr_nmethod(nmethod* n);
   bool remove_osr_nmethod(nmethod* n);
-  int mark_osr_nmethods(const Method* m);
+  int mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m);
   nmethod* lookup_osr_nmethod(const Method* m, int bci, int level, bool match_level) const;
 
 #if INCLUDE_JVMTI
@@ -1077,9 +1078,10 @@ public:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags.set_rewritten(true); }
-  void set_init_thread(Thread *thread)  {
-    assert(thread == nullptr || _init_thread == nullptr, "Only one thread is allowed to own initialization");
-    _init_thread = thread;
+  void set_init_thread(JavaThread *thread)  {
+    assert((thread == JavaThread::current() && _init_thread == nullptr) ||
+           (thread == nullptr && _init_thread == JavaThread::current()), "Only one thread is allowed to own initialization");
+    Atomic::store(&_init_thread, thread);
   }
 
   // The RedefineClasses() API can cause new method idnums to be needed
@@ -1143,6 +1145,7 @@ public:
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
+  bool methods_contain_jsr_bytecode() const;
 #endif
 
   jint compute_modifier_flags() const;

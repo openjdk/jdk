@@ -209,7 +209,7 @@ public class TestExampleCode {
      * same chronology.
      * @param <D> a parameterized ChronoLocalDate
      * @param date a specific date extending ChronoLocalDate
-     * @return a [@code ChronoLocalDateTime<D>} using the change chronology.
+     * @return a {@code ChronoLocalDateTime<D>} using the change chronology.
      */
     @SuppressWarnings("unchecked")
     private <D extends ChronoLocalDate> ChronoLocalDateTime<D> tomorrowNoon(D date) {
