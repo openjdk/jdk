@@ -101,7 +101,7 @@ public class TestJNICriticalStressTest {
     static private class AllocatingWorker implements Runnable {
         private final Object[] array = new Object[MAP_ARRAY_LENGTH];
         private int arrayIndex = 0;
-        
+
         private void doStep() {
             Map<Integer,String> map = populateMap(MAP_SIZE);
             array[arrayIndex] = map;
