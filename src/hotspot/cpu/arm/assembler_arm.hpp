@@ -294,7 +294,7 @@ class VFP {
   class double_num : public fpnum {
    public:
     double_num(double v) {
-      _num_bits = PrimitiveConversions::cast<unsigned long long>(v);
+      _num_bits = PrimitiveConversions::cast<uint64_t>(v);
     }
 
     virtual unsigned int f_hi4() const { return (_num_bits << 12) >> (48+12); }
@@ -303,7 +303,7 @@ class VFP {
     virtual unsigned int s() const { return _num_bits >> 63; }
 
    private:
-    unsigned long long _num_bits;
+    uint64_t _num_bits;
   };
 };
 #endif
