@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  */
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
@@ -62,7 +65,7 @@ public class CDSPluginTest {
 
         var module = "cds";
         helper.generateDefaultJModule(module);
-        var image = helper.generateDefaultImage(new String[] { "--generate-cds-archive" },
+        Path image = helper.generateDefaultImage(new String[] { "--generate-cds-archive" },
                                                 module)
             .assertSuccess();
 
@@ -87,8 +90,24 @@ public class CDSPluginTest {
        if (Platform.isLinux()) {
            System.out.println("---- Test different platforms scenario ----");
            String jlinkPath = JDKToolFinder.getJDKTool("jlink");
-           String[] cmd = {jlinkPath, "--add-modules", "java.base,java.logging",
-                           "-J-Dos.name=windows", "--generate-cds-archive",
+           // copy over the java.base and java.logging module file to a temporary directory
+           // which we then use as a --module-path during jlink image generation. using such a
+           // separate --module-path will force the JLink task to read the ModuleTarget from
+           // the java.base module-info.class to identify the target platform for the image
+           // being generated.
+           Path jdkRoot = Path.of(jlinkPath).getParent().getParent();
+           Path modsPath = Files.createDirectory(Path.of("mods"));
+           copyModuleFiles(jdkRoot, modsPath, new String[] {"java.base", "java.logging"});
+           String[] cmd = {jlinkPath, "--verbose",
+                           "--add-modules", "java.base,java.logging",
+                           // java.base in a custom module path will ensure the ModuleTarget
+                           // attribute in module-info.class is parsed and target platform is
+                           // inferred as a linux-*
+                           "--module-path", modsPath.toString(),
+                           "-J-Dos.name=windows", // simulate current platform as windows
+                           // enable the CDSPlugin, which, during the processing is then expected
+                           // to throw an exception because of current and target platform mismatch
+                           "--generate-cds-archive",
                            "--output", System.getProperty("test.classes") + sep + module + "-tmp"};
            StringBuilder cmdLine = new StringBuilder();
            for (String s : cmd) {
@@ -101,5 +120,21 @@ public class CDSPluginTest {
            out.shouldMatch("Error: Cannot generate CDS archives: target image platform linux-.*is different from runtime platform windows-.*");
            out.shouldHaveExitValue(1);
        }
+    }
+
+    private static void copyModuleFiles(Path jdkRoot, Path targetDir, String[] modules)
+            throws IOException {
+        for (String module : modules) {
+            Path moduleFile = jdkRoot.resolve("jmods").resolve(module + ".jmod");
+            if (!Files.exists(moduleFile)) {
+                throw new AssertionError("Missing " + moduleFile);
+            }
+            Path copy = targetDir.resolve(moduleFile.getFileName());
+            Files.copy(moduleFile, copy);
+            if (!Files.exists(copy)) {
+                throw new AssertionError("Could not copy '" + module
+                        + "' module file to directory: " + targetDir);
+            }
+        }
     }
 }
