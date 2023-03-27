@@ -1828,10 +1828,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         ensureCapacityInternal(limit);
         boolean isLatin1 = isLatin1();
         if (isLatin1 && StringLatin1.canEncode(c)) {
-            byte b = (byte)c;
-            for (int index = this.count; index < limit; index++) {
-                value[index] = b;
-            }
+            Arrays.fill(value, this.count, limit, (byte)c);
         } else {
             if (isLatin1) {
                 inflate();
