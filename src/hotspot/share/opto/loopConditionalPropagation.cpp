@@ -303,12 +303,20 @@ private:
       return _updates.at(i)._node;
     }
 
+    const Type* prev_type_at(int i) const {
+      return _updates.at(i)._before;
+    }
+
+    const Type* type_at(int i) const {
+      return _updates.at(i)._after;
+    }
+
     bool contains(Node* n) const {
       return _updates.find((void*)n, [](void* n, Entry e) { return e._node == (Node*) n; }) != -1;
     }
 
-    void push_node(Node* node) {
-      _updates.push(Entry(node, nullptr, nullptr));
+    void push_node(Node* node, const Type* old_t, const Type* new_t) {
+      _updates.push(Entry(node, old_t, new_t));
     }
   };
 
@@ -407,7 +415,9 @@ private:
           TypeUpdate* updates = *updates_ptr;
           for (int i = 0; i < updates->length(); ++i) {
             Node* n = updates->node_at(i);
-            _types_clone.map(n->_idx, get_type(dom, n));
+            const Type* t = get_type(dom, n);
+            assert(t == updates->prev_type_at(i), "");
+            _types_clone.map(n->_idx, t);
           }
         }
         ctrl = dom;
@@ -885,18 +895,19 @@ public:
     }
     if (!_updated_type.test_set(n->_idx)) {
       Node* root = _phase->C->root();
+      assert(old_t == PhaseTransform::type(n), "");
       _types.put(ControlDataPair(root, n), PhaseTransform::type(n));
       _types.maybe_grow();
-      record_update(root, n);
+      record_update(root, n, nullptr, old_t);
     }
     ControlDataPair pair = ControlDataPair(c, n);
     if (_types.put(pair, t)) {
       _types.maybe_grow();
     }
-    record_update(c, n);
+    record_update(c, n, old_t, t);
   }
 
-  void record_update(Node* c, Node* n) {
+  void record_update(Node* c, Node* n, const Type* old_t, const Type* new_t) {
     TypeUpdate* updates;
     TypeUpdate** updates_ptr = _updates->get(c);
     if (updates_ptr == nullptr) {
@@ -906,7 +917,7 @@ public:
       updates = *updates_ptr;
     }
     if (!updates->contains(n)) {
-      updates->push_node(n);
+      updates->push_node(n, old_t, new_t);
     }
   }
 
