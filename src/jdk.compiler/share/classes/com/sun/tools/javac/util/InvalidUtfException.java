@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,32 @@
  * questions.
  */
 
-package java.io;
+package com.sun.tools.javac.util;
 
 /**
+ * Exception thrown when invalid Modified UTF-8 is encountered.
  *
- * @since 1.8
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ *
+ * @see Convert#utf2chars
+ * @see Convert#utfValidate
  */
-final class DefaultFileSystem {
+public class InvalidUtfException extends Exception {
 
-    private DefaultFileSystem() {}
+    private static final long serialVersionUID = 0;
 
-    /**
-     * Return the FileSystem object for Unix-based platform.
+    private final int offset;
+
+    public InvalidUtfException(int offset) {
+        this.offset = offset;
+    }
+
+    /** Get the {@code byte[]} array offset at which the invalid data was found.
      */
-    public static FileSystem getFileSystem() {
-        return new UnixFileSystem();
+    public int getOffset() {
+        return offset;
     }
 }
