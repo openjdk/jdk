@@ -2570,6 +2570,7 @@ GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
 //     region of the archive, which is not mapped yet.
 bool FileMapInfo::initialize() {
   assert(UseSharedSpaces, "UseSharedSpaces expected.");
+  assert(Arguments::has_jimage(), "The shared archive file cannot be used with an exploded module build.");
 
   if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {
     // CDS assumes that no classes resolved in vmClasses::resolve_all()
@@ -2577,11 +2578,6 @@ bool FileMapInfo::initialize() {
     // during the JVMTI "early" stage, so we can still use CDS if
     // JvmtiExport::has_early_class_hook_env() is false.
     log_info(cds)("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
-    return false;
-  }
-
-  if (!Arguments::has_jimage()) {
-    log_info(cds)("The shared archive file cannot be used with an exploded module build.");
     return false;
   }
 

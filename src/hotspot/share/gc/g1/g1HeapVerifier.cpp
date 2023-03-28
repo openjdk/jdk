@@ -608,7 +608,7 @@ public:
 };
 
 void G1HeapVerifier::verify_card_table_cleanup() {
-  if (G1VerifyCTCleanup || VerifyAfterGC) {
+  if (VerifyAfterGC) {
     G1VerifyCardTableCleanup cleanup_verifier(this);
     _g1h->heap_region_iterate(&cleanup_verifier);
   }

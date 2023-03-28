@@ -79,7 +79,7 @@ void HeapRegionRemSet::clear_locked(bool only_cardset) {
   }
   clear_fcc();
   _card_set.clear();
-  set_state_empty();
+  set_state_untracked();
   assert(occupied() == 0, "Should be clear.");
 }
 
