@@ -27,6 +27,7 @@ package java.nio.channels;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.Flushable;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -341,11 +342,9 @@ public final class Channels {
      * Constructs a channel that writes bytes to the given stream.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
-     * its I/O operations to the given stream.  Upon returning from the
-     * channel's {@linkplain WritableByteChannel#write write} method, the
-     * state of the stream will be as if its {@linkplain OutputStream#flush
-     * flush} method had been invoked.  Closing the channel will in turn cause
-     * the stream to be closed. </p>
+     * its I/O operations to the given stream.  Closing the channel will in
+     * turn cause the stream to be closed.  The returned channel implements
+     * {@linkplain Flushable}; flushing the channel will flush the stream. </p>
      *
      * @param  out
      *         The stream to which bytes are to be written
@@ -359,20 +358,49 @@ public final class Channels {
             return ((FileOutputStream) out).getChannel();
         }
 
-        return new WritableByteChannelImpl(out);
+        return new WritableByteChannelImpl(out, false);
+    }
+
+    /**
+     * Constructs a channel that writes bytes to the given stream.
+     *
+     * <p> The resulting channel will not be buffered; it will simply redirect
+     * its I/O operations to the given stream.  Closing the channel will in
+     * turn cause the stream to be closed.  The stream will be flushed after
+     * each write if the {@code autoFlush} parameter is {@code true}. </p>
+     *
+     * @param  out
+     *         The stream to which bytes are to be written
+     *
+     * @param  autoFlush
+     *         Whether to flush the stream after each write to the channel
+     *
+     * @return  A new writable byte channel
+     */
+    public static WritableByteChannel newChannel(OutputStream out,
+                                                 boolean autoFlush) {
+        Objects.requireNonNull(out, "out");
+
+        if (out.getClass() == FileOutputStream.class) {
+            return ((FileOutputStream) out).getChannel();
+        }
+
+        return new WritableByteChannelImpl(out, autoFlush);
     }
 
     private static class WritableByteChannelImpl
         extends AbstractInterruptibleChannel    // Not really interruptible
-        implements WritableByteChannel
+        implements Flushable, WritableByteChannel
     {
         private final OutputStream out;
+        private final boolean autoFlush;
         private static final int TRANSFER_SIZE = 8192;
         private byte[] buf = new byte[0];
         private final Object writeLock = new Object();
 
-        WritableByteChannelImpl(OutputStream out) {
+        WritableByteChannelImpl(OutputStream out, boolean autoFlush) {
             this.out = out;
+            this.autoFlush = autoFlush;
         }
 
         @Override
@@ -398,9 +426,14 @@ public final class Channels {
                     }
                     totalWritten += bytesToWrite;
                 }
-                out.flush();
+                if (autoFlush)
+                    out.flush();
                 return totalWritten;
             }
+        }
+
+        public void flush() throws IOException {
+            out.flush();
         }
 
         @Override

@@ -303,7 +303,7 @@ public class Basic {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
         try (BufferedOutputStream bos = new BufferedOutputStream(baos, size);
-             WritableByteChannel wbc = Channels.newChannel(bos);) {
+             WritableByteChannel wbc = Channels.newChannel(bos, true);) {
             int max = size + 1 + RND.nextInt(size);
             byte[] expected = new byte[max];
             RND.nextBytes(expected);
