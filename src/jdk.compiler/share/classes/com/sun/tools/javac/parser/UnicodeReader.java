@@ -114,7 +114,7 @@ public class UnicodeReader {
      * @param array   array containing contents of source.
      * @param length  length of meaningful content in buffer.
      */
-    protected  UnicodeReader(Log log, char[] array,  int length) {
+    protected UnicodeReader(Log log, char[] array, int length) {
         this(log, array, 0, length);
     }
 
@@ -126,7 +126,8 @@ public class UnicodeReader {
       * @param pos     start of meaningful content in buffer.
       * @param endPos  end of meaningful content in buffer.
       */
-    protected  UnicodeReader(Log log, char[] array, int pos, int endPos) {
+    @SuppressWarnings("this-escape")
+    protected UnicodeReader(Log log, char[] array, int pos, int endPos) {
         this.buffer = array;
         this.length = endPos;
         this.position = pos;
@@ -449,6 +450,9 @@ public class UnicodeReader {
         return false;
     }
 
+    /**
+     * Match one of the arguments and advance if a match. Returns true if a match.
+     */
     protected boolean acceptOneOf(char ch1, char ch2, char ch3) {
         if (isOneOf(ch1, ch2, ch3)) {
             next();
@@ -467,6 +471,34 @@ public class UnicodeReader {
         return lineReader(pos, endPos);
     }
 
+    protected UnicodeReader lineReader(int pos, int endPos) {
+        return new UnicodeReader(log, buffer, pos, endPos);
+    }
+
+    /**
+     * Return a reader which is bracketed by the currect position
+     * and the next line terminator.
+     *
+     * @return a new reader
+     */
+    protected UnicodeReader lineReader() {
+        int pos = position;
+        skipToEOLN();
+        int endPos = position;
+        accept('\r');
+        accept('\n');
+        return lineReader(pos, endPos);
+    }
+
+    /**
+     * Return a reader which is bracketed by the {@code pos}
+     * and {@code endPos}.
+     *
+     * @param pos     initial position
+     * @param endPos  end position
+     *
+     * @return a new reader
+     */
     protected UnicodeReader lineReader(int pos, int endPos) {
         return new UnicodeReader(log, buffer, pos, endPos);
     }
