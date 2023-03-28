@@ -45,6 +45,8 @@ import org.junit.jupiter.params.provider.Arguments;
  * test the implementation of the Gregorian Calendar roll
  */
 public class RollToMinWeek {
+    static Calendar.Builder CAL_BUILDER = new Builder();
+
     @ParameterizedTest
     @MethodSource("rollUpCalProvider")
     public void rollUpTest(Calendar calendar, String[] validDates){
@@ -106,11 +108,11 @@ public class RollToMinWeek {
     private static Calendar buildCalendar(String type, int firstDayOfWeek,
                                  int minimumWeekLength, int dayOfMonth,
                                  int month, int year) {
-        Calendar.Builder calBuilder = new Builder();
-        calBuilder.setCalendarType(type);
-        calBuilder.setWeekDefinition(firstDayOfWeek, minimumWeekLength);
-        calBuilder.setDate(year, month, dayOfMonth);
-        return calBuilder.build();
+        return CAL_BUILDER
+                .setCalendarType(type)
+                .setWeekDefinition(firstDayOfWeek, minimumWeekLength)
+                .setDate(year, month, dayOfMonth)
+                .build();
     }
 
     private static String longDateString(Calendar calendar) {
