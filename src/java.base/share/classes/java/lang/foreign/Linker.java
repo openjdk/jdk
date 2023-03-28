@@ -197,9 +197,17 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * Note that due to limited ABI specification coverage, none of the native linker implementations supports
- * packed structs (those that lack the padding needed to align their fields) or structs with excess padding
- * (more than is required to align a field) being passed by value.
+ * Due to limited ABI specification coverage, all the native linker implementations limit the function
+ * descriptors that they support to those that contain only so-called <em>canonical</em> layouts. These layouts
+ * have the following restrictions:
+ * <ol>
+ * <li>The layout must have its alignment constraint set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
+ * <li>If the layout is a {@link ValueLayout}, it must have a {@linkplain ValueLayout#order() byte order} that matches
+ * the {@linkplain ByteOrder#nativeOrder() native byte order}</li>
+ * <li>If the layout is a {@link GroupLayout}, its size must be a multiple of its alignment constraint</li>
+ * <li>If the layout is a {@link GroupLayout}, it must not contain excess padding. Padding is considered excess if it is
+ * not strictly required to align a non-padding layout, or to satisfy constraint 3</li>
+ * </ol>
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *

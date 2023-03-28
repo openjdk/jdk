@@ -44,6 +44,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.PaddingLayout;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
+import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -110,45 +111,58 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     protected abstract ByteOrder linkerByteOrder();
 
     private void checkLayouts(FunctionDescriptor descriptor) {
-        descriptor.returnLayout().ifPresent(l -> checkLayoutsRecursive(l, 0, 0));
-        descriptor.argumentLayouts().forEach(l -> checkLayoutsRecursive(l, 0, 0));
+        descriptor.returnLayout().ifPresent(this::checkLayoutsRecursive);
+        descriptor.argumentLayouts().forEach(this::checkLayoutsRecursive);
     }
 
-    private void checkLayoutsRecursive(MemoryLayout layout, long lastUnpaddedOffset , long offset) {
+    private void checkLayoutsRecursive(MemoryLayout layout) {
         checkHasNaturalAlignment(layout);
-        checkOffset(layout, lastUnpaddedOffset, offset);
         checkByteOrder(layout);
-        if (layout instanceof GroupLayout gl) {
-            checkGroupSize(gl);
-            for (MemoryLayout member : gl.memberLayouts()) {
-                checkLayoutsRecursive(member, lastUnpaddedOffset, offset);
+        if (layout instanceof StructLayout sl) {
+            long offset = 0;
+            long lastUnpaddedOffset = 0;
+            for (MemoryLayout member : sl.memberLayouts()) {
+                // check element offset before recursing so that an error points at the
+                // outermost layout first
+                checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
+                checkLayoutsRecursive(member);
 
-                if (gl instanceof StructLayout) {
-                    offset += member.bitSize();
-                    if (!(member instanceof PaddingLayout)) {
-                        lastUnpaddedOffset = offset;
-                    }
+                offset += member.bitSize();
+                if (!(member instanceof PaddingLayout)) {
+                    lastUnpaddedOffset = offset;
                 }
             }
+            checkGroupSize(sl, lastUnpaddedOffset);
+        } else if (layout instanceof UnionLayout ul) {
+            long maxUnpaddedLayout = 0;
+            for (MemoryLayout member : ul.memberLayouts()) {
+                checkLayoutsRecursive(member);
+                if (!(member instanceof PaddingLayout)) {
+                    maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.bitSize());
+                }
+            }
+            checkGroupSize(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
-            checkLayoutsRecursive(sl.elementLayout(), lastUnpaddedOffset, offset);
+            checkLayoutsRecursive(sl.elementLayout());
         }
     }
 
     // check for trailing padding
-    private static void checkGroupSize(GroupLayout gl) {
-        if (gl.bitSize() % gl.bitAlignment() != 0) {
-            throw new IllegalArgumentException("Layout lacks trailing padding: " + gl);
+    private static void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
+        long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.bitAlignment());
+        if (gl.bitSize() != expectedSize) {
+            throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
+                    + gl.bitSize() + " != " + expectedSize);
         }
     }
 
-    // checks both that a layout is aligned within the root,
-    // and also that there is no excess padding between it and
+    // checks both that there is no excess padding between 'memberLayout' and
     // the previous layout
-    private static void checkOffset(MemoryLayout layout, long lastUnpaddedOffset, long offset) {
-        long expectedOffset = Utils.alignUp(lastUnpaddedOffset, layout.bitAlignment());
+    private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
+                                          long lastUnpaddedOffset, long offset) {
+        long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.bitAlignment());
         if (expectedOffset != offset) {
-            throw new IllegalArgumentException("Layout '" + layout + "'" +
+            throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
                     " found at unexpected offset: " + offset + " != " + expectedOffset);
         }
     }

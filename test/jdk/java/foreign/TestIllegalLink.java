@@ -191,7 +191,13 @@ public class TestIllegalLink extends NativeTestHelper {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             ValueLayout.JAVA_LONG,
                             ValueLayout.JAVA_INT)), // missing trailing padding
-                    "Layout lacks trailing padding"
+                    "has unexpected size"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_INT,
+                            MemoryLayout.paddingLayout(32))), // too much trailing padding
+                    "has unexpected size"
             },
         };
     }
