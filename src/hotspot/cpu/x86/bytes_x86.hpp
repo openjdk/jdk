@@ -26,6 +26,7 @@
 #define CPU_X86_BYTES_X86_HPP
 
 #include "memory/allStatic.hpp"
+#incldue "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/byteswap.hpp"
 #include "utilities/macros.hpp"

@@ -28,6 +28,7 @@
 #define CPU_RISCV_BYTES_RISCV_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/byteswap.hpp"
 
 class Bytes: AllStatic {

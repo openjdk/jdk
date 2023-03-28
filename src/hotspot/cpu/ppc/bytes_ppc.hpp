@@ -27,6 +27,7 @@
 #define CPU_PPC_BYTES_PPC_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/byteswap.hpp"
 
 class Bytes: AllStatic {
