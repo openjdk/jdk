@@ -24,8 +24,7 @@
 /**
  * @test
  * @bug 8277451
- * @run testng/othervm -Djdk.reflect.useDirectMethodHandle=true NegativeTest
- * @run testng/othervm -Djdk.reflect.useDirectMethodHandle=false NegativeTest
+ * @run testng/othervm NegativeTest
  * @summary Test exception thrown due to bad receiver and bad value on
  *          Field with and without setAccessible(true)
  */

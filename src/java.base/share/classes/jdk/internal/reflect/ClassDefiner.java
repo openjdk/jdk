@@ -32,8 +32,11 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
 /** Utility class which assists in calling defineClass() by
-    creating a new class loader which delegates to the one needed in
-    order for proper resolution of the given bytecodes to occur. */
+ *  creating a new class loader which delegates to the one needed in
+ *  order for proper resolution of the given bytecodes to occur.
+ *
+ *  This is only used to define SerializationConstructorAccessor.
+ */
 
 class ClassDefiner {
     static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();

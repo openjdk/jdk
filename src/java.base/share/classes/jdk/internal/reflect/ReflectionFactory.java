@@ -141,11 +141,7 @@ public class ReflectionFactory {
         }
         boolean isFinal = Modifier.isFinal(field.getModifiers());
         boolean isReadOnly = isFinal && (!override || langReflectAccess.isTrustedFinalField(field));
-        if (useFieldHandleAccessor()) {
-            return MethodHandleAccessorFactory.newFieldAccessor(field, isReadOnly);
-        } else {
-            return UnsafeFieldAccessorFactory.newFieldAccessor(field, isReadOnly);
-        }
+        return MethodHandleAccessorFactory.newFieldAccessor(field, isReadOnly);
     }
 
     public MethodAccessor newMethodAccessor(Method method, boolean callerSensitive) {
@@ -155,29 +151,7 @@ public class ReflectionFactory {
             method = root;
         }
 
-        if (useMethodHandleAccessor()) {
-            return MethodHandleAccessorFactory.newMethodAccessor(method, callerSensitive);
-        } else {
-            if (noInflation() && !method.getDeclaringClass().isHidden()) {
-                return generateMethodAccessor(method);
-            } else {
-                NativeMethodAccessorImpl acc = new NativeMethodAccessorImpl(method);
-                return acc.getParent();
-            }
-        }
-    }
-
-    /**
-     * Generate the MethodAccessor that invokes the given method with
-     * bytecode invocation.
-     */
-    static MethodAccessorImpl generateMethodAccessor(Method method) {
-        return (MethodAccessorImpl)new MethodAccessorGenerator()
-                .generateMethod(method.getDeclaringClass(),
-                                method.getName(),
-                                method.getParameterTypes(),
-                                method.getReturnType(),
-                                method.getModifiers());
+        return MethodHandleAccessorFactory.newMethodAccessor(method, callerSensitive);
     }
 
     public ConstructorAccessor newConstructorAccessor(Constructor<?> c) {
@@ -196,26 +170,7 @@ public class ReflectionFactory {
             c = root;
         }
 
-        if (useMethodHandleAccessor()) {
-            return MethodHandleAccessorFactory.newConstructorAccessor(c);
-        } else {
-            // Bootstrapping issue: since we use Class.newInstance() in
-            // the ConstructorAccessor generation process, we have to
-            // break the cycle here.
-            if (Reflection.isSubclassOf(declaringClass, ConstructorAccessorImpl.class)) {
-                return new BootstrapConstructorAccessorImpl(c);
-            }
-
-            if (noInflation() && !c.getDeclaringClass().isHidden()) {
-                return new MethodAccessorGenerator().
-                        generateConstructor(c.getDeclaringClass(),
-                                            c.getParameterTypes(),
-                                            c.getModifiers());
-            } else {
-                NativeConstructorAccessorImpl acc = new NativeConstructorAccessorImpl(c);
-                return acc.getParent();
-            }
-        }
+        return MethodHandleAccessorFactory.newConstructorAccessor(c);
     }
 
     //--------------------------------------------------------------------------
@@ -416,7 +371,7 @@ public class ReflectionFactory {
                                                      Constructor<?> constructorToCall) {
 
 
-        ConstructorAccessor acc = new MethodAccessorGenerator().
+        ConstructorAccessor acc = new SerializationConstructorAccessorGenerator().
             generateSerializationConstructor(cl,
                                              constructorToCall.getParameterTypes(),
                                              constructorToCall.getModifiers(),
@@ -585,24 +540,6 @@ public class ReflectionFactory {
     // Internals only below this point
     //
 
-    // Package-private to be accessible to NativeMethodAccessorImpl
-    // and NativeConstructorAccessorImpl
-    static int inflationThreshold() {
-        return config().inflationThreshold;
-    }
-
-    static boolean noInflation() {
-        return config().noInflation;
-    }
-
-    static boolean useMethodHandleAccessor() {
-        return (config().useDirectMethodHandle & METHOD_MH_ACCESSOR) == METHOD_MH_ACCESSOR;
-    }
-
-    static boolean useFieldHandleAccessor() {
-        return (config().useDirectMethodHandle & FIELD_MH_ACCESSOR) == FIELD_MH_ACCESSOR;
-    }
-
     static boolean useNativeAccessorOnly() {
         return config().useNativeAccessorOnly;
     }
@@ -638,9 +575,7 @@ public class ReflectionFactory {
     // for the first few invocations of Methods and Constructors and
     // then switch to the bytecode-based implementations.
 
-    private static final Config DEFAULT_CONFIG = new Config(false, // noInflation
-                                                            15, // inflationThreshold
-                                                            ALL_MH_ACCESSORS, // useDirectMethodHandle
+    private static final Config DEFAULT_CONFIG = new Config(ALL_MH_ACCESSORS, // useDirectMethodHandle
                                                             false, // useNativeAccessorOnly
                                                             false); // disableSerialConstructorChecks
 
@@ -655,9 +590,7 @@ public class ReflectionFactory {
      * are currently not called, but should they be needed, a workaround
      * is to override them.
      */
-    private record Config(boolean noInflation,
-                          int inflationThreshold,
-                          int useDirectMethodHandle,
+    private record Config(int useDirectMethodHandle,
                           boolean useNativeAccessorOnly,
                           boolean disableSerialConstructorChecks) {
     }
@@ -681,27 +614,12 @@ public class ReflectionFactory {
     private static Config loadConfig() {
         assert VM.isModuleSystemInited();
 
-        boolean noInflation = DEFAULT_CONFIG.noInflation;
-        int inflationThreshold = DEFAULT_CONFIG.inflationThreshold;
         int useDirectMethodHandle = DEFAULT_CONFIG.useDirectMethodHandle;
         boolean useNativeAccessorOnly = DEFAULT_CONFIG.useNativeAccessorOnly;
         boolean disableSerialConstructorChecks = DEFAULT_CONFIG.disableSerialConstructorChecks;
 
         Properties props = GetPropertyAction.privilegedGetProperties();
-        String val = props.getProperty("sun.reflect.noInflation");
-        if (val != null && val.equals("true")) {
-            noInflation = true;
-        }
-
-        val = props.getProperty("sun.reflect.inflationThreshold");
-        if (val != null) {
-            try {
-                inflationThreshold = Integer.parseInt(val);
-            } catch (NumberFormatException e) {
-                throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
-            }
-        }
-        val = props.getProperty("jdk.reflect.useDirectMethodHandle");
+        String val = props.getProperty("jdk.reflect.useDirectMethodHandle");
         if (val != null) {
             if (val.equals("false")) {
                 useDirectMethodHandle = 0;
@@ -719,9 +637,7 @@ public class ReflectionFactory {
         disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(noInflation,
-                          inflationThreshold,
-                          useDirectMethodHandle,
+        return new Config(useDirectMethodHandle,
                           useNativeAccessorOnly,
                           disableSerialConstructorChecks);
     }
