@@ -1697,7 +1697,7 @@ public class List extends Component implements ItemSelectable, Accessible {
              * Set the background color of this object.
              *
              * @param c the new Color for the background
-             * @see #setBackground
+             * @see #getBackground
              */
             public void setBackground(Color c) {
                 parent.setBackground(c);

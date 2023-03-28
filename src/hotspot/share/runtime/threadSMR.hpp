@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ class ThreadsList;
 //   jobject jthread = ...;
 //   :
 //   ThreadsListHandle tlh;
-//   JavaThread* jt = NULL;
-//   bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &jt, NULL);
+//   JavaThread* jt = nullptr;
+//   bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &jt, nullptr);
 //   if (is_alive) {
 //     :  // do stuff with 'jt'...
 //   }
@@ -61,9 +61,9 @@ class ThreadsList;
 // JVM/TI jthread example:
 //   jthread thread = ...;
 //   :
-//   JavaThread* jt = NULL;
+//   JavaThread* jt = nullptr;
 //   ThreadsListHandle tlh;
-//   jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), thread, &jt, NULL);
+//   jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), thread, &jt, nullptr);
 //   if (err != JVMTI_ERROR_NONE) {
 //     return err;
 //   }
@@ -72,7 +72,7 @@ class ThreadsList;
 // JVM/TI oop example (this one should be very rare):
 //   oop thread_obj = ...;
 //   :
-//   JavaThread *jt = NULL;
+//   JavaThread *jt = nullptr;
 //   ThreadsListHandle tlh;
 //   jvmtiError err = JvmtiExport::cv_oop_to_JavaThread(tlh.list(), thread_obj, &jt);
 //   if (err != JVMTI_ERROR_NONE) {
@@ -260,9 +260,9 @@ class SafeThreadsListPtr {
 public:
   // Constructor that attaches the list onto a thread.
   SafeThreadsListPtr(Thread *thread, bool acquire) :
-    _previous(NULL),
+    _previous(nullptr),
     _thread(thread),
-    _list(NULL),
+    _list(nullptr),
     _has_ref_count(false),
     _needs_release(false)
   {
@@ -337,7 +337,7 @@ public:
 // specified ThreadsList using the following style:
 //
 //   JavaThreadIterator jti(t_list);
-//   for (JavaThread *jt = jti.first(); jt != NULL; jt = jti.next()) {
+//   for (JavaThread *jt = jti.first(); jt != nullptr; jt = jti.next()) {
 //     ...
 //   }
 //
@@ -347,7 +347,7 @@ class JavaThreadIterator : public StackObj {
 
 public:
   JavaThreadIterator(ThreadsList *list) : _list(list), _index(0) {
-    assert(list != NULL, "ThreadsList must not be NULL.");
+    assert(list != nullptr, "ThreadsList must not be null.");
   }
 
   JavaThread *first() {
@@ -361,7 +361,7 @@ public:
 
   JavaThread *next() {
     if (++_index >= length()) {
-      return NULL;
+      return nullptr;
     }
     return _list->thread_at(_index);
   }
@@ -392,7 +392,7 @@ public:
 
   JavaThread *next() {
     if (_index >= length()) {
-      return NULL;
+      return nullptr;
     }
     return _tlh.list()->thread_at(_index++);
   }

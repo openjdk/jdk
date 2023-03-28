@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ WeakHandle::WeakHandle(OopStorage* storage, Handle obj) :
 
 WeakHandle::WeakHandle(OopStorage* storage, oop obj) :
     _obj(storage->allocate()) {
-  assert(obj != NULL, "no need to create weak null oop");
+  assert(obj != nullptr, "no need to create weak null oop");
 
-  if (_obj == NULL) {
+  if (_obj == nullptr) {
     vm_exit_out_of_memory(sizeof(oop*), OOM_MALLOC_ERROR,
                           "Unable to create new weak oop handle in OopStorage %s",
                           storage->name());
@@ -48,10 +48,10 @@ WeakHandle::WeakHandle(OopStorage* storage, oop obj) :
 
 void WeakHandle::release(OopStorage* storage) const {
   // Only release if the pointer to the object has been created.
-  if (_obj != NULL) {
+  if (_obj != nullptr) {
     // Clear the WeakHandle.  For race in creating ClassLoaderData, we can release this
     // WeakHandle before it is cleared by GC.
-    NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, (oop)NULL);
+    NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, nullptr);
     storage->release(_obj);
   }
 }

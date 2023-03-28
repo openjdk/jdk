@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.nio.channels.FileChannel;
 import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Blocker;
+import jdk.internal.util.ByteArray;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -884,7 +885,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final int readInt() throws IOException {
         readFully(buffer, 0, Integer.BYTES);
-        return Bits.getInt(buffer, 0);
+        return ByteArray.getInt(buffer, 0);
     }
 
     /**
@@ -917,7 +918,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final long readLong() throws IOException {
         readFully(buffer, 0, Long.BYTES);
-        return Bits.getLong(buffer, 0);
+        return ByteArray.getLong(buffer, 0);
     }
 
     /**
@@ -941,7 +942,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final float readFloat() throws IOException {
         readFully(buffer, 0, Float.BYTES);
-        return Bits.getFloat(buffer, 0);
+        return ByteArray.getFloat(buffer, 0);
     }
 
     /**
@@ -965,7 +966,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final double readDouble() throws IOException {
         readFully(buffer, 0, Double.BYTES);
-        return Bits.getDouble(buffer, 0);
+        return ByteArray.getDouble(buffer, 0);
     }
 
     /**
@@ -1104,7 +1105,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeInt(int v) throws IOException {
-        Bits.putInt(buffer, 0, v);
+        ByteArray.setInt(buffer, 0, v);
         write(buffer, 0, Integer.BYTES);
         //written += 4;
     }
@@ -1117,7 +1118,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeLong(long v) throws IOException {
-        Bits.putLong(buffer, 0, v);
+        ByteArray.setLong(buffer, 0, v);
         write(buffer, 0, Long.BYTES);
     }
 
@@ -1133,7 +1134,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Float#floatToIntBits(float)
      */
     public final void writeFloat(float v) throws IOException {
-        writeInt(Float.floatToIntBits(v));
+        ByteArray.setFloat(buffer, 0, v);
+        write(buffer, 0, Float.BYTES);
     }
 
     /**
@@ -1148,7 +1150,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Double#doubleToLongBits(double)
      */
     public final void writeDouble(double v) throws IOException {
-        writeLong(Double.doubleToLongBits(v));
+        ByteArray.setDouble(buffer, 0, v);
+        write(buffer, 0, Double.BYTES);
     }
 
     /**

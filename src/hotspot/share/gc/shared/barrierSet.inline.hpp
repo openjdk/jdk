@@ -42,7 +42,7 @@ inline bool BarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_in
 
   if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
     // Covariant, copy without checks
-    return Raw::oop_arraycopy(NULL, 0, src, NULL, 0, dst, length);
+    return Raw::oop_arraycopy(nullptr, 0, src, nullptr, 0, dst, length);
   }
 
   // Copy each element with checking casts

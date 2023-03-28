@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,15 @@ class ArchivedClassLoaderData {
   Array<ModuleEntry*>* _modules;
 
   void assert_valid(ClassLoaderData* loader_data) {
-    // loader_data may be NULL if the boot layer has loaded no modules for the platform or
+    // loader_data may be null if the boot layer has loaded no modules for the platform or
     // system loaders (e.g., if you create a custom JDK image with only java.base).
-    if (loader_data != NULL) {
+    if (loader_data != nullptr) {
       assert(!loader_data->has_class_mirror_holder(),
              "loaders for non-strong hidden classes not supported");
     }
   }
 public:
-  ArchivedClassLoaderData() : _packages(NULL), _modules(NULL) {}
+  ArchivedClassLoaderData() : _packages(nullptr), _modules(nullptr) {}
 
   void iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure);
   void allocate(ClassLoaderData* loader_data);
@@ -67,12 +67,12 @@ public:
 static ArchivedClassLoaderData _archived_boot_loader_data;
 static ArchivedClassLoaderData _archived_platform_loader_data;
 static ArchivedClassLoaderData _archived_system_loader_data;
-static ModuleEntry* _archived_javabase_moduleEntry = NULL;
+static ModuleEntry* _archived_javabase_moduleEntry = nullptr;
 
 void ArchivedClassLoaderData::iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure) {
   assert(DumpSharedSpaces, "must be");
   assert_valid(loader_data);
-  if (loader_data != NULL) {
+  if (loader_data != nullptr) {
     loader_data->packages()->iterate_symbols(closure);
     loader_data->modules() ->iterate_symbols(closure);
   }
@@ -81,7 +81,7 @@ void ArchivedClassLoaderData::iterate_symbols(ClassLoaderData* loader_data, Meta
 void ArchivedClassLoaderData::allocate(ClassLoaderData* loader_data) {
   assert(DumpSharedSpaces, "must be");
   assert_valid(loader_data);
-  if (loader_data != NULL) {
+  if (loader_data != nullptr) {
     // We can't create hashtables at dump time because the hashcode depends on the
     // address of the Symbols, which may be relocated at runtime due to ASLR.
     // So we store the packages/modules in Arrays. At runtime, we create
@@ -94,7 +94,7 @@ void ArchivedClassLoaderData::allocate(ClassLoaderData* loader_data) {
 void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data) {
   assert(DumpSharedSpaces, "must be");
   assert_valid(loader_data);
-  if (loader_data != NULL) {
+  if (loader_data != nullptr) {
     loader_data->packages()->init_archived_entries(_packages);
     loader_data->modules() ->init_archived_entries(_modules);
   }
@@ -103,7 +103,7 @@ void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data
 void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops) {
   assert(UseSharedSpaces, "must be");
   assert_valid(loader_data);
-  if (_modules != NULL) { // Could be NULL if we have archived no modules for platform/system loaders
+  if (_modules != nullptr) { // Could be null if we have archived no modules for platform/system loaders
     ModuleEntryTable* modules = loader_data->modules();
     PackageEntryTable* packages = loader_data->packages();
 
@@ -120,7 +120,7 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
 
 void ArchivedClassLoaderData::clear_archived_oops() {
   assert(UseSharedSpaces, "must be");
-  if (_modules != NULL) {
+  if (_modules != nullptr) {
     for (int i = 0; i < _modules->length(); i++) {
       _modules->at(i)->clear_archived_oops();
     }
@@ -131,7 +131,7 @@ void ArchivedClassLoaderData::clear_archived_oops() {
 
 static ClassLoaderData* null_class_loader_data() {
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  assert(loader_data != NULL, "must be");
+  assert(loader_data != nullptr, "must be");
   return loader_data;
 }
 

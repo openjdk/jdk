@@ -35,8 +35,9 @@ import javax.crypto.spec.PBEKeySpec;
 
 /**
  * This class implements a key factory for PBE keys derived using
- * PBKDF2 with HmacSHA1/HmacSHA224/HmacSHA256/HmacSHA384/HmacSHA512
- * pseudo random function (PRF) as defined in PKCS#5 v2.1.
+ * PBKDF2 with HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512,
+ * HmacSHA512/224, and HmacSHA512/256 pseudo random function (PRF) as
+ * defined in PKCS#5 v2.1.
  *
  * @author Valerie Peng
  *
@@ -191,6 +192,18 @@ abstract class PBKDF2Core extends SecretKeyFactorySpi {
     public static final class HmacSHA512 extends PBKDF2Core {
         public HmacSHA512() {
             super("HmacSHA512");
+        }
+    }
+
+    public static final class HmacSHA512_224 extends PBKDF2Core {
+        public HmacSHA512_224() {
+            super("HmacSHA512/224");
+        }
+    }
+
+    public static final class HmacSHA512_256 extends PBKDF2Core {
+        public HmacSHA512_256() {
+            super("HmacSHA512/256");
         }
     }
 }

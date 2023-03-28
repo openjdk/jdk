@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.jdi;
 
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.*;
 
@@ -169,8 +170,32 @@ class VMState {
         }
     }
 
+    private final ReferenceQueue<VMListener> listenersReferenceQueue = new ReferenceQueue<>();
+
+    private void removeUnreachableListeners() {
+        // If there are no listeners on the ReferenceQueue, then that means none
+        // are unreachable and we can just return.
+        if (listenersReferenceQueue.poll() == null) {
+            return; // There are no unreachable listeners
+        }
+
+        // We always need to clear the ReferenceQueue
+        while (listenersReferenceQueue.poll() != null)
+            ;
+
+        // Remove unreachable listeners since we know there is at least one.
+        Iterator<WeakReference<VMListener>> iter = listeners.iterator();
+        while (iter.hasNext()) {
+            VMListener l = iter.next().get();
+            if (l == null) {
+                iter.remove();
+            }
+        }
+    }
+
     synchronized void addListener(VMListener listener) {
-        listeners.add(new WeakReference<VMListener>(listener));
+        removeUnreachableListeners();
+        listeners.add(new WeakReference<VMListener>(listener, listenersReferenceQueue));
     }
 
     synchronized boolean hasListener(VMListener listener) {
@@ -180,17 +205,6 @@ class VMState {
             }
         }
         return false;
-    }
-
-    synchronized void removeListener(VMListener listener) {
-        Iterator<WeakReference<VMListener>> iter = listeners.iterator();
-        while (iter.hasNext()) {
-            WeakReference<VMListener> ref = iter.next();
-            if (listener.equals(ref.get())) {
-                iter.remove();
-                break;
-            }
-        }
     }
 
     List<ThreadReference> allThreads() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,10 +254,18 @@ public:
 
   // Remove all elements up to the index (exclusive). The order is preserved.
   void remove_till(int idx) {
-    for (int i = 0, j = idx; j < length(); i++, j++) {
+    remove_range(0, idx);
+  }
+
+  // Remove all elements in the range [start - end). The order is preserved.
+  void remove_range(int start, int end) {
+    assert(0 <= start, "illegal index");
+    assert(start < end && end <= _len, "erase called with invalid range");
+
+    for (int i = start, j = end; j < length(); i++, j++) {
       at_put(i, at(j));
     }
-    trunc_to(length() - idx);
+    trunc_to(length() - (end - start));
   }
 
   // The order is changed.
@@ -318,21 +326,6 @@ public:
       }
     }
     return min;
-  }
-
-  void truncate_to(int idx) {
-    for (int i = 0, j = idx; j < length(); i++, j++) {
-      at_put(i, at(j));
-    }
-    trunc_to(length() - idx);
-  }
-
-  void truncate_from(int idx) {
-    trunc_to(idx);
-  }
-
-  size_t data_size_in_bytes() const {
-    return _len * sizeof(E);
   }
 
   void print() const {
@@ -505,7 +498,7 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
   for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(this->_data[i]);
   for (     ; i < this->_capacity; i++) ::new ((void*)&newData[i]) E();
   for (i = 0; i < old_capacity; i++) this->_data[i].~E();
-  if (this->_data != NULL) {
+  if (this->_data != nullptr) {
     static_cast<Derived*>(this)->deallocate(this->_data);
   }
   this->_data = newData;
@@ -785,7 +778,7 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
 
   static E* allocate(int max, MEMFLAGS flags) {
     if (max == 0) {
-      return NULL;
+      return nullptr;
     }
 
     return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), flags);
@@ -842,7 +835,7 @@ class GrowableArrayIterator : public StackObj {
   }
 
  public:
-  GrowableArrayIterator() : _array(NULL), _position(0) { }
+  GrowableArrayIterator() : _array(nullptr), _position(0) { }
   GrowableArrayIterator<E>& operator++() { ++_position; return *this; }
   E operator*()                          { return _array->at(_position); }
 
