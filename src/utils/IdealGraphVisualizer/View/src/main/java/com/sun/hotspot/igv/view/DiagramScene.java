@@ -211,18 +211,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         public void filteredChanged(SelectionCoordinator coordinator) {
             if (model.getGlobalSelection()) {
                 Set<Integer> ids = coordinator.getSelectedObjects();
-                Set<Object> selectedObjects = new HashSet<>();
+                Set<Figure> selectedFigures = new HashSet<>();
                 for (Figure figure : getModel().getDiagram().getFigures()) {
                     if (ids.contains(figure.getInputNode().getId())) {
-                        selectedObjects.add(figure);
-                    }
-                    for (Slot slot : figure.getSlots()) {
-                        if (!Collections.disjoint(slot.getSource().getSourceNodesAsSet(), ids)) {
-                            selectedObjects.add(slot);
-                        }
+                        selectedFigures.add(figure);
                     }
                 }
-                setObjectSelection(selectedObjects);
+                setFigureSelection(selectedFigures);
                 centerSelectedFigures();
                 validateAll();
             }
@@ -526,7 +521,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         Action action = new AbstractAction(name, new ColorIcon(figure.getColor())) {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setObjectSelection(Collections.singleton(figure));
+                setFigureSelection(Collections.singleton(figure));
                 model.showFigures(model.getSelectedFigures());
                 centerSelectedFigures();
             }
@@ -631,7 +626,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         rebuildMainLayer();
         rebuildBlockLayer();
         relayout();
-        setObjectSelection(model.getSelectedFigures());
+        setFigureSelection(model.getSelectedFigures());
         validateAll();
         centerSelectedFigures();
         rebuilding = false;
@@ -884,23 +879,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         for (InputNode inputNode : nodes) {
             nodeIds.add(inputNode.getId());
         }
-        Set<Object> selectedObjects = new HashSet<>();
+        Set<Figure> selectedFigures = new HashSet<>();
         for (Figure figure : model.getDiagram().getFigures()) {
             if (nodeIds.contains(figure.getInputNode().getId())) {
-                selectedObjects.add(figure);
-            }
-            for (InputSlot is : figure.getInputSlots()) {
-                if (is.hasSourceNodes() && nodeIds.contains(is.getSource().getSourceNodes().get(0).getId())) {
-                    selectedObjects.add(is);
-                }
-            }
-            for (OutputSlot os : figure.getOutputSlots()) {
-                if (os.hasSourceNodes() && nodeIds.contains(os.getSource().getSourceNodes().get(0).getId())) {
-                    selectedObjects.add(os);
-                }
+                selectedFigures.add(figure);
             }
         }
-        setObjectSelection(selectedObjects);
+        setFigureSelection(selectedFigures);
         if (showIfHidden) {
             model.showFigures(model.getSelectedFigures());
         }
@@ -961,8 +946,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         getView().scrollRectToVisible(viewRect);
     }
 
-    private void setObjectSelection(Set<?> selection) {
-        super.setSelectedObjects(new HashSet<>(selection));
+    private void setFigureSelection(Set<Figure> list) {
+        super.setSelectedObjects(new HashSet<>(list));
     }
 
     @Override
