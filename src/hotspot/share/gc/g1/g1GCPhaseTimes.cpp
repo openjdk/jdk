@@ -510,12 +510,12 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
 #if COMPILER2_OR_JVMCI
   debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
-  debug_phase(_gc_par_phases[RedirtyCards], 1);
   debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
 
   if (G1CollectedHeap::heap()->should_sample_collection_set_candidates()) {
     debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);
   }
+  debug_phase(_gc_par_phases[RedirtyCards], 1);
   if (UseTLAB && ResizeTLAB) {
     debug_phase(_gc_par_phases[ResizeThreadLABs], 1);
   }
