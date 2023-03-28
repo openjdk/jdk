@@ -631,14 +631,14 @@ public class LinkedHashMap<K,V>
      */
     public SequencedSet<K> sequencedKeySet() {
         Set<K> ks = keySet;
-        if (ks instanceof SequencedSet<K> sks) {
-            return sks;
-        } else if (ks == null) {
+        if (ks == null) {
             SequencedSet<K> sks = new LinkedKeySet(false);
             keySet = sks;
             return sks;
         } else {
-            return new LinkedKeySet(false);
+            // The cast should never fail, since the only assignment of non-null to keySet is
+            // above, and assignments in AbstractMap and HashMap are in overridden methods.
+            return (SequencedSet<K>) ks;
         }
     }
 
@@ -780,14 +780,14 @@ public class LinkedHashMap<K,V>
      */
     public SequencedCollection<V> sequencedValues() {
         Collection<V> vs = values;
-        if (vs instanceof SequencedCollection<V> svs) {
-            return svs;
-        } else if (vs == null) {
+        if (vs == null) {
             SequencedCollection<V> svs = new LinkedValues(false);
             values = svs;
             return svs;
         } else {
-            return new LinkedValues(false);
+            // The cast should never fail, since the only assignment of non-null to values is
+            // above, and assignments in AbstractMap and HashMap are in overridden methods.
+            return (SequencedCollection<V>) vs;
         }
     }
 
@@ -885,14 +885,14 @@ public class LinkedHashMap<K,V>
      */
     public SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
         Set<Map.Entry<K, V>> es = entrySet;
-        if (es instanceof SequencedSet<Map.Entry<K, V>> ses) {
-            return ses;
-        } else if (es == null) {
+        if (es == null) {
             SequencedSet<Map.Entry<K, V>> ses = new LinkedEntrySet(false);
             entrySet = ses;
             return ses;
         } else {
-            return new LinkedEntrySet(false);
+            // The cast should never fail, since the only assignment of non-null to entrySet is
+            // above, and assignments in HashMap are in overridden methods.
+            return (SequencedSet<Map.Entry<K, V>>) es;
         }
     }
 
