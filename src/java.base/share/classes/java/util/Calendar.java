@@ -2808,10 +2808,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @param amount the amount of date or time to be added to the field.
-     * @throws ArrayIndexOutOfBoundsException if {@code field} is
-     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @throws IllegalArgumentException if this {@code Calendar} is non-lenient
-     * and any of the calendar fields have invalid values
+     * and any of the calendar fields have invalid values or if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @see #roll(int,int)
      * @see #set(int,int)
      */
@@ -2834,10 +2833,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the time field.
      * @param up indicates if the value of the specified time field is to be
      * rolled up or rolled down. Use true if rolling up, false otherwise.
-     * @throws ArrayIndexOutOfBoundsException if {@code field} is
-     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @throws IllegalArgumentException if this {@code Calendar} is non-lenient
-     * and any of the calendar fields have invalid values
+     * and any of the calendar fields have invalid values or if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @see Calendar#add(int,int)
      * @see Calendar#set(int,int)
      */
@@ -2857,10 +2855,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @param amount the signed amount to add to the calendar {@code field}.
-     * @throws ArrayIndexOutOfBoundsException if {@code field} is
-     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @throws IllegalArgumentException if this {@code Calendar} is non-lenient
-     * and any of the calendar fields have invalid values
+     * and any of the calendar fields have invalid values or if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @since 1.2
      * @see #roll(int,boolean)
      * @see #add(int,int)
