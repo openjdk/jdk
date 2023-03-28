@@ -56,7 +56,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * Alternatively, clients can obtain an {@linkplain Arena#ofAuto() automatic arena}, that is an arena
  * which features a <em>bounded lifetime</em> that is managed, automatically, by the garbage collector. As such, the regions
  * of memory backing memory segments allocated with the automatic arena are deallocated at some unspecified time
- * <em>after</em> the automatic allocator (and all the segments allocated by it) become
+ * <em>after</em> the automatic arena (and all the segments allocated by it) become
  * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>, as shown below:
  *
  * {@snippet lang = java:
@@ -86,7 +86,7 @@ import java.lang.foreign.MemorySegment.Scope;
  *
  * Memory segments allocated with a {@linkplain #ofConfined() confined arena} can only be accessed (and closed) by the
  * thread that created the arena. If access to a memory segment from multiple threads is required, clients can allocate
- * segment in a {@linkplain #ofShared() shared arena} instead.
+ * segments in a {@linkplain #ofShared() shared arena} instead.
  * <p>
  * The characteristics of the various arenas are summarized in the following table:
  *
