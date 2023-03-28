@@ -491,20 +491,20 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
       // fast-locking does not use the 'lock' parameter.
       LockStack& lock_stack = current->lock_stack();
       if (lock_stack.can_push()) {
-        markWord header = obj()->mark_acquire();
+        markWord mark = obj()->mark_acquire();
         while (true) {
-          if (header.is_neutral()) {
+          if (mark.is_neutral()) {
             assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
             // Try to swing into 'fast-locked' state without inflating.
-            markWord locked_header = header.set_fast_locked();
-            markWord witness = obj()->cas_set_mark(locked_header, header);
-            if (witness == header) {
+            markWord locked_mark = mark.set_fast_locked();
+            markWord old_mark = obj()->cas_set_mark(locked_mark, mark);
+            if (old_mark == mark) {
               // Successfully fast-locked, push object to lock-stack and return.
               lock_stack.push(obj());
               return;
             }
             // Otherwise retry.
-            header = witness;
+            mark = old_mark;
           } else {
             // Fall-through to inflate-enter.
             break;
@@ -559,15 +559,15 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
     if (UseFastLocking) {
       // fast-locking does not use the 'lock' parameter.
       if (mark.is_fast_locked()) {
-        markWord unlocked_header = mark.set_unlocked();
-        markWord witness = object->cas_set_mark(unlocked_header, mark);
-        if (witness != mark) {
+        markWord unlocked_mark = mark.set_unlocked();
+        markWord old_mark = object->cas_set_mark(unlocked_mark, mark);
+        if (old_mark != mark) {
           // Another thread won the CAS, it must have inflated the monitor.
           // It can only have installed an anonymously locked monitor at this point.
           // Fetch that monitor, set owner correctly to this thread, and
           // exit it (allowing waiting threads to enter).
-          assert(witness.has_monitor(), "must have monitor");
-          ObjectMonitor* monitor = witness.monitor();
+          assert(old_mark.has_monitor(), "must have monitor");
+          ObjectMonitor* monitor = old_mark.monitor();
           assert(monitor->is_owner_anonymous(), "must be anonymous owner");
           monitor->set_owner_from_anonymous(current);
           monitor->exit(current);
@@ -757,10 +757,16 @@ void ObjectSynchronizer::notify(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
 
   markWord mark = obj->mark();
-  if ((mark.is_fast_locked() && current->lock_stack().contains(obj())) ||
-      (mark.has_locker() && current->is_lock_owned((address)mark.locker()))) {
-    // Not inflated so there can't be any waiters to notify.
-    return;
+  if (UseFastLocking) {
+    if ((mark.is_fast_locked() && current->lock_stack().contains(obj()))) {
+      // Not inflated so there can't be any waiters to notify.
+      return;
+    }
+  } else {
+    if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+      // Not inflated so there can't be any waiters to notify.
+      return;
+    }
   }
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped by the calling thread.
@@ -773,10 +779,16 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
 
   markWord mark = obj->mark();
-  if ((mark.is_fast_locked() && current->lock_stack().contains(obj())) ||
-      (mark.has_locker() && current->is_lock_owned((address)mark.locker()))) {
-    // Not inflated so there can't be any waiters to notify.
-    return;
+  if (UseFastLocking) {
+    if ((mark.is_fast_locked() && current->lock_stack().contains(obj()))) {
+      // Not inflated so there can't be any waiters to notify.
+      return;
+    }
+  } else {
+    if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+      // Not inflated so there can't be any waiters to notify.
+      return;
+    }
   }
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped by the calling thread.
@@ -1347,8 +1359,8 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
         monitor->set_owner_anonymous();
       }
       markWord monitor_mark = markWord::encode(monitor);
-      markWord witness = object->cas_set_mark(monitor_mark, mark);
-      if (witness == mark) {
+      markWord old_mark = object->cas_set_mark(monitor_mark, mark);
+      if (old_mark == mark) {
         // Success! Return inflated monitor.
         if (own) {
           assert(current->is_Java_thread(), "must be: checked in is_lock_owned()");

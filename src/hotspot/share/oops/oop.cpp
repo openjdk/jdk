@@ -123,13 +123,13 @@ bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
   // mark to be zero at a safepoint.
   // Outside of a safepoint, the header could be changing (for example,
   // another thread could be inflating a lock on this object).
-  if (ignore_mark_word || UseFastLocking) {
+  if (ignore_mark_word) {
     return true;
   }
   if (obj->mark().value() != 0) {
     return true;
   }
-  return !SafepointSynchronize::is_at_safepoint();
+  return  UseFastLocking || !SafepointSynchronize::is_at_safepoint();
 }
 
 // used only for asserts and guarantees
