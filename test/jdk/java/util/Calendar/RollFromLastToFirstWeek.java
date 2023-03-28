@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 8225641
- * @summary Test the behavior of Calendar.roll(WEEK_OF_YEAR) when the last week
- * is rolled up into a minimal week 1 of the same year
- * @run junit RollToMinWeek
+ * @summary Test the behavior of GregorianCalendar.roll(WEEK_OF_YEAR)
+ * when the last week is rolled into the first week of the same year
+ * @run junit RollFromLastToFirstWeek
  */
 
 
@@ -39,12 +39,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.Arguments;
 
 /**
- * Test to validate the behavior of Calendar.roll(WEEK_OF_YEAR, +1)
- * when rolling into a minimal week 1 from the max week. WEEK_OF_YEAR can
- * not be rolled to a week with a non-existent DAY_OF_WEEK. This only
- * test the implementation of the Gregorian Calendar roll
+ * Test to validate the behavior of GregorianCalendar.roll(WEEK_OF_YEAR, +1)
+ * when rolling from the last week of a year into the first week of the same year.
+ * This only test the implementation of the Gregorian Calendar roll.
+ *
+ * Rolling from the last week of a year into the first week of the same year
+ * could cause a WEEK_OF_YEAR with a non-existent DAY_OF_WEEK combination.
+ * The associated fix ensures that a final check is made, so that the first
+ * week is incremented to prevent this.
  */
-public class RollToMinWeek {
+public class RollFromLastToFirstWeek {
     static Calendar.Builder GREGORIAN_BUILDER = new Builder()
             .setCalendarType("gregory");
 
@@ -96,7 +100,7 @@ public class RollToMinWeek {
         // Test all days at the end of the year that roll into week 1
         for (int dayOfMonth = 25; dayOfMonth <= 31; dayOfMonth++) {
             for (int weekLength = 1; weekLength <= 7; weekLength++) {
-                // Sunday .. Monday -> Saturda
+                // Sunday .. Monday -> Saturday
                 for (int firstDay = SUNDAY; firstDay <= SATURDAY; firstDay++) {
                     calList.add(Arguments.of(buildCalendar(firstDay, weekLength,
                                     dayOfMonth, DECEMBER, 2019), validDates[date]));
