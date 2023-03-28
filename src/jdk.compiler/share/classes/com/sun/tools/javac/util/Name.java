@@ -87,7 +87,11 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         byte[] bs = new byte[len + n.getByteLength()];
         getBytes(bs, 0);
         n.getBytes(bs, len);
-        return table.fromUtf(bs, 0, bs.length);
+        try {
+            return table.fromUtf(bs, 0, bs.length, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /** Return the concatenation of this name, the given ASCII
@@ -99,7 +103,11 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         getBytes(bs, 0);
         bs[len] = (byte) c;
         n.getBytes(bs, len+1);
-        return table.fromUtf(bs, 0, bs.length);
+        try {
+            return table.fromUtf(bs, 0, bs.length, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /** Order names lexicographically.
@@ -180,14 +188,22 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
      */
     public Name subName(int start, int end) {
         if (end < start) end = start;
-        return table.fromUtf(getByteArray(), getByteOffset() + start, end - start);
+        try {
+            return table.fromUtf(getByteArray(), getByteOffset() + start, end - start, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /** Return the string representation of this name.
      */
     @Override
     public String toString() {
-        return Convert.utf2string(getByteArray(), getByteOffset(), getByteLength());
+        try {
+            return Convert.utf2string(getByteArray(), getByteOffset(), getByteLength(), Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /** Return the Utf8 representation of this name.
@@ -257,16 +273,18 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         }
 
         /** Get the name for the bytes in array cs.
-         *  Assume that bytes are in utf8 format.
+         *  Assume that bytes are in strictly valid "Modified UTF-8" format.
          */
-        public Name fromUtf(byte[] cs) {
-            return fromUtf(cs, 0, cs.length);
+        public Name fromUtf(byte[] cs) throws InvalidUtfException {
+            return fromUtf(cs, 0, cs.length, Convert.Validation.STRICT);
         }
 
         /** get the name for the bytes in cs[start..start+len-1].
          *  Assume that bytes are in utf8 format.
+         *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
          */
-        public abstract Name fromUtf(byte[] cs, int start, int len);
+        public abstract Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation)
+            throws InvalidUtfException;
 
         /** Release any resources used by this table.
          */
