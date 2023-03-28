@@ -925,7 +925,7 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
       case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
       case BoolTest::ne: {
         fcmeq(dst, size, src1, src2);
-        notr(dst, T16B, dst);
+        notr(dst, isQ ? T16B : T8B, dst);
         break;
       }
       case BoolTest::ge: fcmge(dst, size, src1, src2); break;
@@ -941,7 +941,7 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
       case BoolTest::eq: cmeq(dst, size, src1, src2); break;
       case BoolTest::ne: {
         cmeq(dst, size, src1, src2);
-        notr(dst, T16B, dst);
+        notr(dst, isQ ? T16B : T8B, dst);
         break;
       }
       case BoolTest::ge: cmge(dst, size, src1, src2); break;
@@ -955,6 +955,26 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
       default:
         assert(false, "unsupported");
         ShouldNotReachHere();
+    }
+  }
+}
+
+void C2_MacroAssembler::neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
+                                          Condition cond, bool isQ) {
+  SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
+  if (bt == T_FLOAT || bt == T_DOUBLE) {
+    if (cond == Assembler::NE) {
+      fcm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      fcm(cond, dst, size, src);
+    }
+  } else {
+    if (cond == Assembler::NE) {
+      cm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      cm(cond, dst, size, src);
     }
   }
 }

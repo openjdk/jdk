@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 //   class loader -> ClassLoaderData -> [class, protection domain set]
 //
 // Classes are loaded lazily. The default VM class loader is
-// represented as NULL.
+// represented as null.
 
 // The underlying data structure is an open hash table (Dictionary) per
 // ClassLoaderData with a fixed number of buckets. During loading the
@@ -95,7 +95,7 @@ class SystemDictionary : AllStatic {
   }
 
   // Returns a class with a given class name and class loader.
-  // Loads the class if needed. If not found NULL is returned.
+  // Loads the class if needed. If not found null is returned.
   static Klass* resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
   // Version with null loader and protection domain
   static Klass* resolve_or_null(Symbol* class_name, TRAPS) {
@@ -139,13 +139,13 @@ class SystemDictionary : AllStatic {
                                             const ClassLoadInfo& cl_info,
                                             TRAPS);
 
-  // Lookup an already loaded class. If not found NULL is returned.
+  // Lookup an already loaded class. If not found null is returned.
   static InstanceKlass* find_instance_klass(Thread* current, Symbol* class_name,
                                             Handle class_loader, Handle protection_domain);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
-  // If not found NULL is returned.
+  // If not found null is returned.
   static Klass* find_instance_or_array_klass(Thread* current, Symbol* class_name,
                                              Handle class_loader,
                                              Handle protection_domain);
@@ -155,7 +155,7 @@ class SystemDictionary : AllStatic {
   // loader that is constrained (via loader constraints) to produce
   // a consistent class.  Do not take protection domains into account.
   // Do not make any queries to class loaders; consult only the cache.
-  // Return NULL if the class is not found.
+  // Return null if the class is not found.
   //
   // This function is a strict superset of find_instance_or_array_klass.
   // This function (the unchecked version) makes a conservative prediction
@@ -273,7 +273,7 @@ public:
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
   static void add_resolution_error(const constantPoolHandle& pool, int which, Symbol* error,
-                                   Symbol* message, Symbol* cause = NULL, Symbol* cause_msg = NULL);
+                                   Symbol* message, Symbol* cause = nullptr, Symbol* cause_msg = nullptr);
   static void delete_resolution_error(ConstantPool* pool);
   static Symbol* find_resolution_error(const constantPoolHandle& pool, int which,
                                        Symbol** message, Symbol** cause, Symbol** cause_msg);
@@ -354,7 +354,7 @@ protected:
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
-  static bool is_boot_class_loader(oop class_loader) { return class_loader == NULL; }
+  static bool is_boot_class_loader(oop class_loader) { return class_loader == nullptr; }
   static bool is_builtin_class_loader(oop class_loader) {
     return is_boot_class_loader(class_loader)      ||
            is_platform_class_loader(class_loader)  ||
@@ -366,8 +366,8 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-  // Setup link to hierarchy
-  static void add_to_hierarchy(InstanceKlass* k);
+  // Setup link to hierarchy and deoptimize
+  static void add_to_hierarchy(JavaThread* current, InstanceKlass* k);
 protected:
 
   // Basic find on loaded classes

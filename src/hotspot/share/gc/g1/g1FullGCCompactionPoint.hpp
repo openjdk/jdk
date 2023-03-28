@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public:
   void forward(oop object, size_t size);
   void add(HeapRegion* hr);
 
-  HeapRegion* remove_last();
+  void remove_at_or_above(uint bottom);
   HeapRegion* current_region();
 
   GrowableArray<HeapRegion*>* regions();

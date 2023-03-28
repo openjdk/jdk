@@ -36,7 +36,7 @@ public class PumpReader extends Reader {
     }
 
     public PumpReader(int bufferSize) {
-        char[] buf = new char[bufferSize];
+        char[] buf = new char[Math.max(bufferSize, 2)];
         this.readBuffer = CharBuffer.wrap(buf);
         this.writeBuffer = CharBuffer.wrap(buf);
         this.writer = new Writer(this);
@@ -53,12 +53,52 @@ public class PumpReader extends Reader {
         return new InputStream(this, charset);
     }
 
-    private boolean wait(CharBuffer buffer) throws InterruptedIOException {
-        if (closed) {
-            return false;
+    /**
+     * Blocks until more input is available, even if {@link #readBuffer} already
+     * contains some chars; or until the reader is closed.
+     *
+     * @return true if more input is available, false if no additional input is
+     *              available and the reader is closed
+     * @throws InterruptedIOException If {@link #wait()} is interrupted
+     */
+    private boolean waitForMoreInput() throws InterruptedIOException {
+        if (!writeBuffer.hasRemaining()) {
+            throw new AssertionError("No space in write buffer");
         }
 
+        int oldRemaining = readBuffer.remaining();
+
+        do {
+            if (closed) {
+                return false;
+            }
+
+            // Wake up waiting writers
+            notifyAll();
+
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                throw new InterruptedIOException();
+            }
+        } while (readBuffer.remaining() <= oldRemaining);
+
+        return true;
+    }
+
+    /**
+     * Waits until {@code buffer.hasRemaining() == true}, or it is false and
+     * the reader is {@link #closed}.
+     *
+     * @return true if {@code buffer.hasRemaining() == true}; false otherwise
+     *         when reader is closed
+     */
+    private boolean wait(CharBuffer buffer) throws InterruptedIOException {
         while (!buffer.hasRemaining()) {
+            if (closed) {
+                return false;
+            }
+
             // Wake up waiting readers/writers
             notifyAll();
 
@@ -67,19 +107,15 @@ public class PumpReader extends Reader {
             } catch (InterruptedException e) {
                 throw new InterruptedIOException();
             }
-
-            if (closed) {
-                return false;
-            }
         }
 
         return true;
     }
 
     /**
-     * Blocks until more input is available or the reader is closed.
+     * Blocks until input is available or the reader is closed.
      *
-     * @return true if more input is available, false if the reader is closed
+     * @return true if input is available, false if no input is available and the reader is closed
      * @throws InterruptedIOException If {@link #wait()} is interrupted
      */
     private boolean waitForInput() throws InterruptedIOException {
@@ -94,7 +130,8 @@ public class PumpReader extends Reader {
      * @throws ClosedException If the reader was closed
      */
     private void waitForBufferSpace() throws InterruptedIOException, ClosedException {
-        if (!wait(writeBuffer)) {
+        // Check `closed` to throw even if writer buffer has space available
+        if (!wait(writeBuffer) || closed) {
             throw new ClosedException();
         }
     }
@@ -122,7 +159,9 @@ public class PumpReader extends Reader {
      * @return If more input is available
      */
     private boolean rewindReadBuffer() {
-        return rewind(readBuffer, writeBuffer) && readBuffer.hasRemaining();
+        boolean rw = rewind(readBuffer, writeBuffer) && readBuffer.hasRemaining();
+        notifyAll();
+        return rw;
     }
 
     /**
@@ -131,6 +170,7 @@ public class PumpReader extends Reader {
      */
     private void rewindWriteBuffer() {
         rewind(writeBuffer, readBuffer);
+        notifyAll();
     }
 
     @Override
@@ -202,10 +242,33 @@ public class PumpReader extends Reader {
     }
 
     private void encodeBytes(CharsetEncoder encoder, ByteBuffer output) throws IOException {
+        int oldPos = output.position();
         CoderResult result = encoder.encode(readBuffer, output, false);
-        if (rewindReadBuffer() && result.isUnderflow()) {
-            encoder.encode(readBuffer, output, false);
+        int encodedCount = output.position() - oldPos;
+
+        if (result.isUnderflow()) {
+            boolean hasMoreInput = rewindReadBuffer();
+            boolean reachedEndOfInput = false;
+
+            // If encoding did not make any progress must block for more input
+            if (encodedCount == 0 && !hasMoreInput) {
+                reachedEndOfInput = !waitForMoreInput();
+            }
+
+            result = encoder.encode(readBuffer, output, reachedEndOfInput);
+            if (result.isError()) {
+                result.throwException();
+            }
+            if (!reachedEndOfInput && output.position() - oldPos == 0) {
+                throw new AssertionError("Failed to encode any chars");
+            }
             rewindReadBuffer();
+        } else if (result.isOverflow()) {
+            if (encodedCount == 0) {
+                throw new AssertionError("Output buffer has not enough space");
+            }
+        } else {
+            result.throwException();
         }
     }
 
@@ -334,7 +397,7 @@ public class PumpReader extends Reader {
             this.encoder = charset.newEncoder()
                     .onUnmappableCharacter(CodingErrorAction.REPLACE)
                     .onMalformedInput(CodingErrorAction.REPLACE);
-            this.buffer = ByteBuffer.allocate((int) Math.ceil(encoder.maxBytesPerChar()));
+            this.buffer = ByteBuffer.allocate((int) Math.ceil(encoder.maxBytesPerChar() * 2));
 
             // No input available after initialization
             buffer.limit(0);

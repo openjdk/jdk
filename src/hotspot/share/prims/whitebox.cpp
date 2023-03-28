@@ -118,8 +118,6 @@
 #include "cgroupSubsystem_linux.hpp"
 #endif
 
-#define SIZE_T_MAX_VALUE ((size_t) -1)
-
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
   do {                                                                 \
     JavaThread* THREAD = JavaThread::thread_from_jni_environment(env); \
@@ -158,7 +156,7 @@ WB_ENTRY(jint, WB_GetHeapOopSize(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jint, WB_GetVMPageSize(JNIEnv* env, jobject o))
-  return os::vm_page_size();
+  return (jint)os::vm_page_size();
 WB_END
 
 WB_ENTRY(jlong, WB_GetVMAllocationGranularity(JNIEnv* env, jobject o))
@@ -190,7 +188,7 @@ public:
           // NOTE: This will not work correctly if the original hidden class
           // name contains a '+'.
           char* plus_char = strchr(k_name, '+');
-          if (plus_char != NULL) {
+          if (plus_char != nullptr) {
             *plus_char = 0;
             char* c_name = _name->as_C_string();
             if (strcmp(c_name, k_name) == 0) {
@@ -208,7 +206,7 @@ public:
 
 WB_ENTRY(jint, WB_CountAliveClasses(JNIEnv* env, jobject target, jstring name))
   oop h_name = JNIHandles::resolve(name);
-  if (h_name == NULL) {
+  if (h_name == nullptr) {
     return 0;
   }
   Symbol* sym = java_lang_String::as_symbol(h_name);
@@ -223,7 +221,7 @@ WB_END
 
 WB_ENTRY(jint, WB_GetSymbolRefcount(JNIEnv* env, jobject unused, jstring name))
   oop h_name = JNIHandles::resolve(name);
-  if (h_name == NULL) {
+  if (h_name == nullptr) {
     return 0;
   }
   Symbol* sym = java_lang_String::as_symbol(h_name);
@@ -278,8 +276,8 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   vs.initialize(rhs, 50 * granularity);
 
   // Check if constraints are complied
-  if (!( UseCompressedOops && rhs.base() != NULL &&
-         CompressedOops::base() != NULL &&
+  if (!( UseCompressedOops && rhs.base() != nullptr &&
+         CompressedOops::base() != nullptr &&
          CompressedOops::use_implicit_null_checks() )) {
     tty->print_cr("WB_ReadFromNoaccessArea method is useless:\n "
                   "\tUseCompressedOops is %d\n"
@@ -347,7 +345,7 @@ WB_ENTRY(jint, WB_StressVirtualSpaceResize(JNIEnv* env, jobject o,
   // sizeof(size_t) depends on whether OS is 32bit or 64bit. sizeof(jlong) is
   // always 8 byte. That's why we should avoid overflow in case of 32bit platform.
   if (sizeof(size_t) < sizeof(jlong)) {
-    jlong size_t_max_value = (jlong) SIZE_T_MAX_VALUE;
+    jlong size_t_max_value = (jlong)SIZE_MAX;
     if (reserved_space_size > size_t_max_value || magnitude > size_t_max_value
         || iterations > size_t_max_value) {
       tty->print_cr("One of variables printed above overflows size_t. Can't proceed.\n");
@@ -720,7 +718,7 @@ WB_ENTRY(void, WB_NMTArenaMalloc(JNIEnv* env, jobject o, jlong arena, jlong size
 WB_END
 
 static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
-  assert(method != NULL, "method should not be null");
+  assert(method != nullptr, "method should not be null");
   ThreadToNativeFromVM ttn(thread);
   return env->FromReflectedMethod(method);
 }
@@ -744,7 +742,7 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
             Deoptimization::deoptimize(t, *f);
             if (_make_not_entrant) {
                 CompiledMethod* cm = CodeCache::find_compiled(f->pc());
-                assert(cm != NULL, "sanity check");
+                assert(cm != nullptr, "sanity check");
                 cm->make_not_entrant();
             }
             ++_result;
@@ -769,35 +767,43 @@ WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
                         RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = thread->last_java_vframe(&reg_map);
-    for (jint d = 0; d < depth && jvf != NULL; d++) {
+    for (jint d = 0; d < depth && jvf != nullptr; d++) {
       jvf = jvf->java_sender();
     }
-    result = jvf != NULL && jvf->fr().is_deoptimized_frame();
+    result = jvf != nullptr && jvf->fr().is_deoptimized_frame();
   }
   return result;
 WB_END
 
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
-  CodeCache::mark_all_nmethods_for_deoptimization();
-  Deoptimization::deoptimize_all_marked();
+  DeoptimizationScope deopt_scope;
+  CodeCache::mark_all_nmethods_for_deoptimization(&deopt_scope);
+  deopt_scope.deoptimize_marked();
 WB_END
 
 WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   int result = 0;
   CHECK_JNI_EXCEPTION_(env, result);
-  MutexLocker mu(Compile_lock);
-  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  if (is_osr) {
-    result += mh->mark_osr_nmethods();
-  } else if (mh->code() != NULL) {
-    mh->code()->mark_for_deoptimization();
-    ++result;
+
+  DeoptimizationScope deopt_scope;
+  {
+    MutexLocker mu(Compile_lock);
+    methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+    if (is_osr) {
+      result += mh->method_holder()->mark_osr_nmethods(&deopt_scope, mh());
+    } else {
+      MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+      if (mh->code() != nullptr) {
+        deopt_scope.mark(mh->code());
+        ++result;
+      }
+    }
+    CodeCache::mark_for_deoptimization(&deopt_scope, mh());
   }
-  result += CodeCache::mark_for_deoptimization(mh());
-  if (result > 0) {
-    Deoptimization::deoptimize_all_marked();
-  }
+
+  deopt_scope.deoptimize_marked();
+
   return result;
 WB_END
 
@@ -807,14 +813,14 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
-  if (code == NULL) {
+  if (code == nullptr) {
     return JNI_FALSE;
   }
   return !code->is_marked_for_deoptimization();
 WB_END
 
 static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
-  if (comp == NULL) {
+  if (comp == nullptr) {
     return true;
   }
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp);
@@ -833,7 +839,7 @@ static bool can_be_compiled_at_level(methodHandle& mh, jboolean is_osr, int leve
 }
 
 WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
-  if (method == NULL || comp_level > CompilationPolicy::highest_compile_level()) {
+  if (method == nullptr || comp_level > CompilationPolicy::highest_compile_level()) {
     return false;
   }
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
@@ -887,14 +893,14 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
 
   DirectiveSet* directive;
   AbstractCompiler* comp = CompileBroker::compiler((int)compLevel);
-  assert(comp != NULL, "compiler not available");
-  if (compilation_context != NULL) {
+  assert(comp != nullptr, "compiler not available");
+  if (compilation_context != nullptr) {
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
     methodHandle cch(THREAD, Method::checked_resolve_jmethod_id(compilation_context_id));
     directive = DirectivesStack::getMatchingDirective(cch, comp);
   } else {
-    // Calling with NULL matches default directive
+    // Calling with null matches default directive
     directive = DirectivesStack::getDefaultDirective(comp);
   }
   bool result = comp->is_intrinsic_available(mh, directive);
@@ -907,7 +913,7 @@ WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject meth
   CHECK_JNI_EXCEPTION_(env, CompLevel_none);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
-  return (code != NULL ? code->comp_level() : CompLevel_none);
+  return (code != nullptr ? code->comp_level() : CompLevel_none);
 WB_END
 
 WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
@@ -927,7 +933,7 @@ WB_ENTRY(jint, WB_GetMethodDecompileCount(JNIEnv* env, jobject o, jobject method
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   uint cnt = 0;
   MethodData* mdo = mh->method_data();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     cnt = mdo->decompile_count();
   }
   return cnt;
@@ -935,7 +941,7 @@ WB_END
 
 // Get the trap count of a method for a specific reason. If the trap count for
 // that reason did overflow, this includes the overflow trap count of the method.
-// If 'reason' is NULL, the sum of the traps for all reasons will be returned.
+// If 'reason' is null, the sum of the traps for all reasons will be returned.
 // This number includes the overflow trap count if the trap count for any reason
 // did overflow.
 WB_ENTRY(jint, WB_GetMethodTrapCount(JNIEnv* env, jobject o, jobject method, jstring reason_obj))
@@ -944,20 +950,20 @@ WB_ENTRY(jint, WB_GetMethodTrapCount(JNIEnv* env, jobject o, jobject method, jst
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   uint cnt = 0;
   MethodData* mdo = mh->method_data();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     ResourceMark rm(THREAD);
-    char* reason_str = (reason_obj == NULL) ?
-      NULL : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(reason_obj));
+    char* reason_str = (reason_obj == nullptr) ?
+      nullptr : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(reason_obj));
     bool overflow = false;
     for (uint reason = 0; reason < mdo->trap_reason_limit(); reason++) {
-      if (reason_str != NULL && !strcmp(reason_str, Deoptimization::trap_reason_name(reason))) {
+      if (reason_str != nullptr && !strcmp(reason_str, Deoptimization::trap_reason_name(reason))) {
         cnt = mdo->trap_count(reason);
         // Count in the overflow trap count on overflow
         if (cnt == (uint)-1) {
           cnt = mdo->trap_count_limit() + mdo->overflow_trap_count();
         }
         break;
-      } else if (reason_str == NULL) {
+      } else if (reason_str == nullptr) {
         uint c = mdo->trap_count(reason);
         if (c == (uint)-1) {
           c = mdo->trap_count_limit();
@@ -975,14 +981,14 @@ WB_ENTRY(jint, WB_GetMethodTrapCount(JNIEnv* env, jobject o, jobject method, jst
 WB_END
 
 WB_ENTRY(jint, WB_GetDeoptCount(JNIEnv* env, jobject o, jstring reason_obj, jstring action_obj))
-  if (reason_obj == NULL && action_obj == NULL) {
+  if (reason_obj == nullptr && action_obj == nullptr) {
     return Deoptimization::total_deoptimization_count();
   }
   ResourceMark rm(THREAD);
-  const char *reason_str = (reason_obj == NULL) ?
-    NULL : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(reason_obj));
-  const char *action_str = (action_obj == NULL) ?
-    NULL : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(action_obj));
+  const char *reason_str = (reason_obj == nullptr) ?
+    nullptr : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(reason_obj));
+  const char *action_str = (action_obj == nullptr) ?
+    nullptr : java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(action_obj));
 
   return Deoptimization::deoptimization_count(reason_str, action_str);
 WB_END
@@ -992,7 +998,7 @@ WB_ENTRY(jint, WB_GetMethodEntryBci(JNIEnv* env, jobject o, jobject method))
   CHECK_JNI_EXCEPTION_(env, InvocationEntryBci);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   CompiledMethod* code = mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false);
-  return (code != NULL && code->is_osr_method() ? code->osr_entry_bci() : InvocationEntryBci);
+  return (code != nullptr && code->is_osr_method() ? code->osr_entry_bci() : InvocationEntryBci);
 WB_END
 
 WB_ENTRY(jboolean, WB_TestSetDontInlineMethod(JNIEnv* env, jobject o, jobject method, jboolean value))
@@ -1037,15 +1043,15 @@ bool WhiteBox::validate_cgroup(const char* proc_cgroups,
 bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThread* THREAD) {
   // Screen for unavailable/bad comp level or null method
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
-  if (method == NULL) {
-    tty->print_cr("WB error: request to compile NULL method");
+  if (method == nullptr) {
+    tty->print_cr("WB error: request to compile null method");
     return false;
   }
   if (comp_level > CompilationPolicy::highest_compile_level()) {
     tty->print_cr("WB error: invalid compilation level %d", comp_level);
     return false;
   }
-  if (comp == NULL) {
+  if (comp == nullptr) {
     tty->print_cr("WB error: no compiler for requested compilation level %d", comp_level);
     return false;
   }
@@ -1060,16 +1066,16 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
-  if ((!is_blocking && is_queued) || nm != NULL) {
+  if ((!is_blocking && is_queued) || nm != nullptr) {
     return true;
   }
   // Check code again because compilation may be finished before Compile_lock is acquired.
   if (bci == InvocationEntryBci) {
     CompiledMethod* code = mh->code();
-    if (code != NULL && code->as_nmethod_or_null() != NULL) {
+    if (code != nullptr && code->as_nmethod_or_null() != nullptr) {
       return true;
     }
-  } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != NULL) {
+  } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != nullptr) {
     return true;
   }
   tty->print("WB error: failed to %s compile at level %d method ", is_blocking ? "blocking" : "", comp_level);
@@ -1090,7 +1096,7 @@ WB_END
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   Method* clinit = ik->class_initializer();
-  if (clinit == NULL || clinit->method_holder()->is_not_initialized()) {
+  if (clinit == nullptr || clinit->method_holder()->is_not_initialized()) {
     return false;
   }
   return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);
@@ -1115,12 +1121,12 @@ WB_ENTRY(jint, WB_MatchesInline(JNIEnv* env, jobject o, jobject method, jstring 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
 
   ResourceMark rm(THREAD);
-  const char* error_msg = NULL;
+  const char* error_msg = nullptr;
   char* method_str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(pattern));
   InlineMatcher* m = InlineMatcher::parse_inline_pattern(method_str, error_msg);
 
-  if (m == NULL) {
-    assert(error_msg != NULL, "Always have an error message");
+  if (m == nullptr) {
+    assert(error_msg != nullptr, "Always have an error message");
     tty->print_cr("Got error: %s", error_msg);
     return -1; // Pattern failed
   }
@@ -1147,11 +1153,11 @@ WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring 
   ResourceMark rm;
   char* method_str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(pattern));
 
-  const char* error_msg = NULL;
+  const char* error_msg = nullptr;
 
   BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg, false);
-  if (m == NULL) {
-    assert(error_msg != NULL, "Must have error_msg");
+  if (m == nullptr) {
+    assert(error_msg != nullptr, "Must have error_msg");
     tty->print_cr("Got error: %s", error_msg);
     return -1;
   }
@@ -1169,7 +1175,7 @@ WB_ENTRY(void, WB_MarkMethodProfiled(JNIEnv* env, jobject o, jobject method))
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
 
   MethodData* mdo = mh->method_data();
-  if (mdo == NULL) {
+  if (mdo == nullptr) {
     Method::build_profiling_method_data(mh, CHECK_AND_CLEAR);
     mdo = mh->method_data();
   }
@@ -1189,7 +1195,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   MethodData* mdo = mh->method_data();
   MethodCounters* mcs = mh->method_counters();
 
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     mdo->init();
     ResourceMark rm(THREAD);
     int arg_count = mdo->method()->size_of_parameters();
@@ -1204,18 +1210,18 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   mh->clear_not_c2_compilable();
   mh->clear_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
-  if (mcs != NULL) {
+  if (mcs != nullptr) {
     mcs->clear_counters();
   }
 WB_END
 
 template <typename T, int type_enum>
 static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
-  if (name == NULL) {
+  if (name == nullptr) {
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-  const char* flag_name = env->GetStringUTFChars(name, NULL);
+  const char* flag_name = env->GetStringUTFChars(name, nullptr);
   CHECK_JNI_EXCEPTION_(env, false);
   const JVMFlag* flag = JVMFlag::find_declared_flag(flag_name);
   JVMFlag::Error result = JVMFlagAccess::get<T, type_enum>(flag, value);
@@ -1225,11 +1231,11 @@ static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
 
 template <typename T, int type_enum>
 static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
-  if (name == NULL) {
+  if (name == nullptr) {
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-  const char* flag_name = env->GetStringUTFChars(name, NULL);
+  const char* flag_name = env->GetStringUTFChars(name, nullptr);
   CHECK_JNI_EXCEPTION_(env, false);
   JVMFlag* flag = JVMFlag::find_flag(flag_name);
   JVMFlag::Error result = JVMFlagAccess::set<T, type_enum>(flag, value, JVMFlagOrigin::INTERNAL);
@@ -1241,13 +1247,13 @@ template <typename T>
 static jobject box(JavaThread* thread, JNIEnv* env, Symbol* name, Symbol* sig, T value) {
   ResourceMark rm(thread);
   jclass clazz = env->FindClass(name->as_C_string());
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   jmethodID methodID = env->GetStaticMethodID(clazz,
         vmSymbols::valueOf_name()->as_C_string(),
         sig->as_C_string());
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   jobject result = env->CallStaticObjectMethod(clazz, methodID, value);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   return result;
 }
 
@@ -1269,8 +1275,8 @@ static jobject doubleBox(JavaThread* thread, JNIEnv* env, jdouble value) {
 
 static const JVMFlag* getVMFlag(JavaThread* thread, JNIEnv* env, jstring name) {
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
-  const char* flag_name = env->GetStringUTFChars(name, NULL);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  const char* flag_name = env->GetStringUTFChars(name, nullptr);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   const JVMFlag* result = JVMFlag::find_declared_flag(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
   return result;
@@ -1278,12 +1284,12 @@ static const JVMFlag* getVMFlag(JavaThread* thread, JNIEnv* env, jstring name) {
 
 WB_ENTRY(jboolean, WB_IsConstantVMFlag(JNIEnv* env, jobject o, jstring name))
   const JVMFlag* flag = getVMFlag(thread, env, name);
-  return (flag != NULL) && flag->is_constant_in_binary();
+  return (flag != nullptr) && flag->is_constant_in_binary();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsLockedVMFlag(JNIEnv* env, jobject o, jstring name))
   const JVMFlag* flag = getVMFlag(thread, env, name);
-  return (flag != NULL) && !(flag->is_unlocked() || flag->is_unlocker());
+  return (flag != nullptr) && !(flag->is_unlocked() || flag->is_unlocker());
 WB_END
 
 WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
@@ -1292,7 +1298,7 @@ WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return booleanBox(thread, env, result);
   }
-  return NULL;
+  return nullptr;
 WB_END
 
 template <typename T, int type_enum>
@@ -1302,7 +1308,7 @@ jobject GetVMFlag_longBox(JNIEnv* env, JavaThread* thread, jstring name) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);
   }
-  return NULL;
+  return nullptr;
 }
 
 WB_ENTRY(jobject, WB_GetIntVMFlag(JNIEnv* env, jobject o, jstring name))
@@ -1335,7 +1341,7 @@ WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return doubleBox(thread, env, result);
   }
-  return NULL;
+  return nullptr;
 WB_END
 
 WB_ENTRY(jstring, WB_GetStringVMFlag(JNIEnv* env, jobject o, jstring name))
@@ -1343,10 +1349,10 @@ WB_ENTRY(jstring, WB_GetStringVMFlag(JNIEnv* env, jobject o, jstring name))
   if (GetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &ccstrResult)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     jstring result = env->NewStringUTF(ccstrResult);
-    CHECK_JNI_EXCEPTION_(env, NULL);
+    CHECK_JNI_EXCEPTION_(env, nullptr);
     return result;
   }
-  return NULL;
+  return nullptr;
 WB_END
 
 WB_ENTRY(void, WB_SetBooleanVMFlag(JNIEnv* env, jobject o, jstring name, jboolean value))
@@ -1392,21 +1398,21 @@ WB_END
 WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring value))
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
   const char* ccstrValue;
-  if (value == NULL) {
-    ccstrValue = NULL;
+  if (value == nullptr) {
+    ccstrValue = nullptr;
   }
   else {
-    ccstrValue = env->GetStringUTFChars(value, NULL);
+    ccstrValue = env->GetStringUTFChars(value, nullptr);
     CHECK_JNI_EXCEPTION(env);
   }
   {
     ccstr param = ccstrValue;
     ThreadInVMfromNative ttvfn(thread); // back to VM
     if (SetVMFlag <JVM_FLAG_TYPE(ccstr)> (thread, env, name, &param)) {
-      assert(param == NULL, "old value is freed automatically and not returned");
+      assert(param == nullptr, "old value is freed automatically and not returned");
     }
   }
-  if (value != NULL) {
+  if (value != nullptr) {
     env->ReleaseStringUTFChars(value, ccstrValue);
   }
 WB_END
@@ -1425,7 +1431,7 @@ WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString
   ResourceMark rm(THREAD);
   int len;
   jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len, CHECK_false);
-  return (StringTable::lookup(name, len) != NULL);
+  return (StringTable::lookup(name, len) != nullptr);
 WB_END
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
@@ -1450,7 +1456,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   static volatile char* p;
 
   p = os::reserve_memory(os::vm_allocation_granularity());
-  if (p == NULL) {
+  if (p == nullptr) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
   }
 
@@ -1462,7 +1468,7 @@ WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
   ThreadToNativeFromVM ttn(thread);
   jstring features_string = env->NewStringUTF(features);
 
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
 
   return features_string;
 WB_END
@@ -1493,23 +1499,23 @@ struct CodeBlobStub {
 static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBlobStub* cb) {
   ResourceMark rm;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
-  CHECK_JNI_EXCEPTION_(env, NULL);
-  jobjectArray result = env->NewObjectArray(4, clazz, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  jobjectArray result = env->NewObjectArray(4, clazz, nullptr);
 
   jstring name = env->NewStringUTF(cb->name);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 0, name);
 
   jobject obj = integerBox(thread, env, cb->size);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 1, obj);
 
   obj = integerBox(thread, env, cb->blob_type);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 2, obj);
 
   obj = longBox(thread, env, cb->address);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 3, obj);
 
   return result;
@@ -1518,11 +1524,11 @@ static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBl
 WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
   ResourceMark rm(THREAD);
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
-  jobjectArray result = NULL;
-  if (code == NULL) {
+  jobjectArray result = nullptr;
+  if (code == nullptr) {
     return result;
   }
   int comp_level = code->comp_level();
@@ -1530,32 +1536,32 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
 
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
-  CHECK_JNI_EXCEPTION_(env, NULL);
-  result = env->NewObjectArray(5, clazz, NULL);
-  if (result == NULL) {
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  result = env->NewObjectArray(5, clazz, nullptr);
+  if (result == nullptr) {
     return result;
   }
 
   CodeBlobStub stub(code);
   jobjectArray codeBlob = codeBlob2objectArray(thread, env, &stub);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 0, codeBlob);
 
   jobject level = integerBox(thread, env, comp_level);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 1, level);
 
   jbyteArray insts = env->NewByteArray(insts_size);
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetByteArrayRegion(insts, 0, insts_size, (jbyte*) code->insts_begin());
   env->SetObjectArrayElement(result, 2, insts);
 
   jobject id = integerBox(thread, env, code->compile_id());
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 3, id);
 
   jobject entry_point = longBox(thread, env, (jlong) code->entry_point());
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 4, entry_point);
 
   return result;
@@ -1571,7 +1577,7 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
-    if (blob != NULL) {
+    if (blob != nullptr) {
       ::new (blob) BufferBlob("WB::DummyBlob", full_size);
     }
   }
@@ -1601,32 +1607,32 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeHeap* heap = WhiteBox::get_code_heap(static_cast<CodeBlobType>(blob_type));
-    if (heap == NULL) {
-      return NULL;
+    if (heap == nullptr) {
+      return nullptr;
     }
     for (CodeBlob* cb = (CodeBlob*) heap->first();
-         cb != NULL; cb = (CodeBlob*) heap->next(cb)) {
+         cb != nullptr; cb = (CodeBlob*) heap->next(cb)) {
       CodeBlobStub* stub = NEW_RESOURCE_OBJ(CodeBlobStub);
       new (stub) CodeBlobStub(cb);
       blobs.append(stub);
     }
   }
   ThreadToNativeFromVM ttn(thread);
-  jobjectArray result = NULL;
+  jobjectArray result = nullptr;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
-  CHECK_JNI_EXCEPTION_(env, NULL);
-  result = env->NewObjectArray(blobs.length(), clazz, NULL);
-  CHECK_JNI_EXCEPTION_(env, NULL);
-  if (result == NULL) {
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  result = env->NewObjectArray(blobs.length(), clazz, nullptr);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  if (result == nullptr) {
     return result;
   }
   int i = 0;
   for (GrowableArrayIterator<CodeBlobStub*> it = blobs.begin();
        it != blobs.end(); ++it) {
     jobjectArray obj = codeBlob2objectArray(thread, env, *it);
-    CHECK_JNI_EXCEPTION_(env, NULL);
+    CHECK_JNI_EXCEPTION_(env, nullptr);
     env->SetObjectArrayElement(result, i, obj);
-    CHECK_JNI_EXCEPTION_(env, NULL);
+    CHECK_JNI_EXCEPTION_(env, nullptr);
     ++i;
   }
   return result;
@@ -1733,7 +1739,7 @@ WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_load
   }
 
   oop class_loader_oop = JNIHandles::resolve(class_loader);
-  ClassLoaderData* cld = class_loader_oop != NULL
+  ClassLoaderData* cld = class_loader_oop != nullptr
       ? java_lang_ClassLoader::loader_data_acquire(class_loader_oop)
       : ClassLoaderData::the_null_class_loader_data();
 
@@ -1840,7 +1846,7 @@ WB_END
 WB_ENTRY(jint, WB_GetConstantPoolCacheLength(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
       return -1;
   }
   return cp->cache()->length();
@@ -1849,7 +1855,7 @@ WB_END
 WB_ENTRY(jint, WB_ConstantPoolRemapInstructionOperandFromCache(JNIEnv* env, jobject wb, jclass klass, jint index))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(), "Constant pool does not have a cache");
   }
   jint cpci = index;
@@ -1872,8 +1878,8 @@ WB_END
 
 template <typename T>
 static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jstring name, T* value) {
-  assert(value != NULL, "sanity");
-  if (method == NULL || name == NULL) {
+  assert(value != nullptr, "sanity");
+  if (method == nullptr || name == nullptr) {
     return false;
   }
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
@@ -1881,7 +1887,7 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   methodHandle mh(thread, Method::checked_resolve_jmethod_id(jmid));
   // can't be in VM when we call JNI
   ThreadToNativeFromVM ttnfv(thread);
-  const char* flag_name = env->GetStringUTFChars(name, NULL);
+  const char* flag_name = env->GetStringUTFChars(name, nullptr);
   CHECK_JNI_EXCEPTION_(env, false);
   enum CompileCommand option = CompilerOracle::string_to_option(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
@@ -1901,7 +1907,7 @@ WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject me
     ThreadToNativeFromVM ttnfv(thread);
     return booleanBox(thread, env, result);
   }
-  return NULL;
+  return nullptr;
 WB_END
 
 WB_ENTRY(jobject, WB_GetMethodIntxOption(JNIEnv* env, jobject wb, jobject method, jstring name))
@@ -1911,7 +1917,7 @@ WB_ENTRY(jobject, WB_GetMethodIntxOption(JNIEnv* env, jobject wb, jobject method
     ThreadToNativeFromVM ttnfv(thread);
     return longBox(thread, env, result);
   }
-  return NULL;
+  return nullptr;
 WB_END
 
 WB_ENTRY(jobject, WB_GetMethodUintxOption(JNIEnv* env, jobject wb, jobject method, jstring name))
@@ -1921,7 +1927,7 @@ WB_ENTRY(jobject, WB_GetMethodUintxOption(JNIEnv* env, jobject wb, jobject metho
     ThreadToNativeFromVM ttnfv(thread);
     return longBox(thread, env, result);
   }
-  return NULL;
+  return nullptr;
 WB_END
 
 WB_ENTRY(jobject, WB_GetMethodDoubleOption(JNIEnv* env, jobject wb, jobject method, jstring name))
@@ -1931,7 +1937,7 @@ WB_ENTRY(jobject, WB_GetMethodDoubleOption(JNIEnv* env, jobject wb, jobject meth
     ThreadToNativeFromVM ttnfv(thread);
     return doubleBox(thread, env, result);
   }
-  return NULL;
+  return nullptr;
 WB_END
 
 WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject method, jstring name))
@@ -1940,10 +1946,10 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
     // can't be in VM when we call JNI
     ThreadToNativeFromVM ttnfv(thread);
     jstring result = env->NewStringUTF(ccstrResult);
-    CHECK_JNI_EXCEPTION_(env, NULL);
+    CHECK_JNI_EXCEPTION_(env, nullptr);
     return result;
   }
-  return NULL;
+  return nullptr;
 WB_END
 
 WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
@@ -1951,7 +1957,7 @@ WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
   ThreadToNativeFromVM ttn(thread);
   jstring path_string = env->NewStringUTF(p);
 
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
 
   return path_string;
 WB_END
@@ -2011,7 +2017,7 @@ WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz
     objArrayOop refs =  cp->resolved_references();
     return (jobject)JNIHandles::make_local(THREAD, refs);
   } else {
-    return NULL;
+    return nullptr;
   }
 WB_END
 
@@ -2108,16 +2114,16 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
                        RegisterMap::UpdateMap::include,
                        RegisterMap::ProcessFrames::include,
                        RegisterMap::WalkContinuation::skip);
-      for (javaVFrame* vf = jt->last_java_vframe(&rmap); vf != NULL; vf = vf->java_sender()) {
+      for (javaVFrame* vf = jt->last_java_vframe(&rmap); vf != nullptr; vf = vf->java_sender()) {
         GrowableArray<MonitorInfo*> *monitors = vf->monitors();
-        if (monitors != NULL) {
+        if (monitors != nullptr) {
           int len = monitors->length();
           // Walk monitors youngest to oldest
           for (int i = len - 1; i >= 0; i--) {
             MonitorInfo* mon_info = monitors->at(i);
             if (mon_info->eliminated()) continue;
             oop owner = mon_info->owner();
-            if (owner != NULL) {
+            if (owner != nullptr) {
               info->append(mon_info);
             }
           }
@@ -2132,10 +2138,10 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
   };
 
   ReadMonitorsClosure rmc;
-  if (thread_handle != NULL) {
+  if (thread_handle != nullptr) {
     ThreadsListHandle tlh;
     JavaThread* target = nullptr;
-    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, nullptr);
     if (is_alive) {
       Handshake::execute(&rmc, &tlh, target);
     }
@@ -2166,10 +2172,10 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
 
   if (all_threads) {
     Handshake::execute(&tsc);
-  } else if (thread_handle != NULL) {
+  } else if (thread_handle != nullptr) {
     ThreadsListHandle tlh;
     JavaThread* target = nullptr;
-    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, nullptr);
     if (is_alive) {
       Handshake::execute(&tsc, &tlh, target);
     }
@@ -2195,10 +2201,10 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
   public:
     TraceSelfClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
   };
-  if (thread_handle != NULL) {
+  if (thread_handle != nullptr) {
     ThreadsListHandle tlh;
     JavaThread* target = nullptr;
-    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, NULL);
+    bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, nullptr);
     if (is_alive) {
       TraceSelfClosure* tsc = new TraceSelfClosure(target);
       Handshake::execute(tsc, target);
@@ -2234,7 +2240,7 @@ WB_END
 // Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
-  assert(field_name != NULL && strlen(field_name) > 0, "Field name not valid");
+  assert(field_name != nullptr && strlen(field_name) > 0, "Field name not valid");
 
   //Get the class of our object
   Klass* arg_klass = object->klass();
@@ -2248,7 +2254,7 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
   fieldDescriptor fd;
 
   Klass* res = ik->find_field(name_symbol, signature_symbol, &fd);
-  if (res == NULL) {
+  if (res == nullptr) {
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(),
         name_symbol->as_C_string());
     vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:class+load=info to see the origin of the problem class");
@@ -2265,8 +2271,8 @@ const char* WhiteBox::lookup_jstring(const char* field_name, oop object) {
   int offset = offset_for_field(field_name, object,
       vmSymbols::string_signature());
   oop string = object->obj_field(offset);
-  if (string == NULL) {
-    return NULL;
+  if (string == nullptr) {
+    return nullptr;
   }
   const char* ret = java_lang_String::as_utf8_string(string);
   return ret;
@@ -2291,10 +2297,10 @@ void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
   CHECK_JNI_EXCEPTION(env);
   for (int i = 0, n = method_count; i < n; ++i) {
     // Skip dummy entries
-    if (method_array[i].fnPtr == NULL) continue;
+    if (method_array[i].fnPtr == nullptr) continue;
     if (env->RegisterNatives(wbclass, &method_array[i], 1) != 0) {
       jthrowable throwable_obj = env->ExceptionOccurred();
-      if (throwable_obj != NULL) {
+      if (throwable_obj != nullptr) {
         env->ExceptionClear();
         if (env->IsInstanceOf(throwable_obj, no_such_method_error_klass)) {
           // NoSuchMethodError is thrown when a method can't be found or a method is not native.
@@ -2316,7 +2322,7 @@ void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
 WB_ENTRY(jint, WB_AddCompilerDirective(JNIEnv* env, jobject o, jstring compDirect))
   // can't be in VM when we call JNI
   ThreadToNativeFromVM ttnfv(thread);
-  const char* dir = env->GetStringUTFChars(compDirect, NULL);
+  const char* dir = env->GetStringUTFChars(compDirect, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
   int ret;
   {
@@ -2341,7 +2347,7 @@ WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstri
 #ifdef LINUX
   // Can't be in VM when we call JNI.
   ThreadToNativeFromVM ttnfv(thread);
-  const char* lf = env->GetStringUTFChars(libfile, NULL);
+  const char* lf = env->GetStringUTFChars(libfile, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
   ret = (jboolean) ElfFile::specifies_noexecstack(lf);
   env->ReleaseStringUTFChars(libfile, lf);
@@ -2374,11 +2380,11 @@ WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
   jint ret = 0;
 #ifdef LINUX
   ThreadToNativeFromVM ttnfv(thread);
-  const char* p_cgroups = env->GetStringUTFChars(proc_cgroups, NULL);
+  const char* p_cgroups = env->GetStringUTFChars(proc_cgroups, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
-  const char* p_s_cgroup = env->GetStringUTFChars(proc_self_cgroup, NULL);
+  const char* p_s_cgroup = env->GetStringUTFChars(proc_self_cgroup, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
-  const char* p_s_mountinfo = env->GetStringUTFChars(proc_self_mountinfo, NULL);
+  const char* p_s_mountinfo = env->GetStringUTFChars(proc_self_mountinfo, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
   u1 cg_type_flags = 0;
   // This sets cg_type_flags
@@ -2429,7 +2435,7 @@ WB_ENTRY(void, WB_CheckThreadObjOfTerminatingThread(JNIEnv* env, jobject wb, job
 
   // Look up the target thread by tid to ensure it is present
   JavaThread* t = tlh.list()->find_JavaThread_from_java_tid(tid);
-  if (t == NULL) {
+  if (t == nullptr) {
     THROW_MSG(vmSymbols::java_lang_RuntimeException(), "Target thread not found in ThreadsList!");
   }
 
@@ -2476,7 +2482,7 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean u
   for (StackFrameStream fst(JavaThread::current(), update_map, true); !fst.is_done(); fst.next()) {
     frame* current_frame = fst.current();
     if (log) {
-      current_frame->print_value_on(&st, NULL);
+      current_frame->print_value_on(&st, nullptr);
     }
     current_frame->verify(fst.register_map());
   }
@@ -2502,7 +2508,7 @@ WB_END
 WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   ThreadToNativeFromVM ttn(thread);
   jstring info_string = env->NewStringUTF(XSTR(LIBC));
-  CHECK_JNI_EXCEPTION_(env, NULL);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
   return info_string;
 WB_END
 

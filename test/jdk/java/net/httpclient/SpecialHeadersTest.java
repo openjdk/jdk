@@ -30,6 +30,7 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext
+ * @requires (vm.compMode != "Xcomp")
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
  *       SpecialHeadersTest
@@ -89,6 +90,7 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import org.testng.Assert;
@@ -557,22 +559,19 @@ public class SpecialHeadersTest implements HttpServerAdapters {
             throw new AssertionError("Unexpected null sslContext");
 
         HttpTestHandler handler = new HttpUriStringHandler();
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(handler, "/http1");
         httpURI = "http://" + serverAuthority(httpTestServer) + "/http1";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(handler, "/https1");
         httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1";
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(handler, "/http2");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(handler, "/https2");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 

@@ -1363,6 +1363,28 @@ class TwoRegNEONOp(CommonNEONInstruction):
 class ThreeRegNEONOp(TwoRegNEONOp):
     numRegs = 3
 
+class NEONFloatCompareWithZero(TwoRegNEONOp):
+    def __init__(self, args):
+        self._name = 'fcm'
+        self.arrangement, self.condition = args
+        self.insname = self._name + (self.condition).lower()
+
+    def cstr(self):
+        return ("%s(%s, %s, %s, %s);"
+                % ("__ " + self._name,
+                   "Assembler::" + self.condition,
+                   self._firstSIMDreg,
+                   "__ T" + self.arrangement,
+                   self._firstSIMDreg.nextReg()))
+
+    def astr(self):
+        return ("%s\t%s.%s, %s.%s, #0.0"
+                % (self.insname,
+                   self._firstSIMDreg,
+                   self.arrangement,
+                   self._firstSIMDreg.nextReg(),
+                   self.arrangement))
+
 class SpecialCases(Instruction):
     def __init__(self, data):
         self._name = data[0]
@@ -1595,6 +1617,16 @@ generate(NEONReduceInstruction,
           ["fmaxp", "fmaxp", "2S"], ["fmaxp", "fmaxp", "2D"],
           ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
+
+neonFloatCompareWithZeroConditions = ['GT', 'GE', 'EQ', 'LT', 'LE']
+neonFloatArrangement = ['2S', '4S', '2D']
+neonFloatCompareWithZeroArgs = []
+for condition in neonFloatCompareWithZeroConditions:
+    for currentArrangement in neonFloatArrangement:
+        currentArgs = [currentArrangement, condition]
+        neonFloatCompareWithZeroArgs.append(currentArgs)
+
+generate(NEONFloatCompareWithZero, neonFloatCompareWithZeroArgs)
 
 generate(TwoRegNEONOp,
          [["absr", "abs", "8B"], ["absr", "abs", "16B"],

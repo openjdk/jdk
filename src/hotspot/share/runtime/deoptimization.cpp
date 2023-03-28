@@ -98,6 +98,121 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
 
+uint64_t DeoptimizationScope::_committed_deopt_gen = 0;
+uint64_t DeoptimizationScope::_active_deopt_gen    = 1;
+bool     DeoptimizationScope::_committing_in_progress = false;
+
+DeoptimizationScope::DeoptimizationScope() : _required_gen(0) {
+  DEBUG_ONLY(_deopted = false;)
+
+  MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  // If there is nothing to deopt _required_gen is the same as comitted.
+  _required_gen = DeoptimizationScope::_committed_deopt_gen;
+}
+
+DeoptimizationScope::~DeoptimizationScope() {
+  assert(_deopted, "Deopt not executed");
+}
+
+void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
+
+  // If it's already marked but we still need it to be deopted.
+  if (cm->is_marked_for_deoptimization()) {
+    dependent(cm);
+    return;
+  }
+
+  CompiledMethod::DeoptimizationStatus status =
+    inc_recompile_counts ? CompiledMethod::deoptimize : CompiledMethod::deoptimize_noupdate;
+  Atomic::store(&cm->_deoptimization_status, status);
+
+  // Make sure active is not committed
+  assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
+  assert(cm->_deoptimization_generation == 0, "Is already marked");
+
+  cm->_deoptimization_generation = DeoptimizationScope::_active_deopt_gen;
+  _required_gen                  = DeoptimizationScope::_active_deopt_gen;
+}
+
+void DeoptimizationScope::dependent(CompiledMethod* cm) {
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
+  // A method marked by someone else may have a _required_gen lower than what we marked with.
+  // Therefore only store it if it's higher than _required_gen.
+  if (_required_gen < cm->_deoptimization_generation) {
+    _required_gen = cm->_deoptimization_generation;
+  }
+}
+
+void DeoptimizationScope::deoptimize_marked() {
+  assert(!_deopted, "Already deopted");
+
+  // We are not alive yet.
+  if (!Universe::is_fully_initialized()) {
+    DEBUG_ONLY(_deopted = true;)
+    return;
+  }
+
+  // Safepoints are a special case, handled here.
+  if (SafepointSynchronize::is_at_safepoint()) {
+    DeoptimizationScope::_committed_deopt_gen = DeoptimizationScope::_active_deopt_gen;
+    DeoptimizationScope::_active_deopt_gen++;
+    Deoptimization::deoptimize_all_marked();
+    DEBUG_ONLY(_deopted = true;)
+    return;
+  }
+
+  uint64_t comitting = 0;
+  bool wait = false;
+  while (true) {
+    {
+      MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
+      // First we check if we or someone else already deopted the gen we want.
+      if (DeoptimizationScope::_committed_deopt_gen >= _required_gen) {
+        DEBUG_ONLY(_deopted = true;)
+        return;
+      }
+      if (!_committing_in_progress) {
+        // The version we are about to commit.
+        comitting = DeoptimizationScope::_active_deopt_gen;
+        // Make sure new marks use a higher gen.
+        DeoptimizationScope::_active_deopt_gen++;
+        _committing_in_progress = true;
+        wait = false;
+      } else {
+        // Another thread is handshaking and committing a gen.
+        wait = true;
+      }
+    }
+    if (wait) {
+      // Wait and let the concurrent handshake be performed.
+      ThreadBlockInVM tbivm(JavaThread::current());
+      os::naked_yield();
+    } else {
+      // Performs the handshake.
+      Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occurred.
+      DEBUG_ONLY(_deopted = true;)
+      {
+        MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
+                       Mutex::_no_safepoint_check_flag);
+        // Make sure that committed doesn't go backwards.
+        // Should only happen if we did a deopt during a safepoint above.
+        if (DeoptimizationScope::_committed_deopt_gen < comitting) {
+          DeoptimizationScope::_committed_deopt_gen = comitting;
+        }
+        _committing_in_progress = false;
+
+        assert(DeoptimizationScope::_committed_deopt_gen >= _required_gen, "Must be");
+
+        return;
+      }
+    }
+  }
+}
+
 Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
                                          int  caller_adjustment,
                                          int  caller_actual_parameters,
@@ -915,17 +1030,11 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
   }
 };
 
-void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
+void Deoptimization::deoptimize_all_marked() {
   ResourceMark rm;
 
   // Make the dependent methods not entrant
-  if (nmethod_only != nullptr) {
-    nmethod_only->mark_for_deoptimization();
-    nmethod_only->make_not_entrant();
-    CodeCache::make_nmethod_deoptimized(nmethod_only);
-  } else {
-    CodeCache::make_marked_nmethods_deoptimized();
-  }
+  CodeCache::make_marked_nmethods_deoptimized();
 
   DeoptimizeMarkedClosure deopt;
   if (SafepointSynchronize::is_at_safepoint()) {

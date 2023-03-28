@@ -235,8 +235,8 @@
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
-  nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
-  nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
+  volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
+  volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
   nonstatic_field(InstanceKlass,               _reference_type,                               u1)                                    \
   volatile_nonstatic_field(InstanceKlass,      _oop_map_cache,                                OopMapCache*)                          \
@@ -379,12 +379,6 @@
                                                                                                                                      \
      static_field(CompressedKlassPointers,     _narrow_klass._base,                           address)                               \
      static_field(CompressedKlassPointers,     _narrow_klass._shift,                          int)                                   \
-                                                                                                                                     \
-  /******/                                                                                                                           \
-  /* os */                                                                                                                           \
-  /******/                                                                                                                           \
-                                                                                                                                     \
-     static_field(os,                          _polling_page,                                 address)                               \
                                                                                                                                      \
   /**********/                                                                                                                       \
   /* Memory */                                                                                                                       \

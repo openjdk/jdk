@@ -95,6 +95,9 @@ public class BindingSpecializer {
     private static final String CLASS_DATA_DESC = methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).descriptorString();
     private static final String RELEASE0_DESC = VOID_DESC;
     private static final String ACQUIRE0_DESC = VOID_DESC;
+    private static final String INTEGER_TO_UNSIGNED_LONG_DESC = MethodType.methodType(long.class, int.class).descriptorString();
+    private static final String SHORT_TO_UNSIGNED_LONG_DESC = MethodType.methodType(long.class, short.class).descriptorString();
+    private static final String BYTE_TO_UNSIGNED_LONG_DESC = MethodType.methodType(long.class, byte.class).descriptorString();
 
     private static final Handle BSM_CLASS_DATA = new Handle(
             H_INVOKESTATIC,
@@ -602,17 +605,82 @@ public class BindingSpecializer {
     private void emitBufferStore(Binding.BufferStore bufferStore) {
         Class<?> storeType = bufferStore.type();
         long offset = bufferStore.offset();
+        int byteWidth = bufferStore.byteWidth();
 
         popType(storeType);
         popType(MemorySegment.class);
-        int valueIdx = newLocal(storeType);
-        emitStore(storeType, valueIdx);
 
-        Class<?> valueLayoutType = emitLoadLayoutConstant(storeType);
-        emitConst(offset);
-        emitLoad(storeType, valueIdx);
-        String descriptor = methodType(void.class, valueLayoutType, long.class, storeType).descriptorString();
-        emitInvokeInterface(MemorySegment.class, "set", descriptor);
+        if (SharedUtils.isPowerOfTwo(byteWidth)) {
+            int valueIdx = newLocal(storeType);
+            emitStore(storeType, valueIdx);
+
+            Class<?> valueLayoutType = emitLoadLayoutConstant(storeType);
+            emitConst(offset);
+            emitLoad(storeType, valueIdx);
+            String descriptor = methodType(void.class, valueLayoutType, long.class, storeType).descriptorString();
+            emitInvokeInterface(MemorySegment.class, "set", descriptor);
+        } else {
+            // long longValue = ((Number) value).longValue();
+            if (storeType == int.class) {
+                mv.visitInsn(I2L);
+            } else {
+                assert storeType == long.class; // chunking only for int and long
+            }
+            int longValueIdx = newLocal(long.class);
+            emitStore(long.class, longValueIdx);
+            int writeAddrIdx = newLocal(MemorySegment.class);
+            emitStore(MemorySegment.class, writeAddrIdx);
+
+            int remaining = byteWidth;
+            int chunkOffset = 0;
+            do {
+                int chunkSize = Integer.highestOneBit(remaining); // next power of 2, in bytes
+                Class<?> chunkStoreType;
+                long mask;
+                switch (chunkSize) {
+                    case 4 -> {
+                        chunkStoreType = int.class;
+                        mask = 0xFFFF_FFFFL;
+                    }
+                    case 2 -> {
+                        chunkStoreType = short.class;
+                        mask = 0xFFFFL;
+                    }
+                    case 1 -> {
+                        chunkStoreType = byte.class;
+                        mask = 0xFFL;
+                    }
+                    default ->
+                       throw new IllegalStateException("Unexpected chunk size for chunked write: " + chunkSize);
+                }
+                //int writeChunk = (int) (((0xFFFF_FFFFL << shiftAmount) & longValue) >>> shiftAmount);
+                int shiftAmount = chunkOffset * Byte.SIZE;
+                mask = mask << shiftAmount;
+                emitLoad(long.class, longValueIdx);
+                emitConst(mask);
+                mv.visitInsn(LAND);
+                if (shiftAmount != 0) {
+                    emitConst(shiftAmount);
+                    mv.visitInsn(LUSHR);
+                }
+                mv.visitInsn(L2I);
+                int chunkIdx = newLocal(chunkStoreType);
+                emitStore(chunkStoreType, chunkIdx);
+                // chunk done, now write it
+
+                //writeAddress.set(JAVA_SHORT_UNALIGNED, offset, writeChunk);
+                emitLoad(MemorySegment.class, writeAddrIdx);
+                Class<?> valueLayoutType = emitLoadLayoutConstant(chunkStoreType);
+                long writeOffset = offset + SharedUtils.pickChunkOffset(chunkOffset, byteWidth, chunkSize);
+                emitConst(writeOffset);
+                emitLoad(chunkStoreType, chunkIdx);
+                String descriptor = methodType(void.class, valueLayoutType, long.class, chunkStoreType).descriptorString();
+                emitInvokeInterface(MemorySegment.class, "set", descriptor);
+
+                remaining -= chunkSize;
+                chunkOffset += chunkSize;
+            } while (remaining != 0);
+        }
     }
 
     // VM_STORE and VM_LOAD are emulated, which is different for down/upcalls
@@ -708,13 +776,82 @@ public class BindingSpecializer {
     private void emitBufferLoad(Binding.BufferLoad bufferLoad) {
         Class<?> loadType = bufferLoad.type();
         long offset = bufferLoad.offset();
+        int byteWidth = bufferLoad.byteWidth();
 
         popType(MemorySegment.class);
 
-        Class<?> valueLayoutType = emitLoadLayoutConstant(loadType);
-        emitConst(offset);
-        String descriptor = methodType(loadType, valueLayoutType, long.class).descriptorString();
-        emitInvokeInterface(MemorySegment.class, "get", descriptor);
+        if (SharedUtils.isPowerOfTwo(byteWidth)) {
+            Class<?> valueLayoutType = emitLoadLayoutConstant(loadType);
+            emitConst(offset);
+            String descriptor = methodType(loadType, valueLayoutType, long.class).descriptorString();
+            emitInvokeInterface(MemorySegment.class, "get", descriptor);
+        } else {
+            // chunked
+            int readAddrIdx = newLocal(MemorySegment.class);
+            emitStore(MemorySegment.class, readAddrIdx);
+
+            emitConstZero(long.class); // result
+            int resultIdx = newLocal(long.class);
+            emitStore(long.class, resultIdx);
+
+            int remaining = byteWidth;
+            int chunkOffset = 0;
+            do {
+                int chunkSize = Integer.highestOneBit(remaining); // next power of 2
+                Class<?> chunkType;
+                Class<?> toULongHolder;
+                String toULongDescriptor;
+                switch (chunkSize) {
+                    case 4 -> {
+                        chunkType = int.class;
+                        toULongHolder = Integer.class;
+                        toULongDescriptor = INTEGER_TO_UNSIGNED_LONG_DESC;
+                    }
+                    case 2 -> {
+                        chunkType = short.class;
+                        toULongHolder = Short.class;
+                        toULongDescriptor = SHORT_TO_UNSIGNED_LONG_DESC;
+                    }
+                    case 1 -> {
+                        chunkType = byte.class;
+                        toULongHolder = Byte.class;
+                        toULongDescriptor = BYTE_TO_UNSIGNED_LONG_DESC;
+                    }
+                    default ->
+                        throw new IllegalStateException("Unexpected chunk size for chunked write: " + chunkSize);
+                }
+                // read from segment
+                emitLoad(MemorySegment.class, readAddrIdx);
+                Class<?> valueLayoutType = emitLoadLayoutConstant(chunkType);
+                String descriptor = methodType(chunkType, valueLayoutType, long.class).descriptorString();
+                long readOffset = offset + SharedUtils.pickChunkOffset(chunkOffset, byteWidth, chunkSize);
+                emitConst(readOffset);
+                emitInvokeInterface(MemorySegment.class, "get", descriptor);
+                emitInvokeStatic(toULongHolder, "toUnsignedLong", toULongDescriptor);
+
+                // shift to right offset
+                int shiftAmount = chunkOffset * Byte.SIZE;
+                if (shiftAmount != 0) {
+                    emitConst(shiftAmount);
+                    mv.visitInsn(LSHL);
+                }
+                // add to result
+                emitLoad(long.class, resultIdx);
+                mv.visitInsn(LOR);
+                emitStore(long.class, resultIdx);
+
+                remaining -= chunkSize;
+                chunkOffset += chunkSize;
+            } while (remaining != 0);
+
+            emitLoad(long.class, resultIdx);
+            if (loadType == int.class) {
+                mv.visitInsn(L2I);
+            } else {
+                assert loadType == long.class; // should not have chunking for other types
+            }
+        }
+
         pushType(loadType);
     }
 

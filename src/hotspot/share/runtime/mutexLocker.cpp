@@ -78,11 +78,11 @@ Mutex*   NonJavaThreadsListSync_lock  = nullptr;
 Monitor* CGC_lock                     = nullptr;
 Monitor* STS_lock                     = nullptr;
 Monitor* G1OldGCCount_lock            = nullptr;
+Mutex*   G1RareEvent_lock             = nullptr;
 Mutex*   G1DetachedRefinementStats_lock = nullptr;
 Mutex*   MarkStackFreeList_lock       = nullptr;
 Mutex*   MarkStackChunkList_lock      = nullptr;
 Mutex*   MonitoringSupport_lock       = nullptr;
-Mutex*   ParGCRareEvent_lock          = nullptr;
 Monitor* ConcurrentGCBreakpoints_lock = nullptr;
 Mutex*   Compile_lock                 = nullptr;
 Monitor* MethodCompileQueue_lock      = nullptr;
@@ -288,7 +288,7 @@ void mutex_init() {
 
   def(JvmtiThreadState_lock        , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
   def(EscapeBarrier_lock           , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
-  def(JvmtiVTMSTransition_lock     , PaddedMonitor, nosafepoint); // used for Virtual Thread Mount State transition management
+  def(JvmtiVTMSTransition_lock     , PaddedMonitor, safepoint);   // used for Virtual Thread Mount State transition management
   def(Management_lock              , PaddedMutex  , safepoint);   // used for JVM management
 
   def(ConcurrentGCBreakpoints_lock , PaddedMonitor, safepoint, true);
@@ -359,7 +359,7 @@ void mutex_init() {
 
   if (UseG1GC) {
     defl(G1OldGCCount_lock         , PaddedMonitor, Threads_lock, true);
-    defl(ParGCRareEvent_lock       , PaddedMutex  , Threads_lock, true);
+    defl(G1RareEvent_lock          , PaddedMutex  , Threads_lock, true);
   }
 
   defl(CompileTaskAlloc_lock       , PaddedMutex ,  MethodCompileQueue_lock);

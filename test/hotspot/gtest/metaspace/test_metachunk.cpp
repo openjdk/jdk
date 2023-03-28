@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,19 +81,6 @@ TEST_VM(metaspace, get_chunk_with_commit_limit) {
 
           // When should commit work? As long as min_committed_words is smaller than commit_limit_words.
           bool commit_should_work = min_committed_words <= commit_limit_words;
-
-          // Exception: MetaspaceReclaimPolicy=none. Here, chunks are fully committed from the get go and
-          // min_committed_words is effectively ignored. So commit would fail if the chunk is larger than
-          // the commit limit. Unfortunately, the chunk size is difficult to predict (it will be between
-          // [pref_lvl, max_lvl]. To make matters simple, we skip the test if we don't know the level for
-          // sure.
-          if (Settings::new_chunks_are_fully_committed()) {
-            if (pref_lvl == max_lvl) {
-              commit_should_work = word_size_for_level(max_lvl) <= commit_limit_words;
-            } else {
-              continue;
-            }
-          }
 
           // printf("commit_limit: " SIZE_FORMAT ", min_committed_words: " SIZE_FORMAT
           //       ", max chunk level: " CHKLVL_FORMAT ", preferred chunk level: " CHKLVL_FORMAT ", should work: %d\n",
@@ -241,11 +228,6 @@ TEST_VM(metaspace, chunk_buddy_stuff) {
 }
 
 TEST_VM(metaspace, chunk_allocate_with_commit_limit) {
-
-  // This test does not make sense if commit-on-demand is off
-  if (Settings::new_chunks_are_fully_committed()) {
-    return;
-  }
 
   const size_t granule_sz = Settings::commit_granule_words();
   const size_t commit_limit = granule_sz * 3;

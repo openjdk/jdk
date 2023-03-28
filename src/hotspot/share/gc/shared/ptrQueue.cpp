@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
 PtrQueue::PtrQueue(PtrQueueSet* qset) :
   _index(0),
   _capacity_in_bytes(index_to_byte_index(qset->buffer_size())),
-  _buf(NULL)
+  _buf(nullptr)
 {}
 
 PtrQueue::~PtrQueue() {
-  assert(_buf == NULL, "queue must be flushed before delete");
+  assert(_buf == nullptr, "queue must be flushed before delete");
 }
 
 BufferNode::AllocatorConfig::AllocatorConfig(size_t size) : _buffer_size(size) {}
@@ -66,8 +66,8 @@ BufferNode* BufferNode::Allocator::allocate() {
 }
 
 void BufferNode::Allocator::release(BufferNode* node) {
-  assert(node != NULL, "precondition");
-  assert(node->next() == NULL, "precondition");
+  assert(node != nullptr, "precondition");
+  assert(node->next() == nullptr, "precondition");
   node->~BufferNode();
   _free_list.release(node);
 }

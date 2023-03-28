@@ -233,6 +233,12 @@ public class MethodHandles {
      * <p>
      * The resulting {@code Lookup} object has no {@code ORIGINAL} access.
      *
+     * @apiNote The {@code Lookup} object returned by this method is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
+     * of {@code targetClass}. Extreme caution should be taken when opening a package
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code targetClass}'s module.
+     *
      * @param targetClass the target class
      * @param caller the caller lookup object
      * @return a lookup object for the target class, with private access
@@ -851,7 +857,7 @@ public class MethodHandles {
      * <p>
      * {@link MethodHandles#privateLookupIn(Class, Lookup) MethodHandles.privateLookupIn(T.class, lookup)}
      * can be used to teleport a {@code lookup} from class {@code C} to class {@code T}
-     * and create a new {@code Lookup} with <a href="#privacc">private access</a>
+     * and produce a new {@code Lookup} with <a href="#privacc">private access</a>
      * if the lookup class is allowed to do <em>deep reflection</em> on {@code T}.
      * The {@code lookup} must have {@link #MODULE} and {@link #PRIVATE} access
      * to call {@code privateLookupIn}.
@@ -869,6 +875,12 @@ public class MethodHandles {
      * it cannot be used to obtain another private {@code Lookup} by calling
      * {@link MethodHandles#privateLookupIn(Class, Lookup) privateLookupIn}
      * because it has no {@code MODULE} access.
+     * <p>
+     * The {@code Lookup} object returned by {@code privateLookupIn} is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
+     * of {@code T}. Extreme caution should be taken when opening a package
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code M2}.
      *
      * <h2><a id="module-access-check"></a>Cross-module access checks</h2>
      *
@@ -2321,7 +2333,7 @@ public class MethodHandles {
          * before calling this factory method.
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeClassDefiner(byte[] bytes) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
@@ -2339,7 +2351,7 @@ public class MethodHandles {
          * @return ClassDefiner that defines a hidden class of the given bytes.
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
@@ -2360,7 +2372,7 @@ public class MethodHandles {
          * @return ClassDefiner that defines a hidden class of the given bytes and options
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes,
                                             Set<ClassOption> options,
@@ -5170,7 +5182,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @return a method handle which inserts an additional argument,
      *         before calling the original method handle
      * @throws NullPointerException if the target or the {@code values} array is null
-     * @throws IllegalArgumentException if (@code pos) is less than {@code 0} or greater than
+     * @throws IllegalArgumentException if {@code pos} is less than {@code 0} or greater than
      *         {@code N - L} where {@code N} is the arity of the target method handle and {@code L}
      *         is the length of the values array.
      * @throws ClassCastException if an argument does not match the corresponding bound parameter

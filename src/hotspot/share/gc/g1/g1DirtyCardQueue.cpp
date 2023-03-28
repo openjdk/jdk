@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -556,36 +556,10 @@ void G1DirtyCardQueueSet::abandon_logs_and_stats() {
   _detached_refinement_stats.reset();
 }
 
-void G1DirtyCardQueueSet::concatenate_logs_and_stats() {
+void G1DirtyCardQueueSet::update_refinement_stats(G1ConcurrentRefineStats& stats) {
   assert_at_safepoint();
 
-  // Disable mutator refinement until concurrent refinement decides otherwise.
-  set_mutator_refinement_threshold(SIZE_MAX);
-
-  // Iterate over all the threads, if we find a partial log add it to
-  // the global list of logs.
-  struct ConcatenateThreadLogClosure : public ThreadClosure {
-    G1DirtyCardQueueSet& _qset;
-    G1ConcurrentRefineStats _total_stats;
-
-    ConcatenateThreadLogClosure(G1DirtyCardQueueSet& qset) :
-      _qset{qset}, _total_stats{} {}
-
-    virtual void do_thread(Thread* t) {
-      G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
-      // Flush the buffer if non-empty.  Flush before accumulating and
-      // resetting stats, since flushing may modify the stats.
-      if ((queue.buffer() != nullptr) &&
-          (queue.index() != _qset.buffer_size())) {
-        _qset.flush_queue(queue);
-      }
-      G1ConcurrentRefineStats& qstats = *queue.refinement_stats();
-      _total_stats += qstats;
-      qstats.reset();
-    }
-  } closure(*this);
-  Threads::threads_do(&closure);
-  _concatenated_refinement_stats = closure._total_stats;
+  _concatenated_refinement_stats = stats;
 
   enqueue_all_paused_buffers();
   verify_num_cards();
@@ -594,6 +568,22 @@ void G1DirtyCardQueueSet::concatenate_logs_and_stats() {
   MutexLocker ml(G1DetachedRefinementStats_lock, Mutex::_no_safepoint_check_flag);
   _concatenated_refinement_stats += _detached_refinement_stats;
   _detached_refinement_stats.reset();
+}
+
+G1ConcurrentRefineStats G1DirtyCardQueueSet::concatenate_log_and_stats(Thread* thread) {
+  assert_at_safepoint();
+
+  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
+  // Flush the buffer if non-empty.  Flush before accumulating and
+  // resetting stats, since flushing may modify the stats.
+  if ((queue.buffer() != nullptr) &&
+    (queue.index() != buffer_size())) {
+    flush_queue(queue);
+  }
+
+  G1ConcurrentRefineStats result = *queue.refinement_stats();
+  queue.refinement_stats()->reset();
+  return result;
 }
 
 G1ConcurrentRefineStats G1DirtyCardQueueSet::concatenated_refinement_stats() const {

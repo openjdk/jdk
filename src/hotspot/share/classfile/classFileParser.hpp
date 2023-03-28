@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ class ClassFileParser {
 
   // Metadata created before the instance klass is created.  Must be deallocated
   // if not transferred to the InstanceKlass upon successful class loading
-  // in which case these pointers have been set to NULL.
+  // in which case these pointers have been set to null.
   const InstanceKlass* _super_klass;
   ConstantPool* _cp;
   Array<u2>* _fields;

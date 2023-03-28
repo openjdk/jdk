@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8291769
+ * @bug 8291769 8301858
  * @summary Verify more complex switches work properly
  * @compile --enable-preview -source ${jdk.version} DeconstructionDesugaring.java
  * @run main/othervm --enable-preview DeconstructionDesugaring
@@ -43,6 +43,8 @@ public class DeconstructionDesugaring {
         assertEquals(runCheckExpressionWithUnconditional(new R5(new R4(null))), 3);
         assertEquals(runCheckExpressionWithUnconditional1(new R5(new R4(null))), 2);
         assertEquals(runCheckExpressionWithUnconditional1(new R5(null)), 3);
+        assertEquals(runCheckExpressionWithUnconditionalAndParams(new R1(42)), 1);
+        assertEquals(runCheckExpressionWithUnconditionalAndParams(new R1(new Object())), 2);
     }
 
     private void test(ToIntFunction<Object> task) {
@@ -102,6 +104,17 @@ public class DeconstructionDesugaring {
             case R5(Object obj) -> 3;
         };
     }
+
+    public static int runCheckExpressionWithUnconditionalAndParams(R1 r) {
+        switch (r) {
+            case R1(Integer i):
+                return meth_I(i);
+            case R1(Object o):
+                return meth_O(o);
+        }
+    }
+    public static int meth_I(Integer i) { return 1; }
+    public static int meth_O(Object o) { return 2;}
 
     private void assertEquals(int expected, int actual) {
         if (expected != actual) {

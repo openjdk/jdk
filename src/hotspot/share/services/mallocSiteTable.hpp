@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  public:
 
   MallocSiteHashtableEntry(NativeCallStack stack, MEMFLAGS flags):
-    _malloc_site(stack, flags), _hash(stack.calculate_hash()), _next(NULL) {
+    _malloc_site(stack, flags), _hash(stack.calculate_hash()), _next(nullptr) {
     assert(flags != mtNone, "Expect a real memory type");
   }
 
@@ -133,7 +133,7 @@ class MallocSiteTable : AllStatic {
   // acquired before access the entry.
   static inline bool access_stack(NativeCallStack& stack, uint32_t marker) {
     MallocSite* site = malloc_site(marker);
-    if (site != NULL) {
+    if (site != nullptr) {
       stack = *site->call_stack();
       return true;
     }
@@ -149,15 +149,15 @@ class MallocSiteTable : AllStatic {
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
       uint32_t* marker, MEMFLAGS flags) {
     MallocSite* site = lookup_or_add(stack, marker, flags);
-    if (site != NULL) site->allocate(size);
-    return site != NULL;
+    if (site != nullptr) site->allocate(size);
+    return site != nullptr;
   }
 
   // Record memory deallocation. marker indicates where the allocation
   // information was recorded.
   static inline bool deallocation_at(size_t size, uint32_t marker) {
     MallocSite* site = malloc_site(marker);
-    if (site != NULL) {
+    if (site != nullptr) {
       site->deallocate(size);
       return true;
     }
@@ -181,12 +181,12 @@ class MallocSiteTable : AllStatic {
   }
 
   static inline const NativeCallStack* hash_entry_allocation_stack() {
-    assert(_hash_entry_allocation_stack != NULL, "Must be set");
+    assert(_hash_entry_allocation_stack != nullptr, "Must be set");
     return _hash_entry_allocation_stack;
   }
 
   static inline const MallocSiteHashtableEntry* hash_entry_allocation_site() {
-    assert(_hash_entry_allocation_site != NULL, "Must be set");
+    assert(_hash_entry_allocation_site != nullptr, "Must be set");
     return _hash_entry_allocation_site;
   }
 

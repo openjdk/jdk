@@ -573,8 +573,9 @@ public class TagletWriterImpl extends TagletWriter {
                 VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
                 overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
 
-                if (overriddenMethod != null)
+                if (overriddenMethod != null) {
                     containing = utils.getEnclosingTypeElement(overriddenMethod);
+                }
             }
             if (refSignature.trim().startsWith("#") &&
                     ! (utils.isPublic(containing) || utils.isLinkable(containing))) {

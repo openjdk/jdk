@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1063,7 +1063,6 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
 #define       badAddress        ((address)::badAddressVal)
-#define       badOop            (cast_to_oop(::badOopVal))
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
@@ -1236,7 +1235,22 @@ inline TYPE NAME (TYPE lhs, jint rhs) {                 \
 
 JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jint, juint)
 JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jlong, julong)
+
 // For signed shift right, assume C++ implementation >> sign extends.
+//
+// C++14 5.8/3: In the description of "E1 >> E2" it says "If E1 has a signed type
+// and a negative value, the resulting value is implementation-defined."
+//
+// However, C++20 7.6.7/3 further defines integral arithmetic, as part of
+// requiring two's-complement behavior.
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0907r3.html
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1236r1.html
+// The corresponding C++20 text is "Right-shift on signed integral types is an
+// arithmetic right shift, which performs sign-extension."
+//
+// As discussed in the two's complement proposal, all known modern C++ compilers
+// already behave that way. And it is unlikely any would go off and do something
+// different now, with C++20 tightening things up.
 JAVA_INTEGER_SHIFT_OP(>>, java_shift_right, jint, jint)
 JAVA_INTEGER_SHIFT_OP(>>, java_shift_right, jlong, jlong)
 // For >>> use C++ unsigned >>.
@@ -1266,6 +1280,38 @@ SATURATED_INTEGER_OP(+, saturated_add, uint, int)
 SATURATED_INTEGER_OP(+, saturated_add, uint, uint)
 
 #undef SATURATED_INTEGER_OP
+
+// Taken from rom section 8-2 of Henry S. Warren, Jr., Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
+inline uint64_t multiply_high_unsigned(const uint64_t x, const uint64_t y) {
+  const uint64_t x1 = x >> 32u;
+  const uint64_t x2 = x & 0xFFFFFFFF;
+  const uint64_t y1 = y >> 32u;
+  const uint64_t y2 = y & 0xFFFFFFFF;
+  const uint64_t z2 = x2 * y2;
+  const uint64_t t = x1 * y2 + (z2 >> 32u);
+  uint64_t z1 = t & 0xFFFFFFFF;
+  const uint64_t z0 = t >> 32u;
+  z1 += x2 * y1;
+
+  return x1 * y1 + z0 + (z1 >> 32u);
+}
+
+// Taken from java.lang.Math::multiplyHigh which uses the technique from section 8-2 of Henry S. Warren, Jr.,
+// Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174 but adapted for signed longs.
+inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
+  const jlong x1 = java_shift_right((jlong)x, 32);
+  const jlong x2 = x & 0xFFFFFFFF;
+  const jlong y1 = java_shift_right((jlong)y, 32);
+  const jlong y2 = y & 0xFFFFFFFF;
+
+  const uint64_t z2 = x2 * y2;
+  const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
+  int64_t z1 = t & 0xFFFFFFFF;
+  const int64_t z0 = java_shift_right((jlong)t, 32);
+  z1 += x2 * y1;
+
+  return x1 * y1 + z0 + java_shift_right((jlong)z1, 32);
+}
 
 // Dereference vptr
 // All C++ compilers that we know of have the vtbl pointer in the first

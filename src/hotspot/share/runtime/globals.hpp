@@ -1109,7 +1109,7 @@ const int ObjectAlignmentInBytes = 8;
   product_pd(bool, CompactStrings,                                          \
           "Enable Strings to use single byte chars in backing store")       \
                                                                             \
-  product_pd(uintx, TypeProfileLevel,                                       \
+  product_pd(uint, TypeProfileLevel,                                        \
           "=XYZ, with Z: Type profiling of arguments at call; "             \
                      "Y: Type profiling of return value at call; "          \
                      "X: Type profiling of parameters to methods; "         \
@@ -1186,9 +1186,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, VerifyFPU, false,                                           \
           "Verify FPU state (check for NaN's, etc.)")                       \
                                                                             \
-  develop(bool, VerifyThread, false,                                        \
-          "Watch the thread register for corruption (SPARC only)")          \
-                                                                            \
   develop(bool, VerifyActivationFrameSize, false,                           \
           "Verify that activation frame didn't become smaller than its "    \
           "minimal size")                                                   \
@@ -1197,7 +1194,7 @@ const int ObjectAlignmentInBytes = 8;
           "Trace frequency based inlining")                                 \
                                                                             \
   develop_pd(bool, InlineIntrinsics,                                        \
-          "Inline intrinsics that can be statically resolved")              \
+          "Use intrinsics in Interpreter that can be statically resolved")  \
                                                                             \
   product_pd(bool, ProfileInterpreter,                                      \
           "Profile at the bytecode level during interpretation")            \
@@ -1311,9 +1308,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
                                                                             \
-  notproduct(ccstrlist, SuppressErrorAt, "",                                \
-          "List of assertions (file:line) to muzzle")                       \
-                                                                            \
   develop(intx, StackPrintLimit, 100,                                       \
           "number of stack frames to print in VM-level stack dump")         \
                                                                             \
@@ -1344,20 +1338,22 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(intx, ZombieALotInterval,     5,                               \
           "Number of exits until ZombieALot kicks in")                      \
                                                                             \
-  product(uintx, MallocMaxTestWords,     0, DIAGNOSTIC,                     \
-          "If non-zero, maximum number of words that malloc/realloc can "   \
-          "allocate (for testing only)")                                    \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(ccstr, MallocLimit, nullptr, DIAGNOSTIC,                          \
-          "Limit malloc allocation size from VM. Reaching the limit will "  \
-          "trigger a fatal error. This feature requires "                   \
+          "Limit malloc allocation size from VM. Reaching a limit will "    \
+          "trigger an action (see flag). This feature requires "            \
           "NativeMemoryTracking=summary or NativeMemoryTracking=detail."    \
           "Usage:"                                                          \
-          "- MallocLimit=<size> to set a total limit. "                     \
-          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...] " \
-          "  to set one or more category-specific limits."                  \
-          "Example: -XX:MallocLimit=compiler:500m")                         \
+          "\"-XX:MallocLimit=<size>[:<flag>]\" sets a total limit."         \
+          "\"-XX:MallocLimit=<category>:<size>[:<flag>][,<category>:<size>[:<flag>] ...]\"" \
+          "sets one or more category-specific limits."                      \
+          "<flag> defines the action upon reaching the limit:"              \
+          "\"fatal\": end VM with a fatal error at the allocation site"     \
+          "\"oom\"  : will mimic a native OOM"                              \
+          "If <flag> is omitted, \"fatal\" is the default."                 \
+          "Examples:\n"                                                     \
+          "-XX:MallocLimit=2g"                                              \
+          "-XX:MallocLimit=2g:oom"                                          \
+          "-XX:MallocLimit=compiler:200m:oom,code:100m")                    \
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
@@ -1423,8 +1419,8 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
-  product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
-          "options: balanced, aggressive, none")                            \
+  product(ccstr, MetaspaceReclaimPolicy, "balanced", DIAGNOSTIC,            \
+          "options: balanced, aggressive")                                  \
                                                                             \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
@@ -1889,7 +1885,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(size_t, ArrayAllocatorMallocLimit, (size_t)-1, EXPERIMENTAL,      \
+  product(size_t, ArrayAllocatorMallocLimit, SIZE_MAX, EXPERIMENTAL,        \
           "Allocation less than this value will be allocated "              \
           "using malloc. Larger allocations will use mmap.")                \
                                                                             \

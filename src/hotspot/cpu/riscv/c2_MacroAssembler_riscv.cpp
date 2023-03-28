@@ -1617,10 +1617,10 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    bool is_double, bool is_min) {
+                                    bool is_double, bool is_min, int length_in_bytes) {
   assert_different_registers(dst, src1, src2);
 
-  vsetvli(t0, x0, is_double ? Assembler::e64 : Assembler::e32);
+  rvv_vsetvli(is_double ? T_DOUBLE : T_FLOAT, length_in_bytes);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);
@@ -1635,11 +1635,11 @@ void C2_MacroAssembler::minmax_FD_v(VectorRegister dst, VectorRegister src1, Vec
 void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min) {
+                                           bool is_double, bool is_min, int length_in_bytes) {
   assert_different_registers(src2, tmp1, tmp2);
 
   Label L_done, L_NaN;
-  vsetvli(t0, x0, is_double ? Assembler::e64 : Assembler::e32);
+  rvv_vsetvli(is_double ? T_DOUBLE : T_FLOAT, length_in_bytes);
   vfmv_s_f(tmp2, src1);
 
   is_min ? vfredmin_vs(tmp1, src2, tmp2)
@@ -1672,11 +1672,10 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
 
 void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
                                             Register src1, VectorRegister src2,
-                                            BasicType bt, int opc) {
+                                            BasicType bt, int opc, int length_in_bytes) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
 
-  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-  vsetvli(t0, x0, sew);
+  rvv_vsetvli(bt, length_in_bytes);
 
   vmv_s_x(tmp, src1);
 
@@ -1705,4 +1704,21 @@ void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
   }
 
   vmv_x_s(dst, tmp);
+}
+
+// Set vl and vtype for full and partial vector operations.
+// (vlmul = m1, vma = mu, vta = tu, vill = false)
+void C2_MacroAssembler::rvv_vsetvli(BasicType bt, int length_in_bytes, Register tmp) {
+  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+  if (length_in_bytes == MaxVectorSize) {
+    vsetvli(tmp, x0, sew);
+  } else {
+    int num_elements = length_in_bytes / type2aelembytes(bt);
+    if (num_elements <= 31) {
+      vsetivli(tmp, num_elements, sew);
+    } else {
+      mv(tmp, num_elements);
+      vsetvli(tmp, tmp, sew);
+    }
+  }
 }

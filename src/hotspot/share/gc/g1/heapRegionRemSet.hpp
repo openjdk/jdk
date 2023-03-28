@@ -55,9 +55,6 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
-  // Split the given address into region of that card and the card within that
-  // region.
-  inline void split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const;
   void clear_fcc();
 
 public:
