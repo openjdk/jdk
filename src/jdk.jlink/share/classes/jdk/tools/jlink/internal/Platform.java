@@ -47,18 +47,7 @@ public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianne
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
         }
-        Properties endianness = new Properties();
-        for (String key : p.stringPropertyNames()) {
-            if (key.endsWith(ENDIANNESS_KEY_SUFFIX)) {
-                String val = p.getProperty(key);
-                String platform = key.substring(0, key.indexOf(ENDIANNESS_KEY_SUFFIX));
-                if (platform.isEmpty()) {
-                    throw new InternalError("Incorrect key '" + key + "'");
-                }
-                endianness.put(platform, val);
-            }
-        }
-        KNOWN_ENDIANNESS = endianness;
+        KNOWN_ENDIANNESS = p;
     }
 
     public enum OperatingSystem {
@@ -109,7 +98,7 @@ public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianne
         }
         // map the endianness from target.properties
         // until ModuleTarget attribute is extended to include the endianness
-        String v = KNOWN_ENDIANNESS.getProperty(platformString);
+        String v = KNOWN_ENDIANNESS.getProperty(platformString + ENDIANNESS_KEY_SUFFIX);
         ByteOrder endian = switch (v.trim().toLowerCase(Locale.ROOT)) {
             case "little" -> ByteOrder.LITTLE_ENDIAN;
             case "big" -> ByteOrder.BIG_ENDIAN;
