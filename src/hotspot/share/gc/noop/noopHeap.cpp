@@ -77,20 +77,30 @@ jint NoopHeap::initialize() {
 
     initialize_reserved_region(heap_rs);
 
-    _space = new ContiguousSpace();
-    _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
-
-    _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(NoopMaxTLABSize / HeapWordSize));
-
     // Mark bitmap reserve and initialization(No large page)
     size_t heap_size = heap_rs.size();
     size_t bitmap_size = MarkBitMap::compute_size(heap_size);
+    
     ReservedSpace bitmap_space(bitmap_size);
 
     _bitmap_region = MemRegion((HeapWord*) (bitmap_space.base()),
 			bitmap_space.size() / HeapWordSize);
 
     _mark_bitmap.initialize(committed_region, _bitmap_region);
+
+    // Mark bitmap reserve and initialization(No large page)
+    ReservedSpace bitmap_space(bitmap_size);
+
+    _fc_bitmap_region = MemRegion((HeapWord*) (bitmap_space.base()),
+			bitmap_space.size() / HeapWordSize);
+
+    _free_chunk_bitmap.initialize(committed_region, _fc_bitmap_region);
+
+    //Initialize space
+    _space = new ContiguousSpace();
+    _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
+
+    _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(NoopMaxTLABSize / HeapWordSize));
 
     // Install barrier set
     BarrierSet::set_barrier_set(new NoopBarrierSet());

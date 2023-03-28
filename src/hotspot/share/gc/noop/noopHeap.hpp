@@ -41,13 +41,23 @@ private:
     ContiguousSpace* _space;
     VirtualSpace _virtual_space;
     size_t _max_tlab_size;
+
+    //Free lists
+
+    //Stats
     size_t _step_counter_update;
     size_t _step_heap_print;
     int64_t _decay_time_ns;
     volatile size_t _last_counter_update;
     volatile size_t _last_heap_print;
-    MarkBitMap _mark_bitmap;
+
+    //Mark bitmap
+    MarkBitMap* _mark_bitmap;
     MemRegion _bitmap_region;
+
+    //FreeChunkBitmap
+    MarkBitMap* _free_chunk_bitmap;
+    MemRegion _fc_bitmap_region;
 
     void prologue();
     void mark();
