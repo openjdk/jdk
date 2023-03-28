@@ -629,7 +629,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
      * Determines if {@code name} or {@code method} are matched by
      * {@link Option#DumpSerializedCode}.
      *
-     * @returns the matched value or null if no match was made
+     * @return the matched value or null if no match was made
      */
     private static String shouldDump(String name, HotSpotCompiledNmethod nmethod) {
         String filter = Option.DumpSerializedCode.getString();

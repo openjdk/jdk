@@ -133,6 +133,7 @@ public class Check {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Check(Context context) {
         context.put(checkKey, this);
 
@@ -2445,7 +2446,7 @@ public class Check {
      *
      *  @param pos      Position to be used for error reporting.
      *  @param t        The type referred to.
-     *  @returns        True if the check completed on all attributed classes
+     *  @return        True if the check completed on all attributed classes
      */
     private boolean checkNonCyclicInternal(DiagnosticPosition pos, Type t) {
         boolean complete = true; // was the check complete?

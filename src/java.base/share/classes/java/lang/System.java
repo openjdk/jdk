@@ -2663,6 +2663,10 @@ public final class System {
                                                       Continuation continuation) {
                 return StackWalker.newInstance(options, null, contScope, continuation);
             }
+
+            public String getLoaderNameID(ClassLoader loader) {
+                return loader.nameAndId();
+            }
         });
     }
 }
