@@ -599,7 +599,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
   testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
-  jccb(Assembler::notZero, IsInflated);
+  jcc(Assembler::notZero, IsInflated);
 
   if (!UseHeavyMonitors) {
     if (UseFastLocking) {
@@ -770,12 +770,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));   // Examine the object's markword
   if (!UseHeavyMonitors) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
-#if INCLUDE_RTM_OPT
-    if (UseFastLocking && use_rtm) {
-      jcc(Assembler::zero, Stacked);
-    } else
-#endif
-    jccb(Assembler::zero, Stacked);
+    jcc(Assembler::zero, Stacked);
     if (UseFastLocking) {
       // If the owner is ANONYMOUS, we need to fix it -  in an outline stub.
       testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) (intptr_t) ANONYMOUS_OWNER);
