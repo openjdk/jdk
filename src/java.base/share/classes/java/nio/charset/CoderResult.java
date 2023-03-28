@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,9 +251,6 @@ public class CoderResult {
     /**
      * Throws an exception appropriate to the result described by this object.
      *
-     * @implNote The default implementation does not throw a
-     *          {@code CharacterCodingException}.
-     *
      * @throws  BufferUnderflowException
      *          If this object is {@link #UNDERFLOW}
      *
@@ -269,8 +266,9 @@ public class CoderResult {
      *          exception's length value will be that of this object
      *
      * @throws  CharacterCodingException
-     *          If this object represents a character-coding error other
-     *          than a malformed-input or an unmappable-character error
+     *          {@code MalformedInputException} if this object represents a
+     *          malformed-input error; {@code UnmappableCharacterException}
+     *          if this object represents an unmappable-character error
      */
     public void throwException()
         throws CharacterCodingException

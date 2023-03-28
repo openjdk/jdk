@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -793,9 +793,13 @@ public abstract class Charset$Coder$ {
      *          CodingErrorAction#REPORT}
      *
      * @throws  CharacterCodingException
-     *          If an error other than {@code MalformedInputException} or
-     *          {@code UnmappableCharacterException} occurs during the $coding$
-     *          operation
+     *          {@code MalformedInputException} if the $itype$ sequence starting at the
+     *          input buffer's current position is $notLegal$ and the current
+     *          malformed-input action is {@code CodingErrorAction.REPORT};
+     *          {@code UnmappableCharacterException} if the $itype$ sequence starting at
+     *          the input buffer's current position cannot be mapped to an
+     *          equivalent $otype$ sequence and the current unmappable-character
+     *          action is {@code CodingErrorAction.REPORT}
      */
     public final $Otype$Buffer $code$($Itype$Buffer in)
         throws CharacterCodingException
