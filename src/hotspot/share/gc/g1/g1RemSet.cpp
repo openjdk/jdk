@@ -253,9 +253,7 @@ private:
 
         for (uint i = next; i < max; i++) {
           HeapRegion* r = _g1h->region_at(_regions->at(i));
-          if (!r->is_survivor()) {
-            r->clear_cardtable();
-          }
+          r->clear_cardtable();
         }
       }
     }

@@ -43,14 +43,14 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
   assert(is_vector(ik), "not a vector");
 
   ciField* fd1 = ik->get_field_by_name(ciSymbols::ETYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
-  assert(fd1 != NULL, "element type info is missing");
+  assert(fd1 != nullptr, "element type info is missing");
 
   ciConstant val1 = fd1->constant_value();
   BasicType elem_bt = val1.as_object()->as_instance()->java_mirror_type()->basic_type();
   assert(is_java_primitive(elem_bt), "element type info is missing");
 
   ciField* fd2 = ik->get_field_by_name(ciSymbols::VLENGTH_name(), ciSymbols::int_signature(), /* is_static */ true);
-  assert(fd2 != NULL, "vector length info is missing");
+  assert(fd2 != nullptr, "vector length info is missing");
 
   ciConstant val2 = fd2->constant_value();
   assert(val2.as_int() > 0, "vector length info is missing");
@@ -164,10 +164,10 @@ Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType el
   assert(EnableVectorSupport, "");
   const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
   if (vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
-    return NULL; // arguments don't agree on vector shapes
+    return nullptr; // arguments don't agree on vector shapes
   }
   if (vbox_type_v->maybe_null()) {
-    return NULL; // no nulls are allowed
+    return nullptr; // no nulls are allowed
   }
   assert(check_vbox(vbox_type), "");
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
@@ -319,10 +319,10 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
 }
 
 static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
-  if (vec_klass->const_oop() == NULL) {
+  if (vec_klass->const_oop() == nullptr) {
     return false; // uninitialized or some kind of unsafe access
   }
-  assert(vec_klass->const_oop()->as_instance()->java_lang_Class_klass() != NULL, "klass instance expected");
+  assert(vec_klass->const_oop()->as_instance()->java_lang_Class_klass() != nullptr, "klass instance expected");
   ciInstanceKlass* klass =  vec_klass->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
   return klass->is_initialized();
 }
@@ -358,8 +358,8 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
-  if (opr == NULL || vector_klass == NULL || elem_klass == NULL || vlen == NULL ||
-      !opr->is_con() || vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (opr == nullptr || vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+      !opr->is_con() || vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -389,7 +389,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   const Type* vmask_type = gvn().type(argument(n + 5));
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
-    if (mask_klass == NULL || mask_klass->const_oop() == NULL) {
+    if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** missing constant: maskclass=%s", NodeClassNames[argument(2)->Opcode()]);
       }
@@ -481,11 +481,11 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     return false;
   }
 
-  Node* opd1 = NULL; Node* opd2 = NULL; Node* opd3 = NULL;
+  Node* opd1 = nullptr; Node* opd2 = nullptr; Node* opd3 = nullptr;
   switch (n) {
     case 3: {
       opd3 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
-      if (opd3 == NULL) {
+      if (opd3 == nullptr) {
         if (C->print_intrinsics()) {
           tty->print_cr("  ** unbox failed v3=%s",
                         NodeClassNames[argument(7)->Opcode()]);
@@ -496,7 +496,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
     case 2: {
       opd2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
-      if (opd2 == NULL) {
+      if (opd2 == nullptr) {
         if (C->print_intrinsics()) {
           tty->print_cr("  ** unbox failed v2=%s",
                         NodeClassNames[argument(6)->Opcode()]);
@@ -507,7 +507,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
     case 1: {
       opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
-      if (opd1 == NULL) {
+      if (opd1 == nullptr) {
         if (C->print_intrinsics()) {
           tty->print_cr("  ** unbox failed v1=%s",
                         NodeClassNames[argument(5)->Opcode()]);
@@ -519,13 +519,13 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     default: fatal("unsupported arity: %d", n);
   }
 
-  Node* mask = NULL;
+  Node* mask = nullptr;
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     assert(is_vector_mask(mbox_klass), "argument(2) should be a mask class");
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
     mask = unbox_vector(argument(n + 5), mbox_type, elem_bt, num_elem);
-    if (mask == NULL) {
+    if (mask == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed mask=%s",
                       NodeClassNames[argument(n + 5)->Opcode()]);
@@ -534,11 +534,11 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
   }
 
-  Node* operation = NULL;
+  Node* operation = nullptr;
   if (opc == Op_CallLeafVector) {
     assert(UseVectorStubs, "sanity");
     operation = gen_call_to_svml(opr->get_con(), elem_bt, num_elem, opd1, opd2);
-    if (operation == NULL) {
+    if (operation == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** svml call failed for %s_%s_%d",
                          (elem_bt == T_FLOAT)?"float":"double",
@@ -563,7 +563,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
     }
   }
 
-  if (is_masked_op && mask != NULL) {
+  if (is_masked_op && mask != nullptr) {
     if (use_predicate) {
       operation->add_req(mask);
       operation->add_flag(Node::Flag_is_predicated_vector);
@@ -595,11 +595,11 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   Node* start = argument(4);
   Node* step  = argument(5);
 
-  if (shuffle_klass == NULL || vlen == NULL || start_val == NULL || step_val == NULL || wrap == NULL) {
+  if (shuffle_klass == nullptr || vlen == nullptr || start_val == nullptr || step_val == nullptr || wrap == nullptr) {
     return false; // dead code
   }
   if (!vlen->is_con() || !is_power_of_2(vlen->get_con()) ||
-      shuffle_klass->const_oop() == NULL || !wrap->is_con()) {
+      shuffle_klass->const_oop() == nullptr || !wrap->is_con()) {
     return false; // not enough info for intrinsification
   }
   if (!is_klass_initialized(shuffle_klass)) {
@@ -689,7 +689,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
   const TypeInt*     vlen       = gvn().type(argument(3))->isa_int();
   Node*              mask       = argument(4);
 
-  if (mask_klass == NULL || elem_klass == NULL || mask->is_top() || vlen == NULL) {
+  if (mask_klass == nullptr || elem_klass == nullptr || mask->is_top() || vlen == nullptr) {
     return false; // dead code
   }
 
@@ -717,7 +717,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
   ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* mask_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
   Node* mask_vec = unbox_vector(mask, mask_box_type, elem_bt, num_elem, true);
-  if (mask_vec == NULL) {
+  if (mask_vec == nullptr) {
     if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed mask=%s",
                       NodeClassNames[argument(4)->Opcode()]);
@@ -725,7 +725,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
     return false;
   }
 
-  if (mask_vec->bottom_type()->isa_vectmask() == NULL) {
+  if (mask_vec->bottom_type()->isa_vectmask() == nullptr) {
     mask_vec = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
   }
   const Type* maskoper_ty = mopc == Op_VectorMaskToLong ? (const Type*)TypeLong::LONG : (const Type*)TypeInt::INT;
@@ -753,10 +753,10 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
   Node*              shuffle       = argument(3);
   const TypeInt*     vlen          = gvn().type(argument(4))->isa_int();
 
-  if (vector_klass == NULL || elem_klass == NULL || shuffle_klass == NULL || shuffle->is_top() || vlen == NULL) {
+  if (vector_klass == nullptr || elem_klass == nullptr || shuffle_klass == nullptr || shuffle->is_top() || vlen == nullptr) {
     return false; // dead code
   }
-  if (!vlen->is_con() || vector_klass->const_oop() == NULL || shuffle_klass->const_oop() == NULL) {
+  if (!vlen->is_con() || vector_klass->const_oop() == nullptr || shuffle_klass->const_oop() == nullptr) {
     return false; // not enough info for intrinsification
   }
   if (!is_klass_initialized(shuffle_klass) || !is_klass_initialized(vector_klass) ) {
@@ -821,8 +821,8 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   // MODE_BITS_COERCED_LONG_TO_MASK for VectorMask.fromLong operation.
   const TypeInt*     mode         = gvn().type(argument(5))->isa_int();
 
-  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || mode == NULL ||
-      bits_type == NULL || vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL ||
+  if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr || mode == nullptr ||
+      bits_type == nullptr || vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr ||
       !vlen->is_con() || !mode->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s bitwise=%s",
@@ -867,7 +867,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
     return false; // not supported
   }
 
-  Node* broadcast = NULL;
+  Node* broadcast = nullptr;
   Node* bits = argument(3);
   Node* elem = bits;
 
@@ -916,7 +916,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
 }
 
 static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_type) {
-  assert(arr_type != NULL, "unexpected");
+  assert(arr_type != nullptr, "unexpected");
   BasicType arr_elem_bt = arr_type->elem()->array_element_basic_type();
   if (elem_bt == arr_elem_bt) {
     return true;
@@ -955,8 +955,8 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
 
-  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL ||
-      vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+      vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -1016,15 +1016,15 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 
   const bool is_mixed_access = !in_heap && !in_native;
 
-  const bool is_mismatched_access = in_heap && (addr_type->isa_aryptr() == NULL);
+  const bool is_mismatched_access = in_heap && (addr_type->isa_aryptr() == nullptr);
 
   const bool needs_cpu_membar = is_mixed_access || is_mismatched_access;
 
   // Now handle special case where load/store happens from/to byte array but element type is not byte.
-  bool using_byte_array = arr_type != NULL && arr_type->elem()->array_element_basic_type() == T_BYTE && elem_bt != T_BYTE;
+  bool using_byte_array = arr_type != nullptr && arr_type->elem()->array_element_basic_type() == T_BYTE && elem_bt != T_BYTE;
   // Handle loading masks.
   // If there is no consistency between array and vector element types, it must be special byte array case or loading masks
-  if (arr_type != NULL && !using_byte_array && !is_mask && !elem_consistent_with_arr(elem_bt, arr_type)) {
+  if (arr_type != nullptr && !using_byte_array && !is_mask && !elem_consistent_with_arr(elem_bt, arr_type)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_store, is_store ? "store" : "load",
@@ -1073,7 +1073,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 
   if (is_store) {
     Node* val = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
-    if (val == NULL) {
+    if (val == nullptr) {
       set_map(old_map);
       set_sp(old_sp);
       return false; // operand unboxing failed
@@ -1094,7 +1094,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     set_memory(vstore, addr_type);
   } else {
     // When using byte array, we need to load as byte then reinterpret the value. Otherwise, do a simple vector load.
-    Node* vload = NULL;
+    Node* vload = nullptr;
     if (using_byte_array) {
       int load_num_elem = num_elem * type2aelembytes(elem_bt);
       vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, load_num_elem, T_BYTE));
@@ -1151,9 +1151,9 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
 
-  if (vector_klass == NULL || mask_klass == NULL || elem_klass == NULL || vlen == NULL ||
-      vector_klass->const_oop() == NULL || mask_klass->const_oop() == NULL ||
-      elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (vector_klass == nullptr || mask_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+      vector_klass->const_oop() == nullptr || mask_klass->const_oop() == nullptr ||
+      elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -1200,9 +1200,9 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
   // Now handle special case where load/store happens from/to byte array but element type is not byte.
-  bool using_byte_array = arr_type != NULL && arr_type->elem()->array_element_basic_type() == T_BYTE && elem_bt != T_BYTE;
+  bool using_byte_array = arr_type != nullptr && arr_type->elem()->array_element_basic_type() == T_BYTE && elem_bt != T_BYTE;
   // If there is no consistency between array and vector element types, it must be special byte array case
-  if (arr_type != NULL && !using_byte_array && !elem_consistent_with_arr(elem_bt, arr_type)) {
+  if (arr_type != nullptr && !using_byte_array && !elem_consistent_with_arr(elem_bt, arr_type)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s",
                     is_store, is_store ? "storeMasked" : "loadMasked",
@@ -1293,7 +1293,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     return false;
   }
 
-  // Can base be NULL? Otherwise, always on-heap access.
+  // Can base be null? Otherwise, always on-heap access.
   bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(gvn().type(base));
   if (can_access_non_heap) {
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -1306,7 +1306,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
 
   Node* mask = unbox_vector(is_store ? argument(8) : argument(7), mbox_type, elem_bt, num_elem);
-  if (mask == NULL) {
+  if (mask == nullptr) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** unbox failed mask=%s",
                     is_store ? NodeClassNames[argument(8)->Opcode()]
@@ -1319,7 +1319,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 
   if (is_store) {
     Node* val = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
-    if (val == NULL) {
+    if (val == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed vector=%s",
                       NodeClassNames[argument(7)->Opcode()]);
@@ -1342,7 +1342,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     Node* vstore = gvn().transform(new StoreVectorMaskedNode(control(), memory(addr), addr, val, addr_type, mask));
     set_memory(vstore, addr_type);
   } else {
-    Node* vload = NULL;
+    Node* vload = nullptr;
 
     if (using_byte_array) {
       // Reinterpret the vector mask to byte type.
@@ -1413,8 +1413,8 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeInt*     vlen             = gvn().type(argument(3))->isa_int();
   const TypeInstPtr* vector_idx_klass = gvn().type(argument(4))->isa_instptr();
 
-  if (vector_klass == NULL || elem_klass == NULL || vector_idx_klass == NULL || vlen == NULL ||
-      vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || vector_idx_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (vector_klass == nullptr || elem_klass == nullptr || vector_idx_klass == nullptr || vlen == nullptr ||
+      vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || vector_idx_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s viclass=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -1446,7 +1446,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const Type* vmask_type = gvn().type(is_scatter ? argument(10) : argument(9));
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
-    if (mask_klass == NULL || mask_klass->const_oop() == NULL) {
+    if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** missing constant: maskclass=%s", NodeClassNames[argument(1)->Opcode()]);
       }
@@ -1512,7 +1512,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
   // The array must be consistent with vector type
-  if (arr_type == NULL || (arr_type != NULL && !elem_consistent_with_arr(elem_bt, arr_type))) {
+  if (arr_type == nullptr || (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type))) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_scatter, is_scatter ? "scatter" : "gather",
@@ -1526,7 +1526,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
   ciKlass* vbox_idx_klass = vector_idx_klass->const_oop()->as_instance()->java_lang_Class_klass();
-  if (vbox_idx_klass == NULL) {
+  if (vbox_idx_klass == nullptr) {
     set_map(old_map);
     set_sp(old_sp);
     return false;
@@ -1534,18 +1534,18 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
 
   const TypeInstPtr* vbox_idx_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_idx_klass);
   Node* index_vect = unbox_vector(argument(8), vbox_idx_type, T_INT, num_elem);
-  if (index_vect == NULL) {
+  if (index_vect == nullptr) {
     set_map(old_map);
     set_sp(old_sp);
     return false;
   }
 
-  Node* mask = NULL;
+  Node* mask = nullptr;
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
     mask = unbox_vector(is_scatter ? argument(10) : argument(9), mbox_type, elem_bt, num_elem);
-    if (mask == NULL) {
+    if (mask == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed mask=%s",
                     is_scatter ? NodeClassNames[argument(10)->Opcode()]
@@ -1560,23 +1560,23 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   if (is_scatter) {
     Node* val = unbox_vector(argument(9), vbox_type, elem_bt, num_elem);
-    if (val == NULL) {
+    if (val == nullptr) {
       set_map(old_map);
       set_sp(old_sp);
       return false; // operand unboxing failed
     }
     set_all_memory(reset_memory());
 
-    Node* vstore = NULL;
-    if (mask != NULL) {
+    Node* vstore = nullptr;
+    if (mask != nullptr) {
       vstore = gvn().transform(new StoreVectorScatterMaskedNode(control(), memory(addr), addr, addr_type, val, index_vect, mask));
     } else {
       vstore = gvn().transform(new StoreVectorScatterNode(control(), memory(addr), addr, addr_type, val, index_vect));
     }
     set_memory(vstore, addr_type);
   } else {
-    Node* vload = NULL;
-    if (mask != NULL) {
+    Node* vload = nullptr;
+    if (mask != nullptr) {
       vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_vect, mask));
     } else {
       vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_vect));
@@ -1605,8 +1605,8 @@ bool LibraryCallKit::inline_vector_reduction() {
   const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
-  if (opr == NULL || vector_klass == NULL || elem_klass == NULL || vlen == NULL ||
-      !opr->is_con() || vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (opr == nullptr || vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+      !opr->is_con() || vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -1633,7 +1633,7 @@ bool LibraryCallKit::inline_vector_reduction() {
   const Type* vmask_type = gvn().type(argument(6));
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
-    if (mask_klass == NULL || mask_klass->const_oop() == NULL) {
+    if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** missing constant: maskclass=%s", NodeClassNames[argument(2)->Opcode()]);
       }
@@ -1683,17 +1683,17 @@ bool LibraryCallKit::inline_vector_reduction() {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
   Node* opd = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
-  if (opd == NULL) {
+  if (opd == nullptr) {
     return false; // operand unboxing failed
   }
 
-  Node* mask = NULL;
+  Node* mask = nullptr;
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     assert(is_vector_mask(mbox_klass), "argument(2) should be a mask class");
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
     mask = unbox_vector(argument(6), mbox_type, elem_bt, num_elem);
-    if (mask == NULL) {
+    if (mask == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed mask=%s",
                       NodeClassNames[argument(6)->Opcode()]);
@@ -1703,24 +1703,24 @@ bool LibraryCallKit::inline_vector_reduction() {
   }
 
   Node* init = ReductionNode::make_reduction_input(gvn(), opc, elem_bt);
-  Node* value = NULL;
-  if (mask == NULL) {
+  Node* value = nullptr;
+  if (mask == nullptr) {
     assert(!is_masked_op, "Masked op needs the mask value never null");
-    value = ReductionNode::make(opc, NULL, init, opd, elem_bt);
+    value = ReductionNode::make(opc, nullptr, init, opd, elem_bt);
   } else {
     if (use_predicate) {
-      value = ReductionNode::make(opc, NULL, init, opd, elem_bt);
+      value = ReductionNode::make(opc, nullptr, init, opd, elem_bt);
       value->add_req(mask);
       value->add_flag(Node::Flag_is_predicated_vector);
     } else {
       Node* reduce_identity = gvn().transform(VectorNode::scalar2vector(init, num_elem, Type::get_const_basic_type(elem_bt)));
       value = gvn().transform(new VectorBlendNode(reduce_identity, opd, mask));
-      value = ReductionNode::make(opc, NULL, init, value, elem_bt);
+      value = ReductionNode::make(opc, nullptr, init, value, elem_bt);
     }
   }
   value = gvn().transform(value);
 
-  Node* bits = NULL;
+  Node* bits = nullptr;
   switch (elem_bt) {
     case T_BYTE:
     case T_SHORT:
@@ -1758,8 +1758,8 @@ bool LibraryCallKit::inline_vector_test() {
   const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
 
-  if (cond == NULL || vector_klass == NULL || elem_klass == NULL || vlen == NULL ||
-      !cond->is_con() || vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (cond == nullptr || vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+      !cond->is_con() || vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: cond=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -1805,7 +1805,7 @@ bool LibraryCallKit::inline_vector_test() {
   } else {
     opd2 = opd1;
   }
-  if (opd1 == NULL || opd2 == NULL) {
+  if (opd1 == nullptr || opd2 == nullptr) {
     return false; // operand unboxing failed
   }
 
@@ -1833,11 +1833,11 @@ bool LibraryCallKit::inline_vector_blend() {
   const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
 
-  if (mask_klass == NULL || vector_klass == NULL || elem_klass == NULL || vlen == NULL) {
+  if (mask_klass == nullptr || vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr) {
     return false; // dead code
   }
-  if (mask_klass->const_oop() == NULL || vector_klass->const_oop() == NULL ||
-      elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (mask_klass->const_oop() == nullptr || vector_klass->const_oop() == nullptr ||
+      elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -1881,7 +1881,7 @@ bool LibraryCallKit::inline_vector_blend() {
   Node* v2   = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   Node* mask = unbox_vector(argument(6), mbox_type, mask_bt, num_elem);
 
-  if (v1 == NULL || v2 == NULL || mask == NULL) {
+  if (v1 == nullptr || v2 == nullptr || mask == nullptr) {
     return false; // operand unboxing failed
   }
 
@@ -1907,11 +1907,11 @@ bool LibraryCallKit::inline_vector_compare() {
   const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
-  if (cond == NULL || vector_klass == NULL || mask_klass == NULL || elem_klass == NULL || vlen == NULL) {
+  if (cond == nullptr || vector_klass == nullptr || mask_klass == nullptr || elem_klass == nullptr || vlen == nullptr) {
     return false; // dead code
   }
-  if (!cond->is_con() || vector_klass->const_oop() == NULL || mask_klass->const_oop() == NULL ||
-      elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (!cond->is_con() || vector_klass->const_oop() == nullptr || mask_klass->const_oop() == nullptr ||
+      elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: cond=%s vclass=%s mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -1968,8 +1968,8 @@ bool LibraryCallKit::inline_vector_compare() {
   Node* v2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
 
   bool is_masked_op = argument(7)->bottom_type() != TypePtr::NULL_PTR;
-  Node* mask = is_masked_op ? unbox_vector(argument(7), mbox_type, elem_bt, num_elem) : NULL;
-  if (is_masked_op && mask == NULL) {
+  Node* mask = is_masked_op ? unbox_vector(argument(7), mbox_type, elem_bt, num_elem) : nullptr;
+  if (is_masked_op && mask == nullptr) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: mask = null arity=2 op=comp/%d vlen=%d etype=%s ismask=usestore is_masked_op=1",
                     cond->get_con(), num_elem, type2name(elem_bt));
@@ -1986,7 +1986,7 @@ bool LibraryCallKit::inline_vector_compare() {
     return false;
   }
 
-  if (v1 == NULL || v2 == NULL) {
+  if (v1 == nullptr || v2 == nullptr) {
     return false; // operand unboxing failed
   }
   BoolTest::mask pred = (BoolTest::mask)cond->get_con();
@@ -2028,12 +2028,12 @@ bool LibraryCallKit::inline_vector_rearrange() {
   const TypeInstPtr* elem_klass    = gvn().type(argument(3))->isa_instptr();
   const TypeInt*     vlen          = gvn().type(argument(4))->isa_int();
 
-  if (vector_klass == NULL  || shuffle_klass == NULL ||  elem_klass == NULL || vlen == NULL) {
+  if (vector_klass == nullptr  || shuffle_klass == nullptr ||  elem_klass == nullptr || vlen == nullptr) {
     return false; // dead code
   }
-  if (shuffle_klass->const_oop() == NULL ||
-      vector_klass->const_oop()  == NULL ||
-      elem_klass->const_oop()    == NULL ||
+  if (shuffle_klass->const_oop() == nullptr ||
+      vector_klass->const_oop()  == nullptr ||
+      elem_klass->const_oop()    == nullptr ||
       !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s sclass=%s etype=%s vlen=%s",
@@ -2073,8 +2073,8 @@ bool LibraryCallKit::inline_vector_rearrange() {
   bool is_masked_op = argument(7)->bottom_type() != TypePtr::NULL_PTR;
   bool use_predicate = is_masked_op;
   if (is_masked_op &&
-      (mask_klass == NULL ||
-       mask_klass->const_oop() == NULL ||
+      (mask_klass == nullptr ||
+       mask_klass->const_oop() == nullptr ||
        !is_klass_initialized(mask_klass))) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** mask_klass argument not initialized");
@@ -2103,16 +2103,16 @@ bool LibraryCallKit::inline_vector_rearrange() {
   Node* v1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   Node* shuffle = unbox_vector(argument(6), shbox_type, shuffle_bt, num_elem);
 
-  if (v1 == NULL || shuffle == NULL) {
+  if (v1 == nullptr || shuffle == nullptr) {
     return false; // operand unboxing failed
   }
 
-  Node* mask = NULL;
+  Node* mask = nullptr;
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
     mask = unbox_vector(argument(7), mbox_type, elem_bt, num_elem);
-    if (mask == NULL) {
+    if (mask == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=3 op=shuffle/rearrange vlen=%d etype=%s ismask=useload is_masked_op=1",
                       num_elem, type2name(elem_bt));
@@ -2143,9 +2143,9 @@ bool LibraryCallKit::inline_vector_rearrange() {
 }
 
 static address get_svml_address(int vop, int bits, BasicType bt, char* name_ptr, int name_len) {
-  address addr = NULL;
+  address addr = nullptr;
   assert(UseVectorStubs, "sanity");
-  assert(name_ptr != NULL, "unexpected");
+  assert(name_ptr != nullptr, "unexpected");
   assert((vop >= VectorSupport::VECTOR_OP_SVML_START) && (vop <= VectorSupport::VECTOR_OP_SVML_END), "unexpected");
   int op = vop - VectorSupport::VECTOR_OP_SVML_START;
 
@@ -2165,7 +2165,7 @@ static address get_svml_address(int vop, int bits, BasicType bt, char* name_ptr,
       break;
     default:
       snprintf(name_ptr, name_len, "invalid");
-      addr = NULL;
+      addr = nullptr;
       Unimplemented();
       break;
   }
@@ -2176,19 +2176,19 @@ static address get_svml_address(int vop, int bits, BasicType bt, char* name_ptr,
 Node* LibraryCallKit::gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2) {
   assert(UseVectorStubs, "sanity");
   assert(vector_api_op_id >= VectorSupport::VECTOR_OP_SVML_START && vector_api_op_id <= VectorSupport::VECTOR_OP_SVML_END, "need valid op id");
-  assert(opd1 != NULL, "must not be null");
+  assert(opd1 != nullptr, "must not be null");
   const TypeVect* vt = TypeVect::make(bt, num_elem);
-  const TypeFunc* call_type = OptoRuntime::Math_Vector_Vector_Type(opd2 != NULL ? 2 : 1, vt, vt);
+  const TypeFunc* call_type = OptoRuntime::Math_Vector_Vector_Type(opd2 != nullptr ? 2 : 1, vt, vt);
   char name[100] = "";
 
   // Get address for svml method.
   address addr = get_svml_address(vector_api_op_id, vt->length_in_bytes() * BitsPerByte, bt, name, 100);
 
-  if (addr == NULL) {
-    return NULL;
+  if (addr == nullptr) {
+    return nullptr;
   }
 
-  assert(name != NULL, "name must not be null");
+  assert(name[0] != '\0', "name must not be null");
   Node* operation = make_runtime_call(RC_VECTOR,
                                       call_type,
                                       addr,
@@ -2214,10 +2214,10 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
-  if (opr == NULL || vector_klass == NULL || elem_klass == NULL || vlen == NULL) {
+  if (opr == nullptr || vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr) {
     return false; // dead code
   }
-  if (!opr->is_con() || vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (!opr->is_con() || vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -2237,7 +2237,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   const Type* vmask_type = gvn().type(argument(7));
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
-    if (mask_klass == NULL || mask_klass->const_oop() == NULL) {
+    if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** missing constant: maskclass=%s", NodeClassNames[argument(2)->Opcode()]);
       }
@@ -2317,7 +2317,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   }
 
   Node* opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
-  Node* opd2 = NULL;
+  Node* opd2 = nullptr;
   if (is_shift) {
     opd2 = vector_shift_count(cnt, opc, elem_bt, num_elem);
   } else {
@@ -2332,16 +2332,16 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     }
   }
 
-  if (opd1 == NULL || opd2 == NULL) {
+  if (opd1 == nullptr || opd2 == nullptr) {
     return false;
   }
 
-  Node* mask = NULL;
+  Node* mask = nullptr;
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
     mask = unbox_vector(argument(7), mbox_type, elem_bt, num_elem);
-    if (mask == NULL) {
+    if (mask == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed mask=%s", NodeClassNames[argument(7)->Opcode()]);
       }
@@ -2350,7 +2350,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   }
 
   Node* operation = VectorNode::make(opc, opd1, opd2, num_elem, elem_bt);
-  if (is_masked_op && mask != NULL) {
+  if (is_masked_op && mask != nullptr) {
     if (use_predicate) {
       operation->add_req(mask);
       operation->add_flag(Node::Flag_is_predicated_vector);
@@ -2386,14 +2386,14 @@ bool LibraryCallKit::inline_vector_convert() {
   const TypeInstPtr* elem_klass_to     = gvn().type(argument(5))->isa_instptr();
   const TypeInt*     vlen_to           = gvn().type(argument(6))->isa_int();
 
-  if (opr == NULL ||
-      vector_klass_from == NULL || elem_klass_from == NULL || vlen_from == NULL ||
-      vector_klass_to   == NULL || elem_klass_to   == NULL || vlen_to   == NULL) {
+  if (opr == nullptr ||
+      vector_klass_from == nullptr || elem_klass_from == nullptr || vlen_from == nullptr ||
+      vector_klass_to   == nullptr || elem_klass_to   == nullptr || vlen_to   == nullptr) {
     return false; // dead code
   }
   if (!opr->is_con() ||
-      vector_klass_from->const_oop() == NULL || elem_klass_from->const_oop() == NULL || !vlen_from->is_con() ||
-      vector_klass_to->const_oop() == NULL || elem_klass_to->const_oop() == NULL || !vlen_to->is_con()) {
+      vector_klass_from->const_oop() == nullptr || elem_klass_from->const_oop() == nullptr || !vlen_from->is_con() ||
+      vector_klass_to->const_oop() == nullptr || elem_klass_to->const_oop() == nullptr || !vlen_to->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: opr=%s vclass_from=%s etype_from=%s vlen_from=%s vclass_to=%s etype_to=%s vlen_to=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -2477,7 +2477,7 @@ bool LibraryCallKit::inline_vector_convert() {
   const TypeInstPtr* vbox_type_from = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass_from);
 
   Node* opd1 = unbox_vector(argument(7), vbox_type_from, elem_bt_from, num_elem_from);
-  if (opd1 == NULL) {
+  if (opd1 == nullptr) {
     return false;
   }
 
@@ -2490,8 +2490,8 @@ bool LibraryCallKit::inline_vector_convert() {
   // where certain masks (depending on the species) are either propagated
   // through a vector or predicate register.
   if (is_mask &&
-      ((src_type->isa_vectmask() == NULL && dst_type->isa_vectmask()) ||
-       (dst_type->isa_vectmask() == NULL && src_type->isa_vectmask()))) {
+      ((src_type->isa_vectmask() == nullptr && dst_type->isa_vectmask()) ||
+       (dst_type->isa_vectmask() == nullptr && src_type->isa_vectmask()))) {
     return false;
   }
 
@@ -2591,10 +2591,10 @@ bool LibraryCallKit::inline_vector_insert() {
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
   const TypeInt*     idx          = gvn().type(argument(4))->isa_int();
 
-  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || idx == NULL) {
+  if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr || idx == nullptr) {
     return false; // dead code
   }
-  if (vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con() || !idx->is_con()) {
+  if (vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con() || !idx->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s idx=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -2631,12 +2631,12 @@ bool LibraryCallKit::inline_vector_insert() {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
   Node* opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
-  if (opd == NULL) {
+  if (opd == nullptr) {
     return false;
   }
 
   Node* insert_val = argument(5);
-  assert(gvn().type(insert_val)->isa_long() != NULL, "expected to be long");
+  assert(gvn().type(insert_val)->isa_long() != nullptr, "expected to be long");
 
   // Convert insert value back to its appropriate type.
   switch (elem_bt) {
@@ -2684,10 +2684,10 @@ bool LibraryCallKit::inline_vector_extract() {
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
   const TypeInt*     idx          = gvn().type(argument(4))->isa_int();
 
-  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || idx == NULL) {
+  if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr || idx == nullptr) {
     return false; // dead code
   }
-  if (vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con() || !idx->is_con()) {
+  if (vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con() || !idx->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s idx=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -2725,14 +2725,14 @@ bool LibraryCallKit::inline_vector_extract() {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
   Node* opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
-  if (opd == NULL) {
+  if (opd == nullptr) {
     return false;
   }
 
   ConINode* idx_con = gvn().intcon(idx->get_con())->as_ConI();
   Node* operation = gvn().transform(ExtractNode::make(opd, idx_con, elem_bt));
 
-  Node* bits = NULL;
+  Node* bits = nullptr;
   switch (elem_bt) {
     case T_BYTE:
     case T_SHORT:
@@ -2775,9 +2775,9 @@ bool LibraryCallKit::inline_vector_compress_expand() {
   const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
 
-  if (vector_klass == NULL || elem_klass == NULL || mask_klass == NULL || vlen == NULL ||
-      vector_klass->const_oop() == NULL || mask_klass->const_oop() == NULL ||
-      elem_klass->const_oop() == NULL || !vlen->is_con() || !opr->is_con()) {
+  if (vector_klass == nullptr || elem_klass == nullptr || mask_klass == nullptr || vlen == nullptr ||
+      vector_klass->const_oop() == nullptr || mask_klass->const_oop() == nullptr ||
+      elem_klass->const_oop() == nullptr || !vlen->is_con() || !opr->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: opr=%s vclass=%s mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -2816,13 +2816,13 @@ bool LibraryCallKit::inline_vector_compress_expand() {
     return false; // not supported
   }
 
-  Node* opd1 = NULL;
-  const TypeInstPtr* vbox_type = NULL;
+  Node* opd1 = nullptr;
+  const TypeInstPtr* vbox_type = nullptr;
   if (opc != Op_CompressM) {
     ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
     vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
     opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
-    if (opd1 == NULL) {
+    if (opd1 == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed vector=%s",
                       NodeClassNames[argument(5)->Opcode()]);
@@ -2836,7 +2836,7 @@ bool LibraryCallKit::inline_vector_compress_expand() {
   const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
 
   Node* mask = unbox_vector(argument(6), mbox_type, elem_bt, num_elem);
-  if (mask == NULL) {
+  if (mask == nullptr) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** unbox failed mask=%s",
                     NodeClassNames[argument(6)->Opcode()]);
@@ -2868,9 +2868,9 @@ bool LibraryCallKit::inline_index_vector() {
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
 
-  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL ||
-      vector_klass->const_oop() == NULL || !vlen->is_con() ||
-      elem_klass->const_oop() == NULL) {
+  if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+      vector_klass->const_oop() == nullptr || !vlen->is_con() ||
+      elem_klass->const_oop() == nullptr) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -2940,7 +2940,7 @@ bool LibraryCallKit::inline_index_vector() {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
   Node* opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
-  if (opd == NULL) {
+  if (opd == nullptr) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** unbox failed vector=%s",
                     NodeClassNames[argument(3)->Opcode()]);
@@ -3018,8 +3018,8 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
 
-  if (mask_klass == NULL || elem_klass == NULL || vlen == NULL ||
-      mask_klass->const_oop() == NULL || elem_klass->const_oop() == NULL || !vlen->is_con()) {
+  if (mask_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+      mask_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -3075,9 +3075,9 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
 
   Node* offset = argument(3);
   Node* limit = argument(5);
-  if (offset == NULL || limit == NULL) {
+  if (offset == nullptr || limit == nullptr) {
     if (C->print_intrinsics()) {
-      tty->print_cr("  ** offset or limit argument is NULL");
+      tty->print_cr("  ** offset or limit argument is null");
     }
     return false; // not supported
   }
@@ -3089,7 +3089,7 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
   // We assume "offset > 0 && limit >= offset && limit - offset < num_elem".
   // So directly get indexLimit with "indexLimit = limit - offset".
   Node* indexLimit = gvn().transform(new SubLNode(limit, offset));
-  Node* mask = NULL;
+  Node* mask = nullptr;
   if (supports_mask_gen) {
     mask = gvn().transform(VectorMaskGenNode::make(indexLimit, elem_bt, num_elem));
   } else {

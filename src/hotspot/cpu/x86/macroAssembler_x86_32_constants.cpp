@@ -25,29 +25,29 @@
 #include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 
-ATTRIBUTE_ALIGNED(16) juint _ONES[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _ONES[] = {
     0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0xbff00000UL
 };
 address MacroAssembler::ONES = (address)_ONES;
 
-ATTRIBUTE_ALIGNED(16) juint _PI4_INV[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _PI4_INV[] = {
     0x6dc9c883UL, 0x3ff45f30UL
 };
 address MacroAssembler::PI4_INV = (address)_PI4_INV;
 
-ATTRIBUTE_ALIGNED(16) juint _PI4X3[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _PI4X3[] = {
     0x54443000UL, 0xbfe921fbUL, 0x3b39a000UL, 0x3d373dcbUL, 0xe0e68948UL,
     0xba845c06UL
 };
 address MacroAssembler::PI4X3 = (address)_PI4X3;
 
-ATTRIBUTE_ALIGNED(16) juint _PI4X4[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _PI4X4[] = {
     0x54400000UL, 0xbfe921fbUL, 0x1a600000UL, 0xbdc0b461UL, 0x2e000000UL,
     0xbb93198aUL, 0x252049c1UL, 0xb96b839aUL
 };
 address MacroAssembler::PI4X4 = (address)_PI4X4;
 
-ATTRIBUTE_ALIGNED(16) juint _L_2IL0FLOATPACKET_0[] = {
+ATTRIBUTE_ALIGNED(16) static const juint _L_2IL0FLOATPACKET_0[] = {
     0xffffffffUL, 0x7fffffffUL, 0x00000000UL, 0x00000000UL
 };
 address MacroAssembler::L_2IL0FLOATPACKET_0 = (address)_L_2IL0FLOATPACKET_0;
