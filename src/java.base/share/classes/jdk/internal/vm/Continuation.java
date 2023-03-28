@@ -30,8 +30,6 @@ import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.action.GetPropertyAction;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -44,6 +42,7 @@ import jdk.internal.vm.annotation.Hidden;
  */
 public class Continuation {
     private static final Unsafe U = Unsafe.getUnsafe();
+    private static final long MOUNTED_OFFSET = U.objectFieldOffset(Continuation.class, "mounted");
     private static final boolean PRESERVE_SCOPED_VALUE_CACHE;
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static {
@@ -54,8 +53,6 @@ public class Continuation {
         String value = GetPropertyAction.privilegedGetProperty("jdk.preserveScopedValueCache");
         PRESERVE_SCOPED_VALUE_CACHE = (value == null) || Boolean.parseBoolean(value);
     }
-
-    private static final VarHandle MOUNTED;
 
     /** Reason for pinning */
     public enum Pinned {
@@ -101,9 +98,6 @@ public class Continuation {
 
             // init Pinned to avoid classloading during mounting
             pinnedReason(2);
-
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            MOUNTED = l.findVarHandle(Continuation.class, "mounted", boolean.class);
         } catch (Exception e) {
             throw new InternalError(e);
         }
@@ -122,7 +116,7 @@ public class Continuation {
     private StackChunk tail;
 
     private boolean done;
-    private volatile boolean mounted = false;
+    private volatile boolean mounted;
     private Object yieldInfo;
     private boolean preempted;
 
@@ -462,9 +456,8 @@ public class Continuation {
     }
 
     private boolean compareAndSetMounted(boolean expectedValue, boolean newValue) {
-       boolean res = MOUNTED.compareAndSet(this, expectedValue, newValue);
-       return res;
-     }
+        return U.compareAndSetBoolean(this, MOUNTED_OFFSET, expectedValue, newValue);
+    }
 
     private void setMounted(boolean newValue) {
         mounted = newValue; // MOUNTED.setVolatile(this, newValue);
