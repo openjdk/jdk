@@ -2156,7 +2156,7 @@ public:
 
 #define INSN(NAME, funct3, op)                                                               \
   void NAME(int32_t offset) {                                                                \
-    assert(is_simm12(offset) && ((offset % 2) == 0), "just checking");                       \
+    assert(is_simm12(offset) && ((offset % 2) == 0), "invalid encoding");                    \
     uint16_t insn = 0;                                                                       \
     c_patch((address)&insn, 1, 0, op);                                                       \
     c_patch((address)&insn, 2, 2, (offset & nth_bit(5)) >> 5);                               \
@@ -2173,7 +2173,7 @@ public:
   void NAME(address dest) {                                                                  \
     assert_cond(dest != NULL);                                                               \
     int64_t distance = dest - pc();                                                          \
-    assert(is_simm12(distance) && ((distance % 2) == 0), "just checking");                   \
+    assert(is_simm12(distance) && ((distance % 2) == 0), "invalid encoding");                \
     c_j(distance);                                                                           \
   }                                                                                          \
   void NAME(Label &L) {                                                                      \
@@ -2186,7 +2186,7 @@ public:
 
 #define INSN(NAME, funct3, op)                                                               \
   void NAME(Register Rs1, int32_t imm) {                                                     \
-    assert(is_simm9(imm) && ((imm % 2) == 0), "just checking");                              \
+    assert(is_simm9(imm) && ((imm % 2) == 0), "invalid encoding");                           \
     uint16_t insn = 0;                                                                       \
     c_patch((address)&insn, 1, 0, op);                                                       \
     c_patch((address)&insn, 2, 2, (imm & nth_bit(5)) >> 5);                                  \
@@ -2201,7 +2201,7 @@ public:
   void NAME(Register Rs1, address dest) {                                                    \
     assert_cond(dest != NULL);                                                               \
     int64_t distance = dest - pc();                                                          \
-    assert(is_simm9(distance) && ((distance % 2) == 0), "just checking");                    \
+    assert(is_simm9(distance) && ((distance % 2) == 0), "invalid encoding");                 \
     NAME(Rs1, distance);                                                                     \
   }                                                                                          \
   void NAME(Register Rs1, Label &L) {                                                        \
