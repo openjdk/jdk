@@ -202,6 +202,7 @@ class SimpleHttpTransactionHandler implements HttpHandler
                 OutputStream os = trans.getResponseBody();
                 os.write(responseBody);
                 // now close the socket
+                // closing the stream here would throw; close the exchange instead
                 trans.close();
             }
         } catch (Exception e) {
