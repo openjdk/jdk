@@ -156,7 +156,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
   if (JvmtiExport::can_force_early_return()) {
     Label L;
     ld(t0, Address(xthread, JavaThread::jvmti_thread_state_offset()));
-    beqz(t0, L);  // if [thread->jvmti_thread_state() == null] then exit
+    beqz(t0, L);  // if thread->jvmti_thread_state() is null then exit
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
@@ -1319,19 +1319,19 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(
 //     row[0].incr()
 //     goto done
 //   ]
-//   if (row[0].rec != null) then [
+//   if (row[0].rec != nullptr) then [
 //     # inner copy of decision tree, rooted at row[1]
 //     if (row[1].rec == rec) then [
 //       row[1].incr()
 //       goto done
 //     ]
-//     if (row[1].rec != null) then [
+//     if (row[1].rec != nullptr) then [
 //       # degenerate decision tree, rooted at row[2]
 //       if (row[2].rec == rec) then [
 //         row[2].incr()
 //         goto done
 //       ]
-//       if (row[2].rec != null) then [
+//       if (row[2].rec != nullptr) then [
 //         count.incr()
 //         goto done
 //       ] # overflow

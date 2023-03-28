@@ -830,7 +830,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
   Label slow_path;
   const Register local_0 = c_rarg0;
-  // Check if local 0 != null
+  // Check if local 0 isn't null
   // If the receiver is null then it is OK to jump to the slow path.
   __ ld(local_0, Address(esp, 0));
   __ beqz(local_0, slow_path);

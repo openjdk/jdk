@@ -833,7 +833,7 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
 
 #define INSN(NAME, REGISTER)                                       \
   void MacroAssembler::NAME(const address dest, Register temp) {   \
-    assert_cond(dest != nullptr);                                     \
+    assert_cond(dest != nullptr);                                  \
     int64_t distance = dest - pc();                                \
     if (is_imm_in_range(distance, 20, 1)) {                        \
       Assembler::jal(REGISTER, distance);                          \
@@ -877,7 +877,7 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
 
 #define INSN(NAME)                                                                    \
   void MacroAssembler::NAME(Register Rd, const address dest, Register temp) {         \
-    assert_cond(dest != nullptr);                                                        \
+    assert_cond(dest != nullptr);                                                     \
     int64_t distance = dest - pc();                                                   \
     if (is_imm_in_range(distance, 20, 1)) {                                           \
       Assembler::NAME(Rd, distance);                                                  \
@@ -2022,13 +2022,13 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 
 void MacroAssembler::null_check(Register reg, int offset) {
   if (needs_explicit_null_check(offset)) {
-    // provoke OS null exception if reg = null by
+    // provoke OS null exception if reg is null by
     // accessing M[reg] w/o changing any registers
     // NOTE: this is plenty to provoke a segv
     ld(zr, Address(reg, 0));
   } else {
     // nothing to do, (later) access of M[reg + offset]
-    // will provoke OS null exception if reg = null
+    // will provoke OS null exception if reg is null
   }
 }
 

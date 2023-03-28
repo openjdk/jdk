@@ -2171,7 +2171,7 @@ public:
     emit_int16(insn);                                                                        \
   }                                                                                          \
   void NAME(address dest) {                                                                  \
-    assert_cond(dest != nullptr);                                                               \
+    assert_cond(dest != nullptr);                                                            \
     int64_t distance = dest - pc();                                                          \
     assert_cond(is_imm_in_range(distance, 11, 1));                                           \
     c_j(distance);                                                                           \
@@ -2199,7 +2199,7 @@ public:
     emit_int16(insn);                                                                        \
   }                                                                                          \
   void NAME(Register Rs1, address dest) {                                                    \
-    assert_cond(dest != nullptr);                                                               \
+    assert_cond(dest != nullptr);                                                            \
     int64_t distance = dest - pc();                                                          \
     assert_cond(is_imm_in_range(distance, 8, 1));                                            \
     NAME(Rs1, distance);                                                                     \

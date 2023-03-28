@@ -3601,8 +3601,8 @@ void TemplateTable::instanceof() {
     __ bind(is_null);   // same as 'done'
   }
   __ bind(done);
-  // x10 = 0: obj == null or  obj is not an instanceof the specified klass
-  // x10 = 1: obj != null and obj is     an instanceof the specified klass
+  // x10 = 0: obj is    null or  obj is not an instanceof the specified klass
+  // x10 = 1: obj isn't null and obj is     an instanceof the specified klass
 }
 
 //-----------------------------------------------------------------------------

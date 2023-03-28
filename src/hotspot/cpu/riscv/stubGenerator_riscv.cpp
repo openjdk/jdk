@@ -1771,7 +1771,7 @@ class StubGenerator: public StubCodeGenerator {
     // (8) dst_pos + length must not exceed length of dst.
     //
 
-    // if [src == null] then return -1
+    // if src is null then return -1
     __ beqz(src, L_failed);
 
     // if [src_pos < 0] then return -1
@@ -1779,7 +1779,7 @@ class StubGenerator: public StubCodeGenerator {
     __ andi(t0, src_pos, 1UL << 31);
     __ bnez(t0, L_failed);
 
-    // if [dst == null] then return -1
+    // if dst is null then return -1
     __ beqz(dst, L_failed);
 
     // if [dst_pos < 0] then return -1

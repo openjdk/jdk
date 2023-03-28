@@ -590,7 +590,7 @@ class MacroAssembler: public Assembler {
 
 #define INSN(NAME)                                                                                       \
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
-    assert_cond(dest != nullptr);                                                                           \
+    assert_cond(dest != nullptr);                                                                        \
     int64_t offset = dest - pc();                                                                        \
     guarantee(is_imm_in_range(offset, 12, 1), "offset is invalid.");                                     \
     Assembler::NAME(Rs1, Rs2, offset);                                                                   \
@@ -780,7 +780,7 @@ public:
 
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \
-    assert_cond(dest != nullptr);                                                                     \
+    assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_offset_in_range(distance, 32)) {                                                        \
       auipc(Rd, (int32_t)distance + 0x800);                                                        \
@@ -837,7 +837,7 @@ public:
 
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rd, address dest, Register temp = t0) {                                  \
-    assert_cond(dest != nullptr);                                                                     \
+    assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_offset_in_range(distance, 32)) {                                                        \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
@@ -897,7 +897,7 @@ public:
 
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rs, address dest, Register temp = t0) {                                       \
-    assert_cond(dest != nullptr);                                                                     \
+    assert_cond(dest != nullptr);                                                                  \
     assert_different_registers(Rs, temp);                                                          \
     int64_t distance = dest - pc();                                                                \
     if (is_offset_in_range(distance, 32)) {                                                        \
@@ -943,7 +943,7 @@ public:
 
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
-    assert_cond(dest != nullptr);                                                                     \
+    assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_offset_in_range(distance, 32)) {                                                        \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
