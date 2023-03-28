@@ -461,31 +461,8 @@ public class Thread implements Runnable {
      *          cleared when this exception is thrown.
      */
     public static void sleep(long millis) throws InterruptedException {
-        if (millis < 0) {
-            throw new IllegalArgumentException("timeout value is negative");
-        }
-
-        if (currentThread() instanceof VirtualThread vthread) {
-            long nanos = MILLISECONDS.toNanos(millis);
-            vthread.sleepNanos(nanos);
-            return;
-        }
-
-        if (ThreadSleepEvent.isTurnedOn()) {
-            ThreadSleepEvent event = new ThreadSleepEvent();
-            try {
-                event.time = MILLISECONDS.toNanos(millis);
-                event.begin();
-                sleep0(millis);
-            } finally {
-                event.commit();
-            }
-        } else {
-            sleep0(millis);
-        }
+        sleep(millis, 0);
     }
-
-    private static native void sleep0(long millis) throws InterruptedException;
 
     /**
      * Causes the currently executing thread to sleep (temporarily cease
@@ -526,11 +503,21 @@ public class Thread implements Runnable {
             return;
         }
 
-        if (nanos > 0 && millis < Long.MAX_VALUE) {
-            millis++;
+        if (ThreadSleepEvent.isTurnedOn()) {
+            ThreadSleepEvent event = new ThreadSleepEvent();
+            try {
+                event.time = MILLISECONDS.toNanos(millis) + nanos;
+                event.begin();
+                sleep0(millis, nanos);
+            } finally {
+                event.commit();
+            }
+        } else {
+            sleep0(millis, nanos);
         }
-        sleep(millis);
     }
+
+    private static native void sleep0(long millis, int nanos) throws InterruptedException;
 
     /**
      * Causes the currently executing thread to sleep (temporarily cease
@@ -558,12 +545,10 @@ public class Thread implements Runnable {
             return;
         }
 
-        // convert to milliseconds
-        long millis = MILLISECONDS.convert(nanos, NANOSECONDS);
-        if (nanos > NANOSECONDS.convert(millis, MILLISECONDS)) {
-            millis += 1L;
-        }
-        sleep(millis);
+        // convert to milliseconds and nanos
+        long millis = NANOSECONDS.toMillis(nanos);
+        nanos -= MILLISECONDS.toNanos(millis);
+        sleep(millis, (int)nanos);
     }
 
     /**

@@ -1975,7 +1975,13 @@ Klass* JavaThread::security_get_caller_class(int depth) {
 // Returns true if sleep time elapsed as expected, and false
 // if the thread was interrupted.
 bool JavaThread::sleep(jlong millis) {
+  return sleep(millis, 0);
+}
+
+bool JavaThread::sleep(jlong millis, jint nanos) {
   assert(this == Thread::current(),  "thread consistency check");
+  assert(0 <= millis, "millis are in range");
+  assert(0 <= nanos && nanos < NANOSECS_PER_MILLISEC, "nanos are in range");
 
   ParkEvent * const slp = this->_SleepEvent;
   // Because there can be races with thread interruption sending an unpark()
@@ -1989,20 +1995,27 @@ bool JavaThread::sleep(jlong millis) {
 
   jlong prevtime = os::javaTimeNanos();
 
+  // Be conscious about math overflows when converting millis to nanos:
+  // cap the millis to max_secs.
+  static const jlong max_secs = 100000000;
+  jlong nanos_remaining = millis_to_nanos_bounded(millis, nanos, max_secs);
+
   for (;;) {
     // interruption has precedence over timing out
     if (this->is_interrupted(true)) {
       return false;
     }
 
-    if (millis <= 0) {
+    if (nanos_remaining <= 0) {
       return true;
     }
 
     {
       ThreadBlockInVM tbivm(this);
       OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-      slp->park(millis);
+      jlong step_millis = nanos_remaining / NANOSECS_PER_MILLISEC;
+      jlong step_nanos  = nanos_remaining - step_millis * NANOSECS_PER_MILLISEC;
+      slp->park(step_millis, step_nanos);
     }
 
     // Update elapsed time tracking
@@ -2013,7 +2026,7 @@ bool JavaThread::sleep(jlong millis) {
       assert(false,
              "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
-      millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
+      nanos_remaining -= (newtime - prevtime);
     }
     prevtime = newtime;
   }

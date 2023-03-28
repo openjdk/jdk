@@ -341,6 +341,16 @@ inline int64_t millis_to_nanos(int64_t millis) {
   return millis * NANOUNITS_PER_MILLIUNIT;
 }
 
+static int64_t millis_to_nanos_bounded(int64_t millis, int64_t nanos, int64_t max_secs) {
+  // We have to watch for overflow when converting millis to nanos,
+  // but if millis is that large then we will end up limiting to
+  // max_secs anyway, so just do that here.
+  if (millis / MILLIUNITS > max_secs) {
+    millis = max_secs * MILLIUNITS;
+  }
+  return millis_to_nanos(millis) + nanos;
+}
+
 // Proper units routines try to maintain at least three significant digits.
 // In worst case, it would print five significant digits with lower prefix.
 // G is close to MAX_SIZE on 32-bit platforms, so its product can easily overflow,

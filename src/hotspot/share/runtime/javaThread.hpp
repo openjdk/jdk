@@ -1135,6 +1135,7 @@ private:
   ParkEvent * _SleepEvent;
 public:
   bool sleep(jlong millis);
+  bool sleep(jlong millis, jint nanos);
 
   // java.lang.Thread interruption support
   void interrupt();
