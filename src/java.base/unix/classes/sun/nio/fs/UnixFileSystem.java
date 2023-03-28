@@ -25,7 +25,6 @@
 
 package sun.nio.fs;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
@@ -42,6 +41,7 @@ import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -52,6 +52,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import jdk.internal.misc.Blocker;
+import jdk.internal.util.SystemProps;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
@@ -75,11 +76,9 @@ abstract class UnixFileSystem
     private final byte[] defaultDirectory;
     private final UnixPath rootDirectory;
 
-    // lazily initialized in needToResolveAgainstDefaultDirectory()
-    private Boolean needToResolveAgainstDefaultDirectory;
-
     // package-private
-    UnixFileSystem(UnixFileSystemProvider provider, String dir) {
+    UnixFileSystem(UnixFileSystemProvider provider) {
+        String dir = SystemProps.initProperties().get("user.dir");
         this.provider = provider;
         this.defaultDirectory = Util.toBytes(UnixPath.normalizeAndCheck(dir));
         if (this.defaultDirectory[0] != '/') {
@@ -93,35 +92,6 @@ abstract class UnixFileSystem
     // package-private
     byte[] defaultDirectory() {
         return defaultDirectory;
-    }
-
-    boolean needToResolveAgainstDefaultDirectory() {
-        // OK if two or more threads initialize this instance variable
-        if (needToResolveAgainstDefaultDirectory == null) {
-            // if process-wide chdir is allowed or default directory is not the
-            // process working directory then paths must be resolved against the
-            // default directory.
-            String propValue = GetPropertyAction
-                .privilegedGetProperty("sun.nio.fs.chdirAllowed", "false");
-            boolean chdirAllowed = Boolean.parseBoolean(propValue);
-
-            if (chdirAllowed) {
-                this.needToResolveAgainstDefaultDirectory = true;
-            } else {
-                byte[] cwd = UnixNativeDispatcher.getcwd();
-                boolean defaultIsCwd = (cwd.length == defaultDirectory.length);
-                if (defaultIsCwd) {
-                    for (int i=0; i<cwd.length; i++) {
-                        if (cwd[i] != defaultDirectory[i]) {
-                            defaultIsCwd = false;
-                            break;
-                        }
-                    }
-                }
-                this.needToResolveAgainstDefaultDirectory = !defaultIsCwd;
-            }
-        }
-        return needToResolveAgainstDefaultDirectory;
     }
 
     boolean isCaseInsensitiveAndPreserving() {
