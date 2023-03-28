@@ -363,13 +363,6 @@ void CardTable::clear_MemRegion(MemRegion mr) {
   memset(cur, clean_card, pointer_delta(last, cur, sizeof(CardValue)));
 }
 
-void CardTable::clear(MemRegion mr) {
-  for (int i = 0; i < _cur_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) clear_MemRegion(mri);
-  }
-}
-
 uintx CardTable::ct_max_alignment_constraint() {
   // Calculate maximum alignment using GCCardSizeInBytes as card_size hasn't been set yet
   return GCCardSizeInBytes * os::vm_page_size();

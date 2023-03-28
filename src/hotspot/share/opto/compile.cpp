@@ -1703,7 +1703,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       assert(field == nullptr ||
              original_field == nullptr ||
              (field->holder() == original_field->holder() &&
-              field->offset() == original_field->offset() &&
+              field->offset_in_bytes() == original_field->offset_in_bytes() &&
               field->is_static() == original_field->is_static()), "wrong field?");
       // Set field() and is_rewritable() attributes.
       if (field != nullptr)  alias_type(idx)->set_field(field);

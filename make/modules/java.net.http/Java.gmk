@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,4 @@
 # questions.
 #
 
-#
-# Rules to create $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/EmojiData.java
-#
-
-GENSRC_EMOJIDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/EmojiData.java
-
-EMOJIDATATEMP = $(MODULE_SRC)/share/classes/jdk/internal/util/regex/EmojiData.java.template
-UNICODEDATA = $(MODULE_SRC)/share/data/unicodedata
-
-$(GENSRC_EMOJIDATA): $(BUILD_TOOLS_JDK) $(EMOJIDATATEMP) $(UNICODEDATA)/emoji/emoji-data.txt
-	$(call LogInfo, Generating $@)
-	$(call MakeTargetDir)
-	$(TOOL_GENERATEEMOJIDATA) \
-		$(EMOJIDATATEMP) \
-		$(UNICODEDATA) \
-		$(GENSRC_EMOJIDATA)
-
-TARGETS += $(GENSRC_EMOJIDATA)
+DISABLED_WARNINGS_java += this-escape

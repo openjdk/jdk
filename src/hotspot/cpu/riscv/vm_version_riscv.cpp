@@ -35,6 +35,12 @@ const char* VM_Version::_vm_mode = "";
 uint32_t VM_Version::_initial_vector_length = 0;
 
 void VM_Version::initialize() {
+  _supports_cx8 = true;
+  _supports_atomic_getset4 = true;
+  _supports_atomic_getadd4 = true;
+  _supports_atomic_getset8 = true;
+  _supports_atomic_getadd8 = true;
+
   get_os_cpu_info();
 
   // check if satp.mode is supported, currently supports up to SV48(RV64)

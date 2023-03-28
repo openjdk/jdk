@@ -1001,7 +1001,7 @@ instruct v$1L_neon(vReg dst, vReg src1, vReg src2) %{
   effect(TEMP_DEF dst);
   format %{ "v$1L_neon $dst, $src1, $src2\t# 2L" %}
   ins_encode %{
-    __ cmgt($dst$$FloatRegister, __ T2D, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ cm(Assembler::GT, $dst$$FloatRegister, __ T2D, $src1$$FloatRegister, $src2$$FloatRegister);
     __ bsl($dst$$FloatRegister, __ T16B, ifelse(min, $1, $src2, $src1)$$FloatRegister, ifelse(min, $1, $src1, $src2)$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -3544,11 +3544,11 @@ instruct vmaskcmp_neon(vReg dst, vReg src1, vReg src2, immI cond) %{
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
   format %{ "vmaskcmp_neon $dst, $src1, $src2, $cond" %}
   ins_encode %{
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ neon_compare($dst$$FloatRegister, bt, $src1$$FloatRegister,
-                    $src2$$FloatRegister, (int)($cond$$constant),
-                    /* isQ */ length_in_bytes == 16);
+                    $src2$$FloatRegister, condition, /* isQ */ length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3595,11 +3595,12 @@ instruct vmaskcmp_sve(pReg dst, vReg src1, vReg src2, immI cond, rFlagsReg cr) %
   effect(KILL cr);
   format %{ "vmaskcmp_sve $dst, $src1, $src2, $cond\t# KILL cr" %}
   ins_encode %{
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ sve_compare($dst$$PRegister, bt, ptrue, $src1$$FloatRegister,
-                   $src2$$FloatRegister, (int)($cond$$constant));
+                   $src2$$FloatRegister, condition);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3611,9 +3612,10 @@ instruct vmaskcmp_masked(pReg dst, vReg src1, vReg src2, immI cond,
   effect(KILL cr);
   format %{ "vmaskcmp_masked $dst, $pg, $src1, $src2, $cond\t# KILL cr" %}
   ins_encode %{
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_compare($dst$$PRegister, bt, $pg$$PRegister, $src1$$FloatRegister,
-                   $src2$$FloatRegister, (int)($cond$$constant));
+                   $src2$$FloatRegister, condition);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4229,12 +4231,12 @@ instruct vcmove_neon(vReg dst, vReg src1, vReg src2, immI cond, cmpOp copnd) %{
   effect(TEMP_DEF dst);
   format %{ "vcmove_neon.$copnd $dst, $src1, $src2\t# vector conditional move fp" %}
   ins_encode %{
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
     __ neon_compare($dst$$FloatRegister, bt, $src1$$FloatRegister,
-                    $src2$$FloatRegister, (int)($cond$$constant),
-                    /* isQ */ length_in_bytes == 16);
+                    $src2$$FloatRegister, condition, /* isQ */ length_in_bytes == 16);
     __ bsl($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
            $src2$$FloatRegister, $src1$$FloatRegister);
   %}
@@ -4250,10 +4252,11 @@ instruct vcmove_sve(vReg dst, vReg src1, vReg src2, immI cond, cmpOp copnd, pReg
   format %{ "vcmove_sve.$copnd $dst, $src1, $src2\t# vector conditional move fp. KILL $pgtmp" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ sve_compare($pgtmp$$PRegister, bt, ptrue, $src1$$FloatRegister,
-                   $src2$$FloatRegister, (int)($cond$$constant));
+                   $src2$$FloatRegister, condition);
     __ sve_sel($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                $pgtmp$$PRegister, $src2$$FloatRegister, $src1$$FloatRegister);
   %}

@@ -116,9 +116,7 @@ void HeapRegion::unlink_from_list() {
 }
 
 void HeapRegion::hr_clear(bool clear_space) {
-  assert(_humongous_start_region == NULL,
-         "we should have already filtered out humongous regions");
-
+  set_top(bottom());
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();

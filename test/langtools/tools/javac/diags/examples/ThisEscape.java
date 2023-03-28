@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,17 @@
  * questions.
  */
 
-package nsk.stress.except;
+// key: compiler.warn.possible.this.escape
+// key: compiler.warn.possible.this.escape.location
+// options: -Xlint:this-escape
 
-/**
- * This class throws exception while static initialization.
- * The test should load this class via reflection in order
- * to hold the exception until runtime.
- *
- * @see nsk.stress.except.except011
- */
-public class except011oops {
-    static boolean truth = true;
+public class ThisEscape {
 
-    static {
-        if (truth)
-            throw new RuntimeException("except011oops");
+    public ThisEscape() {
+        this.method();
+    }
+
+    public final void method() {
+        this.hashCode();
     }
 }
