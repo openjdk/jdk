@@ -95,7 +95,7 @@ public class CDSPluginTest {
            // separate --module-path will force the JLink task to read the ModuleTarget from
            // the java.base module-info.class to identify the target platform for the image
            // being generated.
-           Path jdkRoot = Path.of(jlinkPath).getParent().getParent();
+           Path jdkRoot = Path.of(System.getProperty("test.jdk"));
            Path modsPath = Files.createDirectory(Path.of("mods"));
            copyModuleFiles(jdkRoot, modsPath, new String[] {"java.base", "java.logging"});
            String[] cmd = {jlinkPath, "--verbose",
