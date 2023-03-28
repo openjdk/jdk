@@ -29,18 +29,48 @@
 extern "C" {
 
 static jvmtiEnv *jvmti;
-static int vthread_started_cnt = 0;
+static volatile int vthread_started_cnt = 0;
+static volatile int vthread_ended_cnt = 0;
+static volatile int thread_started_cnt = 0;
+static volatile int thread_ended_cnt = 0;
+
 static jrawMonitorID agent_lock = NULL;
-static bool can_support_vt_enabled = false;
 static volatile jboolean agent_started = JNI_FALSE;
 
 void JNICALL VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   if (!jni->IsVirtualThread(thread)) {
-    fatal(jni, "Failed: tested thread expected to be virtual");
+    fatal(jni, "Failed: expected to be virtual thread");
   }
   RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
 
   vthread_started_cnt++;
+}
+
+void JNICALL VirtualThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
+  if (!jni->IsVirtualThread(thread)) {
+    fatal(jni, "Failed: expected to be virtual thread");
+  }
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+
+  vthread_ended_cnt++;
+}
+
+void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
+  if (jni->IsVirtualThread(thread)) {
+    fatal(jni, "Failed: expected to be platform thread");
+  }
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+
+  thread_started_cnt++;
+}
+
+void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
+  if (jni->IsVirtualThread(thread)) {
+    fatal(jni, "Failed: expected to be platform thread");
+  }
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+
+  thread_ended_cnt++;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -57,6 +87,27 @@ Java_ToggleNotifyJvmtiTest_VirtualThreadStartedCount(JNIEnv* jni, jclass clazz) 
   return vthread_started_cnt;
 }
 
+JNIEXPORT jint JNICALL
+Java_ToggleNotifyJvmtiTest_VirtualThreadEndedCount(JNIEnv* jni, jclass clazz) {
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+
+  return vthread_ended_cnt;
+}
+
+JNIEXPORT jint JNICALL
+Java_ToggleNotifyJvmtiTest_ThreadStartedCount(JNIEnv* jni, jclass clazz) {
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+
+  return thread_started_cnt;
+}
+
+JNIEXPORT jint JNICALL
+Java_ToggleNotifyJvmtiTest_ThreadEndedCount(JNIEnv* jni, jclass clazz) {
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+
+  return thread_ended_cnt;
+}
+
 jint agent_init(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiEventCallbacks callbacks;
@@ -68,9 +119,11 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
   memset(&caps, 0, sizeof(caps));
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.VirtualThreadStart = &VirtualThreadStart;
+  callbacks.VirtualThreadEnd = &VirtualThreadEnd;
+  callbacks.ThreadStart = &ThreadStart;
+  callbacks.ThreadEnd = &ThreadEnd;
 
   {
-    can_support_vt_enabled = true;
     caps.can_support_virtual_threads = 1;
 
     err = jvmti->AddCapabilities(&caps);
@@ -79,6 +132,21 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
       return JNI_ERR;
     }
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
+      return JNI_ERR;
+    }
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
+      return JNI_ERR;
+    }
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
+      return JNI_ERR;
+    }
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;

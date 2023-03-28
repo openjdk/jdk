@@ -1529,16 +1529,38 @@ JvmtiEnvBase::is_in_thread_list(jint count, const jthread* list, oop jt_oop) {
   return false;
 }
 
-class VM_InitNotifyJvmtiEventsMode : public VM_Operation {
+class VM_SetNotifyJvmtiEventsMode : public VM_Operation {
 private:
   bool _enable;
 
-  int count_transitions() {
+  // Iterates over all JavaThread's, counts VTMS transitions and restores
+  // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol. 
+  int count_transitions_and_correct_jvmti_thread_states() {
     int count = 0;
-    if (_enable) {
-      for (JavaThread* jt : ThreadsListHandle()) {
-        if (jt->is_in_VTMS_transition()) {
-          count++;
+
+    for (JavaThread* jt : ThreadsListHandle()) {
+      oop  ct_oop = jt->threadObj();
+      oop  vt_oop = jt->vthread();
+      JvmtiThreadState* jt_state = jt->jvmti_thread_state();
+      JvmtiThreadState* ct_state = java_lang_Thread::jvmti_thread_state(jt->threadObj());
+      JvmtiThreadState* vt_state = vt_oop != nullptr ? java_lang_Thread::jvmti_thread_state(vt_oop) : nullptr;
+      bool virt = vt_oop != nullptr && vt_oop != ct_oop;
+
+      if (jt->is_in_VTMS_transition()) {
+        count++;
+      }
+      // Correct jt->jvmti_thread_state() and jt->jvmti_vthread() if necessary.
+      // It was not maintained while notifyJvmti was disabled. 
+      if (jt_state != ct_state && jt_state != vt_state) {
+        JvmtiThreadState* cur_state = virt ? vt_state : ct_state;
+        jt->set_jvmti_thread_state(cur_state); // restore jt->jvmti_thread_state()
+        if (virt) {
+          jt->set_jvmti_vthread(vt_oop);       // restore jt->jvmti_vthread()
+          if (vt_state != nullptr) {
+            vt_state->set_thread(jt);          // restore JavaThread link
+          }
+        } else {
+          jt->set_jvmti_vthread(nullptr);      // reset jt->jvmti_vthread()
         }
       }
     }
@@ -1546,19 +1568,20 @@ private:
   }
 
 public:
-  VMOp_Type type() const { return VMOp_InitNotifyJvmtiEventsMode; }
+  VMOp_Type type() const { return VMOp_SetNotifyJvmtiEventsMode; }
   bool allow_nested_vm_operations() const { return false; }
-  VM_InitNotifyJvmtiEventsMode(bool enable) : _enable(enable) {}
+  VM_SetNotifyJvmtiEventsMode(bool enable) : _enable(enable) {}
 
   void doit() {
-    int trans_count = count_transitions();
+    int count = count_transitions_and_correct_jvmti_thread_states();
 
+    JvmtiVTMSTransitionDisabler::set_VTMS_transition_count(count);
     JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
-    JvmtiVTMSTransitionDisabler::set_VTMS_transition_count(trans_count);
   }
 };
 
-// must be called in thread-in-native mode
+// This function is to support agents loaded into running VM.
+// Must be called in thread-in-native mode.
 bool
 JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
   if (!Continuations::enabled()) {
@@ -1567,22 +1590,24 @@ JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
   if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     return false; // already enabled
   }
-  VM_InitNotifyJvmtiEventsMode op(true);
+  VM_SetNotifyJvmtiEventsMode op(true);
   VMThread::execute(&op);
   return true;
 }
-
-// must be called in thread-in-native mode
+  
+// This function is used in WhiteBox, only needed to test the function above.
+// It is unsafe to use this function when virtual threads are executed.
+// Must be called in thread-in-native mode.
 bool
 JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
   if (!Continuations::enabled()) {
     return false;
   }
-  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     return false; // already disabled
   }
   JvmtiVTMSTransitionDisabler disabler(true); // ensure there are no other disablers
-  VM_InitNotifyJvmtiEventsMode op(false);
+  VM_SetNotifyJvmtiEventsMode op(false);
   VMThread::execute(&op);
   return true;
 }

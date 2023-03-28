@@ -3961,14 +3961,11 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
 #endif
 JVM_END
 
-// If notifications are enabled then just update the temporary VTMS transition bit.
+// Always update the temporary VTMS transition bit.
 JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
-    return;
-  }
-  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     return;
   }
   assert(!thread->is_in_VTMS_transition(), "sanity check");

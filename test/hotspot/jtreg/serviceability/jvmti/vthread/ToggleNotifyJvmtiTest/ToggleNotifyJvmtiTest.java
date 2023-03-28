@@ -35,11 +35,13 @@
  * @run main/othervm/native -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Djdk.attach.allowAttachSelf=true ToggleNotifyJvmtiTest attach
  */
 
-//import compiler.whitebox.CompilerWhiteBoxTest;
 import com.sun.tools.attach.VirtualMachine;
 import java.util.concurrent.ThreadFactory;
 import jdk.test.whitebox.WhiteBox;
 
+// The TestedThread just mimics some thread activity, but it is important
+// to have sleep() calls to provide yielding as some frequency of virtual
+// thread mount state transitions is needed for this test scenario.
 class TestedThread extends Thread {
     private volatile boolean threadReady = false;
     private volatile boolean shouldFinish = false;
@@ -49,12 +51,6 @@ class TestedThread extends Thread {
         super(name);
     }
 
-    // We will temporarily set a breakpoint on this method when the thread should be suspended.
-    // If we hit the breakpoint, then something is wrong.
-    public void breakpointCheck() {
-        return;
-    }
-
     // run thread continuously
     public void run() {
         // run in a loop
@@ -62,7 +58,6 @@ class TestedThread extends Thread {
         int i = 0;
         int n = 1000;
         while (!shouldFinish) {
-            breakpointCheck();
             if (n <= 0) {
                 n = 1000;
                 ToggleNotifyJvmtiTest.sleep(1);
@@ -77,12 +72,8 @@ class TestedThread extends Thread {
 
     // ensure thread is ready
     public void ensureReady() {
-        try {
-            while (!threadReady) {
-                sleep(1);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interruption while preparing tested thread: \n\t" + e);
+        while (!threadReady) {
+            ToggleNotifyJvmtiTest.sleep(1);
         }
     }
 
@@ -91,13 +82,27 @@ class TestedThread extends Thread {
     }
 }
 
+/*
+ * The testing scenario consists of a number of serialized test cycles.
+ * Each cycle has initially zero virtual threads and has the following steps:
+ *  - disable notifyJvmti events mode
+ *  - start the platform launcher thread which starts N of virtual thread
+ *  - enable notifyJvmti events mode after about hapf of virtual thread started
+ *  - then shut the virtual threads down
+ * The JVMTI agent is loaded at a start-up or at a dynamic attach.
+ * It collects events:
+ *  - VirtualThreadStart, VirtualThreadEnd, ThreadStart and ThreadEnd
+ */
 public class ToggleNotifyJvmtiTest {
-    private static final int VTHREADS_CNT = 60;
+    private static final int VTHREADS_CNT = 20;
     private static final String AGENT_LIB = "ToggleNotifyJvmtiTest";
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     private static native boolean IsAgentStarted();
     private static native int VirtualThreadStartedCount();
+    private static native int VirtualThreadEndedCount();
+    private static native int ThreadStartedCount();
+    private static native int ThreadEndedCount();
 
     static void log(String str) { System.out.println(str); }
 
@@ -118,18 +123,18 @@ public class ToggleNotifyJvmtiTest {
         vts[i] = Thread.ofVirtual().name(name).start(thread);
         thread.ensureReady();
         threads[i] = thread;
-        log("## Java: started vthread: " + name);
+        log("# Java: started vthread: " + name);
     }
 
     static private void startThreads() {
-        log("\n## Java: Starting vthreads");
+        log("\n# Java: Starting vthreads");
         for (int i = 0; i < VTHREADS_CNT; i++) {
+            sleep(1);
             startThread(i);
         }
     }
 
     static private synchronized void finishThreads() {
-        log("\n## Java: runIt: Finishing vthreads");
         try {
             for (int i = 0; i < VTHREADS_CNT; i++) {
                 TestedThread thread = threads[i];
@@ -145,11 +150,43 @@ public class ToggleNotifyJvmtiTest {
     }
 
     static private void setVirtualThreadsNotifyJvmtiMode(int iter, boolean enable) {
-        sleep(5);
-        WB.setVirtualThreadsNotifyJvmtiMode(enable);
+        boolean status = WB.setVirtualThreadsNotifyJvmtiMode(enable);
+        if (!status) {
+            throw new RuntimeException("Java: failed to set VirtualThreadsNotifyJvmtiMode: " + enable);
+        }
         log("# main: SetNotifyJvmtiEvents: #" + iter + " enable: " + enable);
     }
 
+    // Accumulative results after each finished test cycle.
+    static private void printResults() {
+        log("  VirtualThreadStart events: " + VirtualThreadStartedCount());
+        log("  VirtualThreadEnd events:   " + VirtualThreadEndedCount());
+        log("  ThreadStart events:        " + ThreadStartedCount());
+        log("  ThreadEnd events:          " + ThreadEndedCount());
+    }
+
+    static private void run_test_cycle(int iter) throws Exception {
+        log("\n# Java: Started test cycle #" + iter);
+
+        // Disable notifyJvmti events mode at test cycle start.
+        // It is unsafe to do so if any virtual threads are executed.
+        setVirtualThreadsNotifyJvmtiMode(iter, false);
+
+        Thread tt = Thread.ofPlatform().name("StartThreadsTest").start(ToggleNotifyJvmtiTest::startThreads);
+        sleep(20); // give some time for launcher thread to start
+
+        // We want this somewhere in the middle of virtual threads execution.
+        setVirtualThreadsNotifyJvmtiMode(iter, true);
+        sleep(20); // give some time for virtual threads to execute
+
+        finishThreads();
+        tt.join();
+        sleep(20); // give some time for virtual threads to finish
+
+        log("\n# Java: Finished test cycle #" + iter);
+        printResults();
+    }
+ 
     public static void main(String[] args) throws Exception {
         log("# main: loading " + AGENT_LIB + " lib");
 
@@ -157,22 +194,19 @@ public class ToggleNotifyJvmtiTest {
             String arg = args.length == 2 ? args[1] : "";
             VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
             vm.loadAgentLibrary(AGENT_LIB, arg);
-        } else {
-            System.loadLibrary(AGENT_LIB);
         }
         int waitCount = 0;
         while (!IsAgentStarted()) {
             log("# main: waiting for native agent to start: #" + waitCount++);
             sleep(20);
         }
-        Thread tt = Thread.ofPlatform().name("StartThreadsTest").start(ToggleNotifyJvmtiTest::startThreads);
-        sleep(20);
 
-        for (int iter = 0; VirtualThreadStartedCount() < VTHREADS_CNT; iter++) {
-            setVirtualThreadsNotifyJvmtiMode(iter, false); // disable
-            setVirtualThreadsNotifyJvmtiMode(iter, true);  // enable
+        // The testing scenario consists of a number of serialized test cycles.
+        // Each cycle has initially zero virtual threads and starts from disabling
+        // notifyJvmti events mode. Then it starts the launcher platform thread
+        // which starts the VTHREADS_CNT of virtual threads. The native agent
+        for (int iter = 0; iter < 10; iter++) {
+            run_test_cycle(iter);
         }
-        finishThreads();
-        tt.join();
     }
 }
