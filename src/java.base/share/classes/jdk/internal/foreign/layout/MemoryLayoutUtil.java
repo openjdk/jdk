@@ -37,8 +37,8 @@ public final class MemoryLayoutUtil {
         return value;
     }
 
-    public static long requireBitSizeValid(long bitSize) {
-        if (bitSize < 0 || bitSize % 8 != 0) {
+    public static long requireBitSizeValid(long bitSize, boolean allowZero) {
+        if ((bitSize == 0 && !allowZero) || bitSize < 0 || bitSize % 8 != 0) {
             throw new IllegalArgumentException("Invalid bitSize: " + bitSize);
         }
         return bitSize;

@@ -533,11 +533,7 @@ java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-a
 
 java/net/MulticastSocket/Test.java                              7145658 macosx-all
 
-java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-all
-
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
-
-java/net/SocketOption/OptionsTest.java                          8304286 windows-all
 
 ############################################################################
 

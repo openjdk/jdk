@@ -116,7 +116,7 @@ class AdvancedTransformationsTest {
             var clm = Classfile.parse(in.readAllBytes());
             var remapped = Classfile.parse(ClassRemapper.of(map).remapClass(clm));
             assertEmpty(remapped.verify(
-                    ClassHierarchyResolver.of(Set.of(), Map.of(
+                    ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
                                           .orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER)

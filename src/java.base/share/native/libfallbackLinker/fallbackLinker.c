@@ -73,12 +73,12 @@ static void do_capture_state(int32_t* value_ptr, int captured_state_mask) {
 #ifdef _WIN64
   if (captured_state_mask & GET_LAST_ERROR) {
     *value_ptr = GetLastError();
-    value_ptr++;
   }
+  value_ptr++;
   if (captured_state_mask & WSA_GET_LAST_ERROR) {
     *value_ptr = WSAGetLastError();
-    value_ptr++;
   }
+  value_ptr++;
 #endif
   if (captured_state_mask & ERRNO) {
     *value_ptr = errno;

@@ -500,9 +500,9 @@ public sealed interface Linker permits AbstractLinker {
      * However, if the function descriptor's return layout has a {@linkplain AddressLayout#targetLayout()} {@code T},
      * then the size of the returned segment is set to {@code T.byteSize()}.
      * <p>
-     * Finally, the returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
-     * parameter passed to it is associated with the {@link MemorySegment#NULL} address, or a {@link NullPointerException}
-     * if that parameter is {@code null}.
+     * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
+     * representing the target address of the foreign function is the {@link MemorySegment#NULL} address.
+     * The returned method handle will additionally throw {@link NullPointerException} if any argument passed to it is {@code null}.
      *
      * @param function the function descriptor of the target function.
      * @param options  any linker options.
@@ -643,6 +643,15 @@ public sealed interface Linker permits AbstractLinker {
          *     <li>WSAGetLastError</li>
          *     <li>errno</li>
          * </ul>
+         * The following snipet shows how to obtain the names of the supported captured value layouts:
+         * {@snippet lang = java:
+         *    String capturedNames = Linker.Option.captureStateLayout().memberLayouts().stream()
+         *        .map(MemoryLayout::name)
+         *        .filter(Optional::isPresent)
+         *        .map(Optional::get)
+         *        .map(Objects::toString)
+         *        .collect(Collectors.joining(", "));
+         * }
          *
          * @see #captureCallState(String...)
          */

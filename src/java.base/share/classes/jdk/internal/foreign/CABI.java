@@ -27,6 +27,8 @@ package jdk.internal.foreign;
 
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
 import jdk.internal.vm.ForeignLinkerSupport;
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.StaticProperty;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static sun.security.action.GetPropertyAction.privilegedGetProperty;
@@ -51,28 +53,27 @@ public enum CABI {
 
         if (ForeignLinkerSupport.isSupported()) {
             // figure out the ABI based on the platform
-            String arch = privilegedGetProperty("os.arch");
-            String os = privilegedGetProperty("os.name");
+            String arch = StaticProperty.osArch();
             long addressSize = ADDRESS.bitSize();
             // might be running in a 32-bit VM on a 64-bit platform.
             // addressSize will be correctly 32
             if ((arch.equals("amd64") || arch.equals("x86_64")) && addressSize == 64) {
-                if (os.startsWith("Windows")) {
+                if (OperatingSystem.isWindows()) {
                     return WIN_64;
                 } else {
                     return SYS_V;
                 }
             } else if (arch.equals("aarch64")) {
-                if (os.startsWith("Mac")) {
+                if (OperatingSystem.isMacOS()) {
                     return MAC_OS_AARCH_64;
-                } else if (os.startsWith("Windows")) {
+                } else if (OperatingSystem.isWindows()) {
                     return WIN_AARCH_64;
                 } else {
                     // The Linux ABI follows the standard AAPCS ABI
                     return LINUX_AARCH_64;
                 }
             } else if (arch.equals("riscv64")) {
-                if (os.startsWith("Linux")) {
+                if (OperatingSystem.isLinux()) {
                     return LINUX_RISCV_64;
                 }
             }

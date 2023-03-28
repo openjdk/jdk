@@ -113,6 +113,7 @@ class FFIType {
                 return structType;
             }
             assert grpl instanceof UnionLayout;
+            // JDK-8301800
             throw new IllegalArgumentException("Fallback linker does not support by-value unions: " + grpl);
         } else if (layout instanceof SequenceLayout sl) {
             List<MemoryLayout> elements = Collections.nCopies(Math.toIntExact(sl.elementCount()), sl.elementLayout());
