@@ -161,9 +161,9 @@ public class ModuleNameReader {
         return internalize ?
             (buf, offset, len) -> {
                 buf = ClassFile.internalize(buf, offset, len);
-                return Convert.utf2string(buf, 0, buf.length, Convert.UTF8_STRICT);
+                return Convert.utf2string(buf, 0, buf.length, Convert.Validation.STRICT);
             } :
-            (buf, offset, len) -> Convert.utf2string(buf, offset, len, Convert.UTF8_STRICT);
+            (buf, offset, len) -> Convert.utf2string(buf, offset, len, Convert.Validation.STRICT);
     }
 
 }

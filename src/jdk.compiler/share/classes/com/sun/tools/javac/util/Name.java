@@ -88,7 +88,7 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         getBytes(bs, 0);
         n.getBytes(bs, len);
         try {
-            return table.fromUtf(bs, 0, bs.length, Convert.UTF8_LAX);
+            return table.fromUtf(bs, 0, bs.length, Convert.Validation.NONE);
         } catch (InvalidUtfException e) {
             throw new AssertionError(e);
         }
@@ -104,7 +104,7 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         bs[len] = (byte) c;
         n.getBytes(bs, len+1);
         try {
-            return table.fromUtf(bs, 0, bs.length, Convert.UTF8_LAX);
+            return table.fromUtf(bs, 0, bs.length, Convert.Validation.NONE);
         } catch (InvalidUtfException e) {
             throw new AssertionError(e);
         }
@@ -158,7 +158,7 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
     public Name subName(int start, int end) {
         if (end < start) end = start;
         try {
-            return table.fromUtf(getByteArray(), getByteOffset() + start, end - start, Convert.UTF8_LAX);
+            return table.fromUtf(getByteArray(), getByteOffset() + start, end - start, Convert.Validation.NONE);
         } catch (InvalidUtfException e) {
             throw new AssertionError(e);
         }
@@ -169,7 +169,7 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
     @Override
     public String toString() {
         try {
-            return Convert.utf2string(getByteArray(), getByteOffset(), getByteLength(), Convert.UTF8_LAX);
+            return Convert.utf2string(getByteArray(), getByteOffset(), getByteLength(), Convert.Validation.NONE);
         } catch (InvalidUtfException e) {
             throw new AssertionError(e);
         }
@@ -245,14 +245,14 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
          *  Assume that bytes are in strictly valid "Modified UTF-8" format.
          */
         public Name fromUtf(byte[] cs) throws InvalidUtfException {
-            return fromUtf(cs, 0, cs.length, Convert.UTF8_STRICT);
+            return fromUtf(cs, 0, cs.length, Convert.Validation.STRICT);
         }
 
         /** get the name for the bytes in cs[start..start+len-1].
          *  Assume that bytes are in utf8 format.
          *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
          */
-        public abstract Name fromUtf(byte[] cs, int start, int len, int validation)
+        public abstract Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation)
             throws InvalidUtfException;
 
         /** Release any resources used by this table.

@@ -78,7 +78,7 @@ public class PoolReader {
     private final ByteBuffer buf;
     private final Names names;
     private final Symtab syms;
-    private final int utf8validation;
+    private final Convert.Validation utf8validation;
 
     private ImmutablePoolHelper pool;
 
@@ -95,7 +95,7 @@ public class PoolReader {
         this.buf = buf;
         this.names = names;
         this.syms = syms;
-        this.utf8validation = reader != null ? reader.utf8validation : Convert.UTF8_LAX;
+        this.utf8validation = reader != null ? reader.utf8validation : Convert.Validation.NONE;
     }
 
     private static final BitSet classCP = new BitSet();

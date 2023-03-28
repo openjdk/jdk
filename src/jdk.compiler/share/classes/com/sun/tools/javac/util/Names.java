@@ -425,13 +425,13 @@ public class Names {
         return table.fromUtf(cs);
     }
 
-    public Name fromUtf(byte[] cs, int start, int len, int validation) throws InvalidUtfException {
+    public Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation) throws InvalidUtfException {
         return table.fromUtf(cs, start, len, validation);
     }
 
     public Name fromUtfLax(byte[] cs, int start, int len) {
         try {
-            return table.fromUtf(cs, start, len, Convert.UTF8_LAX);
+            return table.fromUtf(cs, start, len, Convert.Validation.NONE);
         } catch (InvalidUtfException e) {
             throw new AssertionError(e);
         }

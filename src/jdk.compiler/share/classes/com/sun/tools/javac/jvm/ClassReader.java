@@ -196,8 +196,8 @@ public class ClassReader {
     /** The minor version number of the class file being read. */
     int minorVersion;
 
-    /** UTF-8 validation level, e.g., {@link Convert#UTF8_STRICT}. */
-    int utf8validation;
+    /** UTF-8 validation level */
+    Convert.Validation utf8validation;
 
     /** A table to hold the constant pool indices for method parameter
      * names, as given in LocalVariableTable attributes.
@@ -676,7 +676,7 @@ public class ClassReader {
     String quoteBadSignature() {
         String sigString;
         try {
-            sigString = Convert.utf2string(signature, sigp, siglimit - sigp, Convert.UTF8_LAX);
+            sigString = Convert.utf2string(signature, sigp, siglimit - sigp, Convert.Validation.NONE);
         } catch (InvalidUtfException e) {
             throw new AssertionError(e);
         }
@@ -2712,7 +2712,7 @@ public class ClassReader {
                                    Integer.toString(maxMajor),
                                    Integer.toString(maxMinor));
         }
-        utf8validation = majorVersion < V48.major ? Convert.UTF8_PREJDK14 : Convert.UTF8_STRICT;
+        utf8validation = majorVersion < V48.major ? Convert.Validation.PREJDK14 : Convert.Validation.STRICT;
 
         if (previewClassFile) {
             if (!preview.isEnabled()) {
