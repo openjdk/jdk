@@ -76,6 +76,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 
 // put OS-includes here
@@ -4489,6 +4490,14 @@ static void workaround_expand_exec_shield_cs_limit() {
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+  if (UseSystemMemoryBarrier) {
+    if (!SystemMemoryBarrier::initialize()) {
+      if (!FLAG_IS_DEFAULT(UseSystemMemoryBarrier)) {
+        warning("UseSystemMemoryBarrier specified, but not supported on this linux version. Use -Xlog:os=info for details.");
+      }
+      FLAG_SET_ERGO(UseSystemMemoryBarrier, false);
+    }
+  }
 
   // This could be set after os::Posix::init() but all platforms
   // have to set it the same so we have to mirror Solaris.

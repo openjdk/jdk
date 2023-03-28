@@ -76,6 +76,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
 
@@ -4310,6 +4311,10 @@ size_t os::_os_min_stack_allowed = 64 * K;
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+  if (UseSystemMemoryBarrier) {
+    bool SystemMemoryBarrier_usable = SystemMemoryBarrier::initialize();
+    assert(SystemMemoryBarrier_usable, "should be on Windows");
+  }
 
   // This could be set any time but all platforms
   // have to set it the same so we have to mirror Solaris.

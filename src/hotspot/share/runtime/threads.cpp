@@ -62,7 +62,6 @@
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -96,7 +95,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -552,15 +550,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
-
-  if (UseSystemMemoryBarrier) {
-    if (!SystemMemoryBarrier::initialize()) {
-      if (!FLAG_IS_DEFAULT(UseSystemMemoryBarrier)) {
-        warning("UseSystemMemoryBarrier specified, but not supported on this OS. Use -Xlog:os=info for details.");
-      }
-      FLAG_SET_ERGO(UseSystemMemoryBarrier, false);
-    }
-  }
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
