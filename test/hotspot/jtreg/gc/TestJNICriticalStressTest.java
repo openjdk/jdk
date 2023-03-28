@@ -82,7 +82,8 @@ public class TestJNICriticalStressTest {
     static private final int BYTE_ARRAY_LENGTH = 16 * 1024;
 
     static private final long SYSTEM_GC_PERIOD_MS = 5 * 1000;
-    static private long fullGcCounts = 0;
+    static private long gcCountBefore = 0;
+    static private GarbageCollectorMXBean collector = null;
 
     static private void println(String str) { System.out.println(str); }
     static private void println()           { System.out.println();    }
@@ -130,6 +131,7 @@ public class TestJNICriticalStressTest {
 
             byte[] outputArray = new byte[2 * inputArray.length];
             deflater.deflate(outputArray);
+            deflater.end();
 
             count += 1;
         }
@@ -143,6 +145,7 @@ public class TestJNICriticalStressTest {
 
     static private class SystemGCWorker implements Runnable {
         public void run() {
+            long fullGcCounts = 0;
             while (true) {
                 try {
                     Thread.sleep(SYSTEM_GC_PERIOD_MS);
@@ -152,6 +155,9 @@ public class TestJNICriticalStressTest {
                 wb.fullGC();
                 fullGcCounts += 1;
                 System.out.println("SYSTEM_GC AFTER");
+
+                long gcCountAfter = collector.getCollectionCount();
+                Asserts.assertLessThanOrEqual(gcCountBefore + fullGcCounts, gcCountAfter, "Triggered more Full GCs than expected");
             }
         }
     }
@@ -185,7 +191,6 @@ public class TestJNICriticalStressTest {
 
         List<GarbageCollectorMXBean> collectors = ManagementFactory.getGarbageCollectorMXBeans();
 
-        GarbageCollectorMXBean collector = null;
 
         for (int i = 0; i < collectors.size(); i++) {
             println(collectors.get(i).getName());
@@ -213,7 +218,7 @@ public class TestJNICriticalStressTest {
             new Thread(new JNICriticalWorker()).start();
         }
 
-        long gcCountBefore = collector.getCollectionCount();
+        gcCountBefore = collector.getCollectionCount();
 
         new Thread(new SystemGCWorker()).start();
 
@@ -229,8 +234,5 @@ public class TestJNICriticalStressTest {
             now = System.currentTimeMillis();
             soFar = now - start;
         }
-
-        long gcCountAfter = collector.getCollectionCount();
-        Asserts.assertLessThanOrEqual(gcCountBefore + fullGcCounts, gcCountAfter, "Triggered more Full GCs than expected");
    }
 }
