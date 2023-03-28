@@ -126,6 +126,7 @@ public class UnicodeReader {
       * @param pos     start of meaningful content in buffer.
       * @param endPos  end of meaningful content in buffer.
       */
+    @SuppressWarnings("this-escape")
     protected UnicodeReader(Log log, char[] array, int pos, int endPos) {
         this.buffer = array;
         this.length = endPos;
