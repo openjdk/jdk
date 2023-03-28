@@ -86,13 +86,12 @@ public class TestJNICriticalStressTest {
     static private GarbageCollectorMXBean collector = null;
 
     static private void println(String str) { System.out.println(str); }
-    static private void println()           { System.out.println();    }
     static private void exit(int code)      { System.exit(code);       }
 
     static Map<Integer,String> populateMap(int size) {
         Map<Integer,String> map = new HashMap<Integer,String>();
         for (int i = 0; i < size; i += 1) {
-            Integer keyInt = new Integer(i);
+            Integer keyInt = Integer.valueOf(i);
             String valStr = "value is [" + i + "]";
             map.put(keyInt,valStr);
         }
@@ -150,14 +149,15 @@ public class TestJNICriticalStressTest {
                 try {
                     Thread.sleep(SYSTEM_GC_PERIOD_MS);
                 } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return;
                 }
-                System.out.println("SYSTEM_GC BEFORE");
-                wb.fullGC();
-                fullGcCounts += 1;
-                System.out.println("SYSTEM_GC AFTER");
 
+                long gcCountBefore = collector.getCollectionCount();
+                wb.fullGC();
                 long gcCountAfter = collector.getCollectionCount();
-                Asserts.assertLessThanOrEqual(gcCountBefore + fullGcCounts, gcCountAfter, "Triggered more Full GCs than expected");
+
+                Asserts.assertLessThan(gcCountBefore, gcCountAfter, "Triggered more Full GCs than expected");
             }
         }
     }
@@ -166,7 +166,7 @@ public class TestJNICriticalStressTest {
 
     public static void main(String... args) throws Exception {
         if (args.length < 4) {
-            println("usage: JNICriticalStressTest3 <duration sec> <alloc threads> <jni critical threads>");
+            println("usage: JNICriticalStressTest <duration sec> <alloc threads> <jni critical threads> <gc name>");
             exit(-1);
         }
 
@@ -191,9 +191,7 @@ public class TestJNICriticalStressTest {
 
         List<GarbageCollectorMXBean> collectors = ManagementFactory.getGarbageCollectorMXBeans();
 
-
         for (int i = 0; i < collectors.size(); i++) {
-            println(collectors.get(i).getName());
             if (collectors.get(i).getName().contains(OldGCName.toString())) {
                 collector = collectors.get(i);
                 break;
@@ -218,8 +216,6 @@ public class TestJNICriticalStressTest {
             new Thread(new JNICriticalWorker()).start();
         }
 
-        gcCountBefore = collector.getCollectionCount();
-
         new Thread(new SystemGCWorker()).start();
 
         long durationMS = (long) (1000 * durationSec);
@@ -229,7 +225,9 @@ public class TestJNICriticalStressTest {
         while (soFar < durationMS) {
             try {
                 Thread.sleep(durationMS - soFar);
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return;
             }
             now = System.currentTimeMillis();
             soFar = now - start;
