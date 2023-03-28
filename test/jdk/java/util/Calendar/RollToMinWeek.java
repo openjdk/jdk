@@ -45,7 +45,8 @@ import org.junit.jupiter.params.provider.Arguments;
  * test the implementation of the Gregorian Calendar roll
  */
 public class RollToMinWeek {
-    static Calendar.Builder CAL_BUILDER = new Builder();
+    static Calendar.Builder GREGORIAN_BUILDER = new Builder()
+            .setCalendarType("gregory");
 
     @ParameterizedTest
     @MethodSource("rollUpCalProvider")
@@ -97,7 +98,7 @@ public class RollToMinWeek {
             for (int weekLength = 1; weekLength <= 7; weekLength++) {
                 // Sunday .. Monday -> Saturda
                 for (int firstDay = SUNDAY; firstDay <= SATURDAY; firstDay++) {
-                    calList.add(Arguments.of(buildCalendar("gregory", firstDay, weekLength,
+                    calList.add(Arguments.of(buildCalendar(firstDay, weekLength,
                                     dayOfMonth, DECEMBER, 2019), validDates[date]));
                 }
             }
@@ -106,11 +107,10 @@ public class RollToMinWeek {
         return calList.stream();
     }
 
-    private static Calendar buildCalendar(String type, int firstDayOfWeek,
-                                 int minimumWeekLength, int dayOfMonth,
-                                 int month, int year) {
-        return CAL_BUILDER
-                .setCalendarType(type)
+    private static Calendar buildCalendar(int firstDayOfWeek,
+                                          int minimumWeekLength, int dayOfMonth,
+                                          int month, int year) {
+        return GREGORIAN_BUILDER
                 .setWeekDefinition(firstDayOfWeek, minimumWeekLength)
                 .setDate(year, month, dayOfMonth)
                 .build();
