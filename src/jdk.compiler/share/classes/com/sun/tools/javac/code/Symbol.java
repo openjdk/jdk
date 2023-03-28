@@ -840,7 +840,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                     return
                         types.rank(that.type) < types.rank(this.type) ||
                         (types.rank(that.type) == types.rank(this.type) &&
-                         that.getQualifiedName().compareTo(this.getQualifiedName()) < 0);
+                         this.getQualifiedName().compareTo(that.getQualifiedName()) < 0);
                 } else if (type.hasTag(TYPEVAR)) {
                     return types.isSubtype(this.type, that.type);
                 }
@@ -1000,6 +1000,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return msym;
         }
 
+        @SuppressWarnings("this-escape")
         public ModuleSymbol(Name name, Symbol owner) {
             super(MDL, 0, name, null, owner);
             Assert.checkNonNull(name);
@@ -1153,6 +1154,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             this.fullname = formFullName(name, owner);
         }
 
+        @SuppressWarnings("this-escape")
         public PackageSymbol(Name name, Symbol owner) {
             this(name, null, owner);
             this.type = new PackageType(this);

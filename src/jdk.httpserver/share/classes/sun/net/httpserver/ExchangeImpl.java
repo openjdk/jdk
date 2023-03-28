@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,7 @@ class ExchangeImpl {
             }
             noContentToSend = true;
             contentLen = 0;
+            o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         } else { /* not a HEAD request or 304 response */
             if (contentLen == 0) {
                 if (http10) {
@@ -282,9 +283,7 @@ class ExchangeImpl {
         sentHeaders = true;
         logger.log(Level.TRACE, "Sent headers: noContentToSend=" + noContentToSend);
         if (noContentToSend) {
-            WriteFinishedEvent e = new WriteFinishedEvent (this);
-            server.addEvent (e);
-            closed = true;
+            close();
         }
         server.logReply (rCode, req.requestLine(), null);
     }

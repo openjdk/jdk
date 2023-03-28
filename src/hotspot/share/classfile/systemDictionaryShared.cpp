@@ -852,7 +852,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
   EventClassLoad class_load_start_event;
 
   // Add to class hierarchy, and do possible deoptimizations.
-  SystemDictionary::add_to_hierarchy(THREAD, loaded_lambda);
+  loaded_lambda->add_to_hierarchy(THREAD);
   // But, do not add to dictionary.
 
   loaded_lambda->link_class(CHECK_NULL);

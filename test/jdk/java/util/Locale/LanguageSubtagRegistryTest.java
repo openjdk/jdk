@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 8040211 8191404 8203872 8222980 8225435 8241082 8242010 8247432
- *      8258795 8267038 8287180 8302512
+ *      8258795 8267038 8287180 8302512 8304761
  * @summary Checks the IANA language subtag registry data update
- *          (LSR Revision: 2023-02-14) with Locale and Locale.LanguageRange
+ *          (LSR Revision: 2023-03-22) with Locale and Locale.LanguageRange
  *          class methods.
  * @run main LanguageSubtagRegistryTest
  */
@@ -44,10 +44,10 @@ public class LanguageSubtagRegistryTest {
     static boolean err = false;
 
     private static final String ACCEPT_LANGUAGE =
-        "Accept-Language: aam, adp, aeb, ajs, aog, aue, bcg, bic, bpp, cey, cnp, cqu, csp, csx, dif, dmw, dsz, ehs, ema,"
-        + " en-gb-oed, gti, iba, jks, kdz, kmb, koj, kru, ksp, kwq, kxe, kzk, lii, lmm, lsb, lsc, lsn, lsv, lsw, lvi, mtm,"
-        + " ngv, nns, ola, oyb, pat, phr, pnd, pub, rib, rnb, rsn, scv, snz, sqx, suj, szy, taj, tjj, tjp, tvx,"
-        + " uss, uth, ysm, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
+        "Accept-Language: aam, adp, aeb, ajs, aog, apc, aue, bcg, bic, bpp, cey, cbr, cnp, cqu, crr, csp, csx, dif, dmw, dsz, ehs, ema,"
+        + " en-gb-oed, gti, iba, jks, kdz, kjh, kmb, koj, kru, ksp, kwq, kxe, kzk, lgs, lii, lmm, lsb, lsc, lsn, lsv, lsw, lvi, mtm,"
+        + " ngv, nns, ola, oyb, pat, phr, plu, pnd, pub, rib, rnb, rsn, scv, snz, sqx, suj, szy, taj, tdg, tjj, tjp, tpn, tvx,"
+        + " umi, uss, uth, ysm, zko, wkr;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
     private static final List<LanguageRange> EXPECTED_RANGE_LIST = List.of(
             new LanguageRange("aam", 1.0),
             new LanguageRange("aas", 1.0),
@@ -60,6 +60,10 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("sgn-ajs", 1.0),
             new LanguageRange("aog", 1.0),
             new LanguageRange("myd", 1.0),
+            new LanguageRange("apc", 1.0),
+            new LanguageRange("ar-apc", 1.0),
+            new LanguageRange("ar-ajp", 1.0),
+            new LanguageRange("ajp", 1.0),
             new LanguageRange("aue", 1.0),
             new LanguageRange("ktz", 1.0),
             new LanguageRange("bcg", 1.0),
@@ -69,10 +73,14 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("bpp", 1.0),
             new LanguageRange("nxu", 1.0),
             new LanguageRange("cey", 1.0),
+            new LanguageRange("cbr", 1.0),
+            new LanguageRange("nom", 1.0),
             new LanguageRange("cnp", 1.0),
             new LanguageRange("zh-cnp", 1.0),
             new LanguageRange("cqu", 1.0),
             new LanguageRange("quh", 1.0),
+            new LanguageRange("crr", 1.0),
+            new LanguageRange("pmk", 1.0),
             new LanguageRange("csp", 1.0),
             new LanguageRange("zh-csp", 1.0),
             new LanguageRange("csx", 1.0),
@@ -98,6 +106,8 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("sgn-jks", 1.0),
             new LanguageRange("kdz", 1.0),
             new LanguageRange("ncp", 1.0),
+            new LanguageRange("kjh", 1.0),
+            new LanguageRange("zkb", 1.0),
             new LanguageRange("kmb", 1.0),
             new LanguageRange("smd", 1.0),
             new LanguageRange("koj", 1.0),
@@ -113,6 +123,8 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("kzk", 1.0),
             new LanguageRange("gli", 1.0),
             new LanguageRange("drr", 1.0),
+            new LanguageRange("lgs", 1.0),
+            new LanguageRange("sgn-lgs", 1.0),
             new LanguageRange("lii", 1.0),
             new LanguageRange("raq", 1.0),
             new LanguageRange("lmm", 1.0),
@@ -144,6 +156,8 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("kxr", 1.0),
             new LanguageRange("phr", 1.0),
             new LanguageRange("pmu", 1.0),
+            new LanguageRange("plu", 1.0),
+            new LanguageRange("kgm", 1.0),
             new LanguageRange("pnd", 1.0),
             new LanguageRange("pub", 1.0),
             new LanguageRange("puz", 1.0),
@@ -163,13 +177,21 @@ public class LanguageSubtagRegistryTest {
             new LanguageRange("szy", 1.0),
             new LanguageRange("taj", 1.0),
             new LanguageRange("tsf", 1.0),
+            new LanguageRange("tdg", 1.0),
+            new LanguageRange("tmk", 1.0),
             new LanguageRange("tjj", 1.0),
             new LanguageRange("tjp", 1.0),
+            new LanguageRange("tpn", 1.0),
+            new LanguageRange("tpw", 1.0),
             new LanguageRange("tvx", 1.0),
+            new LanguageRange("umi", 1.0),
+            new LanguageRange("szd", 1.0),
             new LanguageRange("uss", 1.0),
             new LanguageRange("uth", 1.0),
             new LanguageRange("ysm", 1.0),
             new LanguageRange("sgn-ysm", 1.0),
+            new LanguageRange("zko", 1.0),
+            new LanguageRange("xss", 1.0),
             new LanguageRange("wkr", 0.9),
             new LanguageRange("ar-hyw", 0.8),
             new LanguageRange("yug", 0.5),
