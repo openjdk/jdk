@@ -1312,10 +1312,8 @@ public class GregorianCalendar extends Calendar {
                     // current DAY_OF_WEEK. Only make a check for
                     // rolling up into week 1, as the existing checks
                     // sufficiently handle rolling down into week 1.
-                    if (newWeekOfYear == 1 && (isInvalidWeek1())) {
-                        if (amount > 0) {
-                            newWeekOfYear++;
-                        }
+                    if (newWeekOfYear == 1 && isInvalidWeek1() && amount > 0) {
+                        newWeekOfYear++;
                     }
                     set(field, newWeekOfYear);
                     return;
@@ -3001,34 +2999,28 @@ public class GregorianCalendar extends Calendar {
         } else {
             daysInFirstWeek = getFirstDayOfWeek() - jan1Dow;
         }
-        // If the week is minimum, check if the DAY_OF_WEEK does not exist
-        return isMinWeek(daysInFirstWeek) &&
-                dayNotInMinWeek(internalGet(DAY_OF_WEEK), jan1Dow, getFirstDayOfWeek() - 1);
-    }
-
-    /**
-     * Determines if the specified amount of days can make up
-     * a valid minimum week.
-     */
-    private boolean isMinWeek (int days) {
-        return days >= getMinimalDaysInFirstWeek();
+        // If the week is a valid minimum, check if the DAY_OF_WEEK does not exist
+        return daysInFirstWeek >= getMinimalDaysInFirstWeek() &&
+                !dayInMinWeek(internalGet(DAY_OF_WEEK), jan1Dow, getFirstDayOfWeek() - 1);
     }
 
     /**
      * Determines if the specified day exists in the minimum week.
-     * For example, dayNotInMinWeek(4, 6, 3) returns false since Wednesday
+     * For example, dayInMinWeek(4, 6, 3) returns false since Wednesday
      * is not between the minimum week given by [Friday, Saturday,
      * Sunday, Monday, Tuesday].
      */
-    private boolean dayNotInMinWeek (int day, int startDay, int endDay) {
+    private boolean dayInMinWeek (int day, int startDay, int endDay) {
+        endDay = endDay == 0
+                ? 7 : endDay;
         if (endDay >= startDay) {
-            // dayNotInMinWeek(2, 3, 6), check that 2 is
-            // not between 3 4 5 6
-            return !(day >= startDay && day <= endDay);
+            // dayInMinWeek(6, 3, 5), check that 6 is
+            // between 3 4 5
+            return (day >= startDay && day <= endDay);
         } else {
-            // dayNotInMinWeek(4, 6, 3), check that 4 is
-            // not between 6 7 1 2 3
-            return !(day >= startDay || day <= endDay);
+            // dayInMinWeek(4, 6, 3), check that 4 is
+            // between 6 7 1 2 3
+            return (day >= startDay || day <= endDay);
         }
     }
 
