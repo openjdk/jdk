@@ -306,7 +306,7 @@ public interface StringTemplate {
      * {@link StringTemplate}.
      * {@snippet :
      * StringTemplate st = StringTemplate.combine(RAW."\{a}", RAW."\{b}", RAW."\{c}");
-     * assert st.interpolate().equals(RAW."\{a}\{b}\{c}");
+     * assert st.interpolate().equals(STR."\{a}\{b}\{c}");
      * }
      * Fragment lists from the {@link StringTemplate StringTemplates} are combined end to
      * end with the last fragment from each {@link StringTemplate} concatenated with the
@@ -358,7 +358,7 @@ public interface StringTemplate {
      * {@link StringTemplate}.
      * {@snippet :
      * StringTemplate st = StringTemplate.combine(List.of(RAW."\{a}", RAW."\{b}", RAW."\{c}"));
-     * assert st.interpolate().equals(RAW."\{a}\{b}\{c}");
+     * assert st.interpolate().equals(STR."\{a}\{b}\{c}");
      * }
      * Fragment lists from the {@link StringTemplate StringTemplates} are combined end to
      * end with the last fragment from each {@link StringTemplate} concatenated with the
