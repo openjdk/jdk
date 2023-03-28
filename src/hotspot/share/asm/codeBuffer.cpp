@@ -998,22 +998,24 @@ void CodeBuffer::log_section_sizes(const char* name) {
   if (xtty != NULL) {
     ttyLocker ttyl;
     // log info about buffer usage
-    xtty->print_cr("<blob name='%s' size='%d'>", name, _total_size);
+    xtty->print_cr("<blob name='%s' total_size='%d'>", name, _total_size);
     for (int n = (int) CodeBuffer::SECT_FIRST; n < (int) CodeBuffer::SECT_LIMIT; n++) {
       CodeSection* sect = code_section(n);
       if (!sect->is_allocated() || sect->is_empty())  continue;
-      xtty->print_cr("<sect index='%d' size='" SIZE_FORMAT "' free='" SIZE_FORMAT "'/>",
-                     n, sect->limit() - sect->start(), sect->limit() - sect->end());
+      xtty->print_cr("<sect index='%d' capacity='%d' size='%d' remaining='%d'/>",
+                     n, sect->capacity(), sect->size(), sect->remaining());
     }
     xtty->print_cr("</blob>");
   }
 }
 
-void CodeBuffer::finalize_stubs() {
-  if (!pd_finalize_stubs()) {
-    return;
+bool CodeBuffer::finalize_stubs() {
+  if (_finalize_stubs && !pd_finalize_stubs()) {
+    // stub allocation failure
+    return false;
   }
   _finalize_stubs = false;
+  return true;
 }
 
 void CodeBuffer::shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset) {
