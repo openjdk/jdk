@@ -443,6 +443,36 @@ public class Thread implements Runnable {
     private static native void yield0();
 
     /**
+     * Called before sleeping to create a jdk.ThreadSleepEvent event.
+     */
+    private static ThreadSleepEvent beforeSleep(long nanos) {
+        ThreadSleepEvent event = null;
+        if (ThreadSleepEvent.isTurnedOn()) {
+            try {
+                event = new ThreadSleepEvent();
+                event.time = nanos;
+                event.begin();
+            } catch (OutOfMemoryError e) {
+                event = null;
+            }
+        }
+        return event;
+    }
+
+    /**
+     * Called after sleeping to commit the jdk.ThreadSleepEvent event.
+     */
+    private static void afterSleep(ThreadSleepEvent event) {
+        if (event != null) {
+            try {
+                event.commit();
+            } catch (OutOfMemoryError e) {
+                // ignore
+            }
+        }
+    }
+
+    /**
      * Causes the currently executing thread to sleep (temporarily cease
      * execution) for the specified number of milliseconds, subject to
      * the precision and accuracy of system timers and schedulers. The thread
@@ -463,20 +493,9 @@ public class Thread implements Runnable {
         if (millis < 0) {
             throw new IllegalArgumentException("timeout value is negative");
         }
+
         long nanos = MILLISECONDS.toNanos(millis);
-
-        // create jdk.ThreadSleepEvent event if enabled
-        ThreadSleepEvent event = null;
-        if (ThreadSleepEvent.isTurnedOn()) {
-            try {
-                event = new ThreadSleepEvent();
-                event.time = nanos;
-                event.begin();
-            } catch (OutOfMemoryError e) {
-                event = null;
-            }
-        }
-
+        ThreadSleepEvent event = beforeSleep(nanos);
         try {
             if (currentThread() instanceof VirtualThread vthread) {
                 vthread.sleepNanos(nanos);
@@ -484,11 +503,7 @@ public class Thread implements Runnable {
                 sleep0(millis);
             }
         } finally {
-            try {
-                if (event != null) event.commit();
-            } catch (OutOfMemoryError e) {
-                // ignore
-            }
+            afterSleep(event);
         }
     }
 
@@ -525,10 +540,23 @@ public class Thread implements Runnable {
             throw new IllegalArgumentException("nanosecond timeout value out of range");
         }
 
-        if (nanos > 0 && millis < Long.MAX_VALUE) {
-            millis++;
+        ThreadSleepEvent event = beforeSleep(nanos);
+        try {
+            if (currentThread() instanceof VirtualThread vthread) {
+                // total sleep time, in nanoseconds
+                long totalNanos = MILLISECONDS.toNanos(millis);
+                totalNanos += Math.min(Long.MAX_VALUE - totalNanos, nanos);
+                vthread.sleepNanos(totalNanos);
+            } else {
+                // millisecond precision
+                if (nanos > 0 && millis < Long.MAX_VALUE) {
+                    millis++;
+                }
+                sleep0(millis);
+            }
+        } finally {
+            afterSleep(event);
         }
-        sleep(millis);
     }
 
     /**
@@ -553,23 +581,12 @@ public class Thread implements Runnable {
             return;
         }
 
-        // create jdk.ThreadSleepEvent event if enabled
-        ThreadSleepEvent event = null;
-        if (ThreadSleepEvent.isTurnedOn()) {
-            try {
-                event = new ThreadSleepEvent();
-                event.time = nanos;
-                event.begin();
-            } catch (OutOfMemoryError e) {
-                event = null;
-            }
-        }
-
+        ThreadSleepEvent event = beforeSleep(nanos);
         try {
             if (currentThread() instanceof VirtualThread vthread) {
                 vthread.sleepNanos(nanos);
             } else {
-                // convert to milliseconds
+                // millisecond precision
                 long millis = NANOSECONDS.toMillis(nanos);
                 if (nanos > MILLISECONDS.toNanos(millis)) {
                     millis += 1L;
@@ -577,11 +594,7 @@ public class Thread implements Runnable {
                 sleep0(millis);
             }
         } finally {
-            try {
-                if (event != null) event.commit();
-            } catch (OutOfMemoryError e) {
-                // ignore
-            }
+            afterSleep(event);
         }
     }
 
