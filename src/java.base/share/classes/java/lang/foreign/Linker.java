@@ -630,6 +630,15 @@ public sealed interface Linker permits AbstractLinker {
          *     <li>WSAGetLastError</li>
          *     <li>errno</li>
          * </ul>
+         * The following snipet shows how to obtain the names of the supported captured value layouts:
+         * {@snippet lang = java:
+         *    String capturedNames = Linker.Option.captureStateLayout().memberLayouts().stream()
+         *        .map(MemoryLayout::name)
+         *        .filter(Optional::isPresent)
+         *        .map(Optional::get)
+         *        .map(Objects::toString)
+         *        .collect(Collectors.joining(", "));
+         * }
          *
          * @see #captureCallState(String...)
          */
