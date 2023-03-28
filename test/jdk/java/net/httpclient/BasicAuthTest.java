@@ -91,8 +91,9 @@ public class BasicAuthTest implements HttpServerAdapters {
             HttpResponse resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
 
-            if (!ok || ca.count != 1)
-                throw new RuntimeException("Test failed");
+            var count = ca.count;
+            if (!ok || count != 1)
+                throw new RuntimeException("Test failed: ca.count=" + count);
 
             // repeat same request, should succeed but no additional authenticator calls
 
@@ -100,8 +101,9 @@ public class BasicAuthTest implements HttpServerAdapters {
             resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
 
-            if (!ok || ca.count != 1)
-                throw new RuntimeException("Test failed");
+            count = ca.count;
+            if (!ok || count != 1)
+                throw new RuntimeException("Test failed: ca.count=" + count);
 
             // try a POST
 
@@ -111,8 +113,9 @@ public class BasicAuthTest implements HttpServerAdapters {
             resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200;
 
-            if (!ok || ca.count != 1)
-                throw new RuntimeException("Test failed");
+            count = ca.count;
+            if (!ok || count != 1)
+                throw new RuntimeException("Test failed: ca.count=" + count);
 
 
         } finally {
