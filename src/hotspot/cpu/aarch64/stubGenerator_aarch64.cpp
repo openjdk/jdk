@@ -7997,7 +7997,7 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // Initialization
-  void generate_initial() {
+  void generate_initial_stubs() {
     // Generate initial stubs and initializes the entry points
 
     // entry points that exist in all platforms Note: This is code
@@ -8023,6 +8023,12 @@ class StubGenerator: public StubCodeGenerator {
       generate_throw_exception("delayed StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::throw_delayed_StackOverflowError));
+
+    // Initialize table for copy memory (arraycopy) check.
+    if (UnsafeCopyMemory::_table == nullptr) {
+      UnsafeCopyMemory::create_table(8);
+    }
+
     if (UseCRC32Intrinsics) {
       // set table address before stub generation which use it
       StubRoutines::_crc_table_adr = (address)StubRoutines::aarch64::_crc_table;
@@ -8047,7 +8053,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  void generate_phase1() {
+  void generate_continuation_stubs() {
     // Continuation stubs:
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
@@ -8057,7 +8063,7 @@ class StubGenerator: public StubCodeGenerator {
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
-  void generate_all() {
+  void generate_final_stubs() {
     // support for verify_oop (must happen after universe_init)
     if (VerifyOops) {
       StubRoutines::_verify_oop_subroutine_entry   = generate_verify_oop();
@@ -8080,32 +8086,47 @@ class StubGenerator: public StubCodeGenerator {
                                                 SharedRuntime::
                                                 throw_NullPointerException_at_call));
 
-    if (UseSVE == 0) {
-      StubRoutines::aarch64::_vector_iota_indices = generate_iota_indices("iota_indices");
-    }
-
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    // countPositives stub for large arrays.
-    StubRoutines::aarch64::_count_positives = generate_count_positives(StubRoutines::aarch64::_count_positives_long);
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::aarch64::_method_entry_barrier = generate_method_entry_barrier();
+    }
+
+    StubRoutines::aarch64::_spin_wait = generate_spin_wait();
+
+#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
+
+    generate_atomic_entry_points();
+
+#endif // LINUX
+
+    StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
+  }
+
+  void generate_compiler_stubs() {
+#if COMPILER2_OR_JVMCI
+
+    if (UseSVE == 0) {
+      StubRoutines::aarch64::_vector_iota_indices = generate_iota_indices("iota_indices");
+    }
 
     // array equals stub for large arrays.
     if (!UseSimpleArrayEquals) {
       StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
     }
 
+    // byte_array_inflate stub for large arrays.
+    StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
+
+    // countPositives stub for large arrays.
+    StubRoutines::aarch64::_count_positives = generate_count_positives(StubRoutines::aarch64::_count_positives_long);
+
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
 
-    // byte_array_inflate stub for large arrays.
-    StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
-
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
-      StubRoutines::aarch64::_method_entry_barrier = generate_method_entry_barrier();
-    }
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
@@ -8192,36 +8213,33 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
-
-    StubRoutines::aarch64::_spin_wait = generate_spin_wait();
-
-#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
-
-    generate_atomic_entry_points();
-
-#endif // LINUX
-
-    StubRoutines::aarch64::set_completed();
+#endif // COMPILER2_OR_JVMCI
   }
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
+  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
+    switch(kind) {
+    case Initial_stubs:
+      generate_initial_stubs();
+      break;
+     case Continuation_stubs:
+      generate_continuation_stubs();
+      break;
+    case Compiler_stubs:
+      generate_compiler_stubs();
+      break;
+    case Final_stubs:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected stubs kind: %d", kind);
+      break;
+    };
   }
 }; // end class declaration
 
-#define UCM_TABLE_MAX_ENTRIES 8
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == NULL) {
-    UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
-  }
-  StubGenerator g(code, phase);
+void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
+  StubGenerator g(code, kind);
 }
 
 

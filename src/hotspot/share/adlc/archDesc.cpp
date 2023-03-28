@@ -1192,7 +1192,8 @@ void ArchDesc::buildMustCloneMap(FILE *fp_hpp, FILE *fp_cpp) {
          || strcmp(idealName,"OverflowMulI") == 0
          || strcmp(idealName,"OverflowMulL") == 0
          || strcmp(idealName,"Bool") == 0
-         || strcmp(idealName,"Binary") == 0 ) {
+         || strcmp(idealName,"Binary") == 0
+         || strcmp(idealName,"VectorTest") == 0 ) {
       // Removed ConI from the must_clone list.  CPUs that cannot use
       // large constants as immediates manifest the constant as an
       // instruction.  The must_clone flag prevents the constant from

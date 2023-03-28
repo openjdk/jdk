@@ -74,7 +74,7 @@ public:
      _needs_transition(needs_transition),
      _frame_complete(0),
      _frame_size_slots(0),
-     _oop_maps(NULL) {
+     _oop_maps(nullptr) {
   }
 
   void generate();
