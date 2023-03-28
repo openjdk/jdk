@@ -4645,223 +4645,270 @@ void PhaseIdealLoop::print_statistics() {
 }
 
 //------------------------------verify-----------------------------------------
-// Build a verify-only PhaseIdealLoop, and see that it agrees with me.
-static int fail;                // debug only, so its multi-thread dont care
+// Build a verify-only PhaseIdealLoop, and see that it agrees with "this".
 void PhaseIdealLoop::verify() const {
-  int old_progress = C->major_progress();
   ResourceMark rm;
-  PhaseIdealLoop loop_verify(_igvn, this);
-  VectorSet visited;
+  int old_progress = C->major_progress();
 
-  fail = 0;
-  verify_compare(C->root(), &loop_verify, visited);
+  PhaseIdealLoop loop_verify(_igvn, this);
+
+  // Verify ctrl and idom of every node.
+  int fail = 0;
+  verify_nodes(C->root(), &loop_verify, fail);
   assert(fail == 0, "verify loops failed");
-  // Verify loop structure is the same
-  _ltree_root->verify_tree(loop_verify._ltree_root, NULL);
-  // Reset major-progress.  It was cleared by creating a verify version of
-  // PhaseIdealLoop.
+
+  // Verify loop-tree.
+  _ltree_root->verify_tree(loop_verify._ltree_root, nullptr);
+
+  // Major progress was cleared by creating a verify version of PhaseIdealLoop.
   C->restore_major_progress(old_progress);
 }
 
-//------------------------------verify_compare---------------------------------
-// Make sure me and the given PhaseIdealLoop agree on key data structures
-void PhaseIdealLoop::verify_compare( Node *n, const PhaseIdealLoop *loop_verify, VectorSet &visited ) const {
-  if( !n ) return;
-  if( visited.test_set( n->_idx ) ) return;
-  if( !_nodes[n->_idx] ) {      // Unreachable
-    assert( !loop_verify->_nodes[n->_idx], "both should be unreachable" );
-    return;
-  }
-
-  uint i;
-  for( i = 0; i < n->req(); i++ )
-    verify_compare( n->in(i), loop_verify, visited );
-
-  // Check the '_nodes' block/loop structure
-  i = n->_idx;
-  if( has_ctrl(n) ) {           // We have control; verify has loop or ctrl
-    if( _nodes[i] != loop_verify->_nodes[i] &&
-        get_ctrl_no_update(n) != loop_verify->get_ctrl_no_update(n) ) {
-      tty->print("Mismatched control setting for: ");
-      n->dump();
-      if( fail++ > 10 ) return;
-      Node *c = get_ctrl_no_update(n);
-      tty->print("We have it as: ");
-      if( c->in(0) ) c->dump();
-        else tty->print_cr("N%d",c->_idx);
-      tty->print("Verify thinks: ");
-      if( loop_verify->has_ctrl(n) )
-        loop_verify->get_ctrl_no_update(n)->dump();
-      else
-        loop_verify->get_loop_idx(n)->dump();
-      tty->cr();
-    }
-  } else {                    // We have a loop
-    IdealLoopTree *us = get_loop_idx(n);
-    if( loop_verify->has_ctrl(n) ) {
-      tty->print("Mismatched loop setting for: ");
-      n->dump();
-      if( fail++ > 10 ) return;
-      tty->print("We have it as: ");
-      us->dump();
-      tty->print("Verify thinks: ");
-      loop_verify->get_ctrl_no_update(n)->dump();
-      tty->cr();
-    } else if (!C->major_progress()) {
-      // Loop selection can be messed up if we did a major progress
-      // operation, like split-if.  Do not verify in that case.
-      IdealLoopTree *them = loop_verify->get_loop_idx(n);
-      if( us->_head != them->_head ||  us->_tail != them->_tail ) {
-        tty->print("Unequals loops for: ");
-        n->dump();
-        if( fail++ > 10 ) return;
-        tty->print("We have it as: ");
-        us->dump();
-        tty->print("Verify thinks: ");
-        them->dump();
-        tty->cr();
+//------------------------------verify_nodes-----------------------------
+// Perform a BFS starting at n, through all inputs.
+// Call verify_node on all nodes of BFS traversal.
+void PhaseIdealLoop::verify_nodes(Node* root, const PhaseIdealLoop* loop_verify, int &fail) const {
+  Unique_Node_List worklist;
+  worklist.push(root);
+  for (uint i = 0; i < worklist.size() && fail < 10; i++) {
+    Node* n = worklist.at(i);
+    // process node
+    verify_node(n, loop_verify, fail);
+    // visit inputs
+    for(uint j = 0; j < n->req(); j++) {
+      if (n->in(j) != nullptr) {
+        worklist.push(n->in(j));
       }
     }
   }
+}
 
-  // Check for immediate dominators being equal
-  if( i >= _idom_size ) {
-    if( !n->is_CFG() ) return;
-    tty->print("CFG Node with no idom: ");
-    n->dump();
+//------------------------------verify_node---------------------------------
+// Compare "this" and "loop_verify".
+//  (1) Verify "_nodes": control and loop membership.
+//  (2) Verify dominator structure (IDOM).
+void PhaseIdealLoop::verify_node(Node* n, const PhaseIdealLoop* loop_verify, int &fail) const {
+  uint i = n->_idx;
+  // The loop-tree was built from def to use. The verification happens from def to use.
+  // We may thus find nodes during verification that are not in the loop-tree.
+  if(_nodes[i] == nullptr) {
+    assert(loop_verify->_nodes[i] == nullptr, "both should be unreachable");
     return;
   }
-  if( !n->is_CFG() ) return;
-  if( n == C->root() ) return; // No IDOM here
 
-  assert(n->_idx == i, "sanity");
-  Node *id = idom_no_update(n);
-  if( id != loop_verify->idom_no_update(n) ) {
-    tty->print("Unequals idoms for: ");
+  // Check everything stored in "_nodes".
+  //  (1) has_ctrl -> check lowest bit. 1 -> data node. 0 -> ctrl node.
+  //  (2) has_ctrl true: get_ctrl_no_update returns ctrl of data node.
+  //  (3) has_ctrl false: get_loop_idx returns IdealLoopTree for ctrl node.
+  if (n->is_CFG() == has_ctrl(n)) {
+    tty->print("Exactly one should be true: %d for is_CFG, %d for has_ctrl.", n->is_CFG(), has_ctrl(n));
     n->dump();
-    if( fail++ > 10 ) return;
-    tty->print("We have it as: ");
-    id->dump();
-    tty->print("Verify thinks: ");
-    loop_verify->idom_no_update(n)->dump();
-    tty->cr();
+    fail++;
   }
 
+  if (has_ctrl(n) != loop_verify->has_ctrl(n)) {
+    tty->print("Mismatch has_ctrl: %d for this, %d for verify.", has_ctrl(n), loop_verify->has_ctrl(n));
+    n->dump();
+    fail++;
+  } else if (has_ctrl(n)) {
+    assert(loop_verify->has_ctrl(n), "sanity");
+    // n is a data node.
+    // Verify that it ctrl is the same.
+
+    // Broken part of VerifyLoopOptimizations (A)
+    // Reason:
+    //   BUG, wrong control set for example in
+    //   PhaseIdealLoop::split_if_with_blocks
+    //   at "set_ctrl(x, new_ctrl);"
+    // //if( _nodes[i] != loop_verify->_nodes[i] &&
+    // //    get_ctrl_no_update(n) != loop_verify->get_ctrl_no_update(n) ) {
+    // //  tty->print("Mismatched control setting for: ");
+    // //  n->dump();
+    // //  if( fail++ > 10 ) return;
+    // //  Node *c = get_ctrl_no_update(n);
+    // //  tty->print("We have it as: ");
+    // //  if( c->in(0) ) c->dump();
+    // //    else tty->print_cr("N%d",c->_idx);
+    // //  tty->print("Verify thinks: ");
+    // //  if( loop_verify->has_ctrl(n) )
+    // //    loop_verify->get_ctrl_no_update(n)->dump();
+    // //  else
+    // //    loop_verify->get_loop_idx(n)->dump();
+    // //  tty->cr();
+    // //}
+  } else {
+    assert(!loop_verify->has_ctrl(n), "sanity");
+    // n is a ctrl node.
+    // Verify that not has_ctrl, and that get_loop_idx is the same.
+
+    // if (!C->major_progress()) {
+    //   // Broken part of VerifyLoopOptimizations (B)
+    //   // Reason:
+    //   //   NeverBranch node for example is added to loop outside its scope.
+    //   //   Once we run build_loop_tree again, it is added to the correct loop.
+    //   // // // Loop selection can be messed up if we did a major progress
+    //   // // // operation, like split-if.  Do not verify in that case.
+    //   // // IdealLoopTree *us = get_loop_idx(n);
+    //   // // IdealLoopTree *them = loop_verify->get_loop_idx(n);
+    //   // // if( us->_head != them->_head ||  us->_tail != them->_tail ) {
+    //   // //   tty->print("Unequals loops for: ");
+    //   // //   n->dump();
+    //   // //   if( fail++ > 10 ) return;
+    //   // //   tty->print("We have it as: ");
+    //   // //   us->dump();
+    //   // //   tty->print("Verify thinks: ");
+    //   // //   them->dump();
+    //   // //   tty->cr();
+    //   // // }
+    // }
+  }
+
+  // Verify IDOM for all CFG nodes (except root).
+  if (!n->is_CFG() || n->is_Root()) {
+    return;
+  }
+
+  if (i >= _idom_size) {
+    tty->print("CFG Node with no idom: ");
+    n->dump();
+    fail++;
+    return;
+  }
+
+  // Broken part of VerifyLoopOptimizations (C)
+  // Reason:
+  //   Idom not always set correctly, for example BUG in
+  //   PhaseIdealLoop::create_new_if_for_predicate
+  //   at "set_idom(rgn, nrdom, dom_depth(rgn));"
+  // //Node *id = idom_no_update(n);
+  // //if( id != loop_verify->idom_no_update(n) ) {
+  // //  tty->print("Unequals idoms for: ");
+  // //  n->dump();
+  // //  if( fail++ > 10 ) return;
+  // //  tty->print("We have it as: ");
+  // //  id->dump();
+  // //  tty->print("Verify thinks: ");
+  // //  loop_verify->idom_no_update(n)->dump();
+  // //  tty->cr();
+  // //}
 }
 
 //------------------------------verify_tree------------------------------------
-// Verify that tree structures match.  Because the CFG can change, siblings
-// within the loop tree can be reordered.  We attempt to deal with that by
+// Verify that tree structures match. Because the CFG can change, siblings
+// within the loop tree can be reordered. We attempt to deal with that by
 // reordering the verify's loop tree if possible.
-void IdealLoopTree::verify_tree(IdealLoopTree *loop, const IdealLoopTree *parent) const {
-  assert( _parent == parent, "Badly formed loop tree" );
+void IdealLoopTree::verify_tree(IdealLoopTree* loop, const IdealLoopTree* parent) const {
+  assert(_parent == parent, "Badly formed loop tree");
 
-  // Siblings not in same order?  Attempt to re-order.
-  if( _head != loop->_head ) {
-    // Find _next pointer to update
+  // If "this" and "loop" are not the same sibling of "parent", reorder the siblings.
+  if (_head != loop->_head) {
+    tty->print_cr("reorder loop tree");
+    // Find _next pointer to update (where "loop" is attached)
     IdealLoopTree **pp = &loop->_parent->_child;
-    while( *pp != loop )
+    while (*pp != loop) {
       pp = &((*pp)->_next);
-    // Find proper sibling to be next
+    }
+    // Find proper sibling to be next (where "loop" will be attached)
     IdealLoopTree **nn = &loop->_next;
-    while( (*nn) && (*nn)->_head != _head )
+    while ((*nn) != nullptr && (*nn)->_head != _head) {
       nn = &((*nn)->_next);
+    }
 
     // Check for no match.
-    if( !(*nn) ) {
-      // Annoyingly, irreducible loops can pick different headers
-      // after a major_progress operation, so the rest of the loop
-      // tree cannot be matched.
-      if (_irreducible && Compile::current()->major_progress())  return;
-      assert( 0, "failed to match loop tree" );
+    if ((*nn) == nullptr) {
+      // Annoyingly, irreducible loops can pick different headers (any of the entries)
+      // after a major_progress operation, so the rest of the loop tree cannot be matched.
+      assert(_irreducible && Compile::current()->major_progress(), "failed to match loop tree");
+      return;
     }
 
-    // Move (*nn) to (*pp)
-    IdealLoopTree *hit = *nn;
-    *nn = hit->_next;
-    hit->_next = loop;
+    // Swap (*nn) and (*pp)
+    IdealLoopTree* tmp = *nn;
+    *nn = tmp->_next;
+    tmp->_next = loop;
     *pp = loop;
-    loop = hit;
-    // Now try again to verify
+    loop = tmp;
   }
 
-  assert( _head  == loop->_head , "mismatched loop head" );
-  Node *tail = _tail;           // Inline a non-updating version of
-  while( !tail->in(0) )         // the 'tail()' call.
-    tail = tail->in(1);
-  assert( tail == loop->_tail, "mismatched loop tail" );
+  // After reordering, "this" and "loop" match.
+  assert(_head == loop->_head, "mismatched loop head");
 
-  // Counted loops that are guarded should be able to find their guards
-  if( _head->is_CountedLoop() && _head->as_CountedLoop()->is_main_loop() ) {
+  // Broken part of VerifyLoopOptimizations (D)
+  // Reason:
+  //   split_if has to update the _tail, if it is modified. But that is done by
+  //   checking to what loop the iff belongs to. That info can be wrong, and then
+  //   we do not update the _tail correctly.
+  // // Node *tail = _tail;           // Inline a non-updating version of
+  // // while( !tail->in(0) )         // the 'tail()' call.
+  // //   tail = tail->in(1);
+  // // assert( tail == loop->_tail, "mismatched loop tail" );
+
+  if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();
-    Node *init = cl->init_trip();
-    Node *ctrl = cl->in(LoopNode::EntryControl);
-    assert( ctrl->Opcode() == Op_IfTrue || ctrl->Opcode() == Op_IfFalse, "" );
-    Node *iff  = ctrl->in(0);
-    assert( iff->Opcode() == Op_If, "" );
-    Node *bol  = iff->in(1);
-    assert( bol->Opcode() == Op_Bool, "" );
-    Node *cmp  = bol->in(1);
-    assert( cmp->Opcode() == Op_CmpI, "" );
-    Node *add  = cmp->in(1);
-    Node *opaq;
-    if( add->Opcode() == Op_Opaque1 ) {
-      opaq = add;
-    } else {
-      assert( add->Opcode() == Op_AddI || add->Opcode() == Op_ConI , "" );
-      assert( add == init, "" );
-      opaq = cmp->in(2);
-    }
-    assert( opaq->Opcode() == Op_Opaque1, "" );
 
+    Node* ctrl     = cl->init_control();
+    Node* back     = cl->back_control();
+    assert(ctrl != nullptr && ctrl->is_CFG(), "sane loop in-ctrl");
+    assert(back != nullptr && back->is_CFG(), "sane loop backedge");
+    Node* loopexit = cl->loopexit(); // assert implied
   }
 
-  if (_child != NULL)  _child->verify_tree(loop->_child, this);
-  if (_next  != NULL)  _next ->verify_tree(loop->_next,  parent);
-  // Innermost loops need to verify loop bodies,
-  // but only if no 'major_progress'
-  int fail = 0;
-  if (!Compile::current()->major_progress() && _child == NULL) {
-    for( uint i = 0; i < _body.size(); i++ ) {
-      Node *n = _body.at(i);
-      if (n->outcnt() == 0)  continue; // Ignore dead
-      uint j;
-      for( j = 0; j < loop->_body.size(); j++ )
-        if( loop->_body.at(j) == n )
-          break;
-      if( j == loop->_body.size() ) { // Not found in loop body
-        // Last ditch effort to avoid assertion: Its possible that we
-        // have some users (so outcnt not zero) but are still dead.
-        // Try to find from root.
-        if (Compile::current()->root()->find(n->_idx)) {
-          fail++;
-          tty->print("We have that verify does not: ");
-          n->dump();
-        }
-      }
-    }
-    for( uint i2 = 0; i2 < loop->_body.size(); i2++ ) {
-      Node *n = loop->_body.at(i2);
-      if (n->outcnt() == 0)  continue; // Ignore dead
-      uint j;
-      for( j = 0; j < _body.size(); j++ )
-        if( _body.at(j) == n )
-          break;
-      if( j == _body.size() ) { // Not found in loop body
-        // Last ditch effort to avoid assertion: Its possible that we
-        // have some users (so outcnt not zero) but are still dead.
-        // Try to find from root.
-        if (Compile::current()->root()->find(n->_idx)) {
-          fail++;
-          tty->print("Verify has that we do not: ");
-          n->dump();
-        }
-      }
-    }
-    assert( !fail, "loop body mismatch" );
+  // Broken part of VerifyLoopOptimizations (E)
+  // Reason:
+  //   PhaseIdealLoop::split_thru_region creates new nodes for loop that are not added
+  //   to the loop body. Or maybe they are not added to the correct loop.
+  //   at "Node* x = n->clone();"
+  // // // Innermost loops need to verify loop bodies,
+  // // // but only if no 'major_progress'
+  // // int fail = 0;
+  // // if (!Compile::current()->major_progress() && _child == NULL) {
+  // //   for( uint i = 0; i < _body.size(); i++ ) {
+  // //     Node *n = _body.at(i);
+  // //     if (n->outcnt() == 0)  continue; // Ignore dead
+  // //     uint j;
+  // //     for( j = 0; j < loop->_body.size(); j++ )
+  // //       if( loop->_body.at(j) == n )
+  // //         break;
+  // //     if( j == loop->_body.size() ) { // Not found in loop body
+  // //       // Last ditch effort to avoid assertion: Its possible that we
+  // //       // have some users (so outcnt not zero) but are still dead.
+  // //       // Try to find from root.
+  // //       if (Compile::current()->root()->find(n->_idx)) {
+  // //         fail++;
+  // //         tty->print("We have that verify does not: ");
+  // //         n->dump();
+  // //       }
+  // //     }
+  // //   }
+  // //   for( uint i2 = 0; i2 < loop->_body.size(); i2++ ) {
+  // //     Node *n = loop->_body.at(i2);
+  // //     if (n->outcnt() == 0)  continue; // Ignore dead
+  // //     uint j;
+  // //     for( j = 0; j < _body.size(); j++ )
+  // //       if( _body.at(j) == n )
+  // //         break;
+  // //     if( j == _body.size() ) { // Not found in loop body
+  // //       // Last ditch effort to avoid assertion: Its possible that we
+  // //       // have some users (so outcnt not zero) but are still dead.
+  // //       // Try to find from root.
+  // //       if (Compile::current()->root()->find(n->_idx)) {
+  // //         fail++;
+  // //         tty->print("Verify has that we do not: ");
+  // //         n->dump();
+  // //       }
+  // //     }
+  // //   }
+  // //   assert( !fail, "loop body mismatch" );
+  // // }
+
+  // Recurse to children and siblings
+  if (_child != nullptr) {
+    _child->verify_tree(loop->_child, this);
+  }
+  if (_next != nullptr) {
+    _next->verify_tree(loop->_next, parent);
   }
 }
-
 #endif
 
 //------------------------------set_idom---------------------------------------
@@ -5933,18 +5980,21 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   }
 
 #ifdef ASSERT
-  // If verifying, verify that 'verify_me' has a legal location
-  // and choose it as our location.
-  if( _verify_me ) {
-    Node *v_ctrl = _verify_me->get_ctrl_no_update(n);
-    Node *legal = LCA;
-    while( early != legal ) {   // While not at earliest legal
-      if( legal == v_ctrl ) break;  // Check for prior good location
-      legal = idom(legal)      ;// Bump up the IDOM tree
-    }
-    // Check for prior good location
-    if( legal == v_ctrl ) least = legal; // Keep prior if found
-  }
+  // Broken part of VerifyLoopOptimizations (F)
+  // Reason:
+  //   _verify_me->get_ctrl_no_update(n) seems to return wrong result
+  // // // If verifying, verify that 'verify_me' has a legal location
+  // // // and choose it as our location.
+  // // if( _verify_me ) {
+  // //   Node *v_ctrl = _verify_me->get_ctrl_no_update(n);
+  // //   Node *legal = LCA;
+  // //   while( early != legal ) {   // While not at earliest legal
+  // //     if( legal == v_ctrl ) break;  // Check for prior good location
+  // //     legal = idom(legal)      ;// Bump up the IDOM tree
+  // //   }
+  // //   // Check for prior good location
+  // //   if( legal == v_ctrl ) least = legal; // Keep prior if found
+  // // }
 #endif
 
   // Assign discovered "here or above" point

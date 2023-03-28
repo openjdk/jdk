@@ -783,7 +783,7 @@ public:
 #ifndef PRODUCT
   void dump_head() const;       // Dump loop head only
   void dump() const;            // Dump this loop recursively
-  void verify_tree(IdealLoopTree *loop, const IdealLoopTree *parent) const;
+  void verify_tree(IdealLoopTree* loop, const IdealLoopTree* parent) const;
 #endif
 
  private:
@@ -1687,7 +1687,8 @@ public:
   void get_idoms(Node* n, uint count, Unique_Node_List& idoms) const;
   void dump(IdealLoopTree* loop, uint rpo_idx, Node_List &rpo_list) const;
   void verify() const;          // Major slow  :-)
-  void verify_compare(Node* n, const PhaseIdealLoop* loop_verify, VectorSet &visited) const;
+  void verify_nodes(Node* root, const PhaseIdealLoop* loop_verify, int &fail) const;
+  void verify_node(Node* n, const PhaseIdealLoop* loop_verify, int &fail) const;
   IdealLoopTree* get_loop_idx(Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
     return _nodes[n->_idx] ? (IdealLoopTree*)_nodes[n->_idx] : _ltree_root;
