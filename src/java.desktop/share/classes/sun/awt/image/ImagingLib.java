@@ -93,8 +93,6 @@ public class ImagingLib {
         PrivilegedAction<Boolean> doMlibInitialization =
             new PrivilegedAction<Boolean>() {
                 public Boolean run() {
-                    String arch = System.getProperty("os.arch");
-
                     try {
                         System.loadLibrary("mlib_image");
                     } catch (UnsatisfiedLinkError e) {
