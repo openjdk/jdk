@@ -249,10 +249,8 @@ static constexpr size_t inflation_lock_count() {
   return 256;
 }
 
-// Static storage for an array of PlatformMutex. Each entry is aligned to `alignas(PlatformMutex)`
-// by property of the storage itself being aligned to that requirement and each entry storage being
-// `sizeof(PlatformMutex)` aligned up to `alignof(PlatformMutex)`.
-alignas(PlatformMutex) static uint8_t _inflation_locks[inflation_lock_count()][align_up(sizeof(PlatformMutex), alignof(PlatformMutex))];
+// Static storage for an array of PlatformMutex.
+alignas(PlatformMutex) static uint8_t _inflation_locks[inflation_lock_count()][sizeof(PlatformMutex)];
 
 static inline PlatformMutex* inflation_lock(size_t index) {
   return reinterpret_cast<PlatformMutex*>(_inflation_locks[index]);
