@@ -44,21 +44,20 @@ class LibFallback {
         return true;
     }
 
-    static final int DEFAULT_ABI = ffi_default_abi();
+    static int defaultABI() { return NativeConstants.DEFAULT_ABI; }
 
-    static final MemorySegment UINT8_TYPE = MemorySegment.ofAddress(ffi_type_uint8());
-    static final MemorySegment SINT8_TYPE = MemorySegment.ofAddress(ffi_type_sint8());
-    static final MemorySegment UINT16_TYPE = MemorySegment.ofAddress(ffi_type_uint16());
-    static final MemorySegment SINT16_TYPE = MemorySegment.ofAddress(ffi_type_sint16());
-    static final MemorySegment SINT32_TYPE = MemorySegment.ofAddress(ffi_type_sint32());
-    static final MemorySegment SINT64_TYPE = MemorySegment.ofAddress(ffi_type_sint64());
-    static final MemorySegment FLOAT_TYPE = MemorySegment.ofAddress(ffi_type_float());
-    static final MemorySegment DOUBLE_TYPE = MemorySegment.ofAddress(ffi_type_double());
-    static final MemorySegment POINTER_TYPE = MemorySegment.ofAddress(ffi_type_pointer());
+    static MemorySegment uint8Type() { return NativeConstants.UINT8_TYPE; }
+    static MemorySegment sint8Type() { return NativeConstants.SINT8_TYPE; }
+    static MemorySegment uint16Type() { return NativeConstants.UINT16_TYPE; }
+    static MemorySegment sint16Type() { return NativeConstants.SINT16_TYPE; }
+    static MemorySegment sint32Type() { return NativeConstants.SINT32_TYPE; }
+    static MemorySegment sint64Type() { return NativeConstants.SINT64_TYPE; }
+    static MemorySegment floatType() { return NativeConstants.FLOAT_TYPE; }
+    static MemorySegment doubleType() { return NativeConstants.DOUBLE_TYPE; }
+    static MemorySegment pointerType() { return NativeConstants.POINTER_TYPE; }
+    static MemorySegment voidType() { return NativeConstants.VOID_TYPE; }
 
-    static final MemorySegment VOID_TYPE = MemorySegment.ofAddress(ffi_type_void());
-    static final short STRUCT_TAG = ffi_type_struct();
-    private static final long SIZEOF_CIF = sizeofCif();
+    static short structTag() { return NativeConstants.STRUCT_TAG; }
 
     private static final MethodType UPCALL_TARGET_TYPE = MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class);
 
@@ -98,7 +97,7 @@ class LibFallback {
      */
     static MemorySegment prepCif(MemorySegment returnType, int numArgs, MemorySegment paramTypes, FFIABI abi,
                                          Arena scope) throws IllegalStateException {
-        MemorySegment cif = scope.allocate(SIZEOF_CIF);
+        MemorySegment cif = scope.allocate(NativeConstants.SIZEOF_CIF);
         checkStatus(ffi_prep_cif(cif.address(), abi.value(), numArgs, returnType.address(), paramTypes.address()));
         return cif;
     }
@@ -193,4 +192,24 @@ class LibFallback {
     private static native long ffi_type_float();
     private static native long ffi_type_double();
     private static native long ffi_type_pointer();
+
+    // put these in a separate class to avoid an UnsatisfiedLinkError
+    // when LibFallback is initialized but the library is not present
+    private static class NativeConstants {
+        static final int DEFAULT_ABI = ffi_default_abi();
+
+        static final MemorySegment UINT8_TYPE = MemorySegment.ofAddress(ffi_type_uint8());
+        static final MemorySegment SINT8_TYPE = MemorySegment.ofAddress(ffi_type_sint8());
+        static final MemorySegment UINT16_TYPE = MemorySegment.ofAddress(ffi_type_uint16());
+        static final MemorySegment SINT16_TYPE = MemorySegment.ofAddress(ffi_type_sint16());
+        static final MemorySegment SINT32_TYPE = MemorySegment.ofAddress(ffi_type_sint32());
+        static final MemorySegment SINT64_TYPE = MemorySegment.ofAddress(ffi_type_sint64());
+        static final MemorySegment FLOAT_TYPE = MemorySegment.ofAddress(ffi_type_float());
+        static final MemorySegment DOUBLE_TYPE = MemorySegment.ofAddress(ffi_type_double());
+        static final MemorySegment POINTER_TYPE = MemorySegment.ofAddress(ffi_type_pointer());
+
+        static final MemorySegment VOID_TYPE = MemorySegment.ofAddress(ffi_type_void());
+        static final short STRUCT_TAG = ffi_type_struct();
+        static final long SIZEOF_CIF = sizeofCif();
+    }
 }
