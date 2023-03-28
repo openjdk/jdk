@@ -51,27 +51,27 @@ public class RollToMinWeek {
     @MethodSource("rollUpCalProvider")
     public void rollUpTest(Calendar calendar, String[] validDates){
         if (calendar instanceof GregorianCalendar) {
-            testRoll(calendar, validDates, +1);
+            testRoll(calendar, validDates);
         } else {
             fail(String.format("Calendar is not Gregorian: %s", calendar));
         }
     }
 
-    private void testRoll(Calendar calendar, String[] validDates, int amount) {
+    private void testRoll(Calendar calendar, String[] validDates) {
         String originalDate = longDateString(calendar);
-        calendar.roll(Calendar.WEEK_OF_YEAR, amount);
+        calendar.roll(Calendar.WEEK_OF_YEAR, 1);
         String rolledDate = longDateString(calendar);
         if (!Arrays.asList(validDates).contains(rolledDate)) {
             fail(String.format("""
-            {$$$ Failed: Rolled: "%s" by %s week, where the first day of the week
+            {$$$ Failed: Rolled: "%s" by 1 week, where the first day of the week
             is: %s with a minimum week length of: %s and was expecting one of: "%s", but got: "%s"},
-            """, originalDate, amount, calendar.getFirstDayOfWeek(),
+            """, originalDate, calendar.getFirstDayOfWeek(),
                     calendar.getMinimalDaysInFirstWeek(), Arrays.toString(validDates), rolledDate));
         } else {
             System.out.printf("""
-            {$$$ Passed: Rolled: "%s" by %s week where the first day of the week
+            {$$$ Passed: Rolled: "%s" by 1 week where the first day of the week
             is: %s with a minimum week length of: %s and successfully got: "%s"},
-            """, originalDate, amount, calendar.getFirstDayOfWeek(),
+            """, originalDate, calendar.getFirstDayOfWeek(),
                     calendar.getMinimalDaysInFirstWeek(), rolledDate);
         }
     }
@@ -95,9 +95,10 @@ public class RollToMinWeek {
         // Test all days at the end of the year that roll into week 1
         for (int dayOfMonth = 25; dayOfMonth <= 31; dayOfMonth++) {
             for (int weekLength = 1; weekLength <= 7; weekLength++) {
-                for (int firstDay = 1; firstDay <= 7; firstDay++) {
+                // Sunday .. Monday -> Saturda
+                for (int firstDay = SUNDAY; firstDay <= SATURDAY; firstDay++) {
                     calList.add(Arguments.of(buildCalendar("gregory", firstDay, weekLength,
-                                    dayOfMonth, 11, 2019), validDates[date]));
+                                    dayOfMonth, DECEMBER, 2019), validDates[date]));
                 }
             }
             date++;
