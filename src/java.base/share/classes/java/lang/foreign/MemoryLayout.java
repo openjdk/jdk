@@ -694,10 +694,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if {@code bitSize <= 0} or {@code bitSize % 8 != 0}
      */
     static PaddingLayout paddingLayout(long bitSize) {
-        if (bitSize <= 0) {
-            throw new IllegalArgumentException("Invalid bitSize: " + bitSize);
-        }
-        return PaddingLayoutImpl.of(MemoryLayoutUtil.requireBitSizeValid(bitSize));
+        return PaddingLayoutImpl.of(MemoryLayoutUtil.requireBitSizeValid(bitSize, false));
     }
 
     /**
