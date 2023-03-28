@@ -52,6 +52,13 @@ ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __lsan_default_options()
   return
     "print_suppressions=0,"
     "leak_check_at_exit=0,"
+    "allocator_may_return_null=1,"
+#if defined(__linux__) || defined(__FreeBSD__)
+    // Linux and FreeBSD have MADV_DONTDUMP and MADV_NOCORE respectively. In these cases we can
+    // enable coredump with ASan without creating a 16TiB+ core file.
+    "use_madv_dontdump=1,"
+    "disable_coredump=0,"
+#endif
     // See https://github.com/google/sanitizers/issues/1322. Hopefully this is resolved
     // at some point and we can remove this option.
     "intercept_tls_get_addr=0";

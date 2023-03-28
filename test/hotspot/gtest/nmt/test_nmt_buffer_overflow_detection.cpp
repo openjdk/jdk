@@ -35,8 +35,15 @@
 // come, just use this one.
 #define COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX "NMT corruption"
 
+#ifdef ADDRESS_SANITIZER
+#define ASAN_NOT_ENABLED() false
+#else
+#define ASAN_NOT_ENABLED() true
+#endif
+
 #define DEFINE_TEST(test_function, expected_assertion_message)                            \
-  TEST_VM_FATAL_ERROR_MSG(NMT, test_function, ".*" expected_assertion_message ".*") {     \
+  TEST_VM_FATAL_ERROR_MSG_IF(ASAN_NOT_ENABLED(), NMT, test_function,                      \
+                             ".*" expected_assertion_message ".*") {                      \
     if (MemTracker::tracking_level() > NMT_off) {                                         \
       tty->print_cr("NMT overwrite death test, please ignore subsequent error dump.");    \
       test_function ();                                                                   \

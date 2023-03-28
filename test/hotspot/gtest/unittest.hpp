@@ -142,7 +142,7 @@ extern void gtest_exit_from_child_vm(int num);
     TEST_VM_ASSERT_MSG is only available in debug builds
 #endif
 
-#define TEST_VM_FATAL_ERROR_MSG(category, name, msg)                \
+#define TEST_VM_FATAL_ERROR_MSG_IF(condition, category, name, msg)  \
   static void test_  ## category ## _ ## name ## _();               \
                                                                     \
   static void child_ ## category ## _ ## name ## _() {              \
@@ -152,11 +152,17 @@ extern void gtest_exit_from_child_vm(int num);
   }                                                                 \
                                                                     \
   TEST(category, CONCAT(name, _vm_assert)) {                        \
+    if (!(condition)) {                                             \
+      GTEST_SKIP() << "Skipping because " #condition;               \
+    }                                                               \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
                 msg);                                               \
   }                                                                 \
                                                                     \
   void test_ ## category ## _ ## name ## _()
+
+#define TEST_VM_FATAL_ERROR_MSG(category, name, msg)                \
+  TEST_VM_FATAL_ERROR_MSG_IF(true, category, name, msg)
 
 #endif // UNITTEST_HPP
