@@ -4869,7 +4869,7 @@ void IdealLoopTree::verify_tree(IdealLoopTree* loop, const IdealLoopTree* parent
   // Innermost loops need to verify loop bodies,
   // but only if no 'major_progress'
   int fail = 0;
-  if (!Compile::current()->major_progress() && _child == NULL) {
+  if (!Compile::current()->major_progress() && _child == nullptr) {
     for( uint i = 0; i < _body.size(); i++ ) {
       Node *n = _body.at(i);
       if (n->outcnt() == 0)  continue; // Ignore dead
