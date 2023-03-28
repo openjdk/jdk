@@ -273,9 +273,9 @@ public class Tokens {
     public interface Comment {
 
         enum CommentStyle {
-            LINE,       // Starting with //
-            BLOCK,      // starting with /*
-            JAVADOC,    // starting with /**
+            LINE,
+            BLOCK,
+            JAVADOC,
         }
 
         String getText();
