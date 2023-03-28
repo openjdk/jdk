@@ -201,10 +201,7 @@ public class ToggleNotifyJvmtiTest {
             sleep(20);
         }
 
-        // The testing scenario consists of a number of serialized test cycles.
-        // Each cycle has initially zero virtual threads and starts from disabling
-        // notifyJvmti events mode. Then it starts the launcher platform thread
-        // which starts the VTHREADS_CNT of virtual threads. The native agent
+        // The testing scenario consists of a number of sequential testing cycles.
         for (int iter = 0; iter < 10; iter++) {
             run_test_cycle(iter);
         }
