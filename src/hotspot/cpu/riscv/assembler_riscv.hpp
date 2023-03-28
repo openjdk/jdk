@@ -2461,7 +2461,6 @@ private:
 #define FUNC(NAME, funct3, bits)                                                             \
   bool NAME(Register rs1, Register rd_rs2, int32_t imm12, bool ld) {                         \
     return rs1 == sp &&                                                                      \
-      (imm12 >= 0) &&                                                                        \
       is_uimm(imm12, bits) &&                                                                \
       (intx(imm12) & funct3) == 0x0 &&                                                       \
       (!ld || rd_rs2 != x0);                                                                 \
@@ -2475,7 +2474,6 @@ private:
 #define FUNC(NAME, funct3, bits)                                                             \
   bool NAME(Register rs1, int32_t imm12) {                                                   \
     return rs1 == sp &&                                                                      \
-      (imm12 >= 0) &&                                                                        \
       is_uimm(imm12, bits) &&                                                                \
       (intx(imm12) & funct3) == 0x0;                                                         \
   }                                                                                          \
@@ -2488,7 +2486,6 @@ private:
   bool NAME(Register rs1, REG_TYPE rd_rs2, int32_t imm12) {                                  \
     return rs1->is_compressed_valid() &&                                                     \
       rd_rs2->is_compressed_valid() &&                                                       \
-      (imm12 >= 0) &&                                                                        \
       is_uimm(imm12, bits) &&                                                                \
       (intx(imm12) & funct3) == 0x0;                                                         \
   }                                                                                          \
@@ -2682,7 +2679,7 @@ public:
         if (Rd == Rs1 && (imm & 0b1111) == 0x0 && is_simm10(imm)) {                          \
           c_addi16sp(imm);                                                                   \
           return;                                                                            \
-        } else if (Rd->is_compressed_valid() && (imm & 0b11) == 0x0 && (imm >= 0) && is_uimm10(imm)) { \
+        } else if (Rd->is_compressed_valid() && (imm & 0b11) == 0x0 && is_uimm10(imm)) {     \
           c_addi4spn(Rd, imm);                                                               \
           return;                                                                            \
         }                                                                                    \
