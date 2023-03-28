@@ -603,12 +603,8 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   if (!UseHeavyMonitors) {
     if (UseFastLocking) {
-      Label slow;
-      fast_lock_impl(objReg, tmpReg, thread, scrReg, slow);
+      fast_lock_impl(objReg, tmpReg, thread, scrReg, NO_COUNT);
       jmp(COUNT);
-      bind(slow);
-      testptr(objReg, objReg); // force ZF=0 to indicate failure
-      jmp(NO_COUNT);
     } else {
       // Attempt stack-locking ...
       orptr (tmpReg, markWord::unlocked_value);

@@ -1711,7 +1711,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
         // Save the test result, for recursive case, the result is zero
         __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
-       __ jcc(Assembler::notEqual, slow_path_lock);
+        __ jcc(Assembler::notEqual, slow_path_lock);
       }
     } else {
       __ jmp(slow_path_lock);

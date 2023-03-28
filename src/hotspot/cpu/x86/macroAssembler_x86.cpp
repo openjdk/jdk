@@ -9677,13 +9677,24 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   bind(L_stack_ok);
 }
 
+// Implements fast-locking.
+// Branches to slow upon failure to lock the object, with ZF cleared.
+// Falls through upon success with unspecified ZF.
+//
+// obj: the object to be locked
+// hdr: the (pre-loaded) header of the object, must be rax
+// thread: the thread which attempts to lock obj
+// tmp: a temporary register
 void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, thread, tmp);
 
   // First we need to check if the lock-stack has room for pushing the object reference.
-  cmpl(Address(thread, JavaThread::lock_stack_offset_offset()), LockStack::end_offset());
-  jcc(Assembler::greaterEqual, slow);
+  // Note: we subtract 1 from the end-offset so that we can do a 'greater' comparison, instead
+  // of 'greaterEqual' below, which readily clears the ZF. This makes C2 code a little simpler and
+  // avoids one branch.
+  cmpl(Address(thread, JavaThread::lock_stack_offset_offset()), LockStack::end_offset() - 1);
+  jcc(Assembler::greater, slow);
 
   // Now we attempt to take the fast-lock.
   // Clear lowest two header bits (locked state).
@@ -9697,11 +9708,18 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
 
   // If successful, push object to lock-stack.
   movl(tmp, Address(thread, JavaThread::lock_stack_offset_offset()));
-  movptr(Address(thread, tmp, Address::times_1), obj);
+  movptr(Address(thread, tmp), obj);
   incrementl(tmp, oopSize);
   movl(Address(thread, JavaThread::lock_stack_offset_offset()), tmp);
 }
 
+// Implements fast-unlocking.
+// Branches to slow upon failure, with ZF cleared.
+// Falls through upon success, with unspecified ZF.
+//
+// obj: the object to be unlocked
+// hdr: the (pre-loaded) header of the object, must be rax
+// tmp: a temporary register
 void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, tmp);
