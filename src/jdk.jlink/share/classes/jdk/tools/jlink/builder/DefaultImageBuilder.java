@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,9 +567,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Path binDir = root.resolve(BIN_DIRNAME);
         if (Files.exists(binDir.resolve("java")) ||
             Files.exists(binDir.resolve("java.exe"))) {
-            // It may be possible to extract the platform info from the given image.
-            // --post-process-path is a hidden option and pass unknown platform for now.
-            // --generate-cds-archive plugin cannot be used with --post-process-path option.
             return new DefaultExecutableImage(root, retrieveModules(root), Platform.UNKNOWN);
         }
         return null;

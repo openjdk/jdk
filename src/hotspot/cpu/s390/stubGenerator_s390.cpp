@@ -3087,7 +3087,7 @@ class StubGenerator: public StubCodeGenerator {
   }
   #endif // INCLUD_JFR
 
-  void generate_initial() {
+  void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points.
 
     // Entry points that exist in all platforms.
@@ -3125,7 +3125,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::zarch::_trot_table_addr = (address)StubRoutines::zarch::_trot_table;
   }
 
-  void generate_phase1() {
+  void generate_continuation_stubs() {
     if (!Continuations::enabled()) return;
 
     // Continuation stubs:
@@ -3137,7 +3137,7 @@ class StubGenerator: public StubCodeGenerator {
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
-  void generate_all() {
+  void generate_final_stubs() {
     // Generates all stubs and initializes the entry points.
 
     StubRoutines::zarch::_partial_subtype_check            = generate_partial_subtype_check();
@@ -3152,7 +3152,10 @@ class StubGenerator: public StubCodeGenerator {
 
     // Arraycopy stubs used by compilers.
     generate_arraycopy_stubs();
+  }
 
+  void generate_compiler_stubs() {
+#if COMPILER2_OR_JVMCI
     // Generate AES intrinsics code.
     if (UseAESIntrinsics) {
       if (VM_Version::has_Crypto_AES()) {
@@ -3215,18 +3218,28 @@ class StubGenerator: public StubCodeGenerator {
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
 #endif
+#endif // COMPILER2_OR_JVMCI
   }
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    _stub_count = (phase == 0) ? 0x100 : 0x200;
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
+  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
+    switch(kind) {
+    case Initial_stubs:
+      generate_initial_stubs();
+      break;
+     case Continuation_stubs:
+      generate_continuation_stubs();
+      break;
+    case Compiler_stubs:
+      generate_compiler_stubs();
+      break;
+    case Final_stubs:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected stubs kind: %d", kind);
+      break;
+    };
   }
 
  private:
@@ -3263,6 +3276,6 @@ class StubGenerator: public StubCodeGenerator {
 
 };
 
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  StubGenerator g(code, phase);
+void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
+  StubGenerator g(code, kind);
 }
