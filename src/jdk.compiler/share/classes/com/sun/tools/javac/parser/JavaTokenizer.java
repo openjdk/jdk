@@ -308,6 +308,15 @@ public class JavaTokenizer extends UnicodeReader {
     }
 
     /**
+     * Test if the current character is a line terminator.
+     *
+     * @return true if current character is a line terminator.
+     */
+    private boolean isEOLN() {
+        return isOneOf('\n', '\r');
+    }
+
+    /**
      * Skip and process a line terminator sequence.
      */
     private void skipLineTerminator() {
@@ -1085,7 +1094,7 @@ public class JavaTokenizer extends UnicodeReader {
             if (scannerDebug) {
                     System.out.println("nextToken(" + pos
                                        + "," + endPos + ")=|" +
-                                       getRawString(pos, endPos)
+                                       new String(getRawCharacters(pos, endPos))
                                        + "|");
             }
         }
@@ -1137,11 +1146,13 @@ public class JavaTokenizer extends UnicodeReader {
         if (scannerDebug) {
             System.out.println("processComment(" + pos
                                 + "," + endPos + "," + style + ")=|"
-                                + getRawString(pos, endPos)
+                                + new String(getRawCharacters(pos, endPos))
                                 + "|");
         }
 
-        return new BasicComment(style,this, pos, endPos);
+        char[] buf = getRawCharacters(pos, endPos);
+
+        return new BasicComment(style, fac, buf, pos);
     }
 
     /**
@@ -1156,8 +1167,8 @@ public class JavaTokenizer extends UnicodeReader {
     protected void processWhiteSpace(int pos, int endPos) {
         if (scannerDebug) {
             System.out.println("processWhitespace(" + pos
-                                + "," + endPos + ")=|"
-                                + getRawString(pos, endPos)
+                                + "," + endPos + ")=|" +
+                                new String(getRawCharacters(pos, endPos))
                                 + "|");
         }
     }
@@ -1171,8 +1182,8 @@ public class JavaTokenizer extends UnicodeReader {
     protected void processLineTerminator(int pos, int endPos) {
         if (scannerDebug) {
             System.out.println("processTerminator(" + pos
-                                + "," + endPos + ")=|"
-                                + getRawString(pos, endPos)
+                                + "," + endPos + ")=|" +
+                                new String(getRawCharacters(pos, endPos))
                                 + "|");
         }
     }
@@ -1195,6 +1206,9 @@ public class JavaTokenizer extends UnicodeReader {
     protected static class BasicComment extends PositionTrackingReader implements Comment {
         /**
          * Style of comment
+         *   LINE starting with //
+         *   BLOCK starting with /*
+         *   JAVADOC starting with /**
          */
         CommentStyle cs;
 
@@ -1211,13 +1225,13 @@ public class JavaTokenizer extends UnicodeReader {
         /**
          * Constructor.
          *
-         * @param cs     comment style
-         * @param reader existing reader
-         * @param pos    start of meaningful content in buffer.
-         * @param endPos end of meaningful content in buffer.
+         * @param cs      comment style
+         * @param sf      Scan factory.
+         * @param array   Array containing contents of source.
+         * @param offset  Position offset in original source buffer.
          */
-        protected BasicComment(CommentStyle cs, UnicodeReader reader, int pos, int endPos) {
-            super(reader, pos, endPos);
+        protected BasicComment(CommentStyle cs, ScannerFactory sf, char[] array, int offset) {
+            super(sf, array, offset);
             this.cs = cs;
         }
 
@@ -1233,7 +1247,8 @@ public class JavaTokenizer extends UnicodeReader {
         /**
          * Return buffer position in original buffer mapped from buffer position in comment.
          *
-         * @param pos buffer position in comment.
+         * @param pos  buffer position in comment.
+         *
          * @return buffer position in original buffer.
          */
         public int getSourcePos(int pos) {
@@ -1242,8 +1257,11 @@ public class JavaTokenizer extends UnicodeReader {
 
         /**
          * Return style of comment.
+         *   LINE starting with //
+         *   BLOCK starting with /*
+         *   JAVADOC starting with /**
          *
-         * @return style of comment.
+         * @return
          */
         public CommentStyle getStyle() {
             return cs;
@@ -1255,104 +1273,76 @@ public class JavaTokenizer extends UnicodeReader {
          * @return true if comment contains @deprecated.
          */
         public boolean isDeprecated() {
-            if (!scanned) {
+            if (!scanned && cs == CommentStyle.JAVADOC) {
                 scanDocComment();
             }
+
             return deprecatedFlag;
         }
 
         /**
-         * Detect the deprecated tag.
-         *
-         * @param line line reader
-         *
-         * @return true if deprecated tag is present.
-         */
-        protected boolean hasDeprecated(UnicodeReader line) {
-            return line.accept("@deprecated") &&
-                    (line.isWhitespace() || line.is('*') || line.isEOLN());
-        }
-
-        /**
-         * Remove closing star(s) slash from comment.
-         *
-         * @param line line reader
-         *
-         * @return new line reader if detected otherwise original line reader.
-         */
-        UnicodeReader trimEndOfComment(UnicodeReader line) {
-            int pos = line.position();
-
-            while (line.isAvailable()) {
-                if (line.is('*')) {
-                    int endPos = line.position();
-                    line.skip('*');
-
-                    if (line.is('/')) {
-                        return line.lineReader(pos, endPos);
-                    }
-                } else {
-                    line.next();
-                }
-            }
-
-            line.reset(pos);
-
-            return line;
-        }
-
-        /**
-         * Trim the first part of the JavaDoc comment.
-         *
-         * @param line line reader
-         *
-         * @return modified line reader
-         */
-        UnicodeReader trimJavadocComment(UnicodeReader line) {
-            int pos = line.position();
-            line.skipWhitespace();
-
-            if (line.skip('*') == 0) {
-                line.reset(pos);
-            }
-
-            return trimEndOfComment(line);
-        }
-
-        /**
-         * Put the line into the buffer.
-         *
-         * @param line line reader
-         */
-        protected void putLine(UnicodeReader line) {
-            // ignore overridden in subclass
-        }
-
-        /**
-         * Scan document comment for content.
+         * Scan JAVADOC comment for details.
          */
         protected void scanDocComment() {
-            if (!scanned) {
-                deprecatedFlag = false;
-                scanned = true;
+            try {
+                boolean deprecatedPrefix = false;
+                accept("/**");
 
-                if (!accept("/**")) {
-                    return;
-                }
-
+                forEachLine:
                 while (isAvailable()) {
-                    UnicodeReader line = lineReader();
-                    line = trimJavadocComment(line);
+                    // Skip optional WhiteSpace at beginning of line
+                    skipWhitespace();
 
-                    // If standalone @deprecated tag
-                    int pos = line.position();
-                    if (hasDeprecated(line)) {
-                        deprecatedFlag = true;
+                    // Skip optional consecutive Stars
+                    while (accept('*')) {
+                        if (is('/')) {
+                            return;
+                        }
                     }
 
-                    line.reset(pos);
-                    putLine(line);
-                }
+                    // Skip optional WhiteSpace after Stars
+                    skipWhitespace();
+
+                    // At beginning of line in the JavaDoc sense.
+                    deprecatedPrefix = deprecatedFlag || accept("@deprecated");
+
+                    if (deprecatedPrefix && isAvailable()) {
+                        if (Character.isWhitespace(get())) {
+                            deprecatedFlag = true;
+                        } else if (accept('*')) {
+                            if (is('/')) {
+                                deprecatedFlag = true;
+                                return;
+                            }
+                        }
+                    }
+
+                    // Skip rest of line
+                    while (isAvailable()) {
+                        switch (get()) {
+                            case '*':
+                                next();
+
+                                if (is('/')) {
+                                    return;
+                                }
+
+                                break;
+                            case '\r': // (Spec 3.4)
+                            case '\n': // (Spec 3.4)
+                                accept('\r');
+                                accept('\n');
+                                continue forEachLine;
+
+                            default:
+                                next();
+                                break;
+                        }
+                    } // rest of line
+                } // forEachLine
+                return;
+            } finally {
+                scanned = true;
             }
         }
     }
