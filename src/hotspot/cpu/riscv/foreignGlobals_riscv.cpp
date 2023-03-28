@@ -45,7 +45,7 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
 }
 
 bool ForeignGlobals::has_port() {
-  return false;
+  return true;
 }
 
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
