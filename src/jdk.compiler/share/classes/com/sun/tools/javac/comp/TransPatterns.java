@@ -451,6 +451,7 @@ public class TransPatterns extends TreeTranslator {
                     return l;
                 });
                 newCases.add(c.head);
+                appendBreakIfNeeded(tree, cases, c.head);
             }
             cases = processCases(tree, newCases.toList());
             ListBuffer<JCStatement> statements = new ListBuffer<>();
@@ -595,7 +596,6 @@ public class TransPatterns extends TreeTranslator {
                 previousCompletesNormally =
                         c.caseKind == CaseTree.CaseKind.STATEMENT &&
                         c.completesNormally;
-                appendBreakIfNeeded(tree, c);
             }
 
             if (tree.hasTag(Tag.SWITCH)) {
@@ -640,9 +640,11 @@ public class TransPatterns extends TreeTranslator {
             }.scan(c.stats);
         }
 
-    private void appendBreakIfNeeded(JCTree switchTree, JCCase c) {
-        if (c.caseKind == CaseTree.CaseKind.RULE) {
-            JCBreak brk = make.at(TreeInfo.endPos(c.stats.last())).Break(null);
+    void appendBreakIfNeeded(JCTree switchTree, List<JCCase> cases, JCCase c) {
+        if (c.caseKind == CaseTree.CaseKind.RULE || (cases.last() == c && c.completesNormally)) {
+            JCTree pos = c.stats.nonEmpty() ? c.stats.last()
+                                            : c;
+            JCBreak brk = make.at(TreeInfo.endPos(pos)).Break(null);
             brk.target = switchTree;
             c.stats = c.stats.append(brk);
         }
@@ -745,7 +747,6 @@ public class TransPatterns extends TreeTranslator {
                         } else {
                             newLabel = List.of(make.PatternCaseLabel(binding, newGuard));
                         }
-                        appendBreakIfNeeded(currentSwitch, accummulated);
                         nestedCases.add(make.Case(CaseKind.STATEMENT, newLabel, accummulated.stats, null));
                         lastGuard = newGuard;
                     }

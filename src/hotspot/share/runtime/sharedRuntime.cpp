@@ -230,12 +230,15 @@ JRT_LEAF(jlong, SharedRuntime::lrem(jlong y, jlong x))
 JRT_END
 
 
+#ifdef _WIN64
 const juint  float_sign_mask  = 0x7FFFFFFF;
 const juint  float_infinity   = 0x7F800000;
 const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
+#endif
 
-JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
+#if !defined(X86) || !defined(TARGET_COMPILER_gcc) || defined(_WIN64)
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
@@ -253,7 +256,6 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
 #endif
 JRT_END
 
-
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 #ifdef _WIN64
   union { jdouble d; julong l; } xbits, ybits;
@@ -269,6 +271,7 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   return ((jdouble)fmod((double)x,(double)y));
 #endif
 JRT_END
+#endif // !X86 || !TARGET_COMPILER_gcc || _WIN64
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
@@ -2880,11 +2883,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                                                            BasicType* sig_bt,
                                                            bool allocate_code_blob) {
 
-  // StubRoutines::code2() is initialized after this function can be called. As a result,
-  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
-  // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
-  // stub that ensure that an I2C stub is called from an interpreter frame.
-  bool contains_all_checks = StubRoutines::code2() != nullptr;
+  // StubRoutines::_final_stubs_code is initialized after this function can be called. As a result,
+  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated prior
+  // to all StubRoutines::_final_stubs_code being set. Checks refer to runtime range checks generated
+  // in an I2C stub that ensure that an I2C stub is called from an interpreter frame or stubs.
+  bool contains_all_checks = StubRoutines::final_stubs_code() != nullptr;
 
   VMRegPair stack_regs[16];
   VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);

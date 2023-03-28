@@ -264,7 +264,7 @@ class BitMap {
   void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
 
   // Applies an operation to the index of each set bit in [beg, end), in
-  // increasing order.
+  // increasing (decreasing for reverse iteration) order.
   //
   // If i is an index of the bitmap, the operation is either
   // - function(i)
@@ -276,8 +276,8 @@ class BitMap {
   // an operation returning false.
   //
   // If an operation modifies the bitmap, modifications to bits at indices
-  // greater than the current index will affect which further indices the
-  // operation will be applied to.
+  // greater than (less than for reverse iteration) the current index will
+  // affect which further indices the operation will be applied to.
   //
   // precondition: beg and end form a valid range for the bitmap.
   template<typename Function>
@@ -294,6 +294,22 @@ class BitMap {
   template<typename BitMapClosureType>
   bool iterate(BitMapClosureType* cl) const {
     return iterate(cl, 0, size());
+  }
+
+  template<typename Function>
+  bool reverse_iterate(Function function, idx_t beg, idx_t end) const;
+
+  template<typename BitMapClosureType>
+  bool reverse_iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const;
+
+  template<typename Function>
+  bool reverse_iterate(Function function) const {
+    return reverse_iterate(function, 0, size());
+  }
+
+  template<typename BitMapClosureType>
+  bool reverse_iterate(BitMapClosureType* cl) const {
+    return reverse_iterate(cl, 0, size());
   }
 
   // Return the index of the first set (or clear) bit in the range [beg, end),
