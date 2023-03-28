@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import jdk.internal.util.Architecture;
+
 public class AttachProviderImpl extends HotSpotAttachProvider {
 
     public AttachProviderImpl() {
@@ -42,10 +44,11 @@ public class AttachProviderImpl extends HotSpotAttachProvider {
             throw new RuntimeException(
                 "This provider is not supported on this version of Windows");
         }
-        String arch = System.getProperty("os.arch");
-        if (!arch.equals("x86") && !arch.equals("amd64") && !arch.equals("aarch64")) {
+        if (!Architecture.isX86() &&
+            !Architecture.isX64() &&
+            !Architecture.isAarch64()) {
             throw new RuntimeException(
-                "This provider is not supported on this processor architecture");
+                "This provider is not supported on this processor architecture: " + Architecture.current());
         }
     }
 

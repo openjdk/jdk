@@ -283,7 +283,9 @@ module java.base {
     exports jdk.internal.util.random to
         jdk.random;
     exports jdk.internal.util to
-        java.desktop;
+        java.desktop,
+        jdk.accessibility,
+        jdk.attach;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;

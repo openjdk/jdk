@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore architecture can not be overridden by setting os.arch - delete test
  * @enablePreview
  * @summary test with unknown architecture override
  * @run testng/othervm -Dos.arch=unknown --enable-native-access=ALL-UNNAMED TestUnsupportedLinker

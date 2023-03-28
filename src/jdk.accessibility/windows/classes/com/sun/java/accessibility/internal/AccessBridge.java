@@ -124,6 +124,8 @@ import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
+import jdk.internal.util.Architecture;
+
 /*
  * Note: This class has to be public.  It's loaded from the VM like this:
  *       Class.forName(atName).newInstance();
@@ -164,7 +166,7 @@ public final class AccessBridge {
     private static void initStatic() {
         // Load the appropriate DLLs
         boolean is32on64 = false;
-        if (System.getProperty("os.arch").equals("x86")) {
+        if (Architecture.isX86()) {
             // 32 bit JRE
             // Load jabsysinfo.dll so can determine Win bitness
             java.security.AccessController.doPrivileged(

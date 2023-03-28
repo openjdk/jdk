@@ -25,8 +25,8 @@
  */
 package jdk.internal.foreign;
 
+import jdk.internal.util.Architecture;
 import jdk.internal.util.OperatingSystem;
-import jdk.internal.util.StaticProperty;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
@@ -39,21 +39,19 @@ public enum CABI {
     LINUX_RISCV_64;
 
     private static final CABI ABI;
-    private static final String ARCH;
     private static final long ADDRESS_SIZE;
 
     static {
-        ARCH = StaticProperty.osArch();
         ADDRESS_SIZE = ADDRESS.bitSize();
         // might be running in a 32-bit VM on a 64-bit platform.
         // addressSize will be correctly 32
-        if ((ARCH.equals("amd64") || ARCH.equals("x86_64")) && ADDRESS_SIZE == 64) {
+        if (Architecture.isX64() && ADDRESS_SIZE == 64) {
             if (OperatingSystem.isWindows()) {
                 ABI = WIN_64;
             } else {
                 ABI = SYS_V;
             }
-        } else if (ARCH.equals("aarch64")) {
+        } else if (Architecture.isAarch64()) {
             if (OperatingSystem.isMacOS()) {
                 ABI = MAC_OS_AARCH_64;
             } else if (OperatingSystem.isWindows()) {
@@ -62,7 +60,7 @@ public enum CABI {
                 // The Linux ABI follows the standard AAPCS ABI
                 ABI = LINUX_AARCH_64;
             }
-        } else if (ARCH.equals("riscv64")) {
+        } else if (Architecture.isRiscv64()) {
             if (OperatingSystem.isLinux()) {
                 ABI = LINUX_RISCV_64;
             } else {
@@ -79,7 +77,7 @@ public enum CABI {
         if (ABI == null) {
             throw new UnsupportedOperationException(
                     "Unsupported os, arch, or address size: " + OperatingSystem.current() +
-                            ", " + ARCH + ", " + ADDRESS_SIZE);
+                            ", " + Architecture.current() + ", " + ADDRESS_SIZE);
         }
         return ABI;
     }
