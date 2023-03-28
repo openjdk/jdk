@@ -26,7 +26,6 @@
  * @bug 8284161 8289284
  * @summary Basic test of debugging option to trace pinned threads
  * @requires vm.continuations
- * @enablePreview
  * @library /test/lib
  * @run junit/othervm -Djdk.tracePinnedThreads=full TracePinnedThreads
  * @run junit/othervm -Djdk.tracePinnedThreads=short TracePinnedThreads

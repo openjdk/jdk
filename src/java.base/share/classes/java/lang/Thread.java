@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,6 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.event.ThreadSleepEvent;
-import jdk.internal.javac.PreviewFeature;
-import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.StructureViolationExceptions;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
@@ -56,6 +54,7 @@ import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -84,11 +83,11 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *
  * <p> Threads support {@link ThreadLocal} variables. These are variables that are
  * local to a thread, meaning a thread can have a copy of a variable that is set to
- * a value that is independent of the value set by other threads. Thread also supports
- * {@link InheritableThreadLocal} variables that are thread local variables that are
- * inherited at Thread creation time from the parent Thread. Thread supports a special
- * inheritable thread local for the thread {@linkplain #getContextClassLoader()
- * context-class-loader}.
+ * a value that is independent of the value set by other threads. {@code Thread} also
+ * supports {@link InheritableThreadLocal} variables that are thread local variables
+ * that are inherited at thread creation time from the parent {@code Thread}.
+ * {@code Thread} supports a special inheritable thread local for the thread
+ * {@linkplain #getContextClassLoader() context-class-loader}.
  *
  * <h2><a id="platform-threads">Platform threads</a></h2>
  * <p> {@code Thread} supports the creation of <i>platform threads</i> that are
@@ -464,24 +463,32 @@ public class Thread implements Runnable {
         if (millis < 0) {
             throw new IllegalArgumentException("timeout value is negative");
         }
+        long nanos = MILLISECONDS.toNanos(millis);
 
-        if (currentThread() instanceof VirtualThread vthread) {
-            long nanos = MILLISECONDS.toNanos(millis);
-            vthread.sleepNanos(nanos);
-            return;
+        // create jdk.ThreadSleepEvent event if enabled
+        ThreadSleepEvent event = null;
+        if (ThreadSleepEvent.isTurnedOn()) {
+            try {
+                event = new ThreadSleepEvent();
+                event.time = nanos;
+                event.begin();
+            } catch (OutOfMemoryError e) {
+                event = null;
+            }
         }
 
-        if (ThreadSleepEvent.isTurnedOn()) {
-            ThreadSleepEvent event = new ThreadSleepEvent();
-            try {
-                event.time = MILLISECONDS.toNanos(millis);
-                event.begin();
+        try {
+            if (currentThread() instanceof VirtualThread vthread) {
+                vthread.sleepNanos(nanos);
+            } else {
                 sleep0(millis);
-            } finally {
-                event.commit();
             }
-        } else {
-            sleep0(millis);
+        } finally {
+            try {
+                if (event != null) event.commit();
+            } catch (OutOfMemoryError e) {
+                // ignore
+            }
         }
     }
 
@@ -518,14 +525,6 @@ public class Thread implements Runnable {
             throw new IllegalArgumentException("nanosecond timeout value out of range");
         }
 
-        if (currentThread() instanceof VirtualThread vthread) {
-            // total sleep time, in nanoseconds
-            long totalNanos = MILLISECONDS.toNanos(millis);
-            totalNanos += Math.min(Long.MAX_VALUE - totalNanos, nanos);
-            vthread.sleepNanos(totalNanos);
-            return;
-        }
-
         if (nanos > 0 && millis < Long.MAX_VALUE) {
             millis++;
         }
@@ -550,20 +549,40 @@ public class Thread implements Runnable {
      */
     public static void sleep(Duration duration) throws InterruptedException {
         long nanos = NANOSECONDS.convert(duration);  // MAX_VALUE if > 292 years
-        if (nanos < 0)
-            return;
-
-        if (currentThread() instanceof VirtualThread vthread) {
-            vthread.sleepNanos(nanos);
+        if (nanos < 0) {
             return;
         }
 
-        // convert to milliseconds
-        long millis = MILLISECONDS.convert(nanos, NANOSECONDS);
-        if (nanos > NANOSECONDS.convert(millis, MILLISECONDS)) {
-            millis += 1L;
+        // create jdk.ThreadSleepEvent event if enabled
+        ThreadSleepEvent event = null;
+        if (ThreadSleepEvent.isTurnedOn()) {
+            try {
+                event = new ThreadSleepEvent();
+                event.time = nanos;
+                event.begin();
+            } catch (OutOfMemoryError e) {
+                event = null;
+            }
         }
-        sleep(millis);
+
+        try {
+            if (currentThread() instanceof VirtualThread vthread) {
+                vthread.sleepNanos(nanos);
+            } else {
+                // convert to milliseconds
+                long millis = NANOSECONDS.toMillis(nanos);
+                if (nanos > MILLISECONDS.toNanos(millis)) {
+                    millis += 1L;
+                }
+                sleep0(millis);
+            }
+        } finally {
+            try {
+                if (event != null) event.commit();
+            } catch (OutOfMemoryError e) {
+                // ignore
+            }
+        }
     }
 
     /**
@@ -606,13 +625,6 @@ public class Thread implements Runnable {
     public static void onSpinWait() {}
 
     /**
-     * Characteristic value signifying that the thread cannot set values for its
-     * copy of {@link ThreadLocal thread-locals}.
-     * See Thread initialization.
-     */
-    static final int NO_THREAD_LOCALS = 1 << 1;
-
-    /**
      * Characteristic value signifying that initial values for {@link
      * InheritableThreadLocal inheritable-thread-locals} are not inherited from
      * the constructing thread.
@@ -651,8 +663,7 @@ public class Thread implements Runnable {
             return parent.getContextClassLoader();
         } else {
             // skip call to getContextClassLoader
-            ClassLoader cl = parent.contextClassLoader;
-            return (isSupportedClassLoader(cl)) ? cl : ClassLoader.getSystemClassLoader();
+            return parent.contextClassLoader;
         }
     }
 
@@ -721,23 +732,13 @@ public class Thread implements Runnable {
 
         // thread locals
         if (!attached) {
-            if ((characteristics & NO_THREAD_LOCALS) != 0) {
-                this.threadLocals = ThreadLocal.ThreadLocalMap.NOT_SUPPORTED;
-                this.inheritableThreadLocals = ThreadLocal.ThreadLocalMap.NOT_SUPPORTED;
-                this.contextClassLoader = Constants.NOT_SUPPORTED_CLASSLOADER;
-            } else if ((characteristics & NO_INHERIT_THREAD_LOCALS) == 0) {
+            if ((characteristics & NO_INHERIT_THREAD_LOCALS) == 0) {
                 ThreadLocal.ThreadLocalMap parentMap = parent.inheritableThreadLocals;
-                if (parentMap != null
-                        && parentMap != ThreadLocal.ThreadLocalMap.NOT_SUPPORTED
-                        && parentMap.size() > 0) {
+                if (parentMap != null && parentMap.size() > 0) {
                     this.inheritableThreadLocals = ThreadLocal.createInheritedMap(parentMap);
                 }
-                ClassLoader parentLoader = contextClassLoader(parent);
-                if (VM.isBooted() && !isSupportedClassLoader(parentLoader)) {
-                    // parent does not support thread locals so no CCL to inherit
-                    this.contextClassLoader = ClassLoader.getSystemClassLoader();
-                } else {
-                    this.contextClassLoader = parentLoader;
+                if (VM.isBooted()) {
+                    this.contextClassLoader = contextClassLoader(parent);
                 }
             } else if (VM.isBooted()) {
                 // default CCL to the system class loader when not inheriting
@@ -745,7 +746,7 @@ public class Thread implements Runnable {
             }
         }
 
-        // Special value to indicate this is a newly-created Thread
+        // special value to indicate this is a newly-created Thread
         // Note that his must match the declaration in ScopedValue.
         this.scopedValueBindings = NEW_THREAD_BINDINGS;
     }
@@ -763,31 +764,19 @@ public class Thread implements Runnable {
         this.inheritedAccessControlContext = Constants.NO_PERMISSIONS_ACC;
 
         // thread locals
-        if ((characteristics & NO_THREAD_LOCALS) != 0) {
-            this.threadLocals = ThreadLocal.ThreadLocalMap.NOT_SUPPORTED;
-            this.inheritableThreadLocals = ThreadLocal.ThreadLocalMap.NOT_SUPPORTED;
-            this.contextClassLoader = Constants.NOT_SUPPORTED_CLASSLOADER;
-        } else if ((characteristics & NO_INHERIT_THREAD_LOCALS) == 0) {
+        if ((characteristics & NO_INHERIT_THREAD_LOCALS) == 0) {
             Thread parent = currentThread();
             ThreadLocal.ThreadLocalMap parentMap = parent.inheritableThreadLocals;
-            if (parentMap != null
-                    && parentMap != ThreadLocal.ThreadLocalMap.NOT_SUPPORTED
-                    && parentMap.size() > 0) {
+            if (parentMap != null && parentMap.size() > 0) {
                 this.inheritableThreadLocals = ThreadLocal.createInheritedMap(parentMap);
             }
-            ClassLoader parentLoader = contextClassLoader(parent);
-            if (isSupportedClassLoader(parentLoader)) {
-                this.contextClassLoader = parentLoader;
-            } else {
-                // parent does not support thread locals so no CCL to inherit
-                this.contextClassLoader = ClassLoader.getSystemClassLoader();
-            }
+            this.contextClassLoader = contextClassLoader(parent);
         } else {
             // default CCL to the system class loader when not inheriting
             this.contextClassLoader = ClassLoader.getSystemClassLoader();
         }
 
-        // Special value to indicate this is a newly-created Thread
+        // special value to indicate this is a newly-created Thread
         this.scopedValueBindings = NEW_THREAD_BINDINGS;
 
         // create a FieldHolder object, needed when bound to an OS thread
@@ -830,9 +819,8 @@ public class Thread implements Runnable {
      * }
      *
      * @return A builder for creating {@code Thread} or {@code ThreadFactory} objects.
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public static Builder.OfPlatform ofPlatform() {
         return new ThreadBuilders.PlatformThreadBuilder();
     }
@@ -851,12 +839,9 @@ public class Thread implements Runnable {
      * }
      *
      * @return A builder for creating {@code Thread} or {@code ThreadFactory} objects.
-     * @throws UnsupportedOperationException if preview features are not enabled
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public static Builder.OfVirtual ofVirtual() {
-        PreviewFeatures.ensureEnabled();
         return new ThreadBuilders.VirtualThreadBuilder();
     }
 
@@ -886,14 +871,10 @@ public class Thread implements Runnable {
      *
      * @see Thread#ofPlatform()
      * @see Thread#ofVirtual()
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public sealed interface Builder
-            permits Builder.OfPlatform,
-                    Builder.OfVirtual,
-                    ThreadBuilders.BaseThreadBuilder {
-
+            permits Builder.OfPlatform, Builder.OfVirtual {
 
         /**
          * Sets the thread name.
@@ -930,35 +911,9 @@ public class Thread implements Runnable {
         Builder name(String prefix, long start);
 
         /**
-         * Sets whether the thread is allowed to set values for its copy of {@linkplain
-         * ThreadLocal thread-local} variables. The default is to allow. If not allowed,
-         * then any attempt by the thread to set a value for a thread-local with the
-         * {@link ThreadLocal#set(Object)} method throws {@code
-         * UnsupportedOperationException}. Any attempt to set the thread's context
-         * class loader with {@link Thread#setContextClassLoader(ClassLoader)
-         * setContextClassLoader} also throws. The {@link ThreadLocal#get()} method
-         * always returns the {@linkplain ThreadLocal#initialValue() initial-value}
-         * when thread locals are not allowed.
-         *
-         * @apiNote This method is intended for cases where there are a large number of
-         * threads and where potentially unbounded memory usage due to thread locals is
-         * a concern. Disallowing a thread to set its copy of thread-local variables
-         * creates the potential for exceptions at run-time so great care is required
-         * when the thread is used to invoke arbitrary code.
-         *
-         * @param allow {@code true} to allow, {@code false} to disallow
-         * @return this builder
-         */
-        Builder allowSetThreadLocals(boolean allow);
-
-        /**
          * Sets whether the thread inherits the initial values of {@linkplain
          * InheritableThreadLocal inheritable-thread-local} variables from the
          * constructing thread. The default is to inherit.
-         *
-         * <p> The initial values of {@code InheritableThreadLocal}s are never inherited
-         * when {@link #allowSetThreadLocals(boolean)} is used to disallow the thread
-         * to have its own copy of thread-local variables.
          *
          * @param inherit {@code true} to inherit, {@code false} to not inherit
          * @return this builder
@@ -1018,9 +973,8 @@ public class Thread implements Runnable {
          * this interface causes a {@code NullPointerException} to be thrown.
          *
          * @see Thread#ofPlatform()
-         * @since 19
+         * @since 21
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
         sealed interface OfPlatform extends Builder
                 permits ThreadBuilders.PlatformThreadBuilder {
 
@@ -1031,7 +985,6 @@ public class Thread implements Runnable {
              */
             @Override OfPlatform name(String prefix, long start);
 
-            @Override OfPlatform allowSetThreadLocals(boolean allow);
             @Override OfPlatform inheritInheritableThreadLocals(boolean inherit);
             @Override OfPlatform uncaughtExceptionHandler(UncaughtExceptionHandler ueh);
 
@@ -1094,9 +1047,8 @@ public class Thread implements Runnable {
          * this interface causes a {@code NullPointerException} to be thrown.
          *
          * @see Thread#ofVirtual()
-         * @since 19
+         * @since 21
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
         sealed interface OfVirtual extends Builder
                 permits ThreadBuilders.VirtualThreadBuilder {
 
@@ -1107,7 +1059,6 @@ public class Thread implements Runnable {
              */
             @Override OfVirtual name(String prefix, long start);
 
-            @Override OfVirtual allowSetThreadLocals(boolean allow);
             @Override OfVirtual inheritInheritableThreadLocals(boolean inherit);
             @Override OfVirtual uncaughtExceptionHandler(UncaughtExceptionHandler ueh);
         }
@@ -1525,14 +1476,11 @@ public class Thread implements Runnable {
      *
      * @param task the object to run when the thread executes
      * @return a new, and started, virtual thread
-     * @throws UnsupportedOperationException if preview features are not enabled
      * @see <a href="#inheritance">Inheritance when creating threads</a>
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public static Thread startVirtualThread(Runnable task) {
         Objects.requireNonNull(task);
-        PreviewFeatures.ensureEnabled();
         var thread = ThreadBuilders.newVirtualThread(null, null, 0, task);
         thread.start();
         return thread;
@@ -1544,9 +1492,8 @@ public class Thread implements Runnable {
      *
      * @return {@code true} if this thread is a virtual thread
      *
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public final boolean isVirtual() {
         return (this instanceof BaseVirtualThread);
     }
@@ -1581,6 +1528,8 @@ public class Thread implements Runnable {
                 throw new IllegalThreadStateException();
 
             // bind thread to container
+            if (this.container != null)
+                throw new IllegalThreadStateException();
             setThreadContainer(container);
 
             // start thread
@@ -1655,15 +1604,17 @@ public class Thread implements Runnable {
      * a chance to clean up before it actually exits.
      */
     private void exit() {
-        // pop any remaining scopes from the stack, this may block
-        if (headStackableScopes != null) {
-            StackableScope.popAll();
-        }
-
-        // notify container that thread is exiting
-        ThreadContainer container = threadContainer();
-        if (container != null) {
-            container.onExit(this);
+        try {
+            // pop any remaining scopes from the stack, this may block
+            if (headStackableScopes != null) {
+                StackableScope.popAll();
+            }
+        } finally {
+            // notify container that thread is exiting
+            ThreadContainer container = threadContainer();
+            if (container != null) {
+                container.onExit(this);
+            }
         }
 
         try {
@@ -2375,8 +2326,6 @@ public class Thread implements Runnable {
         ClassLoader cl = this.contextClassLoader;
         if (cl == null)
             return null;
-        if (!isSupportedClassLoader(cl))
-            cl = ClassLoader.getSystemClassLoader();
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -2392,10 +2341,6 @@ public class Thread implements Runnable {
      * <p> The context {@code ClassLoader} may be set by the creator of the thread
      * for use by code running in this thread when loading classes and resources.
      *
-     * <p> The context {@code ClassLoader} cannot be set when the thread is
-     * {@linkplain Thread.Builder#allowSetThreadLocals(boolean) not allowed} to have
-     * its own copy of thread local variables.
-     *
      * <p> If a security manager is present, its {@link
      * SecurityManager#checkPermission(java.security.Permission) checkPermission}
      * method is invoked with a {@link RuntimePermission RuntimePermission}{@code
@@ -2405,9 +2350,6 @@ public class Thread implements Runnable {
      * @param  cl
      *         the context ClassLoader for this Thread, or null  indicating the
      *         system class loader (or, failing that, the bootstrap class loader)
-     *
-     * @throws  UnsupportedOperationException if this thread is not allowed
-     *          to set values for its copy of thread-local variables
      *
      * @throws  SecurityException
      *          if the current thread cannot set the context ClassLoader
@@ -2420,25 +2362,7 @@ public class Thread implements Runnable {
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("setContextClassLoader"));
         }
-        if (!isSupportedClassLoader(contextClassLoader)) {
-            throw new UnsupportedOperationException(
-                "The context class loader cannot be set");
-        }
         contextClassLoader = cl;
-    }
-
-    /**
-     * Returns true if the given ClassLoader is a "supported" class loader. All
-     * class loaders, except ClassLoaders.NOT_SUPPORTED, are considered supported.
-     * This method allows the initialization of ClassLoaders to be delayed until
-     * it is required.
-     */
-    private static boolean isSupportedClassLoader(ClassLoader loader) {
-        if (loader == null)
-            return true;
-        if (loader == jdk.internal.loader.ClassLoaders.appClassLoader())
-            return true;
-        return loader != Constants.NOT_SUPPORTED_CLASSLOADER;
     }
 
     /**
@@ -2977,9 +2901,6 @@ public class Thread implements Runnable {
         @SuppressWarnings("removal")
         static final AccessControlContext NO_PERMISSIONS_ACC;
 
-        // Placeholder TCCL when thread locals not supported
-        static final ClassLoader NOT_SUPPORTED_CLASSLOADER;
-
         static {
             var getThreadGroup  = new PrivilegedAction<ThreadGroup>() {
                 @Override
@@ -2997,16 +2918,6 @@ public class Thread implements Runnable {
             NO_PERMISSIONS_ACC = new AccessControlContext(new ProtectionDomain[] {
                 new ProtectionDomain(null, null)
             });
-
-            var createClassLoader = new PrivilegedAction<ClassLoader>() {
-                @Override
-                public ClassLoader run() {
-                    return new ClassLoader(null) { };
-                }
-            };
-            @SuppressWarnings("removal")
-            ClassLoader loader = AccessController.doPrivileged(createClassLoader);
-            NOT_SUPPORTED_CLASSLOADER = loader;
         }
     }
 
@@ -3032,7 +2943,7 @@ public class Thread implements Runnable {
     int threadLocalRandomSecondarySeed;
 
     /** The thread container that this thread is in */
-    private volatile ThreadContainer container;  // @Stable candidate?
+    private @Stable ThreadContainer container;
     ThreadContainer threadContainer() {
         return container;
     }

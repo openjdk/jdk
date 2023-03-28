@@ -977,10 +977,10 @@ abstract public class TestScaffold extends TargetAdapter {
         mainMethod.setAccessible(true);
 
         if (wrapper.equals("Virtual")) {
-            threadFactory = r -> newVirtualThread(r);
+            threadFactory = Thread.ofVirtual().factory();
             MainThreadGroup tg = new MainThreadGroup();
             // TODO fix to set virtual scheduler group when become available
-            Thread vthread = newVirtualThread(() -> {
+            Thread vthread = Thread.ofVirtual().unstarted(() -> {
                 try {
                     mainMethod.invoke(null, new Object[] { classArgs });
                 } catch (InvocationTargetException e) {
@@ -1027,20 +1027,6 @@ abstract public class TestScaffold extends TargetAdapter {
             uncaughtThrowable = e;
         }
         Throwable uncaughtThrowable = null;
-    }
-
-    // Need to use reflection while virtual threads --enable-preview feature
-    private static Thread newVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            java.lang.reflect.Method unstarted = clazz.getMethod("unstarted", Runnable.class);
-            return (Thread) unstarted.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static Thread newThread(Runnable task) {
