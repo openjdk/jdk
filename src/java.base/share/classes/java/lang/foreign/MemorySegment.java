@@ -2306,12 +2306,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         boolean isAlive();
 
         /**
-         * Returns {@code true}, if the provided object is also a scope, which models the same lifetime as that
-         * modelled by this scope. In that case, it is always the case that
+         * {@return {@code true}, if the provided object is also a scope, which models the same lifetime as that
+         * modelled by this scope}. In that case, it is always the case that
          * {@code this.isAlive() == ((Scope)that).isAlive()}.
          * @param that the object to be tested.
-         * @return {@code true}, if the provided object is also a scope, which models the same lifetime as that
-         * modelled by this scope.
          */
         @Override
         boolean equals(Object that);
