@@ -186,7 +186,7 @@ public class ToggleNotifyJvmtiTest {
         log("\n# Java: Finished test cycle #" + iter);
         printResults();
     }
- 
+
     public static void main(String[] args) throws Exception {
         log("# main: loading " + AGENT_LIB + " lib");
 

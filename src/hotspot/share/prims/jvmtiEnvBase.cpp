@@ -1534,7 +1534,7 @@ private:
   bool _enable;
 
   // Iterates over all JavaThread's, counts VTMS transitions and restores
-  // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol. 
+  // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol.
   int count_transitions_and_correct_jvmti_thread_states() {
     int count = 0;
 
@@ -1550,7 +1550,7 @@ private:
         count++;
       }
       // Correct jt->jvmti_thread_state() and jt->jvmti_vthread() if necessary.
-      // It was not maintained while notifyJvmti was disabled. 
+      // It was not maintained while notifyJvmti was disabled.
       if (jt_state != ct_state && jt_state != vt_state) {
         JvmtiThreadState* cur_state = virt ? vt_state : ct_state;
         jt->set_jvmti_thread_state(cur_state); // restore jt->jvmti_thread_state()
@@ -1594,7 +1594,7 @@ JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
   VMThread::execute(&op);
   return true;
 }
-  
+
 // This function is used in WhiteBox, only needed to test the function above.
 // It is unsafe to use this function when virtual threads are executed.
 // Must be called in thread-in-native mode.
