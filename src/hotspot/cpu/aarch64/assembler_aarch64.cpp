@@ -500,8 +500,7 @@ unsigned Assembler::pack(double value) {
 // Packed operands for  Floating-point Move (immediate)
 
 static float unpack(unsigned value) {
-  unsigned ival;
-  ival = fp_immediate_for_encoding(value, 0);
+  unsigned ival = fp_immediate_for_encoding(value, 0);
   return PrimitiveConversions::cast<float>(ival);
 }
 

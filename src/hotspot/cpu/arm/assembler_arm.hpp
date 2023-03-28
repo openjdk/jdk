@@ -279,31 +279,31 @@ class VFP {
   class float_num : public fpnum {
    public:
     float_num(float v) {
-      _num_bits = PrimitiveConversions::cast<unsigned int>(v);
+      _bits = PrimitiveConversions::cast<unsigned int>(v);
     }
 
-    virtual unsigned int f_hi4() const { return (_num_bits << 9) >> (19+9); }
-    virtual bool f_lo_is_null() const { return (_num_bits & ((1 << 19) - 1)) == 0; }
-    virtual int e() const { return ((_num_bits << 1) >> (23+1)) - 127; }
-    virtual unsigned int s() const { return _num_bits >> 31; }
+    override unsigned int f_hi4() const { return (_bits << 9) >> (19+9); }
+    override bool f_lo_is_null() const { return (_bits & ((1 << 19) - 1)) == 0; }
+    override int e() const { return ((_bits << 1) >> (23+1)) - 127; }
+    override unsigned int s() const { return _bits >> 31; }
 
    private:
-    unsigned int _num_bits;
+    unsigned int _bits;
   };
 
   class double_num : public fpnum {
    public:
     double_num(double v) {
-      _num_bits = PrimitiveConversions::cast<uint64_t>(v);
+      _bits = PrimitiveConversions::cast<uint64_t>(v);
     }
 
-    virtual unsigned int f_hi4() const { return (_num_bits << 12) >> (48+12); }
-    virtual bool f_lo_is_null() const { return (_num_bits & ((1LL << 48) - 1)) == 0; }
-    virtual int e() const { return ((_num_bits << 1) >> (52+1)) - 1023; }
-    virtual unsigned int s() const { return _num_bits >> 63; }
+    override unsigned int f_hi4() const { return (_bits << 12) >> (48+12); }
+    override bool f_lo_is_null() const { return (_bits & ((1LL << 48) - 1)) == 0; }
+    override int e() const { return ((_bits << 1) >> (52+1)) - 1023; }
+    override unsigned int s() const { return _bits >> 63; }
 
    private:
-    uint64_t _num_bits;
+    uint64_t _bits;
   };
 };
 #endif
