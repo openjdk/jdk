@@ -251,7 +251,7 @@ class CodeSection {
   void emit_int64( uint64_t x)  { Bytes::put_native_u8(end(), x); set_end(end() + sizeof(uint64_t)); }
 
   void emit_float( jfloat  x)  { Bytes::put_native_u4(end(), jint_cast(x)); set_end(end() + sizeof(jfloat)); }
-  void emit_double(jdouble x)  { Bytes::put_native_u8(end(), jlong_cast(x)); set_end(end() + sizeof(jdouble)); }
+  void emit_double(jdouble x)  { Bytes::put_native_u8(end(), julong_cast(x)); set_end(end() + sizeof(jdouble)); }
   void emit_address(address x) { Bytes::put_native_u8(end(), p2i(x)); set_end(end() + sizeof(address)); }
 
   // Share a scratch buffer for relocinfo.  (Hacky; saves a resource allocation.)
