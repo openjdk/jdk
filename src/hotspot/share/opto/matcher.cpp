@@ -142,6 +142,7 @@ OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
       _in_arg_limit = OptoReg::add(warped, 1); // Bump max stack slot seen
     if (!RegMask::can_represent_arg(warped)) {
       // the compiler cannot represent this method's calling sequence
+      // Bailout. We do not have space to represent all arguments.
       C->record_method_not_compilable("unsupported incoming calling sequence");
       return OptoReg::Bad;
     }
@@ -311,6 +312,7 @@ void Matcher::match( ) {
 
   if (!RegMask::can_represent_arg(OptoReg::add(_out_arg_limit,-1))) {
     // the compiler cannot represent this method's calling sequence
+    // Bailout. We do not have space to represent all arguments.
     C->record_method_not_compilable("must be able to represent all call arguments in reg mask");
   }
 
@@ -358,6 +360,7 @@ void Matcher::match( ) {
     Node* xroot =        xform( C->root(), 1 );
     if (xroot == nullptr) {
       Matcher::soft_match_failure();  // recursive matching process failed
+      assert(false, "instruction match failed");
       C->record_method_not_compilable("instruction match failed");
     } else {
       // During matching shared constants were attached to C->root()
@@ -389,7 +392,15 @@ void Matcher::match( ) {
     }
   }
   if (C->top() == nullptr || C->root() == nullptr) {
-    C->record_method_not_compilable("graph lost"); // %%% cannot happen?
+    // New graph lost. This is due to a compilation failure we encountered earlier.
+    stringStream ss;
+    if (C->failure_reason() != nullptr) {
+      ss.print("graph lost: %s", C->failure_reason());
+    } else {
+      assert(C->failure_reason() != nullptr, "graph lost: reason unknown");
+      ss.print("graph lost: reason unknown");
+    }
+    C->record_method_not_compilable(ss.as_string());
   }
   if (C->failing()) {
     // delete old;
@@ -1242,6 +1253,7 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
     if( warped >= out_arg_limit_per_call )
       out_arg_limit_per_call = OptoReg::add(warped,1);
     if (!RegMask::can_represent_arg(warped)) {
+      // Bailout. For example not enough space on stack for all arguments. Happens for methods with too many arguments.
       C->record_method_not_compilable("unsupported calling sequence");
       return OptoReg::Bad;
     }
@@ -1434,6 +1446,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     uint r_cnt = mcall->tf()->range()->cnt();
     MachProjNode *proj = new MachProjNode( mcall, r_cnt+10000, RegMask::Empty, MachProjNode::fat_proj );
     if (!RegMask::can_represent_arg(OptoReg::Name(out_arg_limit_per_call-1))) {
+      // Bailout. We do not have space to represent all arguments.
       C->record_method_not_compilable("unsupported outgoing calling sequence");
     } else {
       for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++)
@@ -1621,6 +1634,7 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
   // out of stack space.  See bugs 6272980 & 6227033 for more info.
   LabelRootDepth++;
   if (LabelRootDepth > MaxLabelRootDepth) {
+    // Bailout. Can for example be hit with a deep chain of operations.
     C->record_method_not_compilable("Out of stack space, increase MaxLabelRootDepth");
     return nullptr;
   }

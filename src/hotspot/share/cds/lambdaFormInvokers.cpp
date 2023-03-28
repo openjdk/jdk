@@ -209,7 +209,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   assert(result->java_mirror() != nullptr, "must be");
   add_regenerated_class(result->java_mirror());
 
-  SystemDictionary::add_to_hierarchy(THREAD, result);
+  result->add_to_hierarchy(THREAD);
 
   // new class not linked yet.
   MetaspaceShared::try_link_class(THREAD, result);

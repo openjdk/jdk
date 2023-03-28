@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8291769 8301858 8304883
+ * @bug 8291769 8301858 8304694 8304883
  * @summary Verify more complex switches work properly
  * @compile --enable-preview -source ${jdk.version} DeconstructionDesugaring.java
  * @run main/othervm --enable-preview DeconstructionDesugaring
@@ -59,6 +59,8 @@ public class DeconstructionDesugaring {
         } catch (NullPointerException ex) {
             //expected.
         }
+        assertEquals(runFallThrough(new R7(1, 1)), 0);
+        assertEquals(runFallThrough(new R7(0, 0)), 1);
     }
 
     private void test(ToIntFunction<Object> task) {
@@ -151,6 +153,14 @@ public class DeconstructionDesugaring {
         };
     }
 
+    public static int runFallThrough(R7 r) {
+        switch (r) {
+            case R7(var v1, var v2) when v1 != 0: return 0;
+            case R7(var v1, var v2):
+        }
+        return 1;
+    }
+
     public static int meth_I(Integer i) { return 1; }
     public static int meth_O(Object o) { return 2;}
 
@@ -180,4 +190,5 @@ public class DeconstructionDesugaring {
     record R4(Super o) {}
     record R5(R4 o) {}
     record R6(Object o1, Object o2) {}
+    record R7(int i1, int i2) {}
 }
