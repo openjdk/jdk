@@ -90,7 +90,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u2(address p, u2 x) {
-    if ((intptr_t(p) & 1) == 0) {
+    if ((intptr_t(p) & 1) == 0 || !AvoidUnalignedAccesses) {
       *(u2*)p = x;
     } else {
       p[1] = x >> 8;
@@ -99,7 +99,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u4(address p, u4 x) {
-    switch (intptr_t(p) & 3) {
+    switch (AvoidUnalignedAccesses ? intptr_t(p) & 3 : 0) {
       case 0:
         *(u4*)p = x;
         break;
@@ -119,7 +119,7 @@ class Bytes: AllStatic {
   }
 
   static inline void put_native_u8(address p, u8 x) {
-    switch (intptr_t(p) & 7) {
+    switch (AvoidUnalignedAccesses ? intptr_t(p) & 7 : 0) {
       case 0:
         *(u8*)p = x;
         break;

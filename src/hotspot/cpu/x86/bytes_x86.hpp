@@ -52,7 +52,7 @@ class Bytes: AllStatic {
   static inline void put_native(void* p, T x) {
     assert(p != nullptr, "null pointer");
 
-    if (is_aligned(p, sizeof(T))) {
+    if (is_aligned(p, sizeof(T)) || UseUnalignedAccesses) {
       *(T*)p = x;
     } else {
       memcpy(p, &x, sizeof(T));

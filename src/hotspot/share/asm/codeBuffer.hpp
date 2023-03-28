@@ -218,7 +218,7 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int16(uint16_t x) { *((uint16_t*) end()) = x; set_end(end() + sizeof(uint16_t)); }
+  void emit_int16(uint16_t x) { Bytes::put_native_u2(end(), x); set_end(end() + sizeof(uint16_t)); }
   void emit_int16(uint8_t x1, uint8_t x2) {
     address curr = end();
     *((uint8_t*)  curr++) = x1;
@@ -236,7 +236,7 @@ class CodeSection {
 
   void emit_int32(uint32_t x) {
     address curr = end();
-    *((uint32_t*) curr) = x;
+    Bytes::put_native_u4(curr, x);
     set_end(curr + sizeof(uint32_t));
   }
   void emit_int32(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4)  {
@@ -248,11 +248,11 @@ class CodeSection {
     set_end(curr);
   }
 
-  void emit_int64( uint64_t x)  { *((uint64_t*) end()) = x; set_end(end() + sizeof(uint64_t)); }
+  void emit_int64( uint64_t x)  { Bytes::put_native_u8(end(), x); set_end(end() + sizeof(uint64_t)); }
 
-  void emit_float( jfloat  x)  { *((jfloat*)  end()) = x; set_end(end() + sizeof(jfloat)); }
-  void emit_double(jdouble x)  { *((jdouble*) end()) = x; set_end(end() + sizeof(jdouble)); }
-  void emit_address(address x) { *((address*) end()) = x; set_end(end() + sizeof(address)); }
+  void emit_float( jfloat  x)  { Bytes::put_native_u4(end(), jint_cast(x)); set_end(end() + sizeof(jfloat)); }
+  void emit_double(jdouble x)  { Bytes::put_native_u8(end(), jlong_cast(x)); set_end(end() + sizeof(jdouble)); }
+  void emit_address(address x) { Bytes::put_native_u8(end(), p2i(x)); set_end(end() + sizeof(address)); }
 
   // Share a scratch buffer for relocinfo.  (Hacky; saves a resource allocation.)
   void initialize_shared_locs(relocInfo* buf, int length);
