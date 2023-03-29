@@ -1272,13 +1272,10 @@ public class JavaTokenizer extends UnicodeReader {
             int pos = line.position();
 
             while (line.isAvailable()) {
-                if (line.is('*')) {
-                    int endPos = line.position();
-                    line.skip('*');
+                int endPos = line.position();
 
-                    if (line.is('/')) {
-                        return line.lineReader(pos, endPos);
-                    }
+                if (line.skip('*') != 0 && line.is('/')) {
+                    return line.lineReader(pos, endPos);
                 } else {
                     line.next();
                 }
@@ -1302,9 +1299,13 @@ public class JavaTokenizer extends UnicodeReader {
 
             if (line.skip('*') == 0) {
                 line.reset(pos);
-            }
 
-            return trimEndOfComment(line);
+                return line;
+            } else if (line.is('/')) {
+                return line.lineReader(pos, pos);
+            } else {
+                return trimEndOfComment(line);
+            }
         }
 
         /**
