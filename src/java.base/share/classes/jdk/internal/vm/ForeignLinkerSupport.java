@@ -27,7 +27,7 @@ package jdk.internal.vm;
 /**
  * Defines a static method to test if the VM has support for the foreign java.lang.foreign.Linker.
  */
-public class ForeignLinkerSupport {
+public final class ForeignLinkerSupport {
     private static final boolean SUPPORTED = isSupported0();
 
     private ForeignLinkerSupport() {
@@ -38,16 +38,6 @@ public class ForeignLinkerSupport {
      */
     public static boolean isSupported() {
         return SUPPORTED;
-    }
-
-    /**
-     * Ensures that VM has support for the foreign Linker.
-     * @throws UnsupportedOperationException if not supported
-     */
-    public static void ensureSupported() {
-        if (!isSupported()) {
-            throw new UnsupportedOperationException("VM does not support linker");
-        }
     }
 
     private static native boolean isSupported0();
