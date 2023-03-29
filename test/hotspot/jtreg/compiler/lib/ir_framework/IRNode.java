@@ -1408,6 +1408,16 @@ public class IRNode {
         machOnlyNameRegex(XOR3_SVE, "veor3_sve");
     }
 
+    public static final String COMPRESS_BITSV = PREFIX + "COMPRESS_BITSV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(COMPRESS_BITSV, "CompressBitsV");
+    }
+
+    public static final String EXPAND_BITSV = PREFIX + "EXPAND_BITSV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
