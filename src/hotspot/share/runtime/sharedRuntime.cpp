@@ -623,6 +623,18 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
   throw_and_post_jvmti_exception(current, h_exception);
 }
 
+#if INCLUDE_JVMTI
+JRT_ENTRY(jobject, SharedRuntime::allocate_instance(JavaThread* current, oopDesc* o,  Handle cls))
+  JvmtiVMObjectAllocEventCollector oam;
+  tty->print_cr("CCCCCCCCalled allocate_instance with JvmtiVMObjectAllocEventCollector");
+  // instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(cls()), CHECK_NULL);
+  return nullptr;
+  //JNIHandles::make_local(THREAD, i);
+JRT_END
+
+#endif // INCLUDE_JVMTI
+
+
 // The interpreter code to call this tracing function is only
 // called/generated when UL is on for redefine, class and has the right level
 // and tags. Since obsolete methods are never compiled, we don't have

@@ -135,6 +135,7 @@ class OptoRuntime : public AllStatic {
 
   static address _slow_arraycopy_Java;
   static address _register_finalizer_Java;
+  static address _allocate_instance;
 
   //
   // Implementation of runtime methods
@@ -208,6 +209,7 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
+  static address allocate_instance()                     { return _allocate_instance; }
 
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
 

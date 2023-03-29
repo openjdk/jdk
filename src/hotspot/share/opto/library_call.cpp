@@ -50,6 +50,7 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -2801,6 +2802,32 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   null_check_receiver();  // null-check, then ignore
   Node* cls = null_check(argument(1));
   if (stopped())  return true;
+
+
+#if INCLUDE_JVMTI
+  {
+    IdealKit ideal(this);
+    Node* ONE = ideal.ConI(1);
+    Node *addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_post_vm_object_alloc));
+    Node *should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+
+    ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE);
+    {
+
+      const TypeFunc *tf = OptoRuntime::dtrace_object_alloc_Type();
+      Node *kls = load_klass_from_mirror(cls, false, nullptr, 0);
+
+      sync_kit(ideal);
+      address funcAddr = OptoRuntime::allocate_instance();
+
+      make_runtime_call(RC_NO_LEAF, tf, funcAddr, "allocate_instance", TypePtr::BOTTOM, cls);
+      ideal.sync_kit(this);
+    }
+    ideal.end_if();
+    final_sync(ideal);
+
+  }
+#endif // INCLUDE_JVMTI
 
   Node* kls = load_klass_from_mirror(cls, false, nullptr, 0);
   kls = null_check(kls);
