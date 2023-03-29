@@ -124,6 +124,11 @@ class ClassHierarchyInfoTest {
     }
 
     void transformAndVerify(ClassHierarchyResolver res) throws Exception {
+        transformAndVerifySingle(res);
+        transformAndVerifySingle(ClassHierarchyResolver.ofCached(res));
+    }
+
+    void transformAndVerifySingle(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
         var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(res));
         byte[] newBytes = classModel.transform(
@@ -141,6 +146,11 @@ class ClassHierarchyInfoTest {
                         clb.with(cle);
                 });
         var errors = Classfile.parse(newBytes).verify(null);
-        if (!errors.isEmpty()) throw errors.iterator().next();
+        if (!errors.isEmpty()) {
+            var itr = errors.iterator();
+            var thrown = itr.next();
+            itr.forEachRemaining(thrown::addSuppressed);
+            throw thrown;
+        }
     }
 }
