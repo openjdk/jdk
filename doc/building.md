@@ -1226,6 +1226,42 @@ available using `--with-abi-profile`: arm-vfp-sflt, arm-vfp-hflt, arm-sflt,
 armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer
 properly supported by the JDK.
 
+### Building for RISC-V
+
+The RISC-V community provides a basic [GNU compiler toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain).
+But the [external libraries](#External-Library-Requirements) required by OpenJDK complicate the building process.
+The placeholder `<toolchain-installed-path>` shown below is the path you want to install the toolchain.
+
+  * Install the RISC-V GNU compiler toolchain:
+    ```
+    git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain
+    cd riscv-gnu-toolchain
+    ./configure --prefix=<toolchain-installed-path>
+    make linux
+    export PATH=<toolchain-installed-path>/bin:$PATH
+    ```
+
+  * Cross-compile all the required libraries:
+    ```
+    # An example about libffi
+    git clone https://github.com/libffi/libffi
+    cd libffi
+    ./configure --host=riscv64-unknown-linux-gnu --prefix=<toolchain-installed-path>/sysroot/usr
+    make
+    make install
+    ```
+
+  * Configure and build OpenJDK:
+    ```
+    bash configure \
+      --with-boot-jdk=$BOOT_JDK \
+      --openjdk-target=riscv64-linux-gnu \
+      --with-sysroot=<toolchain-installed-path>/sysroot \
+      --with-toolchain-path=<toolchain-installed-path>/bin \
+      --with-extra-path=<toolchain-installed-path>/bin
+    make images
+    ```
+
 ### Building for musl
 
 Just like it's possible to cross-compile for a different CPU, it's possible to
