@@ -88,7 +88,8 @@ public class SharedStubToInterpTest {
         List<String> addrs = Pattern.compile("\\(static_stub\\) addr=(\\w+) .*\\[static_call=")
             .matcher(output.getStdout())
             .results()
-            .map(m -> m.group(1)).toList();
+            .map(m -> m.group(1))
+            .toList();
         if (addrs.stream().distinct().count() >= addrs.size()) {
             throw new RuntimeException("No static stubs reused: distinct " + addrs.stream().distinct().count() + ", in total " + addrs.size());
         }
