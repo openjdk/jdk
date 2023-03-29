@@ -39,6 +39,12 @@ LockStack::LockStack(JavaThread* jt) :
 #endif
 { }
 
+uint32_t LockStack::start_offset() {
+  int offset = in_bytes(JavaThread::lock_stack_base_offset());
+  assert(offset > 0, "must be positive offset");
+  return static_cast<uint32_t>(offset);
+}
+
 uint32_t LockStack::end_offset() {
   int offset = in_bytes(JavaThread::lock_stack_base_offset()) + CAPACITY * oopSize;
   assert(offset > 0, "must be positive offset");
@@ -59,8 +65,11 @@ void LockStack::verify(const char* msg) const {
 
 void LockStack::verify_no_thread(const char* msg) const {
   assert(UseFastLocking && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
+  assert((_offset <=  end_offset()), "lockstack overflow: _offset %d end_offset %d", _offset, end_offset());
+  assert((_offset >= start_offset()), "lockstack underflow: _offset %d end_offset %d", _offset, start_offset());
   int end = to_index(_offset);
   for (int i = 0; i < end; i++) {
+    assert(_base[i] != nullptr, "no null on lock-stack");
     for (int j = i + 1; j < end; j++) {
       assert(_base[i] != _base[j], "entries must be unique: %s", msg);
     }

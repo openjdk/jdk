@@ -57,6 +57,7 @@ public:
 
   LockStack(JavaThread* jt);
 
+  static uint32_t start_offset();
   static uint32_t end_offset();
   inline bool can_push() const;
   inline void push(oop o);

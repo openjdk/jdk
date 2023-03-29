@@ -93,7 +93,9 @@ inline bool LockStack::contains(oop o) const {
   verify("pre-contains");
   if (!is_self() && !SafepointSynchronize::is_at_safepoint()) {
     StackWatermark* watermark = StackWatermarkSet::get(_thread, StackWatermarkKind::gc);
-    watermark->start_processing();
+    if (watermark != nullptr) {
+      watermark->start_processing();
+    }
   }
   int end = to_index(_offset);
   for (int i = end - 1; i >= 0; i--) {
