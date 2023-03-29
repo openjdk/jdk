@@ -1533,6 +1533,7 @@ class VM_SetNotifyJvmtiEventsMode : public VM_Operation {
 private:
   bool _enable;
 
+  // This function is called only if _enable == true.
   // Iterates over all JavaThread's, counts VTMS transitions and restores
   // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol.
   int count_transitions_and_correct_jvmti_thread_states() {
@@ -1544,23 +1545,25 @@ private:
       JvmtiThreadState* jt_state = jt->jvmti_thread_state();
       JvmtiThreadState* ct_state = java_lang_Thread::jvmti_thread_state(jt->threadObj());
       JvmtiThreadState* vt_state = vt_oop != nullptr ? java_lang_Thread::jvmti_thread_state(vt_oop) : nullptr;
-      bool virt = vt_oop != nullptr && vt_oop != ct_oop;
+      bool virt = vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop);
 
       if (jt->is_in_VTMS_transition()) {
         count++;
       }
       // Correct jt->jvmti_thread_state() and jt->jvmti_vthread() if necessary.
       // It was not maintained while notifyJvmti was disabled.
-      if (jt_state != ct_state && jt_state != vt_state) {
-        JvmtiThreadState* cur_state = virt ? vt_state : ct_state;
-        jt->set_jvmti_thread_state(cur_state); // restore jt->jvmti_thread_state()
-        if (virt) {
-          jt->set_jvmti_vthread(vt_oop);       // restore jt->jvmti_vthread()
+      if (virt) {
+        if (jt_state != vt_state) {
+          jt->set_jvmti_thread_state(vt_state); // restore jt->jvmti_thread_state()
+          jt->set_jvmti_vthread(vt_oop);        // restore jt->jvmti_vthread()
           if (vt_state != nullptr) {
-            vt_state->set_thread(jt);          // restore JavaThread link
+            vt_state->set_thread(jt);           // restore JavaThread link
           }
-        } else {
-          jt->set_jvmti_vthread(nullptr);      // reset jt->jvmti_vthread()
+        }
+      } else { // !virt
+        if (jt_state != ct_state) {
+          jt->set_jvmti_thread_state(ct_state); // restore jt->jvmti_thread_state()
+          jt->set_jvmti_vthread(ct_oop);        // reset jt->jvmti_vthread()
         }
       }
     }
@@ -1573,7 +1576,7 @@ public:
   VM_SetNotifyJvmtiEventsMode(bool enable) : _enable(enable) {}
 
   void doit() {
-    int count = count_transitions_and_correct_jvmti_thread_states();
+    int count = _enable ? count_transitions_and_correct_jvmti_thread_states() : 0;
 
     JvmtiVTMSTransitionDisabler::set_VTMS_transition_count(count);
     JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
