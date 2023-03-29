@@ -2013,8 +2013,8 @@ bool JavaThread::sleep(jlong millis, jint nanos) {
     {
       ThreadBlockInVM tbivm(this);
       OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-      jlong step_millis = nanos_remaining / NANOSECS_PER_MILLISEC;
-      jlong step_nanos  = nanos_remaining - step_millis * NANOSECS_PER_MILLISEC;
+      jlong step_millis = nanos_to_millis(nanos_remaining);
+      jlong step_nanos  = nanos_remaining - millis_to_nanos(step_millis);
       slp->park(step_millis, step_nanos);
     }
 

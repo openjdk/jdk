@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(1)
+@Fork(3)
 @State(Scope.Benchmark)
 public class ThreadSleep {
 
@@ -46,23 +46,23 @@ public class ThreadSleep {
             "1000000000"})
     private int sleep;
 
-    private long sleepMs;
-    private int sleepNs;
+    private long millis;
+    private int nanos;
 
     @Setup
     public void setup() {
-        sleepMs = TimeUnit.NANOSECONDS.toMillis(sleep);
-        sleepNs = (int)(sleep - TimeUnit.MILLISECONDS.toNanos(sleepMs));
+        millis = TimeUnit.NANOSECONDS.toMillis(sleep);
+        nanos = (int)(sleep - TimeUnit.MILLISECONDS.toNanos(millis));
     }
 
     @Benchmark
-    public void sleepMs() throws InterruptedException {
-        Thread.sleep(sleepMs);
+    public void millis() throws InterruptedException {
+        Thread.sleep(millis);
     }
 
     @Benchmark
-    public void sleepMsNs() throws InterruptedException {
-        Thread.sleep(sleepMs, sleepNs);
+    public void millisNanos() throws InterruptedException {
+        Thread.sleep(millis, nanos);
     }
 
 }
