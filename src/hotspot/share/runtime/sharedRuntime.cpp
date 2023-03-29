@@ -2883,11 +2883,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                                                            BasicType* sig_bt,
                                                            bool allocate_code_blob) {
 
-  // StubRoutines::code2() is initialized after this function can be called. As a result,
-  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
-  // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
-  // stub that ensure that an I2C stub is called from an interpreter frame.
-  bool contains_all_checks = StubRoutines::code2() != nullptr;
+  // StubRoutines::_final_stubs_code is initialized after this function can be called. As a result,
+  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated prior
+  // to all StubRoutines::_final_stubs_code being set. Checks refer to runtime range checks generated
+  // in an I2C stub that ensure that an I2C stub is called from an interpreter frame or stubs.
+  bool contains_all_checks = StubRoutines::final_stubs_code() != nullptr;
 
   VMRegPair stack_regs[16];
   VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);

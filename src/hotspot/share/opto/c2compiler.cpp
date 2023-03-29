@@ -55,6 +55,9 @@ const char* C2Compiler::retry_no_iterative_escape_analysis() {
 const char* C2Compiler::retry_class_loading_during_parsing() {
   return "retry class loading during parsing";
 }
+
+void compiler_stubs_init(bool in_compiler_thread);
+
 bool C2Compiler::init_c2_runtime() {
 
   // Check assumptions used while running ADLC
@@ -73,6 +76,8 @@ bool C2Compiler::init_c2_runtime() {
   }
 
   DEBUG_ONLY( Node::init_NodeProperty(); )
+
+  compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
 
   Compile::pd_compiler2_init();
 

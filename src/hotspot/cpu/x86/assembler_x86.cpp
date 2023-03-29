@@ -49,7 +49,7 @@
 // Implementation of AddressLiteral
 
 // A 2-D table for managing compressed displacement(disp8) on EVEX enabled platforms.
-unsigned char tuple_table[Assembler::EVEX_ETUP + 1][Assembler::AVX_512bit + 1] = {
+static const unsigned char tuple_table[Assembler::EVEX_ETUP + 1][Assembler::AVX_512bit + 1] = {
   // -----------------Table 4.5 -------------------- //
   16, 32, 64,  // EVEX_FV(0)
   4,  4,  4,   // EVEX_FV(1) - with Evex.b
@@ -4209,7 +4209,8 @@ void Assembler::vpermw(XMMRegister dst, XMMRegister nds, XMMRegister src, int ve
 }
 
 void Assembler::vpermd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_evex(), "");
+  assert((vector_len == AVX_256bit && VM_Version::supports_avx2()) ||
+         (vector_len == AVX_512bit && VM_Version::supports_evex()), "");
   // VEX.NDS.256.66.0F38.W0 36 /r
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
@@ -4217,13 +4218,23 @@ void Assembler::vpermd(XMMRegister dst, XMMRegister nds, XMMRegister src, int ve
 }
 
 void Assembler::vpermd(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
-  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_evex(), "");
+  assert((vector_len == AVX_256bit && VM_Version::supports_avx2()) ||
+         (vector_len == AVX_512bit && VM_Version::supports_evex()), "");
   // VEX.NDS.256.66.0F38.W0 36 /r
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8(0x36);
   emit_operand(dst, src, 0);
+}
+
+void Assembler::vpermps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert((vector_len == AVX_256bit && VM_Version::supports_avx2()) ||
+         (vector_len == AVX_512bit && VM_Version::supports_evex()), "");
+  // VEX.NDS.XXX.66.0F38.W0 16 /r
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x16, (0xC0 | encode));
 }
 
 void Assembler::vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8) {
@@ -4245,6 +4256,13 @@ void Assembler::vpermilps(XMMRegister dst, XMMRegister src, int imm8, int vector
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x04, (0xC0 | encode), imm8);
+}
+
+void Assembler::vpermilps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx() : VM_Version::supports_evex(), "");
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x0C, (0xC0 | encode));
 }
 
 void Assembler::vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len) {

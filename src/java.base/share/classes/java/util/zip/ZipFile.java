@@ -63,7 +63,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.JavaUtilJarAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.VM;
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
@@ -1085,8 +1085,6 @@ public class ZipFile implements ZipConstants, Closeable {
         }
     }
 
-    private static boolean isWindows;
-
     static {
         SharedSecrets.setJavaUtilZipFileAccess(
             new JavaUtilZipFileAccess() {
@@ -1133,7 +1131,6 @@ public class ZipFile implements ZipConstants, Closeable {
 
              }
         );
-        isWindows = VM.getSavedProperty("os.name").contains("Windows");
     }
 
     private static class Source {
@@ -1321,7 +1318,7 @@ public class ZipFile implements ZipConstants, Closeable {
             this.zc = zc;
             this.key = key;
             if (toDelete) {
-                if (isWindows) {
+                if (OperatingSystem.isWindows()) {
                     this.zfile = SharedSecrets.getJavaIORandomAccessFileAccess()
                                               .openAndDelete(key.file, "r");
                 } else {

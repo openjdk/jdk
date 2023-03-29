@@ -1852,13 +1852,13 @@ enum Nf {
 //     versions. An example:
 //
 //      CompressibleRegion cr(_masm);
-//      __ add(...);       // this instruction will be compressed into 'c.and' when possible
+//      __ add(...);       // this instruction will be compressed into 'c.add' when possible
 //      {
 //         IncompressibleRegion ir(_masm);
 //         __ add(...);    // this instruction will not be compressed
 //         {
 //            CompressibleRegion cr(_masm);
-//            __ add(...); // this instruction will be compressed into 'c.and' when possible
+//            __ add(...); // this instruction will be compressed into 'c.add' when possible
 //         }
 //      }
 //

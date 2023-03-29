@@ -182,11 +182,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_ReverseBytesL:
     return (bt == T_LONG ? Op_ReverseBytesV : 0);
   case Op_CompressBits:
-    // Not implemented. Returning 0 temporarily
-    return 0;
+    return (bt == T_INT || bt == T_LONG ? Op_CompressBitsV : 0);
   case Op_ExpandBits:
-    // Not implemented. Returning 0 temporarily
-    return 0;
+    return (bt == T_INT || bt == T_LONG ? Op_ExpandBitsV : 0);
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -298,9 +296,10 @@ int VectorNode::replicate_opcode(BasicType bt) {
   }
 }
 
-bool VectorNode::vector_size_supported(BasicType bt, uint vlen) {
-  return (Matcher::vector_size_supported(bt, vlen) &&
-          (vlen * type2aelembytes(bt) <= (uint)SuperWordMaxVectorSize));
+// Limits on vector size (number of elements) for auto-vectorization.
+bool VectorNode::vector_size_supported_superword(const BasicType bt, int size) {
+  return Matcher::superword_max_vector_size(bt) >= size &&
+         Matcher::min_vector_size(bt) <= size;
 }
 
 // Also used to check if the code generator
@@ -308,7 +307,7 @@ bool VectorNode::vector_size_supported(BasicType bt, uint vlen) {
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      vector_size_supported(bt, vlen)) {
+      vector_size_supported_superword(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
@@ -702,6 +701,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_ExpandV: return new ExpandVNode(n1, n2, vt);
   case Op_CompressV: return new CompressVNode(n1, n2, vt);
   case Op_CompressM: assert(n1 == nullptr, ""); return new CompressMNode(n2, vt);
+  case Op_CompressBitsV: return new CompressBitsVNode(n1, n2, vt);
+  case Op_ExpandBitsV: return new ExpandBitsVNode(n1, n2, vt);
   case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
   case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
   default:
@@ -1379,7 +1380,7 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
   if (is_java_primitive(dst_type) &&
       is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      VectorNode::vector_size_supported(dst_type, vlen)) {
+      VectorNode::vector_size_supported_superword(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(opc, src_type);
     return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
   }
@@ -1473,7 +1474,7 @@ Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) 
 bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      VectorNode::vector_size_supported(bt, vlen)) {
+      VectorNode::vector_size_supported_superword(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
     return vopc != opc && Matcher::match_rule_supported_superword(vopc, vlen, bt);
   }

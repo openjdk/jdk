@@ -1078,6 +1078,10 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return 8/type2aelembytes(bt);
 }
 
+const int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
+}
+
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then
