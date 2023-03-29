@@ -1338,7 +1338,7 @@ public class JavaTokenizer extends UnicodeReader {
                     line.skipWhitespace();
 
                     if (line.accept("@deprecated") &&
-                            (line.isWhitespace() || line.is('*') || line.isEOLN())) {
+                            (line.isWhitespace() || line.isEOLN() || line.get() == 0x1A)) {
                         deprecatedFlag = true;
                     }
 

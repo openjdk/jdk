@@ -526,7 +526,7 @@ public class UnicodeReader {
     /**
      * Is ASCII line terminator.
      *
-     * @return true if is ASCII white space character
+     * @return true if is ASCII line terminator.
      */
     protected boolean isEOLN() {
         return isOneOf('\r', '\n');
