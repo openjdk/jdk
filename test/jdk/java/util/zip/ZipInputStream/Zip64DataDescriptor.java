@@ -52,7 +52,7 @@ public class Zip64DataDescriptor {
 
     @BeforeMethod
     public void setup() {
-        /**
+        /*
          * Structure of the ZIP64 file used below . Note the precense
          * of a Zip64 extended information extra field and the
          * Data Descriptor having 8-byte values for csize and size.
@@ -100,7 +100,7 @@ public class Zip64DataDescriptor {
         zip64File = HexFormat.of().parseHex(hex.replaceAll("\n", ""));
     }
 
-    /**
+    /*
      * Verify that small-sized Zip64 entries can be parsed by ZipInputStream
      */
     @Test
@@ -108,7 +108,7 @@ public class Zip64DataDescriptor {
         readZipInputStream();
     }
 
-    /**
+    /*
      * For maximal backward compatibility when reading Zip64 descriptors, invalid
      * Zip64 extra data sizes should be ignored
      */
@@ -124,7 +124,7 @@ public class Zip64DataDescriptor {
         assertEquals(ex.getMessage(), "invalid entry size (expected 0 but got 6 bytes)");
     }
 
-    /**
+    /*
      * Validate that an extra data size exceeding the length of the extra field is ignored
      */
     @Test
@@ -150,7 +150,7 @@ public class Zip64DataDescriptor {
                 .putShort(extSizeOffset, size);
     }
 
-    /**
+    /*
      * Consume all entries in a ZipInputStream, possibly throwing a
      * ZipException if the reading of any entry stream fails.
      */
