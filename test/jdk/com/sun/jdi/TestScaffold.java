@@ -466,7 +466,6 @@ abstract public class TestScaffold extends TargetAdapter {
         String mainWrapper = System.getProperty("main.wrapper");
         if ("Virtual".equals(mainWrapper)) {
             argInfo.targetAppCommandLine = TestScaffold.class.getName() + " " + mainWrapper + " ";
-            argInfo.targetVMArgs += "--enable-preview ";
         } else if ("true".equals(System.getProperty("test.enable.preview"))) {
             // the test specified @enablePreview.
             argInfo.targetVMArgs += "--enable-preview ";
