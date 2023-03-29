@@ -31,7 +31,9 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
-class LibFallback {
+final class LibFallback {
+    private LibFallback() {}
+
     static final boolean SUPPORTED = tryLoadLibrary();
 
     private static boolean tryLoadLibrary() {
@@ -195,7 +197,9 @@ class LibFallback {
 
     // put these in a separate class to avoid an UnsatisfiedLinkError
     // when LibFallback is initialized but the library is not present
-    private static class NativeConstants {
+    private static final class NativeConstants {
+        private NativeConstants() {}
+
         static final int DEFAULT_ABI = ffi_default_abi();
 
         static final MemorySegment UINT8_TYPE = MemorySegment.ofAddress(ffi_type_uint8());
