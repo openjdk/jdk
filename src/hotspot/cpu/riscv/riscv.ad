@@ -1945,6 +1945,10 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
+const int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
+}
+
 // Vector ideal reg.
 const uint Matcher::vector_ideal_reg(int len) {
   assert(MaxVectorSize >= len, "");

@@ -131,35 +131,23 @@ void CardTableRS::verify_used_region_at_save_marks(Space* sp) const {
 }
 #endif
 
-void CardTableRS::clear_into_younger(Generation* old_gen) {
-  assert(GenCollectedHeap::heap()->is_old_gen(old_gen),
-         "Should only be called for the old generation");
-  // The card tables for the youngest gen need never be cleared.
-  // There's a bit of subtlety in the clear() and invalidate()
-  // methods that we exploit here and in invalidate_or_clear()
-  // below to avoid missing cards at the fringes. If clear() or
-  // invalidate() are changed in the future, this code should
-  // be revisited. 20040107.ysr
-  clear_MemRegion(old_gen->prev_used_region());
-}
+void CardTableRS::maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty) {
+  assert(GenCollectedHeap::heap()->is_old_gen(old_gen), "precondition");
 
-void CardTableRS::invalidate_or_clear(Generation* old_gen) {
-  assert(GenCollectedHeap::heap()->is_old_gen(old_gen),
-         "Should only be called for the old generation");
-  // Invalidate the cards for the currently occupied part of
-  // the old generation and clear the cards for the
-  // unoccupied part of the generation (if any, making use
-  // of that generation's prev_used_region to determine that
-  // region). No need to do anything for the youngest
-  // generation. Also see note#20040107.ysr above.
-  MemRegion used_mr = old_gen->used_region();
-  MemRegion to_be_cleared_mr = old_gen->prev_used_region().minus(used_mr);
-  if (!to_be_cleared_mr.is_empty()) {
-    clear_MemRegion(to_be_cleared_mr);
+  if (is_young_gen_empty) {
+    clear_MemRegion(old_gen->prev_used_region());
+  } else {
+    MemRegion used_mr = old_gen->used_region();
+    MemRegion prev_used_mr = old_gen->prev_used_region();
+    if (used_mr.end() < prev_used_mr.end()) {
+      // Shrunk; need to clear the previously-used but now-unused parts.
+      clear_MemRegion(MemRegion(used_mr.end(), prev_used_mr.end()));
+    }
+    // No idea which card contains old-to-young pointer, so dirtying cards for
+    // the entire used part of old-gen conservatively.
+    dirty_MemRegion(used_mr);
   }
-  dirty_MemRegion(used_mr);
 }
-
 
 class VerifyCleanCardClosure: public BasicOopIterateClosure {
 private:
