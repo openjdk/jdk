@@ -282,10 +282,10 @@ class VFP {
       _bits = PrimitiveConversions::cast<unsigned int>(v);
     }
 
-    override unsigned int f_hi4() const { return (_bits << 9) >> (19+9); }
-    override bool f_lo_is_null() const { return (_bits & ((1 << 19) - 1)) == 0; }
-    override int e() const { return ((_bits << 1) >> (23+1)) - 127; }
-    override unsigned int s() const { return _bits >> 31; }
+    unsigned int f_hi4() const override { return (_bits << 9) >> (19+9); }
+    bool f_lo_is_null() const override { return (_bits & ((1 << 19) - 1)) == 0; }
+    int e() const override { return ((_bits << 1) >> (23+1)) - 127; }
+    unsigned int s() const override { return _bits >> 31; }
 
    private:
     unsigned int _bits;
@@ -297,10 +297,10 @@ class VFP {
       _bits = PrimitiveConversions::cast<uint64_t>(v);
     }
 
-    override unsigned int f_hi4() const { return (_bits << 12) >> (48+12); }
-    override bool f_lo_is_null() const { return (_bits & ((1LL << 48) - 1)) == 0; }
-    override int e() const { return ((_bits << 1) >> (52+1)) - 1023; }
-    override unsigned int s() const { return _bits >> 63; }
+    unsigned int f_hi4() const override { return (_bits << 12) >> (48+12); }
+    bool f_lo_is_null() const override { return (_bits & ((1LL << 48) - 1)) == 0; }
+    int e() const override { return ((_bits << 1) >> (52+1)) - 1023; }
+    unsigned int s() const override { return _bits >> 63; }
 
    private:
     uint64_t _bits;
