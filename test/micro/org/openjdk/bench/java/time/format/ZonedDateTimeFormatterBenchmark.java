@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package time.format;
+package org.openjdk.bench.java.time.format;
 
 import org.openjdk.jmh.annotations.*;
 
