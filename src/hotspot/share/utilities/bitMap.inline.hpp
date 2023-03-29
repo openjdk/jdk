@@ -394,12 +394,12 @@ inline BitMap::idx_t BitMap::IteratorImpl::last() const {
   return _cur_end - 1;
 }
 
-inline void BitMap::IteratorImpl::step_next() {
+inline void BitMap::IteratorImpl::step_first() {
   assert_not_empty();
   _cur_beg = _map->find_first_set_bit(_cur_beg + 1, _cur_end);
 }
 
-inline void BitMap::IteratorImpl::step_prev() {
+inline void BitMap::IteratorImpl::step_last() {
   assert_not_empty();
   idx_t lastpos = last();
   idx_t pos = _map->find_last_set_bit(_cur_beg, lastpos);
@@ -427,7 +427,7 @@ inline BitMap::idx_t BitMap::Iterator::index() const {
 }
 
 inline void BitMap::Iterator::step() {
-  _impl.step_next();
+  _impl.step_first();
 }
 
 inline BitMap::RBFIterator BitMap::Iterator::begin() const {
@@ -468,7 +468,7 @@ inline BitMap::idx_t BitMap::ReverseIterator::index() const {
 }
 
 inline void BitMap::ReverseIterator::step() {
-  _impl.step_prev();
+  _impl.step_last();
 }
 
 inline BitMap::ReverseRBFIterator BitMap::ReverseIterator::begin() const {
@@ -497,7 +497,7 @@ inline BitMap::idx_t BitMap::RBFIterator::operator*() const {
 }
 
 inline BitMap::RBFIterator& BitMap::RBFIterator::operator++() {
-  _impl.step_next();
+  _impl.step_first();
   return *this;
 }
 
@@ -521,7 +521,7 @@ inline BitMap::idx_t BitMap::ReverseRBFIterator::operator*() const {
 }
 
 inline BitMap::ReverseRBFIterator& BitMap::ReverseRBFIterator::operator++() {
-  _impl.step_prev();
+  _impl.step_last();
   return *this;
 }
 

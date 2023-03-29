@@ -423,13 +423,13 @@ struct BitMap::IteratorImpl {
   // [first() + 1, last()]. The iterator instead becomes empty if there
   // aren't any set bits in that range.
   // precondition: !is_empty()
-  void step_next();
+  void step_first();
 
   // Updates last() to the position of the last set bit in the range
   // [first(), last()). The iterator instead becomes empty if there aren't
   // any set bits in that range.
   // precondition: !is_empty()
-  void step_prev();
+  void step_last();
 };
 
 // Provides iteration over the indices of the set bits in a range of a bitmap,
