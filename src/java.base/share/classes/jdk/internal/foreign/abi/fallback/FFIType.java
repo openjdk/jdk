@@ -83,22 +83,22 @@ class FFIType {
         elementsSeg.setAtIndex(ADDRESS, i, MemorySegment.NULL);
 
         MemorySegment ffiType = scope.allocate(LAYOUT);
-        VH_TYPE.set(ffiType, LibFallback.STRUCT_TAG);
+        VH_TYPE.set(ffiType, LibFallback.structTag());
         VH_ELEMENTS.set(ffiType, elementsSeg);
 
         return ffiType;
     }
 
     private static final Map<Class<?>, MemorySegment> CARRIER_TO_TYPE = Map.of(
-        boolean.class, LibFallback.UINT8_TYPE,
-        byte.class, LibFallback.SINT8_TYPE,
-        short.class, LibFallback.SINT16_TYPE,
-        char.class, LibFallback.UINT16_TYPE,
-        int.class, LibFallback.SINT32_TYPE,
-        long.class, LibFallback.SINT64_TYPE,
-        float.class, LibFallback.FLOAT_TYPE,
-        double.class, LibFallback.DOUBLE_TYPE,
-        MemorySegment.class, LibFallback.POINTER_TYPE
+        boolean.class, LibFallback.uint8Type(),
+        byte.class, LibFallback.sint8Type(),
+        short.class, LibFallback.sint16Type(),
+        char.class, LibFallback.uint16Type(),
+        int.class, LibFallback.sint32Type(),
+        long.class, LibFallback.sint64Type(),
+        float.class, LibFallback.floatType(),
+        double.class, LibFallback.doubleType(),
+        MemorySegment.class, LibFallback.pointerType()
     );
 
     static MemorySegment toFFIType(MemoryLayout layout, FFIABI abi, Arena scope) {
