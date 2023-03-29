@@ -59,7 +59,7 @@ public class CorruptedZipFiles {
     // The path used when reading/writing the corrupted ZIP to disk
     private Path zip = Path.of("corrupted.zip");
 
-    /**
+    /*
      * Make a sample ZIP and calculate some known offsets into this ZIP
      */
     @BeforeTest
@@ -90,7 +90,7 @@ public class CorruptedZipFiles {
             "Extra field length mismatch");
     }
 
-    /**
+    /*
      * Make a copy safe to modify by each test
      */
     @BeforeMethod
@@ -98,7 +98,7 @@ public class CorruptedZipFiles {
         copy = Arrays.copyOf(template, template.length);
     }
 
-    /**
+    /*
      * Delete the ZIP file produced after each test method
      */
     @AfterMethod
@@ -106,7 +106,7 @@ public class CorruptedZipFiles {
         Files.deleteIfExists(zip);
     }
 
-    /**
+    /*
      * An End of Central Directory header with a CEN size exceeding
      * past the offset of the End record itself should be rejected with
      * a ZipException.
@@ -117,7 +117,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad central directory size.*");
     }
 
-    /**
+    /*
      * An End of Central Directory header with a CEN offset incoherent
      * with the position calculated by subtracting the CEN size from
      * the End position should be rejected with a ZipException.
@@ -128,7 +128,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad central directory offset.*");
     }
 
-    /**
+    /*
      * A CEN header with an unexpected signature should be rejected
      * with a ZipException.
      */
@@ -138,7 +138,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad signature.*");
     }
 
-    /**
+    /*
      * A CEN header where the general purpose bit flag 0 ('encrypted')
      * is set should be rejected with a ZipException
      */
@@ -148,7 +148,7 @@ public class CorruptedZipFiles {
         checkZipException(".*encrypted entry.*");
     }
 
-    /**
+    /*
      * A File name length which makes the CEN header overflow into the
      * End of central directory record should be rejected with a ZipException.
      */
@@ -158,7 +158,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad header size.*");
     }
 
-    /**
+    /*
      * A File name length which makes the CEN header overflow into the
      * End of central directory record should be rejected with a ZipException.
      */
@@ -169,7 +169,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad header size.*");
     }
 
-    /**
+    /*
      * If the last CEN header is not immediatly followed by the start
      * of the End record, this should be rejected with a ZipException.
      */
@@ -179,7 +179,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad header size.*");
     }
 
-    /**
+    /*
      * An Extra field length which makes the CEN header overflow into the
      * End of central directory record should be rejected with a ZipException.
      */
@@ -189,7 +189,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad header size.*");
     }
 
-    /**
+    /*
      * An Extra field length which makes the CEN header overflow into the
      * End of central directory record should be rejected with a ZipException.
      */
@@ -200,7 +200,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad header size.*");
     }
 
-    /**
+    /*
      * A File comment length which makes the CEN header overflow into the
      * End of central directory record should be rejected with a ZipException.
      */
@@ -210,7 +210,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad header size.*");
     }
 
-    /**
+    /*
      * A CEN header with an unsupported compression method should be rejected
      * with a ZipException.
      */
@@ -220,7 +220,7 @@ public class CorruptedZipFiles {
         checkZipException(".*bad compression method.*");
     }
 
-    /**
+    /*
      * A LOC header with an unexpected signature should be rejected
      * with a ZipException.
      */
