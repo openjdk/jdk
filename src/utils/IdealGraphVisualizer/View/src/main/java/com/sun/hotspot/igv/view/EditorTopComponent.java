@@ -381,6 +381,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         useBoldDisplayName = bold;
         setDisplayName(getDisplayName());
     }
+
     @Override
     protected void componentActivated() {
         super.componentActivated();
