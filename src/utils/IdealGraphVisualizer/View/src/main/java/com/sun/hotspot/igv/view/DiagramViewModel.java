@@ -344,6 +344,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             provider.setFilterChainSelectionChangedListener(l -> {
                 // this function is called when user selects a different filter profile for this model
                 setFilterChain(provider.getFilterChain(), customFilterChain);
+                filterChanged();
             });
         }
     }

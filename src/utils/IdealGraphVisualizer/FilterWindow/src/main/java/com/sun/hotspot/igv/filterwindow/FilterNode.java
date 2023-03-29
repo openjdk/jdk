@@ -45,10 +45,9 @@ import org.openide.util.lookup.InstanceContent;
  *
  * @author Thomas Wuerthinger
  */
-public class FilterNode extends CheckNode implements LookupListener, ChangedListener<FilterTopComponent> {
+public class FilterNode extends CheckNode implements ChangedListener<FilterTopComponent> {
 
     private final Filter filter;
-    private Lookup.Result<FilterChain> result;
 
     public FilterNode(Filter filter) {
         this(filter, new InstanceContent());
@@ -64,12 +63,8 @@ public class FilterNode extends CheckNode implements LookupListener, ChangedList
 
         update();
 
-        Lookup.Template<FilterChain> tpl = new Lookup.Template<>(FilterChain.class);
-        result = Utilities.actionsGlobalContext().lookup(tpl);
-        result.addLookupListener(this);
-
         FilterTopComponent.findInstance().getFilterSettingsChangedEvent().addListener(this);
-        resultChanged(null);
+        changed(FilterTopComponent.findInstance());
 
         setShortDescription("Double-click to open filter");
     }
@@ -97,11 +92,6 @@ public class FilterNode extends CheckNode implements LookupListener, ChangedList
     @Override
     public Action getPreferredAction() {
         return OpenAction.get(OpenAction.class).createContextAwareInstance(Utilities.actionsGlobalContext());
-    }
-
-    @Override
-    public void resultChanged(LookupEvent lookupEvent) {
-        changed(FilterTopComponent.findInstance());
     }
 
     @Override

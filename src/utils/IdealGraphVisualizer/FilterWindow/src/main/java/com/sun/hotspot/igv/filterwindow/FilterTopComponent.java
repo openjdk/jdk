@@ -83,7 +83,11 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     private FilterChain customFilterChain;
     private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
     private ChangedEvent<JComboBox<FilterChain>> filterChainSelectionChangedEvent;
-    private final ActionListener comboBoxSelectionChangedListener = l -> comboBoxSelectionChanged();
+    private final ActionListener comboBoxSelectionChangedListener = l -> {
+        comboBoxSelectionChanged();
+        // notify model that user selected a different filter profile
+        filterChainSelectionChangedEvent.fire();
+    };
     private static final String CUSTOM_LABEL = "--Local--";
     private static final String GLOBAL_LABEL = "--Global--";
 
@@ -193,6 +197,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
             comboBox.setSelectedIndex(0);
         }
         comboBox.addActionListener(comboBoxSelectionChangedListener);
+        comboBoxSelectionChanged();
     }
 
     public void setCustomFilterChain(FilterChain filterChain) {
@@ -201,19 +206,16 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         customFilterChain = filterChain;
         comboBox.insertItemAt(customFilterChain, 0);
         comboBox.addActionListener(comboBoxSelectionChangedListener);
+        comboBoxSelectionChanged();
     }
 
     private void comboBoxSelectionChanged() {
         FilterChain currentChain = getCurrentChain();
-        if (currentChain == null) {
-            return;
+        if (currentChain != null) {
+            filterSettingsChangedEvent.fire(); // notify all FilterNodes to update checkbox selection
+            SystemAction.get(RemoveFilterSettingsAction.class).setEnabled(currentChain != customFilterChain);
+            SystemAction.get(SaveFilterSettingsAction.class).setEnabled(true);
         }
-
-        filterSettingsChangedEvent.fire();
-        filterChainSelectionChangedEvent.fire();
-        currentChain.getChangedEvent().fire();
-        SystemAction.get(RemoveFilterSettingsAction.class).setEnabled(currentChain != customFilterChain);
-        SystemAction.get(SaveFilterSettingsAction.class).setEnabled(true);
     }
 
     public void addFilterSetting() {
