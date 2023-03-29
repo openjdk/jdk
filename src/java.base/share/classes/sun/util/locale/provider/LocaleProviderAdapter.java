@@ -172,7 +172,7 @@ public abstract class LocaleProviderAdapter {
         }
         if (compatWarningMessage != null) {
             getLogger(LocaleProviderAdapter.class.getCanonicalName())
-                    .log(Logger.Level.WARNING, compatWarningMessage);
+                .log(Logger.Level.WARNING, compatWarningMessage);
         }
     }
 
