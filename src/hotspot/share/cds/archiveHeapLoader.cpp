@@ -472,7 +472,7 @@ void ArchiveHeapLoader::finish_initialization() {
       verify_loaded_heap();
     }
   }
-  if (is_fully_available()) {
+  if (is_in_use()) {
     patch_native_pointers();
   }
 }
