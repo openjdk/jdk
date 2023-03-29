@@ -55,6 +55,9 @@ const char* C2Compiler::retry_no_iterative_escape_analysis() {
 const char* C2Compiler::retry_class_loading_during_parsing() {
   return "retry class loading during parsing";
 }
+
+void compiler_stubs_init(bool in_compiler_thread);
+
 bool C2Compiler::init_c2_runtime() {
 
   // Check assumptions used while running ADLC
@@ -73,6 +76,8 @@ bool C2Compiler::init_c2_runtime() {
   }
 
   DEBUG_ONLY( Node::init_NodeProperty(); )
+
+  compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
 
   Compile::pd_compiler2_init();
 
@@ -180,26 +185,12 @@ void C2Compiler::print_timers() {
   Compile::print_timers();
 }
 
-bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virtual) {
+bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   vmIntrinsics::ID id = method->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (id < vmIntrinsics::FIRST_ID || id > vmIntrinsics::LAST_COMPILER_INLINE) {
     return false;
-  }
-
-  // Only Object.hashCode and Object.clone intrinsics implement also a virtual
-  // dispatch because calling both methods is expensive but both methods are
-  // frequently overridden. All other intrinsics implement only a non-virtual
-  // dispatch.
-  if (is_virtual) {
-    switch (id) {
-    case vmIntrinsics::_hashCode:
-    case vmIntrinsics::_clone:
-      break;
-    default:
-      return false;
-    }
   }
 
   switch (id) {
@@ -785,6 +776,11 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return EnableVectorSupport;
   case vmIntrinsics::_blackhole:
+#if INCLUDE_JVMTI
+  case vmIntrinsics::_notifyJvmtiMount:
+  case vmIntrinsics::_notifyJvmtiUnmount:
+  case vmIntrinsics::_notifyJvmtiHideFrames:
+#endif
     break;
 
   default:

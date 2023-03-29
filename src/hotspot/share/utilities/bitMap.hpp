@@ -94,14 +94,23 @@ class BitMap {
     return raw_to_words_align_down(bit);
   }
 
-  // Helper for get_next_{zero,one}_bit variants.
+  // Helper for find_first_{set,clear}_bit variants.
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
   // - aligned_right is true if end is a priori on a bm_word_t boundary.
+  // - returns end if not found.
   template<bm_word_t flip, bool aligned_right>
-  inline idx_t get_next_bit_impl(idx_t beg, idx_t end) const;
+  inline idx_t find_first_bit_impl(idx_t beg, idx_t end) const;
 
-  // Values for get_next_bit_impl flip parameter.
+  // Helper for find_last_{set,clear}_bit variants.
+  // - flip designates whether searching for 1s or 0s.  Must be one of
+  //   find_{zeros,ones}_flip.
+  // - aligned_left is true if beg is a priori on a bm_word_t boundary.
+  // - returns end if not found.
+  template<bm_word_t flip, bool aligned_left>
+  inline idx_t find_last_bit_impl(idx_t beg, idx_t end) const;
+
+  // Values for find_{first,last}_bit_impl flip parameter.
   static const bm_word_t find_ones_flip = 0;
   static const bm_word_t find_zeros_flip = ~(bm_word_t)0;
 
@@ -255,7 +264,7 @@ class BitMap {
   void verify_range(idx_t beg, idx_t end) const NOT_DEBUG_RETURN;
 
   // Applies an operation to the index of each set bit in [beg, end), in
-  // increasing order.
+  // increasing (decreasing for reverse iteration) order.
   //
   // If i is an index of the bitmap, the operation is either
   // - function(i)
@@ -267,8 +276,8 @@ class BitMap {
   // an operation returning false.
   //
   // If an operation modifies the bitmap, modifications to bits at indices
-  // greater than the current index will affect which further indices the
-  // operation will be applied to.
+  // greater than (less than for reverse iteration) the current index will
+  // affect which further indices the operation will be applied to.
   //
   // precondition: beg and end form a valid range for the bitmap.
   template<typename Function>
@@ -287,22 +296,55 @@ class BitMap {
     return iterate(cl, 0, size());
   }
 
-  // Looking for 1's and 0's at indices equal to or greater than "beg",
-  // stopping if none has been found before "end", and returning
-  // "end" (which must be at most "size") in that case.
-  idx_t get_next_one_offset (idx_t beg, idx_t end) const;
-  idx_t get_next_zero_offset(idx_t beg, idx_t end) const;
+  template<typename Function>
+  bool reverse_iterate(Function function, idx_t beg, idx_t end) const;
 
-  idx_t get_next_one_offset(idx_t beg) const {
-    return get_next_one_offset(beg, size());
-  }
-  idx_t get_next_zero_offset(idx_t beg) const {
-    return get_next_zero_offset(beg, size());
+  template<typename BitMapClosureType>
+  bool reverse_iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const;
+
+  template<typename Function>
+  bool reverse_iterate(Function function) const {
+    return reverse_iterate(function, 0, size());
   }
 
-  // Like "get_next_one_offset", except requires that "end" is
+  template<typename BitMapClosureType>
+  bool reverse_iterate(BitMapClosureType* cl) const {
+    return reverse_iterate(cl, 0, size());
+  }
+
+  // Return the index of the first set (or clear) bit in the range [beg, end),
+  // or end if none found.
+  // precondition: beg and end form a valid range for the bitmap.
+  idx_t find_first_set_bit(idx_t beg, idx_t end) const;
+  idx_t find_first_clear_bit(idx_t beg, idx_t end) const;
+
+  idx_t find_first_set_bit(idx_t beg) const {
+    return find_first_set_bit(beg, size());
+  }
+  idx_t find_first_clear_bit(idx_t beg) const {
+    return find_first_clear_bit(beg, size());
+  }
+
+  // Like "find_first_set_bit", except requires that "end" is
   // aligned to bitsizeof(bm_word_t).
-  idx_t get_next_one_offset_aligned_right(idx_t beg, idx_t end) const;
+  idx_t find_first_set_bit_aligned_right(idx_t beg, idx_t end) const;
+
+  // Return the index of the last set (or clear) bit in the range [beg, end),
+  // or end if none found.
+  // precondition: beg and end form a valid range for the bitmap.
+  idx_t find_last_set_bit(idx_t beg, idx_t end) const;
+  idx_t find_last_clear_bit(idx_t beg, idx_t end) const;
+
+  idx_t find_last_set_bit(idx_t beg) const {
+    return find_last_set_bit(beg, size());
+  }
+  idx_t find_last_clear_bit(idx_t beg) const {
+    return find_last_clear_bit(beg, size());
+  }
+
+  // Like "find_last_set_bit", except requires that "beg" is
+  // aligned to bitsizeof(bm_word_t).
+  idx_t find_last_set_bit_aligned_left(idx_t beg, idx_t end) const;
 
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;

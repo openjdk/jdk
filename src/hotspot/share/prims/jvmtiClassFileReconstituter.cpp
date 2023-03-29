@@ -27,6 +27,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/universe.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "prims/jvmtiClassFileReconstituter.hpp"
 #include "runtime/handles.inline.hpp"
