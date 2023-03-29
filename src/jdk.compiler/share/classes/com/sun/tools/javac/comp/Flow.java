@@ -63,6 +63,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import java.util.Arrays;
+import java.util.Iterator;
 
 /** This pass implements dataflow analysis for Java programs though
  *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
@@ -851,7 +852,6 @@ public class Flow {
         }
 
         private List<PatternDescription> reduceBindingPatterns(Type selectorType, List<PatternDescription> patterns) {
-            //TODO: "viable" permitted subtypes
             for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
                 if (it1.head instanceof BindingPattern bpOne) {
                     for (Type sup : types.directSupertypes(bpOne.type)) {
@@ -868,8 +868,33 @@ public class Flow {
                             permitted.remove(bpOne.type.tsym);
                             bindings.append(it1.head);
                             for (var it2 = it1.tail; it2.nonEmpty(); it2 = it2.tail) {
-                                if (it2.head instanceof BindingPattern bpOther && permitted.remove(bpOther.type.tsym)) {
-                                    bindings.append(it2.head);
+                                if (it2.head instanceof BindingPattern bpOther) {
+                                    boolean reduces = false;
+
+                                    //TODO: verify all subtypes of the pattern covered by the spec:
+                                    List<Symbol> permittedSubtypesClosure = List.of(bpOther.type.tsym);
+
+                                    while (permittedSubtypesClosure.nonEmpty()) {
+                                        ClassSymbol fromClosure = (ClassSymbol) permittedSubtypesClosure.head;
+                                        permittedSubtypesClosure = permittedSubtypesClosure.tail;
+
+                                        for (Iterator<Symbol> it = permitted.iterator(); it.hasNext();) {
+                                            Symbol perm = it.next();
+
+                                            if (types.isSubtype(types.erasure(fromClosure.type), types.erasure(perm.type))) {
+                                                it.remove();
+                                                reduces = true;
+                                            }
+                                        }
+
+                                        if (fromClosure.isSealed()) {
+                                            permittedSubtypesClosure = permittedSubtypesClosure.prependList(fromClosure.permitted);
+                                        }
+                                    }
+
+                                    if (reduces) {
+                                        bindings.append(it2.head);
+                                    }
                                 }
                             }
                             if (permitted.isEmpty()) {
@@ -878,8 +903,6 @@ public class Flow {
                                 }
                                 patterns = patterns.prepend(new BindingPattern(clazz.type));
                                 return patterns;
-                            } else {
-                                System.err.println("selectorType: " + selectorType + ", missing: " + permitted);
                             }
                         }
                     }

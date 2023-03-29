@@ -1471,7 +1471,6 @@ public class Exhaustiveness extends TestRunner {
         }
     }
 
-
     @Test
     public void testComplexSubTypes1(Path base) throws Exception {
         doTest(base,
