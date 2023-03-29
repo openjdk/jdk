@@ -92,14 +92,14 @@ public class IeeeRemainderTests {
         }
 
         // Probe near decision points in the FDLIBM algorithm.
-        double[][] decisionPoints = { 
+        double[][] decisionPoints = {
             {0x1.fffffp1022, 100.0},
             {0x1.fffffp1022, 0x1.fffffp1022},
 
             {2.0*0x1.0p-1022, 0x1.0p-1022},
             {2.0*0x1.0p-1022, 0x1.0p-1023},
         };
-        
+
 
         for (var decisionPoint : decisionPoints) {
             double x = decisionPoint[0];
