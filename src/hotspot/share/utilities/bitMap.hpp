@@ -394,7 +394,10 @@ class BitMap {
 #endif
 };
 
-// Implementation support for bitmap iteration.
+// Implementation support for bitmap iteration.  While it could be used to
+// support bi-directional iteration, it is only intended to be used for
+// uni-directional iteration.  The directionality is determined by the using
+// class.
 struct BitMap::IteratorImpl {
   const BitMap* _map;
   idx_t _cur_beg;
@@ -406,6 +409,11 @@ struct BitMap::IteratorImpl {
   IteratorImpl();
 
   // Constructs an iterator for map, over the range [beg, end).
+  // May be constructed for one of forward or reverse iteration.
+  // precondition: beg and end form a valid range for map.
+  // precondition: either beg == end or
+  // (1) if for forward iteration, then beg must designate a set bit,
+  // (2) if for reverse iteration, then end-1 must designate a set bit.
   IteratorImpl(const BitMap* map, idx_t beg, idx_t end);
 
   // Returns true if the remaining iteration range is empty.
@@ -413,22 +421,26 @@ struct BitMap::IteratorImpl {
 
   // Returns the index of the first set bit in the remaining iteration range.
   // precondition: !is_empty()
+  // precondition: constructed for forward iteration.
   idx_t first() const;
 
   // Returns the index of the last set bit in the remaining iteration range.
   // precondition: !is_empty()
+  // precondition: constructed for reverse iteration.
   idx_t last() const;
 
   // Updates first() to the position of the first set bit in the range
   // [first() + 1, last()]. The iterator instead becomes empty if there
   // aren't any set bits in that range.
   // precondition: !is_empty()
+  // precondition: constructed for forward iteration.
   void step_first();
 
   // Updates last() to the position of the last set bit in the range
   // [first(), last()). The iterator instead becomes empty if there aren't
   // any set bits in that range.
   // precondition: !is_empty()
+  // precondition: constructed for reverse iteration.
   void step_last();
 };
 
