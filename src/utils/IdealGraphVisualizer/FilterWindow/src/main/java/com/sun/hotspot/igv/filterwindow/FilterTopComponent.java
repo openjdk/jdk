@@ -343,39 +343,39 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     }
 
     public void newFilter() {
-        CustomFilter cf = new CustomFilter("My custom filter", "", engine);
-        if (cf.openInEditor()) {
-            addFilter(cf);
+        CustomFilter customFilter = new CustomFilter("My custom filter", "", engine);
+        if (customFilter.openInEditor()) {
+            addFilter(customFilter);
         }
     }
 
-    public void addFilter(CustomFilter cf) {
-        allFiltersOrdered.addFilter(cf);
-        FileObject fo = getFileObject(cf);
-        FilterChangedListener listener = new FilterChangedListener(fo, cf);
-        listener.changed(cf);
-        cf.getChangedEvent().addListener(listener);
+    public void addFilter(CustomFilter customFilter) {
+        allFiltersOrdered.addFilter(customFilter);
+        FileObject fileObject = getFileObject(customFilter);
+        FilterChangedListener listener = new FilterChangedListener(fileObject, customFilter);
+        listener.changed(customFilter);
+        customFilter.getChangedEvent().addListener(listener);
     }
 
-    public void removeFilter(CustomFilter cf) {
-        allFiltersOrdered.removeFilter(cf);
+    public void removeFilter(CustomFilter customFilter) {
+        allFiltersOrdered.removeFilter(customFilter);
         try {
-            getFileObject(cf).delete();
+            getFileObject(customFilter).delete();
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
         }
     }
 
-    private FileObject getFileObject(CustomFilter f) {
-        FileObject fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + f.getName() + ".js");
-        if (fo == null) {
+    private FileObject getFileObject(CustomFilter customFilter) {
+        FileObject fileObject = FileUtil.getConfigRoot().getFileObject(FOLDER_ID + "/" + customFilter.getName() + ".js");
+        if (fileObject == null) {
             try {
-                fo = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(f.getName() + ".js");
+                fileObject = FileUtil.getConfigRoot().getFileObject(FOLDER_ID).createData(customFilter.getName() + ".js");
             } catch (IOException ex) {
                 Exceptions.printStackTrace(ex);
             }
         }
-        return fo;
+        return fileObject;
     }
 
     private static class FilterChangedListener implements ChangedListener<Filter> {
