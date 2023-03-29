@@ -240,6 +240,7 @@ class ExchangeImpl {
             }
             noContentToSend = true;
             contentLen = 0;
+            o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         } else { /* not a HEAD request or 304 response */
             if (contentLen == 0) {
                 if (http10) {

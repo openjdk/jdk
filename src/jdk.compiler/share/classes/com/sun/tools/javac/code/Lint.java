@@ -241,6 +241,11 @@ public class Lint
         OPTIONS("options"),
 
         /**
+         * Warn when any output file is written to more than once.
+         */
+        OUTPUT_FILE_CLASH("output-file-clash"),
+
+        /**
          * Warn about issues regarding method overloads.
          */
         OVERLOADS("overloads"),
