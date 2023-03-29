@@ -645,7 +645,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register size  = R12_scratch2;
   if (index_size == sizeof(u4)) {
     __ load_resolved_indy_entry(cache, size /* tmp */);
-    __ lhz(size, in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
+    __ lhz(size, Array<ResolvedIndyEntry>::base_offset_in_bytes() + in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
   } else {
     __ get_cache_and_index_at_bcp(cache, 1, index_size);
 
