@@ -68,6 +68,8 @@ inline G1FullGCCompactionPoint* G1DetermineCompactionQueueClosure::next_compacti
 
 inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(HeapRegion* hr) {
   _collector->set_compaction_top(hr, hr->bottom());
+  _collector->set_has_compaction_targets();
+
   G1FullGCCompactionPoint* cp = next_compaction_point();
   if (!cp->is_initialized()) {
     cp->initialize(hr);
@@ -87,6 +89,8 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
       bool is_empty = !_collector->mark_bitmap()->is_marked(obj);
       if (is_empty) {
         free_pinned_region<true>(hr);
+      } else {
+        _collector->set_has_humongous();
       }
     } else if (hr->is_open_archive()) {
       bool is_empty = _collector->live_words(hr->hrm_index()) == 0;

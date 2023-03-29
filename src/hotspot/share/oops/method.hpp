@@ -905,10 +905,6 @@ public:
    return method_holder()->lookup_osr_nmethod(this, InvocationEntryBci, level, match_level) != nullptr;
   }
 
-  int mark_osr_nmethods() {
-    return method_holder()->mark_osr_nmethods(this);
-  }
-
   nmethod* lookup_osr_nmethod_for(int bci, int level, bool match_level) {
     return method_holder()->lookup_osr_nmethod(this, bci, level, match_level);
   }

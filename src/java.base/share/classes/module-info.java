@@ -152,6 +152,7 @@ module java.base {
         jdk.compiler,
         jdk.incubator.concurrent, // participates in preview features
         jdk.incubator.vector, // participates in preview features
+        jdk.jartool, // participates in preview features
         jdk.jdi,
         jdk.jfr,
         jdk.jshell,
@@ -190,14 +191,23 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.org.objectweb.asm to
+    exports jdk.internal.classfile to
         jdk.jartool,
-        jdk.jfr,
         jdk.jlink,
         jdk.jshell;
-    exports jdk.internal.org.objectweb.asm.tree to
-        jdk.jfr,
+    exports jdk.internal.classfile.attribute to
+        jdk.jartool,
         jdk.jlink;
+    exports jdk.internal.classfile.constantpool to
+        jdk.jartool,
+        jdk.jlink;
+    exports jdk.internal.classfile.instruction to
+        jdk.jlink,
+        jdk.jshell;
+    exports jdk.internal.org.objectweb.asm to
+        jdk.jfr;
+    exports jdk.internal.org.objectweb.asm.tree to
+        jdk.jfr;
     exports jdk.internal.org.objectweb.asm.util to
         jdk.jfr;
     exports jdk.internal.org.objectweb.asm.commons to

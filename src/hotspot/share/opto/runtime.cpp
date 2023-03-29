@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,22 +93,26 @@
 
 
 // Compiled code entry points
-address OptoRuntime::_new_instance_Java                           = NULL;
-address OptoRuntime::_new_array_Java                              = NULL;
-address OptoRuntime::_new_array_nozero_Java                       = NULL;
-address OptoRuntime::_multianewarray2_Java                        = NULL;
-address OptoRuntime::_multianewarray3_Java                        = NULL;
-address OptoRuntime::_multianewarray4_Java                        = NULL;
-address OptoRuntime::_multianewarray5_Java                        = NULL;
-address OptoRuntime::_multianewarrayN_Java                        = NULL;
-address OptoRuntime::_vtable_must_compile_Java                    = NULL;
-address OptoRuntime::_complete_monitor_locking_Java               = NULL;
-address OptoRuntime::_monitor_notify_Java                         = NULL;
-address OptoRuntime::_monitor_notifyAll_Java                      = NULL;
-address OptoRuntime::_rethrow_Java                                = NULL;
+address OptoRuntime::_new_instance_Java                           = nullptr;
+address OptoRuntime::_new_array_Java                              = nullptr;
+address OptoRuntime::_new_array_nozero_Java                       = nullptr;
+address OptoRuntime::_multianewarray2_Java                        = nullptr;
+address OptoRuntime::_multianewarray3_Java                        = nullptr;
+address OptoRuntime::_multianewarray4_Java                        = nullptr;
+address OptoRuntime::_multianewarray5_Java                        = nullptr;
+address OptoRuntime::_multianewarrayN_Java                        = nullptr;
+address OptoRuntime::_vtable_must_compile_Java                    = nullptr;
+address OptoRuntime::_complete_monitor_locking_Java               = nullptr;
+address OptoRuntime::_monitor_notify_Java                         = nullptr;
+address OptoRuntime::_monitor_notifyAll_Java                      = nullptr;
+address OptoRuntime::_rethrow_Java                                = nullptr;
 
-address OptoRuntime::_slow_arraycopy_Java                         = NULL;
-address OptoRuntime::_register_finalizer_Java                     = NULL;
+address OptoRuntime::_slow_arraycopy_Java                         = nullptr;
+address OptoRuntime::_register_finalizer_Java                     = nullptr;
+#if INCLUDE_JVMTI
+address OptoRuntime::_notify_jvmti_mount                          = nullptr;
+address OptoRuntime::_notify_jvmti_unmount                        = nullptr;
+#endif
 
 ExceptionBlob* OptoRuntime::_exception_blob;
 
@@ -130,7 +134,7 @@ static bool check_compiled_frame(JavaThread* thread) {
 
 #define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, return_pc) \
   var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, return_pc); \
-  if (var == NULL) { return false; }
+  if (var == nullptr) { return false; }
 
 bool OptoRuntime::generate(ciEnv* env) {
 
@@ -148,6 +152,10 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
+#if INCLUDE_JVMTI
+  gen(env, _notify_jvmti_mount             , notify_jvmti_Type            , SharedRuntime::notify_jvmti_mount,   0 , true, false);
+  gen(env, _notify_jvmti_unmount           , notify_jvmti_Type            , SharedRuntime::notify_jvmti_unmount, 0 , true, false);
+#endif
   gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
   gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false);
   gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false);
@@ -181,7 +189,7 @@ const char* OptoRuntime::stub_name(address entry) {
 #ifndef PRODUCT
   CodeBlob* cb = CodeCache::find_blob(entry);
   RuntimeStub* rs =(RuntimeStub *)cb;
-  assert(rs != NULL && rs->is_runtime_stub(), "not a runtime stub");
+  assert(rs != nullptr && rs->is_runtime_stub(), "not a runtime stub");
   return rs->name();
 #else
   // Fast implementation for product mode (maybe it should be inlined too)
@@ -303,7 +311,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   SharedRuntime::on_slowpath_allocation_exit(current);
 
   oop result = current->vm_result();
-  if ((len > 0) && (result != NULL) &&
+  if ((len > 0) && (result != nullptr) &&
       is_deoptimized_caller_frame(current)) {
     // Zero array here if the caller is deoptimized.
     const size_t size = TypeArrayKlass::cast(array_type)->oop_size(result);
@@ -609,12 +617,12 @@ const TypeFunc *OptoRuntime::monitor_notify_Type() {
 const TypeFunc* OptoRuntime::flush_windows_Type() {
   // create input type (domain)
   const Type** fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
+  fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms, fields);
 
   // create result type
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
+  fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
 
   return TypeFunc::make(domain, range);
@@ -781,7 +789,7 @@ static const TypeFunc* make_arraycopy_Type(ArrayCopyType act) {
   int retcnt = (act == ac_checkcast || act == ac_generic ? 1 : 0);
   fields = TypeTuple::fields(1);
   if (retcnt == 0)
-    fields[TypeFunc::Parms+0] = NULL; // void
+    fields[TypeFunc::Parms+0] = nullptr; // void
   else
     fields[TypeFunc::Parms+0] = TypeInt::INT; // status result, if needed
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+retcnt, fields);
@@ -823,7 +831,7 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
 
   // create result type
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
+  fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
 
   return TypeFunc::make(domain, range);
@@ -844,7 +852,7 @@ const TypeFunc* OptoRuntime::aescrypt_block_Type() {
 
   // no result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
+  fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1024,7 +1032,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
 
   // no result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
+  fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1070,7 +1078,7 @@ const TypeFunc* OptoRuntime::multiplyToLen_Type() {
 
   // no result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL;
+  fields[TypeFunc::Parms+0] = nullptr;
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1090,7 +1098,7 @@ const TypeFunc* OptoRuntime::squareToLen_Type() {
 
   // no result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL;
+  fields[TypeFunc::Parms+0] = nullptr;
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1178,7 +1186,7 @@ const TypeFunc * OptoRuntime::bigIntegerShift_Type() {
 
   // no result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms + 0] = NULL;
+  fields[TypeFunc::Parms + 0] = nullptr;
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1218,7 +1226,7 @@ const TypeFunc* OptoRuntime::ghash_processBlocks_Type() {
 
     // result type needed
     fields = TypeTuple::fields(1);
-    fields[TypeFunc::Parms+0] = NULL; // void
+    fields[TypeFunc::Parms+0] = nullptr; // void
     const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
     return TypeFunc::make(domain, range);
 }
@@ -1259,7 +1267,7 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
 
   // result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms + 0] = NULL; // void
+  fields[TypeFunc::Parms + 0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1301,7 +1309,7 @@ const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
 
   // result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms + 0] = NULL; // void
+  fields[TypeFunc::Parms + 0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1316,7 +1324,7 @@ const TypeFunc* OptoRuntime::osr_end_Type() {
   // create result type
   fields = TypeTuple::fields(1);
   // fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // locked oop
-  fields[TypeFunc::Parms+0] = NULL; // void
+  fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
@@ -1355,8 +1363,8 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
   // is only used to pass arguments into the method. Not for general
   // exception handling.  DO NOT CHANGE IT to use pending_exception, since
   // the runtime stubs checks this on exit.
-  assert(current->exception_oop() != NULL, "exception oop is found");
-  address handler_address = NULL;
+  assert(current->exception_oop() != nullptr, "exception oop is found");
+  address handler_address = nullptr;
 
   Handle exception(current, current->exception_oop());
   address pc = current->exception_pc();
@@ -1389,7 +1397,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
   // using rethrow node
 
   nm = CodeCache::find_nmethod(pc);
-  assert(nm != NULL, "No NMethod found");
+  assert(nm != nullptr, "No NMethod found");
   if (nm->is_native_method()) {
     fatal("Native method should not have path to exception handling");
   } else {
@@ -1430,12 +1438,12 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
     } else {
 
       handler_address =
-        force_unwind ? NULL : nm->handler_for_exception_and_pc(exception, pc);
+        force_unwind ? nullptr : nm->handler_for_exception_and_pc(exception, pc);
 
-      if (handler_address == NULL) {
+      if (handler_address == nullptr) {
         bool recursive_exception = false;
         handler_address = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, force_unwind, true, recursive_exception);
-        assert (handler_address != NULL, "must have compiled handler");
+        assert (handler_address != nullptr, "must have compiled handler");
         // Update the exception cache only when the unwind was not forced
         // and there didn't happen another exception during the computation of the
         // compiled exception handler. Checking for exception oop equality is not
@@ -1481,8 +1489,8 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   SharedRuntime::_find_handler_ctr++;          // find exception handler
 #endif
   debug_only(NoHandleMark __hm;)
-  nmethod* nm = NULL;
-  address handler_address = NULL;
+  nmethod* nm = nullptr;
+  address handler_address = nullptr;
   {
     // Enter the VM
 
@@ -1495,7 +1503,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   // Now check to see if the handler we are returning is in a now
   // deoptimized frame
 
-  if (nm != NULL) {
+  if (nm != nullptr) {
     RegisterMap map(current,
                     RegisterMap::UpdateMap::skip,
                     RegisterMap::ProcessFrames::skip,
@@ -1547,7 +1555,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows
 #endif
-  assert (exception != NULL, "should have thrown a NULLPointerException");
+  assert (exception != nullptr, "should have thrown a NullPointerException");
 #ifdef ASSERT
   if (!(exception->is_a(vmClasses::Throwable_klass()))) {
     // should throw an exception here
@@ -1644,6 +1652,24 @@ const TypeFunc *OptoRuntime::class_id_load_barrier_Type() {
 }
 #endif
 
+#if INCLUDE_JVMTI
+const TypeFunc *OptoRuntime::notify_jvmti_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // VirtualThread oop
+  fields[TypeFunc::Parms+1] = TypeInt::BOOL;        // jboolean
+  fields[TypeFunc::Parms+2] = TypeInt::BOOL;        // jboolean
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3,fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = NULL; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+
+  return TypeFunc::make(domain,range);
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Dtrace support.  entry and exit probes have the same signature
 const TypeFunc *OptoRuntime::dtrace_method_entry_exit_Type() {
@@ -1686,7 +1712,7 @@ JRT_END
 
 //-----------------------------------------------------------------------------
 
-NamedCounter * volatile OptoRuntime::_named_counters = NULL;
+NamedCounter * volatile OptoRuntime::_named_counters = nullptr;
 
 //
 // dump the collected NamedCounters.
@@ -1742,7 +1768,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   stringStream st;
   for (int depth = max_depth; depth >= 1; depth--) {
     JVMState* jvms = youngest_jvms->of_depth(depth);
-    ciMethod* m = jvms->has_method() ? jvms->method() : NULL;
+    ciMethod* m = jvms->has_method() ? jvms->method() : nullptr;
     if (!first) {
       st.print(" ");
     } else {
@@ -1750,7 +1776,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     }
     int bci = jvms->bci();
     if (bci < 0) bci = 0;
-    if (m != NULL) {
+    if (m != nullptr) {
       st.print("%s.%s", m->holder()->name()->as_utf8(), m->name()->as_utf8());
     } else {
       st.print("no method");
@@ -1769,7 +1795,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   // add counters so this is safe.
   NamedCounter* head;
   do {
-    c->set_next(NULL);
+    c->set_next(nullptr);
     head = _named_counters;
     c->set_next(head);
   } while (Atomic::cmpxchg(&_named_counters, head, c) != head);

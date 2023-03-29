@@ -32,8 +32,13 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum platform_dependent_constants {
-  code_size1 = 20000 LP64_ONLY(+10000),                    // simply increase if too small (assembler will crash if too small)
-  code_size2 = 35300 LP64_ONLY(+45000) WINDOWS_ONLY(+2048) // simply increase if too small (assembler will crash if too small)
+  // simply increase sizes if too small (assembler will crash if too small)
+  _initial_stubs_code_size      = 20000 WINDOWS_ONLY(+1000),
+  _continuation_stubs_code_size =  1000 LP64_ONLY(+1000),
+  // AVX512 intrinsics add more code in 64-bit VM,
+  // Windows have more code to save/restore registers
+  _compiler_stubs_code_size     = 20000 LP64_ONLY(+30000) WINDOWS_ONLY(+2000),
+  _final_stubs_code_size        = 10000 LP64_ONLY(+20000) WINDOWS_ONLY(+2000)
 };
 
 class x86 {
@@ -127,18 +132,18 @@ class x86 {
   static address _method_entry_barrier;
 
   // masks and table for CRC32
-  static uint64_t _crc_by128_masks[];
-  static juint    _crc_table[];
+  static const uint64_t _crc_by128_masks[];
+  static const juint    _crc_table[];
 #ifdef _LP64
-  static juint    _crc_by128_masks_avx512[];
-  static juint    _crc_table_avx512[];
-  static juint    _crc32c_table_avx512[];
-  static juint    _shuf_table_crc32_avx512[];
+  static const juint    _crc_by128_masks_avx512[];
+  static const juint    _crc_table_avx512[];
+  static const juint    _crc32c_table_avx512[];
+  static const juint    _shuf_table_crc32_avx512[];
 #endif // _LP64
   // table for CRC32C
   static juint* _crc32c_table;
   // table for arrays_hashcode
-  static jint _arrays_hashcode_powers_of_31[];
+  static const jint _arrays_hashcode_powers_of_31[];
 
   // upper word mask for sha1
   static address _upper_word_mask_addr;
@@ -146,7 +151,7 @@ class x86 {
   static address _shuffle_byte_flip_mask_addr;
 
   //k256 table for sha256
-  static juint _k256[];
+  static const juint _k256[];
   static address _k256_adr;
   static address _vector_short_to_byte_mask;
   static address _vector_float_sign_mask;
@@ -175,7 +180,7 @@ class x86 {
 #ifdef _LP64
   static juint _k256_W[];
   static address _k256_W_adr;
-  static julong _k512_W[];
+  static const julong _k512_W[];
   static address _k512_W_addr;
   // byte flip mask for sha512
   static address _pshuffle_byte_flip_mask_addr_sha512;
