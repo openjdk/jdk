@@ -48,7 +48,7 @@ import org.openide.util.Lookup;
  */
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
 
-    private Group group;
+    private final Group group;
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
@@ -157,11 +157,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return hideDuplicates;
     }
 
-    private void init(Group group) {
-        this.group = group;
-        this.group.getChangedEvent().addListener(g -> {
-            assert g == this.group;
-            if (this.group.getGraphs().isEmpty()) {
+    private void initGroup() {
+        group.getChangedEvent().addListener(g -> {
+            assert g == group;
+            if (group.getGraphs().isEmpty()) {
                 // If the group has been emptied, all corresponding graph views
                 // will be closed, so do nothing.
                 return;
@@ -176,7 +175,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public DiagramViewModel(DiagramViewModel model) {
         super(model);
         globalSelection = false;
-        init(model.getGroup());
+        group = model.getGroup();
+        initGroup();
         graphs = new ArrayList<>(model.graphs);
 
         // initialize the filters from a model
@@ -202,7 +202,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public DiagramViewModel(InputGraph graph) {
-        init(graph.getGroup());
+        group = graph.getGroup();
+        initGroup();
 
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         assert provider != null;
