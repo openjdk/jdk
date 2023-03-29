@@ -563,7 +563,6 @@ void klassVtable::put_method_at(Method* m, int index) {
 
 void klassVtable::check_constraints(GrowableArray<InstanceKlass*>* supers, TRAPS) {
   assert(supers->length() == length(), "lengths are different");
-  HandleMark hm(THREAD);
   // For each method in the vtable, check constraints against any super class
   // if overridden.
   for (int i = 0; i < length(); i++) {
@@ -573,6 +572,7 @@ void klassVtable::check_constraints(GrowableArray<InstanceKlass*>* supers, TRAPS
       // Do not check loader constraints for overpass methods because overpass
       // methods are created by the jvm to throw exceptions.
       if (!target_method->is_overpass()) {
+        HandleMark hm(THREAD);
         // Override vtable entry if passes loader constraint check
         // if loader constraint checking requested
         // No need to visit his super, since he and his super
@@ -1175,7 +1175,6 @@ void klassItable::initialize_itable(GrowableArray<Method*>* supers) {
 void klassItable::check_constraints(GrowableArray<Method*>* supers, TRAPS) {
 
   assert(_size_method_table == supers->length(), "wrong size");
-  HandleMark hm(THREAD);
   itableMethodEntry* ime = method_entry(0);
   for (int i = 0; i < _size_method_table; i++) {
     Method* target = ime->method();
@@ -1184,6 +1183,7 @@ void klassItable::check_constraints(GrowableArray<Method*>* supers, TRAPS) {
     if (target != nullptr && interface_method != nullptr) {
       InstanceKlass* method_holder = target->method_holder();
       InstanceKlass* interf = interface_method->method_holder();
+      HandleMark hm(THREAD);
       Handle method_holder_loader(THREAD, method_holder->class_loader());
       Handle interface_loader(THREAD, interf->class_loader());
 
