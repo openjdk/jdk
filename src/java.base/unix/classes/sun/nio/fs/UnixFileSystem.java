@@ -52,7 +52,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import jdk.internal.misc.Blocker;
-import jdk.internal.util.SystemProps;
+import jdk.internal.util.StaticProperty;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
@@ -78,7 +78,7 @@ abstract class UnixFileSystem
 
     // package-private
     UnixFileSystem(UnixFileSystemProvider provider) {
-        String dir = SystemProps.initProperties().get("user.dir");
+        String dir = StaticProperty.userDir();
         this.provider = provider;
         this.defaultDirectory = Util.toBytes(UnixPath.normalizeAndCheck(dir));
         if (this.defaultDirectory[0] != '/') {

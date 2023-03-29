@@ -38,7 +38,7 @@ import static sun.nio.fs.AixNativeDispatcher.*;
 
 class AixFileSystem extends UnixFileSystem {
 
-    AixFileSystem(UnixFileSystemProvider provider, String dir) {
+    AixFileSystem(UnixFileSystemProvider provider) {
         super(provider);
     }
 

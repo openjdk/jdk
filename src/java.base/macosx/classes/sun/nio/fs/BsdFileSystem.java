@@ -46,7 +46,7 @@ import static sun.nio.fs.UnixNativeDispatcher.unlink;
 
 class BsdFileSystem extends UnixFileSystem {
 
-    BsdFileSystem(UnixFileSystemProvider provider, String dir) {
+    BsdFileSystem(UnixFileSystemProvider provider) {
         super(provider);
     }
 

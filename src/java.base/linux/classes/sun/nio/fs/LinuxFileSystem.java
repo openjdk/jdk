@@ -41,7 +41,7 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class LinuxFileSystem extends UnixFileSystem {
-    LinuxFileSystem(UnixFileSystemProvider provider, String dir) {
+    LinuxFileSystem(UnixFileSystemProvider provider) {
         super(provider);
     }
 
