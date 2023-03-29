@@ -132,6 +132,7 @@ public class Attr extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Attr(Context context) {
         context.put(attrKey, this);
 

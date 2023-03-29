@@ -49,6 +49,7 @@ define SetupCharacterData
 	    -specialcasing $(UNICODEDATA)/SpecialCasing.txt \
 	    -proplist $(UNICODEDATA)/PropList.txt \
 	    -derivedprops $(UNICODEDATA)/DerivedCoreProperties.txt \
+	    -emojidata $(UNICODEDATA)/emoji/emoji-data.txt \
 	    -o $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java \
 	    -usecharforbyte $3
 

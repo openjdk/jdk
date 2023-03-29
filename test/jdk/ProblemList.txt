@@ -533,11 +533,7 @@ java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-a
 
 java/net/MulticastSocket/Test.java                              7145658 macosx-all
 
-java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-all
-
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
-
-java/net/SocketOption/OptionsTest.java                          8304286 windows-all
 
 ############################################################################
 
@@ -736,7 +732,6 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
-javax/script/Test7.java                                         8239361 generic-all
 
 jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
 

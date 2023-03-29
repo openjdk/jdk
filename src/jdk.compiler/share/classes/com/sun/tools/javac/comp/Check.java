@@ -135,6 +135,7 @@ public class Check {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Check(Context context) {
         context.put(checkKey, this);
 
