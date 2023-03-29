@@ -890,7 +890,7 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                 MTLSDOps *dstMTLOps = (MTLSDOps *)dstOps->privOps;
                 MTLLayer *layer = (MTLLayer*)dstMTLOps->layer;
                 if (layer != NULL) {
-                    [layer startDisplayLink];
+                    [layer startRedraw];
                 }
             }
         }

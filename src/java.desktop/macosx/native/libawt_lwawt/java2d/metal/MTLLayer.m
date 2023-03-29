@@ -29,7 +29,6 @@
 #import "LWCToolkit.h"
 #import "MTLSurfaceData.h"
 #import "JNIUtilities.h"
-#define KEEP_ALIVE_INC 4
 
 @implementation MTLLayer
 
@@ -42,8 +41,6 @@
 @synthesize topInset;
 @synthesize leftInset;
 @synthesize nextDrawableCount;
-@synthesize displayLink;
-@synthesize displayLinkCount;
 
 - (id) initWithJavaLayer:(jobject)layer
 {
@@ -74,9 +71,7 @@
     self.framebufferOnly = NO;
     self.nextDrawableCount = 0;
     self.opaque = YES;
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
-    self.displayLinkCount = 0;
+    self.redrawCount = 0;
     return self;
 }
 
@@ -84,18 +79,18 @@
     if (self.ctx == NULL || self.javaLayer == NULL || self.buffer == nil || self.ctx.device == nil) {
         J2dTraceLn4(J2D_TRACE_VERBOSE,
                     "MTLLayer.blitTexture: uninitialized (mtlc=%p, javaLayer=%p, buffer=%p, device=%p)", self.ctx,
-                    self.javaLayer, self.buffer, ctx.device);
-        [self stopDisplayLink];
+                    self.javaLayer, self.buffer, self.ctx.device);
+        [self stopRedraw:YES];
         return;
     }
 
     if (self.nextDrawableCount != 0) {
         return;
     }
+    [self stopRedraw:NO];
     @autoreleasepool {
         if ((self.buffer.width == 0) || (self.buffer.height == 0)) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: cannot create drawable of size 0");
-            [self stopDisplayLink];
             return;
         }
 
@@ -106,20 +101,17 @@
 
         if (src_h <= 0 || src_w <= 0) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: Invalid src width or height.");
-            [self stopDisplayLink];
             return;
         }
 
-        id<MTLCommandBuffer> commandBuf = [self.ctx createBlitCommandBuffer];
+        id<MTLCommandBuffer> commandBuf = [self.ctx createCommandBuffer];
         if (commandBuf == nil) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: commandBuf is null");
-            [self stopDisplayLink];
             return;
         }
         id<CAMetalDrawable> mtlDrawable = [self nextDrawable];
         if (mtlDrawable == nil) {
             J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: nextDrawable is null)");
-            [self stopDisplayLink];
             return;
         }
         self.nextDrawableCount++;
@@ -134,16 +126,14 @@
         [blitEncoder endEncoding];
 
         [commandBuf presentDrawable:mtlDrawable];
+        __block MTLLayer* layer = self;
+        [layer retain];
         [commandBuf addCompletedHandler:^(id <MTLCommandBuffer> commandBuf) {
-            self.nextDrawableCount--;
+            layer.nextDrawableCount--;
+            [layer release];
         }];
 
         [commandBuf commit];
-
-        if (--self.displayLinkCount <= 0) {
-            self.displayLinkCount = 0;
-            [self stopDisplayLink];
-        }
     }
 }
 
@@ -151,9 +141,7 @@
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     (*env)->DeleteWeakGlobalRef(env, self.javaLayer);
     self.javaLayer = nil;
-    [self stopDisplayLink];
-    CVDisplayLinkRelease(self.displayLink);
-    self.displayLink = nil;
+    [self stopRedraw:YES];
     [super dealloc];
 }
 
@@ -185,18 +173,18 @@
     [self setNeedsDisplay];
 }
 
-- (void) startDisplayLink {
-    if (!CVDisplayLinkIsRunning(self.displayLink)) {
-        CVDisplayLinkStart(self.displayLink);
-        J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer_startDisplayLink");
+- (void)startRedraw {
+    if (self.ctx != nil) {
+        [self.ctx startRedraw:self];
     }
-    displayLinkCount += KEEP_ALIVE_INC; // Keep alive displaylink counter
 }
 
-- (void) stopDisplayLink {
-    if (CVDisplayLinkIsRunning(self.displayLink)) {
-        CVDisplayLinkStop(self.displayLink);
-        J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer_stopDisplayLink");
+- (void)stopRedraw:(BOOL)force {
+    if (self.ctx != nil) {
+        if (force) {
+            self.redrawCount = 0;
+        }
+        [self.ctx stopRedraw:self];
     }
 }
 
@@ -255,10 +243,10 @@ Java_sun_java2d_metal_MTLLayer_validate
         layer.drawableSize =
             CGSizeMake(layer.buffer.width,
                        layer.buffer.height);
-        [layer startDisplayLink];
+        [layer startRedraw];
     } else {
         layer.ctx = NULL;
-        [layer stopDisplayLink];
+        [layer stopRedraw:YES];
     }
 }
 
@@ -296,7 +284,9 @@ Java_sun_java2d_metal_MTLLayer_blitTexture
     MTLContext * ctx = layer.ctx;
     if (layer == NULL || ctx == NULL) {
         J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer_blit : Layer or Context is null");
-        [layer stopDisplayLink];
+        if (layer != nil) {
+            [layer stopRedraw:YES];
+        }
         return;
     }
 

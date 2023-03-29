@@ -54,8 +54,7 @@
 @property (readwrite, assign) int nextDrawableCount;
 @property (readwrite, assign) int topInset;
 @property (readwrite, assign) int leftInset;
-@property (readwrite, assign) CVDisplayLinkRef displayLink;
-@property (readwrite, atomic) int displayLinkCount;
+@property (readwrite, atomic) int redrawCount;
 
 - (id) initWithJavaLayer:(jobject)layer;
 
@@ -69,8 +68,8 @@
 - (void) blitCallback;
 - (void) display;
 - (void) redraw;
-- (void) startDisplayLink;
-- (void) stopDisplayLink;
+- (void) startRedraw;
+- (void) stopRedraw:(BOOL)force;
 @end
 
 #endif /* MTLLayer_h_Included */

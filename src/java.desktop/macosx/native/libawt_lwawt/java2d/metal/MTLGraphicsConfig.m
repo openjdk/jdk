@@ -121,7 +121,7 @@ JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^() {
 
-        mtlc = [[MTLContext alloc] initWithDevice:CGDirectDisplayCopyCurrentMetalDevice(displayID)
+        mtlc = [[MTLContext alloc] initWithDevice:displayID
                                        shadersLib:path];
         if (mtlc != 0L) {
             // create the MTLGraphicsConfigInfo record for this context

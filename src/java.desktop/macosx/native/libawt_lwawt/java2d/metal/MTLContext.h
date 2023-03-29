@@ -41,6 +41,7 @@
 #include "MTLSamplerManager.h"
 
 @class MTLStencilManager;
+@class MTLLayer;
 
 // Constant from
 // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
@@ -73,7 +74,6 @@
 
 @property (readonly, strong)   id<MTLDevice>   device;
 @property (strong) id<MTLCommandQueue>         commandQueue;
-@property (strong) id<MTLCommandQueue>         blitCommandQueue;
 @property (strong) id<MTLBuffer>               vertexBuffer;
 
 @property (readonly) EncoderManager * encoderManager;
@@ -93,7 +93,7 @@
  */
 + (MTLContext*) setSurfacesEnv:(JNIEnv*)env src:(jlong)pSrc dst:(jlong)pDst;
 
-- (id)initWithDevice:(id<MTLDevice>)d shadersLib:(NSString*)shadersLib;
+- (id)initWithDevice:(jint)displayID shadersLib:(NSString*)shadersLib;
 - (void)dealloc;
 
 /**
@@ -228,7 +228,8 @@
 -(NSObject*)getBufImgOp;
 
 - (id<MTLCommandBuffer>)createCommandBuffer;
-- (id<MTLCommandBuffer>)createBlitCommandBuffer;
+- (void)startRedraw:(MTLLayer*)layer;
+- (void)stopRedraw:(MTLLayer*)layer;
 @end
 
 /**
