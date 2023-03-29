@@ -246,7 +246,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
       auto virt = static_cast<VirtualState*>(state.get_object_state(dst_alloc));
 
       for (int i=0; i < holder->nof_nonstatic_fields(); ++i) {
-        if (field->offset() == holder->nonstatic_field_at(i)->offset()) {
+        if (field->offset_in_bytes() == holder->nonstatic_field_at(i)->offset_in_bytes()) {
           virt->set_field(i, val);
           break;
         }
