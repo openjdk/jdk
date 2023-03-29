@@ -262,18 +262,18 @@ public class GetXSpace {
         }
 
         // On Unix the total space should always be the volume size
-        if (!Platform.isWindows()) {
-            if (ts != s.size()) {
-                fail(s.name() + " total space", ts, "!=", s.size());
-            } else {
-                pass();
-            }
-        } else { // Windows
+        if (Platform.isWindows()) {
             // ts != s.size() indicates that quotas are in effect
             if (ts == s.size() && fs > s.total()) {
                 fail(s.name() + " free space", fs, ">", s.total());
             } else if (ts < s.size() && fs > s.size()) {
                 fail(s.name() + " free space (quota)", fs, ">", s.size());
+            } else {
+                pass();
+            }
+        } else { // not Windows
+            if (ts != s.size()) {
+                fail(s.name() + " total space", ts, "!=", s.size());
             } else {
                 pass();
             }

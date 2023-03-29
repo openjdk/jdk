@@ -64,6 +64,7 @@ Java_GetXSpace_getSpace0
     if (chars == NULL) {
         JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                      "GetStringChars");
+        return JNI_FALSE;
     }
 
 #ifdef _WIN64
