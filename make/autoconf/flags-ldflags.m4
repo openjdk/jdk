@@ -70,7 +70,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       fi
     fi
 
-    # Moved optimization flags to JvmFeatures.gmk, was -Wl,-O1
     BASIC_LDFLAGS_JVM_ONLY=""
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
