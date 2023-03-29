@@ -1378,6 +1378,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
   return true;
 }
 
+#ifdef ASSERT
 class Search2OopsClosure : public OopClosure {
     bool _found;
     const oop _o1;
@@ -1407,7 +1408,7 @@ public:
 // Check if the holder of the target method is reachable from the caller nmethod if
 // the call is statically bound.
 // Without that path the target method could get unloaded even if the caller
-// nmethod is not unloading and a dangling Method* could be left int the static
+// nmethod is not unloading and a dangling Method* could be left in the static
 // stub for the call.
 static void check_path_to_callee(bool is_virtual,
                                  bool is_optimized,
@@ -1438,12 +1439,13 @@ static void check_path_to_callee(bool is_virtual,
     if (!f.found()) {
       stringStream ss;
       to_method->print_short_name(&ss);
-      guarantee(false, "Missing dependency resolving %s%s (%s) call to %s",
-                (is_optimized) ? "optimized " : "", (is_virtual) ? "virtual" : "static",
-                Bytecodes::name(invoke_code), ss.freeze());
+      assert(false, "Missing dependency resolving %s%s (%s) call to %s",
+             (is_optimized) ? "optimized " : "", (is_virtual) ? "virtual" : "static",
+             Bytecodes::name(invoke_code), ss.freeze());
     }
   }
 }
+#endif /* ASSERT */
 
 // Resolves a call.  The compilers generate code for calls that go here
 // and are patched with the real destination of the call.
@@ -1494,10 +1496,12 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
   }
 #endif
 
+#ifdef ASSERT
   if (!is_virtual || is_optimized) {
     // The holder of the callee_method must be reachable from caller_nm
     check_path_to_callee(is_virtual, is_optimized, caller_nm, receiver, callee_method, invoke_code, current /* thread */);
   }
+#endif /* ASSERT */
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
