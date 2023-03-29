@@ -1262,18 +1262,6 @@ public class JavaTokenizer extends UnicodeReader {
         }
 
         /**
-         * Detect the deprecated tag.
-         *
-         * @param line line reader
-         *
-         * @return true if deprecated tag is present.
-         */
-        protected boolean hasDeprecated(UnicodeReader line) {
-            return line.accept("@deprecated") &&
-                    (line.isWhitespace() || line.is('*') || line.isEOLN());
-        }
-
-        /**
          * Remove closing star(s) slash from comment.
          *
          * @param line line reader
@@ -1346,7 +1334,10 @@ public class JavaTokenizer extends UnicodeReader {
 
                     // If standalone @deprecated tag
                     int pos = line.position();
-                    if (hasDeprecated(line)) {
+                    line.skipWhitespace();
+
+                    if (line.accept("@deprecated") &&
+                            (line.isWhitespace() || line.is('*') || line.isEOLN())) {
                         deprecatedFlag = true;
                     }
 
