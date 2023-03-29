@@ -341,7 +341,7 @@ inline int64_t millis_to_nanos(int64_t millis) {
   return millis * NANOUNITS_PER_MILLIUNIT;
 }
 
-static int64_t millis_to_nanos_bounded(int64_t millis, int64_t nanos, int64_t max_secs) {
+inline int64_t millis_to_nanos_bounded(int64_t millis, int64_t nanos, int64_t max_secs) {
   // We have to watch for overflow when converting millis to nanos,
   // but if millis is that large then we will end up limiting to
   // max_secs anyway, so just do that here.
