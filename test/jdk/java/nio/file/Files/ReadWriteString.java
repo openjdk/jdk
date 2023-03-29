@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,12 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /* @test
- * @bug 8201276 8205058 8209576
+ * @bug 8201276 8205058 8209576 8287541
  * @build ReadWriteString PassThroughFileSystem
  * @run testng ReadWriteString
  * @summary Unit test for methods for Files readString and write methods.
  * @key randomness
+ * @modules jdk.charsets
  */
 @Test(groups = "readwrite")
 public class ReadWriteString {
@@ -59,11 +60,6 @@ public class ReadWriteString {
     final String TEXT_UNICODE = "\u201CHello\u201D";
     final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
-
-    // malformed input: a high surrogate without the low surrogate
-    static char[] illChars = {
-        '\u00fa', '\ud800'
-    };
 
     static byte[] data = getData();
 
@@ -98,6 +94,8 @@ public class ReadWriteString {
             {path, "\u00A0\u00A1", US_ASCII},
             {path, "\ud800", UTF_8},
             {path, JA_STRING, ISO_8859_1},
+            {path, "\u041e", Charset.forName("windows-1252")}, // cyrillic capital letter O
+            {path, "\u091c", Charset.forName("windows-31j")}, // devanagari letter ja
         };
     }
 
@@ -119,7 +117,7 @@ public class ReadWriteString {
      * Writes the data using both the existing and new method and compares the results.
      */
     @DataProvider(name = "testWriteString")
-    public Object[][] getWriteString() throws IOException {
+    public Object[][] getWriteString() {
 
         return new Object[][]{
             {testFiles[1], testFiles[2], TEXT_ASCII, US_ASCII, null},
@@ -134,8 +132,7 @@ public class ReadWriteString {
      * Reads the file using both the existing and new method and compares the results.
      */
     @DataProvider(name = "testReadString")
-    public Object[][] getReadString() throws IOException {
-        Path path = Files.createTempFile("readString_file1", null);
+    public Object[][] getReadString() {
         return new Object[][]{
             {testFiles[1], TEXT_ASCII, US_ASCII, US_ASCII},
             {testFiles[1], TEXT_ASCII, US_ASCII, UTF_8},
@@ -267,11 +264,10 @@ public class ReadWriteString {
         path.toFile().deleteOnExit();
         String temp = new String(data, csWrite);
         Files.writeString(path, temp, csWrite, CREATE);
-        String s;
         if (csRead == null) {
-            s = Files.readString(path);
+            Files.readString(path);
         } else {
-            s = Files.readString(path, csRead);
+            Files.readString(path, csRead);
         }
     }
 
