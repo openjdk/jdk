@@ -30,14 +30,14 @@
 HdrSeq::HdrSeq() {
   _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtInternal);
   for (int c = 0; c < MagBuckets; c++) {
-    _hdr[c] = NULL;
+    _hdr[c] = nullptr;
   }
 }
 
 HdrSeq::~HdrSeq() {
   for (int c = 0; c < MagBuckets; c++) {
     int* sub = _hdr[c];
-    if (sub != NULL) {
+    if (sub != nullptr) {
       FREE_C_HEAP_ARRAY(int, sub);
     }
   }
@@ -93,7 +93,7 @@ void HdrSeq::add(double val) {
   }
 
   int* b = _hdr[bucket];
-  if (b == NULL) {
+  if (b == nullptr) {
     b = NEW_C_HEAP_ARRAY(int, ValBuckets, mtInternal);
     for (int c = 0; c < ValBuckets; c++) {
       b[c] = 0;
@@ -108,7 +108,7 @@ double HdrSeq::percentile(double level) const {
   int target = MAX2(1, (int) (level * num() / 100));
   int cnt = 0;
   for (int mag = 0; mag < MagBuckets; mag++) {
-    if (_hdr[mag] != NULL) {
+    if (_hdr[mag] != nullptr) {
       for (int val = 0; val < ValBuckets; val++) {
         cnt += _hdr[mag][val];
         if (cnt >= target) {

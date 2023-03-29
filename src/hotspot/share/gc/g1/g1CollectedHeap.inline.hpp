@@ -107,8 +107,15 @@ inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at
 // Return the region with the given index, or NULL if unmapped. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
 
-inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) const {
-  return _hrm.next_region_in_humongous(hr);
+template <typename Func>
+inline void G1CollectedHeap::humongous_obj_regions_iterate(HeapRegion* start, const Func& f) {
+  assert(start->is_starts_humongous(), "must be");
+
+  do {
+    HeapRegion* next = _hrm.next_region_in_humongous(start);
+    f(start);
+    start = next;
+  } while (start != nullptr);
 }
 
 inline uint G1CollectedHeap::addr_to_region(const void* addr) const {

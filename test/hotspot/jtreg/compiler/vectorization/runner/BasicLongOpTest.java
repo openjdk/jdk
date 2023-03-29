@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,9 +120,9 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
         counts = {IRNode.ADD_V, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
@@ -132,7 +133,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
     public long[] vectorMulSub() {
         long[] res = new long[SIZE];

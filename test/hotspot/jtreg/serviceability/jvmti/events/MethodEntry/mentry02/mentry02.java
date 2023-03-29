@@ -37,7 +37,6 @@
  *     The test reproduced the bug on winNT 1.0fcs-E build.
  *     Ported from JVMDI test /nsk/regression/b4248826.
  *
- * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} mentry02.java
  * @run main/othervm/native --enable-preview -agentlib:mentry02 mentry02

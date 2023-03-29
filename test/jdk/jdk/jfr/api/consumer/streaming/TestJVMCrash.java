@@ -40,7 +40,7 @@ import jdk.jfr.consumer.EventStream;
  */
 public class TestJVMCrash {
 
-    public static void main(String... args) throws Exception  {
+    public static void main(String... args) {
         int id = 1;
         while (true) {
             try (TestProcess process = new TestProcess("crash-application-" + id++, false /* createCore */))  {
@@ -61,6 +61,9 @@ public class TestJVMCrash {
                     }
                     System.out.println("Incorrect event count. Retrying...");
                 }
+            } catch (Exception e) {
+                System.out.println("Exception: " + e.getMessage());
+                System.out.println("Retrying...");
             }
         }
     }

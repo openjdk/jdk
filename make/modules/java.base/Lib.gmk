@@ -47,8 +47,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_gcc_NetworkInterface.c := unused-function, \
     DISABLED_WARNINGS_clang_net_util_md.c := format-nonliteral, \
     DISABLED_WARNINGS_microsoft_InetAddress.c := 4244, \
-    DISABLED_WARNINGS_microsoft_NetworkInterface.c := 4133, \
-    DISABLED_WARNINGS_microsoft_NetworkInterface_winXP.c := 4133, \
     DISABLED_WARNINGS_microsoft_ResolverConfigurationImpl.c := 4996, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

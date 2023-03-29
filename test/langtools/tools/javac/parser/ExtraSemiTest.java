@@ -90,12 +90,9 @@ public class ExtraSemiTest {
     String readFile(File f) throws IOException {
         int len = (int) f.length();
         byte[] data = new byte[len];
-        DataInputStream in = new DataInputStream(new FileInputStream(f));
-        try {
+        try (DataInputStream in = new DataInputStream(new FileInputStream(f))) {
             in.readFully(data);
             return new String(data);
-        } finally {
-            in.close();
         }
     }
 }
