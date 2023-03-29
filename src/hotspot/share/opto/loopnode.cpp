@@ -4593,7 +4593,7 @@ void PhaseIdealLoop::build_and_optimize() {
   if (!C->major_progress() && UseLoopConditionalPropagation && C->run_loop_conditional_propagation()) {
     visited.clear();
     conditional_elimination(visited, nstack, worklist);
-    C->clear_run_loop_conditional_propagation();
+//    C->clear_run_loop_conditional_propagation();
   }
 
   // Perform loop predication before iteration splitting

@@ -991,7 +991,7 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
   t = t->maybe_remove_speculative(include_speculative);
 
   const Type *mt = this_t->xmeet(t);
-#ifdef ASSERT
+#if 0 //def ASSERT
   verify.add(this_t, t, mt);
   if (isa_narrowoop() || t->isa_narrowoop()) {
     return mt;
