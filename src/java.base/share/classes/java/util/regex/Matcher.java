@@ -265,6 +265,10 @@ public final class Matcher implements MatchResult {
         return parentPattern;
     }
 
+    private String captureText() {
+        return text instanceof String s ? s : text.subSequence(first, last).toString();
+    }
+
     /**
      * Returns the match state of this matcher as a {@link MatchResult}.
      * The result is unaffected by subsequent operations performed upon this
@@ -274,16 +278,18 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public MatchResult toMatchResult() {
-        return toMatchResult(text.toString());
+        return toMatchResult(captureText());
     }
 
-    private MatchResult toMatchResult(String text) {
-        return new ImmutableMatchResult(this.first,
-                                        this.last,
-                                        groupCount(),
-                                        this.groups.clone(),
-                                        text,
-                                        namedGroups());
+    private ImmutableMatchResult toMatchResult(String capturedText) {
+        return new ImmutableMatchResult(
+                first,
+                last,
+                groupCount(),
+                groups.clone(),
+                capturedText,
+                namedGroups(),
+                capturedText == text ? 0 : first);
     }
 
     private static class ImmutableMatchResult implements MatchResult {
@@ -293,17 +299,18 @@ public final class Matcher implements MatchResult {
         private final int groupCount;
         private final String text;
         private final Map<String, Integer> namedGroups;
+        private final int offset;
 
         ImmutableMatchResult(int first, int last, int groupCount,
                              int[] groups, String text,
-                             Map<String, Integer> namedGroups)
-        {
+                             Map<String, Integer> namedGroups, int offset) {
             this.first = first;
             this.last = last;
             this.groupCount = groupCount;
             this.groups = groups;
             this.text = text;
             this.namedGroups = namedGroups;
+            this.offset = offset;
         }
 
         @Override
@@ -349,7 +356,7 @@ public final class Matcher implements MatchResult {
             checkGroup(group);
             if ((groups[group * 2] == -1) || (groups[group * 2 + 1] == -1))
                 return null;
-            return text.subSequence(groups[group * 2], groups[group * 2 + 1]).toString();
+            return text.subSequence(groups[group * 2] - offset, groups[group * 2 + 1] - offset).toString();
         }
 
         @Override
@@ -370,7 +377,6 @@ public final class Matcher implements MatchResult {
         private void checkMatch() {
             if (!hasMatch())
                 throw new IllegalStateException("No match found");
-
         }
 
     }
@@ -1348,7 +1354,7 @@ public final class Matcher implements MatchResult {
                 boolean found = find();
                 // Capture the input sequence as a string on first find
                 if (found && state < 0)
-                    textAsString = text.toString();
+                    textAsString = captureText();
                 state = found ? 1 : 0;
                 expectedCount = modCount;
                 return found;
@@ -1372,7 +1378,7 @@ public final class Matcher implements MatchResult {
                     return;
 
                 // Capture the input sequence as a string on first find
-                textAsString = text.toString();
+                textAsString = captureText();
 
                 do {
                     int ec = modCount;
