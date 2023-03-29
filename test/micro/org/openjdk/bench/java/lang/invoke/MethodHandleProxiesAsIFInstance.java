@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,15 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
-import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
+
+import static java.lang.invoke.MethodHandles.lookup;
+import static java.lang.invoke.MethodType.methodType;
 
 /**
  * Benchmark evaluates the performance of MethodHandleProxies.*
@@ -55,17 +59,29 @@ public class MethodHandleProxiesAsIFInstance {
      *   - asInterfaceInstance() can only target static MethodHandle (adapters needed to call instance method?)
      *   - baselineCompute will quickly degrade to GC test, if escape analysis is unable to spare the allocation
      *   - testCreate* will always be slower if allocation is not eliminated; baselineAllocCompute makes sure allocation is present
+     *   - lambda* compares lambda performance with asInterfaceInstance performance
      */
 
     public int i;
 
+    private static final Lookup LOOKUP = lookup();
+    private static final MethodType MT_Doable = methodType(Doable.class);
+    private static final MethodType MT_int_int = methodType(int.class, int.class);
     private MethodHandle target;
     private Doable precreated;
+    private Doable precreatedLambda;
 
     @Setup
     public void setup() throws Throwable {
-        target = MethodHandles.lookup().findStatic(MethodHandleProxiesAsIFInstance.class, "doWork", MethodType.methodType(int.class, int.class));
+        target = LOOKUP.findStatic(MethodHandleProxiesAsIFInstance.class, "doWork", MT_int_int);
         precreated = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
+        precreatedLambda = MethodHandleProxiesAsIFInstance::doWork;
+    }
+
+    @Benchmark
+    public Doable lambdaCreate() throws Throwable {
+        Doable doable = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
+        return doable;              // make sure allocation happens
     }
 
     @Benchmark
@@ -75,10 +91,23 @@ public class MethodHandleProxiesAsIFInstance {
     }
 
     @Benchmark
+    public Doable lambdaCreateCall() throws Throwable {
+        Doable doable = (Doable) LambdaMetafactory.metafactory(LOOKUP, "doWork", MT_Doable, MT_int_int, target, MT_int_int).getTarget().invokeExact();
+        i = doable.doWork(i);       // make sure computation happens
+        return null;                // let allocation be eliminated
+    }
+
+    @Benchmark
     public Doable testCreateCall() {
         Doable doable = MethodHandleProxies.asInterfaceInstance(Doable.class, target);
         i = doable.doWork(i);       // make sure computation happens
         return null;                // let allocation be eliminated
+    }
+
+    @Benchmark
+    public Doable lambdaCall() {
+        i = precreatedLambda.doWork(i); // make sure computation happens
+        return precreatedLambda;
     }
 
     @Benchmark

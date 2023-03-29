@@ -34,12 +34,12 @@ import jdk.internal.classfile.AnnotationElement;
 import jdk.internal.classfile.AnnotationValue;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.WrapperInstance;
 
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -196,7 +196,7 @@ public class MethodHandleProxies {
 
         // Interface-specific setup
         var info = INTERFACE_INFOS.get(intfc); // throws IllegalArgumentException
-        MethodHandle[] mhs = new MethodHandle[info.types.length + 1];
+        var mhs = new MethodHandle[info.types.length + 1];
         mhs[0] = target;
         for (int i = 1; i < mhs.length; i++) {
             mhs[i] = mh.asType(info.types[i - 1]); // throws WrongMethodTypeException
@@ -206,7 +206,7 @@ public class MethodHandleProxies {
         Object proxy;
         try {
             // Intentionally weak + no nestmate
-            var lookup = info.lookup.defineHiddenClassWithClassData(info.bytes, List.of(mhs), true);
+            var lookup = info.lookup.defineHiddenClassWithClassData(info.template, List.of(mhs), true);
             proxy = lookup.findConstructor(lookup.lookupClass(), methodType(void.class))
                     .asType(methodType(Object.class)).invokeExact();
         } catch (Throwable e) {
@@ -218,7 +218,7 @@ public class MethodHandleProxies {
 
     private record LocalMethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown) {}
 
-    private record InterfaceInfo(@Stable MethodType[] types, MethodHandles.Lookup lookup, @Stable byte[] bytes) {}
+    private record InterfaceInfo(@Stable MethodType[] types, Lookup lookup, @Stable byte[] template) {}
 
     private record WrapperInfo(Class<?> type, MethodHandle target) {
         private static final WrapperInfo INVALID = new WrapperInfo(null, null);
@@ -246,12 +246,12 @@ public class MethodHandleProxies {
                 }
             }
 
-            var bytes = spin(desc(intfc), methods.get(0).getName(), infos);
-            return new InterfaceInfo(types, new MethodHandles.Lookup(intfc), bytes);
+            var template = createTemplate(desc(intfc), methods.get(0).getName(), infos);
+            return new InterfaceInfo(types, new Lookup(intfc), template);
         }
     };
 
-    private static final ClassValue<WrapperInfo> WRAPPER_INFOS = new ClassValue<WrapperInfo>() {
+    private static final ClassValue<WrapperInfo> WRAPPER_INFOS = new ClassValue<>() {
         @Override
         protected WrapperInfo computeValue(Class<?> type) {
             var anno = type.getDeclaredAnnotation(WrapperInstance.class);
@@ -281,19 +281,12 @@ public class MethodHandleProxies {
     private static final ClassDesc CD_Error = desc(Error.class);
     private static final List<ClassDesc> DEFAULT_RETHROWNS = List.of(CD_RuntimeException, CD_Error);
     private static final ClassDesc CD_WrapperInstance = desc(WrapperInstance.class);
-    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
-    private static final MethodTypeDesc MTD_int_Object = MethodTypeDesc.of(CD_int, CD_Object);
-    private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
-    private static final MethodTypeDesc MTD_String_Object = MethodTypeDesc.of(CD_String, CD_Object);
-    private static final MethodTypeDesc MTD_boolean_Object = MethodTypeDesc.of(CD_boolean, CD_Object);
-    private static final ClassDesc CD_System = desc(System.class);
-    private static final ClassDesc CD_Objects = desc(Objects.class);
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
 
     // Spin an implementation class for an interface. A new class should be defined for each handle.
     // constructor parameter: Array[target, mh1, mh2, ...]
-    private static byte[] spin(ClassDesc ifaceDesc, String name, List<LocalMethodInfo> methods) {
+    private static byte[] createTemplate(ClassDesc ifaceDesc, String name, List<LocalMethodInfo> methods) {
         ClassDesc proxyDesc = ifaceDesc.nested("$MethodHandleProxy");
         return Classfile.build(proxyDesc, clb -> {
             clb.withSuperclass(CD_Object);
@@ -306,21 +299,6 @@ public class MethodHandleProxies {
                     .aload(0)
                     .invokespecial(CD_Object, INIT_NAME, MTD_void)
                     .return_());
-
-            // object methods
-            clb.withMethodBody("toString", MTD_String, ACC_PUBLIC, cob -> cob
-                    .aload(0)
-                    .invokestatic(CD_Objects, "toIdentityString", MTD_String_Object)
-                    .areturn());
-            clb.withMethodBody("hashCode", MTD_int, ACC_PUBLIC, cob -> cob
-                    .aload(0)
-                    .invokestatic(CD_System, "identityHashCode", MTD_int_Object)
-                    .ireturn());
-            clb.withMethodBody("equals", MTD_boolean_Object, ACC_PUBLIC, cob -> cob
-                    .aload(0)
-                    .aload(1)
-                    .ifThenElse(Opcode.IF_ACMPEQ, CodeBuilder::iconst_1, CodeBuilder::iconst_0)
-                    .ireturn());
 
             // actual implementations
             int i = 1;

@@ -21,6 +21,16 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 6983726
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ * @summary Basic sanity tests for MethodHandleProxies
+ * @run junit BasicTest
+ */
+
 import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
 import org.junit.jupiter.api.Test;
@@ -38,6 +48,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -51,14 +62,6 @@ import static java.lang.invoke.MethodType.methodType;
 import static jdk.internal.classfile.Classfile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/* @test
- * @bug 6983726
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- * @summary Basic sanity tests for MethodHandleProxies
- * @run junit BasicTest
- */
 public class BasicTest {
 
     @Test
@@ -96,6 +99,27 @@ public class BasicTest {
         assertThrows(IllegalArgumentException.class, () -> wrapperInstanceTarget(lambda));
         assertSame(Comparator.class, wrapperInstanceType(proxy));
         assertThrows(IllegalArgumentException.class, () -> wrapperInstanceType(lambda));
+    }
+
+    // We both check for correctness and that it doesn't throw
+    @Test
+    public void testObjectMethods() throws Throwable {
+        var mh = MethodHandles.publicLookup()
+                .findVirtual(Integer.class, "compareTo", methodType(int.class, Integer.class));
+        @SuppressWarnings("unchecked")
+        Comparator<Integer> p1 = (Comparator<Integer>) asInterfaceInstance(Comparator.class, mh);
+        @SuppressWarnings("unchecked")
+        Comparator<Integer> p2 = (Comparator<Integer>) asInterfaceInstance(Comparator.class, mh);
+
+        assertEquals(System.identityHashCode(p1), p1.hashCode());
+        assertEquals(System.identityHashCode(p2), p2.hashCode());
+
+        assertEquals(p1, p1);
+        assertEquals(p1 == p2, p1.equals(p2));
+        assertEquals(p2 == p1, p2.equals(p1));
+
+        assertEquals(Objects.toIdentityString(p1), p1.toString());
+        assertEquals(Objects.toIdentityString(p2), p2.toString());
     }
 
     private <T extends Throwable> Closeable throwing(Class<T> clz, T value) {
@@ -148,6 +172,8 @@ public class BasicTest {
         var mh = MethodHandles.constant(String.class, "42");
         assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(Inaccessible.class, mh));
         assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(loadHidden(), mh));
+        assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(MultiAbstractMethods.class, mh));
+        assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(NoAbstractMethods.class, mh));
         assertThrows(WrongMethodTypeException.class, () -> asInterfaceInstance(IntSupplier.class, mh));
     }
 
@@ -202,6 +228,15 @@ public class BasicTest {
 
         var child = lookup.ensureInitialized(lookup.defineClass(childBytes));
         return List.of(base, child);
+    }
+
+    public interface MultiAbstractMethods {
+        String a();
+        String b();
+    }
+
+    public interface NoAbstractMethods {
+        String toString();
     }
 }
 
