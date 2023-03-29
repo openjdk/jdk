@@ -3351,8 +3351,7 @@ class FdLibm {
                     }
                 }
             }
-            x = __HI(x, __HI(x)^sx);
-            return x;
+            return __HI(x, __HI(x)^sx);
         }
 
         private static double __ieee754_fmod(double x, double y) {
@@ -3368,8 +3367,8 @@ class FdLibm {
             hy &= 0x7fff_ffff;      // |y|
 
             // purge off exception values
-            if((hy | ly) == 0 || (hx >= 0x7ff0_0000)||       // y = 0, or x not finite
-               ((hy | ((ly | -ly) >> 31)) > 0x7ff0_0000))    // or y is NaN
+            if ((hy | ly) == 0 || (hx >= 0x7ff0_0000)||       // y = 0, or x not finite
+               ((hy | ((ly | -ly) >>> 31)) > 0x7ff0_0000))    // or y is NaN, unsigned shift
                 return (x*y)/(x*y);
             if (hx <= hy) {
                 if ((hx < hy) || (Integer.compareUnsigned(lx, ly) < 0)) { // |x| < |y| return x
@@ -3396,7 +3395,7 @@ class FdLibm {
                     lx = 0;
                 }
             }
-            if(iy >= -1022)
+            if (iy >= -1022)
                 hy = 0x0010_0000 | (0x000f_ffff & hy);
             else {          // subnormal y, shift y to normal
                 n = -1022 - iy;
@@ -3411,7 +3410,7 @@ class FdLibm {
 
             // fix point fmod
             n = ix - iy;
-            while(n-- != 0) {
+            while (n-- != 0) {
                 hz = hx - hy;
                 lz = lx - ly;
                 if (Integer.compareUnsigned(lx, ly) < 0) {
@@ -3442,16 +3441,17 @@ class FdLibm {
             if ((hx | lx) == 0) {                  // return sign(x)*0
                 return signedZero(sx);
             }
-            while (hx < 0x0010_0000) {          // normalize x
+            while (hx < 0x0010_0000) {      // normalize x
                 hx = hx + hx + (lx >>> 31); // unsigned shift
                 lx = lx + lx;
                 iy -= 1;
             }
-            if( iy >= -1022) {        // normalize output
+            if (iy >= -1022) {        // normalize output
                 hx = ((hx - 0x0010_0000) | ((iy + 1023) << 20));
                 x = __HI_LO(hx | sx, lx);
             } else {                // subnormal output
                 n = -1022 - iy;
+
                 if (n <= 20) {
                     lx = (lx >>> n)|(/*(unsigned)*/hx << (32 - n)); // unsigned shift
                     hx >>= n;
