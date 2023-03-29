@@ -2223,14 +2223,6 @@ static void set_page_size(size_t page_size) {
 
 // This is called _before_ the most of global arguments have been parsed.
 void os::init(void) {
-  if (UseSystemMemoryBarrier) {
-    if (!SystemMemoryBarrier::initialize()) {
-      if (!FLAG_IS_DEFAULT(UseSystemMemoryBarrier)) {
-        warning("UseSystemMemoryBarrier specified, but not supported on this OS. Use -Xlog:os=info for details.");
-      }
-      FLAG_SET_ERGO(UseSystemMemoryBarrier, false);
-    }
-  }
 
   // This is basic, we want to know if that ever changes.
   // (Shared memory boundary is supposed to be a 256M aligned.)
