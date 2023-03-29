@@ -2223,7 +2223,6 @@ static void set_page_size(size_t page_size) {
 
 // This is called _before_ the most of global arguments have been parsed.
 void os::init(void) {
-
   // This is basic, we want to know if that ever changes.
   // (Shared memory boundary is supposed to be a 256M aligned.)
   assert(SHMLBA == ((uint64_t)0x10000000ULL)/*256M*/, "unexpected");
