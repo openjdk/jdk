@@ -2348,30 +2348,46 @@ void SuperWord::verify_packs() {
 }
 #endif
 
+// The PacksetGraph combines the DepPreds graph with the packset. In the PackSet
+// graph, we have two kinds of nodes:
+//  (1) pack-node:   Represents all nodes of some pack p in a single node, which
+//                   shall later become a vector node.
+//  (2) scalar-node: Represents a node that is not in any pack.
+// For any edge (n1, n2) in DepPreds, we add an edge to the PacksetGraph for the
+// PacksetGraph nodes corresponding to n1 and n2.
+// We work from the DepPreds graph, because it gives us all the data-dependencies,
+// as well as more refined memory-dependencies than the C2 graph. DepPreds does
+// not have cycles. But packing nodes can introduce cyclic dependencies. Example:
+//
+//                                                       +--------+
+//  A -> X                                               |        v
+//                     Pack [A,B] and [X,Y]             [A,B]    [X,Y]
+//  Y -> B                                                 ^        |
+//                                                         +--------+
+//
 class PacksetGraph {
 private:
   // pid: packset graph node id.
-  GrowableArray<int> _pid; // Node.idx -> pid
-  GrowableArray<int> _incnt;
-  GrowableArray<GrowableArray<int>> _out;
+  GrowableArray<int> _pid;                 // bb_idx(n) -> pid
+  GrowableArray<GrowableArray<int>> _out;  // out-edges
+  GrowableArray<int> _incnt;               // number of (implicit) in-edges
   int _max_pid = 0;
 
-  GrowableArray<Node*> &_block;
-  GrowableArray<Node_List*> &_packset;
-  DepGraph &_dg;
+  SuperWord* _slp;
 public:
-  PacksetGraph(Arena* a,
-                GrowableArray<Node*> &block,
-                GrowableArray<Node_List*> &packset,
-                DepGraph &dg)
-  : _pid(a, 8, 0, /* default */ 0), _block(block), _packset(packset), _dg(dg) {
+  PacksetGraph(SuperWord* slp)
+  : _pid(8, 0, /* default */ 0), _slp(slp) {
   }
   // Get pid, if there is a packset node that n belongs to. Else return 0.
   int get_pid_or_zero(const Node* n) const {
-    if ((int)n->_idx >= _pid.length()) {
+    if (!_slp->in_bb(n)) {
+      return 0;
+    }
+    int idx = _slp->bb_idx(n);
+    if (idx >= _pid.length()) {
       return 0;
     } else {
-      return _pid.at(n->_idx);
+      return _pid.at(idx);
     }
   }
   int get_pid(const Node* n) {
@@ -2381,7 +2397,9 @@ public:
   }
   void set_pid(const Node* n, int pid) {
     assert(n != nullptr && pid > 0, "sane inputs");
-    _pid.at_put_grow(n->_idx, pid);
+    assert(_slp->in_bb(n), "must be");
+    int idx = _slp->bb_idx(n);
+    _pid.at_put_grow(idx, pid);
   }
   int new_pid() {
     _incnt.push(0);
@@ -2394,9 +2412,12 @@ public:
 
   // Create nodes (from packs and scalar-nodes), and add edges, based on DepPreds.
   void build() {
+    const GrowableArray<Node_List*> &packset = _slp->packset();
+    const GrowableArray<Node*> &block = _slp->block();
+    const DepGraph &dg = _slp->dg();
     // Map nodes in packsets
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p = _packset.at(i);
+    for (int i = 0; i < packset.length(); i++) {
+      Node_List* p = packset.at(i);
       int pid = new_pid();
       for (uint k = 0; k < p->size(); k++) {
         Node* n = p->at(k);
@@ -2407,8 +2428,8 @@ public:
     int max_pid_packset = _max_pid;
 
     // Map nodes not in packset
-    for (int i = 0; i < _block.length(); i++) {
-      Node* n = _block.at(i);
+    for (int i = 0; i < block.length(); i++) {
+      Node* n = block.at(i);
       if (n->is_Phi() || n->is_CFG()) {
         continue; // ignore control flow
       }
@@ -2421,19 +2442,20 @@ public:
 
     // Map edges for packset nodes
     VectorSet set;
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p = _packset.at(i);
+    for (int i = 0; i < packset.length(); i++) {
+      Node_List* p = packset.at(i);
       set.clear();
+      int pid = get_pid(p->at(0));
       for (uint k = 0; k < p->size(); k++) {
         Node* n = p->at(k);
-        int pid = get_pid(n);
-        for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+        assert(pid == get_pid(n), "all nodes in pack have same pid");
+        for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
           Node* pred = preds.current();
           int pred_pid = get_pid_or_zero(pred);
           if (pred_pid == pid && n->is_reduction()) {
             continue; // reduction -> self-cycle is not a cyclic dependency
           }
-          // Only add edges once, and only for mapped nodes (in _block)
+          // Only add edges once, and only for mapped nodes (in block)
           if (pred_pid > 0 && !set.test_set(pred_pid)) {
             incnt_set(pid, incnt(pid) + 1); // increment
             out(pred_pid).push(pid);
@@ -2443,16 +2465,16 @@ public:
     }
 
     // Map edges for nodes not in packset
-    for (int i = 0; i < _block.length(); i++) {
-      Node* n = _block.at(i);
-      int pid = get_pid_or_zero(n);
-      if (pid == 0 || pid <= max_pid_packset) {
+    for (int i = 0; i < block.length(); i++) {
+      Node* n = block.at(i);
+      int pid = get_pid_or_zero(n); // zero for Phi or CFG
+      if (pid <= max_pid_packset) {
         continue; // Only scalar-nodes
       }
-      for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+      for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
         Node* pred = preds.current();
         int pred_pid = get_pid_or_zero(pred);
-        // Only add edges for mapped nodes (in _block)
+        // Only add edges for mapped nodes (in block)
         if (pred_pid > 0) {
           incnt_set(pid, incnt(pid) + 1); // increment
           out(pred_pid).push(pid);
@@ -2488,7 +2510,11 @@ public:
     // Was every pid scheduled?
     return worklist.length() == _max_pid;
   }
+  // Print the PacksetGraph.
+  // print_nodes = true: print all C2 nodes beloning to PacksetGrahp node.
+  // print_zero_incnt = false: do not print nodes that have no in-edges (any more).
   void print(bool print_nodes, bool print_zero_incnt) {
+    const GrowableArray<Node*> &block = _slp->block();
     tty->print_cr("PacksetGraph");
     for (int pid = 1; pid <= _max_pid; pid++) {
       if (incnt(pid) == 0 && !print_zero_incnt) {
@@ -2501,8 +2527,8 @@ public:
       tty->print_cr("]");
 #ifndef PRODUCT
       if (print_nodes) {
-        for (int i = 0; i < _block.length(); i++) {
-          Node* n = _block.at(i);
+        for (int i = 0; i < block.length(); i++) {
+          Node* n = block.at(i);
           if (get_pid_or_zero(n) == pid) {
             tty->print("    ");
             n->dump();
@@ -2532,7 +2558,7 @@ void SuperWord::remove_cycles() {
   }
   ResourceMark rm;
 
-  PacksetGraph graph(arena(), _block, _packset, _dg);
+  PacksetGraph graph(this);
 
   graph.build();
 
@@ -5130,7 +5156,7 @@ void DepEdge::print() {
 // Iterator over predecessor edges in the dependence graph.
 
 //------------------------------DepPreds---------------------------
-DepPreds::DepPreds(Node* n, DepGraph& dg) {
+DepPreds::DepPreds(Node* n, const DepGraph& dg) {
   _n = n;
   _done = false;
   if (_n->is_Store() || _n->is_Load()) {
