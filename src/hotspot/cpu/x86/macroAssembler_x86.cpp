@@ -68,7 +68,7 @@
 bool AbstractAssembler::pd_check_instruction_mark() { return true; }
 #endif
 
-static Assembler::Condition reverse[] = {
+static const Assembler::Condition reverse[] = {
     Assembler::noOverflow     /* overflow      = 0x0 */ ,
     Assembler::overflow       /* noOverflow    = 0x1 */ ,
     Assembler::aboveEqual     /* carrySet      = 0x2, below         = 0x2 */ ,
@@ -9195,7 +9195,7 @@ void MacroAssembler::fill64_masked(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
                                        Register temp, bool use64byteVector) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
+  const BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   if (!use64byteVector) {
     fill32(dst, disp, xmm);
     subptr(length, 32 >> shift);
@@ -9211,7 +9211,7 @@ void MacroAssembler::fill32_masked(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
                                        Register temp) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
+  const BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   fill_masked(type[shift], Address(dst, disp), xmm, mask, length, temp, Assembler::AVX_256bit);
 }
 

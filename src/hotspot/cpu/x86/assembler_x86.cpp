@@ -49,7 +49,7 @@
 // Implementation of AddressLiteral
 
 // A 2-D table for managing compressed displacement(disp8) on EVEX enabled platforms.
-unsigned char tuple_table[Assembler::EVEX_ETUP + 1][Assembler::AVX_512bit + 1] = {
+static const unsigned char tuple_table[Assembler::EVEX_ETUP + 1][Assembler::AVX_512bit + 1] = {
   // -----------------Table 4.5 -------------------- //
   16, 32, 64,  // EVEX_FV(0)
   4,  4,  4,   // EVEX_FV(1) - with Evex.b

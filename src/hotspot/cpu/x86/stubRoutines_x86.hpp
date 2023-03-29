@@ -132,18 +132,18 @@ class x86 {
   static address _method_entry_barrier;
 
   // masks and table for CRC32
-  static uint64_t _crc_by128_masks[];
-  static juint    _crc_table[];
+  static const uint64_t _crc_by128_masks[];
+  static const juint    _crc_table[];
 #ifdef _LP64
-  static juint    _crc_by128_masks_avx512[];
-  static juint    _crc_table_avx512[];
-  static juint    _crc32c_table_avx512[];
-  static juint    _shuf_table_crc32_avx512[];
+  static const juint    _crc_by128_masks_avx512[];
+  static const juint    _crc_table_avx512[];
+  static const juint    _crc32c_table_avx512[];
+  static const juint    _shuf_table_crc32_avx512[];
 #endif // _LP64
   // table for CRC32C
   static juint* _crc32c_table;
   // table for arrays_hashcode
-  static jint _arrays_hashcode_powers_of_31[];
+  static const jint _arrays_hashcode_powers_of_31[];
 
   // upper word mask for sha1
   static address _upper_word_mask_addr;
@@ -151,7 +151,7 @@ class x86 {
   static address _shuffle_byte_flip_mask_addr;
 
   //k256 table for sha256
-  static juint _k256[];
+  static const juint _k256[];
   static address _k256_adr;
   static address _vector_short_to_byte_mask;
   static address _vector_float_sign_mask;
@@ -180,7 +180,7 @@ class x86 {
 #ifdef _LP64
   static juint _k256_W[];
   static address _k256_W_adr;
-  static julong _k512_W[];
+  static const julong _k512_W[];
   static address _k512_W_addr;
   // byte flip mask for sha512
   static address _pshuffle_byte_flip_mask_addr_sha512;
