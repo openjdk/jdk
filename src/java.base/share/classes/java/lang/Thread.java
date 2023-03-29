@@ -540,12 +540,13 @@ public class Thread implements Runnable {
             throw new IllegalArgumentException("nanosecond timeout value out of range");
         }
 
-        ThreadSleepEvent event = beforeSleep(nanos);
+        // total sleep time, in nanoseconds
+        long totalNanos = MILLISECONDS.toNanos(millis);
+        totalNanos += Math.min(Long.MAX_VALUE - totalNanos, nanos);
+
+        ThreadSleepEvent event = beforeSleep(totalNanos);
         try {
             if (currentThread() instanceof VirtualThread vthread) {
-                // total sleep time, in nanoseconds
-                long totalNanos = MILLISECONDS.toNanos(millis);
-                totalNanos += Math.min(Long.MAX_VALUE - totalNanos, nanos);
                 vthread.sleepNanos(totalNanos);
             } else {
                 // millisecond precision
