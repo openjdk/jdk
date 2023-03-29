@@ -90,14 +90,14 @@ public class CDSPluginTest {
        if (Platform.isLinux()) {
            System.out.println("---- Test different platforms scenario ----");
            String jlinkPath = JDKToolFinder.getJDKTool("jlink");
-           // copy over the java.base and java.logging module file to a temporary directory
+           // copy over the packaged modules java.base and java.logging to a temporary directory
            // which we then use as a --module-path during jlink image generation. using such a
            // separate --module-path will force the JLink task to read the ModuleTarget from
            // the java.base module-info.class to identify the target platform for the image
            // being generated.
            Path jdkRoot = Path.of(System.getProperty("test.jdk"));
            Path modsPath = Files.createDirectory(Path.of("mods"));
-           copyModuleFiles(jdkRoot, modsPath, new String[] {"java.base", "java.logging"});
+           copyPackagedModules(jdkRoot, modsPath, new String[] {"java.base", "java.logging"});
            String[] cmd = {jlinkPath, "--verbose",
                            "--add-modules", "java.base,java.logging",
                            // java.base in a custom module path will ensure the ModuleTarget
@@ -122,7 +122,7 @@ public class CDSPluginTest {
        }
     }
 
-    private static void copyModuleFiles(Path jdkRoot, Path targetDir, String[] modules)
+    private static void copyPackagedModules(Path jdkRoot, Path targetDir, String[] modules)
             throws IOException {
         for (String module : modules) {
             Path moduleFile = jdkRoot.resolve("jmods").resolve(module + ".jmod");
@@ -131,10 +131,6 @@ public class CDSPluginTest {
             }
             Path copy = targetDir.resolve(moduleFile.getFileName());
             Files.copy(moduleFile, copy);
-            if (!Files.exists(copy)) {
-                throw new AssertionError("Could not copy '" + module
-                        + "' module file to directory: " + targetDir);
-            }
         }
     }
 }
