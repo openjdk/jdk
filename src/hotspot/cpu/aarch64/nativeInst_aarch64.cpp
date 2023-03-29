@@ -23,6 +23,7 @@
  *
  */
 
+#include <runtime/threadWXSetters.inline.hpp>
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/codeCache.hpp"
@@ -184,6 +185,8 @@ address NativeCall::destination() const {
 // Add parameter assert_lock to switch off assertion
 // during code generation, where no patching lock is needed.
 void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
+  // MACOS_ONLY(ThreadWXEnable __wx(WXWrite,JavaThread::current()));
+
   assert(!assert_lock ||
          (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),

@@ -22,6 +22,7 @@
  *
  */
 
+#include <runtime/threadWXSetters.inline.hpp>
 #include "precompiled.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
@@ -558,6 +559,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
 
 
 bool CompiledIC::is_icholder_entry(address entry) {
+  //MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,JavaThread::current()));
   CodeBlob* cb = CodeCache::find_blob(entry);
   if (cb != nullptr && cb->is_adapter_blob()) {
     return true;

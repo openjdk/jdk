@@ -1254,6 +1254,7 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
+  //MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,JavaThread::current()));
   Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
@@ -2064,6 +2065,8 @@ static PcDesc* linear_search(const PcDescSearch& search, int pc_offset, bool app
 
 // Finds a PcDesc with real-pc equal to "pc"
 PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, const PcDescSearch& search) {
+  //MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,JavaThread::current()));
+
   address base_address = search.code_begin();
   if ((pc < base_address) ||
       (pc - base_address) >= (ptrdiff_t) PcDesc::upper_offset_limit) {

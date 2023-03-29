@@ -22,6 +22,7 @@
  *
  */
 
+#include <runtime/threadWXSetters.inline.hpp>
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
@@ -164,6 +165,7 @@ static NativeNMethodBarrier* native_nmethod_barrier(nmethod* nm) {
 }
 
 void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+  //MACOS_ONLY(ThreadWXEnable __wx(WXWrite,JavaThread::current()));
   if (!supports_entry_barrier(nm)) {
     return;
   }

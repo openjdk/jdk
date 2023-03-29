@@ -483,6 +483,8 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   CodeBlob* blob = CodeCache::find_blob(return_address);
   CompiledMethod* nm = (blob != nullptr) ? blob->as_compiled_method_or_null() : nullptr;
   if (nm != nullptr) {
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,JavaThread::current()));
+
     // Set flag if return address is a method handle call site.
     current->set_is_method_handle_return(nm->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
@@ -2036,6 +2038,7 @@ bool SharedRuntime::should_fixup_call_destination(address destination, address e
 // interpreted. If the caller is compiled we attempt to patch the caller
 // so he no longer calls into the interpreter.
 JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
+
   Method* moop(method);
 
   AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
@@ -2119,6 +2122,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
       address destination = call->destination();
       address entry_point = callee->verified_entry_point();
       if (should_fixup_call_destination(destination, entry_point, caller_pc, moop, cb)) {
+        MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,JavaThread::current()));
         call->set_destination_mt_safe(entry_point);
       }
     }
