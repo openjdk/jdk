@@ -29,10 +29,10 @@
  */
 
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -65,7 +65,7 @@ public class CorruptedZipFiles {
     /*
      * Make a sample ZIP and calculate some known offsets into this ZIP
      */
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws IOException {
         // Make a ZIP with a single entry
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -100,7 +100,7 @@ public class CorruptedZipFiles {
     /*
      * Make a copy safe to modify by each test
      */
-    @Before
+    @BeforeEach
     public void makeCopy() {
         copy = template.clone();
     }
@@ -108,7 +108,7 @@ public class CorruptedZipFiles {
     /*
      * Delete the ZIP file produced after each test method
      */
-    @After
+    @AfterEach
     public void cleanup() throws IOException {
         Files.deleteIfExists(zip);
     }
