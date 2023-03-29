@@ -376,7 +376,7 @@ public interface StringTemplate {
      * StringTemplate st1 = RAW."a\{}b\{}c";
      * StringTemplate st2 = RAW."x\{}y\{}z";
      * StringTemplate st3 = RAW."a\{}b\{}cx\{}y\{}z";
-     * StringTemplate stc = StringTemplate.combine(st1, st2);
+     * StringTemplate stc = StringTemplate.combine(List.of(st1, st2));
      *
      * assert Objects.equals(st1.fragments(), List.of("a", "b", "c"));
      * assert Objects.equals(st2.fragments(), List.of("x", "y", "z"));
