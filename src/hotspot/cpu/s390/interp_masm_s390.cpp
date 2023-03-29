@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,6 +344,17 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Regis
   // Convert from field index to ConstantPoolCache offset in bytes.
   z_sllg(cpe_offset, cpe_offset, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord));
   BLOCK_COMMENT("}");
+}
+
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // Get address of invokedynamic array
+  get_constant_pool_cache(cache);
+  z_lg(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  z_sllg(index, index, exact_log2(sizeof(ResolvedIndyEntry)));
+  z_la(cache, Array<ResolvedIndyEntry>::base_offset_in_bytes(), index, cache);
 }
 
 // Kills Z_R0_scratch.
@@ -739,6 +750,11 @@ void InterpreterMacroAssembler::get_constant_pool(Register Rdst) {
   get_method(Rdst);
   mem2reg_opt(Rdst, Address(Rdst, Method::const_offset()));
   mem2reg_opt(Rdst, Address(Rdst, ConstMethod::constants_offset()));
+}
+
+void InterpreterMacroAssembler::get_constant_pool_cache(Register Rdst) {
+  get_constant_pool(Rdst);
+  mem2reg_opt(Rdst, Address(Rdst, ConstantPool::cache_offset_in_bytes()));
 }
 
 void InterpreterMacroAssembler::get_cpool_and_tags(Register Rcpool, Register Rtags) {

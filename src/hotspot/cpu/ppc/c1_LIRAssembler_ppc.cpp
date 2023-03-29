@@ -819,10 +819,6 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
           } else {
             __ ld(to_reg->as_register(), offset, base);
           }
-          if (VerifyOops) {
-            BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-            bs->check_oop(_masm, to_reg->as_register(), FILE_AND_LINE); // kills R0
-          }
           break;
         }
       case T_FLOAT:  __ lfs(to_reg->as_float_reg(), offset, base); break;
@@ -852,10 +848,6 @@ int LIR_Assembler::load(Register base, Register disp, LIR_Opr to_reg, BasicType 
           __ decode_heap_oop(to_reg->as_register());
         } else {
           __ ldx(to_reg->as_register(), base, disp);
-        }
-        if (VerifyOops) {
-          BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-          bs->check_oop(_masm, to_reg->as_register(), FILE_AND_LINE); // kills R0
         }
         break;
       }
