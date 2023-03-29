@@ -27,16 +27,14 @@ package jdk.tools.jlink.internal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 
 /**
  * Supported platforms
  */
 public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianness) {
-    private static final Properties KNOWN_ENDIANNESS;
+    private static final Properties PLATFORM_PROPERTIES;
     private static final String ENDIANNESS_KEY_SUFFIX = ".endianness";
 
     static {
@@ -47,7 +45,7 @@ public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianne
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
         }
-        KNOWN_ENDIANNESS = p;
+        PLATFORM_PROPERTIES = p;
     }
 
     public enum OperatingSystem {
@@ -98,7 +96,7 @@ public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianne
         }
         // map the endianness from target.properties
         // until ModuleTarget attribute is extended to include the endianness
-        String v = KNOWN_ENDIANNESS.getProperty(platformString + ENDIANNESS_KEY_SUFFIX);
+        String v = PLATFORM_PROPERTIES.getProperty(platformString + ENDIANNESS_KEY_SUFFIX);
         ByteOrder endian = switch (v.trim().toLowerCase(Locale.ROOT)) {
             case "little" -> ByteOrder.LITTLE_ENDIAN;
             case "big" -> ByteOrder.BIG_ENDIAN;
