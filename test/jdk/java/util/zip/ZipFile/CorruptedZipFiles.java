@@ -25,13 +25,14 @@
  * @bug 4770745 6218846 6218848 6237956
  * @summary test for correct detection and reporting of corrupted zip files
  * @author Martin Buchholz
- * @run testng CorruptedZipFiles
+ * @run junit CorruptedZipFiles
  */
 
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -45,18 +46,18 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import static java.util.zip.ZipFile.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CorruptedZipFiles {
 
     // Byte array holding a valid template ZIP
-    private byte[] template;
+    private static byte[] template;
 
     // Copy of the template ZIP for modification by each test
     private byte[] copy;
 
     // Some well-known locations in the ZIP
-    private int endpos, cenpos, locpos;
+    private static int endpos, cenpos, locpos;
 
     // The path used when reading/writing the corrupted ZIP to disk
     private Path zip = Path.of("corrupted.zip");
@@ -64,8 +65,8 @@ public class CorruptedZipFiles {
     /*
      * Make a sample ZIP and calculate some known offsets into this ZIP
      */
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeClass
+    public static void setup() throws IOException {
         // Make a ZIP with a single entry
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(out)) {
@@ -85,27 +86,29 @@ public class CorruptedZipFiles {
         locpos = buffer.getShort(cenpos + CENOFF);
 
         // Run some sanity checks on the valid ZIP:
-        assertEquals(buffer.getInt(endpos), ENDSIG, "Where's ENDSIG?");
-        assertEquals(buffer.getInt(cenpos), CENSIG, "Where's CENSIG?");
-        assertEquals(buffer.getInt(locpos), LOCSIG, "Where's LOCSIG?");
-        assertEquals(buffer.getShort(locpos+LOCNAM), buffer.getShort(cenpos+CENNAM),
-            "Name field length mismatch");
-        assertEquals(buffer.getShort( locpos+LOCEXT), buffer.getShort(cenpos+CENEXT),
-            "Extra field length mismatch");
+        assertEquals(ENDSIG, buffer.getInt(endpos),"Where's ENDSIG?");
+        assertEquals(CENSIG, buffer.getInt(cenpos),"Where's CENSIG?");
+        assertEquals(LOCSIG, buffer.getInt(locpos),"Where's LOCSIG?");
+        assertEquals(buffer.getShort(cenpos+CENNAM),
+                buffer.getShort(locpos+LOCNAM),
+                "Name field length mismatch");
+        assertEquals(buffer.getShort(cenpos+CENEXT),
+                buffer.getShort( locpos+LOCEXT),
+                "Extra field length mismatch");
     }
 
     /*
      * Make a copy safe to modify by each test
      */
-    @BeforeMethod
+    @Before
     public void makeCopy() {
-        copy = Arrays.copyOf(template, template.length);
+        copy = template.clone();
     }
 
     /*
      * Delete the ZIP file produced after each test method
      */
-    @AfterMethod
+    @After
     public void cleanup() throws IOException {
         Files.deleteIfExists(zip);
     }
@@ -245,7 +248,7 @@ public class CorruptedZipFiles {
 
         Files.write(zip, copy);
 
-        ZipException ex = expectThrows(ZipException.class, () -> {
+        ZipException ex = assertThrows(ZipException.class, () -> {
             try (ZipFile zf = new ZipFile(zip.toFile())) {
                 try (InputStream is = zf.getInputStream(new ZipEntry("x"))) {
                     is.transferTo(OutputStream.nullOutputStream());
