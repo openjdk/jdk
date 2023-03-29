@@ -1,29 +1,11 @@
-// -Xcomp -Xms16M -Xmx16M -XX:+AlwaysPreTouch -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -XX:-UseOnStackReplacement -XX:CompileOnly='Example1.ivanov' -XX:CompileCommand=dontinline,Example1.blackhole
 class Example1 {
     private Object _cache;
-    public void foo(boolean cond) {
+    public void test(boolean cond) {
         Object x = new Object();
 
         if (cond) {
             _cache = x;
         }
-    }
-
-    // Ivanov suggest to make this happen first.
-    // we don't need to create JVMState for the cloning Allocate.
-    public void ivanov(boolean cond) {
-        Object x = new Object();
-
-        if (cond) {
-            blackhole(x);
-        }
-    }
-
-    static void blackhole(Object x) {}
-
-    public void test1(boolean cond) {
-        foo(cond);
-        //ivanov(cond);
     }
 
     public static void main(String[] args)  {
@@ -36,7 +18,7 @@ class Example1 {
         long iterations = 0;
         try {
             while (true) {
-                kase.test1(0 == (iterations & 0xf));
+                kase.test(0 == (iterations & 0xf));
                 iterations++;
             }
         } finally {

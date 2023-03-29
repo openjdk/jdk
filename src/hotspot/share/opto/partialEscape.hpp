@@ -64,15 +64,16 @@ class ObjectState {
 
 class VirtualState: public ObjectState {
   friend class PEAState;
+  const TypeOopPtr* const _oop_type;
   int _lockcnt;
-  int _nfields;
   Node** _entries;
+
 
  protected:
   VirtualState(const VirtualState& other);
 
  public:
-  VirtualState(int nfields);
+  VirtualState(const TypeOopPtr* oop_type);
 
   bool is_virtual() const override { return true; }
   Node* get_materialized_value() override { return nullptr; }
@@ -80,11 +81,13 @@ class VirtualState: public ObjectState {
     return new VirtualState(*this);
   }
 
-  void set_field(int idx, Node* val);
+  int nfields() const;
+  void set_field(ciField* field, Node* val);
   Node* get_field(int idx) const {
-    assert(idx >= 0 && idx < _nfields, "sanity check");
+    assert(idx >= 0 && idx < nfields(), "sanity check");
     return _entries[idx];
   }
+
   ObjectState& merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
                      RegionNode* region, int pnum) override;
 #ifndef PRODUCT

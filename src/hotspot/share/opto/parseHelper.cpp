@@ -315,33 +315,52 @@ void Parse::dump_map_adr_mem() const {
 // Our adaption to C2.
 // https://gist.github.com/navyxliu/62a510a5c6b0245164569745d758935b
 //
-VirtualState::VirtualState(int nfields): _lockcnt(0), _nfields(nfields) {
+VirtualState::VirtualState(const TypeOopPtr* oop_type): _oop_type(oop_type), _lockcnt(0) {
   Compile* C = Compile::current();
-  _entries = NEW_ARENA_ARRAY(C->parser_arena(), Node*, nfields);
+  int nof = nfields();
+  _entries = NEW_ARENA_ARRAY(C->parser_arena(), Node*, nof);
   // only track explicit stores.
   // see IntializeNode semantics in memnode.cpp
-  for (int i = 0; i < nfields; ++i) {
+  for (int i = 0; i < nof; ++i) {
     _entries[i] = nullptr;
   }
 }
 
 // do NOT call base's copy constructor. we would like to reset refcnt!
-VirtualState::VirtualState(const VirtualState& other) {
-  _lockcnt = other._lockcnt;
-  _nfields   = other._nfields;
-  _entries = NEW_ARENA_ARRAY(Compile::current()->parser_arena(), Node*, _nfields);
+VirtualState::VirtualState(const VirtualState& other) : _oop_type(other._oop_type), _lockcnt(other._lockcnt) {
+  int nof = nfields();
+  _entries = NEW_ARENA_ARRAY(Compile::current()->parser_arena(), Node*, nof);
 
+  // Using arraycopy stub is more efficient?
   Node** dst = _entries;
   Node** src = other._entries;
-  int sz = _nfields;
-  while (sz-- > 0) {
+  while (nof-- > 0) {
     *dst++ = *src++;
   }
 }
 
-void VirtualState::set_field(int idx, Node* val) {
-  assert(idx >= 0 && idx < _nfields, "sanity check");
-  _entries[idx] = val;
+int VirtualState::nfields() const {
+  ciInstanceKlass* holder = _oop_type->is_instptr()->instance_klass();
+  return holder->nof_nonstatic_fields();
+}
+
+void VirtualState::set_field(ciField* field, Node* val) {
+  // We can't trust field->holder() here. It may reference to the super class.
+  // field layouter may flip order in jdk15+, refer to:
+  // https://shipilev.net/jvm/objects-inside-out/#_superhierarchy_gaps_in_java_15
+  //
+  // _oop_type is the exact type when we registered ObjID in allocation state.
+  //
+  ciInstanceKlass* holder = _oop_type->is_instptr()->instance_klass();
+
+  for (int i = 0; i < holder->nof_nonstatic_fields(); ++i) {
+    if (field->offset_in_bytes() == holder->nonstatic_field_at(i)->offset_in_bytes()) {
+      _entries[i] = val;
+      return;
+    }
+  }
+
+  ShouldNotReachHere();
 }
 
 ObjectState& VirtualState::merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
@@ -351,9 +370,9 @@ ObjectState& VirtualState::merge(ObjectState& newin, GraphKit* kit, const TypeOo
 
   if (this != vs) {
     ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
-    assert(_nfields == ik->nof_nonstatic_fields(), "_nfields should be consistent with instanceKlass");
+    assert(nfields() == ik->nof_nonstatic_fields(), "_nfields should be consistent with instanceKlass");
 
-    for (int i = 0; i < _nfields; ++i) {
+    for (int i = 0; i < nfields(); ++i) {
       Node* m = _entries[i];
 
       if (m != vs->_entries[i]) {
@@ -389,7 +408,7 @@ ObjectState& VirtualState::merge(ObjectState& newin, GraphKit* kit, const TypeOo
 void VirtualState::print_on(outputStream* os) const {
   os->print_cr("Virt = %p", this);
 
-  for (int i = 0; i < _nfields; ++i) {
+  for (int i = 0; i < nfields(); ++i) {
     Node* val = _entries[i];
     os->print("#%d: ", i);
     if (val != nullptr) {
@@ -437,7 +456,7 @@ void PEAState::add_new_allocation(Node* obj) {
       return;
     }
 
-    bool result = _state.put(alloc, new VirtualState(nfields));
+    bool result = _state.put(alloc, new VirtualState(oop_type));
     assert(result, "the key existed in _state");
     add_alias(alloc, obj);
   }
