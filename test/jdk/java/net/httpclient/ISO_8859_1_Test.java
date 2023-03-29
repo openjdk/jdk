@@ -96,6 +96,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -412,23 +414,20 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         http1DummyServer = new DummyServer();
         http1Dummy = "http://" + http1DummyServer.serverAuthority() +"/http1/dummy/x";
 
-        HttpServer http1 = HttpServer.create(loopback, 0);
-        http1TestServer = HttpServerAdapters.HttpTestServer.of(http1);
+        http1TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(handler, "/http1/server/");
         http1URI = "http://" + http1TestServer.serverAuthority() + "/http1/server/x";
 
-        HttpsServer https1 = HttpsServer.create(loopback, 0);
-        https1.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        https1TestServer = HttpServerAdapters.HttpTestServer.of(https1);
+        https1TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1, sslContext);
         https1TestServer.addHandler(handler, "/https1/server/");
         https1URI = "https://" + https1TestServer.serverAuthority() + "/https1/server/x";
 
         // HTTP/2
-        http2TestServer = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(handler, "/http2/server/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/server/x";
 
-        https2TestServer = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(handler, "/https2/server/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/server/x";
 

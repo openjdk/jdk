@@ -126,8 +126,8 @@ void ProfileData::print_data_on(outputStream* st, const MethodData* md) const {
 }
 
 void ProfileData::print_shared(outputStream* st, const char* name, const char* extra) const {
-  st->print("bci: %d", bci());
-  st->fill_to(tab_width_one);
+  st->print("bci: %d ", bci());
+  st->fill_to(tab_width_one + 1);
   st->print("%s", name);
   tab(st);
   int trap = trap_state();
@@ -837,27 +837,37 @@ static void guarantee_failed_speculations_alive(nmethod* nm, FailedSpeculation**
 bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len) {
   assert(failed_speculations_address != nullptr, "must be");
   size_t fs_size = sizeof(FailedSpeculation) + speculation_len;
-  FailedSpeculation* fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
-  if (fs == nullptr) {
-    // no memory -> ignore failed speculation
-    return false;
-  }
 
-  guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
   guarantee_failed_speculations_alive(nm, failed_speculations_address);
 
   FailedSpeculation** cursor = failed_speculations_address;
+  FailedSpeculation* fs = nullptr;
   do {
     if (*cursor == nullptr) {
+      if (fs == nullptr) {
+        // lazily allocate FailedSpeculation
+        fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
+        if (fs == nullptr) {
+          // no memory -> ignore failed speculation
+          return false;
+        }
+        guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
+      }
       FailedSpeculation* old_fs = Atomic::cmpxchg(cursor, (FailedSpeculation*) nullptr, fs);
       if (old_fs == nullptr) {
         // Successfully appended fs to end of the list
         return true;
       }
-      cursor = old_fs->next_adr();
-    } else {
-      cursor = (*cursor)->next_adr();
     }
+    guarantee(*cursor != nullptr, "cursor must point to non-null FailedSpeculation");
+    // check if the current entry matches this thread's failed speculation
+    if ((*cursor)->data_len() == speculation_len && memcmp(speculation, (*cursor)->data(), speculation_len) == 0) {
+      if (fs != nullptr) {
+        delete fs;
+      }
+      return false;
+    }
+    cursor = (*cursor)->next_adr();
   } while (true);
 }
 

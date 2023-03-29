@@ -381,7 +381,7 @@ public class EdgeCases extends ModuleTestBase {
             .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "- compiler.err.cant.access: <error>.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.illegal.start.of.class.file))",
+                "- compiler.err.cant.access: <error>.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.bad.class.truncated.at.offset: 0))",
                 "1 error");
 
         if (!expected.equals(log)) {

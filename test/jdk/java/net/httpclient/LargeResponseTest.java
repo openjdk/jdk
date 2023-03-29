@@ -52,6 +52,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * @test
@@ -125,9 +127,7 @@ public class LargeResponseTest implements HttpServerAdapters {
             InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
             // HTTP/1.1
-            HttpServer server1 = HttpServer.create(sa, 0);
-            server1.setExecutor(executor);
-            http1Server = HttpTestServer.of(server1);
+            http1Server = HttpTestServer.create(HTTP_1_1, null, executor);
             http1Server.addHandler(new HttpTestLargeHandler(), "/LargeResponseTest/http1/");
             http1Server.start();
             http1URI = new URI("http://" + http1Server.serverAuthority() + "/LargeResponseTest/http1/");
@@ -143,15 +143,13 @@ public class LargeResponseTest implements HttpServerAdapters {
             https1URI = new URI("https://" + https1Server.serverAuthority() + "/LargeResponseTest/https1/");
 
             // HTTP/2.0
-            http2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", false, 0));
+            http2Server = HttpTestServer.create(HTTP_2);
             http2Server.addHandler(new HttpTestLargeHandler(), "/LargeResponseTest/http2/");
             http2Server.start();
             http2URI = new URI("http://" + http2Server.serverAuthority() + "/LargeResponseTest/http2/");
 
             // HTTPS/2.0
-            https2Server = HttpTestServer.of(
-                    new Http2TestServer("localhost", true, 0));
+            https2Server = HttpTestServer.create(HTTP_2, SSLContext.getDefault());
             https2Server.addHandler(new HttpTestLargeHandler(), "/LargeResponseTest/https2/");
             https2Server.start();
             https2URI = new URI("https://" + https2Server.serverAuthority() + "/LargeResponseTest/https2/");

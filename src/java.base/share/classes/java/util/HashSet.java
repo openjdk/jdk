@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ public class HashSet<E>
                                              loadFactor);
         }
         // Clamp load factor to range of 0.25...4.0.
-        loadFactor = Math.min(Math.max(0.25f, loadFactor), 4.0f);
+        loadFactor = Math.clamp(loadFactor, 0.25f, 4.0f);
 
         // Read size and verify non-negative.
         int size = s.readInt();

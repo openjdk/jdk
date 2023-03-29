@@ -503,7 +503,7 @@ public final class InfoCmp {
         public String[] getNames() {
             return getCapabilitiesByName().entrySet().stream()
                     .filter(e -> e.getValue() == this)
-                    .map(Map.Entry::getValue)
+                    .map(Map.Entry::getKey)
                     .toArray(String[]::new);
         }
 

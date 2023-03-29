@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,85 @@ import java.util.function.Supplier;
  * format string. MessageFormat-like formatting is enabled by the presence of
  * "{0" or "{1".
  *
- * <p> See {@link Utils#getDebugLogger(Supplier, boolean)} and
- * {@link Utils#getHpackLogger(Supplier, boolean)}.
+ * <p> See {@link Utils#getDebugLogger(Supplier)} and
+ * {@link Utils#getHpackLogger(Supplier)}.
  */
 final class DebugLogger implements Logger {
+
+    /**
+     * A DebugLogger configuration is composed of three levels.
+     * The three levels can be configured independently, but are
+     * typically either Level.ALL or Level.OFF.
+     *
+     * @param outLevel the level at or above which messages will be directly
+     *                printed to {@link System#out}
+     * @param errLevel the level at or above which messages will be directly
+     *                printed to {@link System#err}
+     * @param logLevel the level at or above which messages will be forwarded
+     *               to an underlying {@link System.Logger}
+     */
+    public record LoggerConfig(Level outLevel, Level errLevel, Level logLevel) {
+        public LoggerConfig {
+            Objects.requireNonNull(outLevel);
+            Objects.requireNonNull(errLevel);
+            Objects.requireNonNull(logLevel);
+        }
+
+        // true if at least one of the three levels is not Level.OFF
+        public boolean on() {
+            return minSeverity() < Level.OFF.getSeverity();
+        }
+
+        // The minimal severity of the three level. Messages below
+        // that severity will not be logged anywhere.
+        public int minSeverity() {
+            return Math.min(outLevel.getSeverity(),
+                    Math.min(errLevel.getSeverity(), logLevel.getSeverity()));
+        }
+
+        // Whether the given level can be logged with the given logger
+        public boolean levelEnabledFor(Level level, System.Logger logger) {
+            if (level == Level.OFF) return false;
+            int severity = level.getSeverity();
+            if (severity >= errLevel.getSeverity()) return true;
+            if (severity >= outLevel.getSeverity()) return true;
+            if (severity >= logLevel.getSeverity()) return logger.isLoggable(level);
+            return false;
+        }
+        // The same configuration, but with the given {@link #errLevel}
+        public LoggerConfig withErrLevel(Level errLevel) {
+            return new LoggerConfig(outLevel, errLevel, logLevel);
+        }
+        // The same configuration, but with the given {@link #outLevel}
+        public LoggerConfig withOutLevel(Level outLevel) {
+            return new LoggerConfig(outLevel, errLevel, logLevel);
+        }
+        // The same configuration, but with the given {@link #logLevel}
+        public LoggerConfig withLogLevel(Level logLevel) {
+            return new LoggerConfig(outLevel, errLevel, logLevel);
+        }
+
+        /** Logs on {@link System#err} only, does not forward to System.Logger **/
+        public static final LoggerConfig STDERR = new LoggerConfig(Level.OFF, Level.ALL, Level.OFF);
+        /** Logs on {@link System#out} only, does not forward to System.Logger **/
+        public static final LoggerConfig STDOUT = new LoggerConfig(Level.ALL, Level.OFF, Level.OFF);
+        /** Forward to System.Logger, doesn't log directly to System.out or System.err **/
+        public static final LoggerConfig LOG = new LoggerConfig(Level.OFF, Level.OFF, Level.ALL);
+        /** does not log anywhere **/
+        public static final LoggerConfig OFF = new LoggerConfig(Level.OFF, Level.OFF, Level.OFF);
+        /** logs on both System.err and System.Logger **/
+        public static final LoggerConfig ERRLOG = new LoggerConfig(Level.OFF, Level.ALL, Level.ALL);
+
+        public static LoggerConfig of(LoggerConfig config) {
+            if (config.equals(OFF)) return OFF;
+            if (config.equals(ERRLOG)) return ERRLOG;
+            if (config.equals(STDERR)) return STDERR;
+            if (config.equals(STDOUT)) return STDOUT;
+            if (config.equals(LOG)) return LOG;
+            return config;
+        }
+    };
+
     // deliberately not in the same subtree than standard loggers.
     static final String HTTP_NAME  = "jdk.internal.httpclient.debug";
     static final String WS_NAME  = "jdk.internal.httpclient.websocket.debug";
@@ -53,16 +128,16 @@ final class DebugLogger implements Logger {
     static final System.Logger WS = System.getLogger(WS_NAME);
     static final System.Logger HPACK = System.getLogger(HPACK_NAME);
     private static final DebugLogger NO_HTTP_LOGGER =
-            new DebugLogger(HTTP, "HTTP"::toString, Level.OFF, Level.OFF);
+            new DebugLogger(HTTP, "HTTP"::toString, LoggerConfig.OFF);
     private static final DebugLogger NO_WS_LOGGER =
-            new DebugLogger(HTTP, "WS"::toString, Level.OFF, Level.OFF);
+            new DebugLogger(WS, "WS"::toString, LoggerConfig.OFF);
     private static final DebugLogger NO_HPACK_LOGGER =
-            new DebugLogger(HTTP, "HPACK"::toString, Level.OFF, Level.OFF);
+            new DebugLogger(HPACK, "HPACK"::toString, LoggerConfig.OFF);
     static final long START_NANOS = System.nanoTime();
 
     private final Supplier<String> dbgTag;
-    private final Level errLevel;
-    private final Level outLevel;
+    private final LoggerConfig config;
+    private final int minSeverity;
     private final System.Logger logger;
     private final boolean debugOn;
     private final boolean traceOn;
@@ -70,43 +145,48 @@ final class DebugLogger implements Logger {
     /**
      * Create a logger for debug traces.The logger should only be used
      * with levels whose severity is {@code <= DEBUG}.
-     *
-     * By default, this logger will forward all messages logged to the supplied
-     * {@code logger}.
-     * But in addition, if the message severity level is {@code >=} to
-     * the provided {@code errLevel} it will print the messages on System.err,
-     * and if the message severity level is {@code >=} to
-     * the provided {@code outLevel} it will also print the messages on System.out.
+     * <p>
+     * By default, this logger will print message whose severity is
+     * above the severity configured in the logger {@code config}
+     * <ul>
+     *     <li>If {@code config.outLevel()} is not Level.OFF, messages
+     *     whose severity are at or above that severity will be directly
+     *     printed on System.out</li>
+     *     <li>If {@code config.errLevel()} is not Level.OFF, messages
+     *     whose severity are at or above that severity will be directly
+     *     printed on System.err</li>
+     *     <li>If {@code config.logLevel()} is not Level.OFF, messages
+     *     whose severity are at or above that severity will be forwarded
+     *     to the supplied {@code logger}.</li>
+     * </ul>
      * <p>
      * The logger will add some decoration to the printed message, in the form of
      * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
      *
      * @apiNote To obtain a logger that will always print things on stderr in
      *          addition to forwarding to the internal logger, use
-     *          {@code new DebugLogger(logger, this::dbgTag, Level.OFF, Level.ALL);}.
+     *          {@code new DebugLogger(logger, this::dbgTag,
+     *                                 LoggerConfig.LOG.withErrLevel(Level.ALL));}.
      *          To obtain a logger that will only forward to the internal logger,
-     *          use {@code new DebugLogger(logger, this::dbgTag, Level.OFF, Level.OFF);}.
+     *          use {@code new DebugLogger(logger, this::dbgTag, LoggerConfig.LOG);}.
      *
      * @param logger The internal logger to which messages will be forwarded.
-     *               This should be either {@link #HPACK} or {@link #HTTP};
+     *               This is typically either {@link #WS}, {@link #HPACK}, or {@link #HTTP};
      *
      * @param dbgTag A lambda that returns a string that identifies the caller
      *               (e.g: "SocketTube(3)", or "Http2Connection(SocketTube(3))")
-     * @param outLevel The level above which messages will be also printed on
-     *               System.out (in addition to being forwarded to the internal logger).
-     * @param errLevel The level above which messages will be also printed on
-     *               System.err (in addition to being forwarded to the internal logger).
+     * @param config The levels at or above which messages will be printed to the
+     *               corresponding destination.
      *
      * @return A logger for HTTP internal debug traces
      */
     private DebugLogger(System.Logger logger,
                 Supplier<String> dbgTag,
-                Level outLevel,
-                Level errLevel) {
+                LoggerConfig config) {
         this.dbgTag = dbgTag;
-        this.errLevel = errLevel;
-        this.outLevel = outLevel;
+        this.config = LoggerConfig.of(Objects.requireNonNull(config));
         this.logger = Objects.requireNonNull(logger);
+        this.minSeverity = config.minSeverity();
         // support only static configuration.
         this.debugOn = isEnabled(Level.DEBUG);
         this.traceOn = isEnabled(Level.TRACE);
@@ -118,7 +198,9 @@ final class DebugLogger implements Logger {
     }
 
     private boolean isEnabled(Level level) {
-        return levelEnabledFor(level, outLevel, errLevel, logger);
+        int severity = level.getSeverity();
+        if (severity < minSeverity) return false;
+        return levelEnabledFor(level, config, logger);
     }
 
     @Override
@@ -126,13 +208,9 @@ final class DebugLogger implements Logger {
         return debugOn;
     }
 
-    static boolean levelEnabledFor(Level level, Level outLevel, Level errLevel,
-                                   System.Logger logger) {
-        if (level == Level.OFF) return false;
-        int severity = level.getSeverity();
-        return severity >= errLevel.getSeverity()
-                || severity >= outLevel.getSeverity()
-                || logger.isLoggable(level);
+    private static boolean levelEnabledFor(Level level, LoggerConfig config,
+                            System.Logger logger) {
+        return config.levelEnabledFor(level, logger);
     }
 
     @Override
@@ -151,17 +229,23 @@ final class DebugLogger implements Logger {
         // support only static configuration.
         if (level == Level.DEBUG && !debugOn) return;
         if (level == Level.TRACE && !traceOn) return;
-
         int severity = level.getSeverity();
+        if (severity < minSeverity) return;
+
+        var errLevel = config.errLevel();
         if (errLevel != Level.OFF
                 && errLevel.getSeverity() <= severity) {
             print(System.err, level, format, params, null);
         }
+        var outLevel = config.outLevel();
         if (outLevel != Level.OFF
                 && outLevel.getSeverity() <= severity) {
             print(System.out, level, format, params, null);
         }
-        if (logger.isLoggable(level)) {
+        var logLevel = config.logLevel();
+        if (logLevel != Level.OFF
+                && logLevel.getSeverity() <= severity
+                && logger.isLoggable(level)) {
             logger.log(level, unused,
                     getFormat(new StringBuilder(), format, params).toString(),
                     params);
@@ -174,16 +258,23 @@ final class DebugLogger implements Logger {
         // fast path, we assume these guys never change.
         if (level == Level.DEBUG && !debugOn) return;
         if (level == Level.TRACE && !traceOn) return;
+        int severity = level.getSeverity();
+        if (severity < minSeverity) return;
 
+        var errLevel = config.errLevel();
         if (errLevel != Level.OFF
-                && errLevel.getSeverity() <= level.getSeverity()) {
+                && errLevel.getSeverity() <= severity) {
             print(System.err, level, msg, null, thrown);
         }
+        var outLevel = config.outLevel();
         if (outLevel != Level.OFF
-                && outLevel.getSeverity() <= level.getSeverity()) {
+                && outLevel.getSeverity() <= severity) {
             print(System.out, level, msg, null, thrown);
         }
-        if (logger.isLoggable(level)) {
+        var logLevel = config.logLevel();
+        if (logLevel != Level.OFF
+                && logLevel.getSeverity() <= severity
+                && logger.isLoggable(level)) {
             logger.log(level, unused,
                     getFormat(new StringBuilder(), msg, null).toString(),
                     thrown);
@@ -226,7 +317,6 @@ final class DebugLogger implements Logger {
         return sb;
     }
 
-
     private StringBuilder getFormat(StringBuilder sb, String format, Object[] params) {
         if (format == null || params == null || params.length == 0) {
             return decorate(sb, format);
@@ -260,10 +350,9 @@ final class DebugLogger implements Logger {
     }
 
     public static DebugLogger createHttpLogger(Supplier<String> dbgTag,
-                                               Level outLevel,
-                                               Level errLevel) {
-        if (levelEnabledFor(Level.DEBUG, outLevel, errLevel, HTTP)) {
-            return new DebugLogger(HTTP, dbgTag, outLevel, errLevel);
+                                               LoggerConfig config) {
+        if (levelEnabledFor(Level.DEBUG, config, HTTP)) {
+            return new DebugLogger(HTTP, dbgTag, config);
         } else {
             // return a shared instance if debug logging is not enabled.
             return NO_HTTP_LOGGER;
@@ -271,21 +360,18 @@ final class DebugLogger implements Logger {
     }
 
     public static DebugLogger createWebSocketLogger(Supplier<String> dbgTag,
-                                                    Level outLevel,
-                                                    Level errLevel) {
-        if (levelEnabledFor(Level.DEBUG, outLevel, errLevel, WS)) {
-            return new DebugLogger(WS, dbgTag, outLevel, errLevel);
+                                                    LoggerConfig config) {
+        if (levelEnabledFor(Level.DEBUG, config, WS)) {
+            return new DebugLogger(WS, dbgTag, config);
         } else {
             // return a shared instance if logging is not enabled.
             return NO_WS_LOGGER;
         }
     }
 
-    public static DebugLogger createHpackLogger(Supplier<String> dbgTag,
-                                                Level outLevel,
-                                                Level errLevel) {
-        if (levelEnabledFor(Level.DEBUG, outLevel, errLevel, HPACK)) {
-            return new DebugLogger(HPACK, dbgTag, outLevel, errLevel);
+    public static DebugLogger createHpackLogger(Supplier<String> dbgTag, LoggerConfig config) {
+        if (levelEnabledFor(Level.DEBUG, config, HPACK)) {
+            return new DebugLogger(HPACK, dbgTag, config);
         } else {
             // return a shared instance if logging is not enabled.
             return NO_HPACK_LOGGER;

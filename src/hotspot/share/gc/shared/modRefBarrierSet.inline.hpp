@@ -31,6 +31,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
+#include "runtime/thread.hpp"
 
 class Klass;
 
@@ -137,7 +138,7 @@ inline void ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT>::
 clone_in_heap(oop src, oop dst, size_t size) {
   Raw::clone(src, dst, size);
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
-  bs->write_region(MemRegion((HeapWord*)(void*)dst, size));
+  bs->invalidate(MemRegion((HeapWord*)(void*)dst, size));
 }
 
 #endif // SHARE_GC_SHARED_MODREFBARRIERSET_INLINE_HPP
