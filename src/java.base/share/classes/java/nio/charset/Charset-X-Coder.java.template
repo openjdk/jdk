@@ -793,6 +793,15 @@ public abstract class Charset$Coder$ {
      *          the current unmappable-character action is {@link
      *          CodingErrorAction#REPORT}
      *
+     * @throws  CharacterCodingException
+     *          {@code MalformedInputException} if the $itype$ sequence starting at the
+     *          input buffer's current position is $notLegal$ and the current
+     *          malformed-input action is {@code CodingErrorAction.REPORT};
+     *          {@code UnmappableCharacterException} if the $itype$ sequence starting at
+     *          the input buffer's current position cannot be mapped to an
+     *          equivalent $otype$ sequence and the current unmappable-character
+     *          action is {@code CodingErrorAction.REPORT}
+     *
      * @throws  OutOfMemoryError
      *          If the output $otype$ buffer for the requested size of the input
      *          $itype$ buffer cannot be allocated
