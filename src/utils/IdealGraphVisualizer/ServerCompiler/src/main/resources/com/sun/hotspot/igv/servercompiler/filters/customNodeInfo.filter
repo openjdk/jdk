@@ -1,4 +1,4 @@
-// This filter add a new line to the label of selected nodes with custom
+// This filter adds a new line to the label of selected nodes with custom
 // information. This is achieved by adding a special property 'extra_label' to
 // them with information extracted from other properties, typically 'dump_spec'.
 
