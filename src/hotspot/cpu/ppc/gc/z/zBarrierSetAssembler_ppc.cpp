@@ -562,21 +562,21 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
 }
 
 
-// For usage without load barrier.
-void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register oop, const char* msg) {
+// Verify a colored pointer.
+void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const char* msg) {
   if (!VerifyOops) {
     return;
   }
   Label done, skip_uncolor;
   // Skip (colored) null.
-  __ srdi_(R0, oop, ZPointerLoadShift);
+  __ srdi_(R0, obj, ZPointerLoadShift);
   __ beq(CCR0, done);
 
   // Check if ZAddressHeapBase << ZPointerLoadShift is set. If so, we need to uncolor.
-  __ rldicl_(R0, oop, 64-ZAddressHeapBaseShift-ZPointerLoadShift, 63);
-  __ mr(R0, oop);
+  __ rldicl_(R0, obj, 64 - ZAddressHeapBaseShift - ZPointerLoadShift, 63);
+  __ mr(R0, obj);
   __ beq(CCR0, skip_uncolor);
-  __ srdi(R0, oop, ZPointerLoadShift);
+  __ srdi(R0, obj, ZPointerLoadShift);
   __ bind(skip_uncolor);
 
   __ verify_oop(R0, msg);
