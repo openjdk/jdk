@@ -52,6 +52,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
+import com.sun.tools.javac.code.Kinds.Kind;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import com.sun.tools.javac.code.Type.TypeVar;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
@@ -212,6 +213,7 @@ public class Flow {
     private final JCDiagnostic.Factory diags;
     private Env<AttrContext> attrEnv;
     private       Lint lint;
+    private final Infer infer;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -333,6 +335,7 @@ public class Flow {
         types = Types.instance(context);
         chk = Check.instance(context);
         lint = Lint.instance(context);
+        infer = Infer.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
@@ -750,32 +753,56 @@ public class Flow {
         }
 
         sealed interface PatternDescription {
-            public static PatternDescription from(JCPattern pattern) {
+            public static PatternDescription from(Types types, JCPattern pattern) {
                 if (pattern instanceof JCBindingPattern binding) {
                     return new BindingPattern(binding.type);
                 } else if (pattern instanceof JCRecordPattern record) {
-                    return new RecordPattern(record.type, record.nested.map(PatternDescription::from).toArray(s -> new PatternDescription[s]));
+                    Type[] componentTypes = ((ClassSymbol) record.type.tsym).getRecordComponents()
+                            .map(r -> types.memberType(record.type, r))
+                            .toArray(s -> new Type[s]);
+                    return new RecordPattern(record.type, componentTypes, record.nested.map(p -> PatternDescription.from(types, p)).toArray(s -> new PatternDescription[s]));
                 } else {
                     throw Assert.error();
                 }
             }
         }
         record BindingPattern(Type type) implements PatternDescription {}
-        record RecordPattern(Type recordType, PatternDescription... nested) implements PatternDescription {}
+        record RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {}
+
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
             List<PatternDescription> patterns = List.nil();
+            Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
             for (JCCase c : cases) {
                 for (var l : c.labels) {
-                    if (!(l instanceof JCPatternCaseLabel patternLabel) || !TreeInfo.unguardedCaseLabel(l))
+                    if (!TreeInfo.unguardedCaseLabel(l))
                         continue;
-                    patterns = patterns.prepend(PatternDescription.from(patternLabel.pat));
+
+                    if (l instanceof JCPatternCaseLabel patternLabel) {
+                        patterns = patterns.prepend(PatternDescription.from(types, patternLabel.pat));
+                    } else if (l instanceof JCConstantCaseLabel constantLabel) {
+                        Symbol s = TreeInfo.symbol(constantLabel.expr);
+                        if (s != null && s.isEnum()) {
+                            enum2Constants.computeIfAbsent(s.owner, x -> {
+                                Set<Symbol> result = new HashSet<>();
+                                s.owner.members()
+                                       .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
+                                       .forEach(result::add);
+                                return result;
+                            }).remove(s);
+                        }
+                    }
+                }
+            }
+            for (Entry<Symbol, Set<Symbol>> e : enum2Constants.entrySet()) {
+                if (e.getValue().isEmpty()) {
+                    patterns = patterns.prepend(new BindingPattern(e.getKey().type));
                 }
             }
             boolean repeat = true;
             while (repeat) {
                 repeat = false;
                 List<PatternDescription> updatedPatterns;
-                updatedPatterns = reduceBindingPatterns(patterns);
+                updatedPatterns = reduceBindingPatterns(selector.type, patterns);
                 if (!(repeat |= updatedPatterns != patterns)) {
                     updatedPatterns = reduceNestedPatterns(patterns);
                 }
@@ -784,21 +811,46 @@ public class Flow {
                 }
                 repeat |= updatedPatterns != patterns;
                 patterns = updatedPatterns;
+                if (checkCovered(selector.type, patterns)) {
+                    return true;
+                }
+            }
+            return checkCovered(selector.type, patterns);
+        }
+
+        private boolean checkCovered(Type seltype, List<PatternDescription> patterns) {
+            for (Type seltypeComponent : components(seltype)) {
                 for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
-                    if (it1.head instanceof BindingPattern bp && bp.type.tsym == selector.type.tsym) {
+                    if (it1.head instanceof BindingPattern bp && types.isSubtype(seltypeComponent, types.erasure(bp.type))) {
                         return true;
                     }
                 }
             }
-            for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
-                if (it1.head instanceof BindingPattern bp && bp.type.tsym == selector.type.tsym) {
-                    return true;
-                }
-            }
             return false;
         }
+        
+        private List<Type> components(Type seltype) {
+            return switch (seltype.getTag()) {
+                case CLASS -> {
+                    if (seltype.isCompound()) {
+                        if (seltype.isIntersection()) {
+                            yield ((Type.IntersectionClassType) seltype).getComponents()
+                                                                        .stream()
+                                                                        .flatMap(t -> components(t).stream())
+                                                                        .collect(List.collector());
+                        }
+                        yield List.nil();
+                    }
+                    yield List.of(types.erasure(seltype));
+                }
+                case TYPEVAR -> components(((TypeVar) seltype).getUpperBound());
+                default -> {
+                    yield List.of(types.erasure(seltype));
+                }
+            };
+        }
 
-        private List<PatternDescription> reduceBindingPatterns(List<PatternDescription> patterns) {
+        private List<PatternDescription> reduceBindingPatterns(Type selectorType, List<PatternDescription> patterns) {
             //TODO: "viable" permitted subtypes
             for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
                 if (it1.head instanceof BindingPattern bpOne) {
@@ -806,8 +858,13 @@ public class Flow {
                         ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                         ClassSymbol clazz = (ClassSymbol) sup.tsym; //TODO: j.l.Object's supertype!!
 
-                        if (clazz.isSealed()) {
-                            Set<Symbol> permitted = new HashSet<>(clazz.permitted);
+                        if (clazz.isSealed() && clazz.isAbstract()) {
+                            Set<Symbol> permitted = new HashSet<>();
+                            for (Symbol permittedSubtype : clazz.permitted) {
+                                if (infer.instantiatePatternType(selectorType, (TypeSymbol) permittedSubtype) != null) {
+                                    permitted.add(permittedSubtype);
+                                }
+                            }
                             permitted.remove(bpOne.type.tsym);
                             bindings.append(it1.head);
                             for (var it2 = it1.tail; it2.nonEmpty(); it2 = it2.tail) {
@@ -821,6 +878,8 @@ public class Flow {
                                 }
                                 patterns = patterns.prepend(new BindingPattern(clazz.type));
                                 return patterns;
+                            } else {
+                                System.err.println("selectorType: " + selectorType + ", missing: " + permitted);
                             }
                         }
                     }
@@ -850,10 +909,9 @@ public class Flow {
                             }
                         }
 
-                        //XXX: may result to more than one!!!
                         int mismatchingCandidateFin = mismatchingCandidate;
                         List<PatternDescription> nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(List.collector());
-                        List<PatternDescription> updatedPatterns = reduceBindingPatterns(nestedPatterns);
+                        List<PatternDescription> updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], nestedPatterns);
 
                         if (nestedPatterns == updatedPatterns) {
                             updatedPatterns = reduceNestedPatterns(nestedPatterns);
@@ -866,7 +924,7 @@ public class Flow {
                             for (PatternDescription nested : updatedPatterns) {
                                 PatternDescription[] nue = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
                                 nue[mismatchingCandidateFin] = nested;
-                                patterns = patterns.prepend(new RecordPattern(rpOne.recordType, nue));
+                                patterns = patterns.prepend(new RecordPattern(rpOne.recordType(), rpOne.fullComponentTypes(), nue));
                             }
                             return patterns;
                         }
@@ -907,17 +965,17 @@ public class Flow {
 
         private PatternDescription reduceRecordPattern(PatternDescription pattern) {
             if (pattern instanceof RecordPattern rpOne) {
-                Symbol[] formalComponents = ((ClassSymbol) rpOne.recordType.tsym).getRecordComponents().map(rc -> rc.type.tsym).toArray(s -> new Symbol[s]);
+                Type[] componentType = rpOne.fullComponentTypes();
                 boolean covered = true;
-                for (int i = 0; i < formalComponents.length; i++) {
+                for (int i = 0; i < componentType.length; i++) {
                     PatternDescription newNested = reduceRecordPattern(rpOne.nested[i]);
                     if (newNested != rpOne.nested[i]) {
                         PatternDescription[] nue = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
                         nue[i] = newNested;
-                        return new RecordPattern(rpOne.recordType, nue);
+                        return new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), nue);
                     }
 
-                    covered &= rpOne.nested[i] instanceof BindingPattern bp && bp.type.tsym == formalComponents[i];
+                    covered &= rpOne.nested[i] instanceof BindingPattern bp && types.isSubtype(types.erasure(componentType[i]), types.erasure(bp.type));
                 }
                 if (covered) {
                     return new BindingPattern(rpOne.recordType);
