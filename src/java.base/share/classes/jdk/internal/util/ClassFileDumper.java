@@ -27,18 +27,18 @@ package jdk.internal.util;
 import jdk.internal.misc.VM;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
-import sun.util.logging.PlatformLogger;
 
 import java.io.FilePermission;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HexFormat;
 import java.util.Objects;
 import java.util.PropertyPermission;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,17 +51,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * and LambdaMetafactory, make use of lambda lead to recursive calls cause stack overflow.
  */
 public final class ClassFileDumper {
-    private static final char[] HEX = {
-        '0', '1', '2', '3', '4', '5', '6', '7',
-        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-    };
-    private static final char[] BAD_CHARS = {
-        '\\', ':', '*', '?', '"', '<', '>', '|'
-    };
-    private static final String[] REPLACEMENT = {
-        "%5C", "%3A", "%2A", "%3F", "%22", "%3C", "%3E", "%7C"
-    };
-
     private static final ConcurrentHashMap<String, ClassFileDumper> DUMPER_MAP
             = new ConcurrentHashMap<>();
 
@@ -202,32 +191,22 @@ public final class ClassFileDumper {
             });
     }
 
+    private static HexFormat HEX = HexFormat.of().withUpperCase();
+    private static final Set<Character> BAD_CHARS = Set.of('\\', ':', '*', '?', '"', '<', '>', '|');
 
     private static String encodeForFilename(String className) {
-        final int len = className.length();
+        int len = className.length();
         StringBuilder sb = new StringBuilder(len);
-
         for (int i = 0; i < len; i++) {
             char c = className.charAt(i);
             // control characters
-            if (c <= 31) {
-                sb.append('%');
-                sb.append(HEX[c >> 4 & 0x0F]);
-                sb.append(HEX[c & 0x0F]);
+            if (c <= 31 || BAD_CHARS.contains(c)) {
+                sb.append("%");
+                HEX.toHexDigits(sb, (byte)c);
             } else {
-                int j = 0;
-                for (; j < BAD_CHARS.length; j++) {
-                    if (c == BAD_CHARS[j]) {
-                        sb.append(REPLACEMENT[j]);
-                        break;
-                    }
-                }
-                if (j >= BAD_CHARS.length) {
-                    sb.append(c);
-                }
+                sb.append(c);
             }
         }
-
         return sb.toString();
     }
 }
