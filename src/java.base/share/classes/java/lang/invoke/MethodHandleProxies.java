@@ -209,6 +209,8 @@ public class MethodHandleProxies {
             var lookup = info.lookup.defineHiddenClassWithClassData(info.template, List.of(mhs), true);
             proxy = lookup.findConstructor(lookup.lookupClass(), methodType(void.class))
                     .asType(methodType(Object.class)).invokeExact();
+        } catch (Error e) {
+            throw e;
         } catch (Throwable e) {
             throw new InternalError("Cannot create interface instance", e);
         }
