@@ -933,7 +933,6 @@ public class URLClassPath {
          */
         @Override
         URL[] getClassPath() throws IOException {
-
             ensureOpen();
 
             // Only get manifest when necessary
