@@ -107,12 +107,12 @@ inline bool LockStack::contains(oop o) const {
 }
 
 inline void LockStack::oops_do(OopClosure* cl) {
-  verify("pre-oops-do");
+  verify_no_thread("pre-oops-do");
   int end = to_index(_offset);
   for (int i = 0; i < end; i++) {
     cl->do_oop(&_base[i]);
   }
-  verify("post-oops-do");
+  verify_no_thread("post-oops-do");
 }
 
 #endif // SHARE_RUNTIME_LOCKSTACK_INLINE_HPP

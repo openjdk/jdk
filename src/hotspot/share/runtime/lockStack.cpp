@@ -54,6 +54,10 @@ static bool is_stack_watermark_processing(JavaThread* thread) {
 void LockStack::verify(const char* msg) const {
   assert(is_self() || SafepointSynchronize::is_at_safepoint() || _thread->is_handshake_safe_for(Thread::current()) || _thread->is_suspended() || _thread->is_obj_deopt_suspend() || is_stack_watermark_processing(_thread),
          "access only thread-local, or when target thread safely holds stil");
+  verify_no_thread(msg);
+}
+
+void LockStack::verify_no_thread(const char* msg) const {
   assert(UseFastLocking && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
   int end = to_index(_offset);
   for (int i = 0; i < end; i++) {
