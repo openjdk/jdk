@@ -4657,7 +4657,7 @@ void PhaseIdealLoop::verify() const {
   assert(fail == 0, "verify loops failed");
 
   // Verify loop-tree.
-  _ltree_root->verify_tree(loop_verify._ltree_root, nullptr);
+  _ltree_root->verify_tree(loop_verify._ltree_root);
 
   // Major progress was cleared by creating a verify version of PhaseIdealLoop.
   C->restore_major_progress(old_progress);
@@ -4688,7 +4688,8 @@ void PhaseIdealLoop::verify_nodes(Node* root, const PhaseIdealLoop* loop_verify,
 //  (2) Verify dominator structure (IDOM).
 void PhaseIdealLoop::verify_node(Node* n, const PhaseIdealLoop* loop_verify, int &fail) const {
   uint i = n->_idx;
-  // The loop-tree was built from def to use. The verification happens from def to use.
+  // The loop-tree was built from def to use (top-down).
+  // The verification happens from use to def (bottom-up).
   // We may thus find nodes during verification that are not in the loop-tree.
   if(_nodes[i] == nullptr) {
     assert(loop_verify->_nodes[i] == nullptr, "both should be unreachable");
@@ -4712,7 +4713,7 @@ void PhaseIdealLoop::verify_node(Node* n, const PhaseIdealLoop* loop_verify, int
   } else if (has_ctrl(n)) {
     assert(loop_verify->has_ctrl(n), "sanity");
     // n is a data node.
-    // Verify that it ctrl is the same.
+    // Verify that its ctrl is the same.
 
     // Broken part of VerifyLoopOptimizations (A)
     // Reason:
@@ -4799,44 +4800,85 @@ void PhaseIdealLoop::verify_node(Node* n, const PhaseIdealLoop* loop_verify, int
 }
 
 //------------------------------verify_tree------------------------------------
+void IdealLoopTree::collect_children(GrowableArray<IdealLoopTree*> &children) const {
+  children.clear();
+  IdealLoopTree* child = _child;
+  while (child != nullptr) {
+    assert(child->_parent == this, "all must be children of this");
+    children.push(child);
+    child = child->_next;
+  }
+}
+
+int compare_tree(IdealLoopTree** a, IdealLoopTree** b) {
+  assert((*a) != nullptr && (*b) != nullptr, "must be");
+  return (*a)->_head->_idx - (*b)->_head->_idx;
+}
+
+//------------------------------verify_tree------------------------------------
 // Verify that tree structures match. Because the CFG can change, siblings
 // within the loop tree can be reordered. We attempt to deal with that by
 // reordering the verify's loop tree if possible.
-void IdealLoopTree::verify_tree(IdealLoopTree* loop, const IdealLoopTree* parent) const {
-  assert(_parent == parent, "Badly formed loop tree");
+void IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
+  assert(_head == loop_verify->_head, "mismatched loop head");
+  assert(this->_parent != nullptr || this->_next == nullptr, "is_root_loop implies has_no_sibling");
 
-  // If "this" and "loop" are not the same sibling of "parent", reorder the siblings.
-  if (_head != loop->_head) {
-    tty->print_cr("reorder loop tree");
-    // Find _next pointer to update (where "loop" is attached)
-    IdealLoopTree **pp = &loop->_parent->_child;
-    while (*pp != loop) {
-      pp = &((*pp)->_next);
-    }
-    // Find proper sibling to be next (where "loop" will be attached)
-    IdealLoopTree **nn = &loop->_next;
-    while ((*nn) != nullptr && (*nn)->_head != _head) {
-      nn = &((*nn)->_next);
-    }
+  // Collect the children
+  GrowableArray<IdealLoopTree*> children;
+  GrowableArray<IdealLoopTree*> children_verify;
+  collect_children(children);
+  loop_verify->collect_children(children_verify);
+  children.sort(compare_tree);
+  children_verify.sort(compare_tree);
 
-    // Check for no match.
-    if ((*nn) == nullptr) {
-      // Annoyingly, irreducible loops can pick different headers (any of the entries)
-      // after a major_progress operation, so the rest of the loop tree cannot be matched.
-      assert(_irreducible && Compile::current()->major_progress(), "failed to match loop tree");
-      return;
+  // Compare the two children lists
+  for (int i = 0, j = 0; i < children.length() || j < children_verify.length(); ) {
+    IdealLoopTree* child        = nullptr;
+    IdealLoopTree* child_verify = nullptr;
+    // Read from both lists, if possible.
+    if (i < children.length()) {
+      child = children.at(i);
     }
-
-    // Swap (*nn) and (*pp)
-    IdealLoopTree* tmp = *nn;
-    *nn = tmp->_next;
-    tmp->_next = loop;
-    *pp = loop;
-    loop = tmp;
+    if (j < children_verify.length()) {
+      child_verify = children_verify.at(j);
+    }
+    if (child != nullptr && child_verify != nullptr && child->_head != child_verify->_head) {
+      assert(child->_head->_idx != child_verify->_head->_idx, "is implied");
+      // We found two non-equal children. Select the smaller one.
+      if (child->_head->_idx < child_verify->_head->_idx) {
+        child_verify = nullptr;
+      } else {
+        child = nullptr;
+      }
+    }
+    // Process the two children, or potentially log the failure if we only found one.
+    if (child_verify == nullptr) {
+      if (child_verify->_irreducible && Compile::current()->major_progress()) {
+        // Irreducible loops can pick a different header (one of its entries).
+      } else {
+        tty->print_cr("We have loop that verify does not have");
+        child->dump();
+        assert(false, "We have loop that verify does not have");
+      }
+      i++; // step for this
+    } else if (child == nullptr) {
+      if (child_verify->_irreducible && Compile::current()->major_progress()) {
+        // Irreducible loops can pick a different header (one of its entries).
+      } else if (child_verify->_head->as_Region()->is_in_infinite_subgraph()) {
+        // Infinite loops do not get attached to the loop-tree on their first visit.
+      } else {
+        tty->print_cr("Verify has loop that we do not have");
+        child_verify->dump();
+        assert(false, "Verify has loop that we do not have");
+      }
+      j++; // step for verify
+    } else {
+      assert(child->_head == child_verify->_head, "We have both and they are equal");
+      child->verify_tree(child_verify); // Recursion
+      i++; // step for this
+      j++; // step for verify
+    }
   }
-
-  // After reordering, "this" and "loop" match.
-  assert(_head == loop->_head, "mismatched loop head");
 
   // Broken part of VerifyLoopOptimizations (D)
   // Reason:
@@ -4909,14 +4951,6 @@ void IdealLoopTree::verify_tree(IdealLoopTree* loop, const IdealLoopTree* parent
     assert( !fail, "loop body mismatch" );
   }
   */
-
-  // Recurse to children and siblings
-  if (_child != nullptr) {
-    _child->verify_tree(loop->_child, this);
-  }
-  if (_next != nullptr) {
-    _next->verify_tree(loop->_next, parent);
-  }
 }
 #endif
 

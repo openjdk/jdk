@@ -791,7 +791,8 @@ public:
 #ifndef PRODUCT
   void dump_head();       // Dump loop head only
   void dump();            // Dump this loop recursively
-  void verify_tree(IdealLoopTree* loop, const IdealLoopTree* parent) const;
+  void collect_children(GrowableArray<IdealLoopTree*> &children) const;
+  void verify_tree(IdealLoopTree* loop_verify) const;
 #endif
 
  private:
