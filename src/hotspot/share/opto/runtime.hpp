@@ -135,7 +135,11 @@ class OptoRuntime : public AllStatic {
 
   static address _slow_arraycopy_Java;
   static address _register_finalizer_Java;
+#if INCLUDE_JVMTI
   static address _allocate_instance;
+  static address _notify_jvmti_mount;
+  static address _notify_jvmti_unmount;
+#endif
 
   //
   // Implementation of runtime methods
@@ -209,7 +213,11 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
+#if INCLUDE_JVMTI
   static address allocate_instance()                     { return _allocate_instance; }
+  static address notify_jvmti_mount()                    { return _notify_jvmti_mount; }
+  static address notify_jvmti_unmount()                  { return _notify_jvmti_unmount; }
+#endif
 
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
 
@@ -296,6 +304,9 @@ private:
   static const TypeFunc* register_finalizer_Type();
 
   JFR_ONLY(static const TypeFunc* class_id_load_barrier_Type();)
+#if INCLUDE_JVMTI
+  static const TypeFunc* notify_jvmti_Type();
+#endif
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

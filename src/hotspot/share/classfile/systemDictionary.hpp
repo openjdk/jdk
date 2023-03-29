@@ -302,12 +302,6 @@ private:
   static Klass* resolve_array_class_or_null(Symbol* class_name,
                                             Handle class_loader,
                                             Handle protection_domain, TRAPS);
-  static InstanceKlass* handle_parallel_loading(JavaThread* current,
-                                                Symbol* name,
-                                                ClassLoaderData* loader_data,
-                                                Handle lockObject,
-                                                bool* throw_circularity_error);
-
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_helper(Symbol* class_name,
                                               Handle class_loader,
@@ -366,8 +360,6 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-  // Setup link to hierarchy and deoptimize
-  static void add_to_hierarchy(JavaThread* current, InstanceKlass* k);
 protected:
 
   // Basic find on loaded classes
