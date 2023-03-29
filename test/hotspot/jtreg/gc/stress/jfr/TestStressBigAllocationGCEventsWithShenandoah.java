@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,37 +21,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jfr.event.gc.detailed;
 
-/*
+/**
  * @test id=default
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyCheckCast
+ * @key randomness
+ * @requires vm.hasJFR
+ * @requires vm.gc == "Shenandoah"
+ * @library /test/lib /test/jdk
+ * @run main/othervm -XX:+UseShenandoahGC -Xmx256m jdk.jfr.event.gc.detailed.TestStressBigAllocationGCEventsWithShenandoah 1048576
  */
 
-/*
- * @test id=generational
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyCheckCast -XX:ShenandoahGCMode=generational
- */
-public class TestArrayCopyCheckCast {
-
-    static class Foo {}
-    static class Bar {}
+ /**
+  * @test id=generational
+  * @key randomness
+  * @requires vm.hasJFR
+  * @requires vm.gc == "Shenandoah"
+  * @library /test/lib /test/jdk
+  * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xmx256m jdk.jfr.event.gc.detailed.TestStressBigAllocationGCEventsWithShenandoah 1048576
+  */
+public class TestStressBigAllocationGCEventsWithShenandoah {
 
     public static void main(String[] args) throws Exception {
-        try {
-            Object[] array1 = new Object[1];
-            array1[0] = new Bar();
-            Foo[] array2 = new Foo[1];
-            System.arraycopy(array1, 0, array2, 0, 1);
-            throw new RuntimeException();
-        } catch (ArrayStoreException ex) {
-            // expected
-        }
+        new StressAllocationGCEvents().run(args);
     }
-
 }

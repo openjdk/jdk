@@ -72,6 +72,16 @@
  */
 
 /*
+ * @test id=generational
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -Dtarget=10000
+ *      TestLotsOfCycles
+ */
+
+/*
  * @test id=static
  * @requires vm.gc.Shenandoah
  *

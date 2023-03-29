@@ -28,7 +28,7 @@
     *
     * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
     *      -XX:+ShenandoahRegionSampling -XX:+ShenandoahRegionSampling
-    *      -Xlog:gc+region=debug:region-snapshots-%p.log::filesize=100,filecount=3
+    *      -Xlog:gc+region=trace:region-snapshots-%p.log::filesize=100,filecount=3
     *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
     *      TestShenandoahLogRotation
     */

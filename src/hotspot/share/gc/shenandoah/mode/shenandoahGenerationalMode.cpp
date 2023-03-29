@@ -23,8 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
+#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -50,6 +51,18 @@ void ShenandoahGenerationalMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
+}
+
+ShenandoahHeuristics* ShenandoahGenerationalMode::initialize_heuristics(ShenandoahGeneration* generation) const {
+  if (ShenandoahGCHeuristics == nullptr) {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
+  }
+
+  if (strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {
+    vm_exit_during_initialization("Generational mode requires the (default) adaptive heuristic");
+  }
+
+  return new ShenandoahAdaptiveHeuristics(generation);
 }
 
 const char* affiliation_name(oop ptr) {

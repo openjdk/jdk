@@ -41,6 +41,25 @@
  *      TestJNIGlobalRefs
  */
 
+/* @test id=generational-verify
+ * @summary Test JNI Global Refs with Shenandoah
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestJNIGlobalRefs
+ */
+
+/* @test id=generational
+ * @summary Test JNI Global Refs with Shenandoah
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm/native -Xmx1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      TestJNIGlobalRefs
+ */
+
 import java.util.Arrays;
 import java.util.Random;
 

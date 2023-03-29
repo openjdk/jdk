@@ -74,5 +74,19 @@ public class TestThreadFailure {
             analyzer.shouldContain("java.lang.OutOfMemoryError");
             analyzer.shouldContain("All good");
         }
+
+        {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-Xmx32m",
+                    "-XX:+UnlockExperimentalVMOptions",
+                    "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
+                    TestThreadFailure.class.getName(),
+                    "test");
+
+            OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+            analyzer.shouldHaveExitValue(0);
+            analyzer.shouldContain("java.lang.OutOfMemoryError");
+            analyzer.shouldContain("All good");
+        }
     }
 }

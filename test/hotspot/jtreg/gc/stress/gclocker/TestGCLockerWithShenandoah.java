@@ -41,6 +41,24 @@ package gc.stress.gclocker;
  */
 
 /*
+ * @test id=generational
+ * @library /
+ * @requires vm.gc.Shenandoah
+ * @summary Stress Shenandoah's JNI handling by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
+ *
+ * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahMaxYoungPercentage=90
+ *      -XX:+ShenandoahVerify
+ *      gc.stress.gclocker.TestGCLockerWithShenandoah
+ *
+ * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahMaxYoungPercentage=90
+ *      gc.stress.gclocker.TestGCLockerWithShenandoah
+ */
+
+/*
  * @test id=aggressive
  * @library /
  * @requires vm.gc.Shenandoah

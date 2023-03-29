@@ -24,7 +24,7 @@
 
 package gc.shenandoah.generational;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import java.util.Random;
 import java.util.HashMap;
 
@@ -39,8 +39,8 @@ import java.util.HashMap;
  * @requires vm.gc.Shenandoah
  * @summary Confirm that card marking and remembered set scanning do not crash.
  * @library /testlibrary /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *      -Xms256m -Xmx256m
  *      -XX:+IgnoreUnrecognizedVMOptions

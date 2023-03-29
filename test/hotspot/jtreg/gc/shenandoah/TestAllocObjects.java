@@ -105,6 +105,26 @@
  */
 
 /*
+ * @test id=generational
+ * @summary Acceptance tests: collector can withstand allocation
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestAllocObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      TestAllocObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahSuspendibleWorkers
+ *      TestAllocObjects
+ */
+
+/*
  * @test id=static
  * @summary Acceptance tests: collector can withstand allocation
  * @requires vm.gc.Shenandoah

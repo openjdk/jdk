@@ -43,6 +43,22 @@
  */
 
 /*
+ * @test id=generational
+ * @summary Test Shenandoah string deduplication implementation
+ * @key randomness
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @modules java.base/java.lang:open
+ *          java.management
+ *
+ * @run main/othervm -Xmx1g -Xlog:gc+stats -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -DtargetStrings=3000000
+ *      TestStringDedupStress
+ */
+
+/*
  * @test id=default
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness

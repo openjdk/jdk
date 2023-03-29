@@ -84,6 +84,31 @@
  */
 
 /*
+ * @test id=generational
+ * @summary Acceptance tests: collector can deal with retained objects
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestRetainObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      TestRetainObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
+ *      TestRetainObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
+ *      TestRetainObjects
+ */
+
+/*
  * @test id=static
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah

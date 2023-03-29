@@ -63,6 +63,17 @@
  */
 
 /*
+ * @test id=generational
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -Dtarget=10000
+ *      TestDynamicSoftMaxHeapSize
+ */
+
+/*
  * @test id=static
  * @requires vm.gc.Shenandoah
  * @library /test/lib

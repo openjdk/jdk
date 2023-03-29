@@ -76,6 +76,22 @@
  */
 
 /*
+ * @test id=generational
+ * @summary Check that Shenandoah cleans up interned strings
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestStringInternCleanup
+ *
+ * @run main/othervm -Xmx64m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ClassUnloadingWithConcurrentMark
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      TestStringInternCleanup
+ */
+
+
+/*
  * @test id=iu
  * @summary Check that Shenandoah cleans up interned strings
  * @requires vm.gc.Shenandoah

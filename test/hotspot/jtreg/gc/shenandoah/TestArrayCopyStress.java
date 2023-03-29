@@ -26,12 +26,21 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /*
- * @test
+ * @test id=default
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyStress
+ */
+
+/*
+ * @test id=generational
+ * @key randomness
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyStress
  */
 public class TestArrayCopyStress {
 

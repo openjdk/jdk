@@ -23,7 +23,7 @@
  */
 
  /*
- * @test
+ * @test id=default
  * @summary Test Shenandoah with different log levels
  * @requires vm.gc.Shenandoah
  *
@@ -34,6 +34,17 @@
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms256M -Xmx1G -Xlog:gc*=trace   TestWithLogLevel
  */
 
+/*
+ * @test id=generational
+ * @summary Test Shenandoah with different log levels
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms256M -Xmx1G -Xlog:gc*=error   TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms256M -Xmx1G -Xlog:gc*=warning TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms256M -Xmx1G -Xlog:gc*=info    TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms256M -Xmx1G -Xlog:gc*=debug   TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms256M -Xmx1G -Xlog:gc*=trace   TestWithLogLevel
+ */
 import java.util.*;
 
 public class TestWithLogLevel {

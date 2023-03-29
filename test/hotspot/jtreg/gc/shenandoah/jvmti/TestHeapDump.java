@@ -63,6 +63,46 @@
  *      -XX:+UseStringDeduplication TestHeapDump
  */
 
+/**
+ * @test id=generational
+ * @summary Tests JVMTI heap dumps
+ * @requires vm.gc.Shenandoah
+ * @requires vm.jvmti
+ * @compile TestHeapDump.java
+ * @run main/othervm/native/timeout=300 -agentlib:TestHeapDump
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xmx128m
+ *      -XX:ShenandoahGCMode=generational
+ *      TestHeapDump
+ *
+ */
+
+/**
+ * @test id=no-coops-generational
+ * @summary Tests JVMTI heap dumps
+ * @requires vm.gc.Shenandoah
+ * @requires vm.jvmti
+ * @requires vm.bits == "64"
+ * @compile TestHeapDump.java
+ * @run main/othervm/native/timeout=300 -agentlib:TestHeapDump
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xmx128m
+ *      -XX:ShenandoahGCMode=generational
+ *      -XX:-UseCompressedOops TestHeapDump
+ */
+
+/**
+ * @test id=generational-strdedup
+ * @summary Tests JVMTI heap dumps
+ * @requires vm.gc.Shenandoah
+ * @requires vm.jvmti
+ * @compile TestHeapDump.java
+ * @run main/othervm/native/timeout=300 -agentlib:TestHeapDump
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xmx128m
+ *      -XX:ShenandoahGCMode=generational
+ *      -XX:+UseStringDeduplication TestHeapDump
+ */
 import java.lang.ref.Reference;
 
 public class TestHeapDump {

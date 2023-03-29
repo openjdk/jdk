@@ -23,7 +23,7 @@
  */
 
 /**
- * @test
+ * @test id=default
  * @summary Test JMX memory beans
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc
@@ -33,6 +33,19 @@
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms128m -Xmx1g TestMemoryMXBeans  128 1024
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms1g   -Xmx1g -XX:ShenandoahUncommitDelay=0 TestMemoryMXBeans 1024 1024
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms128m -Xmx1g -XX:ShenandoahUncommitDelay=0 TestMemoryMXBeans  128 1024
+ */
+
+/**
+ * @test id=generational
+ * @summary Test JMX memory beans
+ * @requires vm.gc.Shenandoah
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational          -Xmx1g TestMemoryMXBeans   -1 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms1g   -Xmx1g TestMemoryMXBeans 1024 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms128m -Xmx1g TestMemoryMXBeans  128 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms1g   -Xmx1g -XX:ShenandoahUncommitDelay=0 TestMemoryMXBeans 1024 1024
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xms128m -Xmx1g -XX:ShenandoahUncommitDelay=0 TestMemoryMXBeans  128 1024
  */
 
 import java.lang.management.*;

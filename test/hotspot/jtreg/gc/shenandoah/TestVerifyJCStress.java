@@ -57,6 +57,11 @@
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
  *      -XX:+ShenandoahVerify -XX:+ShenandoahVerifyOptoBarriers
  *      TestVerifyJCStress
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify -XX:+ShenandoahVerifyOptoBarriers
+ *      TestVerifyJCStress
  */
 
 /*
@@ -74,6 +79,11 @@
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+ShenandoahVerify
+ *      TestVerifyJCStress
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
  *      -XX:+ShenandoahVerify
  *      TestVerifyJCStress
  */

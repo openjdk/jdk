@@ -47,6 +47,15 @@
  */
 
 /*
+ * @test id=generational
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+ShenandoahRegionSampling
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      TestRegionSampling
+ */
+
+/*
  * @test id=static
  * @requires vm.gc.Shenandoah
  *

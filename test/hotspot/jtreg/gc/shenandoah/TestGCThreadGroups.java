@@ -77,6 +77,24 @@
  */
 
 /**
+ * @test id=generational
+ * @summary Test Shenandoah GC uses concurrent/parallel threads correctly
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC
+ *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
+ *      -Dtarget=1000 -XX:ShenandoahGCMode=generational
+ *      TestGCThreadGroups
+ *
+ * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC
+ *      -XX:-UseDynamicNumberOfGCThreads
+ *      -Dtarget=1000 -XX:ShenandoahGCMode=generational
+ *      TestGCThreadGroups
+ */
+
+/**
  * @test id=iu
  * @summary Test Shenandoah GC uses concurrent/parallel threads correctly
  * @requires vm.gc.Shenandoah

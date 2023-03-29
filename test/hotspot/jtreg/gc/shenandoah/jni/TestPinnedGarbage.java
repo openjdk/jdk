@@ -61,6 +61,22 @@
  *      TestPinnedGarbage
  */
 
+/* @test id=generational
+ * @summary Test that garbage in the pinned region does not crash VM
+ * @key randomness
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx128m
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      TestPinnedGarbage
+ *
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx128m
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestPinnedGarbage
+ */
+
 import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.Utils;

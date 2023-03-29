@@ -35,18 +35,6 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test id=iu
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm
- *      -Xbootclasspath/a:.
- *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      gc.shenandoah.TestReferenceRefersToShenandoah
- */
-
 /* @test id=satb-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -57,6 +45,43 @@ package gc.shenandoah;
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGarbageThreshold=100 -Xmx100m
+ *      gc.shenandoah.TestReferenceRefersToShenandoah
+ */
+
+/* @test id=generational
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      gc.shenandoah.TestReferenceRefersToShenandoah
+ */
+
+/* @test id=generational-100
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @modules java.base
+ * @run main jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGarbageThreshold=100 -Xmx100m
+ *      gc.shenandoah.TestReferenceRefersToShenandoah
+ */
+
+/* @test id=iu
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 

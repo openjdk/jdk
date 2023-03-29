@@ -42,6 +42,21 @@
  */
 
 /*
+ * @test id=generational
+ * @summary Test that null references/referents work fine
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestRefprocSanity
+ *
+ * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      TestRefprocSanity
+ */
+
+/*
  * @test id=iu
  * @summary Test that null references/referents work fine
  * @requires vm.gc.Shenandoah

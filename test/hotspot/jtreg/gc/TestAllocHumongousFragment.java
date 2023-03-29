@@ -94,6 +94,23 @@
  * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
  *      TestAllocHumongousFragment
+*/
+
+/*
+ * @test id=generational
+ * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
+ * @key randomness
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestAllocHumongousFragment
+ *
+ * @run main/othervm -Xmx1g -Xms1g -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      TestAllocHumongousFragment
  */
 
 /*

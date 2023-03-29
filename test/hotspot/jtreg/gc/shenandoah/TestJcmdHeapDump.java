@@ -73,6 +73,18 @@
  */
 
 /*
+ * @test id=generational
+ * @library /test/lib
+ * @modules jdk.attach/com.sun.tools.attach
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -Dtarget=10000
+ *      TestJcmdHeapDump
+ */
+
+/*
  * @test id=static
  * @library /test/lib
  * @modules jdk.attach/com.sun.tools.attach

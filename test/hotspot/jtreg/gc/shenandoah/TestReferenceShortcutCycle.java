@@ -36,6 +36,19 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceShortcutCycle
  */
 
+/* @test id=generational-100
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @modules java.base
+ * @run main jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGarbageThreshold=100 -Xmx100m
+ *      gc.shenandoah.TestReferenceShortcutCycle
+ */
+
 /* @test id=iu-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib

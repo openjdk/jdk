@@ -23,7 +23,7 @@
  */
 
 /*
- * @test
+ * @test default
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=0 TestVerifyLevels
@@ -33,6 +33,16 @@
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=4 TestVerifyLevels
  */
 
+/*
+ * @test generational
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=0 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=1 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=2 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=3 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=4 TestVerifyLevels
+ */
 public class TestVerifyLevels {
 
     static final long TARGET_MB = Long.getLong("target", 1_000); // 1 Gb allocation
