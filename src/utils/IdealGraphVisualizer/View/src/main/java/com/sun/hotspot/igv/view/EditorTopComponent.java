@@ -68,6 +68,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     private final JPanel centerPanel;
     private final CardLayout cardLayout;
     private final Toolbar quickSearchToolbar;
+    private boolean useBoldDisplayName = false;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
@@ -375,8 +376,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
             setHtmlDisplayName(getDisplayName());
         }
     }
-
-    private boolean useBoldDisplayName = false;
 
     private void setBoldDisplayName(boolean bold) {
         useBoldDisplayName = bold;
