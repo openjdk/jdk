@@ -131,6 +131,7 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
     public List<Filter> getFilters() {
         return Collections.unmodifiableList(filters);
     }
+
     public String getName() {
         return name;
     }
