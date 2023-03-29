@@ -312,11 +312,18 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   if (obj == nullptr) return false;  // slow-path for invalid obj
   const markWord mark = obj->mark();
 
-  if ((mark.is_fast_locked() && current->lock_stack().contains(oop(obj))) ||
-      (mark.has_locker() && current->is_lock_owned((address)mark.locker()))) {
-    // Degenerate notify
-    // fast-locked or stack-locked by caller so by definition the implied waitset is empty.
-    return true;
+  if (UseFastLocking) {
+    if (mark.is_fast_locked() && current->lock_stack().contains(oop(obj))) {
+      // Degenerate notify
+      // fast-locked or stack-locked by caller so by definition the implied waitset is empty.
+      return true;
+    }
+  } else {
+    if (mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+      // Degenerate notify
+      // fast-locked or stack-locked by caller so by definition the implied waitset is empty.
+      return true;
+    }
   }
 
   if (mark.has_monitor()) {
@@ -932,7 +939,7 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
 
 static bool is_lock_owned(Thread* thread, oop obj) {
   assert(UseFastLocking, "only call this with fast-locking enabled");
-  return thread->is_Java_thread() ? reinterpret_cast<JavaThread*>(thread)->lock_stack().contains(obj) : false;
+  return thread->is_Java_thread() ? JavaThread::cast(thread)->lock_stack().contains(obj) : false;
 }
 
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
@@ -1316,7 +1323,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       if (UseFastLocking && inf->is_owner_anonymous() && is_lock_owned(current, object)) {
         inf->set_owner_from_anonymous(current);
         assert(current->is_Java_thread(), "must be Java thread");
-        reinterpret_cast<JavaThread*>(current)->lock_stack().remove(object);
+        JavaThread::cast(current)->lock_stack().remove(object);
       }
       return inf;
     }
@@ -1364,7 +1371,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
         // Success! Return inflated monitor.
         if (own) {
           assert(current->is_Java_thread(), "must be: checked in is_lock_owned()");
-          reinterpret_cast<JavaThread*>(current)->lock_stack().remove(object);
+          JavaThread::cast(current)->lock_stack().remove(object);
         }
         // Once the ObjectMonitor is configured and object is associated
         // with the ObjectMonitor, it is safe to allow async deflation:

@@ -26,20 +26,34 @@
 #include "memory/allocation.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackWatermark.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
 
-LockStack::LockStack() :
-  _offset(in_bytes(JavaThread::lock_stack_base_offset())) {
+LockStack::LockStack(JavaThread* jt) :
+  _offset(in_bytes(JavaThread::lock_stack_base_offset())), _base()
+#ifdef ASSERT
+  , _thread(jt)
+#endif
+{ }
+
+uint32_t LockStack::end_offset() {
+  int offset = in_bytes(JavaThread::lock_stack_base_offset()) + CAPACITY * oopSize;
+  assert(offset > 0, "must be positive offset");
+  return static_cast<uint32_t>(offset);
 }
 
-int LockStack::end_offset() {
-  return in_bytes(JavaThread::lock_stack_base_offset()) + CAPACITY * oopSize;
+static bool is_stack_watermark_processing(JavaThread* thread) {
+  StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
+  return watermark->processing_started() && !watermark->processing_completed();
 }
 
 #ifndef PRODUCT
-void LockStack::validate(const char* msg) const {
+void LockStack::verify(const char* msg) const {
+  assert(is_self() || SafepointSynchronize::is_at_safepoint() || _thread->is_handshake_safe_for(Thread::current()) || _thread->is_suspended() || _thread->is_obj_deopt_suspend() || is_stack_watermark_processing(_thread),
+         "access only thread-local, or when target thread safely holds stil");
   assert(UseFastLocking && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
   int end = to_index(_offset);
   for (int i = 0; i < end; i++) {

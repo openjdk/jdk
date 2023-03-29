@@ -26,10 +26,14 @@
 #define SHARE_RUNTIME_LOCKSTACK_INLINE_HPP
 
 #include "memory/iterator.hpp"
+#include "oops/access.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/lockStack.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/stackWatermark.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 
-inline int LockStack::to_index(int offset) {
+inline int LockStack::to_index(uint32_t offset) {
   return (offset - in_bytes(JavaThread::lock_stack_base_offset())) / oopSize;
 }
 
@@ -37,28 +41,38 @@ inline bool LockStack::can_push() const {
   return to_index(_offset) < CAPACITY;
 }
 
+inline bool LockStack::is_self() const {
+  Thread* thread = Thread::current();
+  if (!thread->is_Java_thread()) {
+    return false;
+  }
+  bool is_self = &JavaThread::cast(thread)->lock_stack() == this;
+  assert(is_self == (_thread == thread), "is_self sanity");
+  return is_self;
+}
+
 inline void LockStack::push(oop o) {
-  validate("pre-push");
+  verify("pre-push");
   assert(oopDesc::is_oop(o), "must be");
   assert(!contains(o), "entries must be unique");
   assert(can_push(), "must have room");
   _base[to_index(_offset)] = o;
   _offset += oopSize;
-  validate("post-push");
+  verify("post-push");
 }
 
 inline oop LockStack::pop() {
-  validate("pre-pop");
+  verify("pre-pop");
   assert(to_index(_offset) > 0, "underflow, probably unbalanced push/pop");
   _offset -= oopSize;
   oop o = _base[to_index(_offset)];
   assert(!contains(o), "entries must be unique");
-  validate("post-pop");
+  verify("post-pop");
   return o;
 }
 
 inline void LockStack::remove(oop o) {
-  validate("pre-remove");
+  verify("pre-remove");
   assert(contains(o), "entry must be present");
   int end = to_index(_offset);
   for (int i = 0; i < end; i++) {
@@ -72,29 +86,33 @@ inline void LockStack::remove(oop o) {
     }
   }
   assert(!contains(o), "entries must be unique: " PTR_FORMAT, p2i(o));
-  validate("post-remove");
+  verify("post-remove");
 }
 
 inline bool LockStack::contains(oop o) const {
-  validate("pre-contains");
+  verify("pre-contains");
+  if (!is_self() && !SafepointSynchronize::is_at_safepoint()) {
+    StackWatermark* watermark = StackWatermarkSet::get(_thread, StackWatermarkKind::gc);
+    watermark->start_processing();
+  }
   int end = to_index(_offset);
   for (int i = end - 1; i >= 0; i--) {
-    if (_base[i] == o) {
-      validate("post-contains");
+    if (NativeAccess<>::oop_load(&_base[i]) == o) {
+      verify("post-contains");
       return true;
     }
   }
-  validate("post-contains");
+  verify("post-contains");
   return false;
 }
 
 inline void LockStack::oops_do(OopClosure* cl) {
-  validate("pre-oops-do");
+  verify("pre-oops-do");
   int end = to_index(_offset);
   for (int i = 0; i < end; i++) {
     cl->do_oop(&_base[i]);
   }
-  validate("post-oops-do");
+  verify("post-oops-do");
 }
 
 #endif // SHARE_RUNTIME_LOCKSTACK_INLINE_HPP

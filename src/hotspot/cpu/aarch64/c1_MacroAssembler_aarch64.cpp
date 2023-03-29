@@ -87,7 +87,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   } else {
     Label done;
     // and mark it as unlocked
-     orr(hdr, hdr, markWord::unlocked_value);
+    orr(hdr, hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
     str(hdr, Address(disp_hdr, 0));
     // test if object header is still the same (i.e. unlocked), and if so, store the

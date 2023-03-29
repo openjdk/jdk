@@ -39,20 +39,24 @@ private:
   // The offset of the next element, in bytes, relative to the JavaThread structure.
   // We do this instead of a simple index into the array because this allows for
   // efficient addressing in generated code.
-  int _offset;
+  uint32_t _offset;
   oop _base[CAPACITY];
+#ifdef ASSERT
+  JavaThread* const _thread;
+#endif
 
-  void validate(const char* msg) const PRODUCT_RETURN;
+  bool is_self() const;
+  void verify(const char* msg) const PRODUCT_RETURN;
 
-  static inline int to_index(int offset);
+  static inline int to_index(uint32_t offset);
 
 public:
   static ByteSize offset_offset() { return byte_offset_of(LockStack, _offset); }
   static ByteSize base_offset()   { return byte_offset_of(LockStack, _base); }
 
-  LockStack();
+  LockStack(JavaThread* jt);
 
-  static int end_offset();
+  static uint32_t end_offset();
   inline bool can_push() const;
   inline void push(oop o);
   inline oop pop();

@@ -6212,9 +6212,10 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
   }
 }
 
-// Attempt to fast-lock an object. Fall-through on success, branch to slow label
-// on failure.
-// Registers:
+// Implements fast-locking.
+// Branches to slow upon failure to lock the object, with ZF cleared.
+// Falls through upon success with unspecified ZF.
+//
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - t1, t2: temporary registers, will be destroyed
@@ -6224,8 +6225,8 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
 
   // Check if we would have space on lock-stack for the object.
   ldrw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
-  cmpw(t1, (unsigned)LockStack::end_offset());
-  br(Assembler::GE, slow);
+  cmpw(t1, (unsigned)LockStack::end_offset() - 1);
+  br(Assembler::GT, slow);
 
   // Load (object->mark() | 1) into hdr
   orr(hdr, hdr, markWord::unlocked_value);
@@ -6238,11 +6239,23 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
 
   // After successful lock, push object on lock-stack
   ldrw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
+  // Strictly speaking we should emit an IN_NATIVE store. However, non
+  // of the GCs currently need any special treatment, and some currently
+  // would not correctly handle IN_NATIVE store and the possibly non-null
+  // stale previous value.
+  // access_store_at(T_OBJECT, IN_NATIVE, Address(rthread, t1), obj, noreg, noreg, noreg);
   str(obj, Address(rthread, t1));
   addw(t1, t1, oopSize);
   strw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
 }
 
+// Implements fast-unlocking.
+// Branches to slow upon failure, with ZF cleared.
+// Falls through upon success, with unspecified ZF.
+//
+// - obj: the object to be unlocked
+// - hdr: the (pre-loaded) header of the object
+// - t1, t2: temporary registers
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(UseFastLocking, "only used with fast-locking");
   assert_different_registers(obj, hdr, t1, t2);

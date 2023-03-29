@@ -1420,6 +1420,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
 }
 
 JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
+  assert(SafepointSynchronize::is_at_safepoint(), "not safe outside of safepoint");
   assert(UseFastLocking, "Only with fast-locking");
   for (JavaThread* q : *t_list) {
     if (q->lock_stack().contains(obj)) {
@@ -1430,7 +1431,6 @@ JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
 }
 
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  assert(SafepointSynchronize::is_at_safepoint(), "not safe outside of safepoint");
   if (UseFastLocking) {
     if (monitor->is_owner_anonymous()) {
       return owning_thread_from_object(t_list, monitor->object());

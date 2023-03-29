@@ -490,7 +490,7 @@ JavaThread::JavaThread() :
 
   _SleepEvent(ParkEvent::Allocate(this)),
 
-  _lock_stack() {
+  _lock_stack(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
