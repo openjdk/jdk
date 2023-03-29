@@ -806,7 +806,7 @@ public abstract sealed class VarHandle implements Constable
      * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
-     * witness value was not the same as the {@code expectedValue}.
+     * <em>witness value</em> was not the same as the {@code expectedValue}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
      * @throws WrongMethodTypeException if the access mode type does not
@@ -839,7 +839,7 @@ public abstract sealed class VarHandle implements Constable
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
-     * @return the signature-polymorphic result that is the witness value, which
+     * @return the signature-polymorphic result that is the <em>witness value</em>, which
      * will be the same as the {@code expectedValue} if successful
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
@@ -874,7 +874,7 @@ public abstract sealed class VarHandle implements Constable
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
-     * @return the signature-polymorphic result that is the witness value, which
+     * @return the signature-polymorphic result that is the <em>witness value</em>, which
      * will be the same as the {@code expectedValue} if successful
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
@@ -909,7 +909,7 @@ public abstract sealed class VarHandle implements Constable
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
-     * @return the signature-polymorphic result that is the witness value, which
+     * @return the signature-polymorphic result that is the <em>witness value</em>, which
      * will be the same as the {@code expectedValue} if successful
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
@@ -936,7 +936,7 @@ public abstract sealed class VarHandle implements Constable
      * {@link #get}.
      *
      * <p>This operation may fail spuriously (typically, due to memory
-     * contention) even if the witness value does match the expected value.
+     * contention) even if the <em>witness value</em> does match the expected value.
      *
      * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
@@ -949,7 +949,7 @@ public abstract sealed class VarHandle implements Constable
      * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
-     * witness value was not the same as the {@code expectedValue} or if this
+     * <em>witness value</em> was not the same as the {@code expectedValue} or if this
      * operation spuriously failed.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
@@ -973,7 +973,7 @@ public abstract sealed class VarHandle implements Constable
      * {@link #getVolatile}.
      *
      * <p>This operation may fail spuriously (typically, due to memory
-     * contention) even if the witness value does match the expected value.
+     * contention) even if the <em>witness value</em> does match the expected value.
      *
      * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
@@ -986,7 +986,7 @@ public abstract sealed class VarHandle implements Constable
      * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
-     * witness value was not the same as the {@code expectedValue} or if this
+     * <em>witness value</em> was not the same as the {@code expectedValue} or if this
      * operation spuriously failed.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
@@ -1010,7 +1010,7 @@ public abstract sealed class VarHandle implements Constable
      * {@link #getAcquire}.
      *
      * <p>This operation may fail spuriously (typically, due to memory
-     * contention) even if the witness value does match the expected value.
+     * contention) even if the <em>witness value</em> does match the expected value.
      *
      * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
@@ -1024,7 +1024,7 @@ public abstract sealed class VarHandle implements Constable
      * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
-     * witness value was not the same as the {@code expectedValue} or if this
+     * <em>witness value</em> was not the same as the {@code expectedValue} or if this
      * operation spuriously failed.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
@@ -1048,7 +1048,7 @@ public abstract sealed class VarHandle implements Constable
      * {@link #get}.
      *
      * <p>This operation may fail spuriously (typically, due to memory
-     * contention) even if the witness value does match the expected value.
+     * contention) even if the <em>witness value</em> does match the expected value.
      *
      * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
@@ -1062,7 +1062,7 @@ public abstract sealed class VarHandle implements Constable
      * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
-     * witness value was not the same as the {@code expectedValue} or if this
+     * <em>witness value</em> was not the same as the {@code expectedValue} or if this
      * operation spuriously failed.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.

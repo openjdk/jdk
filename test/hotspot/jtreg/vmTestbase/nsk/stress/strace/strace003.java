@@ -47,10 +47,6 @@
 
 package nsk.stress.strace;
 
-import nsk.share.ArgumentParser;
-import nsk.share.Log;
-
-import java.io.PrintStream;
 
 /**
  * The test check up <code>java.lang.Thread.getStackTrace()</code> method for many threads,
@@ -58,60 +54,24 @@ import java.io.PrintStream;
  * <p>
  * <p>The test creates <code>THRD_COUNT</code> instances of <code>strace003Thread</code>
  * class, tries to get their stack traces and checks up that returned array contains
- * correct stack frames. Each stack frame must be corresponded to one of the following
- * methods defined by the <code>EXPECTED_METHODS</code> array.</p>
- * <p>These checking are performed <code>REPEAT_COUNT</code> times.</p>
+ * correct stack frames. </p>
  */
-public class strace003 {
+public class strace003 extends StraceBase {
 
     static final int DEPTH = 100;
     static final int THRD_COUNT = 100;
     static final int REPEAT_COUNT = 10;
-    static final String[] EXPECTED_METHODS = {
-            "java.lang.System.arraycopy",
-            "java.lang.Object.wait",
-            "java.lang.Object.wait0",
-            "java.lang.System$2.headStackableScope",
-            "java.lang.Thread.headStackableScopes",
-            "java.lang.Thread.exit",
-            "java.lang.Thread.yield",
-            "java.lang.Thread.yield0",
-            "java.lang.Thread.clearReferences",
-            "java.lang.Thread.currentCarrierThread",
-            "java.lang.Thread.currentThread",
-            "java.lang.Thread.threadContainer",
-            "jdk.internal.misc.Blocker.begin",
-            "jdk.internal.misc.Blocker.currentCarrierThread",
-            "jdk.internal.misc.Blocker.end",
-            "jdk.internal.vm.StackableScope.head",
-            "jdk.internal.vm.StackableScope.popAll",
-            "nsk.stress.strace.strace003Thread.run",
-            "nsk.stress.strace.strace003Thread.recursiveMethod"
-    };
-
 
     static volatile boolean isLocked = false;
-    static PrintStream out;
-    static long waitTime = 2;
 
     static Object waitStart = new Object();
 
     static strace003Thread[] threads;
     static StackTraceElement[][] snapshots = new StackTraceElement[THRD_COUNT][];
-    static Log log;
 
     volatile int achivedCount = 0;
 
     public static void main(String[] args) {
-        out = System.out;
-        int exitCode = run(args);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String[] args) {
-        ArgumentParser argHandler = new ArgumentParser(args);
-        log = new Log(out, argHandler);
-        waitTime = argHandler.getWaitTime() * 60000;
 
         strace003 test = new strace003();
         boolean res = true;
@@ -126,11 +86,9 @@ public class strace003 {
         }
 
         if (!res) {
-            complain("***>>>Test failed<<<***");
-            return 2;
+            new RuntimeException("***>>>Test failed<<<***");
         }
 
-        return 0;
     }
 
     void startThreads() {
@@ -229,15 +187,6 @@ public class strace003 {
         return res;
     }
 
-    boolean checkElement(StackTraceElement element) {
-        String name = element.getClassName() + "." + element.getMethodName();
-        for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (name.startsWith(EXPECTED_METHODS[i]))
-                return true;
-        }
-        return false;
-    }
-
     void finishThreads() {
         try {
             for (int i = 0; i < threads.length; i++) {
@@ -248,14 +197,6 @@ public class strace003 {
             complain("" + e);
         }
         isLocked = false;
-    }
-
-    static void display(String message) {
-        log.display(message);
-    }
-
-    static void complain(String message) {
-        log.complain(message);
     }
 
 }

@@ -53,7 +53,7 @@ public class TransportImpl implements Transport {
     // -- Debugging infrastructure --
 
     private static final Logger debug =
-            Utils.getWebSocketLogger("[Transport]"::toString, Utils.DEBUG_WS);
+            Utils.getWebSocketLogger("[Transport]"::toString);
 
     /* Used for correlating enters to and exists from a method */
     private final AtomicLong counter = new AtomicLong();

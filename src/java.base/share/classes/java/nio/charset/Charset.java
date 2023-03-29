@@ -38,7 +38,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
@@ -667,7 +666,7 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
-    private Set<String> aliasSet = null;
+    private Set<String> aliasSet;
 
     /**
      * Initializes a new charset with the given canonical name and alias
@@ -714,14 +713,12 @@ public abstract class Charset
      * @return  An immutable set of this charset's aliases
      */
     public final Set<String> aliases() {
-        if (aliasSet != null)
-            return aliasSet;
-        int n = aliases.length;
-        HashSet<String> hs = HashSet.newHashSet(n);
-        for (int i = 0; i < n; i++)
-            hs.add(aliases[i]);
-        aliasSet = Collections.unmodifiableSet(hs);
-        return aliasSet;
+        Set<String> set = this.aliasSet;
+        if (set == null) {
+            set = Set.of(aliases);
+            this.aliasSet = set;
+        }
+        return set;
     }
 
     /**

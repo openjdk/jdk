@@ -73,7 +73,6 @@ public:
 
   STWGCTimer* timer();
   G1FullGCTracer* tracer();
-  G1HeapTransition* heap_transition();
   size_t region_compaction_threshold() const;
 };
 

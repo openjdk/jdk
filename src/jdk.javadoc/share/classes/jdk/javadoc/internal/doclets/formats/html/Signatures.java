@@ -135,10 +135,9 @@ public class Signatures {
                 nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
             }
             HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement);
-            linkInfo.showTypeParameterAnnotations = true;
-            //Let's not link to ourselves in the signature.
-            linkInfo.linkToSelf = false;
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement)
+                    .linkToSelf(false)  // Let's not link to ourselves in the signature
+                    .showTypeParameterAnnotations(true);
             nameSpan.add(writer.getTypeParameterLinks(linkInfo));
             content.add(nameSpan);
 
