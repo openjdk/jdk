@@ -4447,7 +4447,7 @@ void PhaseIdealLoop::build_and_optimize() {
     assert(C->unique() == unique, "non-optimize _mode made Nodes? ? ?");
     return;
   }
-  if (VerifyLoopOptimizations) verify();
+  DEBUG_ONLY( if(VerifyLoopOptimizations) { verify(); } );
   if (TraceLoopOpts && C->has_loops()) {
     _ltree_root->dump();
   }
@@ -4519,7 +4519,7 @@ void PhaseIdealLoop::build_and_optimize() {
   if (!C->major_progress() && SplitIfBlocks && do_split_ifs) {
     visited.clear();
     split_if_with_blocks( visited, nstack);
-    NOT_PRODUCT( if( VerifyLoopOptimizations ) verify(); );
+    DEBUG_ONLY( if(VerifyLoopOptimizations) { verify(); } );
   }
 
   if (!C->major_progress() && do_expensive_nodes && process_expensive_nodes()) {
@@ -4642,7 +4642,9 @@ volatile int PhaseIdealLoop::_long_loop_counted_loops=0; // Number of long loops
 void PhaseIdealLoop::print_statistics() {
   tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d, long loops=%d/%d/%d", _loop_invokes, _loop_work, _long_loop_counted_loops, _long_loop_nests, _long_loop_candidates);
 }
+#endif
 
+#ifdef ASSERT
 //------------------------------verify-----------------------------------------
 // Build a verify-only PhaseIdealLoop, and see that it agrees with "this".
 void PhaseIdealLoop::verify() const {
@@ -4813,7 +4815,6 @@ bool PhaseIdealLoop::verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) c
   }
 }
 
-//------------------------------verify_tree------------------------------------
 void IdealLoopTree::collect_children(GrowableArray<IdealLoopTree*> &children) const {
   children.clear();
   IdealLoopTree* child = _child;
