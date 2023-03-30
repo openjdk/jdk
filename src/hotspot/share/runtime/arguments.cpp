@@ -2425,7 +2425,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         jio_snprintf(options, length, "%s", tail);
         AgentList::add("instrument", options, false);
         FREE_C_HEAP_ARRAY(char, options);
- 
+
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
