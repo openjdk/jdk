@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +231,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
       const address end_payload = start_payload + candidate->size();
       const address end_payload_plus_fudge = end_payload + fudge;
       if (addr >= start_block && addr < end_payload_plus_fudge) {
-        // We found a life block the pointer is pointing into or very nearby.
+        // We found a block the pointer is pointing into, or almost into.
         // If its a life block, we have our info. If its a dead block, we still
         // may be within the borders of a larger life block we have not found yet -
         // continue search.
