@@ -2341,6 +2341,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         AgentList::add_xrun(name, options, false);
+        FREE_C_HEAP_ARRAY(char, name);
+        FREE_C_HEAP_ARRAY(char, options);
       }
     } else if (match_option(option, "--add-reads=", &tail)) {
       if (!create_numbered_module_property("jdk.module.addreads", tail, addreads_count++)) {
@@ -2411,6 +2413,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
 #endif // !INCLUDE_JVMTI
         AgentList::add(name, options, is_absolute_path);
+        os::free(name);
+        os::free(options);
       }
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
