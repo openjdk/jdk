@@ -3049,8 +3049,6 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
-  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
-         "Doesn't need explicit null check");
   if (UseCompressedClassPointers) {
     lwz(dst, oopDesc::klass_offset_in_bytes(), src);
     // Attention: no null check here!

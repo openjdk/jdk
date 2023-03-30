@@ -4315,8 +4315,6 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
-  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
-         "Doesn't need explicit null check");
   if (UseCompressedClassPointers) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst);

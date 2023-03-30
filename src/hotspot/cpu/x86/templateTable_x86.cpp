@@ -4053,8 +4053,6 @@ void TemplateTable::anewarray() {
 }
 
 void TemplateTable::arraylength() {
-  assert(arrayOopDesc::length_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
-         "Doesn't need explicit null check");
   transition(atos, itos);
   __ movl(rax, Address(rax, arrayOopDesc::length_offset_in_bytes()));
 }
