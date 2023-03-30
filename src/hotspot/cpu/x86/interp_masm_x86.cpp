@@ -1356,7 +1356,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 #endif
       // Handle unstructured locking.
       Register tmp = swap_reg;
-      movl(tmp, Address(thread, JavaThread::lock_stack_offset_offset()));
+      movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
       cmpptr(obj_reg, Address(thread, tmp, Address::times_1,  -oopSize));
       jcc(Assembler::notEqual, slow_case);
       // Try to swing header from locked to unlocked.

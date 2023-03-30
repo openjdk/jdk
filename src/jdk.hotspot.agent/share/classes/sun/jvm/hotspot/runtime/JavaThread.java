@@ -44,7 +44,7 @@ public class JavaThread extends Thread {
   private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.runtime.JavaThread.DEBUG") != null;
 
   private static long          threadObjFieldOffset;
-  private static long          lockStackOffsetOffset;
+  private static long          lockStackTopOffset;
   private static long          lockStackBaseOffset;
   private static AddressField  anchorField;
   private static AddressField  lastJavaSPField;
@@ -102,7 +102,7 @@ public class JavaThread extends Thread {
     terminatedField   = type.getCIntegerField("_terminated");
     activeHandlesField = type.getAddressField("_active_handles");
 
-    lockStackOffsetOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_offset").getOffset();
+    lockStackTopOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_top").getOffset();
     lockStackBaseOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_base[0]").getOffset();
     oopPtrSize = VM.getVM().getAddressSize();
 
@@ -404,7 +404,7 @@ public class JavaThread extends Thread {
 
   public boolean isLockOwned(OopHandle obj) {
     long current = lockStackBaseOffset;
-    long end = addr.getJIntAt(lockStackOffsetOffset);
+    long end = addr.getJIntAt(lockStackTopOffset);
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(current <= end, "current stack offset must be above base offset");
     }

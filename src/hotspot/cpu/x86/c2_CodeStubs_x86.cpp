@@ -86,9 +86,9 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   Register mon = monitor();
   Register t = tmp();
   __ movptr(Address(mon, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), r15_thread);
-  __ subl(Address(r15_thread, JavaThread::lock_stack_offset_offset()), oopSize);
+  __ subl(Address(r15_thread, JavaThread::lock_stack_top_offset()), oopSize);
 #ifdef ASSERT
-  __ movl(t, Address(r15_thread, JavaThread::lock_stack_offset_offset()));
+  __ movl(t, Address(r15_thread, JavaThread::lock_stack_top_offset()));
   __ movptr(Address(r15_thread, t), 0);
 #endif
   __ jmp(continuation());

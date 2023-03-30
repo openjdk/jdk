@@ -32,12 +32,12 @@
 #include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
 
-const size_t LockStack::lock_stack_offset =        in_bytes(JavaThread::lock_stack_offset());
-const size_t LockStack::lock_stack_offset_offset = in_bytes(JavaThread::lock_stack_offset_offset());
-const size_t LockStack::lock_stack_base_offset =   in_bytes(JavaThread::lock_stack_base_offset());
+const size_t LockStack::lock_stack_offset =      in_bytes(JavaThread::lock_stack_offset());
+const size_t LockStack::lock_stack_top_offset =  in_bytes(JavaThread::lock_stack_top_offset());
+const size_t LockStack::lock_stack_base_offset = in_bytes(JavaThread::lock_stack_base_offset());
 
 LockStack::LockStack(JavaThread* jt) :
-  _offset(lock_stack_base_offset), _base()
+  _top(lock_stack_base_offset), _base()
 {
 #ifdef ASSERT
   for (int i = 0; i < CAPACITY; i++) {
@@ -73,9 +73,9 @@ void LockStack::verify(const char* msg) const {
 
 void LockStack::verify_no_thread(const char* msg) const {
   assert(UseFastLocking && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
-  assert((_offset <  end_offset()), "lockstack overflow: _offset %d end_offset %d", _offset, end_offset());
-  assert((_offset >= start_offset()), "lockstack underflow: _offset %d end_offset %d", _offset, start_offset());
-  int top = to_index(_offset);
+  assert((_top <  end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
+  assert((_top >= start_offset()), "lockstack underflow: _topt %d end_offset %d", _top, start_offset());
+  int top = to_index(_top);
   for (int i = 0; i < top; i++) {
     assert(_base[i] != nullptr, "no zapped before top");
     for (int j = i + 1; j < top; j++) {

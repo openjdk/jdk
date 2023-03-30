@@ -9692,7 +9692,7 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   // Note: we subtract 1 from the end-offset so that we can do a 'greater' comparison, instead
   // of 'greaterEqual' below, which readily clears the ZF. This makes C2 code a little simpler and
   // avoids one branch.
-  cmpl(Address(thread, JavaThread::lock_stack_offset_offset()), LockStack::end_offset() - 1);
+  cmpl(Address(thread, JavaThread::lock_stack_top_offset()), LockStack::end_offset() - 1);
   jcc(Assembler::greater, slow);
 
   // Now we attempt to take the fast-lock.
@@ -9706,10 +9706,10 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   jcc(Assembler::notEqual, slow);
 
   // If successful, push object to lock-stack.
-  movl(tmp, Address(thread, JavaThread::lock_stack_offset_offset()));
+  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
   movptr(Address(thread, tmp), obj);
   incrementl(tmp, oopSize);
-  movl(Address(thread, JavaThread::lock_stack_offset_offset()), tmp);
+  movl(Address(thread, JavaThread::lock_stack_top_offset()), tmp);
 }
 
 // Implements fast-unlocking.
@@ -9736,9 +9736,9 @@ void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, 
   const Register thread = rax;
   get_thread(thread);
 #endif
-  subl(Address(thread, JavaThread::lock_stack_offset_offset()), oopSize);
+  subl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
 #ifdef ASSERT
-  movl(tmp, Address(thread, JavaThread::lock_stack_offset_offset()));
+  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
   movptr(Address(thread, tmp), 0);
 #endif
 }

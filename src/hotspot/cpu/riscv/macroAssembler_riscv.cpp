@@ -4494,7 +4494,7 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Regist
   assert_different_registers(obj, hdr, tmp1, tmp2);
 
   // Check if we would have space on lock-stack for the object.
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
   mv(tmp2, (unsigned)LockStack::end_offset());
   bge(tmp1, tmp2, slow, /* is_far */ true);
 
@@ -4509,11 +4509,11 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Regist
   bind(success);
 
   // After successful lock, push object on lock-stack
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
   add(tmp2, xthread, tmp1);
   sd(obj, Address(tmp2, 0));
   addw(tmp1, tmp1, oopSize);
-  sw(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
+  sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
 }
 
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
@@ -4533,7 +4533,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Regi
   bind(success);
 
   // After successful unlock, pop object from lock-stack
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
+  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
   subw(tmp1, tmp1, oopSize);
-  sw(tmp1, Address(xthread, JavaThread::lock_stack_offset_offset()));
+  sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
 }

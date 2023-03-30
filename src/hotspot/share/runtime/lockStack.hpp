@@ -41,13 +41,13 @@ private:
   // but this is currently not the case because we're using offset_of() which is non-constexpr,
   // GCC would warn about non-standard-layout types if we were using offsetof() (which *is* constexpr).
   static const size_t lock_stack_offset;
-  static const size_t lock_stack_offset_offset;
+  static const size_t lock_stack_top_offset;
   static const size_t lock_stack_base_offset;
 
   // The offset of the next element, in bytes, relative to the JavaThread structure.
   // We do this instead of a simple index into the array because this allows for
   // efficient addressing in generated code.
-  uint32_t _offset;
+  uint32_t _top;
   oop _base[CAPACITY];
 
   inline JavaThread* get_thread() const;
@@ -59,8 +59,8 @@ private:
   static inline int to_index(uint32_t offset);
 
 public:
-  static ByteSize offset_offset() { return byte_offset_of(LockStack, _offset); }
-  static ByteSize base_offset()   { return byte_offset_of(LockStack, _base); }
+  static ByteSize top_offset()  { return byte_offset_of(LockStack, _top); }
+  static ByteSize base_offset() { return byte_offset_of(LockStack, _base); }
 
   LockStack(JavaThread* jt);
 

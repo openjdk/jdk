@@ -43,7 +43,7 @@ JavaThread* LockStack::get_thread() const {
 }
 
 inline bool LockStack::can_push() const {
-  return to_index(_offset) < CAPACITY;
+  return to_index(_top) < CAPACITY;
 }
 
 inline bool LockStack::is_self() const {
@@ -61,19 +61,19 @@ inline void LockStack::push(oop o) {
   assert(oopDesc::is_oop(o), "must be");
   assert(!contains(o), "entries must be unique");
   assert(can_push(), "must have room");
-  assert(_base[to_index(_offset)] == nullptr, "expect zapped entry");
-  _base[to_index(_offset)] = o;
-  _offset += oopSize;
+  assert(_base[to_index(_top)] == nullptr, "expect zapped entry");
+  _base[to_index(_top)] = o;
+  _top += oopSize;
   verify("post-push");
 }
 
 inline oop LockStack::pop() {
   verify("pre-pop");
-  assert(to_index(_offset) > 0, "underflow, probably unbalanced push/pop");
-  _offset -= oopSize;
-  oop o = _base[to_index(_offset)];
+  assert(to_index(_top) > 0, "underflow, probably unbalanced push/pop");
+  _top -= oopSize;
+  oop o = _base[to_index(_top)];
 #ifdef ASSERT
-  _base[to_index(_offset)] = nullptr;
+  _base[to_index(_top)] = nullptr;
 #endif
   assert(!contains(o), "entries must be unique");
   verify("post-pop");
@@ -83,16 +83,16 @@ inline oop LockStack::pop() {
 inline void LockStack::remove(oop o) {
   verify("pre-remove");
   assert(contains(o), "entry must be present");
-  int end = to_index(_offset);
+  int end = to_index(_top);
   for (int i = 0; i < end; i++) {
     if (_base[i] == o) {
       int last = end - 1;
       for (; i < last; i++) {
         _base[i] = _base[i + 1];
       }
-      _offset -= oopSize;
+      _top -= oopSize;
 #ifdef ASSERT
-      _base[to_index(_offset)] = nullptr;
+      _base[to_index(_top)] = nullptr;
 #endif
       break;
     }
@@ -109,7 +109,7 @@ inline bool LockStack::contains(oop o) const {
       watermark->start_processing();
     }
   }
-  int end = to_index(_offset);
+  int end = to_index(_top);
   for (int i = end - 1; i >= 0; i--) {
     if (NativeAccess<>::oop_load(&_base[i]) == o) {
       verify("post-contains");
@@ -122,7 +122,7 @@ inline bool LockStack::contains(oop o) const {
 
 inline void LockStack::oops_do(OopClosure* cl) {
   verify_no_thread("pre-oops-do");
-  int end = to_index(_offset);
+  int end = to_index(_top);
   for (int i = 0; i < end; i++) {
     cl->do_oop(&_base[i]);
   }
