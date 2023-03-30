@@ -4859,8 +4859,8 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
     if (j < children_verify.length()) {
       child_verify = children_verify.at(j);
     }
+    assert(child->_head != nullptr || child_verify->_head != nullptr, "must find at least one");
     if (child != nullptr && child_verify != nullptr && child->_head != child_verify->_head) {
-      assert(child->_head->_idx != child_verify->_head->_idx, "is implied");
       // We found two non-equal children. Select the smaller one.
       if (child->_head->_idx < child_verify->_head->_idx) {
         child_verify = nullptr;
@@ -4883,6 +4883,9 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
         // Irreducible loops can pick a different header (one of its entries).
       } else if (child_verify->_head->as_Region()->is_in_infinite_subgraph()) {
         // Infinite loops do not get attached to the loop-tree on their first visit.
+        // "this" runs before "loop_verify". It is thus possible that we find the
+        // infinite loop only for "child_verify". Only finding it with "child" would
+        // mean that we lost it, which is not ok.
       } else {
         tty->print_cr("Verify has loop that we do not have");
         child_verify->dump();
