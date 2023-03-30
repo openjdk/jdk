@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,18 +50,19 @@ public class SPI {
                         out.println(line);
                     } else {
                         charsets.values()
-                                .stream()
-                                .filter(cs -> cs.pkgName.equals("sun.nio.cs.ext") &&
-                                              !cs.isInternal &&
-                                              (cs.os == null || cs.os.equals(os)))
-                                .forEach( cs -> {
-                            out.printf("        charset(\"%s\", \"%s\",%n", cs.csName, cs.clzName);
-                            out.printf("                new String[] {%n");
-                            for (String alias : cs.aliases) {
-                                out.printf("                    \"%s\",%n", alias);
-                            }
-                            out.printf("                });%n%n");
-                        });
+                            .stream()
+                            .filter(cs -> cs.pkgName.equals("sun.nio.cs.ext") &&
+                                          !cs.isInternal &&
+                                          (cs.os == null || cs.os.equals(os)))
+                            .forEach( cs -> {
+                                out.printf("        charset(\"%s\", \"%s\",%n", cs.csName, cs.clzName);
+                                out.printf("                new String[] {%n");
+                                for (String alias : cs.aliases) {
+                                    out.printf("                    \"%s\",%n",
+                                            alias);
+                                }
+                                out.printf("                });%n%n");
+                            });
                     }
                 }
             } else if (type.startsWith("stdcs")) {    // StandardCharsets.java
@@ -93,8 +94,15 @@ public class SPI {
                                  .filter(cs -> cs.pkgName.equals("sun.nio.cs"))
                                  .forEach( cs -> {
                              if (cs.aliases == null || cs.aliases.length == 0) {
-                                 out.printf("    static String[] aliases_%s() { return null; }%n%n",
-                                            cs.clzName);
+                                 if (cs.csName.equals("GB18030")) {
+                                     out.printf("    static String[] aliases_GB18030() { return new String[] {%n");
+                                     out.printf("            GB18030.IS_2000 ? \"gb18030-2000\" : \"gb18030-2022\"%n");
+                                     out.printf("        };%n");
+                                     out.printf("    }%n%n");
+                                 } else {
+                                     out.printf("    static String[] aliases_%s() { return null; }%n%n",
+                                             cs.clzName);
+                                 }
                              } else {
                                  boolean methodEnd = true;
                                  // non-final for SJIS and MS932 to support sun.nio.cs.map

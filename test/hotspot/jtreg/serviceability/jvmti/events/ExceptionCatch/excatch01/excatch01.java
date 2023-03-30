@@ -37,7 +37,6 @@
  * COMMENTS
  *     Ported from JVMDI.
  *
- * @requires vm.continuations
  * @library /test/lib
  * @compile excatch01a.jasm
  * @compile --enable-preview -source ${jdk.version} excatch01.java

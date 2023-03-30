@@ -41,6 +41,7 @@
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
+#include "jfr/periodic/jfrNativeMemoryEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
@@ -63,7 +64,6 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
-#include "services/memJfrReporter.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -643,9 +643,9 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 }
 
 TRACE_REQUEST_FUNC(NativeMemoryUsage) {
-  MemJFRReporter::send_type_events();
+  JfrNativeMemoryEvent::send_type_events(timestamp());
 }
 
 TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
-  MemJFRReporter::send_total_event();
+  JfrNativeMemoryEvent::send_total_event(timestamp());
 }

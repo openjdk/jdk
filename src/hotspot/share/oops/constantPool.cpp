@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/classPrelinker.hpp"
@@ -294,8 +295,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
         int index = object_to_cp_index(i);
         if (tag_at(index).is_string()) {
           assert(java_lang_String::is_instance(obj), "must be");
-          typeArrayOop value = java_lang_String::value_no_keepalive(obj);
-          if (!HeapShared::is_too_large_to_archive(value)) {
+          if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
             rr->obj_at_put(i, obj);
           }
         }
@@ -311,7 +311,8 @@ void ConstantPool::add_dumped_interned_strings() {
     int rr_len = rr->length();
     for (int i = 0; i < rr_len; i++) {
       oop p = rr->obj_at(i);
-      if (java_lang_String::is_instance(p)) {
+      if (java_lang_String::is_instance(p) &&
+          !ArchiveHeapWriter::is_string_too_large_to_archive(p)) {
         HeapShared::add_to_dumped_interned_strings(p);
       }
     }
@@ -336,7 +337,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (ArchiveHeapLoader::is_fully_available() &&
+    if (ArchiveHeapLoader::is_in_use() &&
         _cache->archived_references() != nullptr) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -635,24 +636,38 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
 
 bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->has_appendix();
+  if (is_invokedynamic_index(which)) {
+    int indy_index = decode_invokedynamic_index(which);
+    return cpool->resolved_indy_entry_at(indy_index)->has_appendix();
+  } else {
+    int cache_index = decode_cpcache_index(which, true);
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->has_appendix();
+  }
 }
 
 oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->appendix_if_resolved(cpool);
+  if (is_invokedynamic_index(which)) {
+    int indy_index = decode_invokedynamic_index(which);
+    return cpool->resolved_reference_from_indy(indy_index);
+  } else {
+    int cache_index = decode_cpcache_index(which, true);
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->appendix_if_resolved(cpool);
+  }
 }
 
 
 bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->has_local_signature();
+  if (is_invokedynamic_index(which)) {
+    return cpool->resolved_indy_entry_at(cache_index)->has_local_signature();
+  } else {
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->has_local_signature();
+  }
 }
 
 Symbol* ConstantPool::impl_name_ref_at(int which, bool uncached) {
@@ -670,7 +685,7 @@ int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
   int i = which;
   if (!uncached && cache() != nullptr) {
     if (ConstantPool::is_invokedynamic_index(which)) {
-      // Invokedynamic index is index into the constant pool cache
+      // Invokedynamic index is index into the resolved indy array in the constant pool cache
       int pool_index = invokedynamic_bootstrap_ref_index_at(which);
       pool_index = bootstrap_name_and_type_ref_index_at(pool_index);
       assert(tag_at(pool_index).is_name_and_type(), "");

@@ -50,7 +50,6 @@
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1InitLogger.hpp"
 #include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
@@ -194,80 +193,56 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size,
   return res;
 }
 
-HeapWord*
-G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
-                                                           uint num_regions,
-                                                           size_t word_size) {
-  assert(first_hr != NULL, "pre-condition");
-  assert(is_humongous(word_size), "word_size should be humongous");
-  assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
-
-  // Index of last region in the series.
-  uint first = first_hr->hrm_index();
-  uint last = first + num_regions - 1;
-
-  // We need to initialize the region(s) we just discovered. This is
-  // a bit tricky given that it can happen concurrently with
-  // refinement threads refining cards on these regions and
-  // potentially wanting to refine the BOT as they are scanning
-  // those cards (this can happen shortly after a cleanup; see CR
-  // 6991377). So we have to set up the region(s) carefully and in
-  // a specific order.
-
-  // The word size sum of all the regions we will allocate.
-  size_t word_size_sum = (size_t) num_regions * HeapRegion::GrainWords;
+void G1CollectedHeap::set_humongous_metadata(HeapRegion* first_hr,
+                                             uint num_regions,
+                                             size_t word_size,
+                                             bool update_remsets) {
+  // Calculate the new top of the humongous object.
+  HeapWord* obj_top = first_hr->bottom() + word_size;
+  // The word size sum of all the regions used
+  size_t word_size_sum = num_regions * HeapRegion::GrainWords;
   assert(word_size <= word_size_sum, "sanity");
-
-  // The passed in hr will be the "starts humongous" region. The header
-  // of the new object will be placed at the bottom of this region.
-  HeapWord* new_obj = first_hr->bottom();
-  // This will be the new top of the new object.
-  HeapWord* obj_top = new_obj + word_size;
-
-  // First, we need to zero the header of the space that we will be
-  // allocating. When we update top further down, some refinement
-  // threads might try to scan the region. By zeroing the header we
-  // ensure that any thread that will try to scan the region will
-  // come across the zero klass word and bail out.
-  //
-  // NOTE: It would not have been correct to have used
-  // CollectedHeap::fill_with_object() and make the space look like
-  // an int array. The thread that is doing the allocation will
-  // later update the object header to a potentially different array
-  // type and, for a very short period of time, the klass and length
-  // fields will be inconsistent. This could cause a refinement
-  // thread to calculate the object size incorrectly.
-  Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
-
-  // Next, pad out the unused tail of the last region with filler
-  // objects, for improved usage accounting.
-  // How many words we use for filler objects.
-  size_t word_fill_size = word_size_sum - word_size;
 
   // How many words memory we "waste" which cannot hold a filler object.
   size_t words_not_fillable = 0;
 
-  if (word_fill_size >= min_fill_size()) {
-    fill_with_objects(obj_top, word_fill_size);
-  } else if (word_fill_size > 0) {
+  // Pad out the unused tail of the last region with filler
+  // objects, for improved usage accounting.
+
+  // How many words can we use for filler objects.
+  size_t words_fillable = word_size_sum - word_size;
+
+  if (words_fillable >= G1CollectedHeap::min_fill_size()) {
+    G1CollectedHeap::fill_with_objects(obj_top, words_fillable);
+  } else {
     // We have space to fill, but we cannot fit an object there.
-    words_not_fillable = word_fill_size;
-    word_fill_size = 0;
+    words_not_fillable = words_fillable;
+    words_fillable = 0;
   }
 
   // We will set up the first region as "starts humongous". This
   // will also update the BOT covering all the regions to reflect
   // that there is a single object that starts at the bottom of the
   // first region.
-  first_hr->set_starts_humongous(obj_top, word_fill_size);
-  _policy->remset_tracker()->update_at_allocate(first_hr);
-  // Then, if there are any, we will set up the "continues
-  // humongous" regions.
-  HeapRegion* hr = NULL;
+  first_hr->hr_clear(false /* clear_space */);
+  first_hr->set_starts_humongous(obj_top, words_fillable);
+
+  if (update_remsets) {
+    _policy->remset_tracker()->update_at_allocate(first_hr);
+  }
+
+  // Indices of first and last regions in the series.
+  uint first = first_hr->hrm_index();
+  uint last = first + num_regions - 1;
+
+  HeapRegion* hr = nullptr;
   for (uint i = first + 1; i <= last; ++i) {
     hr = region_at(i);
+    hr->hr_clear(false /* clear_space */);
     hr->set_continues_humongous(first_hr);
-    _policy->remset_tracker()->update_at_allocate(hr);
+    if (update_remsets) {
+      _policy->remset_tracker()->update_at_allocate(hr);
+    }
   }
 
   // Up to this point no concurrent thread would have been able to
@@ -298,11 +273,57 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
   assert(words_not_fillable == 0 ||
          first_hr->bottom() + word_size_sum - words_not_fillable == hr->top(),
          "Miscalculation in humongous allocation");
+}
 
-  increase_used((word_size_sum - words_not_fillable) * HeapWordSize);
+HeapWord*
+G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
+                                                           uint num_regions,
+                                                           size_t word_size) {
+  assert(first_hr != NULL, "pre-condition");
+  assert(is_humongous(word_size), "word_size should be humongous");
+  assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
+
+  // Index of last region in the series.
+  uint first = first_hr->hrm_index();
+  uint last = first + num_regions - 1;
+
+  // We need to initialize the region(s) we just discovered. This is
+  // a bit tricky given that it can happen concurrently with
+  // refinement threads refining cards on these regions and
+  // potentially wanting to refine the BOT as they are scanning
+  // those cards (this can happen shortly after a cleanup; see CR
+  // 6991377). So we have to set up the region(s) carefully and in
+  // a specific order.
+
+  // The passed in hr will be the "starts humongous" region. The header
+  // of the new object will be placed at the bottom of this region.
+  HeapWord* new_obj = first_hr->bottom();
+
+  // First, we need to zero the header of the space that we will be
+  // allocating. When we update top further down, some refinement
+  // threads might try to scan the region. By zeroing the header we
+  // ensure that any thread that will try to scan the region will
+  // come across the zero klass word and bail out.
+  //
+  // NOTE: It would not have been correct to have used
+  // CollectedHeap::fill_with_object() and make the space look like
+  // an int array. The thread that is doing the allocation will
+  // later update the object header to a potentially different array
+  // type and, for a very short period of time, the klass and length
+  // fields will be inconsistent. This could cause a refinement
+  // thread to calculate the object size incorrectly.
+  Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
+
+  // Next, update the metadata for the regions.
+  set_humongous_metadata(first_hr, num_regions, word_size, true);
+
+  HeapRegion* last_hr = region_at(last);
+  size_t used = byte_size(first_hr->bottom(), last_hr->top());
+
+  increase_used(used);
 
   for (uint i = first; i <= last; ++i) {
-    hr = region_at(i);
+    HeapRegion *hr = region_at(i);
     _humongous_set.add(hr);
     _hr_printer.alloc(hr);
   }
@@ -488,40 +509,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 
   ShouldNotReachHere();
   return NULL;
-}
-
-void G1CollectedHeap::begin_archive_alloc_range(bool open) {
-  assert_at_safepoint_on_vm_thread();
-  assert(_archive_allocator == nullptr, "should not be initialized");
-  _archive_allocator = G1ArchiveAllocator::create_allocator(this, open);
-}
-
-bool G1CollectedHeap::is_archive_alloc_too_large(size_t word_size) {
-  // Allocations in archive regions cannot be of a size that would be considered
-  // humongous even for a minimum-sized region, because G1 region sizes/boundaries
-  // may be different at archive-restore time.
-  return word_size >= humongous_threshold_for(HeapRegion::min_region_size_in_words());
-}
-
-HeapWord* G1CollectedHeap::archive_mem_allocate(size_t word_size) {
-  assert_at_safepoint_on_vm_thread();
-  assert(_archive_allocator != nullptr, "_archive_allocator not initialized");
-  if (is_archive_alloc_too_large(word_size)) {
-    return nullptr;
-  }
-  return _archive_allocator->archive_mem_allocate(word_size);
-}
-
-void G1CollectedHeap::end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
-                                              size_t end_alignment_in_bytes) {
-  assert_at_safepoint_on_vm_thread();
-  assert(_archive_allocator != nullptr, "_archive_allocator not initialized");
-
-  // Call complete_archive to do the real work, filling in the MemRegion
-  // array with the archive regions.
-  _archive_allocator->complete_archive(ranges, end_alignment_in_bytes);
-  delete _archive_allocator;
-  _archive_allocator = nullptr;
 }
 
 bool G1CollectedHeap::check_archive_addresses(MemRegion* ranges, size_t count) {
@@ -1005,8 +992,11 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   if (!VerifyBeforeGC) {
     return;
   }
+  if (!G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyFull)) {
+    return;
+  }
   _verifier->verify_region_sets_optional();
-  _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
+  _verifier->verify_before_gc();
   _verifier->verify_bitmap_clear(true /* above_tams_only */);
 }
 
@@ -1033,10 +1023,6 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  if (G1HotCardCache::use_cache()) {
-    _hot_card_cache->reset_hot_cache();
-  }
-
   // Discard all remembered set updates and reset refinement statistics.
   G1BarrierSet::dirty_card_queue_set().abandon_logs_and_stats();
   assert(G1BarrierSet::dirty_card_queue_set().num_cards() == 0,
@@ -1048,9 +1034,12 @@ void G1CollectedHeap::verify_after_full_collection() {
   if (!VerifyAfterGC) {
     return;
   }
+  if (!G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyFull)) {
+    return;
+  }
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
-  _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
+  _verifier->verify_after_gc();
   _verifier->verify_bitmap_clear(false /* above_tams_only */);
 
   // At this point there should be no regions in the
@@ -1098,12 +1087,10 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // Currently, there is no facility in the do_full_collection(bool) API to notify
   // the caller that the collection did not succeed (e.g., because it was locked
   // out by the GC locker). So, right now, we'll ignore the return value.
-  // When clear_all_soft_refs is set we want to do a maximal compaction
-  // not leaving any dead wood.
-  bool do_maximal_compaction = clear_all_soft_refs;
-  bool dummy = do_full_collection(true,                /* explicit_gc */
-                                  clear_all_soft_refs,
-                                  do_maximal_compaction);
+
+  do_full_collection(false,                /* explicit_gc */
+                     clear_all_soft_refs,
+                     false /* do_maximal_compaction */);
 }
 
 bool G1CollectedHeap::upgrade_to_full_collection() {
@@ -1268,22 +1255,13 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
     *expand_time_ms = (os::elapsedTime() - expand_heap_start_time_sec) * MILLIUNITS;
   }
 
-  if (expanded_by > 0) {
-    size_t actual_expand_bytes = expanded_by * HeapRegion::GrainBytes;
-    assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
-    policy()->record_new_heap_size(num_regions());
-  } else {
-    log_debug(gc, ergo, heap)("Did not expand the heap (heap expansion operation failed)");
+  assert(expanded_by > 0, "must have failed during commit.");
 
-    // The expansion of the virtual storage space was unsuccessful.
-    // Let's see if it was because we ran out of swap.
-    if (G1ExitOnExpansionFailure &&
-        _hrm.available() >= regions_to_expand) {
-      // We had head room...
-      vm_exit_out_of_memory(aligned_expand_bytes, OOM_MMAP_ERROR, "G1 heap expansion");
-    }
-  }
-  return expanded_by > 0;
+  size_t actual_expand_bytes = expanded_by * HeapRegion::GrainBytes;
+  assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
+  policy()->record_new_heap_size(num_regions());
+
+  return true;
 }
 
 bool G1CollectedHeap::expand_single_region(uint node_index) {
@@ -1421,7 +1399,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _verifier(NULL),
   _summary_bytes_used(0),
   _bytes_used_during_gc(0),
-  _archive_allocator(nullptr),
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
   _old_evac_stats("Old", OldPLABSize, PLABWeight),
   _monitoring_support(nullptr),
@@ -1438,7 +1415,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _policy(new G1Policy(_gc_timer_stw)),
   _heap_sizing_policy(NULL),
   _collection_set(this, _policy),
-  _hot_card_cache(NULL),
   _rem_set(NULL),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
@@ -1576,9 +1552,6 @@ jint G1CollectedHeap::initialize() {
     satbqs.set_buffer_enqueue_threshold_percentage(G1SATBBufferEnqueueingThresholdPercent);
   }
 
-  // Create the hot card cache.
-  _hot_card_cache = new G1HotCardCache(this);
-
   // Create space mappers.
   size_t page_size = heap_rs.page_size();
   G1RegionToSpaceMapper* heap_storage =
@@ -1601,7 +1574,7 @@ jint G1CollectedHeap::initialize() {
                        heap_rs.size());
   heap_storage->set_mapping_changed_listener(&_listener);
 
-  // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmap.
+  // Create storage for the BOT, card table and the bitmap.
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block Offset Table",
                              G1BlockOffsetTable::compute_size(heap_rs.size() / HeapWordSize),
@@ -1612,20 +1585,12 @@ jint G1CollectedHeap::initialize() {
                              G1CardTable::compute_size(heap_rs.size() / HeapWordSize),
                              G1CardTable::heap_map_factor());
 
-  G1RegionToSpaceMapper* card_counts_storage =
-    create_aux_memory_mapper("Card Counts Table",
-                             G1CardCounts::compute_size(heap_rs.size() / HeapWordSize),
-                             G1CardCounts::heap_map_factor());
-
   size_t bitmap_size = G1CMBitMap::compute_size(heap_rs.size());
   G1RegionToSpaceMapper* bitmap_storage =
     create_aux_memory_mapper("Mark Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
 
-  _hrm.initialize(heap_storage, bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
+  _hrm.initialize(heap_storage, bitmap_storage, bot_storage, cardtable_storage);
   _card_table->initialize(cardtable_storage);
-
-  // Do later initialization work for concurrent refinement.
-  _hot_card_cache->initialize(card_counts_storage);
 
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
@@ -1637,7 +1602,7 @@ jint G1CollectedHeap::initialize() {
   guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size(), "Java heap must not start within the first card.");
   G1FromCardCache::initialize(max_reserved_regions());
   // Also create a G1 rem set.
-  _rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
+  _rem_set = new G1RemSet(this, _card_table);
   _rem_set->initialize(max_reserved_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
@@ -1817,14 +1782,9 @@ size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
   return _hrm.total_free_bytes();
 }
 
-void G1CollectedHeap::iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id) {
-  _hot_card_cache->drain(cl, worker_id);
-}
-
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
   size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
-  assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   return result;
 }
 
@@ -2603,16 +2563,6 @@ void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
 }
 #endif
 
-class VerifyRegionRemSetClosure : public HeapRegionClosure {
-  public:
-    bool do_heap_region(HeapRegion* hr) {
-      if (!hr->is_archive() && !hr->is_continues_humongous()) {
-        hr->verify_rem_set();
-      }
-      return false;
-    }
-};
-
 void G1CollectedHeap::start_new_collection_set() {
   collection_set()->start_incremental_building();
 
@@ -2640,16 +2590,14 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
   if (!VerifyBeforeGC) {
     return;
   }
+  if (!G1HeapVerifier::should_verify(type)) {
+    return;
+  }
   Ticks start = Ticks::now();
   _verifier->prepare_for_verify();
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
-  if (VerifyRememberedSets) {
-    log_info(gc, verify)("[Verifying RemSets before GC]");
-    VerifyRegionRemSetClosure v_cl;
-    heap_region_iterate(&v_cl);
-  }
-  _verifier->verify_before_gc(type);
+  _verifier->verify_before_gc();
   verify_numa_regions("GC Start");
   phase_times()->record_verify_before_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
@@ -2658,13 +2606,11 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   if (!VerifyAfterGC) {
     return;
   }
-  Ticks start = Ticks::now();
-  if (VerifyRememberedSets) {
-    log_info(gc, verify)("[Verifying RemSets after GC]");
-    VerifyRegionRemSetClosure v_cl;
-    heap_region_iterate(&v_cl);
+  if (!G1HeapVerifier::should_verify(type)) {
+    return;
   }
-  _verifier->verify_after_gc(type);
+  Ticks start = Ticks::now();
+  _verifier->verify_after_gc();
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
   phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
@@ -2845,13 +2791,6 @@ void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
   assert(!hr->is_free(), "the region should not be free");
   assert(!hr->is_empty(), "the region should not be empty");
   assert(_hrm.is_available(hr->hrm_index()), "region should be committed");
-
-  // Clear the card counts for this region.
-  // Note: we only need to do this if the region is not young
-  // (since we don't refine cards in young regions).
-  if (!hr->is_young()) {
-    _hot_card_cache->reset_card_counts(hr);
-  }
 
   // Reset region metadata to allow reuse.
   hr->hr_clear(true /* clear_space */);
@@ -3073,7 +3012,6 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
 
   if (!free_list_only) {
     set_used(cl.total_used());
-    assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   }
   assert_used_and_recalculate_used_equal(this);
 }
@@ -3272,17 +3210,11 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
     evac_failure_injector()->reset();
 
     set_used(recalculate_used());
-
-    assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   } else {
     // The "used" of the collection set have already been subtracted
     // when they were freed.  Add in the bytes used.
     increase_used(_bytes_used_during_gc);
   }
-}
-
-void G1CollectedHeap::reset_hot_card_cache() {
-  _hot_card_cache->reset_hot_cache();
 }
 
 class RebuildCodeRootClosure: public CodeBlobClosure {

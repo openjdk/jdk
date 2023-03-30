@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
 
   // Save registers, if required.
   OopMapSet* oop_maps = new OopMapSet();
-  OopMap* oop_map = NULL;
+  OopMap* oop_map = nullptr;
 
   switch (id) {
   case forward_exception_id: {
@@ -379,7 +379,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   oop_maps->add_gc_map(call_offset, oop_map);
 
   DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-  assert(deopt_blob != NULL, "deoptimization blob must have been created");
+  assert(deopt_blob != nullptr, "deoptimization blob must have been created");
 
   __ cmp_32(R0, 0);
 
@@ -401,7 +401,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   const bool must_gc_arguments = true;
   const bool dont_gc_arguments = false;
 
-  OopMapSet* oop_maps = NULL;
+  OopMapSet* oop_maps = nullptr;
   bool save_fpu_registers = HaveVFP;
 
   switch (id) {
@@ -664,7 +664,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps->add_gc_map(call_offset, oop_map);
         restore_live_registers_without_return(sasm);
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        assert(deopt_blob != nullptr, "deoptimization blob must have been created");
         __ jump(deopt_blob->unpack_with_reexecution(), relocInfo::runtime_call_type, noreg);
       }
       break;
@@ -710,7 +710,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         restore_live_registers_without_return(sasm);
 
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        assert(deopt_blob != nullptr, "deoptimization blob must have been created");
         __ jump(deopt_blob->unpack_with_reexecution(), relocInfo::runtime_call_type, Rtemp);
       }
       break;

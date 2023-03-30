@@ -28,6 +28,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#include "runtime/vm_version.hpp"
 #include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
@@ -308,6 +309,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     if (!InlineMathNatives || !UseFMA) return true;
+    break;
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!InlineIntrinsics) return true;
     break;
   case vmIntrinsics::_arraycopy:
     if (!InlineArrayCopy) return true;
@@ -645,9 +650,8 @@ vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
   return _none;
 }
 
-bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
-  return is_disabled_by_flags(id);
+bool vmIntrinsics::is_intrinsic_available(vmIntrinsics::ID id) {
+  return VM_Version::is_intrinsic_supported(id) && !is_disabled_by_flags(id);
 }
 
 bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {

@@ -377,10 +377,10 @@ public class ClassWriter implements /* imports */ ClassConstants
             short accessFlags    = klass.getFieldAccessFlags(index);
             dos.writeShort(accessFlags & (short) JVM_RECOGNIZED_FIELD_MODIFIERS);
 
-            short nameIndex    = klass.getFieldNameIndex(index);
+            int nameIndex = klass.getFieldNameIndex(index);
             dos.writeShort(nameIndex);
 
-            short signatureIndex = klass.getFieldSignatureIndex(index);
+            int signatureIndex = klass.getFieldSignatureIndex(index);
             dos.writeShort(signatureIndex);
             if (DEBUG) debugMessage("\tfield name = " + nameIndex + ", signature = " + signatureIndex);
 
@@ -389,11 +389,11 @@ public class ClassWriter implements /* imports */ ClassConstants
             if (hasSyn)
                 fieldAttributeCount++;
 
-            short initvalIndex = klass.getFieldInitialValueIndex(index);
+            int initvalIndex = klass.getFieldInitialValueIndex(index);
             if (initvalIndex != 0)
                 fieldAttributeCount++;
 
-            short genSigIndex = klass.getFieldGenericSignatureIndex(index);
+            int genSigIndex = klass.getFieldGenericSignatureIndex(index);
             if (genSigIndex != 0)
                 fieldAttributeCount++;
 

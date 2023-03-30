@@ -213,15 +213,16 @@ public:
            region_index,
            BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
     _humongous_objects_reclaimed++;
-    do {
-      HeapRegion* next = _g1h->next_region_in_humongous(r);
+
+    auto free_humongous_region = [&] (HeapRegion* r) {
       _freed_bytes += r->used();
       r->set_containing_set(nullptr);
       _humongous_regions_reclaimed++;
       _g1h->free_humongous_region(r, nullptr);
       _g1h->hr_printer()->cleanup(r);
-      r = next;
-    } while (r != nullptr);
+    };
+
+    _g1h->humongous_obj_regions_iterate(r, free_humongous_region);
 
     return false;
   }
@@ -237,14 +238,6 @@ public:
   size_t bytes_freed() const {
     return _freed_bytes;
   }
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask : public G1AbstractSubTask {
-public:
-  ResetHotCardCacheTask() : G1AbstractSubTask(G1GCPhaseTimes::ResetHotCardCache) { }
-
-  double worker_cost() const override { return 0.5; }
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->reset_hot_card_cache(); }
 };
 
 #if COMPILER2_OR_JVMCI
@@ -733,7 +726,6 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
-  add_serial_task(new ResetHotCardCacheTask());
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
