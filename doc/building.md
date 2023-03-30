@@ -1228,9 +1228,11 @@ properly supported by the JDK.
 
 ### Building for RISC-V
 
-The RISC-V community provides a basic [GNU compiler toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain).
-But the [external libraries](#External-Library-Requirements) required by OpenJDK complicate the building process.
-The placeholder `<toolchain-installed-path>` shown below is the path you want to install the toolchain.
+The RISC-V community provides a basic
+[GNU compiler toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain).
+But the [external libraries](#External-Library-Requirements) required by OpenJDK
+complicate the building process. The placeholder `<toolchain-installed-path>`
+shown below is the path where you want to install the toolchain.
 
   * Install the RISC-V GNU compiler toolchain:
     ```
@@ -1243,7 +1245,7 @@ The placeholder `<toolchain-installed-path>` shown below is the path you want to
 
   * Cross-compile all the required libraries:
     ```
-    # An example about libffi
+    # An example for libffi
     git clone https://github.com/libffi/libffi
     cd libffi
     ./configure --host=riscv64-unknown-linux-gnu --prefix=<toolchain-installed-path>/sysroot/usr
