@@ -346,29 +346,12 @@ final class $vectortype$ extends $abstractvectortype$ {
         return (long) super.reduceLanesTemplate(op, $masktype$.class, ($masktype$) m);  // specialized
     }
 
-#if[!FP]
     @Override
     @ForceInline
-    public $shuffletype$ toShuffle() {
-        return ($shuffletype$) super.toShuffleTemplate($shuffletype$.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
-#end[!FP]
-#if[FP]
-    @Override
-    @ForceInline
-    public $shuffletype$ toShuffle() {
-        return ($shuffletype$) castShape($bitsvectortype$.VSPECIES, 0)
-                .reinterpretAs$Bitstype$s()
-                .toFPShuffle();
-    }
-#end[FP]
-#if[intOrLong]
-    @Override
-    @ForceInline
-    $fpvectortype$.$Fptype$$bits$Shuffle toFPShuffle() {
-        return ($fpvectortype$.$Fptype$$bits$Shuffle) super.toFPShuffleTemplate($fpvectortype$.$Fptype$$bits$Shuffle.class, $fpvectortype$.VSPECIES);
-    }
-#end[intOrLong]
 
     // Specialized unary testing
 
@@ -1109,16 +1092,13 @@ final class $vectortype$ extends $abstractvectortype$ {
         @Override
         @ForceInline
         $bitsvectortype$ toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    $shuffletype$.class, $bitstype$.class, VLENGTH,
-                    $bitsvectortype$.class, $bitstype$.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return ($bitsvectortype$) super.toBitsVectorTemplate();
         }
 
-        private static $bitsvectortype$ toBitsVectorHelper($shuffletype$ s) {
-            return ($bitsvectortype$) $bitsvectortype$.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        $Bitstype$Vector toBitsVector0() {
+            return $bitsvectortype$.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

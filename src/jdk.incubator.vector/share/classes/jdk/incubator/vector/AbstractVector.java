@@ -188,11 +188,35 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     abstract AbstractMask<E> maskFromArray(boolean[] bits);
 
-    abstract AbstractShuffle<E> iotaShuffle();
+    abstract <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp);
+
+    /*package-private*/
+    @ForceInline
+    final <F> VectorShuffle<F> toShuffleTemplate(AbstractSpecies<F> dsp) {
+        Class<?> etype = vspecies().elementType();
+        Class<?> dvtype = dsp.shuffleType();
+        Class<?> dtype = dsp.asIntegral().elementType();
+        int dlength = dsp.dummyVector().length();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), etype, length(),
+                                     dvtype, dtype, dlength,
+                                  this, dsp,
+                                     AbstractVector::toShuffle0);
+    }
+
+    abstract <F> VectorShuffle<F> toShuffle0(AbstractSpecies<F> dsp);
+
+    @ForceInline
+    public final
+    VectorShuffle<E> toShuffle() {
+        return toShuffle(vspecies());
+    }
+
+    abstract VectorShuffle<E> iotaShuffle();
 
     @ForceInline
     @SuppressWarnings({"rawtypes", "unchecked"})
-    final AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap) {
+    final VectorShuffle<E> iotaShuffle(int start, int step, boolean wrap) {
         if ((length() & (length() - 1)) != 0) {
             return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, length())))
                         : shuffleFromOp(i -> i * step + start);
@@ -209,7 +233,7 @@ abstract class AbstractVector<E> extends Vector<E> {
             VectorMask<?> mask = wrapped.compare(VectorOperators.EQ, iota);
             wrapped = wrappedEx.blend(wrapped, mask);
         }
-        return (AbstractShuffle<E>) wrapped.toShuffle().cast(vspecies());
+        return ((AbstractVector) wrapped).toShuffle(vspecies());
     }
 
     abstract AbstractShuffle<E> shuffleFromArray(int[] indexes, int i);

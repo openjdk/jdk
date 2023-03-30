@@ -344,8 +344,9 @@ final class Short128Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short128Shuffle toShuffle() {
-        return (Short128Shuffle) super.toShuffleTemplate(Short128Shuffle.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -817,16 +818,13 @@ final class Short128Vector extends ShortVector {
         @Override
         @ForceInline
         Short128Vector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Short128Shuffle.class, short.class, VLENGTH,
-                    Short128Vector.class, short.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (Short128Vector) super.toBitsVectorTemplate();
         }
 
-        private static Short128Vector toBitsVectorHelper(Short128Shuffle s) {
-            return (Short128Vector) Short128Vector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        ShortVector toBitsVector0() {
+            return Short128Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

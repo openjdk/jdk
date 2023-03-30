@@ -331,10 +331,9 @@ final class Float512Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float512Shuffle toShuffle() {
-        return (Float512Shuffle) castShape(Int512Vector.VSPECIES, 0)
-                .reinterpretAsInts()
-                .toFPShuffle();
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -824,16 +823,13 @@ final class Float512Vector extends FloatVector {
         @Override
         @ForceInline
         Int512Vector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Float512Shuffle.class, int.class, VLENGTH,
-                    Int512Vector.class, int.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (Int512Vector) super.toBitsVectorTemplate();
         }
 
-        private static Int512Vector toBitsVectorHelper(Float512Shuffle s) {
-            return (Int512Vector) Int512Vector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        IntVector toBitsVector0() {
+            return Int512Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

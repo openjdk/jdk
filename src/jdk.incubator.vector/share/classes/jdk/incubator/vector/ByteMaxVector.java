@@ -344,8 +344,9 @@ final class ByteMaxVector extends ByteVector {
 
     @Override
     @ForceInline
-    public ByteMaxShuffle toShuffle() {
-        return (ByteMaxShuffle) super.toShuffleTemplate(ByteMaxShuffle.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -803,16 +804,13 @@ final class ByteMaxVector extends ByteVector {
         @Override
         @ForceInline
         ByteMaxVector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    ByteMaxShuffle.class, byte.class, VLENGTH,
-                    ByteMaxVector.class, byte.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (ByteMaxVector) super.toBitsVectorTemplate();
         }
 
-        private static ByteMaxVector toBitsVectorHelper(ByteMaxShuffle s) {
-            return (ByteMaxVector) ByteMaxVector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        ByteVector toBitsVector0() {
+            return ByteMaxVector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

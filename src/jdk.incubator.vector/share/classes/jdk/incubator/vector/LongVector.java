@@ -2331,48 +2331,14 @@ public abstract class LongVector extends AbstractVector<Long> {
     }
 
     @ForceInline
-    private final
-    VectorShuffle<Long> toShuffle0(LongSpecies dsp) {
+    final <F>
+    VectorShuffle<F> toShuffle0(AbstractSpecies<F> dsp) {
         long[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
         return VectorShuffle.fromArray(dsp, sa, 0);
-    }
-
-    /*package-private*/
-    @ForceInline
-    final VectorShuffle<Long> toShuffleTemplate(Class<?> shuffleType) {
-        LongSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                                     getClass(), long.class, length(),
-                                     shuffleType, long.class, length(),
-                                     this, vsp,
-                                     LongVector::toShuffle0);
-    }
-
-    abstract AbstractShuffle<Double> toFPShuffle();
-
-    @ForceInline
-    private final
-    AbstractShuffle<Double> toFPShuffle0(VectorSpecies<Double> dsp) {
-        long[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return (AbstractShuffle<Double>) VectorShuffle.fromArray(dsp, sa, 0);
-    }
-
-    @ForceInline
-    final
-    AbstractShuffle<Double> toFPShuffleTemplate(Class<?> shuffleType, DoubleVector.DoubleSpecies dsp) {
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                                     getClass(), long.class, length(),
-                                     shuffleType, long.class, length(),
-                                     this, dsp,
-                                     LongVector::toFPShuffle0);
     }
 
     /**
@@ -3762,9 +3728,10 @@ public abstract class LongVector extends AbstractVector<Long> {
         private LongSpecies(VectorShape shape,
                 Class<? extends LongVector> vectorType,
                 Class<? extends AbstractMask<Long>> maskType,
+                Class<? extends AbstractShuffle<Long>> shuffleType,
                 Function<Object, LongVector> vectorFactory) {
             super(shape, LaneType.of(long.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == Long.SIZE);
         }
@@ -4031,6 +3998,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         = new LongSpecies(VectorShape.S_64_BIT,
                             Long64Vector.class,
                             Long64Vector.Long64Mask.class,
+                            Long64Vector.Long64Shuffle.class,
                             Long64Vector::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -4038,6 +4006,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         = new LongSpecies(VectorShape.S_128_BIT,
                             Long128Vector.class,
                             Long128Vector.Long128Mask.class,
+                            Long128Vector.Long128Shuffle.class,
                             Long128Vector::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -4045,6 +4014,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         = new LongSpecies(VectorShape.S_256_BIT,
                             Long256Vector.class,
                             Long256Vector.Long256Mask.class,
+                            Long256Vector.Long256Shuffle.class,
                             Long256Vector::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -4052,6 +4022,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         = new LongSpecies(VectorShape.S_512_BIT,
                             Long512Vector.class,
                             Long512Vector.Long512Mask.class,
+                            Long512Vector.Long512Shuffle.class,
                             Long512Vector::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -4059,6 +4030,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         = new LongSpecies(VectorShape.S_Max_BIT,
                             LongMaxVector.class,
                             LongMaxVector.LongMaxMask.class,
+                            LongMaxVector.LongMaxShuffle.class,
                             LongMaxVector::new);
 
     /**

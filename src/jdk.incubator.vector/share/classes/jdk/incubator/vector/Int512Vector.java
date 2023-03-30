@@ -344,13 +344,9 @@ final class Int512Vector extends IntVector {
 
     @Override
     @ForceInline
-    public Int512Shuffle toShuffle() {
-        return (Int512Shuffle) super.toShuffleTemplate(Int512Shuffle.class); // specialize
-    }
-    @Override
-    @ForceInline
-    Float512Vector.Float512Shuffle toFPShuffle() {
-        return (Float512Vector.Float512Shuffle) super.toFPShuffleTemplate(Float512Vector.Float512Shuffle.class, Float512Vector.VSPECIES);
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -838,16 +834,13 @@ final class Int512Vector extends IntVector {
         @Override
         @ForceInline
         Int512Vector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Int512Shuffle.class, int.class, VLENGTH,
-                    Int512Vector.class, int.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (Int512Vector) super.toBitsVectorTemplate();
         }
 
-        private static Int512Vector toBitsVectorHelper(Int512Shuffle s) {
-            return (Int512Vector) Int512Vector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        IntVector toBitsVector0() {
+            return Int512Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

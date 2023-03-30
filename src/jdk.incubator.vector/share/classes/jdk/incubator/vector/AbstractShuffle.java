@@ -26,6 +26,7 @@ package jdk.incubator.vector;
 
 import java.util.function.IntUnaryOperator;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.vector.VectorSupport;
 
 abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     static final IntUnaryOperator IDENTITY = i -> i;
@@ -47,7 +48,20 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     }
 
     /*package-private*/
-    abstract Vector<?> toBitsVector();
+    abstract AbstractVector<?> toBitsVector();
+
+    final AbstractVector<?> toBitsVectorTemplate() {
+        AbstractSpecies<?> dsp = vspecies().asIntegral();
+        Class<?> etype = dsp.elementType();
+        Class<?> rvtype = dsp.dummyVector().getClass();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
+                                     getClass(), etype, length(),
+                                     rvtype, etype, length(),
+                                     this, dsp,
+                                     (v, s) -> v.toBitsVector0());
+    }
+
+    abstract AbstractVector<?> toBitsVector0();
 
     @Override
     @ForceInline
@@ -65,24 +79,11 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
 
     @Override
     @ForceInline
-    @SuppressWarnings("unchecked")
     public final <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-        AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-        if (length() != species.laneCount()) {
+        if (length() != s.length()) {
             throw new IllegalArgumentException("VectorShuffle length and species length differ");
         }
-        Vector<?> v = toBitsVector();
-        if (species.asIntegral() == species) {
-            return v.castShape(species, 0).toShuffle();
-        } else if (species.elementType() == float.class) {
-            return (VectorShuffle<F>) v.castShape(species.asIntegral(), 0)
-                                       .reinterpretAsInts()
-                                       .toFPShuffle();
-        } else {
-            return (VectorShuffle<F>) v.castShape(species.asIntegral(), 0)
-                                       .reinterpretAsLongs()
-                                       .toFPShuffle();
-        }
+        return toBitsVector().toShuffle((AbstractSpecies<F>) s);
     }
 
     @Override

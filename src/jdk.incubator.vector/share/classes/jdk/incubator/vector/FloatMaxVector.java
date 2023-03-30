@@ -331,10 +331,9 @@ final class FloatMaxVector extends FloatVector {
 
     @Override
     @ForceInline
-    public FloatMaxShuffle toShuffle() {
-        return (FloatMaxShuffle) castShape(IntMaxVector.VSPECIES, 0)
-                .reinterpretAsInts()
-                .toFPShuffle();
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -793,16 +792,13 @@ final class FloatMaxVector extends FloatVector {
         @Override
         @ForceInline
         IntMaxVector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    FloatMaxShuffle.class, int.class, VLENGTH,
-                    IntMaxVector.class, int.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (IntMaxVector) super.toBitsVectorTemplate();
         }
 
-        private static IntMaxVector toBitsVectorHelper(FloatMaxShuffle s) {
-            return (IntMaxVector) IntMaxVector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        IntVector toBitsVector0() {
+            return IntMaxVector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

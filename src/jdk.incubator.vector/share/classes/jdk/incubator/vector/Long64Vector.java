@@ -339,13 +339,9 @@ final class Long64Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long64Shuffle toShuffle() {
-        return (Long64Shuffle) super.toShuffleTemplate(Long64Shuffle.class); // specialize
-    }
-    @Override
-    @ForceInline
-    Double64Vector.Double64Shuffle toFPShuffle() {
-        return (Double64Vector.Double64Shuffle) super.toFPShuffleTemplate(Double64Vector.Double64Shuffle.class, Double64Vector.VSPECIES);
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -798,16 +794,13 @@ final class Long64Vector extends LongVector {
         @Override
         @ForceInline
         Long64Vector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Long64Shuffle.class, long.class, VLENGTH,
-                    Long64Vector.class, long.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (Long64Vector) super.toBitsVectorTemplate();
         }
 
-        private static Long64Vector toBitsVectorHelper(Long64Shuffle s) {
-            return (Long64Vector) Long64Vector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        LongVector toBitsVector0() {
+            return Long64Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

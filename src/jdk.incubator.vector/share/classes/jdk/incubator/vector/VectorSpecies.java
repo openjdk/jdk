@@ -24,6 +24,8 @@
  */
 package jdk.incubator.vector;
 
+import jdk.internal.vm.annotation.ForceInline;
+
 import java.lang.foreign.MemorySegment;
 
 import java.nio.ByteOrder;
@@ -342,6 +344,7 @@ public interface VectorSpecies<E> {
      * @see #withLanes(Class)
      * @see #withShape(VectorShape)
      */
+    @ForceInline
     static <E> VectorSpecies<E> of(Class<E> elementType, VectorShape shape) {
         LaneType laneType = LaneType.of(elementType);
         return AbstractSpecies.findSpecies(elementType, laneType, shape);
@@ -367,6 +370,7 @@ public interface VectorSpecies<E> {
      *         or if the given type is not a valid {@code ETYPE}
      * @see VectorSpecies#ofPreferred(Class)
      */
+    @ForceInline
     static <E> VectorSpecies<E> ofLargestShape(Class<E> etype) {
         return VectorSpecies.of(etype, VectorShape.largestShapeFor(etype));
     }
@@ -410,6 +414,7 @@ public interface VectorSpecies<E> {
      * @see VectorShape#preferredShape()
      * @see VectorSpecies#ofLargestShape(Class)
      */
+    @ForceInline
     public static <E> VectorSpecies<E> ofPreferred(Class<E> etype) {
         return of(etype, VectorShape.preferredShape());
     }
@@ -432,6 +437,7 @@ public interface VectorSpecies<E> {
      *         if the given {@code elementType} argument is not
      *         a valid vector {@code ETYPE}
      */
+    @ForceInline
     static int elementSize(Class<?> elementType) {
         return LaneType.of(elementType).elementSize;
     }

@@ -339,13 +339,9 @@ final class LongMaxVector extends LongVector {
 
     @Override
     @ForceInline
-    public LongMaxShuffle toShuffle() {
-        return (LongMaxShuffle) super.toShuffleTemplate(LongMaxShuffle.class); // specialize
-    }
-    @Override
-    @ForceInline
-    DoubleMaxVector.DoubleMaxShuffle toFPShuffle() {
-        return (DoubleMaxVector.DoubleMaxShuffle) super.toFPShuffleTemplate(DoubleMaxVector.DoubleMaxShuffle.class, DoubleMaxVector.VSPECIES);
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -798,16 +794,13 @@ final class LongMaxVector extends LongVector {
         @Override
         @ForceInline
         LongMaxVector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    LongMaxShuffle.class, long.class, VLENGTH,
-                    LongMaxVector.class, long.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (LongMaxVector) super.toBitsVectorTemplate();
         }
 
-        private static LongMaxVector toBitsVectorHelper(LongMaxShuffle s) {
-            return (LongMaxVector) LongMaxVector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        LongVector toBitsVector0() {
+            return LongMaxVector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

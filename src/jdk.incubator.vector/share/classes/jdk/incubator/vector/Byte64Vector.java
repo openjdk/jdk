@@ -344,8 +344,9 @@ final class Byte64Vector extends ByteVector {
 
     @Override
     @ForceInline
-    public Byte64Shuffle toShuffle() {
-        return (Byte64Shuffle) super.toShuffleTemplate(Byte64Shuffle.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -817,16 +818,13 @@ final class Byte64Vector extends ByteVector {
         @Override
         @ForceInline
         Byte64Vector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Byte64Shuffle.class, byte.class, VLENGTH,
-                    Byte64Vector.class, byte.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (Byte64Vector) super.toBitsVectorTemplate();
         }
 
-        private static Byte64Vector toBitsVectorHelper(Byte64Shuffle s) {
-            return (Byte64Vector) Byte64Vector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        ByteVector toBitsVector0() {
+            return Byte64Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

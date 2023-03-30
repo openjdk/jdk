@@ -2321,7 +2321,16 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r1.blend(r0, valid);
     }
 
-
+    @ForceInline
+    final <F>
+    VectorShuffle<F> toShuffle0(AbstractSpecies<F> dsp) {
+        double[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
 
     /**
      * {@inheritDoc} <!--workaround-->
@@ -3678,9 +3687,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         private DoubleSpecies(VectorShape shape,
                 Class<? extends DoubleVector> vectorType,
                 Class<? extends AbstractMask<Double>> maskType,
+                Class<? extends AbstractShuffle<Double>> shuffleType,
                 Function<Object, DoubleVector> vectorFactory) {
             super(shape, LaneType.of(double.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == Double.SIZE);
         }
@@ -3956,6 +3966,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_64_BIT,
                             Double64Vector.class,
                             Double64Vector.Double64Mask.class,
+                            Double64Vector.Double64Shuffle.class,
                             Double64Vector::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -3963,6 +3974,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_128_BIT,
                             Double128Vector.class,
                             Double128Vector.Double128Mask.class,
+                            Double128Vector.Double128Shuffle.class,
                             Double128Vector::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -3970,6 +3982,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_256_BIT,
                             Double256Vector.class,
                             Double256Vector.Double256Mask.class,
+                            Double256Vector.Double256Shuffle.class,
                             Double256Vector::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -3977,6 +3990,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_512_BIT,
                             Double512Vector.class,
                             Double512Vector.Double512Mask.class,
+                            Double512Vector.Double512Shuffle.class,
                             Double512Vector::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -3984,6 +3998,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_Max_BIT,
                             DoubleMaxVector.class,
                             DoubleMaxVector.DoubleMaxMask.class,
+                            DoubleMaxVector.DoubleMaxShuffle.class,
                             DoubleMaxVector::new);
 
     /**

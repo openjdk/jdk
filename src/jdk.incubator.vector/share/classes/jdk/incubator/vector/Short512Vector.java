@@ -344,8 +344,9 @@ final class Short512Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short512Shuffle toShuffle() {
-        return (Short512Shuffle) super.toShuffleTemplate(Short512Shuffle.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -865,16 +866,13 @@ final class Short512Vector extends ShortVector {
         @Override
         @ForceInline
         Short512Vector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Short512Shuffle.class, short.class, VLENGTH,
-                    Short512Vector.class, short.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (Short512Vector) super.toBitsVectorTemplate();
         }
 
-        private static Short512Vector toBitsVectorHelper(Short512Shuffle s) {
-            return (Short512Vector) Short512Vector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        ShortVector toBitsVector0() {
+            return Short512Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

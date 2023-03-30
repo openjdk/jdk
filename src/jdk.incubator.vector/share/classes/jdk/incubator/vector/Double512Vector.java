@@ -331,10 +331,9 @@ final class Double512Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    public Double512Shuffle toShuffle() {
-        return (Double512Shuffle) castShape(Long512Vector.VSPECIES, 0)
-                .reinterpretAsLongs()
-                .toFPShuffle();
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -808,16 +807,13 @@ final class Double512Vector extends DoubleVector {
         @Override
         @ForceInline
         Long512Vector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Double512Shuffle.class, long.class, VLENGTH,
-                    Long512Vector.class, long.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (Long512Vector) super.toBitsVectorTemplate();
         }
 
-        private static Long512Vector toBitsVectorHelper(Double512Shuffle s) {
-            return (Long512Vector) Long512Vector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        LongVector toBitsVector0() {
+            return Long512Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

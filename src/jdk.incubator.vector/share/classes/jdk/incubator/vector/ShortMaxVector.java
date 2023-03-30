@@ -344,8 +344,9 @@ final class ShortMaxVector extends ShortVector {
 
     @Override
     @ForceInline
-    public ShortMaxShuffle toShuffle() {
-        return (ShortMaxShuffle) super.toShuffleTemplate(ShortMaxShuffle.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -803,16 +804,13 @@ final class ShortMaxVector extends ShortVector {
         @Override
         @ForceInline
         ShortMaxVector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    ShortMaxShuffle.class, short.class, VLENGTH,
-                    ShortMaxVector.class, short.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (ShortMaxVector) super.toBitsVectorTemplate();
         }
 
-        private static ShortMaxVector toBitsVectorHelper(ShortMaxShuffle s) {
-            return (ShortMaxVector) ShortMaxVector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        ShortVector toBitsVector0() {
+            return ShortMaxVector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override

@@ -344,13 +344,9 @@ final class Int128Vector extends IntVector {
 
     @Override
     @ForceInline
-    public Int128Shuffle toShuffle() {
-        return (Int128Shuffle) super.toShuffleTemplate(Int128Shuffle.class); // specialize
-    }
-    @Override
-    @ForceInline
-    Float128Vector.Float128Shuffle toFPShuffle() {
-        return (Float128Vector.Float128Shuffle) super.toFPShuffleTemplate(Float128Vector.Float128Shuffle.class, Float128Vector.VSPECIES);
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -814,16 +810,13 @@ final class Int128Vector extends IntVector {
         @Override
         @ForceInline
         Int128Vector toBitsVector() {
-            return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    Int128Shuffle.class, int.class, VLENGTH,
-                    Int128Vector.class, int.class, VLENGTH,
-                    this, vspecies().asIntegral(),
-                    (v, s) -> toBitsVectorHelper(v));
+            return (Int128Vector) super.toBitsVectorTemplate();
         }
 
-        private static Int128Vector toBitsVectorHelper(Int128Shuffle s) {
-            return (Int128Vector) Int128Vector.VSPECIES.dummyVector()
-                    .vectorFactory(s.indices());
+        @Override
+        @ForceInline
+        IntVector toBitsVector0() {
+            return Int128Vector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
         @Override
