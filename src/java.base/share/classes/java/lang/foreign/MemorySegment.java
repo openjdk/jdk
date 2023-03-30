@@ -407,7 +407,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * Which approach is taken largely depends on the information that a client has available when obtaining a memory segment
  * wrapping a native pointer. For instance, if such pointer points to a C struct, the client might prefer to resize the
  * segment unsafely, to match the size of the struct (so that out-of-bounds access will be detected by the API). If the
- * size is known statically, using an address layout with the correct target layout might be preferable.
+ * true size of the zero-length memory segment is known statically, using an address layout with the correct target layout might be preferable.
  * In other instances, however, there will be no, or little information as to what spatial and/or temporal bounds should
  * be associated with a given native pointer. In these cases using an unbounded address layout might be preferable.
  * <p>
