@@ -204,10 +204,10 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
 
   // Carefully feel your way upwards and try to find a malloc header. Then check if
   // we are within the block.
-  // We give preference to found life blocks; but if no life block had been found,
+  // We give preference to found live blocks; but if no live block had been found,
   // but the pointer points into remnants of a dead block, print that instead.
   const MallocHeader* likely_dead_block = nullptr;
-  const MallocHeader* likely_life_block = nullptr;
+  const MallocHeader* likely_live_block = nullptr;
   {
     const MallocHeader* candidate = (const MallocHeader*)(align_down(addr, 16));
     const MallocHeader* const end = candidate - 0x1001; // stop searching after 4k
@@ -232,11 +232,11 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
       const address end_payload_plus_fudge = end_payload + fudge;
       if (addr >= start_block && addr < end_payload_plus_fudge) {
         // We found a block the pointer is pointing into, or almost into.
-        // If its a life block, we have our info. If its a dead block, we still
-        // may be within the borders of a larger life block we have not found yet -
+        // If its a live block, we have our info. If its a dead block, we still
+        // may be within the borders of a larger live block we have not found yet -
         // continue search.
         if (candidate->is_live()) {
-          likely_life_block = candidate;
+          likely_live_block = candidate;
           break;
         } else {
           likely_dead_block = candidate;
@@ -247,7 +247,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   }
 
   // If we've found a reasonable candidate. Print the info.
-  const MallocHeader* block = likely_life_block != nullptr ? likely_life_block : likely_dead_block;
+  const MallocHeader* block = likely_live_block != nullptr ? likely_live_block : likely_dead_block;
   if (block != nullptr) {
     const char* where = nullptr;
     const address start_block = (address)block;
