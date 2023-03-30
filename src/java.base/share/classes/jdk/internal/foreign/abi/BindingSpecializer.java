@@ -27,6 +27,7 @@ package jdk.internal.foreign.abi;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.Label;
+import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
@@ -510,13 +511,11 @@ public class BindingSpecializer {
 
     private void emitReleaseScopes() {
         for (int scopeLocal : scopeSlots) {
-            Label skipRelease = cb.newLabel();
-
             cb.loadInstruction(ReferenceType, scopeLocal);
-            cb.if_null(skipRelease);
-            cb.loadInstruction(ReferenceType, scopeLocal);
-            cb.invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
-            cb.labelBinding(skipRelease);
+            cb.ifThen(Opcode.IFNONNULL, ifCb -> {
+                ifCb.loadInstruction(ReferenceType, scopeLocal);
+                ifCb.invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
+            });
         }
     }
 
