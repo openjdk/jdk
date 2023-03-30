@@ -2841,8 +2841,6 @@ public:
   static bool is_uimm9(uint64_t x);
   static bool is_uimm10(uint64_t x);
 
-  static bool operand_valid_for_add_sub_immediate(long imm);
-
   // The maximum range of a branch is fixed for the RISCV architecture.
   static const unsigned long branch_range = 1 * M;
 

@@ -46,6 +46,4 @@ inline bool Assembler::is_uimm8(uint64_t x) { return is_uimm(x, 8); }
 inline bool Assembler::is_uimm9(uint64_t x) { return is_uimm(x, 9); }
 inline bool Assembler::is_uimm10(uint64_t x) { return is_uimm(x, 10); }
 
-inline bool Assembler::operand_valid_for_add_sub_immediate(int64_t imm) { return is_simm12(imm); }
-
 #endif // CPU_RISCV_ASSEMBLER_RISCV_INLINE_HPP

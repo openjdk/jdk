@@ -2887,7 +2887,7 @@ operand immI_63()
 // 32 bit integer valid for add immediate
 operand immIAdd()
 %{
-  predicate(Assembler::operand_valid_for_add_sub_immediate((int64_t)n->get_int()));
+  predicate(Assembler::is_simm12((int64_t)n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -2897,7 +2897,7 @@ operand immIAdd()
 // 32 bit integer valid for sub immediate
 operand immISub()
 %{
-  predicate(Assembler::operand_valid_for_add_sub_immediate(-(int64_t)n->get_int()));
+  predicate(Assembler::is_simm12(-(int64_t)n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3052,7 +3052,7 @@ operand immL_pc_off()
 // 64 bit integer valid for add immediate
 operand immLAdd()
 %{
-  predicate(Assembler::operand_valid_for_add_sub_immediate(n->get_long()));
+  predicate(Assembler::is_simm12(n->get_long()));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -3062,7 +3062,7 @@ operand immLAdd()
 // 64 bit integer valid for sub immediate
 operand immLSub()
 %{
-  predicate(Assembler::operand_valid_for_add_sub_immediate(-(n->get_long())));
+  predicate(Assembler::is_simm12(-(n->get_long())));
   match(ConL);
   op_cost(0);
   format %{ %}

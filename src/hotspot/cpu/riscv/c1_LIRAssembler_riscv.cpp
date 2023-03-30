@@ -1294,7 +1294,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register();
     if (right->is_constant()) {
       int right_const = right->as_jint();
-      if (Assembler::operand_valid_for_add_sub_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
         __ addw(Rdst, Rdst, zr);
      } else {
@@ -1309,7 +1309,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register_lo();
     if (right->is_constant()) {
       long right_const = right->as_jlong();
-      if (Assembler::operand_valid_for_add_sub_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
       } else {
         __ mv(t0, right_const);
