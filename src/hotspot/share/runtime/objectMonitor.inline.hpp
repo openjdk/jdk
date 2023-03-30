@@ -33,20 +33,20 @@
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/synchronizer.hpp"
 
-inline intptr_t ObjectMonitor::is_entered(JavaThread* current) const {
+inline bool ObjectMonitor::is_entered(JavaThread* current) const {
   if (UseFastLocking) {
     if (is_owner_anonymous()) {
-      return current->lock_stack().contains(object()) ? 1 : 0;
+      return current->lock_stack().contains(object());
     } else {
-      return current == owner_raw() ? 1 : 0;
+      return current == owner_raw();
     }
   } else {
     void* owner = owner_raw();
     if (current == owner || current->is_lock_owned((address)owner)) {
-      return 1;
+      return true;
     }
   }
-  return 0;
+  return false;
 }
 
 inline markWord ObjectMonitor::header() const {

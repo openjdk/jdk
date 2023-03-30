@@ -257,7 +257,7 @@ private:
   }
   const char* is_busy_to_string(stringStream* ss);
 
-  intptr_t  is_entered(JavaThread* current) const;
+  bool is_entered(JavaThread* current) const;
 
   // Returns true if this OM has an owner, false otherwise.
   bool      has_owner() const;

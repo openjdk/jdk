@@ -6214,7 +6214,7 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 
 // Implements fast-locking.
 // Branches to slow upon failure to lock the object, with ZF cleared.
-// Falls through upon success with unspecified ZF.
+// Falls through upon success with ZF set.
 //
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
@@ -6251,7 +6251,7 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
 
 // Implements fast-unlocking.
 // Branches to slow upon failure, with ZF cleared.
-// Falls through upon success, with unspecified ZF.
+// Falls through upon success, with ZF set.
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object

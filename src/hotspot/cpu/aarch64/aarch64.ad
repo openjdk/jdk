@@ -3838,7 +3838,6 @@ encode %{
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
         __ fast_lock(oop, disp_hdr, tmp, rscratch1, no_count);
-        __ cmp(oop, oop); // Force ZF=1 to indicate success.
         __ b(count);
       } else {
         // Set tmp to be (markWord of object | UNLOCK_VALUE).
@@ -3942,7 +3941,6 @@ encode %{
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
         __ fast_unlock(oop, tmp, box, disp_hdr, no_count);
-        __ cmp(oop, oop);  // Force ZF=1 to indicate success.
         __ b(count);
       } else {
         // Check if it is still a light weight lock, this is is true if we

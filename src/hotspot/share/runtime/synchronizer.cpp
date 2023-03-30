@@ -495,30 +495,23 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
 
   if (!useHeavyMonitors()) {
     if (UseFastLocking) {
-      // fast-locking does not use the 'lock' parameter.
+      // Fast-locking does not use the 'lock' argument..
       LockStack& lock_stack = current->lock_stack();
       if (lock_stack.can_push()) {
         markWord mark = obj()->mark_acquire();
-        while (true) {
-          if (mark.is_neutral()) {
-            assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
-            // Try to swing into 'fast-locked' state without inflating.
-            markWord locked_mark = mark.set_fast_locked();
-            markWord old_mark = obj()->cas_set_mark(locked_mark, mark);
-            if (old_mark == mark) {
-              // Successfully fast-locked, push object to lock-stack and return.
-              lock_stack.push(obj());
-              return;
-            }
-            // Otherwise retry.
-            mark = old_mark;
-          } else {
-            // Fall-through to inflate-enter.
-            break;
+        if (mark.is_neutral()) {
+          assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
+          // Try to swing into 'fast-locked' state.
+          markWord locked_mark = mark.set_fast_locked();
+          markWord old_mark = obj()->cas_set_mark(locked_mark, mark);
+          if (old_mark == mark) {
+            // Successfully fast-locked, push object to lock-stack and return.
+            lock_stack.push(obj());
+            return;
           }
         }
       }
-      // No room on the lock_stack so fall-through to inflate-enter.
+      // All other paths fall-through to inflate-enter.
     } else {
       markWord mark = obj->mark();
       if (mark.is_neutral()) {
@@ -564,7 +557,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   if (!useHeavyMonitors()) {
     markWord mark = object->mark();
     if (UseFastLocking) {
-      // fast-locking does not use the 'lock' parameter.
+      // Fast-locking does not use the 'lock' argument.
       if (mark.is_fast_locked()) {
         markWord unlocked_mark = mark.set_unlocked();
         markWord old_mark = object->cas_set_mark(unlocked_mark, mark);
