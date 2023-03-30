@@ -70,7 +70,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean hideDuplicates;
     private static boolean globalSelection = false;
 
-    private final ChangedListener<FilterChain> filterChainChangedListener = source -> filterChanged();
+    private final ChangedListener<FilterChain> filterChainChangedListener = changedFilterChain -> {
+        assert filterChain == changedFilterChain;
+        rebuildDiagram();
+    };
 
     public Group getGroup() {
         return group;
@@ -185,7 +188,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         customFilterChain = provider.createNewCustomFilterChain();
         customFilterChain.clearFilters();
         customFilterChain.addFilters(model.getCustomFilterChain().getFilters());
-        setFilterChain(model.getFilterChain(), customFilterChain);
+        setFilterChain(model.getFilterChain());
         filtersOrder = provider.getAllFiltersOrdered();
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
@@ -208,7 +211,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         assert provider != null;
         customFilterChain = provider.createNewCustomFilterChain();
-        setFilterChain(provider.getFilterChain(), customFilterChain);
+        setFilterChain(provider.getFilterChain());
         filtersOrder = provider.getAllFiltersOrdered();
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
@@ -323,12 +326,13 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         hiddenNodesChangedEvent.fire();
     }
 
-    private void setFilterChain(FilterChain newFC, FilterChain customFC) {
+    private void setFilterChain(FilterChain newFC) {
+        assert newFC != null && customFilterChain != null;
         if (filterChain != null) {
             filterChain.getChangedEvent().removeListener(filterChainChangedListener);
         }
-        if (newFC.getName().equals(customFC.getName())) {
-            filterChain = customFC;
+        if (newFC.getName().equals(customFilterChain.getName())) {
+            filterChain = customFilterChain;
         } else {
             filterChain = newFC;
         }
@@ -344,21 +348,14 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             // link the Filters window with this model
             provider.setFilterChainSelectionChangedListener(l -> {
                 // this function is called when user selects a different filter profile for this model
-                setFilterChain(provider.getFilterChain(), customFilterChain);
-                filterChanged();
+                setFilterChain(provider.getFilterChain());
+                rebuildDiagram();
             });
         }
     }
 
-    // called when the filter in filterChain changed, but not filterChain itself
-    private void filterChanged() {
-        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
-        assert provider == null || (filterChain == provider.getFilterChain());
-        rebuildDiagram();
-        diagramChangedEvent.fire();
-    }
-
     void close() {
+        System.out.println(getGraph().getDisplayName() + " removeListener to " + filterChain.getName());
         filterChain.getChangedEvent().removeListener(filterChainChangedListener);
         getChangedEvent().fire();
     }
@@ -376,6 +373,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
+        diagram.setCFG(getShowCFG());
         filterChain.applyInOrder(diagram, filtersOrder);
         if (graph.isDiffGraph()) {
             ColorFilter f = new ColorFilter("");
@@ -385,6 +383,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             f.addRule(stateColorRule("deleted", Color.red));
             f.apply(diagram);
         }
+        diagramChangedEvent.fire();
     }
 
     public FilterChain getFilterChain() {
@@ -471,7 +470,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public Diagram getDiagram() {
-        diagram.setCFG(getShowCFG());
         return diagram;
     }
 

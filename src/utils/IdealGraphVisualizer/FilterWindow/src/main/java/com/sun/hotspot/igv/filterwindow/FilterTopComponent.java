@@ -81,7 +81,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     private final FilterChain allFiltersOrdered = new FilterChain();
     private static final FilterChain defaultFilterChain = new FilterChain("DEFAULT");
     private FilterChain customFilterChain;
-    private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
+    private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent = new ChangedEvent<>(this);
     private ChangedEvent<JComboBox<FilterChain>> filterChainSelectionChangedEvent;
     private final ActionListener comboBoxSelectionChangedListener = l -> {
         comboBoxSelectionChanged();
@@ -122,7 +122,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     }
 
     private FilterTopComponent() {
-        filterSettingsChangedEvent = new ChangedEvent<>(this);
         initComponents();
         setName(NbBundle.getMessage(FilterTopComponent.class, "CTL_FilterTopComponent"));
         setToolTipText(NbBundle.getMessage(FilterTopComponent.class, "HINT_FilterTopComponent"));
@@ -206,7 +205,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         customFilterChain = filterChain;
         comboBox.insertItemAt(customFilterChain, 0);
         comboBox.addActionListener(comboBoxSelectionChangedListener);
-        comboBoxSelectionChanged();
     }
 
     private void comboBoxSelectionChanged() {
