@@ -30,7 +30,7 @@
 #include "unittest.hpp"
 
 // Uncomment to get test output
-#define LOG_PLEASE
+//#define LOG_PLEASE
 #include "testutils.hpp"
 
 using ::testing::HasSubstr;
