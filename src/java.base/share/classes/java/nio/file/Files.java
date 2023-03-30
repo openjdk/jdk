@@ -1721,7 +1721,8 @@ public final class Files {
      *          permission required by a file type detector implementation.
      *
      * @spec https://www.rfc-editor.org/info/rfc2045
-     *      RFC 2045: RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
+     *      RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One:
+     *              Format of Internet Message Bodies
      */
     public static String probeContentType(Path path)
         throws IOException
