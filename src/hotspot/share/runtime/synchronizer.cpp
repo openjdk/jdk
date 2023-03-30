@@ -313,7 +313,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   const markWord mark = obj->mark();
 
   if (UseFastLocking) {
-    if (mark.is_fast_locked() && current->lock_stack().contains(oop(obj))) {
+    if (mark.is_fast_locked() && current->lock_stack().contains(cast_to_oop(obj))) {
       // Degenerate notify
       // fast-locked or stack-locked by caller so by definition the implied waitset is empty.
       return true;
