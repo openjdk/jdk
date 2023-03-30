@@ -53,6 +53,12 @@
 void InterpreterCodelet::initialize(const char* description, Bytecodes::Code bytecode) {
   _description = description;
   _bytecode    = bytecode;
+#ifndef PRODUCT
+  AsmRemarks* arp = new(&_asm_remarks) AsmRemarks();
+  DbgStrings* dsp = new(&_dbg_strings) DbgStrings();
+  postcond(arp == &_asm_remarks);
+  postcond(dsp == &_dbg_strings);
+#endif
 }
 
 void InterpreterCodelet::verify() {}
