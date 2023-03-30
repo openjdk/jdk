@@ -118,35 +118,32 @@ public class DeInflate {
         } catch (ReadOnlyBufferException robe) {}
     }
 
-    static void check(Deflater def, byte[] in, int len,
-                      byte[] out1, byte[] out2, boolean nowrap)
+    static void check(Deflater def, byte[] in, int len, boolean nowrap)
         throws Throwable
     {
-        Arrays.fill(out1, (byte)0);
-        Arrays.fill(out2, (byte)0);
-
+        byte[] tempBuffer = new byte[len];
         def.setInput(in, 0, len);
         def.finish();
         int m = 0;
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
         while (!def.finished()) {
-            int temp_counter = def.deflate(out1);
+            int temp_counter = def.deflate(tempBuffer);
             m += temp_counter;
-            baos.write(out1, 0, temp_counter);
+            baos.write(tempBuffer, 0, temp_counter);
         }
-        out1 = baos.toByteArray();
+        byte[] out1 = baos.toByteArray();
         baos.reset();
         Inflater inf = new Inflater(nowrap);
         inf.setInput(out1, 0, m);
         int n = 0;
 
         while (!inf.finished()) {
-            int temp_counter = inf.inflate(out2);
+            int temp_counter = inf.inflate(tempBuffer);
             n += temp_counter;
-            baos.write(out2, 0,  temp_counter);
+            baos.write(tempBuffer, 0,  temp_counter);
         }
-        out2 = baos.toByteArray();
+        byte[] out2 = baos.toByteArray();
         baos.close();
         if (n != len ||
             !Arrays.equals(Arrays.copyOf(in, len), Arrays.copyOf(out2, len)) ||
@@ -302,7 +299,7 @@ public class DeInflate {
                                           : new Random().nextInt(dataIn.length);
                         // use a new deflater
                         Deflater def = newDeflater(level, strategy, dowrap, dataOut2);
-                        check(def, dataIn, len, dataOut1, dataOut2, dowrap);
+                        check(def, dataIn, len, dowrap);
                         def.end();
 
                         // reuse the deflater (with reset) and test on stream, which
