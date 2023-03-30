@@ -178,6 +178,7 @@ class outputStream;
   f(full_gc_copy_objects,                           "  Copy Objects")                  \
   f(full_gc_copy_objects_regular,                   "    Regular Objects")             \
   f(full_gc_copy_objects_humong,                    "    Humongous Objects")           \
+  f(full_gc_recompute_generation_usage,             "    Recompute generation usage")  \
   f(full_gc_copy_objects_reset_complete,            "    Reset Complete Bitmap")       \
   f(full_gc_copy_objects_rebuild,                   "    Rebuild Region Sets")         \
   f(full_gc_reconstruct_remembered_set,             "    Reconstruct Remembered Set")  \

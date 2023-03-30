@@ -943,6 +943,13 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
   return _affiliated_region_count;
 }
 
+void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste) {
+  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
+  _affiliated_region_count = num_regions;
+  _used = num_bytes;
+  // future improvement: _humongous_waste = humongous_waste;
+}
+
 void ShenandoahGeneration::clear_used() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
   // Do this atomically to assure visibility to other threads, even though these other threads may be idle "right now"..

@@ -183,6 +183,8 @@ private:
   // Return the updated value of affiliated_region_count
   size_t decrement_affiliated_region_count();
 
+  void establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste);
+
   void clear_used();
   void increase_used(size_t bytes);
   void decrease_used(size_t bytes);
