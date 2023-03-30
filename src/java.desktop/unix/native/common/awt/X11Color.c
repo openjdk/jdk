@@ -1230,8 +1230,6 @@ jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
 }
 #endif /* !HEADLESS */
 
-extern jfieldID colorValueID;
-
 #ifndef HEADLESS
 void
 awt_allocate_systemrgbcolors (jint *rgbColors, int num_colors,

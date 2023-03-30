@@ -553,7 +553,7 @@ SurfaceData_GetOps(JNIEnv *env, jobject sData);
  * Does the same as the above, but doesn't call Setup function
  * even if it's set.
  */
-JNIEXPORT SurfaceDataOps * JNICALL
+SurfaceDataOps *
 SurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData);
 
 /*
@@ -569,7 +569,7 @@ SurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData);
  *      is called since this function will not leave any outstanding
  *      JNI Critical locks unreleased.
  */
-JNIEXPORT void JNICALL
+void
 SurfaceData_SetOps(JNIEnv *env, jobject sData, SurfaceDataOps *ops);
 
 /*

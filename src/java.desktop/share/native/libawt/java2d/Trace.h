@@ -52,7 +52,7 @@ extern "C" {
 
 JNIEXPORT void JNICALL
 J2dTraceImpl(int level, jboolean cr, const char *string, ...);
-JNIEXPORT void JNICALL
+void
 J2dTraceInit();
 
 #ifndef DEBUG

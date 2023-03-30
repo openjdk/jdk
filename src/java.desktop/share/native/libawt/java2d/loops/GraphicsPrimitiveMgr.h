@@ -541,9 +541,9 @@ typedef struct {
     jdouble ty;
 } TransformInfo;
 
-extern JNIEXPORT void JNICALL
+extern void
 Transform_GetInfo(JNIEnv *env, jobject txform, TransformInfo *pTxInfo);
-extern JNIEXPORT void JNICALL
+extern void
 Transform_transform(TransformInfo *pTxInfo, jdouble *pX, jdouble *pY);
 
 void GrPrim_RefineBounds(SurfaceDataBounds *bounds, jint transX, jint transY,

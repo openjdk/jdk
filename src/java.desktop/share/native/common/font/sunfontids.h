@@ -82,10 +82,7 @@ typedef struct FontManagerNativeIDs {
       glyphImages, glyphListUsePos, glyphListPos, lcdRGBOrder, lcdSubPixPos;
 } FontManagerNativeIDs;
 
-/* Note: we share variable in the context of fontmanager lib
-   but we need access method to use it from separate rasterizer lib */
 extern FontManagerNativeIDs sunFontIDs;
-JNIEXPORT FontManagerNativeIDs getSunFontIDs(JNIEnv* env);
 
 #ifdef  __cplusplus
 }
