@@ -87,11 +87,17 @@ public class UnsharedNameTable extends Utf8NameTable {
     public Name fromChars(char[] cs, int start, int len) {
         byte[] name = new byte[len * 3];
         int nbytes = Convert.chars2utf(cs, start, name, 0, len);
-        return fromUtf8(name, 0, nbytes);
+        return fromValidUtf(name, 0, nbytes);
     }
 
     @Override
-    public Name fromUtf8(byte[] cs, int start, int len) {
+    public Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation) throws InvalidUtfException {
+        if (validation != Convert.Validation.NONE)
+            Convert.utfValidate(cs, start, len, validation);
+        return fromValidUtf(cs, start, len);
+    }
+
+    private Name fromValidUtf(byte[] cs, int start, int len) {
         int h = hashValue(cs, start, len) & hashMask;
 
         HashEntry element = hashes[h];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,25 +322,6 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #endif
 
     return capabilities;
-}
-
-JNIEXPORT jbyteArray JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_getcwd(JNIEnv* env, jclass this) {
-    jbyteArray result = NULL;
-    char buf[PATH_MAX+1];
-
-    /* EINTR not listed as a possible error */
-    char* cwd = getcwd(buf, sizeof(buf));
-    if (cwd == NULL) {
-        throwUnixException(env, errno);
-    } else {
-        jsize len = (jsize)strlen(buf);
-        result = (*env)->NewByteArray(env, len);
-        if (result != NULL) {
-            (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)buf);
-        }
-    }
-    return result;
 }
 
 JNIEXPORT jbyteArray

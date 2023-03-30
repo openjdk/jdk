@@ -114,7 +114,9 @@ public class SharedNameTable extends Utf8NameTable {
     }
 
     @Override
-    public Name fromUtf8(byte[] cs, int start, int len) {
+    public Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation) throws InvalidUtfException {
+        if (validation != Convert.Validation.NONE)
+            Convert.utfValidate(cs, start, len, validation);
         int h = hashValue(cs, start, len) & hashMask;
         NameImpl n = hashes[h];
         byte[] names = this.bytes;

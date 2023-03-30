@@ -106,6 +106,7 @@ public class ClassFile {
 
     public enum Version {
         V45_3(45, 3), // base level for all attributes
+        V48(48, 0),   // JDK 1.4
         V49(49, 0),   // JDK 1.5: enum, generics, annotations
         V50(50, 0),   // JDK 1.6: stackmaps
         V51(51, 0),   // JDK 1.7
@@ -149,9 +150,12 @@ public class ClassFile {
      * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
      * which defines "internal name" to be the form using "/" instead of "."
      */
-    public static byte[] internalize(byte[] buf, int offset, int len) {
+    public static byte[] internalize(byte[] buf, int off, int len) {
         byte[] translated = new byte[len];
-        copyAndReplace(buf, offset, translated, (byte)'/', (byte)'.');
+        for (int i = 0; i < len; i++) {
+            byte b = buf[off++];
+            translated[i] = b == (byte)'/' ? (byte)'.' : b;
+        }
         return translated;
     }
 
@@ -161,22 +165,8 @@ public class ClassFile {
      * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
      * which defines "internal name" to be the form using "/" instead of "."
      */
-    public static byte[] internalize(Name name) {
-        byte[] buf = name.toUtf8();
-        replace(buf, (byte)'/', (byte)'.');
-        return buf;
-    }
-
-    /**
-     * Return external representation of buf[offset..offset+len-1], converting '.' to '/'.
-     *
-     * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
-     * which defines "internal name" to be the form using "/" instead of "."
-     */
-    public static byte[] externalize(byte[] buf, int offset, int len) {
-        byte[] translated = new byte[len];
-        copyAndReplace(buf, offset, translated, (byte)'.', (byte)'/');
-        return translated;
+    public static Name internalize(Name name) {
+        return name.table.names.fromString(name.toString().replace('/', '.'));
     }
 
     /**
@@ -185,23 +175,17 @@ public class ClassFile {
      * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
      * which defines "internal name" to be the form using "/" instead of "."
      */
-    public static byte[] externalize(Name name) {
-        byte[] buf = name.toUtf8();
-        replace(buf, (byte)'.', (byte)'/');
-        return buf;
+    public static Name externalize(Name name) {
+        return name.table.names.fromString(externalize(name.toString()));
     }
 
-    static void replace(byte[] buf, byte x, byte y) {
-        for (int i = 0; i < buf.length; i++) {
-            if (buf[i] == x)
-                buf[i] = y;
-        }
-    }
-
-    static void copyAndReplace(byte[] src, int off, byte[] dst, byte x, byte y) {
-        for (int i = 0; i < dst.length; i++) {
-            byte b = src[off++];
-            dst[i] = b == x ? y : b;
-        }
+    /**
+     * Return external representation of given name, converting '/' to '.'.
+     *
+     * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
+     * which defines "internal name" to be the form using "/" instead of "."
+     */
+    public static String externalize(String name) {
+        return name.replace('.', '/');
     }
 }

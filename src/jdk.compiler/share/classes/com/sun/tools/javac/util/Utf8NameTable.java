@@ -109,7 +109,11 @@ public abstract class Utf8NameTable extends Name.Table {
 
         @Override
         public String toString() {
-            return Convert.utf2string(getByteData(), getByteOffset(), getByteLength());
+            try {
+                return Convert.utf2string(getByteData(), getByteOffset(), getByteLength(), Convert.Validation.NONE);
+            } catch (InvalidUtfException e) {
+                throw new AssertionError();
+            }
         }
 
     // javax.lang.model.element.Name
@@ -175,7 +179,11 @@ public abstract class Utf8NameTable extends Name.Table {
             byte[] result = new byte[len1 + len2];
             System.arraycopy(buf1, off1, result, 0, len1);
             System.arraycopy(buf2, off2, result, len1, len2);
-            return table.fromUtf8(result, 0, result.length);
+            try {
+                return table.fromUtf(result, 0, result.length, Convert.Validation.NONE);
+            } catch (InvalidUtfException e) {
+                throw new AssertionError();
+            }
         }
 
         @Override
@@ -193,7 +201,11 @@ public abstract class Utf8NameTable extends Name.Table {
             System.arraycopy(buf1, off1, result, 0, len1);
             result[len1] = (byte)ch;
             System.arraycopy(buf2, off2, result, len1 + 1, len2);
-            return table.fromUtf8(result, 0, result.length);
+            try {
+                return table.fromUtf(result, 0, result.length, Convert.Validation.NONE);
+            } catch (InvalidUtfException e) {
+                throw new AssertionError();
+            }
         }
 
         @Override

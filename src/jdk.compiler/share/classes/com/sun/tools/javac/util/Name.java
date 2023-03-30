@@ -125,7 +125,6 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
      *  <p>
      *  The ordering defined by this method must match the ordering
      *  defined by the corresponding {@link #toString()} values.
-     *  The given name must come from the same table as this one.
      *  @see String#compareTo
      */
     @Override
@@ -213,11 +212,20 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
      */
     public abstract void getUtf8Bytes(byte buf[], int off);
 
+// Mapping
+
+    /** Maps the Modified UTF-8 encoding of a {@link Name} to something.
+     */
+    @FunctionalInterface
+    public interface NameMapper<X> {
+        X map(byte[] bytes, int offset, int len);
+    }
+
     /** Decode this name's Modified UTF-8 encoding into something.
      */
-    public <T> T map(PoolReader.Decoder<T> decoder) {
+    public <T> T map(NameMapper<T> mapper) {
         byte[] buf = toUtf8();
-        return decoder.decode(buf, 0, buf.length);
+        return mapper.map(buf, 0, buf.length);
     }
 
 // Table
@@ -255,13 +263,13 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
 
         /** Get the unique {@link Name} corresponding to the given Modified UTF-8 encoding.
          *  <p>
-         *  The implementation in {@link Table} delegates to {@link #fromUtf8(byte[], int, int)}.
+         *  The implementation in {@link Table} delegates to {@link #fromUtf(byte[], int, int)}.
          *  @param buf character string
          *  @return the corresponding {@link Name}
          *  @throws IllegalArgumentException if the data is not valid Modified UTF-8
          */
-        public Name fromUtf8(byte[] buf) {
-            return fromUtf8(buf, 0, buf.length);
+        public Name fromUtf(byte[] cs) throws InvalidUtfException {
+            return fromUtf(cs, 0, cs.length, Convert.Validation.STRICT);
         }
 
         /** Get the unique {@link Name} corresponding to the given Modified UTF-8 encoding.
@@ -270,8 +278,10 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
          *  @param len number of bytes
          *  @return the corresponding {@link Name}
          *  @throws IllegalArgumentException if the data is not valid Modified UTF-8
+         *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
          */
-        public abstract Name fromUtf8(byte[] buf, int off, int len);
+        public abstract Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation)
+            throws InvalidUtfException;
 
         /** Release any resources used by this table.
          */

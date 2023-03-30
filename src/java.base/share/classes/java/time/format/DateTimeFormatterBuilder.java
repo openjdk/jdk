@@ -4516,9 +4516,9 @@ public final class DateTimeFormatterBuilder {
 
         // cache per instance for now
         private final Map<Locale, Entry<Integer, SoftReference<PrefixTree>>>
-            cachedTree = new HashMap<>();
+            cachedTree = HashMap.newHashMap(1);
         private final Map<Locale, Entry<Integer, SoftReference<PrefixTree>>>
-            cachedTreeCI = new HashMap<>();
+            cachedTreeCI = HashMap.newHashMap(1);
 
         @Override
         protected PrefixTree getTree(DateTimeParseContext context) {
@@ -4527,9 +4527,8 @@ public final class DateTimeFormatterBuilder {
             }
             Locale locale = context.getLocale();
             boolean isCaseSensitive = context.isCaseSensitive();
-            Set<String> regionIds = new HashSet<>(ZoneRulesProvider.getAvailableZoneIds());
-            Set<String> nonRegionIds = new HashSet<>(64);
-            int regionIdsSize = regionIds.size();
+            Set<String> availableZoneIds = ZoneRulesProvider.getAvailableZoneIds();
+            int regionIdsSize = availableZoneIds.size();
 
             Map<Locale, Entry<Integer, SoftReference<PrefixTree>>> cached =
                 isCaseSensitive ? cachedTree : cachedTreeCI;
@@ -4542,6 +4541,8 @@ public final class DateTimeFormatterBuilder {
                 (tree = entry.getValue().get()) == null)) {
                 tree = PrefixTree.newTree(context);
                 zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);
+                Set<String> nonRegionIds = HashSet.newHashSet(64);
+                Set<String> regionIds = new HashSet<>(availableZoneIds);
                 for (String[] names : zoneStrings) {
                     String zid = names[0];
                     if (!regionIds.remove(zid)) {
@@ -4666,8 +4667,10 @@ public final class DateTimeFormatterBuilder {
                     if (length >= position + 3 && context.charEquals(text.charAt(position + 2), 'C')) {
                         // There are localized zone texts that start with "UTC", e.g.
                         // "UTC\u221210:00" (MINUS SIGN instead of HYPHEN-MINUS) in French.
-                        // Exclude those ZoneText cases.
-                        if (!(this instanceof ZoneTextPrinterParser)) {
+                        // Exclude those cases.
+                        if (length == position + 3 ||
+                                context.charEquals(text.charAt(position + 3), '+') ||
+                                context.charEquals(text.charAt(position + 3), '-')) {
                             return parseOffsetBased(context, text, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                         }
                     } else {

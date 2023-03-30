@@ -100,6 +100,120 @@ public class Convert {
 /* Conversion routines between names, strings, and byte arrays in Utf8 format
  */
 
+    /** Validate the given Modified UTF-8 encoding using the given validation level.
+     *  Reject invalid data by throwing an {@link InvalidUtfException}.
+     *  Note: there is no point in calling this method with {@link Validation#NONE}.
+     *  @param buf        Buffer containing data
+     *  @param off        Data starting offset
+     *  @param len        Data length
+     *  @param validation Level of validation
+     *  @throws InvalidUtfException if {@code validation} is not {@link Validation#NONE}
+     *      and invalid Modified UTF-8 is encountered
+     */
+    public static void utfValidate(byte[] buf, int off, int len, Validation validation) throws InvalidUtfException {
+        utf2chars(buf, off, null, 0, len, validation);
+    }
+
+    /** Decode characters encoded in Modified UTF-8 encoding using the given validation level.
+     *  Reject any invalid data by throwing an {@link InvalidUtfException}.
+     *  Parameters are as in System.arraycopy():
+     *  @param src        The array holding the bytes to convert.
+     *  @param soff       The start index from which bytes are converted.
+     *  @param dst        The array holding the converted characters,
+     *                    or null to just validate
+     *  @param doff       The start index from which converted characters
+     *                    are written.
+     *  @param len        The maximum number of bytes to convert.
+     *  @param validation Level of validation
+     *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
+     *  @return the index in {@code dst} just after the last copied char
+     *  @throws InvalidUtfException if {@code validation} is not {@link Validation#NONE}
+     *      and invalid Modified UTF-8 is encountered
+     */
+    public static int utf2chars(byte[] src, int soff, char[] dst, int doff, int len, Validation validation)
+      throws InvalidUtfException {
+        final int doff0 = doff;
+        while (len-- > 0) {
+            final int soff0 = soff;
+            int value = src[soff++];
+            if (value < 0) {
+                if ((value & 0xe0) == 0xc0) {
+                    int value2;
+                    if (len-- > 0)
+                        value2 = src[soff++];
+                    else if (validation.allowAnything())
+                        value2 = 0;
+                    else
+                        throw new InvalidUtfException(soff0);
+                    if (!validation.allowAnything() && (value2 & 0xc0) != 0x80)
+                        throw new InvalidUtfException(soff0);
+                    value = ((value & 0x1f) << 6) | (value2 & 0x3f);
+                    if (!validation.allowLongEncoding() && (value & ~0x7f) == 0 && value != 0)
+                        throw new InvalidUtfException(soff0);   // could have been one byte
+                } else if ((value & 0xf0) == 0xe0) {
+                    int value2;
+                    int value3;
+                    if ((len -= 2) >= 0) {
+                        value2 = src[soff++];
+                        value3 = src[soff++];
+                    } else if (validation.allowAnything()) {
+                        value2 = 0;
+                        value3 = 0;
+                    } else
+                        throw new InvalidUtfException(soff0);
+                    if (!validation.allowAnything() && ((value2 & 0xc0) != 0x80 || (value3 & 0xc0) != 0x80))
+                        throw new InvalidUtfException(soff0);
+                    value = ((value & 0x0f) << 12) | ((value2 & 0x3f) << 6) | (value3 & 0x3f);
+                    if (!validation.allowLongEncoding() && (value & ~0x7ff) == 0)
+                        throw new InvalidUtfException(soff0);   // could have been two bytes
+                } else if (validation.allowAnything())
+                    value &= 0xff;
+                else
+                    throw new InvalidUtfException(soff0);
+            } else if (!validation.allowSingleByteNul() && value == 0)
+                throw new InvalidUtfException(soff0);           // 0x0000 must be encoded as two bytes
+            if (dst != null)
+                dst[doff] = (char)value;
+            doff++;
+        }
+        return doff - doff0;
+    }
+
+    /** Decode characters encoded in Modified UTF-8 encoding.
+     *  @param src        The array holding the bytes.
+     *  @param sindex     The start index from which bytes are converted.
+     *  @param len        The maximum number of bytes to convert.
+     *  @param validation Level of validation
+     *  @return           The decoded characters in an array.
+     *  @throws InvalidUtfException if {@code validation} is not {@link Validation#NONE}
+     *      and invalid Modified UTF-8 is encountered
+     */
+    public static char[] utf2chars(byte[] src, int sindex, int len, Validation validation)
+      throws InvalidUtfException {
+        char[] dst = new char[len];
+        int len1 = utf2chars(src, sindex, dst, 0, len, validation);
+        if (len1 == len)
+            return dst;
+        char[] result = new char[len1];
+        System.arraycopy(dst, 0, result, 0, len1);
+        return result;
+    }
+
+    /** Decode a {@link String} encoded in Modified UTF-8 encoding.
+     *  @param src        The array holding the bytes.
+     *  @param sindex     The start index from which bytes are converted.
+     *  @param len        The maximum number of bytes to convert.
+     *  @param validation Level of validation
+     *  @throws InvalidUtfException if {@code validation} is not {@link Validation#NONE}
+     *      and invalid Modified UTF-8 is encountered
+     */
+    public static String utf2string(byte[] src, int sindex, int len, Validation validation)
+      throws InvalidUtfException {
+        char dst[] = new char[len];
+        int len1 = utf2chars(src, sindex, dst, 0, len, validation);
+        return new String(dst, 0, len1);
+    }
+
     /** Count the number of characters encoded in a Modified UTF-8 encoding.
      *  This method does not check for invalid data.
      *  @param buf data buffer
@@ -116,93 +230,6 @@ public class Convert {
             numChars++;
         }
         return numChars;
-    }
-
-    /** Decode characters encoded in Modified UTF-8 encoding.
-     *  Reject any invalid data by throwing an {@link IllegalArgumentException}.
-     *  Parameters are as in System.arraycopy():
-     *  @param src        The array holding the bytes to convert.
-     *  @param soff       The start index from which bytes are converted.
-     *  @param dst        The array holding the converted characters..
-     *  @param doff       The start index from which converted characters
-     *                    are written.
-     *  @param len        The maximum number of bytes to convert.
-     *  @return the index in {@code dst} just after the last copied char
-     *  @throws IllegalArgumentException if invalid Modified UTF-8 is encountered
-     */
-    public static int utf2chars(byte[] src, int soff, char[] dst, int doff, int len) {
-        final int soff0 = soff;
-        final int doff0 = doff;
-        while (len-- > 0) {
-            int value = src[soff++];
-            if (value < 0) {
-                if ((value & 0xe0) == 0xc0) {
-                    if (--len < 0)
-                        throw new IllegalArgumentException("truncated data at offset " + (soff - soff0));
-                    int value2 = src[soff++];
-                    if ((value2 & 0xc0) != 0x80)
-                        throw new IllegalArgumentException("invalid data at offset " + (soff - soff0));
-                    value = ((value & 0x1f) << 6) | (value2 & 0x3f);
-                } else if ((value & 0xf0) == 0xe0) {
-                    if ((len -= 2) < 0)
-                        throw new IllegalArgumentException("truncated data at offset " + (soff - soff0));
-                    int value2 = src[soff++];
-                    int value3 = src[soff++];
-                    if ((value2 & 0xc0) != 0x80 || (value3 & 0xc0) != 0x80)
-                        throw new IllegalArgumentException("invalid data at offset " + (soff - soff0));
-                    value = ((value & 0x0f) << 12) | ((value2 & 0x3f) << 6) | (value3 & 0x3f);
-                } else
-                    throw new IllegalArgumentException("invalid data at offset " + (soff - soff0));
-            }
-            dst[doff++] = (char)value;
-        }
-        return doff - doff0;
-    }
-
-    /** Decode characters encoded in Modified UTF-8 encoding.
-     *  @param src        The array holding the bytes.
-     *  @param sindex     The start index from which bytes are converted.
-     *  @param len        The maximum number of bytes to convert.
-     *  @return           The decoded characters in an array.
-     *  @throws IllegalArgumentException if invalid data is encountered
-     */
-    public static char[] utf2chars(byte[] src, int sindex, int len) {
-        char[] dst = new char[len];
-        int len1 = utf2chars(src, sindex, dst, 0, len);
-        if (len1 == len)
-            return dst;
-        char[] result = new char[len1];
-        System.arraycopy(dst, 0, result, 0, len1);
-        return result;
-    }
-
-    /** Decode characters encoded in Modified UTF-8 encoding.
-     *  as an array of characters.
-     *  @param src        The array holding the bytes.
-     *  @throws IllegalArgumentException if invalid data is encountered
-     */
-    public static char[] utf2chars(byte[] src) {
-        return utf2chars(src, 0, src.length);
-    }
-
-    /** Decode a {@link String} encoded in Modified UTF-8 encoding.
-     *  @param src        The array holding the bytes.
-     *  @param sindex     The start index from which bytes are converted.
-     *  @param len        The maximum number of bytes to convert.
-     *  @throws IllegalArgumentException if invalid data is encountered
-     */
-    public static String utf2string(byte[] src, int sindex, int len) {
-        char dst[] = new char[len];
-        int len1 = utf2chars(src, sindex, dst, 0, len);
-        return new String(dst, 0, len1);
-    }
-
-    /** Return all bytes of a given array in Utf8 representation
-     *  as a string.
-     *  @param src        The array holding the bytes.
-     */
-    public static String utf2string(byte[] src) {
-        return utf2string(src, 0, src.length);
     }
 
     /** Copy characters in source array to bytes in target array,
@@ -387,5 +414,61 @@ public class Convert {
             names = names.prepend(name.table.names.fromString(pack + clz));
         }
         return names.reverse();
+    }
+
+    /**
+     * Modified UTF-8 decoding validation levels.
+     */
+    public enum Validation {
+
+        /**
+         * Do zero validation of UTF-8, i.e., always decode something without error.
+         * When this is used, {@link InvalidUtfException} is never thrown.
+         */
+        NONE(true, true, true),
+
+        /**
+         * Do validation in accordance with the pre-JDK 1.4 Java class file format,
+         * which allows (a) the NUL character {@code &#92;u0000} to be encoded as a single byte
+         * and (b) longer-than-necessary encodings (e.g., three bytes instead of two).
+         */
+        PREJDK14(true, true, false),
+
+        /**
+         * Do strict validation. At this level, each character has only one valid encoding.
+         */
+        STRICT(false, false, false);
+
+        private final boolean allowSingleByteNul;
+        private final boolean allowLongEncoding;
+        private final boolean allowAnything;
+
+        private Validation(boolean allowSingleByteNul, boolean allowLongEncoding, boolean allowAnything) {
+            this.allowSingleByteNul = allowSingleByteNul;
+            this.allowLongEncoding = allowLongEncoding;
+            this.allowAnything = allowAnything;
+        }
+
+        /**
+         * Whether to allow the NUL character {@code &#92;u0000} to be encoded as a single byte.
+         * Modified UTF-8 specifies that it be encoded in two bytes.
+         */
+        public boolean allowSingleByteNul() {
+            return allowSingleByteNul;
+        }
+
+        /**
+         * Whether to allow characters to be encoded using more bytes than required.
+         */
+        public boolean allowLongEncoding() {
+            return allowLongEncoding;
+        }
+
+        /**
+         * Whether to allow anything, including truncated characters and bogus flag bits.
+         */
+        public boolean allowAnything() {
+            return allowAnything;
+        }
     }
 }

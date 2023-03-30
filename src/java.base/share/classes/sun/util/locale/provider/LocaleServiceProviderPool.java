@@ -50,7 +50,7 @@ import java.util.stream.Stream;
 public final class LocaleServiceProviderPool {
 
     /**
-     * A Map that holds singleton instances of this class.  Each instance holds a
+     * A Map that holds singleton instances of this class. Each instance holds a
      * set of provider implementations of a particular locale sensitive service.
      */
     private static final ConcurrentMap<Class<? extends LocaleServiceProvider>, LocaleServiceProviderPool> poolOfPools =
@@ -63,7 +63,7 @@ public final class LocaleServiceProviderPool {
         new ConcurrentHashMap<>();
 
     /**
-     * Available locales for this locale sensitive service.  This also contains
+     * Available locales for this locale sensitive service. This also contains
      * JRE's available locales
      */
     private Set<Locale> availableLocales = null;
@@ -148,33 +148,31 @@ public final class LocaleServiceProviderPool {
     }
 
     /**
-     * Returns a stream of the available locales for all the provider classes.
-     * This stream is constructed from all the locales
-     * that are provided by each provider, including the JRE.
+     * {@return a stream of the available locales for all the provider classes}
      *
-     * @return a stream of the available locales for all provider classes
+     * This stream is constructed from all the locales that are provided by each
+     * provider, including the JRE.
      */
     public static Stream<Locale> streamAllAvailableLocales() {
         return Arrays.stream(AllAvailableLocales.allAvailableLocales);
     }
 
     /**
-     * Returns an array of available locales for all the provider classes.
+     * {@return an array of the available locales for all the provider classes}
+     *
      * This array is a merged array of all the locales that are provided by each
      * provider, including the JRE.
-     *
-     * @return an array of the available locales for all provider classes
      */
     public static Locale[] getAllAvailableLocales() {
         return AllAvailableLocales.allAvailableLocales.clone();
     }
 
     /**
-     * Returns an array of available locales.  This array is a
+     * {@return an array of the available locales}
+     *
+     * This array is a
      * merged array of all the locales that are provided by each
      * provider, including the JRE.
-     *
-     * @return an array of the available locales
      */
     public Locale[] getAvailableLocales() {
         Set<Locale> locList = new HashSet<>();

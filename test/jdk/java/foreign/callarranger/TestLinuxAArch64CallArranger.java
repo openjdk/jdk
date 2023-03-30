@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -425,5 +425,55 @@ public class TestLinuxAArch64CallArranger extends CallArrangerTestBase {
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
+    }
+
+    @Test
+    public void testFloatArrayStruct() {
+        // should be classified as HFA
+        StructLayout S10 = MemoryLayout.structLayout(
+                MemoryLayout.sequenceLayout(4, C_DOUBLE)
+        );
+        MethodType mt = MethodType.methodType(MemorySegment.class, MemorySegment.class);
+        FunctionDescriptor fd = FunctionDescriptor.of(S10, S10);
+        FunctionDescriptor fdExpected = FunctionDescriptor.of(S10, ADDRESS, ADDRESS, S10); // uses return buffer
+        CallArranger.Bindings bindings = CallArranger.LINUX.getBindings(mt, fd, false);
+
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class));
+        assertEquals(callingSequence.functionDesc(), fdExpected);
+
+        // This is identical to the non-variadic calling sequence
+        checkArgumentBindings(callingSequence, new Binding[][]{
+            { unboxAddress(), vmStore(RETURN_BUFFER_STORAGE, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
+            { dup(),
+                bufferLoad(0, double.class),
+                vmStore(v0, double.class),
+              dup(),
+                bufferLoad(8, double.class),
+                vmStore(v1, double.class),
+              dup(),
+                bufferLoad(16, double.class),
+                vmStore(v2, double.class),
+                bufferLoad(24, double.class),
+                vmStore(v3, double.class) },
+        });
+
+        checkReturnBindings(callingSequence, new Binding[]{
+            allocate(S10),
+              dup(),
+                 vmLoad(v0, double.class),
+                 bufferStore(0, double.class),
+              dup(),
+                 vmLoad(v1, double.class),
+                 bufferStore(8, double.class),
+              dup(),
+                 vmLoad(v2, double.class),
+                 bufferStore(16, double.class),
+              dup(),
+                 vmLoad(v3, double.class),
+                 bufferStore(24, double.class),
+        });
     }
 }

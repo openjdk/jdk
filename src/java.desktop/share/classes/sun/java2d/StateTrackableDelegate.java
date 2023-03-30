@@ -93,7 +93,7 @@ public final class StateTrackableDelegate implements StateTrackable {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      * @since 1.7
      */
     public State getState() {
@@ -101,7 +101,7 @@ public final class StateTrackableDelegate implements StateTrackable {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      * @since 1.7
      */
     public synchronized StateTracker getStateTracker() {

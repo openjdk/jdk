@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301833 8302026 8301444 8302028 8302040
+ * @bug 8301833 8302026 8301444 8302028 8302040 8302027
  * @build Tests
  * @build FdlibmTranslit
  * @build ExhaustingTests
@@ -84,9 +84,9 @@ public class ExhaustingTests {
             new UnaryTestCase("cosh",  FdlibmTranslit::cosh,  StrictMath::cosh,  DEFAULT_SHIFT),
             new UnaryTestCase("tanh",  FdlibmTranslit::tanh,  StrictMath::tanh,  DEFAULT_SHIFT),
 
-         // new UnaryTestCase("sin",   FdlibmTranslit::sin,   StrictMath::sin,   DEFAULT_SHIFT),
-         // new UnaryTestCase("cos",   FdlibmTranslit::cos,   StrictMath::cos,   DEFAULT_SHIFT),
-         // new UnaryTestCase("tan",   FdlibmTranslit::tan,   StrictMath::tan,   DEFAULT_SHIFT),
+            new UnaryTestCase("sin",   FdlibmTranslit::sin,   StrictMath::sin,   DEFAULT_SHIFT),
+            new UnaryTestCase("cos",   FdlibmTranslit::cos,   StrictMath::cos,   DEFAULT_SHIFT),
+            new UnaryTestCase("tan",   FdlibmTranslit::tan,   StrictMath::tan,   DEFAULT_SHIFT),
 
             new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin,  DEFAULT_SHIFT),
             new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos,  DEFAULT_SHIFT),
