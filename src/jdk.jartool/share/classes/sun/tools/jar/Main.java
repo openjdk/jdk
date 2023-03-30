@@ -396,7 +396,8 @@ public class Main {
                 }
             } else if (iflag) {
                 if (!suppressDeprecateMsg) {
-                    warn(formatMsg("warn.flag.is.deprecated", "-i"));
+                    warn(getMsg("warn.index.is.ignored"));
+                    warn(formatMsg("warn.flag.is.deprecated", "--generate-index/-i"));
                 }
                 String[] files = filesMap.get(BASE_VERSION);  // base entries only, can be null
                 genIndex(rootjar, files);
