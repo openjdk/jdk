@@ -57,7 +57,7 @@ public class ObjectMonitor extends VMObject {
     waitersField      = new CIntField(type.getCIntegerField("_waiters"), 0);
     recursionsField   = type.getCIntegerField("_recursions");
 
-    ANONYMOUS_OWNER = db.lookupLongConstant("ANONYMOUS_OWNER").longValue();
+    ANONYMOUS_OWNER = db.lookupLongConstant("ObjectMonitor::ANONYMOUS_OWNER").longValue();
   }
 
   public ObjectMonitor(Address addr) {

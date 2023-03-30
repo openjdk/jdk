@@ -1404,7 +1404,7 @@ bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
 bool ObjectMonitor::check_owner(TRAPS) {
   JavaThread* current = THREAD;
   void* cur = owner_raw();
-  assert(cur != ANONYMOUS_OWNER, "no anon owner here");
+  assert(cur != anon_owner_ptr(), "no anon owner here");
   if (cur == current) {
     return true;
   }

@@ -2629,7 +2629,7 @@
   declare_constant(InvocationCounter::count_shift)                        \
                                                                           \
   /* ObjectMonitor constants */                                           \
-  declare_constant(reinterpret_cast<uintptr_t>(ANONYMOUS_OWNER))        \
+  declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \
 
 //--------------------------------------------------------------------------------
 //
