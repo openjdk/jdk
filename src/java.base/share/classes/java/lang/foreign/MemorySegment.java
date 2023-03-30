@@ -393,7 +393,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * int x = foreign.get(ValueLayout.JAVA_INT, 0); // throws IllegalStateException
  *}
  *
- * Alternatively, if the size of the foreign segment is known statically, clients can associate a
+ * Alternatively, if the true size of the zero-length memory segment is known statically, clients can associate a
  * {@linkplain AddressLayout#withTargetLayout(MemoryLayout) target layout} with the address layout used to obtain the
  * segment. When an access operation, or a function descriptor that is passed to a downcall method handle,
  * uses an address value layout with target layout {@code T}, the runtime will wrap any corresponding raw addresses
