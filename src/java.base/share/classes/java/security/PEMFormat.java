@@ -607,7 +607,7 @@ public class PEMFormat {
         if (pemData.keyType() != KeyType.PRIVATE) {
             throw new IOException("Encryption can only happen on Private Keys");
         }
-        byte[] encoded = EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password);
+        byte[] encoded = null;//EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password);
         return new PEMFormat(encoded, KeyType.ENCRYPTED_PRIVATE);
     }
 
@@ -626,7 +626,7 @@ public class PEMFormat {
         if (pemData.keyType() != KeyType.PRIVATE) {
             throw new IOException("Encryption can only happen on Private Keys");
         }
-        byte[] encoded = EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password, pbeAlgo, aps, p);
+        byte[] encoded = null;//EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password, pbeAlgo, aps, p);
         return new PEMFormat(encoded, KeyType.ENCRYPTED_PRIVATE);
     }
 

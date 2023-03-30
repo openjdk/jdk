@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.security.*;
 import java.security.spec.*;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -251,6 +252,13 @@ public class EncryptedPrivateKeyInfo {
         this.encoded = null;
     }
 
+    private EncryptedPrivateKeyInfo(byte[] encoded, byte[] eData, AlgorithmId id, AlgorithmParameters p) {
+        this.encoded = encoded;
+        encryptedData = eData;
+        algid = id;
+        params = p;
+    }
+
     /**
      * Returns the encryption algorithm.
      * <p>Note: Standard name is returned instead of the specified one
@@ -349,7 +357,7 @@ public class EncryptedPrivateKeyInfo {
      * @return the byte [ ]
      * @throws IOException the io exception
      */
-    public static byte[] encryptKey(byte[] encodedBytes, char[] password,
+    public static EncryptedPrivateKeyInfo encrypt(byte[] encodedBytes, char[] password,
         String pbeAlgo, AlgorithmParameterSpec aps, Provider p) throws IOException {
 
         AlgorithmId algid;
@@ -371,23 +379,12 @@ public class EncryptedPrivateKeyInfo {
             var skey = factory.generateSecret(spec);
             cipher.init(Cipher.ENCRYPT_MODE, skey, aps);
             encryptedData = cipher.doFinal(encodedBytes);
-            algid = new AlgorithmId(getPBEID(pbeAlgo), cipher.getParameters());
+            algid = new AlgorithmId(Pem.getPBEID(pbeAlgo), cipher.getParameters());
             algid.encode(out);
             out.putOctetString(encryptedData);
-            return DerValue.wrap(DerValue.tag_Sequence, out).toByteArray();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-    }
-
-    // Sorta hack to get the right OID for PBBS2
-    private static ObjectIdentifier getPBEID(String algorithm) throws IOException {
-        try {
-            if (algorithm.contains("AES")) {
-                return AlgorithmId.get("PBES2").getOID();
-            } else {
-                return AlgorithmId.get(algorithm).getOID();
-            }
+            return new EncryptedPrivateKeyInfo(
+                DerValue.wrap(DerValue.tag_Sequence, out).toByteArray(),
+                encryptedData, algid, cipher.getParameters());
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -401,9 +398,9 @@ public class EncryptedPrivateKeyInfo {
      * @return the byte [ ]
      * @throws IOException the io exception
      */
-    public static byte[] encryptKey(byte[] encodedBytes, char[] password)
+    public static EncryptedPrivateKeyInfo encrypt(byte[] encodedBytes, char[] password)
         throws IOException {
-        return encryptKey(encodedBytes, password, DEFAULT_ALGO, null, null);
+        return encrypt(encodedBytes, password, DEFAULT_ALGO, null, null);
     }
     /**
      * Extract the enclosed PKCS8EncodedKeySpec object from the

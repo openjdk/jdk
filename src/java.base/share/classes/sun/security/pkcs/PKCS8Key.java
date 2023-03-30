@@ -235,6 +235,10 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         return pubKeyEncoded;
     }
 
+    public boolean hasPublicKey() {
+        return (pubKeyEncoded == null ? false : true);
+    }
+
     /**
      * Returns the algorithm ID to be used with this key.
      */

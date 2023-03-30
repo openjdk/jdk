@@ -25,6 +25,8 @@
 
 package sun.security.util;
 
+import sun.security.x509.AlgorithmId;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -33,6 +35,36 @@ import java.util.Base64;
  * A utility class for PEM format encoding.
  */
 public class Pem {
+
+    /**
+     * Public Key PEM header & footer
+     */
+    public static final String PUBHEADER = "-----BEGIN PUBLIC KEY-----";
+    public static final String PUBFOOTER = "-----END PUBLIC KEY-----";
+
+    /**
+     * Private Key PEM header & footer
+     */
+    public static final String PKCS8HEADER = "-----BEGIN PRIVATE KEY-----";
+    public static final String PKCS8FOOTER = "-----END PRIVATE KEY-----";
+
+    /**
+     * Encrypted Private Key PEM header & footer
+     */
+    public static final String PKCS8ENCHEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----";
+    public static final String PKCS8ENCFOOTER = "-----END ENCRYPTED PRIVATE KEY-----";
+
+    /**
+     * Certificate PEM header & footer
+     */
+    public static final String CERTHEADER = "-----BEGIN CERTIFICATE-----";
+    public static final String CERTFOOTER = "-----END CERTIFICATE-----";
+
+    /**
+     * CRL PEM header & footer
+     */
+    public static final String CRLHEADER = "-----BEGIN CRL-----";
+    public static final String CRLFOOTER = "-----END CRL-----";
 
     /**
      * Decodes a PEM-encoded block.
@@ -51,4 +83,19 @@ public class Pem {
             throw new IOException(e);
         }
     }
+
+
+    // Sorta hack to get the right OID for PBBS2
+    public static ObjectIdentifier getPBEID(String algorithm) throws IOException {
+        try {
+            if (algorithm.contains("AES")) {
+                return AlgorithmId.get("PBES2").getOID();
+            } else {
+                return AlgorithmId.get(algorithm).getOID();
+            }
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
+
 }
