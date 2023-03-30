@@ -695,6 +695,13 @@ void JvmtiExport::initialize_oop_storage() {
   _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 
+// Lookup an agent from an JvmtiEnv.Return agent only if it is not yet initialized.
+// An agent can create multiple JvmtiEnvs, but for agent initialization, we are only interested in the initial one.
+static Agent* lookup_uninitialized_agent(JvmtiEnv* env, void* callback) {
+  Agent* const agent = AgentList::lookup(env, callback);
+  return agent == nullptr || agent->is_initialized() ? nullptr : agent;
+}
+
 void JvmtiExport::post_vm_initialized() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_INIT, ("Trg VM init event triggered" ));
 
@@ -711,7 +718,7 @@ void JvmtiExport::post_vm_initialized() {
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMInit callback = env->callbacks()->VMInit;
       if (callback != nullptr) {
-        Agent* const agent = AgentList::lookup(env, reinterpret_cast<void*>(callback));
+        Agent* const agent = lookup_uninitialized_agent(env, reinterpret_cast<void*>(callback));
         if (agent != nullptr) {
           agent->initialization_begin();
         }
@@ -723,10 +730,10 @@ void JvmtiExport::post_vm_initialized() {
     }
   }
 
-  // Agents are timestamped as part of posting the VMInit event above.
-  // For -Xrun agents and agents with no VMInit callback, we explicitly ensure they are also timestamped.
+  // Agents are initialized as part of posting the VMInit event above.
+  // For -Xrun agents and agents with no VMInit callback, we explicitly ensure they are also initialized.
   // JVM_OnLoad and Agent_OnLoad callouts are performed too early for the proper timestamp logic.
-  AgentList::timestamp();
+  AgentList::initialize();
 }
 
 void JvmtiExport::post_vm_death() {

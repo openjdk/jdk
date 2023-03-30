@@ -28,10 +28,9 @@
 #include "memory/allocation.hpp"
 #include "prims/agent.hpp"
 
-class JvmtiEnv;
-
 template <typename, MEMFLAGS>
 class GrowableArrayCHeap;
+class JvmtiEnv;
 
 // Maintains a single cas linked-list of Agents.
 class AgentList : AllStatic {
@@ -41,16 +40,17 @@ class AgentList : AllStatic {
   class Iterator {
     friend class AgentList;
    private:
-    enum Type {
+    enum Filter {
       JAVA,
       NATIVE,
-      JAVA_OR_NATIVE, // union of JAVA and NATIVE
-      XRUN
+      XRUN,
+      NOT_XRUN,
+      ALL
     };
     GrowableArrayCHeap<Agent*, mtServiceability>* _stack;
-    const Type _type;
-    Iterator(Agent** list, Type type);
-    Agent* filter(Agent* agent) const;
+    const Filter _filter;
+    Iterator(Agent** list, Filter filter);
+    Agent* select(Agent* agent) const;
    public:
     bool has_next() const;
     Agent* next();
@@ -61,10 +61,9 @@ class AgentList : AllStatic {
  private:
   static Agent* _list;
 
-  static void timestamp();
-  static void invoke_JVM_OnLoad();
+  static Iterator all();
+  static void initialize();
   static void convert_xrun_agents();
-  static void convert_to_jplis(Agent* agent);
 
  public:
   static void add(Agent* agent);

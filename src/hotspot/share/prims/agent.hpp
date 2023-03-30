@@ -28,52 +28,61 @@
 #include "memory/allocation.hpp"
 #include "utilities/ticks.hpp"
 
+class JvmtiEnv;
+class outputStream;
+
 // Represents an agent launched on the command-line by -agentlib, -agentpath or -Xrun.
 // Also agents loaded dynamically during runtime, for example using the Attach API.
 class Agent : public CHeapObj<mtServiceability> {
   friend class AgentList;
  private:
-  Ticks _init;
-  Tickspan _init_time;
+  Ticks _initialization_time;
+  Tickspan _initialization_duration;
   Agent* _next;
   const char* _name;
   const char* _options;
   void* _os_lib;
   const char* _os_lib_path;
   const void* _jplis;
-  bool _valid;
-  bool _is_absolute_path;
-  bool _is_static_lib;
-  bool _is_dynamic;
-  bool _is_instrument_lib;
-  bool _is_xrun;
+  bool _loaded;
+  bool _absolute_path;
+  bool _static_lib;
+  bool _instrument_lib;
+  bool _dynamic;
+  bool _xrun;
 
   Agent* next() const;
-  void set_jplis(const void* jplis);
+  void set_next(Agent* agent);
+  void convert_xrun_agent();
+  void set_xrun();
 
  public:
+  Agent(const char* name, const char* options, bool is_absolute_path, bool dynamic = false);
   const char* name() const;
   const char* options() const;
   bool is_absolute_path() const;
   void* os_lib() const;
   void set_os_lib(void* os_lib);
-  void set_os_lib_path(const char* path);
   const char* os_lib_path() const;
+  void set_os_lib_path(const char* path);
   bool is_static_lib() const;
   void set_static_lib();
   bool is_dynamic() const;
+  bool is_xrun() const;
   bool is_instrument_lib() const;
-  bool is_valid() const;
-  void set_valid();
-  const Ticks& initialization() const;
-  const Tickspan& initialization_time() const;
+  bool is_loaded() const;
+  void set_loaded();
   bool is_jplis() const;
-  bool is_jplis(const void* jplis) const;
-  bool is_timestamped() const;
-  void timestamp();
+  bool is_jplis(JvmtiEnv* env) const;
+  void set_jplis(const void* jplis);
+  bool is_initialized() const;
   void initialization_begin();
   void initialization_end();
-  Agent(const char* name, const char* options, bool is_absolute_path);
+  const Ticks& initialization_time() const;
+  const Tickspan& initialization_duration() const;
+
+  bool load(outputStream* st = nullptr);
+  void unload();
 };
 
 #endif // SHARE_PRIMS_AGENT_HPP

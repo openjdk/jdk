@@ -275,8 +275,8 @@ static void send_agent_event(AgentEvent& event, const Agent* agent) {
   event.set_name(agent->name());
   event.set_options(agent->options());
   event.set_dynamic(agent->is_dynamic());
-  event.set_initialization(agent->initialization());
   event.set_initializationTime(agent->initialization_time());
+  event.set_initializationDuration(agent->initialization_duration());
   event.commit();
 }
 

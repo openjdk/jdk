@@ -90,11 +90,11 @@ public final class TestAgentEvent {
             Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
             Events.assertField(e, "options").equal("foo=bar");
             Events.assertField(e, "dynamic").equal(false);
-            Instant initialization = e.getInstant("initialization");
-            if (initialization.isAfter(r.getStartTime())) {
+            Instant initializationTime = e.getInstant("initializationTime");
+            if (initializationTime.isAfter(r.getStartTime())) {
                 throw new Exception("Expected a static JavaAgent to be initialized before recording start");
             }
-            Events.assertField(e, "initializationTime").atLeast(0L);
+            Events.assertField(e, "initializationDuration").atLeast(0L);
         }
     }
 
@@ -109,11 +109,11 @@ public final class TestAgentEvent {
             Events.assertField(e, "name").equal("jdwp");
             Events.assertField(e, "options").equal("transport=dt_socket,server=y,address=any,onjcmd=y");
             Events.assertField(e, "dynamic").equal(false);
-            Instant initialization = e.getInstant("initialization");
-            if (initialization.isAfter(r.getStartTime())) {
+            Instant initializationTime = e.getInstant("initializationTime");
+            if (initializationTime.isAfter(r.getStartTime())) {
                 throw new Exception("Expected a static NativeAgent to be initialized before recording start");
             }
-            Events.assertField(e, "initializationTime").atLeast(0L);
+            Events.assertField(e, "initializationDuration").atLeast(0L);
         }
     }
 
@@ -136,19 +136,19 @@ public final class TestAgentEvent {
             List<RecordedEvent> events = Events.fromRecording(r);
             for (RecordedEvent e : events) {
                 System.out.println(e);
-                Instant initialization = e.getInstant("initialization");
-                if (initialization.isBefore(r.getStartTime())) {
+                Instant initializationTime = e.getInstant("initializationTime");
+                if (initializationTime.isBefore(r.getStartTime())) {
                     throw new Exception("Expected a dynamic JavaAgent to be initialized after recording start");
                 }
-                if (initialization.isAfter(r.getStopTime())) {
+                if (initializationTime.isAfter(r.getStopTime())) {
                     throw new Exception("Expected a dynamic JavaAgent to be initialized before recording stop");
                 }
-                Duration initializationTime = e.getDuration("initializationTime");
-                if (initializationTime.isNegative()) {
-                    throw new Exception("Expected initalizationTime to be positive value");
+                Duration initializationDuration = e.getDuration("initializationDuration");
+                if (initializationDuration.isNegative()) {
+                    throw new Exception("Expected initalizationDuration to be positive value");
                 }
-                if (initializationTime.toSeconds() > 3600) {
-                    throw new Exception("Expected initializationTime to be less than 1 hour");
+                if (initializationDuration.toSeconds() > 3600) {
+                    throw new Exception("Expected initializationDuration to be less than 1 hour");
                 }
                 Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
             }
