@@ -430,11 +430,7 @@ void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread
 
 class VM_PopulateDumpSharedSpace : public VM_Operation {
 private:
-  GrowableArray<MemRegion> *_closed_heap_regions;
-  GrowableArray<MemRegion> *_open_heap_regions;
-
-  GrowableArray<ArchiveHeapBitmapInfo> *_closed_heap_bitmaps;
-  GrowableArray<ArchiveHeapBitmapInfo> *_open_heap_bitmaps;
+  ArchiveHeapInfo _heap_info;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
@@ -445,11 +441,7 @@ private:
 
 public:
 
-  VM_PopulateDumpSharedSpace() : VM_Operation(),
-    _closed_heap_regions(nullptr),
-    _open_heap_regions(nullptr),
-    _closed_heap_bitmaps(nullptr),
-    _open_heap_bitmaps(nullptr) {}
+  VM_PopulateDumpSharedSpace() : VM_Operation(), _heap_info() {}
 
   bool skip_operation() const { return false; }
 
@@ -549,11 +541,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(cloned_vtables);
   mapinfo->open_for_write();
-  builder.write_archive(mapinfo,
-                        _closed_heap_regions,
-                        _open_heap_regions,
-                        _closed_heap_bitmaps,
-                        _open_heap_bitmaps);
+  builder.write_archive(mapinfo, &_heap_info);
 
   if (PrintSystemDictionaryAtExit) {
     SystemDictionary::print();
@@ -874,14 +862,7 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
     }
   }
 
-  // The closed and open archive heap space has maximum two regions.
-  // See FileMapInfo::write_heap_regions() for details.
-  _closed_heap_regions = new GrowableArray<MemRegion>(2);
-  _open_heap_regions = new GrowableArray<MemRegion>(2);
-  _closed_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
-  _open_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
-  HeapShared::archive_objects(_closed_heap_regions, _open_heap_regions,
-                              _closed_heap_bitmaps, _open_heap_bitmaps);
+  HeapShared::archive_objects(&_heap_info);
   ArchiveBuilder::OtherROAllocMark mark;
   HeapShared::write_subgraph_info_table();
 }

@@ -40,6 +40,7 @@
 
 static const int JVM_IDENT_MAX = 256;
 
+class ArchiveHeapInfo;
 class BitMapView;
 class CHeapBitMap;
 class ClassFileStream;
@@ -104,13 +105,6 @@ public:
   }
 };
 
-struct ArchiveHeapBitmapInfo {
-  address _map;               // bitmap for relocating embedded oops
-  size_t  _bm_region_offset;  // this bitmap is stored at this offset from the bottom of the BM region
-  size_t  _size_in_bits;
-  size_t  _size_in_bytes;
-};
-
 class SharedPathTable {
   Array<u8>* _table;
   int _size;
@@ -173,7 +167,8 @@ public:
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
   void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
             bool allow_exec, int crc);
-  void init_bitmaps(ArchiveHeapBitmapInfo oopmap, ArchiveHeapBitmapInfo ptrmap);
+  void init_oopmap(size_t offset, size_t size_in_bits);
+  void init_ptrmap(size_t offset, size_t size_in_bits);
   BitMapView oopmap_view();
   BitMapView ptrmap_view();
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
@@ -451,13 +446,9 @@ public:
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
-  char* write_bitmap_region(const CHeapBitMap* ptrmap,
-                            GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
-                            GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps,
+  char* write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
                             size_t &size_in_bytes);
-  size_t write_heap_regions(GrowableArray<MemRegion>* regions,
-                            GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
-                            int first_region_id, int max_num_regions);
+  size_t write_heap_region(ArchiveHeapInfo* heap_info);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
@@ -568,17 +559,14 @@ public:
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
-  bool  map_heap_regions(int first, int max, bool is_open_archive,
-                         MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
-  void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
+  bool  map_heap_regions_impl_inner() NOT_CDS_JAVA_HEAP_RETURN_(false);
+  void  dealloc_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   bool  can_use_heap_regions();
   bool  load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
-  static size_t set_bitmaps_offset(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_size);
-  static size_t write_bitmaps(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_offset, char* buffer);
 
 public:
   address heap_region_dumptime_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
