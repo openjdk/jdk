@@ -355,7 +355,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     void close() {
-        System.out.println(getGraph().getDisplayName() + " removeListener to " + filterChain.getName());
         filterChain.getChangedEvent().removeListener(filterChainChangedListener);
         getChangedEvent().fire();
     }
