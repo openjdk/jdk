@@ -242,13 +242,12 @@ import sun.security.action.GetIntegerAction;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataInput
  * @see java.io.ObjectOutputStream
  * @see java.io.Serializable
- * @see <a href="{@docRoot}/../specs/serialization/input.html">
- *      <cite>Java Object Serialization Specification,</cite> Section 3, "Object Input Classes"</a>
  * @since   1.1
  */
 public class ObjectInputStream

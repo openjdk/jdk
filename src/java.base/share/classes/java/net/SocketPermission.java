@@ -134,6 +134,8 @@ import sun.security.util.Debug;
  * transfer and share confidential data among parties who may not
  * otherwise have access to the data.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2732
+ *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @see java.security.Permissions
  * @see SocketPermission
  *
