@@ -4859,7 +4859,7 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
     if (j < children_verify.length()) {
       child_verify = children_verify.at(j);
     }
-    assert(child->_head != nullptr || child_verify->_head != nullptr, "must find at least one");
+    assert(child != nullptr || child_verify != nullptr, "must find at least one");
     if (child != nullptr && child_verify != nullptr && child->_head != child_verify->_head) {
       // We found two non-equal children. Select the smaller one.
       if (child->_head->_idx < child_verify->_head->_idx) {
