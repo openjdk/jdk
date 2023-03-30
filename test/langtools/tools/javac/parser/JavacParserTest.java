@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8304671
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1793,6 +1793,171 @@ public class JavacParserTest extends TestCase {
         int typeStart = (int) sp.getStartPosition(cut, param.getType());
         int typeEnd   = (int) sp.getEndPosition(cut, param.getType());
         assertEquals("correct parameter type span", code.substring(typeStart, typeEnd), "int[]...");
+    }
+
+    @Test //JDK-8304671
+    void testEnumConstantUnderscore() throws IOException {
+        record TestCase(String code, String release, String ast, String errors) {}
+        TestCase[] testCases = new TestCase[] {
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             A;
+                             void t() {}
+                             _;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ,
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                             \n\
+                             void t() {
+                             }
+                         } """,
+                         """
+                         Test.java:5:5: compiler.err.enum.constant.not.expected
+                         Test.java:5:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             A;
+                             void t() {}
+                             _;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ,
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                             \n\
+                             void t() {
+                             }
+                         } """,
+                         """
+                         Test.java:5:5: compiler.err.enum.constant.not.expected
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _ {},
+                             A;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/  {
+                             },
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _ {},
+                             A;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/  {
+                             },
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         """),
+        };
+        for (TestCase testCase : testCases) {
+            StringWriter out = new StringWriter();
+            JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
+                    List.of("-XDrawDiagnostics", "--release", testCase.release),
+                    null, Arrays.asList(new MyFileObject(testCase.code)));
+            String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
+            assertEquals("Unexpected AST, got:\n" + ast, testCase.ast, ast);
+            assertEquals("Unexpected errors, got:\n" + out.toString(),
+                         out.toString().replaceAll("\\R", "\n"),
+                         testCase.errors);
+        }
     }
 
     void run(String[] args) throws Exception {

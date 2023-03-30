@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4120,10 +4120,13 @@ public class JavacParser implements Parser {
         return defs.toList();
     }
 
+    @SuppressWarnings("fallthrough")
     private EnumeratorEstimate estimateEnumeratorOrMember(Name enumName) {
         // if we are seeing a record declaration inside of an enum we want the same error message as expected for a
         // let's say an interface declaration inside an enum
-        if (token.kind == TokenKind.IDENTIFIER && token.name() != enumName &&
+        boolean ident = token.kind == TokenKind.IDENTIFIER ||
+                        token.kind == TokenKind.UNDERSCORE;
+        if (ident && token.name() != enumName &&
                 (!allowRecords || !isRecordStart())) {
             Token next = S.token(1);
             switch (next.kind) {
@@ -4132,12 +4135,11 @@ public class JavacParser implements Parser {
             }
         }
         switch (token.kind) {
-            case IDENTIFIER: case MONKEYS_AT: case LT:
-                if (token.kind == IDENTIFIER) {
-                    if (allowRecords && isRecordStart()) {
-                        return EnumeratorEstimate.MEMBER;
-                    }
+            case IDENTIFIER:
+                if (allowRecords && isRecordStart()) {
+                    return EnumeratorEstimate.MEMBER;
                 }
+            case MONKEYS_AT: case LT: case UNDERSCORE:
                 return EnumeratorEstimate.UNKNOWN;
             default:
                 return EnumeratorEstimate.MEMBER;
