@@ -27,8 +27,6 @@
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "unittest.hpp"
-
-//#define LOG_PLEASE
 #include "testutils.hpp"
 
 using ::testing::HasSubstr;
@@ -65,8 +63,10 @@ static void test_for_c_heap(size_t sz, ssize_t offset) {
 TEST_VM(NMT, location_printing_cheap_1) { test_for_c_heap(2 * K, 0); }              // start of payload
 TEST_VM(NMT, location_printing_cheap_2) { test_for_c_heap(2 * K, -7); }             // into header
 TEST_VM(NMT, location_printing_cheap_3) { test_for_c_heap(2 * K, K + 1); }          // into payload
-TEST_VM(NMT, location_printing_cheap_4) { test_for_c_heap(2 * K + 1, 2 * K + 2); }  // just outside payload
-TEST_VM(NMT, location_printing_cheap_5) { test_for_c_heap(4, 4); }                  // just outside a very small block
+TEST_VM(NMT, location_printing_cheap_4) { test_for_c_heap(2 * K, K + 2); }          // into payload (check for even/odd errors)
+TEST_VM(NMT, location_printing_cheap_5) { test_for_c_heap(2 * K + 1, 2 * K + 2); }  // just outside payload
+TEST_VM(NMT, location_printing_cheap_6) { test_for_c_heap(4, 0); }                  // into a very small block
+TEST_VM(NMT, location_printing_cheap_7) { test_for_c_heap(4, 4); }                  // just outside a very small block
 
 static void test_for_mmap(size_t sz, ssize_t offset) {
   char* addr = os::reserve_memory(sz, false, mtTest);

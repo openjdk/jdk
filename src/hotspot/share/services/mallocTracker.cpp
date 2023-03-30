@@ -196,61 +196,69 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
 // totally failproof. Only use this during debugging or when you can afford
 // signals popping up, e.g. when writing an hs_err file.
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
-  if (!MemTracker::enabled()) {
-    return false;
-  }
+  assert(MemTracker::enabled(), "NMT not enabled");
+
   address addr = (address)p;
 
   // Carefully feel your way upwards and try to find a malloc header. Then check if
   // we are within the block.
   const MallocHeader* candidate = (const MallocHeader*)(align_down(addr, 16));
   const MallocHeader* const last_candidate = candidate - 0x1001; // 4k (incl. header)
-  while(candidate >= last_candidate) {
+  for (; candidate >= last_candidate; candidate--) {
     if (!os::is_readable_pointer(candidate)) {
-      break;
+      // Probably OOB, give up
+      return false;
     }
-    if (candidate->looks_valid()) {
-      // fudge factor:
-      // We don't report blocks for which p is clearly out. That would cause us to return true and possibly prevent
-      // subsequent tests of p, see os::print_location(). But if p is just outside of the found block, this may be a
-      // narrow oob error and we'd like to know that.
-      const int fudge = 8;
-      const address start_block = (address)candidate;
-      const address start_payload = (address)(candidate + 1);
-      const address end_payload = start_payload + candidate->size();
-      const address end_payload_plus_fudge = end_payload + fudge;
-      if (addr >= start_block && addr < end_payload_plus_fudge) {
-        const char* where = nullptr;
-        if (addr < start_payload) {
-          where = "into header of";
-        } else if (addr < end_payload) {
-          where = "into";
-        } else {
-          where = "just outside of";
-        }
-        st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size " SIZE_FORMAT ", tag %s",
-                  p2i(p), where,
-                  (candidate->is_dead() ? "dead" : "live"),
-                  p2i(candidate + 1), // lets print the payload start, not the header
-                  candidate->size(), NMTUtil::flag_to_enum_name(candidate->flags()));
-        if (MemTracker::tracking_level() == NMT_detail) {
-          NativeCallStack ncs;
-          if (candidate->get_stack(ncs)) {
-            ncs.print_on(st);
-            st->cr();
-          }
-        }
-        return true;
-        break;
+    if (!candidate->looks_valid()) {
+      // This is definitely not a header, go on to the next candidate.
+      continue;
+    }
+
+    // fudge factor:
+    // We don't report blocks for which p is clearly outside of. That would cause us to return true and possibly prevent
+    // subsequent tests of p, see os::print_location(). But if p is just outside of the found block, this may be a
+    // narrow oob error and we'd like to know that.
+    const int fudge = 8;
+    const address start_block = (address)candidate;
+    const address start_payload = (address)(candidate + 1);
+    const address end_payload = start_payload + candidate->size();
+    const address end_payload_plus_fudge = end_payload + fudge;
+    if (!(addr >= start_block && addr < end_payload_plus_fudge)) {
+      // The address of the pointer is not within what the header recorded.
+      if (candidate->is_live()) {
+        // The candidate is live, meaning we found a header
+        // of some allocation that is not part of this pointer.
+        // Then we can give up, we're clearly reading into some other payload.
+        return false;
       } else {
-        // Break if we found a live header but the pointer had not been nearby. If this was a dead header, it may be
-        // a remnant from an older freed block, so continue searching.
-        if (candidate->is_live()) {
-          return false;
-        }
+        // The candidate is dead, so this may be a remnant of an older freed block.
+        // We continue searching.
+        continue;
       }
     }
-    candidate --;
+
+    // We've found a reasonable candidate. Print the info.
+    const char* where = nullptr;
+    if (addr < start_payload) {
+      where = "into header of";
+    } else if (addr < end_payload) {
+      where = "into";
+    } else {
+      where = "just outside of";
+    }
+    st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size " SIZE_FORMAT ", tag %s",
+                 p2i(p), where,
+                 (candidate->is_dead() ? "dead" : "live"),
+                 p2i(candidate + 1), // lets print the payload start, not the header
+                 candidate->size(), NMTUtil::flag_to_enum_name(candidate->flags()));
+    if (MemTracker::tracking_level() == NMT_detail) {
+      NativeCallStack ncs;
+      if (candidate->get_stack(ncs)) {
+        ncs.print_on(st);
+        st->cr();
+      }
+    }
+    return true;
   }
   return false;
 }

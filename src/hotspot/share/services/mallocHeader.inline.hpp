@@ -119,7 +119,7 @@ inline const MallocHeader* MallocHeader::resolve_checked(const void* memblock) {
 
 // Used for debugging purposes only. Check header if it could constitute a valid (life or dead) header.
 inline bool MallocHeader::looks_valid() const {
-  // Note: we define these restrictions lose enough to also catch moderately corrupted blocks.
+  // Note: we define these restrictions loose enough to also catch moderately corrupted blocks.
   // E.g. we don't check footer canary.
   return ( (_canary == _header_canary_life_mark NOT_LP64(&& _alt_canary == _header_alt_canary_life_mark)) ||
            (_canary == _header_canary_dead_mark NOT_LP64(&& _alt_canary == _header_alt_canary_dead_mark)) ) &&
