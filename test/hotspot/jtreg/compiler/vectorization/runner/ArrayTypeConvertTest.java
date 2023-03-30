@@ -143,8 +143,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        // JDK-8298935 disabled the vectorization of some
-        // conversions when `+AlignVector`.
+        // The vectorization of some conversions may fail when `+AlignVector`.
+        // We can remove the condition after JDK-8303827.
         applyIf = {"AlignVector", "false"},
         counts = {IRNode.VECTOR_CAST_I2X, ">0"})
     public double[] convertIntToDouble() {
@@ -233,8 +233,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true"},
-        // JDK-8298935 disabled the vectorization of some
-        // conversions when `+AlignVector`.
+        // The vectorization of some conversions may fail when `+AlignVector`.
+        // We can remove the condition after JDK-8303827.
         applyIf = {"AlignVector", "false"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public long[] convertFloatToLong() {
@@ -317,8 +317,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     // ---------------- Convert Between F & D ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        // JDK-8298935 disabled the vectorization of some
-        // conversions when `+AlignVector`.
+        // The vectorization of some conversions may fail when `+AlignVector`.
+        // We can remove the condition after JDK-8303827.
         applyIf = {"AlignVector", "false"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public double[] convertFloatToDouble() {

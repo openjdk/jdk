@@ -58,8 +58,8 @@ public class TestVectorizeTypeConversion {
     @IR(counts = {IRNode.LOAD_VECTOR, ">0",
                   IRNode.VECTOR_CAST_I2X, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        // JDK-8298935 disabled the vectorization of some
-        // conversions when `+AlignVector`.
+        // The vectorization of some conversions may fail when `+AlignVector`.
+        // We can remove the condition after JDK-8303827.
         applyIf = {"AlignVector", "false"})
     private static void testConvI2D(double[] d, int[] a) {
         for(int i = 0; i < d.length; i++) {
