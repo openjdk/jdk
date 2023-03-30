@@ -6239,11 +6239,6 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
 
   // After successful lock, push object on lock-stack
   ldrw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));
-  // Strictly speaking we should emit an IN_NATIVE store. However, non
-  // of the GCs currently need any special treatment, and some currently
-  // would not correctly handle IN_NATIVE store and the possibly non-null
-  // stale previous value.
-  // access_store_at(T_OBJECT, IN_NATIVE, Address(rthread, t1), obj, noreg, noreg, noreg);
   str(obj, Address(rthread, t1));
   addw(t1, t1, oopSize);
   strw(t1, Address(rthread, JavaThread::lock_stack_offset_offset()));

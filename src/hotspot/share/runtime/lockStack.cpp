@@ -67,7 +67,7 @@ static bool is_stack_watermark_processing(JavaThread* thread) {
 void LockStack::verify(const char* msg) const {
   JavaThread* thread = get_thread();
   assert(is_self() || SafepointSynchronize::is_at_safepoint() || thread->is_handshake_safe_for(Thread::current()) || thread->is_suspended() || thread->is_obj_deopt_suspend() || is_stack_watermark_processing(thread),
-         "access only thread-local, or when target thread safely holds stil");
+         "access only thread-local, or when target thread safely holds still");
   verify_no_thread(msg);
 }
 
