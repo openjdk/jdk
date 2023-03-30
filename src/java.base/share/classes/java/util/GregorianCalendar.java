@@ -2992,27 +2992,38 @@ public class GregorianCalendar extends Calendar {
         // Calculate the DAY_OF_WEEK for Jan 1 of the current YEAR
         long jan1Fd =  gcal.getFixedDate(internalGet(YEAR), 1, 1, null);
         int jan1Dow = BaseCalendar.getDayOfWeekFromFixedDate(jan1Fd);
+        // Calculate how many days are in the first week
         int daysInFirstWeek;
         if (getFirstDayOfWeek() <= jan1Dow) {
             // Add wrap around days
-            daysInFirstWeek = (7 - jan1Dow) + getFirstDayOfWeek();
+            daysInFirstWeek = 7 - jan1Dow + getFirstDayOfWeek();
         } else {
             daysInFirstWeek = getFirstDayOfWeek() - jan1Dow;
         }
+        // Calculate the end day of the first week
+        int endDow = getFirstDayOfWeek() - 1 == 0
+                ? 7 : getFirstDayOfWeek() - 1;
         // If the week is a valid minimum, check if the DAY_OF_WEEK does not exist
         return daysInFirstWeek >= getMinimalDaysInFirstWeek() &&
-                !dayInMinWeek(internalGet(DAY_OF_WEEK), jan1Dow, getFirstDayOfWeek() - 1);
+                !dayInMinWeek(internalGet(DAY_OF_WEEK), jan1Dow, endDow);
     }
 
     /**
-     * Determines if the specified day exists in the minimum week.
+     * Given the first day and last day of a week, this method determines
+     * if the specified day exists in the minimum week.
+     * This method expects all parameters to be passed in as DAY_OF_WEEK values.
      * For example, dayInMinWeek(4, 6, 3) returns false since Wednesday
      * is not between the minimum week given by [Friday, Saturday,
      * Sunday, Monday, Tuesday].
+     *
+     * @throws IllegalArgumentException if either startDay or endDay are not between
+     * 1 and 7 inclusive (Calendar.SUNDAY to Calendar.SATURDAY)
      */
     private boolean dayInMinWeek (int day, int startDay, int endDay) {
-        endDay = endDay == 0
-                ? 7 : endDay;
+        if (endDay > 7 || endDay < 1 || startDay > 7 || startDay < 1) {
+            throw new IllegalArgumentException("Start day or end day is not " +
+                    "a valid day of the week");
+        }
         if (endDay >= startDay) {
             // dayInMinWeek(6, 3, 5), check that 6 is
             // between 3 4 5
