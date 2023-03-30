@@ -2812,52 +2812,66 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   Node* cls = null_check(argument(1));
   if (stopped())  return true;
 
+  IdealKit ideal(this);
 
-#if INCLUDE_JVMTI
-  {
-    IdealKit ideal(this);
+    IdealVariable result(ideal); ideal.declarations_done();
     Node* ONE = ideal.ConI(1);
     Node *addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_post_vm_object_alloc));
     Node *should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
-    ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE);
-    {
+    ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE); {
 
-      const TypeFunc *tf = OptoRuntime::dtrace_object_alloc_Type();
-      Node *kls = load_klass_from_mirror(cls, false, nullptr, 0);
+     const TypeFunc *tf = OptoRuntime::allocate_instance_Type();
 
+     address funcAddr = OptoRuntime::allocate_instance();
+     sync_kit(ideal);
+     Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "allocate_instance", TypePtr::BOTTOM, cls);
+     ideal.sync_kit(this);
+     Node* value = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+
+
+     ideal.set(result, value);
+
+    } ideal.end_if();
+    //ideal.else_(); {
+
+    sync_kit(ideal);
+    Node *kls = load_klass_from_mirror(cls, false, nullptr, 0);
+    ideal.sync_kit(this);
+
+    kls = null_check(kls);
+    if (stopped())
+      return true;  // argument was like int.class
+
+    Node *test = nullptr;
+    if (LibraryCallKit::klass_needs_init_guard(kls)) {
+      // Note:  The argument might still be an illegal value like
+      // Serializable.class or Object[].class.   The runtime will handle it.
+      // But we must make an explicit check for initialization.
       sync_kit(ideal);
-      address funcAddr = OptoRuntime::allocate_instance();
-
-      make_runtime_call(RC_NO_LEAF, tf, funcAddr, "allocate_instance", TypePtr::BOTTOM, cls);
+      Node *insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
       ideal.sync_kit(this);
+      // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
+      // can generate code to load it as unsigned byte.
+      sync_kit(ideal);
+      Node *inst = make_load(nullptr, insp, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
+      ideal.sync_kit(this);
+      Node *bits = intcon(InstanceKlass::fully_initialized);
+      test = _gvn.transform(new SubINode(inst, bits));
+      // The 'test' is non-zero if we need to take a slow path.
     }
-    ideal.end_if();
-    final_sync(ideal);
+    sync_kit(ideal);
+    Node *obj = new_instance(kls, test);
+    ideal.sync_kit(this);
+ // ideal.if_then(should_post_vm_object_alloc, BoolTest::ne, ONE); {
+  ideal.set(result, obj);
+ // } ideal.end_if();
 
-  }
-#endif // INCLUDE_JVMTI
 
-  Node* kls = load_klass_from_mirror(cls, false, nullptr, 0);
-  kls = null_check(kls);
-  if (stopped())  return true;  // argument was like int.class
+  final_sync(ideal);
+  set_result(ideal.value(result));
 
-  Node* test = nullptr;
-  if (LibraryCallKit::klass_needs_init_guard(kls)) {
-    // Note:  The argument might still be an illegal value like
-    // Serializable.class or Object[].class.   The runtime will handle it.
-    // But we must make an explicit check for initialization.
-    Node* insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
-    // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
-    // can generate code to load it as unsigned byte.
-    Node* inst = make_load(nullptr, insp, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
-    Node* bits = intcon(InstanceKlass::fully_initialized);
-    test = _gvn.transform(new SubINode(inst, bits));
-    // The 'test' is non-zero if we need to take a slow path.
-  }
 
-  Node* obj = new_instance(kls, test);
-  set_result(obj);
   return true;
 }
 

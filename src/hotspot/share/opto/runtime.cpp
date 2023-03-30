@@ -153,7 +153,7 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
-  gen(env, _allocate_instance              , new_instance_Type            , SharedRuntime::allocate_instance,    0 , true, false);
+  gen(env, _allocate_instance              , allocate_instance_Type       , SharedRuntime::allocate_instance,    0 , true, false);
   gen(env, _notify_jvmti_mount             , notify_jvmti_Type            , SharedRuntime::notify_jvmti_mount,   0 , true, false);
   gen(env, _notify_jvmti_unmount           , notify_jvmti_Type            , SharedRuntime::notify_jvmti_unmount, 0 , true, false);
   gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
@@ -472,6 +472,21 @@ const TypeFunc *OptoRuntime::new_instance_Type() {
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
 
   return TypeFunc::make(domain, range);
+}
+
+const TypeFunc *OptoRuntime::allocate_instance_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL; // Klass to be allocated
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+   // create result type (range)
+   fields = TypeTuple::fields(1);
+   fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL; // Returned oop
+
+   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+   return TypeFunc::make(domain, range);
 }
 
 

@@ -629,16 +629,18 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 }
 
 #if INCLUDE_JVMTI
-JRT_ENTRY(jobject, SharedRuntime::allocate_instance(JavaThread* current, oopDesc* o,  Handle cls))
+JRT_ENTRY(void, SharedRuntime::allocate_instance(oopDesc* o, JavaThread* current))
   JvmtiVMObjectAllocEventCollector oam;
-  tty->print_cr("CCCCCCCCalled allocate_instance with JvmtiVMObjectAllocEventCollector");
-  // instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(cls()), CHECK_NULL);
-  return nullptr;
-  //JNIHandles::make_local(THREAD, i);
+  ResourceMark rm;
+  tty->print_cr("Called allocate_instance with JvmtiVMObjectAllocEventCollector");
+  o->print();
+  tty->print_cr("Classs  >>>>>>");
+  instanceOop i = InstanceKlass::allocate_instance(o, CHECK);
+  tty->print_cr("Result: ");
+  i->print();
+  tty->print_cr("Result: >>>>>>>>>>>>");
+  current->set_vm_result(i);
 JRT_END
-
-#endif // INCLUDE_JVMTI
-
 
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));

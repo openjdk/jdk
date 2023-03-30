@@ -233,6 +233,7 @@ private:
   // ======================================================
 
   static const TypeFunc* new_instance_Type(); // object allocation (slow case)
+  static const TypeFunc* allocate_instance_Type(); // object allocation with VMObjectAlloc enabled
   static const TypeFunc* new_array_Type ();   // [a]newarray (slow case)
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
   static const TypeFunc* multianewarray2_Type(); // multianewarray
