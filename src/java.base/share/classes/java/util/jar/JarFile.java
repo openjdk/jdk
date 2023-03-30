@@ -208,8 +208,9 @@ public class JarFile extends ZipFile {
     public static final String MANIFEST_NAME = META_INF + "MANIFEST.MF";
 
     /**
-     * The 'JAR index' feature has been removed, but we still need to
-     * process existing files which have this entry.
+     * The 'JAR index' feature has been removed, but JarInputStream and
+     * JarVerifier's verification of signed jars still need to be
+     * able to skip this entry.
      */
     static final String INDEX_NAME = "META-INF/INDEX.LIST";
 
