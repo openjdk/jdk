@@ -28,6 +28,7 @@
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
+ *      8305211
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -46,12 +47,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 90;
+    private static final int COUNT = 84;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "A3:57:D9:69:62:ED:00:ED:72:83:1E:15:46:02:93:F3:12:0F:49:83:E3:E6:D0:9F:96:34:05:9C:43:EB:D6:05";
+            = "7B:27:09:9B:57:D3:F5:70:C5:B9:71:29:26:F2:D7:F2:F4:B8:9A:2C:49:5E:E8:90:6D:93:05:54:47:A3:83:FE";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -88,12 +89,6 @@ public class VerifyCACerts {
                     "E7:93:C9:B0:2F:D8:AA:13:E2:1C:31:22:8A:CC:B0:81:19:64:3B:74:9C:89:89:64:B1:74:6D:46:C3:D4:CB:D2");
             put("usertrusteccca [jdk]",
                     "4F:F4:60:D5:4B:9C:86:DA:BF:BC:FC:57:12:E0:40:0D:2B:ED:3F:BC:4D:4F:BD:AA:86:E0:6A:DC:D2:A9:AD:7A");
-            put("utnuserfirstobjectca [jdk]",
-                    "6F:FF:78:E4:00:A7:0C:11:01:1C:D8:59:77:C4:59:FB:5A:F9:6A:3D:F0:54:08:20:D0:F4:B8:60:78:75:E5:8F");
-            put("addtrustexternalca [jdk]",
-                    "68:7F:A4:51:38:22:78:FF:F0:C8:B1:1F:8D:43:D5:76:67:1C:6E:B2:BC:EA:B4:13:FB:83:D9:65:D0:6D:2F:F2");
-            put("addtrustqualifiedca [jdk]",
-                    "80:95:21:08:05:DB:4B:BC:35:5E:44:28:D8:FD:6E:C2:CD:E3:AB:5F:B9:7A:99:42:98:8E:B8:F4:DC:D0:60:16");
             put("baltimorecybertrustca [jdk]",
                     "16:AF:57:A9:F6:76:B0:AB:12:60:95:AA:5E:BA:DE:F2:2A:B3:11:19:D6:44:AC:95:CD:4B:93:DB:F3:F2:6A:EB");
             put("digicertglobalrootca [jdk]",
@@ -112,8 +107,6 @@ public class VerifyCACerts {
                     "7E:37:CB:8B:4C:47:09:0C:AB:36:55:1B:A6:F4:5D:B8:40:68:0F:BA:16:6A:95:2D:B1:00:71:7F:43:05:3F:C2");
             put("digicerthighassuranceevrootca [jdk]",
                     "74:31:E5:F4:C3:C1:CE:46:90:77:4F:0B:61:E0:54:40:88:3B:A9:A0:1E:D0:0B:A6:AB:D7:80:6E:D3:B1:18:CF");
-            put("geotrustglobalca [jdk]",
-                    "FF:85:6A:2D:25:1D:CD:88:D3:66:56:F4:50:12:67:98:CF:AB:AA:DE:40:79:9C:72:2D:E4:D2:B5:DB:36:A7:3A");
             put("geotrustprimaryca [jdk]",
                     "37:D5:10:06:C5:12:EA:AB:62:64:21:F1:EC:8C:92:01:3F:C5:F8:2A:E9:8E:E5:33:EB:46:19:B8:DE:B4:D0:6C");
             put("geotrustprimarycag2 [jdk]",
@@ -146,10 +139,6 @@ public class VerifyCACerts {
                     "5D:56:49:9B:E4:D2:E0:8B:CF:CA:D0:8A:3E:38:72:3D:50:50:3B:DE:70:69:48:E4:2F:55:60:30:19:E5:28:AE");
             put("letsencryptisrgx1 [jdk]",
                     "96:BC:EC:06:26:49:76:F3:74:60:77:9A:CF:28:C5:A7:CF:E8:A3:C0:AA:E1:1A:8F:FC:EE:05:C0:BD:DF:08:C6");
-            put("luxtrustglobalrootca [jdk]",
-                    "A1:B2:DB:EB:64:E7:06:C6:16:9E:3C:41:18:B2:3B:AA:09:01:8A:84:27:66:6D:8B:F0:E2:88:91:EC:05:19:50");
-            put("quovadisrootca [jdk]",
-                    "A4:5E:DE:3B:BB:F0:9C:8A:E1:5C:72:EF:C0:72:68:D6:93:A2:1C:99:6F:D5:1E:67:CA:07:94:60:FD:6D:88:73");
             put("quovadisrootca1g3 [jdk]",
                     "8A:86:6F:D1:B2:76:B5:7E:57:8E:92:1C:65:82:8A:2B:ED:58:E9:F2:F2:88:05:41:34:B7:F1:F4:BF:C9:CC:74");
             put("quovadisrootca2 [jdk]",
@@ -247,18 +236,6 @@ public class VerifyCACerts {
     @SuppressWarnings("serial")
     private static final HashSet<String> EXPIRY_EXC_ENTRIES = new HashSet<>() {
         {
-            // Valid until: Tue Jul 09 14:40:36 EDT 2019
-            add("utnuserfirstobjectca [jdk]");
-            // Valid until: Sat May 30 10:38:31 GMT 2020
-            add("addtrustexternalca [jdk]");
-            // Valid until: Sat May 30 10:44:50 GMT 2020
-            add("addtrustqualifiedca [jdk]");
-            // Valid until: Wed Mar 17 02:51:37 PDT 2021
-            add("luxtrustglobalrootca [jdk]");
-            // Valid until: Wed Mar 17 11:33:33 PDT 2021
-            add("quovadisrootca [jdk]");
-            // Valid until: Sat May 21 04:00:00 GMT 2022
-            add("geotrustglobalca [jdk]");
         }
     };
 
