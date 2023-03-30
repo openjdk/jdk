@@ -53,7 +53,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
     private final FilterChain filterChain;
-    private final FilterChain filterSequence;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
     private final ChangedEvent<DiagramViewModel> diagramChangedEvent;
@@ -152,10 +151,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         if (provider == null) {
             filterChain = new FilterChain();
-            filterSequence = new FilterChain();
         } else {
             filterChain = provider.getFilterChain();
-            filterSequence = provider.getSequence();
         }
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
@@ -293,6 +290,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         hiddenNodesChangedEvent.fire();
     }
 
+    public FilterChain getSequenceFilterChain() {
+        return filterChain;
+    }
+
     private void filterChanged() {
         rebuildDiagram();
         diagramChangedEvent.fire();
@@ -311,7 +312,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
-        getFilterChain().applyInOrder(diagram, filterChain, filterSequence);
+        getFilterChain().apply(diagram, getSequenceFilterChain());
         if (graph.isDiffGraph()) {
             ColorFilter f = new ColorFilter("");
             f.addRule(stateColorRule("same",    Color.white));
