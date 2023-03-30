@@ -734,37 +734,38 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 //%note synchronization_3
 
 //%note monitor_1
-JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, void* elem))
-  if (!UseHeavyMonitors && UseFastLocking) {
-    // TODO: We accept elem as void* to workaround a limitation of registers in x86_32. Interpreter
-    // code is really sending an oopDesc* here.
-    // The problem is that we would need to preserve the register that holds the BasicObjectLock,
-    // but we are using that register to hold the thread. We don't have enough registers to
-    // also keep the BasicObjectLock, but we don't really need it anyway, we only need
-    // the object. See also InterpreterMacroAssembler::lock_object().
-    // As soon as traditional stack-locking goes away we can change elem to be oopDesc*
-    // (also in monitorexit below).
-    Handle h_obj(current, oop((reinterpret_cast<oopDesc*>(elem))));
-    assert(Universe::heap()->is_in_or_null(h_obj()),
-           "must be null or an object");
-    ObjectSynchronizer::enter(h_obj, nullptr, current);
-    return;
-  }
-  BasicObjectLock* lock = reinterpret_cast<BasicObjectLock*>(elem);
+JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, BasicObjectLock* elem))
+  assert(!UseFastLocking, "Should call monitorenter_obj() when using UseFastLocking");
 #ifdef ASSERT
-  current->last_frame().interpreter_frame_verify_monitor(lock);
+  current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
-  Handle h_obj(current, lock->obj());
+  Handle h_obj(current, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be null or an object");
-  ObjectSynchronizer::enter(h_obj, lock->lock(), current);
-  assert(Universe::heap()->is_in_or_null(lock->obj()),
+  ObjectSynchronizer::enter(h_obj, elem->lock(), current);
+  assert(Universe::heap()->is_in_or_null(elem->obj()),
          "must be null or an object");
 #ifdef ASSERT
-  current->last_frame().interpreter_frame_verify_monitor(lock);
+  current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
 JRT_END
 
+// NOTE: We provide a separate implementation for UseFastLocking to workaround a limitation
+// of registers in x86_32. This entry point accepts an oop instead of a BasicObjectLock*.
+// The problem is that we would need to preserve the register that holds the BasicObjectLock,
+// but we are using that register to hold the thread. We don't have enough registers to
+// also keep the BasicObjectLock, but we don't really need it anyway, we only need
+// the object. See also InterpreterMacroAssembler::lock_object().
+// As soon as traditional stack-locking goes away we could remove the other monitorenter() entry
+// point, and only use oop-accepting entries (same for monitorexit() below).
+JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter_obj(JavaThread* current, oopDesc* obj))
+  assert(!UseHeavyMonitors && UseFastLocking, "Should call monitorenter() when not using UseFastLocking");
+  Handle h_obj(current, cast_to_oop(obj));
+  assert(Universe::heap()->is_in_or_null(h_obj()),
+         "must be null or an object");
+  ObjectSynchronizer::enter(h_obj, nullptr, current);
+  return;
+JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   oop obj = elem->obj();

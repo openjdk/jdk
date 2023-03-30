@@ -9739,7 +9739,7 @@ void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, 
 #endif
   subl(Address(thread, JavaThread::lock_stack_offset_offset()), oopSize);
 #ifdef ASSERT
-  movl(tmp, Address(r15_thread, JavaThread::lock_stack_offset_offset()));
+  movl(tmp, Address(thread, JavaThread::lock_stack_offset_offset()));
   movptr(Address(thread, tmp), 0);
 #endif
 }
