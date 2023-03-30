@@ -831,7 +831,7 @@ reg_class double_reg(
 );
 
 // Class for RVV vector registers
-// v0, v30, v31 is used as RVV mask registers.
+// Note: v0, v30 and v31 are used as mask registers.
 reg_class vectora_reg(
     V1, V1_H, V1_J, V1_K,
     V2, V2_H, V2_J, V2_K,
