@@ -58,10 +58,12 @@ uint32_t LockStack::end_offset() {
   return static_cast<uint32_t>(offset);
 }
 
+#ifdef ASSERT
 static bool is_stack_watermark_processing(JavaThread* thread) {
   StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
   return watermark->processing_started() && !watermark->processing_completed();
 }
+#endif
 
 #ifndef PRODUCT
 void LockStack::verify(const char* msg) const {

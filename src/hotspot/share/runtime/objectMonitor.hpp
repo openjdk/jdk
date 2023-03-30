@@ -158,7 +158,7 @@ public:
   static const uintptr_t ANONYMOUS_OWNER = 1;
 
 private:
-  static constexpr void* anon_owner_ptr() { return reinterpret_cast<void*>(ANONYMOUS_OWNER); }
+  static void* anon_owner_ptr() { return reinterpret_cast<void*>(ANONYMOUS_OWNER); }
 
   void* volatile _owner;            // pointer to owning thread OR BasicLock
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
