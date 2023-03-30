@@ -61,6 +61,7 @@ public class CorruptedZipFiles {
 
     // The path used when reading/writing the corrupted ZIP to disk
     private Path zip = Path.of("corrupted.zip");
+    private ByteBuffer buffer;
 
     /*
      * Make a sample ZIP and calculate some known offsets into this ZIP
@@ -103,6 +104,7 @@ public class CorruptedZipFiles {
     @BeforeEach
     public void makeCopy() {
         copy = template.clone();
+        buffer = ByteBuffer.wrap(copy).order(ByteOrder.LITTLE_ENDIAN);
     }
 
     /*
@@ -120,7 +122,7 @@ public class CorruptedZipFiles {
      */
     @Test
     public void excessiveCENSize() throws IOException {
-        copy[endpos+ENDSIZ]=(byte)0xff;
+        buffer.putInt(endpos+ENDSIZ, 0xff000000);
         assertZipException(".*bad central directory size.*");
     }
 
@@ -131,7 +133,7 @@ public class CorruptedZipFiles {
      */
     @Test
     public void excessiveCENOffset() throws IOException {
-        copy[endpos+ENDOFF]=(byte)0xff;
+        buffer.putInt(endpos+ENDOFF, 0xff000000);
         assertZipException(".*bad central directory offset.*");
     }
 
@@ -141,7 +143,8 @@ public class CorruptedZipFiles {
      */
     @Test
     public void invalidCENSignature() throws IOException {
-        copy[cenpos]++;
+        int existingSignature = buffer.getInt(cenpos);
+        buffer.putInt(cenpos, existingSignature +1);
         assertZipException(".*bad signature.*");
     }
 
@@ -161,7 +164,8 @@ public class CorruptedZipFiles {
      */
     @Test
     public void excessiveFileNameLength() throws IOException {
-        copy[cenpos+CENNAM]++;
+        short existingNameLength = buffer.getShort(cenpos + CENNAM);
+        buffer.putShort(cenpos+CENNAM, (short) (existingNameLength + 1));
         assertZipException(".*bad header size.*");
     }
 
@@ -171,8 +175,7 @@ public class CorruptedZipFiles {
      */
     @Test
     public void excessiveFileNameLength2() throws IOException {
-        copy[cenpos+CENNAM]   = (byte)0xfd;
-        copy[cenpos+CENNAM+1] = (byte)0xfd;
+        buffer.putShort(cenpos + CENNAM, (short) 0xfdfd);
         assertZipException(".*bad header size.*");
     }
 
@@ -182,7 +185,8 @@ public class CorruptedZipFiles {
      */
     @Test
     public void insufficientFilenameLength() throws IOException {
-        copy[cenpos+CENNAM]--;
+        short existingNameLength = buffer.getShort(cenpos + CENNAM);
+        buffer.putShort(cenpos+CENNAM, (short) (existingNameLength - 1));
         assertZipException(".*bad header size.*");
     }
 
@@ -192,7 +196,8 @@ public class CorruptedZipFiles {
      */
     @Test
     public void excessiveExtraFieldLength() throws IOException {
-        copy[cenpos+CENEXT]++;
+        short existingExtraLength = buffer.getShort(cenpos + CENEXT);
+        buffer.putShort(cenpos+CENEXT, (short) (existingExtraLength + 1));
         assertZipException(".*bad header size.*");
     }
 
@@ -202,8 +207,7 @@ public class CorruptedZipFiles {
      */
     @Test
     public void excessiveExtraFieldLength2() throws IOException {
-        copy[cenpos+CENEXT]   = (byte)0xfd;
-        copy[cenpos+CENEXT+1] = (byte)0xfd;
+        buffer.putShort(cenpos+CENEXT, (short) 0xfdfd);
         assertZipException(".*bad header size.*");
     }
 
@@ -213,7 +217,8 @@ public class CorruptedZipFiles {
      */
     @Test
     public void excessiveCommentLength() throws IOException {
-        copy[cenpos+CENCOM]++;
+        short existingCommentLength = buffer.getShort(cenpos + CENCOM);
+        buffer.putShort(cenpos+CENCOM, (short) (existingCommentLength + 1));
         assertZipException(".*bad header size.*");
     }
 
@@ -233,7 +238,8 @@ public class CorruptedZipFiles {
      */
     @Test
     public void invalidLOCSignature() throws IOException {
-        copy[locpos]++;
+        int existingSignatur = buffer.getInt(locpos);
+        buffer.putInt(locpos, existingSignatur +1);
         assertZipException(".*bad signature.*");
     }
 
