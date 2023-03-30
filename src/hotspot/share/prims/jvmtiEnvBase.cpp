@@ -1572,6 +1572,7 @@ private:
           // restore VTMS transition bit in j.l.Thread object
           java_lang_Thread::set_is_in_VTMS_transition(vt_oop, true);
         }
+        continue; // no need in JvmtiThreadState correction below if in transition
       }
       if (_whitebox_used) {
         correct_jvmti_thread_state(jt); // needed in testing environment only
