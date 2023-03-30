@@ -371,6 +371,7 @@ public class JavaCompiler {
 
     /** Construct a new compiler using a shared context.
      */
+    @SuppressWarnings("this-escape")
     public JavaCompiler(Context context) {
         this.context = context;
         context.put(compilerKey, this);

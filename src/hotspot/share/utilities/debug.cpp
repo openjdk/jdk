@@ -83,8 +83,11 @@ DebuggingContext::DebuggingContext() {
 }
 
 DebuggingContext::~DebuggingContext() {
-  assert(is_enabled(), "Debugging nesting confusion");
-  _enabled -= 1;                // Decrease nesting count.
+  if (is_enabled()) {
+    _enabled -= 1;              // Decrease nesting count.
+  } else {
+    fatal("Debugging nesting confusion");
+  }
 }
 
 #ifndef ASSERT
