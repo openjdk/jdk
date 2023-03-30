@@ -49,7 +49,7 @@ import org.junit.jupiter.params.provider.Arguments;
  * week is incremented to prevent this.
  */
 public class RollFromLastToFirstWeek {
-    static Calendar.Builder GREGORIAN_BUILDER = new Builder()
+    private static final Builder GREGORIAN_BUILDER = new Builder()
             .setCalendarType("gregory");
 
     @ParameterizedTest
