@@ -74,8 +74,6 @@ public class BindingSpecializer {
     // Bunch of helper constants
     private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
 
-    private static final MethodTypeDesc MTD_VOID = MethodTypeDesc.of(CD_void);
-
     private static final ClassDesc CD_Arena = desc(Arena.class);
     private static final ClassDesc CD_MemorySegment = desc(MemorySegment.class);
     private static final ClassDesc CD_MemorySegment_Scope = desc(MemorySegment.Scope.class);
@@ -99,15 +97,15 @@ public class BindingSpecializer {
     private static final MethodTypeDesc MTD_NEW_EMPTY_ARENA = MethodTypeDesc.of(CD_Arena);
     private static final MethodTypeDesc MTD_SCOPE = MethodTypeDesc.of(CD_MemorySegment_Scope);
     private static final MethodTypeDesc MTD_SESSION_IMPL = MethodTypeDesc.of(CD_MemorySessionImpl);
-    private static final MethodTypeDesc MTD_CLOSE = MTD_VOID;
+    private static final MethodTypeDesc MTD_CLOSE = MTD_void;
     private static final MethodTypeDesc MTD_UNBOX_SEGMENT = MethodTypeDesc.of(CD_long, CD_MemorySegment);
     private static final MethodTypeDesc MTD_COPY = MethodTypeDesc.of(CD_void, CD_MemorySegment, CD_long, CD_MemorySegment, CD_long, CD_long);
     private static final MethodTypeDesc MTD_LONG_TO_ADDRESS_NO_SCOPE = MethodTypeDesc.of(CD_MemorySegment, CD_long, CD_long, CD_long);
     private static final MethodTypeDesc MTD_LONG_TO_ADDRESS_SCOPE = MethodTypeDesc.of(CD_MemorySegment, CD_long, CD_long, CD_long, CD_MemorySessionImpl);
     private static final MethodTypeDesc MTD_ALLOCATE = MethodTypeDesc.of(CD_MemorySegment, CD_long, CD_long);
     private static final MethodTypeDesc MTD_HANDLE_UNCAUGHT_EXCEPTION = MethodTypeDesc.of(CD_void, CD_Throwable);
-    private static final MethodTypeDesc MTD_RELEASE0 = MTD_VOID;
-    private static final MethodTypeDesc MTD_ACQUIRE0 = MTD_VOID;
+    private static final MethodTypeDesc MTD_RELEASE0 = MTD_void;
+    private static final MethodTypeDesc MTD_ACQUIRE0 = MTD_void;
     private static final MethodTypeDesc MTD_INTEGER_TO_UNSIGNED_LONG = MethodTypeDesc.of(CD_long, CD_int);
     private static final MethodTypeDesc MTD_SHORT_TO_UNSIGNED_LONG = MethodTypeDesc.of(CD_long, CD_short);
     private static final MethodTypeDesc MTD_BYTE_TO_UNSIGNED_LONG = MethodTypeDesc.of(CD_long, CD_byte);
