@@ -1698,11 +1698,9 @@ void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (Assembler::is_simm12(offset)) {
     __ addi(as_Register(reg), sp, offset);
-  } else if (Assembler::is_simm32(offset)) {
+  } else {
     __ li32(t0, offset);
     __ add(as_Register(reg), sp, t0);
-  } else {
-    ShouldNotReachHere();
   }
 }
 
