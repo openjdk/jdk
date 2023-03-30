@@ -43,8 +43,7 @@ class WindowsFileSystem
     private final String defaultRoot;
 
     // package-private
-    WindowsFileSystem(WindowsFileSystemProvider provider)
-    {
+    WindowsFileSystem(WindowsFileSystemProvider provider) {
         this.provider = provider;
 
         // parse default directory and check it is absolute
