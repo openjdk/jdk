@@ -1170,6 +1170,9 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
       buster \
       ~/sysroot-arm64 \
       http://httpredir.debian.org/debian/
+    # An alternative mirror is `https://deb.debian.org/debian/`.
+    # If the target architecture is `riscv64`,
+    # the path should be `debian-ports` instead of `debian`.
     ```
 
   * Make sure the symlinks inside the newly created chroot point to proper locations:
@@ -1217,6 +1220,7 @@ Architectures that are known to successfully cross-compile like this are:
   m68k          sid          m68k          m68k-linux-gnu           zero
   alpha         sid          alpha         alpha-linux-gnu          zero
   sh4           sid          sh4           sh4-linux-gnu            zero
+  riscv64       sid          riscv64       riscv64-linux-gnu        (all)
 
 ### Building for ARM/aarch64
 
