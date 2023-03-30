@@ -86,7 +86,8 @@ public final class ClassFileDumper {
 
     /**
      * Returns a ClassFileDumper instance for the given key with a given
-     * dump path. To enable dumping of the generated classes, -D<key>=true.
+     * dump path. To enable dumping of the generated classes
+     *     -D<key> or -D<key>=true
      *
      * The system property is read only once when it is the first time
      * the dumper instance for the given key is created.
@@ -100,7 +101,9 @@ public final class ClassFileDumper {
 
         var dumper = DUMPER_MAP.get(key);
         if (dumper == null) {
-            boolean enabled = GetBooleanAction.privilegedGetProperty(key);
+            String value = GetPropertyAction.privilegedGetProperty(key);
+            boolean enabled = value != null && value.isEmpty()
+                                    ? true : Boolean.parseBoolean(value);
             Path dir = enabled ? validateDumpDir(path) : null;
             var newDumper = new ClassFileDumper(key, dir);
             var v = DUMPER_MAP.putIfAbsent(key, newDumper);

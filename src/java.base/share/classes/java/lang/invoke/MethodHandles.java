@@ -2241,7 +2241,8 @@ public class MethodHandles {
 
         // A default dumper for writing class files passed to Lookup::defineClass
         // and Lookup::defineHiddenClass to disk for debugging purposes.  To enable,
-        // set -Djdk.invoke.MethodHandle.dumpHiddenClassFiles=true
+        // set -Djdk.invoke.MethodHandle.dumpHiddenClassFiles or
+        //     -Djdk.invoke.MethodHandle.dumpHiddenClassFiles=true
         //
         // This default dumper does not dump hidden classes defined by LambdaMetafactory
         // and LambdaForms and method handle internals.  They are dumped via

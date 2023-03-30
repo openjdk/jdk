@@ -94,7 +94,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     static {
         // To dump the lambda proxy classes, set this system property:
-        //    -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true
+        //    -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles
+        // or -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true
         final String dumpProxyClassesKey = "jdk.invoke.LambdaMetafactory.dumpProxyClassFiles";
         lambdaProxyClassFileDumper = ClassFileDumper.getInstance(dumpProxyClassesKey, Path.of("DUMP_LAMBDA_PROXY_CLASS_FILES"));
 
