@@ -660,6 +660,22 @@ public class UnicodeReader {
     }
 
     /**
+     * Returns a string subset of the input buffer.
+     * The returned string begins at the {@code position} and
+     * extends to the character at index {@code length - 1}.
+     * Thus the length of the substring is {@code length-position}.
+     * This behavior is like
+     * {@code String.substring(position, length)}.
+     * Unicode escape sequences are not translated.
+     *
+     * @throws ArrayIndexOutOfBoundsException if either offset is outside of the
+     *         array bounds
+     */
+    public String getRawString() {
+        return getRawString(position, length);
+    }
+
+    /**
      * This is a specialized version of UnicodeReader that keeps track of the
      * column position within a given character stream. Used for Javadoc
      * processing to build a table for mapping positions in the comment string

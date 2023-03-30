@@ -99,6 +99,11 @@ public class JavadocTokenizer extends JavaTokenizer {
         private final StringBuilder sb;
 
         /**
+         * Indicates if newline is required.
+         */
+        private boolean firstLine = true;
+
+        /**
          * Map used to map the extracted Javadoc comment's character positions back to
          * the original source.
          */
@@ -115,6 +120,11 @@ public class JavadocTokenizer extends JavaTokenizer {
          * @param line line reader
          */
         protected void putLine(UnicodeReader line) {
+            if (firstLine) {
+                firstLine = false;
+            } else {
+                sb.append('\n');
+            }
             while (line.isAvailable()) {
                 offsetMap.add(sb.length(), line.position());
 
@@ -126,8 +136,6 @@ public class JavadocTokenizer extends JavaTokenizer {
 
                 line.next();
             }
-            offsetMap.add(sb.length(), line.position());
-            sb.append('\n');
         }
 
         @Override

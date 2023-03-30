@@ -1270,13 +1270,15 @@ public class JavaTokenizer extends UnicodeReader {
          */
         UnicodeReader trimEndOfComment(UnicodeReader line) {
             int pos = line.position();
+            boolean allWhitespace = true;
 
             while (line.isAvailable()) {
                 int endPos = line.position();
 
                 if (line.skip('*') != 0 && line.is('/')) {
-                    return line.lineReader(pos, endPos);
+                    return line.lineReader(allWhitespace ? endPos : pos, endPos);
                 } else {
+                    allWhitespace = allWhitespace && line.isWhitespace();
                     line.next();
                 }
             }
@@ -1294,18 +1296,19 @@ public class JavaTokenizer extends UnicodeReader {
          * @return modified line reader
          */
         UnicodeReader trimJavadocComment(UnicodeReader line) {
+            line = trimEndOfComment(line);
             int pos = line.position();
             line.skipWhitespace();
 
+            if (!line.isAvailable()) {
+                return line;
+            }
+
             if (line.skip('*') == 0) {
                 line.reset(pos);
-
-                return line;
-            } else if (line.is('/')) {
-                return line.lineReader(pos, pos);
-            } else {
-                return trimEndOfComment(line);
             }
+
+            return line;
         }
 
         /**
@@ -1314,7 +1317,7 @@ public class JavaTokenizer extends UnicodeReader {
          * @param line line reader
          */
         protected void putLine(UnicodeReader line) {
-            // ignore overridden in subclass
+            // ignore, overridden in subclass
         }
 
         /**
@@ -1329,6 +1332,14 @@ public class JavaTokenizer extends UnicodeReader {
                     return;
                 }
 
+                skip('*');
+                skipWhitespace();
+
+                if (isEOLN()) {
+                    accept('\r');
+                    accept('\n');
+                }
+
                 while (isAvailable()) {
                     UnicodeReader line = lineReader();
                     line = trimJavadocComment(line);
@@ -1338,7 +1349,10 @@ public class JavaTokenizer extends UnicodeReader {
                     line.skipWhitespace();
 
                     if (line.accept("@deprecated") &&
-                            (line.isWhitespace() || line.isEOLN() || line.get() == 0x1A)) {
+                            (!line.isAvailable() ||
+                                    line.isWhitespace() ||
+                                    line.isEOLN() ||
+                                    line.get() == EOI)) {
                         deprecatedFlag = true;
                     }
 
