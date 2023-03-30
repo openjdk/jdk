@@ -138,9 +138,6 @@ public class ToggleNotifyJvmtiTest {
         try {
             for (int i = 0; i < VTHREADS_CNT; i++) {
                 TestedThread thread = threads[i];
-                if (thread == null) {
-                    break;
-                }
                 thread.letFinish();
                 vts[i].join();
             }
