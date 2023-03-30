@@ -1147,7 +1147,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
 ### Cross compiling with Debian sysroots
 
 Fortunately, you can create sysroots for foreign architectures with tools
-provided by your OS. On Debian/Ubuntu systems, one could use `qemu-deboostrap` to
+provided by your OS. On Debian/Ubuntu systems, one could use `debootstrap` to
 create the *target* system chroot, which would have the native libraries and headers
 specific to that *target* system. After that, we can use the cross-compiler on the *build*
 system, pointing into chroot to get the build dependencies right. This allows building
@@ -1162,7 +1162,7 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Create chroot on the *build* system, configuring it for *target* system:
     ```
-    sudo qemu-debootstrap \
+    sudo debootstrap \
       --arch=arm64 \
       --verbose \
       --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
