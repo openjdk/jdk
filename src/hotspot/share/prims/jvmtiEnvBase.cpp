@@ -1531,6 +1531,7 @@ JvmtiEnvBase::is_in_thread_list(jint count, const jthread* list, oop jt_oop) {
 
 class VM_SetNotifyJvmtiEventsMode : public VM_Operation {
 private:
+  static bool _whitebox_used;
   bool _enable;
 
   // This function is needed only for testing purposes to support multiple
@@ -1551,7 +1552,7 @@ private:
     if (virt) {
       jt->set_jvmti_thread_state(nullptr);  // reset jt->jvmti_thread_state()
       jt->set_jvmti_vthread(vt_oop);        // restore jt->jvmti_vthread()
-    } else { 
+    } else {
       jt->set_jvmti_thread_state(ct_state); // restore jt->jvmti_thread_state()
       jt->set_jvmti_vthread(ct_oop);        // restore jt->jvmti_vthread()
     }
@@ -1566,8 +1567,15 @@ private:
     for (JavaThread* jt : ThreadsListHandle()) {
       if (jt->is_in_VTMS_transition()) {
         count++;
+        oop  vt_oop = jt->vthread();
+        if (vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop)) {
+          // restore VTMS transition bit in j.l.Thread object
+          java_lang_Thread::set_is_in_VTMS_transition(vt_oop, true);
+        }
       }
-      correct_jvmti_thread_state(jt);
+      if (_whitebox_used) {
+        correct_jvmti_thread_state(jt); // needed in testing environment only
+      }
     }
     return count;
   }
@@ -1575,7 +1583,11 @@ private:
 public:
   VMOp_Type type() const { return VMOp_SetNotifyJvmtiEventsMode; }
   bool allow_nested_vm_operations() const { return false; }
-  VM_SetNotifyJvmtiEventsMode(bool enable) : _enable(enable) {}
+  VM_SetNotifyJvmtiEventsMode(bool enable) : _enable(enable) {
+    if (!enable) {
+      _whitebox_used = true; // disabling is available via WhiteBox only
+    }
+  }
 
   void doit() {
     int count = _enable ? count_transitions_and_correct_jvmti_thread_states() : 0;
@@ -1584,6 +1596,8 @@ public:
     JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
   }
 };
+
+bool VM_SetNotifyJvmtiEventsMode::_whitebox_used = false;
 
 // This function is to support agents loaded into running VM.
 // Must be called in thread-in-native mode.

@@ -117,7 +117,7 @@ public class ToggleNotifyJvmtiTest {
     static TestedThread[] threads = new TestedThread[VTHREADS_CNT];
     static Thread vts[] = new Thread[VTHREADS_CNT];
 
-    static private synchronized void startThread(int i) {
+    static private void startThread(int i) {
         String name = "TestedThread" + i;
         TestedThread thread = new TestedThread(name);
         vts[i] = Thread.ofVirtual().name(name).start(thread);
@@ -126,7 +126,7 @@ public class ToggleNotifyJvmtiTest {
         log("# Java: started vthread: " + name);
     }
 
-    static private void startThreads() {
+    static synchronized private void startThreads() {
         log("\n# Java: Starting vthreads");
         for (int i = 0; i < VTHREADS_CNT; i++) {
             sleep(1);
