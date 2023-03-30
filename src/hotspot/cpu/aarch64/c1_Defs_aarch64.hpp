@@ -88,6 +88,8 @@ enum {
 };
 
 // multiplier factor to update reserved_area_argument_size
-static const int pd_reserved_argument_area_size_factor = 2;
+enum {
+  pd_reserved_argument_area_size_factor = 2
+};
 
 #endif // CPU_AARCH64_C1_DEFS_AARCH64_HPP

@@ -67,6 +67,8 @@ enum {
 };
 
 // multiplier factor to update reserved_area_argument_size
-static constexpr int reserved_argument_area_size_factor = pd_reserved_argument_area_size_factor;
+enum {
+  reserved_argument_area_size_factor = pd_reserved_argument_area_size_factor
+};
 
 #endif // SHARE_C1_C1_DEFS_HPP
