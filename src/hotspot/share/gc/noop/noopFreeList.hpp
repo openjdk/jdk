@@ -26,18 +26,18 @@
 #ifndef SHARE_GC_NOOP_NOOPFREELIST_H
 #define SHARE_GC_NOOP_NOOPFREELIST_H
 
-struct Node {
+struct Node: public CHeapObj<mtGC> {
 private:
-    Node* _next;
-    Node* _prev;
     HeapWord* _start;
     size_t _size = 0;
+    Node* _prev;
+    Node* _next;
 public:
     Node(HeapWord* start, size_t size, Node* next = nullptr, Node* prev = nullptr): _start(start), _size(size), _prev(prev), _next(next) {}
 
     inline HeapWord* start() const { return _start; }
 
-    inline HeapWord* size() const { return _size; }
+    inline size_t size() const { return _size; }
 
     inline Node* next() const { return _next; }
 
@@ -48,14 +48,14 @@ public:
     inline void setPrev(Node* prev) { _prev = prev; }
 
     inline void setSize(size_t size) { _size = size; }
-}
+};
 
-class NoopFreeList {
+class NoopFreeList: public CHeapObj<mtGC> {
 private:
     Node* _head;
     Node* _tail;
     MarkBitMap* _free_chunk_bitmap;
-    const size_t _chunk_size_alignment = 2;
+    static const size_t _chunk_size_alignment = 2;
 public:
     NoopFreeList(Node* head, MarkBitMap* fc);
 
@@ -66,7 +66,7 @@ public:
 
     static size_t adjust_chunk_size(size_t size);
 
-    static void slice_node(Node* node, size_t size);
+    void slice_node(Node* node, size_t size);
     
     //Pop from list
     Node* getFirstFit(size_t size);
@@ -88,4 +88,6 @@ public:
         //Sweep -> SweepClosure -> 
                                     //1. freeNotFree() -> return to free list, mark, convert to block etc.
                                     //2. isFree() == true -> read size and skip 
-}
+};
+
+#endif

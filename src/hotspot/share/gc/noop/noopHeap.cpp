@@ -86,15 +86,15 @@ jint NoopHeap::initialize() {
     _bitmap_region = MemRegion((HeapWord*) (bitmap_space.base()),
 			bitmap_space.size() / HeapWordSize);
 
-    _mark_bitmap.initialize(committed_region, _bitmap_region);
+    _mark_bitmap->initialize(committed_region, _bitmap_region);
 
     // Mark bitmap reserve and initialization(No large page)
-    ReservedSpace bitmap_space(bitmap_size);
+    ReservedSpace fc_bitmap_space(bitmap_size);
 
-    _fc_bitmap_region = MemRegion((HeapWord*) (bitmap_space.base()),
-			bitmap_space.size() / HeapWordSize);
+    _fc_bitmap_region = MemRegion((HeapWord*) (fc_bitmap_space.base()),
+			fc_bitmap_space.size() / HeapWordSize);
 
-    _free_chunk_bitmap.initialize(committed_region, _fc_bitmap_region);
+    _free_chunk_bitmap->initialize(committed_region, _fc_bitmap_region);
 
     //Initialize space
     _space = new ContiguousSpace();
@@ -291,37 +291,6 @@ class ScanOopClosure: public BasicOopIterateClosure {
 		}
 };
 
-class SweepOopClosure: public BasicOopIterateClosure {
-    private:
-        MarkBitMap* const _bitmap;
-
-        template<class T>
-		void do_oop_work(T* p) {
-			  // p is the pointer to memory location where oop is, load the value
-			  // from it, unpack the compressed reference, if needed:
-			T o = RawAccess<>::oop_load(p);
-			if (!CompressedOops::is_null(o)) {
-				oop obj = CompressedOops::decode_not_null(o);
-
-				if (_bitmap->is_marked(obj)) {
-					obj->release
-				}
-			}
-		}
-
-    public:
-        ScanOopClosure(MarkBitMap* bitmap) :
-			_bitmap(bitmap) {
-		}
-
-        virtual void do_oop(oop* p) {
-			do_oop_work(p);
-		}
-		virtual void do_oop(narrowOop* p) {
-			do_oop_work(p);
-		}
-};
-
 void NoopHeap::prologue() {
     //Commiting memory for bitmap
     if (!os::commit_memory((char*)_bitmap_region.start(), _bitmap_region.byte_size(), false)) { return; }
@@ -337,7 +306,7 @@ void NoopHeap::mark() {
     // would scan the outgoing references, mark them, and push newly-marked
     // objects to stack for further processing.
     NoopMarkStack stack;
-    ScanOopClosure cl(&stack, &_mark_bitmap);
+    ScanOopClosure cl(&stack, _mark_bitmap);
 
     //Not all roots
     do_roots(&cl, false);

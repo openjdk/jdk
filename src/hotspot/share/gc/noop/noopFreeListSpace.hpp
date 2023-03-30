@@ -27,15 +27,17 @@
 #include "gc/shared/space.hpp"
 #include "gc/noop/noopFreeList.hpp"
 
+
 class NoopFreeListSpace: public CompactibleSpace {
     friend class VMStructs;
 private:
     MarkBitMap* _free_chunk_bitmap;
     NoopFreeList* _free_list;
 public:
-    FreeListSpace(): CompactibleSpace() {}
 
-    virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+    using CompactibleSpace::initialize;
+
+    virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space, MarkBitMap* fc_bitmap);
 
     virtual HeapWord* allocate(size_t size);
 
@@ -44,4 +46,6 @@ public:
     //GC support
         //Iteration
 
-}
+};
+
+#endif

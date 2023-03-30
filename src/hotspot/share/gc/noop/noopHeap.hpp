@@ -30,7 +30,7 @@
 #include "gc/shared/space.hpp"
 #include "memory/virtualspace.hpp"
 #include "gc/noop/noopBarrierSet.hpp"
-#include "gc/shared/markBitMap.hpp"
+#include "gc/shared/markBitMap.inline.hpp"
 
 class NoopHeap: public CollectedHeap {
     friend class VMStructs;
