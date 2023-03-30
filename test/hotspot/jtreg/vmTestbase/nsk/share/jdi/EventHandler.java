@@ -251,6 +251,41 @@ public class EventHandler implements Runnable {
         defaultExceptionRequest.enable();
     }
 
+
+    /**
+     * Creates an EventListener for unexpected ThreadStartEvents. The
+     * events are ignored.
+     */
+    public EventListener createSpuriousThreadStartEventListener(String owner) {
+        /*
+         * This listener catches spurious thread creations that we want to ignore.
+         */
+        return (new EventListener() {
+            boolean handled = false;
+
+            public boolean eventReceived(Event event) {
+                handled = false;
+                if (event instanceof ThreadStartEvent) {
+                    if (EventFilters.filtered(event)) {
+                        display(owner + ": Ignoring spurious thread creation: " + event);
+                        handled = true;
+                    }
+                }
+                return handled;
+            }
+
+            public void eventSetComplete(EventSet set) {
+                // If we ignored this event, then we need to resume.
+                if (handled) {
+                    handled = false; // reset for next EventSet that comes in.
+                    display(owner + ": set.resume() after spurious thread creation: " + set);
+                    set.resume();
+                }
+            }
+        }
+        );
+    }
+
     /**
      * This method sets up default listeners.
      */
@@ -343,6 +378,13 @@ public class EventHandler implements Runnable {
             }
         }
         );
+
+        /**
+         * This listener attempt to catch any ThreadStartEvent for a thread not
+         * created by the test. It prevents the "Unexpected event" listener
+         * above from complaining about these events.
+         */
+        addListener(createSpuriousThreadStartEventListener("Default Listener"));
     }
 
     /**
@@ -404,12 +446,13 @@ public class EventHandler implements Runnable {
                             en.set = set;
                             EventHandler.this.notifyAll();
                         }
-                        return true;
+                        return true; // event was handled
                     }
                 }
-                return false;
+                return false; // event was not handled
             }
         };
+
         if (shouldRemoveListeners) {
             display("waitForRequestedEventCommon: enabling remove of listener " + listener);
             listener.enableRemovingThisListener();
@@ -418,6 +461,13 @@ public class EventHandler implements Runnable {
             requests[i].enable();
         }
         addListener(listener);
+
+        /*
+         * This listener skips spurious thread creations that we want to ignore.
+         */
+        EventListener spuriousThreadStartEventListener =
+            createSpuriousThreadStartEventListener("waitForRequestedEventCommon");
+        addListener(spuriousThreadStartEventListener);
 
         /*
          * This listener logs each EventSet received.
@@ -452,6 +502,7 @@ public class EventHandler implements Runnable {
                 requests[i].disable();
             }
         }
+        removeListener(spuriousThreadStartEventListener);
         removeListener(eventLogListener);
         return en;
     }

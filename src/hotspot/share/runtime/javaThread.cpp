@@ -236,7 +236,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_string_void_signature(),
                             thread_group,
                             name,
-                            THREAD);
+                            CHECK);
   } else {
     // Thread gets assigned name "Thread-nnn" and null target
     // (java.lang.Thread doesn't have a constructor taking only a ThreadGroup argument)
@@ -247,7 +247,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_runnable_void_signature(),
                             thread_group,
                             Handle(),
-                            THREAD);
+                            CHECK);
   }
   os::set_priority(this, NormPriority);
 
@@ -377,6 +377,9 @@ void JavaThread::check_possible_safepoint() {
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
+  // Don't complain if running a debugging command.
+  if (DebuggingContext::is_enabled()) return;
+
   // Check NoSafepointVerifier, which is implied by locks taken that can be
   // shared with the VM thread.  This makes sure that no locks with allow_vm_block
   // are held.
@@ -2030,21 +2033,10 @@ bool JavaThread::sleep(jlong millis) {
 void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
-  // We could get here with a pending exception, if so clear it now or
-  // it will cause MetaspaceShared::link_shared_classes to
-  // fail for dynamic dump.
+  // We could get here with a pending exception, if so clear it now.
   if (this->has_pending_exception()) {
     this->clear_pending_exception();
   }
-
-#if INCLUDE_CDS
-  // Link all classes for dynamic CDS dumping before vm exit.
-  // Same operation is being done in JVM_BeforeHalt for handling the
-  // case where the application calls System.exit().
-  if (DynamicArchive::should_dump_at_vm_exit()) {
-    DynamicArchive::prepare_for_dump_at_exit();
-  }
-#endif
 
   EXCEPTION_MARK;
   Klass* shutdown_klass =

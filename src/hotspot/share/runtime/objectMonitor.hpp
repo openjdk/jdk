@@ -348,7 +348,6 @@ private:
 
   // Use the following at your own risk
   intx      complete_exit(JavaThread* current);
-  bool      reenter(intx recursions, JavaThread* current);
 
  private:
   void      AddWaiter(ObjectWaiter* waiter);
