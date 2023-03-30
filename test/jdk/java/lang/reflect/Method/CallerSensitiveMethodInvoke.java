@@ -30,6 +30,7 @@
  */
 
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -52,7 +53,8 @@ public class CallerSensitiveMethodInvoke {
         try {
             // Field::get throws IAE
             Method m = Field.class.getDeclaredMethod("get", Object.class);
-            m.invoke(f, new Object());
+            m.invoke(f, new Object());  // illegal receiver type. IAE thrown
+            fail("should not reach here");
         } catch (InvocationTargetException e) {
             Throwable t = e.getCause();
             if (!(t instanceof IllegalArgumentException)) {
@@ -71,6 +73,7 @@ public class CallerSensitiveMethodInvoke {
             // m() throws InvocationTargetException which will be wrapped by Method::invoke
             Method m = CallerSensitiveMethodInvoke.class.getDeclaredMethod("m");
             m.invoke(new CallerSensitiveMethodInvoke());
+            fail("should not reach here");
         } catch (InvocationTargetException e) {
             Throwable t = e.getCause();
             if (!(t instanceof InvocationTargetException)) {
