@@ -37,6 +37,29 @@ static volatile int thread_ended_cnt = 0;
 static jrawMonitorID agent_lock = NULL;
 static volatile jboolean agent_started = JNI_FALSE;
 
+static void check_and_print_thread_names(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
+                                         bool is_virtual, const char* msg) {
+  jthread cthread = NULL;
+  jthread vthread = NULL;
+
+  if (is_virtual) {
+    vthread = thread;
+    cthread = get_carrier_thread(jvmti, jni, vthread);
+    if (jni->IsVirtualThread(cthread)) {
+      fatal(jni, "Failed: expected to be carrier thread");
+    }
+  } else {
+    cthread = thread;
+  }
+  char* ctname = get_thread_name(jvmti, jni, cthread);
+  char* vtname = vthread == NULL ? NULL : get_thread_name(jvmti, jni, vthread);
+
+  LOG("Event: %s virtual: %d ct: %s vt: %s\n", msg, is_virtual, ctname, vtname);
+
+  deallocate(jvmti, jni, (void*)ctname);
+  deallocate(jvmti, jni, (void*)vtname);
+}
+
 void JNICALL VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   if (!jni->IsVirtualThread(thread)) {
     fatal(jni, "Failed: expected to be virtual thread");
@@ -44,6 +67,7 @@ void JNICALL VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
 
   vthread_started_cnt++;
+  check_and_print_thread_names(jvmti, jni, thread, /* is_virtual */ true, "VirtualThreadStart");
 }
 
 void JNICALL VirtualThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
@@ -53,6 +77,7 @@ void JNICALL VirtualThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
 
   vthread_ended_cnt++;
+  check_and_print_thread_names(jvmti, jni, thread, /* is_virtual */ true, "VirtualThreadEnd");
 }
 
 void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
@@ -62,6 +87,7 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
 
   thread_started_cnt++;
+  check_and_print_thread_names(jvmti, jni, thread, /*is_virtual*/ false, "ThreadStart");
 }
 
 void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
@@ -71,6 +97,7 @@ void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
 
   thread_ended_cnt++;
+  check_and_print_thread_names(jvmti, jni, thread, /*is_virtual*/ false, "ThreadEnd");
 }
 
 JNIEXPORT jboolean JNICALL

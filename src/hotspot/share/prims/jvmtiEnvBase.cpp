@@ -1533,6 +1533,30 @@ class VM_SetNotifyJvmtiEventsMode : public VM_Operation {
 private:
   bool _enable;
 
+  // This function is needed only for testing purposes to support multiple
+  // enable&disable notifyJvmti events. Otherwise, there can be only one call
+  // to enable_virtual_threads_notify_jvmti() for late binding agents. There
+  // have to be no JvmtiThreadState's and need to correct them in such a case.
+  static void correct_jvmti_thread_state(JavaThread* jt) {
+    oop  ct_oop = jt->threadObj();
+    oop  vt_oop = jt->vthread();
+    JvmtiThreadState* jt_state = jt->jvmti_thread_state();
+    JvmtiThreadState* ct_state = java_lang_Thread::jvmti_thread_state(jt->threadObj());
+    JvmtiThreadState* vt_state = vt_oop != nullptr ? java_lang_Thread::jvmti_thread_state(vt_oop) : nullptr;
+    bool virt = vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop);
+
+    // Correct jt->jvmti_thread_state() and jt->jvmti_vthread().
+    // It was not maintained while notifyJvmti was disabled but there can be
+    // a leftover from previous cycle when notification were enabled.
+    if (virt) {
+      jt->set_jvmti_thread_state(nullptr);  // reset jt->jvmti_thread_state()
+      jt->set_jvmti_vthread(vt_oop);        // restore jt->jvmti_vthread()
+    } else { 
+      jt->set_jvmti_thread_state(ct_state); // restore jt->jvmti_thread_state()
+      jt->set_jvmti_vthread(ct_oop);        // restore jt->jvmti_vthread()
+    }
+  }
+
   // This function is called only if _enable == true.
   // Iterates over all JavaThread's, counts VTMS transitions and restores
   // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol.
@@ -1540,32 +1564,10 @@ private:
     int count = 0;
 
     for (JavaThread* jt : ThreadsListHandle()) {
-      oop  ct_oop = jt->threadObj();
-      oop  vt_oop = jt->vthread();
-      JvmtiThreadState* jt_state = jt->jvmti_thread_state();
-      JvmtiThreadState* ct_state = java_lang_Thread::jvmti_thread_state(jt->threadObj());
-      JvmtiThreadState* vt_state = vt_oop != nullptr ? java_lang_Thread::jvmti_thread_state(vt_oop) : nullptr;
-      bool virt = vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop);
-
       if (jt->is_in_VTMS_transition()) {
         count++;
       }
-      // Correct jt->jvmti_thread_state() and jt->jvmti_vthread() if necessary.
-      // It was not maintained while notifyJvmti was disabled.
-      if (virt) {
-        if (jt_state != vt_state) {
-          jt->set_jvmti_thread_state(vt_state); // restore jt->jvmti_thread_state()
-          jt->set_jvmti_vthread(vt_oop);        // restore jt->jvmti_vthread()
-          if (vt_state != nullptr) {
-            vt_state->set_thread(jt);           // restore JavaThread link
-          }
-        }
-      } else { // !virt
-        if (jt_state != ct_state) {
-          jt->set_jvmti_thread_state(ct_state); // restore jt->jvmti_thread_state()
-          jt->set_jvmti_vthread(ct_oop);        // reset jt->jvmti_vthread()
-        }
-      }
+      correct_jvmti_thread_state(jt);
     }
     return count;
   }
