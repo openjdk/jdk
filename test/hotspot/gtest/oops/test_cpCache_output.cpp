@@ -61,6 +61,12 @@ TEST_VM(ConstantPoolCache, print_on) {
   ASSERT_TRUE(strstr(output, "num parameters:") != NULL) << "must have number of parameters";
 
   // field entry test
-  ASSERT_TRUE(strstr(output, "volatile:") != NULL) << "must have volatile flag";
-  ASSERT_TRUE(strstr(output, "field index:") != NULL) << "must have field index";
+  ASSERT_TRUE(strstr(output, "Offset:") != NULL) << "must have field offset";
+  ASSERT_TRUE(strstr(output, "Field Index:") != NULL) << "must have field index";
+  ASSERT_TRUE(strstr(output, "CP Index:") != NULL) << "must have constant pool index";
+  ASSERT_TRUE(strstr(output, "TOS:") != NULL) << "must have type";
+  ASSERT_TRUE(strstr(output, "Is Final:") != NULL) << "must have final flag";
+  ASSERT_TRUE(strstr(output, "Is Volatile:") != NULL) << "must have volatile flag";
+  ASSERT_TRUE(strstr(output, "Bytecode 1:") != NULL) << "must have \"bytecode 1\"";
+  ASSERT_TRUE(strstr(output, "Bytecode 2:") != NULL) << "must have \"bytecode 2\"";
 }

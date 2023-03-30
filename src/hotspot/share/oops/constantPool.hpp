@@ -919,6 +919,10 @@ class ConstantPool : public Metadata {
 
   const char* internal_name() const { return "{constant pool}"; }
 
+  // ResolvedFieldEntry getters
+  inline ResolvedFieldEntry* resolved_field_entry_at(int field_index);
+  inline int resolved_field_entries_length() const;
+
   // ResolvedIndyEntry getters
   inline ResolvedIndyEntry* resolved_indy_entry_at(int index);
   inline int resolved_indy_entries_length() const;

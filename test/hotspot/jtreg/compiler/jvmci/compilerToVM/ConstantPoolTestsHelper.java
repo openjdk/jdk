@@ -84,6 +84,13 @@ public class ConstantPoolTestsHelper {
                     }
                 }
             }
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.FIELDREF)) {
+                for (int field_index = 0; field_index < WB.getFieldEntriesLength(this.klass); field_index++) {
+                    if (WB.getFieldCPIndex(this.klass, field_index) == cpi) {
+                        return field_index;
+                    }
+                }
+            }
             int cacheLength = WB.getConstantPoolCacheLength(this.klass);
             int indexTag = WB.getConstantPoolCacheIndexTag();
             for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {

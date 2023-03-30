@@ -105,6 +105,8 @@ public class BytecodeTracerTest {
         mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>");
         mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]");
 
+        mustMatch(".*getstatic [0-9]+ <java/lang/System.out/Ljava/io/PrintStream;>");
+
         // ======
         if (false) { // disabled due to JDK-8309811
         printMethods("invokedynamic in unlinked class",

@@ -685,8 +685,7 @@ int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
     case Bytecodes::_getstatic:
     case Bytecodes::_putfield:
     case Bytecodes::_putstatic:
-      // TODO: handle resolved field entries with new structure
-      // i = ....
+      return resolved_field_entry_at(index)->constant_pool_index();
     case Bytecodes::_invokeinterface:
     case Bytecodes::_invokehandle:
     case Bytecodes::_invokespecial:
@@ -736,7 +735,6 @@ u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
             "an invokedynamic instruction does not have a klass");
   return uncached_klass_ref_index_at(to_cp_index(index, code));
 }
-
 
 int ConstantPool::remap_instruction_operand_from_cache(int operand) {
   int cpc_index = operand;

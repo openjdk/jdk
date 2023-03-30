@@ -298,7 +298,7 @@ int ciBytecodeStream::get_field_index() {
          cur_bc() == Bytecodes::_putfield ||
          cur_bc() == Bytecodes::_getstatic ||
          cur_bc() == Bytecodes::_putstatic, "wrong bc");
-  return get_index_u2_cpcache();
+  return get_index_u2();
 }
 
 

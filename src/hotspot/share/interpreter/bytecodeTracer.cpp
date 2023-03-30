@@ -35,6 +35,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -65,6 +66,7 @@ class BytecodePrinter {
   int       get_index_u2()           { int i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
   int       get_index_u1_cpcache()   { return get_index_u1() + ConstantPool::CPCACHE_INDEX_TAG; }
   int       get_index_u2_cpcache()   { int i=Bytes::get_native_u2(_next_pc); _next_pc+=2; return i + ConstantPool::CPCACHE_INDEX_TAG; }
+  int       get_index_u2_raw()       { int i=Bytes::get_native_u2(_next_pc); _next_pc+=2; return i; }
   int       get_index_u4()           { int i=Bytes::get_native_u4(_next_pc); _next_pc+=4; return i; }
   int       get_index_special()      { return (is_wide()) ? get_index_u2() : get_index_u1(); }
   Method* method()                 { return _current_method; }
@@ -76,6 +78,7 @@ class BytecodePrinter {
   bool      check_cp_cache_index(int i, int& cp_index, outputStream* st);
   bool      check_obj_index(int i, int& cp_index, outputStream* st);
   bool      check_invokedynamic_index(int i, int& cp_index, outputStream* st);
+  bool      check_field_index(int i, int& cp_index, outputStream* st);
   void      print_constant(int i, outputStream* st);
   void      print_constant_nocheck(int i, outputStream* st);
   void      print_cpcache_entry(int cpc_index, outputStream* st);
@@ -234,7 +237,11 @@ bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
       okay = check_invokedynamic_index(i, cp_index, st);
       break;
     default:
-      okay = check_cp_cache_index(i, cp_index, st);
+      if (Bytecodes::is_field_code(code)) {
+        okay = check_field_index(i, cp_index, st);
+      } else {
+        okay = check_cp_cache_index(i, cp_index, st);
+      }
       break;
     }
     if (!okay) return false;
@@ -311,6 +318,17 @@ bool BytecodePrinter::check_invokedynamic_index(int i, int& cp_index, outputStre
     int indy_index = ConstantPool::decode_invokedynamic_index(i);
     ResolvedIndyEntry* indy_entry = constants->resolved_indy_entry_at(indy_index);
     cp_index = indy_entry->constant_pool_index();
+  }
+  return true;
+}
+
+bool BytecodePrinter::check_field_index(int i, int& cp_index, outputStream* st) {
+  ConstantPool* constants = _current_method->constants();
+  if (constants->cache() == nullptr) {
+    cp_index = i; // TODO: This is wrong on little-endian. See JDK-8309811.
+  } else {
+    ResolvedFieldEntry* field_entry = constants->resolved_field_entry_at(i);
+    cp_index = field_entry->constant_pool_index();
   }
   return true;
 }
@@ -606,7 +624,8 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_getstatic:
     case Bytecodes::_putfield:
     case Bytecodes::_getfield:
-      print_field_or_method(get_index_u2_cpcache(), st);
+      // TODO: get_index_u2() does not work here due to using java_u2 instead of native_u2
+      print_field_or_method(get_index_u2_raw(), st);
       break;
 
     case Bytecodes::_invokevirtual:

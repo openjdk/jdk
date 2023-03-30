@@ -968,7 +968,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_getstatic:
     case Bytecodes::_getfield: {
       // Find out the type of the field accessed.
-      int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       ConstantPool* cp = _method->constants();
       int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
@@ -982,7 +982,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
 
     case Bytecodes::_putstatic:
     case Bytecodes::_putfield: {
-      int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       ConstantPool* cp = _method->constants();
       int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
@@ -1132,7 +1132,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_dastore:
       return 3;
     case Bytecodes::_putfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base + pos);
         ConstantPool* cp = _method->constants();
         int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int type_index = cp->signature_ref_index_at(name_and_type_index);
@@ -1326,7 +1326,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     }
 
     case Bytecodes::_getstatic: {
-      int cp_index = Bytes::get_native_u2(code_base + pos) + ConstantPool::CPCACHE_INDEX_TAG;
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       print_field_and_class(os, _method, cp_index, code);
       return true;
     }
@@ -1337,7 +1337,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
       if (print_NPE_cause0(os, source_bci, 0, max_detail - 1, inner_expr)) {
         os->print(".");
       }
-      int cp_index = Bytes::get_native_u2(code_base + pos) + ConstantPool::CPCACHE_INDEX_TAG;
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       os->print("%s", get_field_name(_method, cp_index, code));
       return true;
     }
@@ -1414,7 +1414,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
     case Bytecodes::_monitorexit:
       os->print("Cannot exit synchronized block"); break;
     case Bytecodes::_getfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base + pos);
         ConstantPool* cp = _method->constants();
         int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
@@ -1422,7 +1422,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
         os->print("Cannot read field \"%s\"", name->as_C_string());
       } break;
     case Bytecodes::_putfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base + pos);
         os->print("Cannot assign field \"%s\"", get_field_name(_method, cp_index, code));
       } break;
     case Bytecodes::_invokevirtual:
