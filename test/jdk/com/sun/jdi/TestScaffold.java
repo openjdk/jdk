@@ -710,6 +710,25 @@ abstract public class TestScaffold extends TargetAdapter {
             } catch (InterruptedException e) {
             }
         }
+
+        // Make sure debuggee exits with no errors. Otherwise failures might go unnoticed.
+        Process p = vm.process();
+        try {
+            p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        if (p.isAlive()) {
+            throw new RuntimeException("Debuggee is still alive after disconnecting.");
+        } else {
+            int res = p.exitValue();
+            // Some tests purposefully exit with an exception, which produces exitValue
+            // 1, so we have to allow it also.
+            if (res != 0 && res != 1) {
+                throw new RuntimeException("Non-zero debuggee exitValue: " + res);
+            }
+        }
+
         traceln("TS: waitForVMDisconnect: done");
     }
 
