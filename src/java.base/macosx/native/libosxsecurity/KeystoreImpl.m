@@ -285,9 +285,14 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
     OSErr searchResult = noErr;
 
     jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
-    CHECK_NULL(jc_KeychainStore);
+    if (jc_KeychainStore == NULL) {
+        goto errOut;
+    }
     jmethodID jm_createKeyEntry = (*env)->GetMethodID(env, jc_KeychainStore, "createKeyEntry", "(Ljava/lang/String;JJ[J[[B)V");
-    CHECK_NULL(jm_createKeyEntry);
+    if (jm_createKeyEntry == NULL) {
+        goto errOut;
+    }
+
     do {
         searchResult = SecIdentitySearchCopyNext(identitySearch, &theIdentity);
 

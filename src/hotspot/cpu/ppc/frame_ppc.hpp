@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,13 @@
 
  private:
 
+#ifdef ASSERT
+  enum special_backlink_values : uint64_t {
+    NOT_FULLY_INITIALIZED = 0xBBAADDF9
+  };
+  bool is_fully_initialized()       const { return (uint64_t)_fp != NOT_FULLY_INITIALIZED; }
+#endif // ASSERT
+
   //  STACK:
   //            ...
   //            [THIS_FRAME]             <-- this._sp (stack pointer for this frame)
@@ -378,6 +385,9 @@
   void set_fp(intptr_t* newfp)  { _fp = newfp; }
   int offset_fp() const         { assert_offset();  return _offset_fp; }
   void set_offset_fp(int value) { assert_on_heap(); _offset_fp = value; }
+
+  // Mark a frame as not fully initialized. Must not be used for frames in the valid back chain.
+  void mark_not_fully_initialized() const { DEBUG_ONLY(own_abi()->callers_sp = NOT_FULLY_INITIALIZED;)  }
 
   // Accessors for ABIs
   inline abi_minframe* own_abi()     const { return (abi_minframe*) _sp; }

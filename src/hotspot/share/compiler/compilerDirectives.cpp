@@ -549,8 +549,7 @@ void DirectiveSet::print_inline(outputStream* st) {
   }
 }
 
-bool DirectiveSet::is_intrinsic_disabled(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
+bool DirectiveSet::is_intrinsic_disabled(vmIntrinsics::ID id) {
   assert(id > vmIntrinsics::_none && id < vmIntrinsics::ID_LIMIT, "invalid intrinsic_id!");
 
   TriBool b = _intrinsic_control_words[vmIntrinsics::as_int(id)];

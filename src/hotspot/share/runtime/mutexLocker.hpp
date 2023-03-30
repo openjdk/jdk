@@ -156,7 +156,7 @@ extern Monitor* JVMCIRuntime_lock;               // protects critical sections f
 
 extern Mutex*   Bootclasspath_lock;
 
-extern Mutex* tty_lock;                          // lock to synchronize output.
+extern Mutex*   tty_lock;                          // lock to synchronize output.
 
 // A MutexLocker provides mutual exclusion with respect to a given mutex
 // for the scope which contains the locker.  The lock is an OS lock, not

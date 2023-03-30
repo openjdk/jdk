@@ -77,7 +77,7 @@ import static jdk.internal.net.http.websocket.WebSocketImpl.State.WAITING;
 public final class WebSocketImpl implements WebSocket {
 
     private static final Logger debug =
-            Utils.getWebSocketLogger("[WebSocket]"::toString, Utils.DEBUG_WS);
+            Utils.getWebSocketLogger("[WebSocket]"::toString);
     private final AtomicLong sendCounter = new AtomicLong();
     private final AtomicLong receiveCounter = new AtomicLong();
 

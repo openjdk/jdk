@@ -80,6 +80,7 @@ public class TreeMaker implements JCTree.Factory {
 
     /** Create a tree maker with null toplevel and NOPOS as initial position.
      */
+    @SuppressWarnings("this-escape")
     protected TreeMaker(Context context) {
         context.put(treeMakerKey, this);
         this.pos = Position.NOPOS;
@@ -1035,7 +1036,7 @@ public class TreeMaker implements JCTree.Factory {
                 m.name != names.init ? Type(mtype.getReturnType()) : null,
                 TypeParams(mtype.getTypeArguments()),
                 null, // receiver type
-                Params(mtype.getParameterTypes(), m),
+                m.params != null ? Params(m) : Params(m, mtype.getParameterTypes()),
                 Types(mtype.getThrownTypes()),
                 body,
                 null,
@@ -1064,20 +1065,27 @@ public class TreeMaker implements JCTree.Factory {
         return VarDef(new VarSymbol(PARAMETER, name, argtype, owner), null);
     }
 
-    /** Create a list of value parameter trees x0, ..., xn from a list of
-     *  their types and their owner.
+    /** Create a list of value parameter trees for a method's parameters
+     *  using the same names as the method's existing parameters.
      */
-    public List<JCVariableDecl> Params(List<Type> argtypes, Symbol owner) {
+    public List<JCVariableDecl> Params(MethodSymbol mth) {
+        Assert.check(mth.params != null);
         ListBuffer<JCVariableDecl> params = new ListBuffer<>();
-        MethodSymbol mth = (owner.kind == MTH) ? ((MethodSymbol)owner) : null;
-        if (mth != null && mth.params != null && argtypes.length() == mth.params.length()) {
-            for (VarSymbol param : ((MethodSymbol)owner).params)
-                params.append(VarDef(param, null));
-        } else {
-            int i = 0;
-            for (List<Type> l = argtypes; l.nonEmpty(); l = l.tail)
-                params.append(Param(paramName(i++), l.head, owner));
-        }
+        for (VarSymbol param : mth.params)
+            params.append(VarDef(param, null));
+        return params.toList();
+    }
+
+    /** Synthesize a list of parameter trees for a method's parameters.
+     *  Used for methods with no parameters defined, e.g. bridge methods.
+     *  The placeholder names will be x0, x1, ..., xn.
+     */
+    public List<JCVariableDecl> Params(MethodSymbol mth, List<Type> argtypes) {
+        Assert.check(mth.params == null);
+        ListBuffer<JCVariableDecl> params = new ListBuffer<>();
+        int i = 0;
+        for (List<Type> l = argtypes; l.nonEmpty(); l = l.tail)
+            params.append(Param(paramName(i++), l.head, mth));
         return params.toList();
     }
 

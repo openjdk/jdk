@@ -613,12 +613,12 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
           oop call_site = deps.argument_oop(0);
           MethodHandles::add_dependent_nmethod(call_site, nm);
         } else {
-          Klass* klass = deps.context_type();
-          if (klass == nullptr) {
+          InstanceKlass* ik = deps.context_type();
+          if (ik == nullptr) {
             continue;  // ignore things like evol_method
           }
           // record this nmethod as dependent on this klass
-          InstanceKlass::cast(klass)->add_dependent_nmethod(nm);
+          ik->add_dependent_nmethod(nm);
         }
       }
       NOT_PRODUCT(if (nm != nullptr)  note_java_nmethod(nm));
@@ -1044,7 +1044,7 @@ void nmethod::print_nmethod(bool printmethod) {
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintDependencies || CompilerOracle::has_option(mh, CompileCommand::PrintDependencies)) {
-      print_dependencies();
+      print_dependencies_on(tty);
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
     if (printmethod || PrintExceptionHandlers) {
@@ -1160,6 +1160,8 @@ void nmethod::finalize_relocations() {
 
 void nmethod::make_deoptimized() {
   if (!Continuations::enabled()) {
+    // Don't deopt this again.
+    set_deoptimized_done();
     return;
   }
 
@@ -1167,6 +1169,12 @@ void nmethod::make_deoptimized() {
 
   CompiledICLocker ml(this);
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
+
+  // If post call nops have been already patched, we can just bail-out.
+  if (has_been_deoptimized()) {
+    return;
+  }
+
   ResourceMark rm;
   RelocIterator iter(this, oops_reloc_begin());
 
@@ -1202,7 +1210,7 @@ void nmethod::make_deoptimized() {
     }
   }
   // Don't deopt this again.
-  mark_deoptimized();
+  set_deoptimized_done();
 }
 
 void nmethod::verify_clean_inline_caches() {
@@ -1488,13 +1496,13 @@ void nmethod::flush_dependencies() {
         oop call_site = deps.argument_oop(0);
         MethodHandles::clean_dependency_context(call_site);
       } else {
-        Klass* klass = deps.context_type();
-        if (klass == nullptr) {
+        InstanceKlass* ik = deps.context_type();
+        if (ik == nullptr) {
           continue;  // ignore things like evol_method
         }
         // During GC liveness of dependee determines class that needs to be updated.
         // The GC may clean dependency contexts concurrently and in parallel.
-        InstanceKlass::cast(klass)->clean_dependency_context();
+        ik->clean_dependency_context();
       }
     }
   }
@@ -2142,7 +2150,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   ResourceMark rm;
 
   // Turn off dependency tracing while actually testing dependencies.
-  NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
+  NOT_PRODUCT( FlagSetting fs(Dependencies::_verify_in_progress, true));
 
   typedef ResourceHashtable<DependencySignature, int, 11027,
                             AnyObj::RESOURCE_AREA, mtInternal,
@@ -2172,7 +2180,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
             tty->print_cr("Failed dependency:");
             changes.print();
             nm->print();
-            nm->print_dependencies();
+            nm->print_dependencies_on(tty);
             assert(false, "Should have been marked for deoptimization");
           }
         }
@@ -2473,20 +2481,21 @@ void nmethod::print_code() {
 
 #ifndef PRODUCT  // called InstanceKlass methods are available only then. Declared as PRODUCT_RETURN
 
-void nmethod::print_dependencies() {
+void nmethod::print_dependencies_on(outputStream* out) {
   ResourceMark rm;
-  ttyLocker ttyl;   // keep the following output all in one block
-  tty->print_cr("Dependencies:");
+  stringStream st;
+  st.print_cr("Dependencies:");
   for (Dependencies::DepStream deps(this); deps.next(); ) {
-    deps.print_dependency();
-    Klass* ctxk = deps.context_type();
+    deps.print_dependency(&st);
+    InstanceKlass* ctxk = deps.context_type();
     if (ctxk != nullptr) {
-      if (ctxk->is_instance_klass() && InstanceKlass::cast(ctxk)->is_dependent_nmethod(this)) {
-        tty->print_cr("   [nmethod<=klass]%s", ctxk->external_name());
+      if (ctxk->is_dependent_nmethod(this)) {
+        st.print_cr("   [nmethod<=klass]%s", ctxk->external_name());
       }
     }
     deps.log_dependency();  // put it into the xml log also
   }
+  out->print_raw(st.as_string());
 }
 #endif
 

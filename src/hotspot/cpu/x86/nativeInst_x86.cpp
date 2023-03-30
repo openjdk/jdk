@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,7 @@ void NativeCall::insert(address code_pos, address entry) {
 void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(Patching_lock->is_locked() ||
          SafepointSynchronize::is_at_safepoint(), "concurrent code patching");
-  assert (instr_addr != NULL, "illegal address for code patching");
+  assert (instr_addr != nullptr, "illegal address for code patching");
 
   NativeCall* n_call =  nativeCall_at (instr_addr); // checking that it is a call
   guarantee((intptr_t)instr_addr % BytesPerWord == 0, "must be aligned");
@@ -616,7 +616,7 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 // (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
-   assert (instr_addr != NULL, "illegal address for code patching (4)");
+   assert (instr_addr != nullptr, "illegal address for code patching (4)");
    NativeGeneralJump* n_jump =  nativeGeneralJump_at (instr_addr); // checking that it is a jump
 
    // Temporary code

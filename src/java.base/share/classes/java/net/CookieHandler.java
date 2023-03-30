@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public abstract class CookieHandler {
      *
      * @param uri a {@code URI} representing the intended use for the
      *            cookies
-     * @param requestHeaders - a Map from request header
+     * @param requestHeaders a Map from request header
      *            field names to lists of field values representing
      *            the current request headers
      * @return an immutable map from state management headers, with
