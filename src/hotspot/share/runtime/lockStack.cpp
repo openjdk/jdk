@@ -32,21 +32,28 @@
 #include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
 
+const size_t LockStack::lock_stack_offset =        in_bytes(JavaThread::lock_stack_offset());
+const size_t LockStack::lock_stack_offset_offset = in_bytes(JavaThread::lock_stack_offset_offset());
+const size_t LockStack::lock_stack_base_offset =   in_bytes(JavaThread::lock_stack_base_offset());
+
 LockStack::LockStack(JavaThread* jt) :
-  _offset(in_bytes(JavaThread::lock_stack_base_offset())), _base()
+  _offset(lock_stack_base_offset), _base()
+{
 #ifdef ASSERT
-  , _thread(jt)
+  for (int i = 0; i < CAPACITY; i++) {
+    _base[i] = nullptr;
+  }
 #endif
-{ }
+}
 
 uint32_t LockStack::start_offset() {
-  int offset = in_bytes(JavaThread::lock_stack_base_offset());
+  int offset = lock_stack_base_offset;
   assert(offset > 0, "must be positive offset");
   return static_cast<uint32_t>(offset);
 }
 
 uint32_t LockStack::end_offset() {
-  int offset = in_bytes(JavaThread::lock_stack_base_offset()) + CAPACITY * oopSize;
+  int offset = lock_stack_base_offset + CAPACITY * oopSize;
   assert(offset > 0, "must be positive offset");
   return static_cast<uint32_t>(offset);
 }
@@ -58,21 +65,25 @@ static bool is_stack_watermark_processing(JavaThread* thread) {
 
 #ifndef PRODUCT
 void LockStack::verify(const char* msg) const {
-  assert(is_self() || SafepointSynchronize::is_at_safepoint() || _thread->is_handshake_safe_for(Thread::current()) || _thread->is_suspended() || _thread->is_obj_deopt_suspend() || is_stack_watermark_processing(_thread),
+  JavaThread* thread = get_thread();
+  assert(is_self() || SafepointSynchronize::is_at_safepoint() || thread->is_handshake_safe_for(Thread::current()) || thread->is_suspended() || thread->is_obj_deopt_suspend() || is_stack_watermark_processing(thread),
          "access only thread-local, or when target thread safely holds stil");
   verify_no_thread(msg);
 }
 
 void LockStack::verify_no_thread(const char* msg) const {
   assert(UseFastLocking && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
-  assert((_offset <=  end_offset()), "lockstack overflow: _offset %d end_offset %d", _offset, end_offset());
+  assert((_offset <  end_offset()), "lockstack overflow: _offset %d end_offset %d", _offset, end_offset());
   assert((_offset >= start_offset()), "lockstack underflow: _offset %d end_offset %d", _offset, start_offset());
-  int end = to_index(_offset);
-  for (int i = 0; i < end; i++) {
-    assert(_base[i] != nullptr, "no null on lock-stack");
-    for (int j = i + 1; j < end; j++) {
+  int top = to_index(_offset);
+  for (int i = 0; i < top; i++) {
+    assert(_base[i] != nullptr, "no zapped before top");
+    for (int j = i + 1; j < top; j++) {
       assert(_base[i] != _base[j], "entries must be unique: %s", msg);
     }
+  }
+  for (int i = top; i < CAPACITY; i++) {
+    assert(_base[i] == nullptr, "only zapped entries after top: i: %d, top: %d, entry: " PTR_FORMAT, i, top, p2i(_base[i]));
   }
 }
 #endif

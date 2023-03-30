@@ -36,14 +36,21 @@ class LockStack {
   friend class VMStructs;
 private:
   static const int CAPACITY = 8;
+
+  // TODO: It would be very useful if JavaThread::lock_stack_offset() and friends were constexpr,
+  // but this is currently not the case because we're using offset_of() which is non-constexpr,
+  // GCC would warn about non-standard-layout types if we were using offsetof() (which *is* constexpr).
+  static const size_t lock_stack_offset;
+  static const size_t lock_stack_offset_offset;
+  static const size_t lock_stack_base_offset;
+
   // The offset of the next element, in bytes, relative to the JavaThread structure.
   // We do this instead of a simple index into the array because this allows for
   // efficient addressing in generated code.
   uint32_t _offset;
   oop _base[CAPACITY];
-#ifdef ASSERT
-  JavaThread* const _thread;
-#endif
+
+  inline JavaThread* get_thread() const;
 
   bool is_self() const;
   void verify(const char* msg) const PRODUCT_RETURN;

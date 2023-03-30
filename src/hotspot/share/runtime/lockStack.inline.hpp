@@ -34,7 +34,12 @@
 #include "runtime/stackWatermarkSet.inline.hpp"
 
 inline int LockStack::to_index(uint32_t offset) {
-  return (offset - in_bytes(JavaThread::lock_stack_base_offset())) / oopSize;
+  return (offset - lock_stack_base_offset) / oopSize;
+}
+
+JavaThread* LockStack::get_thread() const {
+  char* addr = reinterpret_cast<char*>(const_cast<LockStack*>(this));
+  return reinterpret_cast<JavaThread*>(addr - lock_stack_offset);
 }
 
 inline bool LockStack::can_push() const {
@@ -47,7 +52,7 @@ inline bool LockStack::is_self() const {
     return false;
   }
   bool is_self = &JavaThread::cast(thread)->lock_stack() == this;
-  assert(is_self == (_thread == thread), "is_self sanity");
+  assert(is_self == (get_thread() == thread), "is_self sanity");
   return is_self;
 }
 
@@ -56,6 +61,7 @@ inline void LockStack::push(oop o) {
   assert(oopDesc::is_oop(o), "must be");
   assert(!contains(o), "entries must be unique");
   assert(can_push(), "must have room");
+  assert(_base[to_index(_offset)] == nullptr, "expect zapped entry");
   _base[to_index(_offset)] = o;
   _offset += oopSize;
   verify("post-push");
@@ -66,6 +72,9 @@ inline oop LockStack::pop() {
   assert(to_index(_offset) > 0, "underflow, probably unbalanced push/pop");
   _offset -= oopSize;
   oop o = _base[to_index(_offset)];
+#ifdef ASSERT
+  _base[to_index(_offset)] = nullptr;
+#endif
   assert(!contains(o), "entries must be unique");
   verify("post-pop");
   return o;
@@ -82,6 +91,9 @@ inline void LockStack::remove(oop o) {
         _base[i] = _base[i + 1];
       }
       _offset -= oopSize;
+#ifdef ASSERT
+      _base[to_index(_offset)] = nullptr;
+#endif
       break;
     }
   }
@@ -92,7 +104,7 @@ inline void LockStack::remove(oop o) {
 inline bool LockStack::contains(oop o) const {
   verify("pre-contains");
   if (!is_self() && !SafepointSynchronize::is_at_safepoint()) {
-    StackWatermark* watermark = StackWatermarkSet::get(_thread, StackWatermarkKind::gc);
+    StackWatermark* watermark = StackWatermarkSet::get(get_thread(), StackWatermarkKind::gc);
     if (watermark != nullptr) {
       watermark->start_processing();
     }

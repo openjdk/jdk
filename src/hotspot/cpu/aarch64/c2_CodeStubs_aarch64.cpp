@@ -68,7 +68,7 @@ int C2HandleAnonOMOwnerStub::max_size() const {
   // Max size of stub has been determined by testing with 0, in which case
   // C2CodeStubList::emit() will throw an assertion and report the actual size that
   // is needed.
-  return 20;
+  return 24;
 }
 
 void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
@@ -83,6 +83,9 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   // Pop owner object from lock-stack.
   __ ldrw(t, Address(rthread, JavaThread::lock_stack_offset_offset()));
   __ subw(t, t, oopSize);
+#ifdef ASSERT
+  __ str(zr, Address(rthread, t));
+#endif
   __ strw(t, Address(rthread, JavaThread::lock_stack_offset_offset()));
 
   __ b(continuation());
