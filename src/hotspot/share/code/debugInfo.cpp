@@ -101,11 +101,9 @@ ScopeValue* DebugInfoReadStream::get_cached_object() {
   int id = read_int();
   assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
-    ScopeValue* sv = _obj_pool->at(i);
-    if (sv->is_object() && sv->as_ObjectValue()->id() == id) {
-      return sv->as_ObjectValue();
-    } else if (sv->is_object_merge() && sv->as_ObjectMergeValue()->id() == id) {
-      return sv->as_ObjectMergeValue();
+    ObjectValue* ov = _obj_pool->at(i)->as_ObjectValue();
+    if (ov->id() == id) {
+      return ov;
     }
   }
   ShouldNotReachHere();
@@ -170,6 +168,7 @@ void ObjectValue::set_value(oop value) {
 }
 
 void ObjectValue::read_object(DebugInfoReadStream* stream) {
+  _only_merge_sr_candidate = stream->read_bool();
   _klass = read_from(stream);
   assert(_klass->is_constant_oop(), "should be constant java mirror oop");
   int length = stream->read_int();
@@ -187,6 +186,7 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
     set_visited(true);
     stream->write_int(is_auto_box() ? AUTO_BOX_OBJECT_CODE : OBJECT_CODE);
     stream->write_int(_id);
+    stream->write_bool(_only_merge_sr_candidate);
     _klass->write_on(stream);
     int length = _field_values.length();
     stream->write_int(length);
@@ -199,7 +199,7 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
 void ObjectValue::print_on(outputStream* st) const {
   st->print("%s: ID=%d, is_merge_candidate=%d, skip_field_assignment=%d, N.Fields=%d",
             is_auto_box() ? "box_obj" : "obj", _id,
-            _merge_candidate, _skip_field_assignment, _field_values.length());
+            _only_merge_sr_candidate, _skip_field_assignment, _field_values.length());
   st->print_cr(", klass: %s ", java_lang_Class::as_Klass(_klass->as_ConstantOopReadValue()->value()())->external_name());
   st->print("Fields: ");
   print_fields_on(st);
@@ -271,10 +271,6 @@ ObjectValue* ObjectMergeValue::select(frame* fr, RegisterMap* reg_map) {
     // a real object.
     return nullptr;
   }
-}
-
-void ObjectMergeValue::set_value(oop value) {
-  _value = Handle(Thread::current(), value);
 }
 
 void ObjectMergeValue::read_object(DebugInfoReadStream* stream) {

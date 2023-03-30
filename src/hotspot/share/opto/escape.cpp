@@ -441,7 +441,7 @@ bool ConnectionGraph::can_reduce_this_phi_check_inputs(PhiNode* ophi) const {
     // Right now we can't restore a "null" pointer during deoptimization
     const Type* inp_t = _igvn->type(ophi->in(i));
     if (inp_t == nullptr || inp_t->make_oopptr() == nullptr || inp_t->make_oopptr()->maybe_null()) {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print("Can NOT reduce Phi %d on invocation %d. Input %d is nullable.", ophi->_idx, _invocation, i);)
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Input %d is nullable.", ophi->_idx, _invocation, i);)
       return false;
     }
 
@@ -459,7 +459,7 @@ bool ConnectionGraph::can_reduce_this_phi_check_inputs(PhiNode* ophi) const {
     }
   }
 
-  NOT_PRODUCT(if (TraceReduceAllocationMerges && !found_sr_allocate) tty->print_cr("\tCan NOT reduce Phi %d on invocation %d. No SR Allocate as input.", ophi->_idx, _invocation);)
+  NOT_PRODUCT(if (TraceReduceAllocationMerges && !found_sr_allocate) tty->print_cr("Can NOT reduce Phi %d on invocation %d. No SR Allocate as input.", ophi->_idx, _invocation);)
   return found_sr_allocate;
 }
 
@@ -601,107 +601,115 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
 
   _igvn->hash_delete(ophi);
 
- // Fill in the 'selector' Phi. If index 'i' of the selector is:
- // -> a '-1' constant, the i'th input of the original Phi is NSR.
- // -> a 'x' constant >=0, the i'th input of of original Phi will be SR and the
- //    info about the scalarized object will be at index x of
- //    ObjectMergeValue::possible_objects
- for (uint i = 1; i < ophi->req(); i++) {
-   Node* base          = ophi->in(i);
-   JavaObjectNode* ptn = unique_java_object(base);
+  // Fill in the 'selector' Phi. If index 'i' of the selector is:
+  // -> a '-1' constant, the i'th input of the original Phi is NSR.
+  // -> a 'x' constant >=0, the i'th input of of original Phi will be SR and the
+  //    info about the scalarized object will be at index x of
+  //    ObjectMergeValue::possible_objects
+  for (uint i = 1; i < ophi->req(); i++) {
+    Node* base          = ophi->in(i);
+    JavaObjectNode* ptn = unique_java_object(base);
 
-   if (ptn != nullptr && ptn->scalar_replaceable()) {
-     Node* sr_obj_idx = _igvn->register_new_node_with_optimizer(ConINode::make(number_of_sr_objects));
-     selector->set_req(i, sr_obj_idx);
-     number_of_sr_objects++;
-   }
- }
+    if (ptn != nullptr && ptn->scalar_replaceable()) {
+      Node* sr_obj_idx = _igvn->register_new_node_with_optimizer(ConINode::make(number_of_sr_objects));
+      selector->set_req(i, sr_obj_idx);
+      number_of_sr_objects++;
+    }
+  }
 
- // Update the debug information of all safepoints in turn
- for (uint spi = 0; spi < safepoints->size(); spi++ ) {
-   Node* call               = safepoints->at(spi);
-   Node* ctrl               = call->in(TypeFunc::Control);
-   Node* memory             = call->in(TypeFunc::Memory);
-   JVMState *jvms           = call->jvms();
-   uint scalar_fields_index = (call->req() - jvms->scloff());
-   int debug_start          = jvms->debug_start();
-   int debug_end            = jvms->debug_end();
+  // Update the debug information of all safepoints in turn
+  for (uint spi = 0; spi < safepoints->size(); spi++) {
+    Node* call      = safepoints->at(spi);
+    Node* ctrl      = call->in(TypeFunc::Control);
+    Node* memory    = call->in(TypeFunc::Memory);
+    JVMState *jvms  = call->jvms();
+    uint merge_idx  = (call->req() - jvms->scloff());
+    int debug_start = jvms->debug_start();
 
-   // Keep a copy of the original pointer to NSR objects
-   call->add_req(ophi);
-   // Add the selector so we know which direction the execution took
-   call->add_req(selector);
+    SafePointScalarMergeNode* smerge = new SafePointScalarMergeNode(merge_t, merge_idx);
+    smerge->init_req(0, _compile->root());
+    _igvn->register_new_node_with_optimizer(smerge);
 
-   for (uint i = 1; i < ophi->req(); i++) {
-     Node* base               = ophi->in(i);
-     JavaObjectNode* ptn      = unique_java_object(base);
+    // Keep a copy of the original pointer to NSR objects
+    call->add_req(ophi);
 
-     // If the base is not scalar replaceable we don't need to register information about
-     // it at this time.
-     if (ptn == nullptr || !ptn->scalar_replaceable()) {
-       continue;
-     }
+    // Add the selector so we know which direction the execution took
+    call->add_req(selector);
 
-     const TypeOopPtr* base_t   = _igvn->type(base)->make_oopptr();
-     ciInstanceKlass* iklass    = base_t->is_instptr()->instance_klass();
-     int nfields                = iklass->nof_nonstatic_fields();
-     AllocateNode* alloc        = ptn->ideal_node()->as_Allocate();
-     Node* ccpp                 = alloc->result_cast();
-     const TypeOopPtr* res_type = _igvn->type(ccpp)->isa_oopptr();
-     Node* base_klass_node      = alloc->in(AllocateNode::KlassNode);
-     assert(base_klass_node != nullptr, "This shouldn't happen.");
+    for (uint i = 1; i < ophi->req(); i++) {
+      Node* base          = ophi->in(i);
+      JavaObjectNode* ptn = unique_java_object(base);
 
-     call->add_req(base_klass_node);
+      // If the base is not scalar replaceable we don't need to register information about
+      // it at this time.
+      if (ptn == nullptr || !ptn->scalar_replaceable()) {
+        continue;
+      }
 
-     for (int j = 0; j < nfields; j++) {
-       ciField* field            = iklass->nonstatic_field_at(j);
-       ciType* elem_type         = field->type();
-       BasicType basic_elem_type = field->layout_type();
-       const Type* field_type    = nullptr;
-       const TypeOopPtr *field_adr_type = res_type->add_offset(field->offset())->isa_oopptr();
+      const TypeOopPtr* base_t   = _igvn->type(base)->make_oopptr();
+      ciInstanceKlass* iklass    = base_t->is_instptr()->instance_klass();
+      int nfields                = iklass->nof_nonstatic_fields();
+      AllocateNode* alloc        = ptn->ideal_node()->as_Allocate();
+      Node* ccpp                 = alloc->result_cast();
+      const TypeOopPtr* res_type = _igvn->type(ccpp)->isa_oopptr();
+      Node* base_klass_node      = alloc->in(AllocateNode::KlassNode);
+      uint first_ind             = (call->req() - jvms->scloff());
 
-       if (is_reference_type(basic_elem_type)) {
-         if (!elem_type->is_loaded()) {
-           field_type = TypeInstPtr::BOTTOM;
-         } else {
-           field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
-         }
+      SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, nfields);
+      sobj->init_req(0, _compile->root());
+      _igvn->register_new_node_with_optimizer(sobj);
 
-         if (UseCompressedOops) {
-           field_type = field_type->make_narrowoop();
-           basic_elem_type = T_NARROWOOP;
-         }
-       } else {
-         field_type = Type::get_const_basic_type(basic_elem_type);
-       }
+      for (int j = 0; j < nfields; j++) {
+        ciField* field            = iklass->nonstatic_field_at(j);
+        ciType* elem_type         = field->type();
+        BasicType basic_elem_type = field->layout_type();
+        const Type* field_type    = nullptr;
+        const TypeOopPtr *field_adr_type = res_type->add_offset(field->offset())->isa_oopptr();
 
-       Node* field_val = PhaseMacroExpand::value_from_mem(_compile, _igvn, memory, ctrl, basic_elem_type, field_type, field_adr_type, alloc);
-       assert(field_val != nullptr, "field_val is null");
+        if (is_reference_type(basic_elem_type)) {
+          if (!elem_type->is_loaded()) {
+            field_type = TypeInstPtr::BOTTOM;
+          } else {
+            field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
+          }
 
-       call->add_req(field_val);
-     }
+          if (UseCompressedOops) {
+            field_type = field_type->make_narrowoop();
+            basic_elem_type = T_NARROWOOP;
+          }
+        } else {
+          field_type = Type::get_const_basic_type(basic_elem_type);
+        }
 
-     JVMState *jvms = call->jvms();
-     jvms->set_endoff(call->req());
-   }
+        Node* field_val = PhaseMacroExpand::value_from_mem(_compile, _igvn, memory, ctrl, basic_elem_type, field_type, field_adr_type, alloc);
+        assert(field_val != nullptr, "field_val is null");
 
-   SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(merge_t,
-#ifdef ASSERT
-   NOT_PRODUCT(nullptr),
-#endif
-                                                                   /* first_index */ 0,
-                                                                   /* n_fields */ 0,
-                                                                   scalar_fields_index,
-                                                                   number_of_sr_objects);
-   assert(sobj->is_from_merge(), "sanity");
+        call->add_req(field_val);
+      }
 
-   sobj->init_req(0, _compile->root());
-   _igvn->register_new_node_with_optimizer(sobj);
+      jvms->set_endoff(call->req());
 
-   // Replaces debug information references to "ophi" in "call" with references to "sobj"
-   call->replace_edges_in_range(ophi, sobj, debug_start, debug_end, _igvn);
-   _igvn->_worklist.push(call);
- }
+      // Now make a pass over the debug information replacing any references
+      // to the allocated object with "sobj"
+      int debug_end = jvms->debug_end();
+      int reps = call->replace_edges_in_range(ccpp, sobj, debug_start, debug_end, _igvn);
+
+      // If the call was NOT using the scalarized object directly then this SOBJ
+      // is just a candidate for rematerialization.
+      if (reps == 0) {
+        sobj->set_only_merge_sr_candidate(true);
+      }
+
+      // Register the scalarized object as a candidate for reallocation
+      smerge->add_req(sobj);
+    }
+
+    // Replaces debug information references to "ophi" in "call" with references to "smerge"
+    int debug_end = jvms->debug_end();
+    call->replace_edges_in_range(ophi, smerge, debug_start, debug_end, _igvn);
+    call->set_req(smerge->merge_pointer_idx(jvms), ophi);
+    _igvn->_worklist.push(call);
+  }
 
   // Now we can change ophi since we don't need to know the types
   // of the input allocations anymore.

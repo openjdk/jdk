@@ -302,25 +302,25 @@ static void print_objects(JavaThread* deoptee_thread,
     ObjectValue* sv = nullptr;
     Klass* k = nullptr;
 
-    if (objects->at(i)->is_object()) {
-      sv = objects->at(i)->as_ObjectValue();
-      // This object is only a candidate inside an ObjectMergeValue
-      if (sv->is_merge_candidate()) {
-        continue;
-      }
-      k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
-    } else if (objects->at(i)->is_object_merge()) {
+    if (objects->at(i)->is_object_merge()) {
       ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
       sv = merged->select(frame, reg_map);
       // Klass may be null if the object was actually a NSR input of a merge.
       k = sv->klass() != nullptr ? java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()) : nullptr;
+    } else if (objects->at(i)->is_object()) {
+      sv = objects->at(i)->as_ObjectValue();
+      // This object is only a candidate inside an ObjectMergeValue
+      if (sv->is_only_merge_sr_candidate()) {
+        continue;
+      }
+      k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     }
 
     Handle obj = sv->value();
 
     st.print("     object <" INTPTR_FORMAT ">", p2i(sv->value()()));
     if (k == nullptr) {
-      st.print(" from an allocation merge.");
+      st.print(" NSR input from an allocation merge.");
     } else {
       st.print(" of type ");
       k->print_value_on(&st);
@@ -1208,17 +1208,10 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
   bool failures = false;
 
   for (int i = 0; i < objects->length(); i++) {
-    assert(objects->at(i)->is_object() || objects->at(i)->is_object_merge(), "invalid debug information");
+    assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = nullptr;
 
-    if (objects->at(i)->is_object()) {
-      sv = objects->at(i)->as_ObjectValue();
-
-      // This object is only a candidate inside an ObjectMergeValue
-      if (sv->is_merge_candidate()) {
-        continue;
-      }
-    } else {
+    if (objects->at(i)->is_object_merge()) {
       ObjectMergeValue* merged = objects->at(i)->as_ObjectMergeValue();
       sv = merged->select(fr, reg_map);
 
@@ -1234,6 +1227,15 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       if (!sv->value().is_null()) {
         continue;
       }
+    } else if (objects->at(i)->is_object()) {
+      sv = objects->at(i)->as_ObjectValue();
+
+      // This object is only a candidate inside an ObjectMergeValue
+      if (sv->is_only_merge_sr_candidate()) {
+        continue;
+      }
+    } else {
+      assert(false, "sanity");
     }
 
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
@@ -1583,10 +1585,13 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 // restore fields of all eliminated objects and arrays
 void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
   for (int i = 0; i < objects->length(); i++) {
-    assert(objects->at(i)->is_object() || objects->at(i)->is_object_merge(), "invalid debug information");
+    assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = nullptr;
 
-    if (objects->at(i)->is_object()) {
+    if (objects->at(i)->is_object_merge()) {
+      // Merge objects don't need field reassignment
+      continue;
+    } else if (objects->at(i)->is_object()) {
       sv = objects->at(i)->as_ObjectValue();
 
       // If the object is only a candidate inside an ObjectMergeValue we
@@ -1594,12 +1599,11 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       //
       // If the pointer didn't come from a scalar replaced object then
       // we don't need to do field reassignment.
-      if (sv->is_merge_candidate() || sv->skip_field_assignment()) {
+      if (sv->is_only_merge_sr_candidate() || sv->skip_field_assignment()) {
         continue;
       }
     } else {
-      // Merge objects don't need field reassignment
-      continue;
+      assert(false, "sanity");
     }
 
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());

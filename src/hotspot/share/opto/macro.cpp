@@ -723,11 +723,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     // of regular debuginfo at the last (youngest) JVMS.
     // Record relative start index.
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
-    SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type,
-#ifdef ASSERT
-                                                 alloc,
-#endif
-                                                 first_ind, nfields);
+    SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, nfields);
     sobj->init_req(0, C->root());
     transform_later(sobj);
 

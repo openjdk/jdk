@@ -133,20 +133,20 @@ class ObjectValue: public ScopeValue {
   GrowableArray<ScopeValue*> _field_values;
   Handle                     _value;
   bool                       _visited;
-  bool                       _merge_candidate;        // Will be true if this object is just representing
+  bool                       _only_merge_sr_candidate;// Will be true if this object is just representing
                                                       // a scalar replaced object inside an ObjectMergeValue.
 
   bool                       _skip_field_assignment;  // Will be true if the _value field of this object
                                                       // actually holds a pointer to a non-scalarized object
                                                       // that was participating in an allocation merge.
  public:
-  ObjectValue(int id, ScopeValue* klass)
+  ObjectValue(int id, ScopeValue* klass, bool only_merge_sr_candidate = false)
      : _id(id)
      , _klass(klass)
      , _field_values()
      , _value()
      , _visited(false)
-     , _merge_candidate(false)
+     , _only_merge_sr_candidate(only_merge_sr_candidate)
      , _skip_field_assignment(false) {
     assert(klass->is_constant_oop(), "should be constant java mirror oop");
   }
@@ -157,26 +157,26 @@ class ObjectValue: public ScopeValue {
      , _field_values()
      , _value()
      , _visited(false)
-     , _merge_candidate(false)
+     , _only_merge_sr_candidate(false)
      , _skip_field_assignment(false) {}
 
   // Accessors
-  bool                        is_object() const              { return true; }
-  int                         id() const                     { return _id; }
-  ScopeValue*                 klass() const                  { return _klass; }
-  GrowableArray<ScopeValue*>* field_values()                 { return &_field_values; }
-  ScopeValue*                 field_at(int i) const          { return _field_values.at(i); }
-  int                         field_size()                   { return _field_values.length(); }
-  Handle                      value() const                  { return _value; }
-  bool                        is_visited() const             { return _visited; }
-  bool                        is_merge_candidate() const     { return _merge_candidate; }
-  bool                        skip_field_assignment() const  { return _skip_field_assignment; }
+  bool                        is_object() const                   { return true; }
+  int                         id() const                          { return _id; }
+  ScopeValue*                 klass() const                       { return _klass; }
+  GrowableArray<ScopeValue*>* field_values()                      { return &_field_values; }
+  ScopeValue*                 field_at(int i) const               { return _field_values.at(i); }
+  int                         field_size()                        { return _field_values.length(); }
+  Handle                      value() const                       { return _value; }
+  bool                        is_visited() const                  { return _visited; }
+  bool                        is_only_merge_sr_candidate() const  { return _only_merge_sr_candidate; }
+  bool                        skip_field_assignment() const       { return _skip_field_assignment; }
 
-  void                        set_id(int id)                 { _id = id; }
+  void                        set_id(int id)                      { _id = id; }
   void                        set_value(oop value);
-  void                        set_visited(bool visited)      { _visited = visited; }
-  void                        set_merge_candidate(bool cnd)  { _merge_candidate = cnd; }
-  void                        set_skip_field_assignment()    { _skip_field_assignment = true; }
+  void                        set_visited(bool visited)           { _visited = visited; }
+  void                        set_merge_candidate(bool cnd)       { _only_merge_sr_candidate = cnd; }
+  void                        set_skip_field_assignment()         { _skip_field_assignment = true; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);
@@ -196,44 +196,33 @@ class ObjectValue: public ScopeValue {
 // of a candidate object in '_possible_objects'. That candidate object is an
 // ObjectValue describing an object that was scalar replaced.
 
-class ObjectMergeValue: public ScopeValue {
+class ObjectMergeValue: public ObjectValue {
 protected:
-  int                        _id;
   ScopeValue*                _selector;
   ScopeValue*                _merge_pointer;
   GrowableArray<ScopeValue*> _possible_objects;
   ObjectValue*               _selected;
-  Handle                     _value;
-  bool                       _visited;
 public:
   ObjectMergeValue(int id, ScopeValue* merge_pointer, ScopeValue* selector)
-     : _id(id)
+     : ObjectValue(id)
      , _selector(selector)
      , _merge_pointer(merge_pointer)
-     , _selected(nullptr)
-     , _value()
-     , _visited(false) {}
+     , _possible_objects()
+     , _selected(nullptr) {}
 
   ObjectMergeValue(int id)
-     : _id(id)
+     : ObjectValue(id)
      , _selector(nullptr)
      , _merge_pointer(nullptr)
-     , _selected(nullptr)
-     , _value()
-     , _visited(false) {}
+     , _possible_objects()
+     , _selected(nullptr) {}
 
   bool                        is_object_merge() const         { return true; }
-  int                         id() const                      { return _id; }
   ScopeValue*                 selector() const                { return _selector; }
   ScopeValue*                 merge_pointer() const           { return _merge_pointer; }
   GrowableArray<ScopeValue*>* possible_objects()              { return &_possible_objects; }
-  Handle                      value() const                   { return _value; }
-  bool                        is_visited() const              { return _visited; }
   ObjectValue*                select(frame* fr, RegisterMap* reg_map) ;
   ObjectValue*                selected()                      { assert(_selected != nullptr, "not yet."); return _selected; };
-
-  void                        set_value(oop value);
-  void                        set_visited(bool visited)       { _visited = visited; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);
@@ -250,7 +239,7 @@ public:
   bool                       is_auto_box() const        { return true; }
   bool                       is_cached() const          { return _cached; }
   void                       set_cached(bool cached)    { _cached = cached; }
-  AutoBoxObjectValue(int id, ScopeValue* klass) : ObjectValue(id, klass), _cached(false) { }
+  AutoBoxObjectValue(int id, ScopeValue* klass, bool only_merge_candidate = false) : ObjectValue(id, klass, only_merge_candidate), _cached(false) { }
   AutoBoxObjectValue(int id) : ObjectValue(id), _cached(false) { }
 };
 

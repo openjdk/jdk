@@ -237,10 +237,10 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
       ScopeValue* sv = (ScopeValue*) _objects->at(i);
-      if (sv->is_object()) {
-        sv->as_ObjectValue()->print_on(st);
-      } else if (sv->is_object_merge()) {
+      if (sv->is_object_merge()) {
         sv->as_ObjectMergeValue()->print_on(st);
+      } else if (sv->is_object()) {
+        sv->as_ObjectValue()->print_on(st);
       } else {
         st->print_cr("Unknown Object Type in Object Pool");
       }

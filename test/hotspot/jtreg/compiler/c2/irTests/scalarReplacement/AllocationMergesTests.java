@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8281429
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
- * @requires vm.compiler2.enabled
+ * @requires vm.bits == 64 & vm.compiler2.enabled & vm.opt.final.UseCompressedOops & vm.opt.final.EliminateAllocations
  * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesTests
  */
 public class AllocationMergesTests {
@@ -483,11 +483,10 @@ public class AllocationMergesTests {
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-    @IR(counts = { IRNode.ALLOC, "2" }, applyIf = { "UseCompressedOops", "false" })
+    @IR(counts = { IRNode.ALLOC, "2" } )
     // The two Picture objects will be removed. The nested Point objects won't
     // be removed because the Phi merging them will have a DecodeN user - which
-    // currently isn't supported. The 'applyIf' directive is needed to make the
-    // test pass on x86_32 VMs.
+    // currently isn't supported.
     int testNestedObjectsNoEscapeObject(boolean cond, int x, int y) {
         Picture p = new Picture(x, x, y);
 
