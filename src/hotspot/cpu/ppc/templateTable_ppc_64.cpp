@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
@@ -49,7 +50,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 #undef __
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // ============================================================================
 // Misc helpers
@@ -2273,6 +2274,73 @@ void TemplateTable::load_field_cp_cache_entry(Register Robj,
   }
 }
 
+// Sets registers:
+//   `method`   Target method for invokedynamic
+//   R3_RET     Return address for invoke
+//
+// Kills: R11, R21, R30, R31
+void TemplateTable::load_invokedynamic_entry(Register method) {
+  // setup registers
+  const Register ret_addr = R3_RET;
+  const Register appendix = R30;
+  const Register cache    = R31;
+  const Register index    = R21_tmp1;
+  const Register tmp      = R11_scratch1;
+  assert_different_registers(method, appendix, cache, index, tmp);
+
+  Label resolved;
+
+  __ load_resolved_indy_entry(cache, index);
+  __ ld_ptr(method, in_bytes(ResolvedIndyEntry::method_offset()), cache);
+
+  // The invokedynamic is unresolved iff method is NULL
+  __ cmpdi(CCR0, method, 0);
+  __ bne(CCR0, resolved);
+
+  Bytecodes::Code code = bytecode();
+
+  // Call to the interpreter runtime to resolve invokedynamic
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ li(R4_ARG2, code);
+  __ call_VM(noreg, entry, R4_ARG2, true);
+  // Update registers with resolved info
+  __ load_resolved_indy_entry(cache, index);
+  __ ld_ptr(method, in_bytes(ResolvedIndyEntry::method_offset()), cache);
+
+  DEBUG_ONLY(__ cmpdi(CCR0, method, 0));
+  __ asm_assert_ne("Should be resolved by now");
+  __ bind(resolved);
+  __ isync(); // Order load wrt. succeeding loads.
+
+  Label L_no_push;
+  // Check if there is an appendix
+  __ lbz(index, in_bytes(ResolvedIndyEntry::flags_offset()), cache);
+  __ rldicl_(R0, index, 64-ResolvedIndyEntry::has_appendix_shift, 63);
+  __ beq(CCR0, L_no_push);
+
+  // Get appendix
+  __ lhz(index, in_bytes(ResolvedIndyEntry::resolved_references_index_offset()), cache);
+  // Push the appendix as a trailing parameter
+  assert(cache->is_nonvolatile(), "C-call in resolve_oop_handle");
+  __ load_resolved_reference_at_index(appendix, index, /* temp */ ret_addr, tmp);
+  __ verify_oop(appendix);
+  __ push_ptr(appendix);   // push appendix (MethodType, CallSite, etc.)
+  __ bind(L_no_push);
+
+  // load return address
+  {
+    Register Rtable_addr = tmp;
+    address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
+
+    // compute return type
+    __ lbz(index, in_bytes(ResolvedIndyEntry::result_type_offset()), cache);
+    __ load_dispatch_table(Rtable_addr, (address*)table_addr);
+    __ sldi(index, index, LogBytesPerWord);
+    // Get return address.
+    __ ldx(ret_addr, Rtable_addr, index);
+  }
+}
+
 // Load the constant pool cache entry at invokes into registers.
 // Resolve if necessary.
 
@@ -2293,7 +2361,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register Rflags,
                                                bool is_invokevirtual,
                                                bool is_invokevfinal,
-                                               bool is_invokedynamic) {
+                                               bool is_invokedynamic /*unused*/) {
 
   ByteSize cp_base_offset = ConstantPoolCache::base_offset();
   // Determine constant pool cache field offsets.
@@ -2310,7 +2378,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
     // Already resolved.
     __ get_cache_and_index_at_bcp(Rcache, 1);
   } else {
-    resolve_cache_and_index(byte_no, Rcache, /* temp */ Rmethod, is_invokedynamic ? sizeof(u4) : sizeof(u2));
+    resolve_cache_and_index(byte_no, Rcache, /* temp */ Rmethod, sizeof(u2));
   }
 
   __ ld(Rmethod, method_offset, Rcache);
@@ -3327,7 +3395,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   // Determine flags.
   const Bytecodes::Code code = bytecode();
   const bool is_invokeinterface  = code == Bytecodes::_invokeinterface;
-  const bool is_invokedynamic    = code == Bytecodes::_invokedynamic;
+  const bool is_invokedynamic    = false; // should not reach here with invokedynamic
   const bool is_invokehandle     = code == Bytecodes::_invokehandle;
   const bool is_invokevirtual    = code == Bytecodes::_invokevirtual;
   const bool is_invokespecial    = code == Bytecodes::_invokespecial;
@@ -3343,7 +3411,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   // Saving of SP done in call_from_interpreter.
 
   // Maybe push "appendix" to arguments.
-  if (is_invokedynamic || is_invokehandle) {
+  if (is_invokehandle) {
     Label Ldone;
     Register reference = Rscratch1;
 
@@ -3653,14 +3721,13 @@ void TemplateTable::invokeinterface(int byte_no) {
 void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
 
-  const Register Rret_addr = R3_ARG1,
-                 Rflags    = R31,
-                 Rmethod   = R22_tmp2,
-                 Rscratch1 = R30,
-                 Rscratch2 = R11_scratch1,
-                 Rscratch3 = R12_scratch2;
+  const Register Rret_addr = R3_RET;
+  const Register Rmethod   = R22_tmp2;
+  const Register Rscratch1 = R30;
+  const Register Rscratch2 = R11_scratch1;
 
-  prepare_invoke(byte_no, Rmethod, Rret_addr, Rscratch1, noreg, Rflags, Rscratch2, Rscratch3);
+  // Returns target method in Rmethod and return address in R3_RET. Kills all argument registers.
+  load_invokedynamic_entry(Rmethod);
 
   // Profile this call.
   __ profile_call(Rscratch1, Rscratch2);

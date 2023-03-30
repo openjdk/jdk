@@ -440,18 +440,27 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ profile_return_type(mdp, obj, tmp);
   }
 
-  // Pop N words from the stack
-  __ get_cache_and_index_at_bcp(x11, x12, 1, index_size);
-  __ ld(x11, Address(x11, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ andi(x11, x11, ConstantPoolCacheEntry::parameter_size_mask);
+  const Register cache = x11;
+  const Register index = x12;
 
-  __ shadd(esp, x11, esp, t0, 3);
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ shadd(esp, cache, esp, t0, 3);
+  } else {
+    // Pop N words from the stack
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+    __ ld(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andi(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
+
+    __ shadd(esp, cache, esp, t0, 3);
+  }
 
   // Restore machine SP
   __ restore_sp_after_call();
 
- __ check_and_handle_popframe(xthread);
- __ check_and_handle_earlyret(xthread);
+  __ check_and_handle_popframe(xthread);
+  __ check_and_handle_earlyret(xthread);
 
   __ get_dispatch();
   __ dispatch_next(state, step);

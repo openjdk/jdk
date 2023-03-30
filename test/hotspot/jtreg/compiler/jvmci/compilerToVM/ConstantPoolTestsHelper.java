@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,13 @@ public class ConstantPoolTestsHelper {
         }
 
         public int getCPCacheIndex(int cpi) {
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
+                for (int indy_index = 0; indy_index < WB.getIndyInfoLength(this.klass); indy_index++) {
+                    if (WB.getIndyCPIndex(this.klass, indy_index) == cpi) {
+                        return ~indy_index;
+                    }
+                }
+            }
             int cacheLength = WB.getConstantPoolCacheLength(this.klass);
             int indexTag = WB.getConstantPoolCacheIndexTag();
             for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {
