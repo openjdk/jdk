@@ -425,8 +425,8 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
         int currentZoomLevel = scene.getZoomPercentage();
         SwingUtilities.invokeLater(() -> {
-            etc.centerSelectedNodes();
             etc.setZoomLevel(currentZoomLevel);
+            etc.centerSelectedNodes();
         });
         return etc;
     }
