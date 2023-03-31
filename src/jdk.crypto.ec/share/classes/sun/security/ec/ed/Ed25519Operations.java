@@ -191,14 +191,14 @@ public class Ed25519Operations extends EdECOperations {
         // x = A = x^2
         p.getY().setSquare();
         // y = B = y^2
-        t2.setValue(p.getX()).setSum(p.getY()).setReduced();
+        t2.setValue(p.getX()).setSum(p.getY());
         // t2 holds H
         p.getZ().setSquare().setProduct(two);
         // z holds C
 
         p.getT().setValue(t2).setDifference(t1);
         // t holds E
-        t1.setValue(p.getX()).setDifference(p.getY()).setReduced();
+        t1.setValue(p.getX()).setDifference(p.getY());
         // t1 holds G
 
         p.getZ().setSum(t1);

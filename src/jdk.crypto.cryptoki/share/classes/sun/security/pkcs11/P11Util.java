@@ -43,7 +43,7 @@ public final class P11Util {
     // A cleaner, shared within this module.
     public static final Cleaner cleaner = Cleaner.create();
 
-    private static Object LOCK = new Object();
+    private static final Object LOCK = new Object();
 
     private static volatile Provider sun, sunRsaSign, sunJce;
 

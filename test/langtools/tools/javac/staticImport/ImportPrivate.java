@@ -18,7 +18,7 @@ class A {
 }
 
 class MyTest {
-    public static void main(String argv[]) {
+    public static void meth() {
         m();
     }
 }

@@ -325,7 +325,7 @@ public class DriverManagerTests {
     }
 
     /**
-     * Create a PrintWriter and use to to send output via DriverManager.println
+     * Create a PrintWriter and use it to send output via DriverManager.println
      * Validate that if you disable the writer, the output sent is not present
      */
     @Test

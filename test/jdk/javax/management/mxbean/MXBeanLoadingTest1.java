@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public class MXBeanLoadingTest1 {
                             + ".class", "");
 
             URL[] urls = new URL[]{new URL(clsLoadPath)};
+            @SuppressWarnings("removal")
             PrivateMLet mlet = new PrivateMLet(urls, null, false);
             Class<?> shadowClass = mlet.loadClass(TestMXBean.class.getName());
 
@@ -266,6 +267,7 @@ public class MXBeanLoadingTest1 {
             mbs.unregisterMBean(testName);
             mbs.unregisterMBean(mletName);
 
+            @SuppressWarnings("removal")
             WeakReference<PrivateMLet> mletRef =
                     new WeakReference<PrivateMLet>(mlet);
             mlet = null;

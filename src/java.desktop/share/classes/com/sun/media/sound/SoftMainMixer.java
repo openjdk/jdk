@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,102 +123,126 @@ public final class SoftMainMixer {
     private void processSystemExclusiveMessage(byte[] data) {
         synchronized (synth.control_mutex) {
             activity();
-
+            if (data.length < 3 || (data[1] & 0xFF) != 0x7E && (data[1] & 0xFF) != 0x7F ) {
+                // Not enough data to determine SysEx type or SysEx type is not supported
+                return;
+            }
             // Universal Non-Real-Time SysEx
             if ((data[1] & 0xFF) == 0x7E) {
                 int deviceID = data[2] & 0xFF;
                 if (deviceID == 0x7F || deviceID == synth.getDeviceID()) {
+                    if (data.length < 4) {
+                        return;
+                    }
                     int subid1 = data[3] & 0xFF;
                     int subid2;
                     switch (subid1) {
-                    case 0x08:  // MIDI Tuning Standard
-                        subid2 = data[4] & 0xFF;
-                        switch (subid2) {
-                        case 0x01:  // BULK TUNING DUMP
-                        {
-                            // http://www.midi.org/about-midi/tuning.shtml
-                            SoftTuning tuning = synth.getTuning(new Patch(0,
-                                    data[5] & 0xFF));
-                            tuning.load(data);
-                            break;
-                        }
-                        case 0x04:  // KEY-BASED TUNING DUMP
-                        case 0x05:  // SCALE/OCTAVE TUNING DUMP, 1 byte format
-                        case 0x06:  // SCALE/OCTAVE TUNING DUMP, 2 byte format
-                        case 0x07:  // SINGLE NOTE TUNING CHANGE (NON REAL-TIME)
+                        case 0x08:  // MIDI Tuning Standard
+                            if (data.length < 5) {
+                                break;
+                            }
+                            subid2 = data[4] & 0xFF;
+                            switch (subid2) {
+                                case 0x01:  // BULK TUNING DUMP
+                                {
+                                    if (data.length < 6) {
+                                        break;
+                                    }
+                                    // http://www.midi.org/about-midi/tuning.shtml
+                                    SoftTuning tuning = synth.getTuning(new Patch(0,
+                                            data[5] & 0xFF));
+                                    tuning.load(data);
+                                    break;
+                                }
+                                case 0x04:  // KEY-BASED TUNING DUMP
+                                case 0x05:  // SCALE/OCTAVE TUNING DUMP, 1 byte format
+                                case 0x06:  // SCALE/OCTAVE TUNING DUMP, 2 byte format
+                                case 0x07:  // SINGLE NOTE TUNING CHANGE (NON REAL-TIME)
                                     // (BANK)
-                        {
-                            // http://www.midi.org/about-midi/tuning_extens.shtml
-                            SoftTuning tuning = synth.getTuning(new Patch(
-                                    data[5] & 0xFF, data[6] & 0xFF));
-                            tuning.load(data);
-                            break;
-                        }
-                        case 0x08:  // scale/octave tuning 1-byte form (Non
+                                {
+                                    if (data.length < 7) {
+                                        break;
+                                    }
+                                    // http://www.midi.org/about-midi/tuning_extens.shtml
+                                    SoftTuning tuning = synth.getTuning(new Patch(
+                                            data[5] & 0xFF, data[6] & 0xFF));
+                                    tuning.load(data); // Check inside!
+                                    break;
+                                }
+                                case 0x08:  // scale/octave tuning 1-byte form (Non
                                     // Real-Time)
-                        case 0x09:  // scale/octave tuning 2-byte form (Non
+                                case 0x09:  // scale/octave tuning 2-byte form (Non
                                     // Real-Time)
-                        {
-                            // http://www.midi.org/about-midi/tuning-scale.shtml
-                            SoftTuning tuning = new SoftTuning(data);
-                            int channelmask = (data[5] & 0xFF) * 16384
-                                    + (data[6] & 0xFF) * 128 + (data[7] & 0xFF);
-                            SoftChannel[] channels = synth.channels;
-                            for (int i = 0; i < channels.length; i++)
-                                if ((channelmask & (1 << i)) != 0)
-                                    channels[i].tuning = tuning;
+                                {
+                                    if (data.length < 8) {
+                                        break;
+                                    }
+                                    // http://www.midi.org/about-midi/tuning-scale.shtml
+                                    SoftTuning tuning = new SoftTuning(data);
+                                    int channelmask = (data[5] & 0xFF) * 16384
+                                            + (data[6] & 0xFF) * 128 + (data[7] & 0xFF);
+                                    SoftChannel[] channels = synth.channels;
+                                    for (int i = 0; i < channels.length; i++)
+                                        if ((channelmask & (1 << i)) != 0)
+                                            channels[i].tuning = tuning;
+                                    break;
+                                }
+                                default:
+                                    break;
+                            }
                             break;
-                        }
-                        default:
+                        case 0x09:  // General Midi Message
+                            if (data.length < 5) {
+                                break;
+                            }
+                            subid2 = data[4] & 0xFF;
+                            switch (subid2) {
+                                case 0x01:  // General Midi 1 On
+                                    synth.setGeneralMidiMode(1);
+                                    reset();
+                                    break;
+                                case 0x02:  // General Midi Off
+                                    synth.setGeneralMidiMode(0);
+                                    reset();
+                                    break;
+                                case 0x03:  // General MidI Level 2 On
+                                    synth.setGeneralMidiMode(2);
+                                    reset();
+                                    break;
+                                default:
+                                    break;
+                            }
                             break;
-                        }
-                        break;
-                    case 0x09:  // General Midi Message
-                        subid2 = data[4] & 0xFF;
-                        switch (subid2) {
-                        case 0x01:  // General Midi 1 On
-                            synth.setGeneralMidiMode(1);
-                            reset();
+                        case 0x0A: // DLS Message
+                            if (data.length < 5) {
+                                break;
+                            }
+                            subid2 = data[4] & 0xFF;
+                            switch (subid2) {
+                                case 0x01:  // DLS On
+                                    if (synth.getGeneralMidiMode() == 0)
+                                        synth.setGeneralMidiMode(1);
+                                    synth.voice_allocation_mode = 1;
+                                    reset();
+                                    break;
+                                case 0x02:  // DLS Off
+                                    synth.setGeneralMidiMode(0);
+                                    synth.voice_allocation_mode = 0;
+                                    reset();
+                                    break;
+                                case 0x03:  // DLS Static Voice Allocation Off
+                                    synth.voice_allocation_mode = 0;
+                                    break;
+                                case 0x04:  // DLS Static Voice Allocation On
+                                    synth.voice_allocation_mode = 1;
+                                    break;
+                                default:
+                                    break;
+                            }
                             break;
-                        case 0x02:  // General Midi Off
-                            synth.setGeneralMidiMode(0);
-                            reset();
-                            break;
-                        case 0x03:  // General MidI Level 2 On
-                            synth.setGeneralMidiMode(2);
-                            reset();
-                            break;
-                        default:
-                            break;
-                        }
-                        break;
-                    case 0x0A: // DLS Message
-                        subid2 = data[4] & 0xFF;
-                        switch (subid2) {
-                        case 0x01:  // DLS On
-                            if (synth.getGeneralMidiMode() == 0)
-                                synth.setGeneralMidiMode(1);
-                            synth.voice_allocation_mode = 1;
-                            reset();
-                            break;
-                        case 0x02:  // DLS Off
-                            synth.setGeneralMidiMode(0);
-                            synth.voice_allocation_mode = 0;
-                            reset();
-                            break;
-                        case 0x03:  // DLS Static Voice Allocation Off
-                            synth.voice_allocation_mode = 0;
-                            break;
-                        case 0x04:  // DLS Static Voice Allocation On
-                            synth.voice_allocation_mode = 1;
-                            break;
-                        default:
-                            break;
-                        }
-                        break;
 
-                    default:
-                        break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -227,197 +251,240 @@ public final class SoftMainMixer {
             if ((data[1] & 0xFF) == 0x7F) {
                 int deviceID = data[2] & 0xFF;
                 if (deviceID == 0x7F || deviceID == synth.getDeviceID()) {
+                    if (data.length < 4) {
+                        return;
+                    }
                     int subid1 = data[3] & 0xFF;
                     int subid2;
                     switch (subid1) {
-                    case 0x04: // Device Control
-
-                        subid2 = data[4] & 0xFF;
-                        switch (subid2) {
-                        case 0x01: // Master Volume
-                        case 0x02: // Master Balane
-                        case 0x03: // Master fine tuning
-                        case 0x04: // Master coarse tuning
-                            int val = (data[5] & 0x7F)
-                                    + ((data[6] & 0x7F) * 128);
-                            if (subid2 == 0x01)
-                                setVolume(val);
-                            else if (subid2 == 0x02)
-                                setBalance(val);
-                            else if (subid2 == 0x03)
-                                setFineTuning(val);
-                            else if (subid2 == 0x04)
-                                setCoarseTuning(val);
-                            break;
-                        case 0x05: // Global Parameter Control
-                            int ix = 5;
-                            int slotPathLen = (data[ix++] & 0xFF);
-                            int paramWidth = (data[ix++] & 0xFF);
-                            int valueWidth = (data[ix++] & 0xFF);
-                            int[] slotPath = new int[slotPathLen];
-                            for (int i = 0; i < slotPathLen; i++) {
-                                int msb = (data[ix++] & 0xFF);
-                                int lsb = (data[ix++] & 0xFF);
-                                slotPath[i] = msb * 128 + lsb;
+                        case 0x04: // Device Control
+                            if (data.length < 5) {
+                                break;
                             }
-                            int paramCount = (data.length - 1 - ix)
-                                    / (paramWidth + valueWidth);
-                            long[] params = new long[paramCount];
-                            long[] values = new long[paramCount];
-                            for (int i = 0; i < paramCount; i++) {
-                                values[i] = 0;
-                                for (int j = 0; j < paramWidth; j++)
-                                    params[i] = params[i] * 128
-                                            + (data[ix++] & 0xFF);
-                                for (int j = 0; j < valueWidth; j++)
-                                    values[i] = values[i] * 128
-                                            + (data[ix++] & 0xFF);
+                            subid2 = data[4] & 0xFF;
+                            switch (subid2) {
+                                case 0x01: // Master Volume
+                                case 0x02: // Master Balane
+                                case 0x03: // Master fine tuning
+                                case 0x04: // Master coarse tuning
+                                    if (data.length < 7) {
+                                        break;
+                                    }
+                                    int val = (data[5] & 0x7F)
+                                            + ((data[6] & 0x7F) * 128);
+                                    if (subid2 == 0x01)
+                                        setVolume(val);
+                                    else if (subid2 == 0x02)
+                                        setBalance(val);
+                                    else if (subid2 == 0x03)
+                                        setFineTuning(val);
+                                    else if (subid2 == 0x04)
+                                        setCoarseTuning(val);
+                                    break;
+                                case 0x05: // Global Parameter Control
+                                    if (data.length < 6) {
+                                        break;
+                                    }
+                                    int ix = 5;
+                                    int slotPathLen = (data[ix++] & 0xFF);
+                                    if (data.length < slotPathLen * 2 + 8) {
+                                        break;
+                                    }
+                                    int paramWidth = (data[ix++] & 0xFF);
+                                    int valueWidth = (data[ix++] & 0xFF);
+                                    int[] slotPath = new int[slotPathLen];
+                                    for (int i = 0; i < slotPathLen; i++) {
+                                        int msb = (data[ix++] & 0xFF);
+                                        int lsb = (data[ix++] & 0xFF);
+                                        slotPath[i] = msb * 128 + lsb;
+                                    }
+                                    int paramCount = (data.length - 1 - ix)
+                                            / (paramWidth + valueWidth);
+                                    if (paramCount < 1) {
+                                        break;
+                                    }
+                                    long[] params = new long[paramCount];
+                                    long[] values = new long[paramCount];
+                                    for (int i = 0; i < paramCount; i++) {
+                                        values[i] = 0;
+                                        for (int j = 0; j < paramWidth; j++)
+                                            params[i] = params[i] * 128
+                                                    + (data[ix++] & 0xFF);
+                                        for (int j = 0; j < valueWidth; j++)
+                                            values[i] = values[i] * 128
+                                                    + (data[ix++] & 0xFF);
 
+                                    }
+                                    globalParameterControlChange(slotPath, params, values);
+                                    break;
+                                default:
+                                    break;
                             }
-                            globalParameterControlChange(slotPath, params, values);
                             break;
-                        default:
-                            break;
-                        }
-                        break;
 
-                    case 0x08:  // MIDI Tuning Standard
-                        subid2 = data[4] & 0xFF;
-                        switch (subid2) {
-                        case 0x02:  // SINGLE NOTE TUNING CHANGE (REAL-TIME)
-                        {
-                            // http://www.midi.org/about-midi/tuning.shtml
-                            SoftTuning tuning = synth.getTuning(new Patch(0,
-                                    data[5] & 0xFF));
-                            tuning.load(data);
-                            SoftVoice[] voices = synth.getVoices();
-                            for (int i = 0; i < voices.length; i++)
-                                if (voices[i].active)
-                                    if (voices[i].tuning == tuning)
-                                        voices[i].updateTuning(tuning);
-                            break;
-                        }
-                        case 0x07:  // SINGLE NOTE TUNING CHANGE (REAL-TIME)
+                        case 0x08:  // MIDI Tuning Standard
+                            if (data.length < 5) {
+                                break;
+                            }
+                            subid2 = data[4] & 0xFF;
+                            switch (subid2) {
+                                case 0x02:  // SINGLE NOTE TUNING CHANGE (REAL-TIME)
+                                {
+                                    // http://www.midi.org/about-midi/tuning.shtml
+                                    if (data.length < 6) {
+                                        break;
+                                    }
+                                    SoftTuning tuning = synth.getTuning(new Patch(0,
+                                            data[5] & 0xFF));
+                                    tuning.load(data);
+                                    SoftVoice[] voices = synth.getVoices();
+                                    for (int i = 0; i < voices.length; i++)
+                                        if (voices[i].active)
+                                            if (voices[i].tuning == tuning)
+                                                voices[i].updateTuning(tuning);
+                                    break;
+                                }
+                                case 0x07:  // SINGLE NOTE TUNING CHANGE (REAL-TIME)
                                     // (BANK)
-                        {
-                            // http://www.midi.org/about-midi/tuning_extens.shtml
-                            SoftTuning tuning = synth.getTuning(new Patch(
-                                    data[5] & 0xFF, data[6] & 0xFF));
-                            tuning.load(data);
-                            SoftVoice[] voices = synth.getVoices();
-                            for (int i = 0; i < voices.length; i++)
-                                if (voices[i].active)
-                                    if (voices[i].tuning == tuning)
-                                        voices[i].updateTuning(tuning);
-                            break;
-                        }
-                        case 0x08:  // scale/octave tuning 1-byte form
+                                {
+                                    // http://www.midi.org/about-midi/tuning_extens.shtml
+                                    if (data.length < 7) {
+                                        break;
+                                    }
+                                    SoftTuning tuning = synth.getTuning(new Patch(
+                                            data[5] & 0xFF, data[6] & 0xFF));
+                                    tuning.load(data);
+                                    SoftVoice[] voices = synth.getVoices();
+                                    for (int i = 0; i < voices.length; i++)
+                                        if (voices[i].active)
+                                            if (voices[i].tuning == tuning)
+                                                voices[i].updateTuning(tuning);
+                                    break;
+                                }
+                                case 0x08:  // scale/octave tuning 1-byte form
                                     //(Real-Time)
-                        case 0x09:  // scale/octave tuning 2-byte form
+                                case 0x09:  // scale/octave tuning 2-byte form
                                     // (Real-Time)
-                        {
-                            // http://www.midi.org/about-midi/tuning-scale.shtml
-                            SoftTuning tuning = new SoftTuning(data);
-                            int channelmask = (data[5] & 0xFF) * 16384
-                                    + (data[6] & 0xFF) * 128 + (data[7] & 0xFF);
-                            SoftChannel[] channels = synth.channels;
-                            for (int i = 0; i < channels.length; i++)
-                                if ((channelmask & (1 << i)) != 0)
-                                    channels[i].tuning = tuning;
-                            SoftVoice[] voices = synth.getVoices();
-                            for (int i = 0; i < voices.length; i++)
-                                if (voices[i].active)
-                                    if ((channelmask & (1 << (voices[i].channel))) != 0)
-                                        voices[i].updateTuning(tuning);
-                            break;
-                        }
-                        default:
-                            break;
-                        }
-                        break;
-                    case 0x09:  // Control Destination Settings
-                        subid2 = data[4] & 0xFF;
-                        switch (subid2) {
-                        case 0x01: // Channel Pressure
-                        {
-                            int[] destinations = new int[(data.length - 7) / 2];
-                            int[] ranges = new int[(data.length - 7) / 2];
-                            int ix = 0;
-                            for (int j = 6; j < data.length - 1; j += 2) {
-                                destinations[ix] = data[j] & 0xFF;
-                                ranges[ix] = data[j + 1] & 0xFF;
-                                ix++;
+                                {
+                                    // http://www.midi.org/about-midi/tuning-scale.shtml
+                                    if (data.length < 8) {
+                                        break;
+                                    }
+                                    SoftTuning tuning = new SoftTuning(data);
+                                    int channelmask = (data[5] & 0xFF) * 16384
+                                            + (data[6] & 0xFF) * 128 + (data[7] & 0xFF);
+                                    SoftChannel[] channels = synth.channels;
+                                    for (int i = 0; i < channels.length; i++)
+                                        if ((channelmask & (1 << i)) != 0)
+                                            channels[i].tuning = tuning;
+                                    SoftVoice[] voices = synth.getVoices();
+                                    for (int i = 0; i < voices.length; i++)
+                                        if (voices[i].active)
+                                            if ((channelmask & (1 << (voices[i].channel))) != 0)
+                                                voices[i].updateTuning(tuning);
+                                    break;
+                                }
+                                default:
+                                    break;
                             }
-                            int channel = data[5] & 0xFF;
-                            SoftChannel softchannel = synth.channels[channel];
-                            softchannel.mapChannelPressureToDestination(
-                                    destinations, ranges);
                             break;
-                        }
-                        case 0x02: // Poly Pressure
-                        {
-                            int[] destinations = new int[(data.length - 7) / 2];
-                            int[] ranges = new int[(data.length - 7) / 2];
-                            int ix = 0;
-                            for (int j = 6; j < data.length - 1; j += 2) {
-                                destinations[ix] = data[j] & 0xFF;
-                                ranges[ix] = data[j + 1] & 0xFF;
-                                ix++;
+                        case 0x09:  // Control Destination Settings
+                            if (data.length < 5) {
+                                break;
                             }
-                            int channel = data[5] & 0xFF;
-                            SoftChannel softchannel = synth.channels[channel];
-                            softchannel.mapPolyPressureToDestination(
-                                    destinations, ranges);
-                            break;
-                        }
-                        case 0x03: // Control Change
-                        {
-                            int[] destinations = new int[(data.length - 7) / 2];
-                            int[] ranges = new int[(data.length - 7) / 2];
-                            int ix = 0;
-                            for (int j = 7; j < data.length - 1; j += 2) {
-                                destinations[ix] = data[j] & 0xFF;
-                                ranges[ix] = data[j + 1] & 0xFF;
-                                ix++;
+                            subid2 = data[4] & 0xFF;
+                            switch (subid2) {
+                                case 0x01: // Channel Pressure
+                                {
+                                    if (data.length < 8) {
+                                        break;
+                                    }
+                                    int[] destinations = new int[(data.length - 6) / 2];
+                                    int[] ranges = new int[(data.length - 6) / 2];
+                                    int ix = 0;
+                                    for (int j = 6; j < data.length - 1; j += 2) {
+                                        destinations[ix] = data[j] & 0xFF;
+                                        ranges[ix] = data[j + 1] & 0xFF;
+                                        ix++;
+                                    }
+                                    int channel = data[5] & 0xFF;
+                                    SoftChannel softchannel = synth.channels[channel];
+                                    softchannel.mapChannelPressureToDestination(
+                                            destinations, ranges);
+                                    break;
+                                }
+                                case 0x02: // Poly Pressure
+                                {
+                                    if (data.length < 8) {
+                                        break;
+                                    }
+                                    int[] destinations = new int[(data.length - 6) / 2];
+                                    int[] ranges = new int[(data.length - 6) / 2];
+                                    int ix = 0;
+                                    for (int j = 6; j < data.length - 1; j += 2) {
+                                        destinations[ix] = data[j] & 0xFF;
+                                        ranges[ix] = data[j + 1] & 0xFF;
+                                        ix++;
+                                    }
+                                    int channel = data[5] & 0xFF;
+                                    SoftChannel softchannel = synth.channels[channel];
+                                    softchannel.mapPolyPressureToDestination(
+                                            destinations, ranges);
+                                    break;
+                                }
+                                case 0x03: // Control Change
+                                {
+                                    if (data.length < 8) {
+                                        break;
+                                    }
+                                    int[] destinations = new int[(data.length - 7) / 2];
+                                    int[] ranges = new int[(data.length - 7) / 2];
+                                    int ix = 0;
+                                    for (int j = 7; j < data.length - 1; j += 2) {
+                                        destinations[ix] = data[j] & 0xFF;
+                                        ranges[ix] = data[j + 1] & 0xFF;
+                                        ix++;
+                                    }
+                                    int channel = data[5] & 0xFF;
+                                    SoftChannel softchannel = synth.channels[channel];
+                                    int control = data[6] & 0xFF;
+                                    softchannel.mapControlToDestination(control,
+                                            destinations, ranges);
+                                    break;
+                                }
+                                default:
+                                    break;
                             }
-                            int channel = data[5] & 0xFF;
-                            SoftChannel softchannel = synth.channels[channel];
-                            int control = data[6] & 0xFF;
-                            softchannel.mapControlToDestination(control,
-                                    destinations, ranges);
                             break;
-                        }
-                        default:
-                            break;
-                        }
-                        break;
 
-                    case 0x0A:  // Key Based Instrument Control
-                    {
-                        subid2 = data[4] & 0xFF;
-                        switch (subid2) {
-                        case 0x01: // Basic Message
-                            int channel = data[5] & 0xFF;
-                            int keynumber = data[6] & 0xFF;
-                            SoftChannel softchannel = synth.channels[channel];
-                            for (int j = 7; j < data.length - 1; j += 2) {
-                                int controlnumber = data[j] & 0xFF;
-                                int controlvalue = data[j + 1] & 0xFF;
-                                softchannel.controlChangePerNote(keynumber,
-                                        controlnumber, controlvalue);
+                        case 0x0A:  // Key Based Instrument Control
+                        {
+                            if (data.length < 8 || (data[4] & 0xFF) != 0x01) {
+                                break;
+                            }
+                            subid2 = data[4] & 0xFF;
+                            switch (subid2) {
+                                case 0x01: // Basic Message
+                                    int channel = data[5] & 0xFF;
+                                    int keynumber = data[6] & 0xFF;
+                                    SoftChannel softchannel = synth.channels[channel];
+                                    for (int j = 7; j < data.length - 1; j += 2) {
+                                        int controlnumber = data[j] & 0xFF;
+                                        int controlvalue = data[j + 1] & 0xFF;
+                                        softchannel.controlChangePerNote(keynumber,
+                                                controlnumber, controlvalue);
+                                    }
+                                    break;
+                                default:
+                                    break;
                             }
                             break;
+                        }
                         default:
                             break;
-                        }
-                        break;
-                    }
-                    default:
-                        break;
                     }
                 }
             }
-
         }
     }
 

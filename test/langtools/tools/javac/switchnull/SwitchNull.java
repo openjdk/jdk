@@ -97,8 +97,8 @@ public class SwitchNull {
     private int switchEnumWithDefault(E e) {
         switch (e) {
             case A: return 0;
-            default: return 1;
             case null: return -1;
+            default: return 1;
         }
     }
 

@@ -48,7 +48,6 @@ public class Guards {
         runIfTrue(this::typeGuardAfterParenthesizedTrueSwitchStatement);
         runIfTrue(this::typeGuardAfterParenthesizedTrueSwitchExpression);
         runIfTrue(this::typeGuardAfterParenthesizedTrueIfStatement);
-        testGuardNPE();
     }
 
     void run(Function<Object, String> convert) {
@@ -56,6 +55,7 @@ public class Guards {
         assertEquals("one", convert.apply(1));
         assertEquals("other", convert.apply(-1));
         assertEquals("box with empty", convert.apply(new Box("")));
+        assertEquals("box with non-empty", convert.apply(new Box("a")));
         assertEquals("any", convert.apply(""));
     }
 
@@ -71,6 +71,7 @@ public class Guards {
             case Integer i when i == 1: return "one";
             case Integer i: return "other";
             case Box(String s) when s.isEmpty(): return "box with empty";
+            case Box(String s) : return "box with non-empty";
             case Object x: return "any";
         }
     }
@@ -81,6 +82,7 @@ public class Guards {
             case Integer i when i == 1 -> { yield "one"; }
             case Integer i -> "other";
             case Box(String s) when s.isEmpty() -> "box with empty";
+            case Box(String s) -> "box with non-empty";
             case Object x -> "any";
         };
     }
@@ -92,6 +94,7 @@ public class Guards {
             case Integer i when i == 1 -> { x = "one"; yield true; }
             case Integer i -> { x = "other"; yield true; }
             case Box(String s) when s.isEmpty() -> {x = "box with empty"; yield true; }
+            case Box(String s) -> {x = "box with non-empty"; yield true; }
             case Object other -> (x = "any") != null;
         }) {
             return x;
@@ -160,34 +163,6 @@ public class Guards {
             return s;
         }
         return null;
-    }
-
-    void testGuardNPE() {
-        doTestGuardNPE(this::guardNPE1);
-        doTestGuardNPE(this::guardNPE2);
-    }
-
-    void doTestGuardNPE(Function<Object, String> test) {
-        assertEquals("empty", test.apply(""));
-        assertEquals("A", test.apply("A"));
-        assertEquals("other", test.apply(1));
-        assertEquals("empty", test.apply(null));
-    }
-
-    String guardNPE1(Object o) {
-        return switch (o) {
-            case null, String s when s.isEmpty() -> "empty";
-            case String s -> s;
-            case Object x -> "other";
-        };
-    }
-
-    String guardNPE2(Object o) {
-        return switch (o) {
-            case null, ((((String s)))) when s.isEmpty() -> "empty";
-            case ((((String s)))) -> s;
-            case Object x -> "other";
-        };
     }
 
     record Box(Object o) {}

@@ -39,7 +39,7 @@ import org.testng.annotations.Listeners;
  * @test
  * @key headful
  * @summary Verifies SwingSet3 TabbedPaneDemo by iterating through tab placement
- *          positions, opening each tab and verifying the the tab gets selected.
+ *          positions, opening each tab and verifying the tab gets selected.
  *
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src

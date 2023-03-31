@@ -1036,15 +1036,9 @@ public class Compatibility {
         long start = System.currentTimeMillis();
         try {
             String[] cmd;
-            if (Platform.isWindows()) {
-                cmd = new String[args.length + 3];
-                System.arraycopy(args, 0, cmd, 3, args.length);
-            } else {
-                cmd = new String[args.length + 4];
-                cmd[3] = "-J-Djava.security.egd=file:/dev/./urandom";
-                System.arraycopy(args, 0, cmd, 4, args.length);
-            }
 
+            cmd = new String[args.length + 3];
+            System.arraycopy(args, 0, cmd, 3, args.length);
             cmd[0] = toolPath;
             cmd[1] = "-J-Duser.language=en";
             cmd[2] = "-J-Duser.country=US";

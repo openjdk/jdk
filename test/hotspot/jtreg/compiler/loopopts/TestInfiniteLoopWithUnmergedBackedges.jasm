@@ -1,0 +1,200 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+super public class TestInfiniteLoopWithUnmergedBackedges
+{
+    public Method "<init>":"()V"
+    stack 2 locals 1
+    {
+        aload_0;
+        invokespecial  Method java/lang/Object."<init>":"()V";
+        return;
+    }
+    static Method test_001:"(IIIII)V"
+    stack 5 locals 10
+    {
+        iload_0;
+        ifgt LOOP;
+        // below is dominated by the one above
+        iload_0;
+        ifle BACK;
+        goto HEAD;
+    HEAD:
+        iload_3;
+        ifeq BACK;
+    BACK:
+        goto HEAD;
+    LOOP:
+        iload_1;
+        iflt LOOP;
+        iload_2;
+        iflt LOOP;
+        return;
+    }
+    static Method test_002:"(IIIII)V"
+    stack 5 locals 30
+    {
+        iload_0;
+        ifgt LOOP;
+
+        iconst_0;
+        istore 9;
+
+        goto HEAD;
+    TAIL:
+        iload_3;
+        iload 9;
+        if_icmpeq HEAD;
+        iinc 9, 1;
+    HEAD:
+        goto TAIL;
+    LOOP:
+        iload_1;
+        iflt LOOP;
+        iload_2;
+        iflt LOOP;
+        return;
+    }
+    static Method test_003:"(IIIII)I"
+    stack 5 locals 30
+    {
+        iload_0;
+        ifgt SKIP;
+
+        iconst_0;
+        istore 9;
+
+        goto HEAD;
+    TAIL:
+        iload_3;
+        iload 9;
+        if_icmpeq HEAD;
+        iinc 9, 1;
+        // Two paths lead to HEAD, so we have an inner and outer loop
+        // But no SafePoint is placed here, because we go forward in bci
+    HEAD:
+        // SafePoint is placed here, because we go from here back in bci
+        goto TAIL;
+
+    SKIP:
+        iconst_0;
+        istore 8;
+        iconst_0;
+        istore 9;
+        // loop with two backedges, which calls
+        // merge_many_backedges and then recomputes
+        // build_loop_tree
+    LOOP:
+        iinc 9, 1;
+        iinc 8, -1;
+        iload 9;
+        ldc 7;
+        irem;
+        ifeq LOOP;
+        iload 9;
+        ldc 10001;
+        if_icmple LOOP;
+        iload 8;
+        ireturn;
+    }
+    static Method test_004:"(IIIII)I"
+    stack 5 locals 30
+    {
+        iload_0;
+        ifgt SKIP;
+
+        iconst_0;
+        istore 9;
+
+        goto HEAD;
+    TAIL:
+        iload_3;
+        iload 9;
+        if_icmpeq HEAD;
+        iinc 9, 1;
+        iload 9;
+        ldc 10001;
+        if_icmpeq HEAD; // a second one
+        iinc 9, 1;
+    HEAD:
+        goto TAIL;
+
+    SKIP:
+        iconst_0;
+        istore 8;
+        iconst_0;
+        istore 9;
+    LOOP:
+        iinc 9, 1;
+        iinc 8, -1;
+        iload 9;
+        ldc 7;
+        irem;
+        ifeq LOOP;
+        iload 9;
+        ldc 10001;
+        if_icmple LOOP;
+        iload 8;
+        ireturn;
+    }
+    static Method test_005:"(IIIII)I"
+    stack 5 locals 30
+    {
+        iload_0;
+        ifgt SKIP;
+
+        iconst_0;
+        istore 9;
+
+        goto HEAD;
+    TAIL:
+        iload_3;
+        iload 9;
+        if_icmpeq HEAD;
+        iinc 9, 1;
+        iload 9;
+        ldc 10001;
+        if_icmpeq HEAD; // a second one
+        iinc 9, 1;
+    HEAD:
+        goto TAIL;
+
+    SKIP:
+        iconst_0;
+        istore 8;
+        iconst_0;
+        istore 9;
+    LOOP:
+        iinc 9, 1;
+        iinc 8, -1;
+        iload 9;
+        ldc 7;
+        irem;
+        ifeq LOOP;
+        iload 9;
+        ldc 10001;
+        if_icmple LOOP;
+        iload 8;
+        ireturn;
+    }
+}

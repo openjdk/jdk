@@ -6,7 +6,7 @@
  */
 public class BindingsTest2 {
     public static boolean Ktrue() { return true; }
-    public static void main(String[] args) {
+    public static void meth() {
         Object o1 = "hello";
         Integer in = 42;
         Object o2 = in;

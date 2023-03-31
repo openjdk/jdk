@@ -53,7 +53,7 @@ public class CRLNumberExtension extends Extension {
     private final String extensionLabel;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (crlNumber == null) {
             this.extensionValue = null;
             return;
@@ -69,7 +69,7 @@ public class CRLNumberExtension extends Extension {
      *
      * @param crlNum the value to be set for the extension.
      */
-    public CRLNumberExtension(int crlNum) throws IOException {
+    public CRLNumberExtension(int crlNum) {
         this(PKIXExtensions.CRLNumber_Id, false, BigInteger.valueOf(crlNum),
         NAME, LABEL);
     }
@@ -80,7 +80,7 @@ public class CRLNumberExtension extends Extension {
      *
      * @param crlNum the value to be set for the extension, cannot be null
      */
-    public CRLNumberExtension(BigInteger crlNum) throws IOException {
+    public CRLNumberExtension(BigInteger crlNum) {
         this(PKIXExtensions.CRLNumber_Id, false, crlNum, NAME, LABEL);
     }
 
@@ -88,8 +88,8 @@ public class CRLNumberExtension extends Extension {
      * Creates the extension (also called by the subclass).
      */
     protected CRLNumberExtension(ObjectIdentifier extensionId,
-        boolean isCritical, BigInteger crlNum, String extensionName,
-        String extensionLabel) throws IOException {
+            boolean isCritical, BigInteger crlNum, String extensionName,
+            String extensionLabel) {
 
         if (crlNum == null) {
             throw new IllegalArgumentException("CRL number cannot be null");
@@ -158,10 +158,9 @@ public class CRLNumberExtension extends Extension {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         encode(out, PKIXExtensions.CRLNumber_Id, true);
     }
 
@@ -170,7 +169,7 @@ public class CRLNumberExtension extends Extension {
      * (Also called by the subclass)
      */
     protected void encode(DerOutputStream out, ObjectIdentifier extensionId,
-            boolean isCritical) throws IOException {
+            boolean isCritical) {
 
        if (this.extensionValue == null) {
            this.extensionId = extensionId;

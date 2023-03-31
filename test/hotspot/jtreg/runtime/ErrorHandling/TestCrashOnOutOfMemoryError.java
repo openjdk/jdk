@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 public class TestCrashOnOutOfMemoryError {
 
@@ -63,9 +64,6 @@ public class TestCrashOnOutOfMemoryError {
 
         /* Output should look something like this. The actual text will depend on the OS and its core dump processing.
            Aborting due to java.lang.OutOfMemoryError: Requested array size exceeds VM limit
-           # To suppress the following error report, specify this argument
-           # after -XX: or in .hotspotrc:  SuppressErrorAt=/debug.cpp:303
-           #
            # A fatal error has been detected by the Java Runtime Environment:
            #
            #  Internal Error (/home/cheleswer/Desktop/jdk9/dev/hotspot/src/share/vm/utilities/debug.cpp:303), pid=6212, tid=6213
@@ -88,36 +86,15 @@ public class TestCrashOnOutOfMemoryError {
         */
         output.shouldContain("Aborting due to java.lang.OutOfMemoryError: Requested array size exceeds VM limit");
         // extract hs-err file
-        String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-        if (hs_err_file == null) {
-            throw new Error("Did not find hs-err file in output.\n");
-        }
+        File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output);
 
-        /*
-         * Check if hs_err files exist or not
-         */
-        File f = new File(hs_err_file);
-        if (!f.exists()) {
-            throw new Error("hs-err file missing at "+ f.getAbsolutePath() + ".\n");
-        }
+        // Do a perfunctory check of the hs-err file produced by the crash.
+        Pattern[] pattern = new Pattern[] {
+            Pattern.compile(".*fatal error: OutOfMemory encountered: Requested array size exceeds VM limit.*")
+        };
 
-        /*
-         * Checking the completness of hs_err file. If last line of hs_err file is "END"
-         * then it proves that file is complete.
-         */
-        try (FileInputStream fis = new FileInputStream(f);
-            BufferedReader br = new BufferedReader(new InputStreamReader(fis))) {
-            String line = null;
-            String lastLine = null;
-            while ((line = br.readLine()) != null) {
-                lastLine = line;
-            }
-            if (!lastLine.equals("END.")) {
-                throw new Error("hs-err file incomplete (missing END marker.)");
-            } else {
-                System.out.println("End marker found.");
-            }
-        }
+        HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
+
         System.out.println("PASSED");
     }
 }

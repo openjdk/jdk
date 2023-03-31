@@ -49,14 +49,14 @@
  * @key randomness
  * @modules java.base/com.sun.crypto.provider
  * @summary Unit test for IntrinsicCandidate in com.sun.crypto.provider.Poly1305.
- * @run main/othervm -Xcomp -XX:-TieredCompilation java.base/com.sun.crypto.provider.Poly1305IntrinsicFuzzTest
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable java.base/com.sun.crypto.provider.Poly1305IntrinsicFuzzTest
  */
 
 /*
  * @test
  * @modules java.base/com.sun.crypto.provider
  * @summary Unit test for IntrinsicCandidate in com.sun.crypto.provider.Poly1305.
- * @run main/othervm -Xcomp -XX:-TieredCompilation java.base/com.sun.crypto.provider.Poly1305KAT
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable java.base/com.sun.crypto.provider.Poly1305KAT
  */
 
 package com.sun.crypto.provider.Cipher.ChaCha20;

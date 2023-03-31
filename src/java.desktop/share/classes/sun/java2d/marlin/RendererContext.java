@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,18 +88,25 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
     double clipInvScale = 0.0d;
     // CurveBasicMonotonizer instance
     final CurveBasicMonotonizer monotonizer;
+    // bit flags indicating to skip the stroker to process joins
+    // bits: 2 : Dasher CurveClipSplitter
+    // bits: 1 : Dasher CurveBasicMonotonizer
+    // bits: 0 : Stroker CurveClipSplitter
+    int firstFlags = 0;
     // CurveClipSplitter instance
     final CurveClipSplitter curveClipSplitter;
+    // DPQS Sorter context
+    final DPQSSorterContext sorterCtx;
 
     // Array caches:
     /* clean int[] cache (zero-filled) = 5 refs */
-    private final IntArrayCache cleanIntCache = new IntArrayCache(true, 5);
+    private final ArrayCacheIntClean cleanIntCache = new ArrayCacheIntClean(5);
     /* dirty int[] cache = 5 refs */
-    private final IntArrayCache dirtyIntCache = new IntArrayCache(false, 5);
+    private final ArrayCacheInt dirtyIntCache = new ArrayCacheInt(5);
     /* dirty double[] cache = 4 refs (2 polystack) */
-    private final DoubleArrayCache dirtyDoubleCache = new DoubleArrayCache(false, 4);
+    private final ArrayCacheDouble dirtyDoubleCache = new ArrayCacheDouble(4);
     /* dirty byte[] cache = 2 ref (2 polystack) */
-    private final ByteArrayCache dirtyByteCache = new ByteArrayCache(false, 2);
+    private final ArrayCacheByte dirtyByteCache = new ArrayCacheByte(2);
 
     // RendererContext statistics
     final RendererStats stats;
@@ -146,6 +153,8 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
 
         stroker = new Stroker(this);
         dasher = new Dasher(this);
+
+        sorterCtx = (MergeSort.USE_DPQS) ? new DPQSSorterContext() : null;
     }
 
     /**
@@ -163,6 +172,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
         doClip     = false;
         closedPath = false;
         clipInvScale = 0.0d;
+        firstFlags = 0;
 
         // if context is marked as DIRTY:
         if (dirty) {
@@ -191,7 +201,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
             p2d = new Path2D.Double(WIND_NON_ZERO, INITIAL_EDGES_COUNT); // 32K
 
             // update weak reference:
-            refPath2D = new WeakReference<Path2D.Double>(p2d);
+            refPath2D = new WeakReference<>(p2d);
         }
         // reset the path anyway:
         p2d.reset();
@@ -209,19 +219,19 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
         return new OffHeapArray(cleanerObj, initialSize);
     }
 
-    IntArrayCache.Reference newCleanIntArrayRef(final int initialSize) {
+    ArrayCacheIntClean.Reference newCleanIntArrayRef(final int initialSize) {
         return cleanIntCache.createRef(initialSize);
     }
 
-    IntArrayCache.Reference newDirtyIntArrayRef(final int initialSize) {
+    ArrayCacheInt.Reference newDirtyIntArrayRef(final int initialSize) {
         return dirtyIntCache.createRef(initialSize);
     }
 
-    DoubleArrayCache.Reference newDirtyDoubleArrayRef(final int initialSize) {
+    ArrayCacheDouble.Reference newDirtyDoubleArrayRef(final int initialSize) {
         return dirtyDoubleCache.createRef(initialSize);
     }
 
-    ByteArrayCache.Reference newDirtyByteArrayRef(final int initialSize) {
+    ArrayCacheByte.Reference newDirtyByteArrayRef(final int initialSize) {
         return dirtyByteCache.createRef(initialSize);
     }
 

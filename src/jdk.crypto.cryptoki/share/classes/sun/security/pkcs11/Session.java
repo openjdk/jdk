@@ -83,7 +83,7 @@ final class Session implements Comparable<Session> {
     }
 
     long id() {
-        if (token.isPresent(this.id) == false) {
+        if (!token.isPresent(this.id)) {
             throw new ProviderException("Token has been removed");
         }
         lastAccess = System.currentTimeMillis();
@@ -135,7 +135,7 @@ final class Session implements Comparable<Session> {
     static boolean drainRefQueue() {
         boolean found = false;
         SessionRef next;
-        while ((next = (SessionRef) SessionRef.refQueue.poll())!= null) {
+        while ((next = (SessionRef) SessionRef.REF_QUEUE.poll())!= null) {
             found = true;
             next.dispose();
         }
@@ -150,24 +150,24 @@ final class Session implements Comparable<Session> {
 final class SessionRef extends PhantomReference<Session>
         implements Comparable<SessionRef> {
 
-    static ReferenceQueue<Session> refQueue = new ReferenceQueue<>();
+    static final ReferenceQueue<Session> REF_QUEUE = new ReferenceQueue<>();
 
-    private static Set<SessionRef> refList =
+    private static final Set<SessionRef> REF_LIST =
         Collections.synchronizedSortedSet(new TreeSet<>());
 
     // handle to the native session
-    private long id;
-    private Token token;
+    private final long id;
+    private final Token token;
 
     SessionRef(Session session, long id, Token token) {
-        super(session, refQueue);
+        super(session, REF_QUEUE);
         this.id = id;
         this.token = token;
-        refList.add(this);
+        REF_LIST.add(this);
     }
 
     void dispose() {
-        refList.remove(this);
+        REF_LIST.remove(this);
         try {
             if (token.isPresent(id)) {
                 token.p11.C_CloseSession(id);

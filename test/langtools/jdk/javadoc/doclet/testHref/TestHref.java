@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestHref extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHref tester = new TestHref();
+        var tester = new TestHref();
         tester.runTests();
     }
 
@@ -53,7 +53,7 @@ public class TestHref extends JavadocTester {
         checkOutput("pkg/C1.html", true,
                 //External link.
                 """
-                    href="http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html#wait(long,int)\"""",
+                    href="http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html#wait-long-int-\"""",
                 //Member summary table link.
                 """
                     href="#method(int,int,java.util.ArrayList)\"""",
@@ -69,7 +69,7 @@ public class TestHref extends JavadocTester {
                 """
                     See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><a href="C1.html#method(int,int,java.util.ArrayList)">"""
         );
 

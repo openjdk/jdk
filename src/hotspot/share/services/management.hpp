@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,20 +78,20 @@ public:
   // methods to return a Klass*.
   static InstanceKlass* java_lang_management_ThreadInfo_klass(TRAPS);
   static InstanceKlass* java_lang_management_MemoryUsage_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* java_lang_management_MemoryPoolMXBean_klass(TRAPS);
   static InstanceKlass* java_lang_management_MemoryManagerMXBean_klass(TRAPS);
   static InstanceKlass* java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
   static InstanceKlass* sun_management_ManagementFactoryHelper_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* sun_management_Sensor_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* com_sun_management_internal_GarbageCollectorExtImpl_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* com_sun_management_GcInfo_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
   static InstanceKlass* com_sun_management_internal_DiagnosticCommandImpl_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
+      NOT_MANAGEMENT_RETURN_(nullptr);
 
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, TRAPS);
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, objArrayHandle monitors_array, typeArrayHandle depths_array, objArrayHandle synchronizers_array, TRAPS);

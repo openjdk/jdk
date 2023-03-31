@@ -325,10 +325,6 @@ public final class Subject implements java.io.Serializable {
      * retrieved by this method. After {@code action} is finished, the current
      * subject is reset to its previous value. The current
      * subject is {@code null} before the first call of {@code callAs()}.
-     * <p>
-     * When a new thread is created, its current subject is the same as
-     * the one of its parent thread, and will not change even if
-     * its parent thread's current subject is changed to another value.
      *
      * @implNote
      * This method returns the same value as

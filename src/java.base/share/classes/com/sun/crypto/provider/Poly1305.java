@@ -124,10 +124,10 @@ final class Poly1305 {
                     BLOCK_LENGTH - blockOffset);
 
             if (bytesToWrite >= BLOCK_LENGTH) {
-                // If bytes to write == BLOCK_LENGTH, then we have no
-                // left-over data from previous updates and we can create
-                // the IntegerModuloP directly from the input buffer.
-                processBlock(buf, bytesToWrite);
+                // Have at least one full block in the buf, process all full blocks
+                int blockMultipleLength = remaining & (~(BLOCK_LENGTH-1));
+                processMultipleBlocks(buf, blockMultipleLength);
+                remaining -= blockMultipleLength;
             } else {
                 // We have some left-over data from previous updates, so
                 // copy that into the holding block until we get a full block.
@@ -138,9 +138,8 @@ final class Poly1305 {
                     processBlock(block, 0, BLOCK_LENGTH);
                     blockOffset = 0;
                 }
+                remaining -= bytesToWrite;
             }
-
-            remaining -= bytesToWrite;
         }
     }
 
@@ -252,6 +251,24 @@ final class Poly1305 {
             processBlock(input, offset, BLOCK_LENGTH);
             offset += BLOCK_LENGTH;
             length -= BLOCK_LENGTH;
+        }
+    }
+
+    private void processMultipleBlocks(ByteBuffer buf, int blockMultipleLength) {
+        if (buf.hasArray()) {
+            byte[] input = buf.array();
+            int offset = buf.arrayOffset() + buf.position();
+            long[] aLimbs = a.getLimbs();
+            long[] rLimbs = r.getLimbs();
+
+            processMultipleBlocksCheck(input, offset, blockMultipleLength, aLimbs, rLimbs);
+            processMultipleBlocks(input, offset, blockMultipleLength, aLimbs, rLimbs);
+            buf.position(offset + blockMultipleLength);
+        } else {
+            while (blockMultipleLength >= BLOCK_LENGTH) {
+                processBlock(buf, BLOCK_LENGTH);
+                blockMultipleLength -= BLOCK_LENGTH;
+            }
         }
     }
 

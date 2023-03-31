@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -53,7 +53,7 @@ class MetachunkList {
 
 public:
 
-  MetachunkList() : _first(NULL), _num_chunks() {}
+  MetachunkList() : _first(nullptr), _num_chunks() {}
 
   int count() const { return _num_chunks.get(); }
 
@@ -72,14 +72,14 @@ public:
       Metachunk* c = _first;
       _first = _first->next();
       if (_first) {
-        _first->set_prev(NULL);
+        _first->set_prev(nullptr);
       }
       _num_chunks.decrement();
-      c->set_prev(NULL);
-      c->set_next(NULL);
+      c->set_prev(nullptr);
+      c->set_next(nullptr);
       return c;
     }
-    return NULL;
+    return nullptr;
   }
 
   Metachunk* first()              { return _first; }

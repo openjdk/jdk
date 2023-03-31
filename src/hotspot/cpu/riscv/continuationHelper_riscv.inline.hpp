@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,8 @@ inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const fr
   return (address*)(f.fp() + frame::return_addr_offset);
 }
 
-inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, intptr_t* sp) {
+inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, const frame& caller) {
+  intptr_t* sp = caller.unextended_sp();
   assert(f.is_interpreted_frame(), "");
   intptr_t* la = f.addr_at(frame::interpreter_frame_sender_sp_offset);
   *la = f.is_heap_frame() ? (intptr_t)(sp - f.fp()) : (intptr_t)sp;
@@ -129,11 +130,15 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame& f) { // exclusive; this will not be copied with the frame
-  return (intptr_t*)f.at(frame::interpreter_frame_locals_offset) + 1; // exclusive, so we add 1 word
+  return (intptr_t*)f.at_relative(frame::interpreter_frame_locals_offset) + 1; // exclusive, so we add 1 word
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {
   return f.unextended_sp() + (callee_interpreted ? callee_argsize : 0);
+}
+
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  return f.fp();
 }
 
 #endif // CPU_RISCV_CONTINUATIONFRAMEHELPERS_RISCV_INLINE_HPP

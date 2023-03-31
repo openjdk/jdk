@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,14 +92,15 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
-  static bool vector_size_supported(BasicType bt, uint vlen);
+
+  // Limits on vector size (number of elements) for auto-vectorization.
+  static bool vector_size_supported_superword(const BasicType bt, int size);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
   static bool is_type_transition_short_to_int(Node* n);
   static bool is_type_transition_to_int(Node* n);
   static bool is_muladds2i(Node* n);
-  static bool is_type_transition_long_to_int(Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
@@ -551,7 +552,9 @@ class PopCountVINode : public VectorNode {
 // Vector popcount long bits
 class PopCountVLNode : public VectorNode {
  public:
-  PopCountVLNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  PopCountVLNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {
+    assert(vt->element_basic_type() == T_LONG, "must be long");
+  }
   virtual int Opcode() const;
 };
 
@@ -1269,13 +1272,13 @@ class VectorLoadConstNode : public VectorNode {
 // Extract a scalar from a vector at position "pos"
 class ExtractNode : public Node {
  public:
-  ExtractNode(Node* src, ConINode* pos) : Node(NULL, src, (Node*)pos) {
+  ExtractNode(Node* src, ConINode* pos) : Node(nullptr, src, (Node*)pos) {
     assert(in(2)->get_int() >= 0, "positive constants");
   }
   virtual int Opcode() const;
   uint  pos() const { return in(2)->get_int(); }
 
-  static Node* make(Node* v, uint position, BasicType bt);
+  static Node* make(Node* v, ConINode* pos, BasicType bt);
   static int opcode(BasicType bt);
 };
 
@@ -1421,7 +1424,7 @@ class VectorMaskWrapperNode : public VectorNode {
   Node* vector_mask() const { return in(2); }
 };
 
-class VectorTestNode : public Node {
+class VectorTestNode : public CmpNode {
  private:
   BoolTest::mask _predicate;
 
@@ -1429,18 +1432,18 @@ class VectorTestNode : public Node {
   uint size_of() const { return sizeof(*this); }
 
  public:
-  VectorTestNode(Node* in1, Node* in2, BoolTest::mask predicate) : Node(NULL, in1, in2), _predicate(predicate) {
+  VectorTestNode(Node* in1, Node* in2, BoolTest::mask predicate) : CmpNode(in1, in2), _predicate(predicate) {
     assert(in2->bottom_type()->is_vect() == in2->bottom_type()->is_vect(), "same vector type");
   }
   virtual int Opcode() const;
   virtual uint hash() const { return Node::hash() + _predicate; }
+  virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
+  virtual const Type* sub(const Type*, const Type*) const { return TypeInt::CC; }
+  BoolTest::mask get_predicate() const { return _predicate; }
+
   virtual bool cmp( const Node &n ) const {
     return Node::cmp(n) && _predicate == ((VectorTestNode&)n)._predicate;
   }
-  virtual const Type *bottom_type() const { return TypeInt::BOOL; }
-  virtual uint ideal_reg() const { return Op_RegI; }  // TODO Should be RegFlags but due to missing comparison flags for BoolTest
-                                                      // in middle-end, we make it boolean result directly.
-  BoolTest::mask get_predicate() const { return _predicate; }
 };
 
 class VectorBlendNode : public VectorNode {
@@ -1541,7 +1544,7 @@ class VectorCastNode : public VectorNode {
   virtual int Opcode() const;
 
   static VectorCastNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
-  static int  opcode(BasicType bt, bool is_signed = true);
+  static int  opcode(int opc, BasicType bt, bool is_signed = true);
   static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
 
   virtual Node* Identity(PhaseGVN* phase);
@@ -1627,6 +1630,22 @@ class VectorUCastS2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+class VectorCastHF2FNode : public VectorCastNode {
+ public:
+  VectorCastHF2FNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
+  }
+  virtual int Opcode() const;
+};
+
+class VectorCastF2HFNode : public VectorCastNode {
+ public:
+  VectorCastF2HFNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
+  }
+  virtual int Opcode() const;
+};
+
 class VectorUCastI2XNode : public VectorCastNode {
  public:
   VectorUCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1659,13 +1678,13 @@ class VectorBoxNode : public Node {
   };
   VectorBoxNode(Compile* C, Node* box, Node* val,
                 const TypeInstPtr* box_type, const TypeVect* vt)
-    : Node(NULL, box, val), _box_type(box_type), _vec_type(vt) {
+    : Node(nullptr, box, val), _box_type(box_type), _vec_type(vt) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
-  const  TypeInstPtr* box_type() const { assert(_box_type != NULL, ""); return _box_type; };
-  const  TypeVect*    vec_type() const { assert(_vec_type != NULL, ""); return _vec_type; };
+  const  TypeInstPtr* box_type() const { assert(_box_type != nullptr, ""); return _box_type; };
+  const  TypeVect*    vec_type() const { assert(_vec_type != nullptr, ""); return _vec_type; };
 
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return _box_type; }
@@ -1678,7 +1697,7 @@ class VectorBoxNode : public Node {
 class VectorBoxAllocateNode : public CallStaticJavaNode {
  public:
   VectorBoxAllocateNode(Compile* C, const TypeInstPtr* vbox_type)
-    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), NULL, NULL) {
+    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), nullptr, nullptr) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
@@ -1732,7 +1751,10 @@ public:
 class CountLeadingZerosVNode : public VectorNode {
  public:
   CountLeadingZerosVNode(Node* in, const TypeVect* vt)
-  : VectorNode(in, vt) {}
+  : VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == vt->element_basic_type(),
+           "must be the same");
+  }
 
   virtual int Opcode() const;
 };
@@ -1740,7 +1762,10 @@ class CountLeadingZerosVNode : public VectorNode {
 class CountTrailingZerosVNode : public VectorNode {
  public:
   CountTrailingZerosVNode(Node* in, const TypeVect* vt)
-  : VectorNode(in, vt) {}
+  : VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == vt->element_basic_type(),
+           "must be the same");
+  }
 
   virtual int Opcode() const;
 };
@@ -1776,6 +1801,20 @@ public:
   SignumVDNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
   : VectorNode(in1, zero, one, vt) {}
 
+  virtual int Opcode() const;
+};
+
+class CompressBitsVNode : public VectorNode {
+public:
+  CompressBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
+  virtual int Opcode() const;
+};
+
+class ExpandBitsVNode : public VectorNode {
+public:
+  ExpandBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
   virtual int Opcode() const;
 };
 

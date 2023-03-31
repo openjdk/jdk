@@ -1524,22 +1524,19 @@ static ClassFileStream* retransform_bytes(const Klass* existing_klass, const Cla
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   jint size_of_new_bytes = 0;
   unsigned char* new_bytes = NULL;
-  {
-    ResourceMark rm(THREAD);
-    const ClassFileStream* const stream = parser.clone_stream();
-    assert(stream != NULL, "invariant");
-    const jclass clazz = static_cast<jclass>(JfrJavaSupport::local_jni_handle(existing_klass->java_mirror(), THREAD));
-    JfrUpcalls::on_retransform(JfrTraceId::load_raw(existing_klass),
-                               clazz,
-                               stream->length(),
-                               stream->buffer(),
-                               &size_of_new_bytes,
-                               &new_bytes,
-                               THREAD);
-    JfrJavaSupport::destroy_local_jni_handle(clazz);
-    if (has_pending_exception(THREAD)) {
-      return NULL;
-    }
+  const ClassFileStream* const stream = parser.clone_stream();
+  assert(stream != NULL, "invariant");
+  const jclass clazz = static_cast<jclass>(JfrJavaSupport::local_jni_handle(existing_klass->java_mirror(), THREAD));
+  JfrUpcalls::on_retransform(JfrTraceId::load_raw(existing_klass),
+                              clazz,
+                              stream->length(),
+                              stream->buffer(),
+                              &size_of_new_bytes,
+                              &new_bytes,
+                              THREAD);
+  JfrJavaSupport::destroy_local_jni_handle(clazz);
+  if (has_pending_exception(THREAD)) {
+    return NULL;
   }
   assert(new_bytes != NULL, "invariant");
   assert(size_of_new_bytes > 0, "invariant");

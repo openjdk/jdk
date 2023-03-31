@@ -68,12 +68,6 @@ inline intptr_t* StackChunkFrameStream<frame_kind>::unextended_sp_for_interprete
 }
 
 template <ChunkFrames frame_kind>
-intptr_t* StackChunkFrameStream<frame_kind>::next_sp_for_interpreter_frame() const {
-  Unimplemented();
-  return NULL;
-}
-
-template <ChunkFrames frame_kind>
 inline void StackChunkFrameStream<frame_kind>::next_for_interpreter_frame() {
   Unimplemented();
 }

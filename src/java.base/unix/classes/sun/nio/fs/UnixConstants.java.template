@@ -153,7 +153,7 @@ class UnixConstants {
     static final int PREFIX_CLONE_NOFOLLOW = CLONE_NOFOLLOW;
     static final int PREFIX_CLONE_NOOWNERCOPY = CLONE_NOOWNERCOPY;
 
-    // flags used with setattrlist
+    // flags used with fsetattrlist
     static final int PREFIX_ATTR_CMN_CRTIME = ATTR_CMN_CRTIME;
     static final int PREFIX_ATTR_CMN_MODTIME = ATTR_CMN_MODTIME;
     static final int PREFIX_ATTR_CMN_ACCTIME = ATTR_CMN_ACCTIME;

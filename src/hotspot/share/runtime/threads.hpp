@@ -66,7 +66,6 @@ class Threads: AllStatic {
   static void remove(JavaThread* p, bool is_daemon);
   static void non_java_threads_do(ThreadClosure* tc);
   static void java_threads_do(ThreadClosure* tc);
-  static void java_threads_and_vm_thread_do(ThreadClosure* tc);
   static void threads_do(ThreadClosure* tc);
   static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
 
@@ -83,6 +82,7 @@ class Threads: AllStatic {
   // Does not include JNI_VERSION_1_1
   static jboolean is_supported_jni_version(jint version);
 
+private:
   // The "thread claim token" provides a way for threads to be claimed
   // by parallel worker tasks.
   //
@@ -99,6 +99,8 @@ class Threads: AllStatic {
   // New threads get their token set to 0 and change_thread_claim_token()
   // never sets the global token to 0.
   static uintx thread_claim_token() { return _thread_claim_token; }
+
+public:
   static void change_thread_claim_token();
   static void assert_all_threads_claimed() NOT_DEBUG_RETURN;
 

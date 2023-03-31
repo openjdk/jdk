@@ -44,8 +44,8 @@ import toolbox.ToolBox;
 public class TestConditionalPages extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestConditionalPages tester = new TestConditionalPages();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestConditionalPages();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

@@ -57,6 +57,8 @@ private:
 
   static bool is_oop(PhaseGVN* phase, Node* n);
 #endif // ASSERT
+
+  Node* load_klass(PhaseGVN* phase) const;
 };
 
 #endif // SHARE_OPTO_SUBTYPENODE_HPP

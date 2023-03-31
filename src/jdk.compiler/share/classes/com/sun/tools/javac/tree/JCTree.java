@@ -668,9 +668,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCImport extends JCTree implements ImportTree {
         public boolean staticImport;
         /** The imported class(es). */
-        public JCTree qualid;
+        public JCFieldAccess qualid;
         public com.sun.tools.javac.code.Scope importScope;
-        protected JCImport(JCTree qualid, boolean importStatic) {
+        protected JCImport(JCFieldAccess qualid, boolean importStatic) {
             this.qualid = qualid;
             this.staticImport = importStatic;
         }
@@ -680,7 +680,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public boolean isStatic() { return staticImport; }
         @DefinedBy(Api.COMPILER_TREE)
-        public JCTree getQualifiedIdentifier() { return qualid; }
+        public JCFieldAccess getQualifiedIdentifier() { return qualid; }
 
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.IMPORT; }
@@ -1075,6 +1075,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCStatement> stats;
         /** Position of closing brace, optional. */
         public int endpos = Position.NOPOS;
+        /** If this block contains record pattern, it is necessary to catch
+         *  exceptions from the deconstructors and wrap them.
+         * The {@code patternMatchingCatch} keeps the list of the deconstructor
+         * invocations, and the additional catch block that wraps the exceptions.
+         */
+        public PatternMatchingCatch patternMatchingCatch;
         protected JCBlock(long flags, List<JCStatement> stats) {
             this.stats = stats;
             this.flags = flags;
@@ -1099,6 +1105,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Tag getTag() {
             return BLOCK;
         }
+
+        public record PatternMatchingCatch(JCCatch handler, Set<JCMethodInvocation> calls2Handle) {}
     }
 
     /**
@@ -1211,11 +1219,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * The enhanced for loop.
      */
     public static class JCEnhancedForLoop extends JCStatement implements EnhancedForLoopTree {
-        public JCVariableDecl var;
+        public JCTree varOrRecordPattern;
         public JCExpression expr;
         public JCStatement body;
-        protected JCEnhancedForLoop(JCVariableDecl var, JCExpression expr, JCStatement body) {
-            this.var = var;
+        public Type elementType;
+
+        protected JCEnhancedForLoop(JCTree varOrRecordPattern, JCExpression expr, JCStatement body) {
+            this.varOrRecordPattern = varOrRecordPattern;
             this.expr = expr;
             this.body = body;
         }
@@ -1225,7 +1235,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() { return Kind.ENHANCED_FOR_LOOP; }
         @DefinedBy(Api.COMPILER_TREE)
-        public JCVariableDecl getVariable() { return var; }
+        public JCVariableDecl getVariable() {
+            return varOrRecordPattern instanceof JCVariableDecl var ? var : null;
+        }
+        @DefinedBy(Api.COMPILER_TREE)
+        public JCTree getVariableOrRecordPattern() { return varOrRecordPattern; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return expr; }
         @DefinedBy(Api.COMPILER_TREE)
@@ -1237,6 +1251,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return FOREACHLOOP;
+        }
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public EnhancedForLoopTree.DeclarationKind getDeclarationKind() {
+            return varOrRecordPattern.hasTag(VARDEF) ? DeclarationKind.VARIABLE : DeclarationKind.PATTERN;
         }
     }
 
@@ -2209,6 +2227,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCInstanceOf extends JCExpression implements InstanceOfTree {
         public JCExpression expr;
         public JCTree pattern;
+        /**{@code true} if this instanceof test should have
+         * value {@code true} when the {@code expr} is {@code null}.*/
+        public boolean allowNull;
         protected JCInstanceOf(JCExpression expr, JCTree pattern) {
             this.expr = expr;
             this.pattern = pattern;
@@ -2228,6 +2249,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return expr; }
+        @DefinedBy(Api.COMPILER_TREE)
+        public TestKind getTestKind() {
+            return pattern instanceof JCPatternCaseLabel ? TestKind.PATTERN : TestKind.TYPE;
+        }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitInstanceOf(this, d);
@@ -2457,15 +2482,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             implements DeconstructionPatternTree {
         public JCExpression deconstructor;
         public List<JCPattern> nested;
-        public JCVariableDecl var;
         public ClassSymbol record;
         public List<Type> fullComponentTypes;
 
-        protected JCRecordPattern(JCExpression deconstructor, List<JCPattern> nested,
-                                  JCVariableDecl var) {
+        protected JCRecordPattern(JCExpression deconstructor, List<JCPattern> nested) {
             this.deconstructor = deconstructor;
             this.nested = nested;
-            this.var = var;
         }
 
         @DefinedBy(Api.COMPILER_TREE)
@@ -2502,11 +2524,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return RECORDPATTERN;
-        }
-
-        @Override @DefinedBy(Api.COMPILER_TREE)
-        public VariableTree getVariable() {
-            return var;
         }
 
     }
@@ -3415,7 +3432,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCCompilationUnit TopLevel(List<JCTree> defs);
         JCPackageDecl PackageDecl(List<JCAnnotation> annotations,
                                   JCExpression pid);
-        JCImport Import(JCTree qualid, boolean staticImport);
+        JCImport Import(JCFieldAccess qualid, boolean staticImport);
         JCClassDecl ClassDef(JCModifiers mods,
                           Name name,
                           List<JCTypeParameter> typarams,
@@ -3443,7 +3460,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                         JCExpression cond,
                         List<JCExpressionStatement> step,
                         JCStatement body);
-        JCEnhancedForLoop ForeachLoop(JCVariableDecl var, JCExpression expr, JCStatement body);
+        JCEnhancedForLoop ForeachLoop(JCTree var, JCExpression expr, JCStatement body);
         JCLabeledStatement Labelled(Name label, JCStatement body);
         JCSwitch Switch(JCExpression selector, List<JCCase> cases);
         JCSwitchExpression SwitchExpression(JCExpression selector, List<JCCase> cases);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,16 +530,13 @@ bool G1DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_id,
   return true;
 }
 
-void G1DirtyCardQueueSet::abandon_logs() {
+void G1DirtyCardQueueSet::abandon_logs_and_stats() {
   assert_at_safepoint();
-  abandon_completed_buffers();
-  _detached_refinement_stats.reset();
 
   // Disable mutator refinement until concurrent refinement decides otherwise.
   set_mutator_refinement_threshold(SIZE_MAX);
 
-  // Since abandon is done only at safepoints, we can safely manipulate
-  // these queues.
+  // Iterate over all the threads, resetting per-thread queues and stats.
   struct AbandonThreadLogClosure : public ThreadClosure {
     G1DirtyCardQueueSet& _qset;
     AbandonThreadLogClosure(G1DirtyCardQueueSet& qset) : _qset(qset) {}
@@ -550,59 +547,48 @@ void G1DirtyCardQueueSet::abandon_logs() {
     }
   } closure(*this);
   Threads::threads_do(&closure);
+
+  enqueue_all_paused_buffers();
+  abandon_completed_buffers();
+
+  // Reset stats from detached threads.
+  MutexLocker ml(G1DetachedRefinementStats_lock, Mutex::_no_safepoint_check_flag);
+  _detached_refinement_stats.reset();
 }
 
-void G1DirtyCardQueueSet::concatenate_logs() {
+void G1DirtyCardQueueSet::update_refinement_stats(G1ConcurrentRefineStats& stats) {
   assert_at_safepoint();
 
-  // Disable mutator refinement until concurrent refinement decides otherwise.
-  set_mutator_refinement_threshold(SIZE_MAX);
-
-  // Iterate over all the threads, if we find a partial log add it to
-  // the global list of logs.
-  struct ConcatenateThreadLogClosure : public ThreadClosure {
-    G1DirtyCardQueueSet& _qset;
-    ConcatenateThreadLogClosure(G1DirtyCardQueueSet& qset) : _qset(qset) {}
-    virtual void do_thread(Thread* t) {
-      G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
-      if ((queue.buffer() != nullptr) &&
-          (queue.index() != _qset.buffer_size())) {
-        _qset.flush_queue(queue);
-      }
-    }
-  } closure(*this);
-  Threads::threads_do(&closure);
+  _concatenated_refinement_stats = stats;
 
   enqueue_all_paused_buffers();
   verify_num_cards();
-}
-
-G1ConcurrentRefineStats G1DirtyCardQueueSet::get_and_reset_refinement_stats() {
-  assert_at_safepoint();
-
-  // Since we're at a safepoint, there aren't any races with recording of
-  // detached refinement stats.  In particular, there's no risk of double
-  // counting a thread that detaches after we've examined it but before
-  // we've processed the detached stats.
-
-  // Collect and reset stats for attached threads.
-  struct CollectStats : public ThreadClosure {
-    G1ConcurrentRefineStats _total_stats;
-    virtual void do_thread(Thread* t) {
-      G1DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(t);
-      G1ConcurrentRefineStats& stats = *dcq.refinement_stats();
-      _total_stats += stats;
-      stats.reset();
-    }
-  } closure;
-  Threads::threads_do(&closure);
 
   // Collect and reset stats from detached threads.
   MutexLocker ml(G1DetachedRefinementStats_lock, Mutex::_no_safepoint_check_flag);
-  closure._total_stats += _detached_refinement_stats;
+  _concatenated_refinement_stats += _detached_refinement_stats;
   _detached_refinement_stats.reset();
+}
 
-  return closure._total_stats;
+G1ConcurrentRefineStats G1DirtyCardQueueSet::concatenate_log_and_stats(Thread* thread) {
+  assert_at_safepoint();
+
+  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
+  // Flush the buffer if non-empty.  Flush before accumulating and
+  // resetting stats, since flushing may modify the stats.
+  if ((queue.buffer() != nullptr) &&
+    (queue.index() != buffer_size())) {
+    flush_queue(queue);
+  }
+
+  G1ConcurrentRefineStats result = *queue.refinement_stats();
+  queue.refinement_stats()->reset();
+  return result;
+}
+
+G1ConcurrentRefineStats G1DirtyCardQueueSet::concatenated_refinement_stats() const {
+  assert_at_safepoint();
+  return _concatenated_refinement_stats;
 }
 
 void G1DirtyCardQueueSet::record_detached_refinement_stats(G1ConcurrentRefineStats* stats) {

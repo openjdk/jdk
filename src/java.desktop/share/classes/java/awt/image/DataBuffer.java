@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@
 
 package java.awt.image;
 
-import sun.java2d.StateTrackable.State;
-import static sun.java2d.StateTrackable.State.*;
-import sun.java2d.StateTrackableDelegate;
+import java.lang.annotation.Native;
 
 import sun.awt.image.SunWritableRaster;
+import sun.java2d.StateTrackable.State;
+import sun.java2d.StateTrackableDelegate;
 
-import java.lang.annotation.Native;
+import static sun.java2d.StateTrackable.State.UNTRACKABLE;
 
 /**
  * This class exists to wrap one or more data arrays.  Each data array in
@@ -75,16 +75,16 @@ public abstract class DataBuffer {
     /** Tag for unsigned short data. */
     @Native public static final int TYPE_USHORT = 1;
 
-    /** Tag for signed short data.  Placeholder for future use. */
+    /** Tag for signed short data. */
     @Native public static final int TYPE_SHORT = 2;
 
     /** Tag for int data. */
     @Native public static final int TYPE_INT   = 3;
 
-    /** Tag for float data.  Placeholder for future use. */
+    /** Tag for float data. */
     @Native public static final int TYPE_FLOAT  = 4;
 
-    /** Tag for double data.  Placeholder for future use. */
+    /** Tag for double data. */
     @Native public static final int TYPE_DOUBLE  = 5;
 
     /** Tag for undefined data. */

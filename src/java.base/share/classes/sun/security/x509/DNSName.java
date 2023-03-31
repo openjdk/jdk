@@ -150,9 +150,9 @@ public class DNSName implements GeneralNameInterface {
      * Encode the DNSName into the DerOutputStream.
      *
      * @param out the DER stream to encode the DNSName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putIA5String(name);
     }
 

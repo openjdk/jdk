@@ -1043,7 +1043,7 @@ class InvokerBytecodeGenerator {
     private static boolean isStaticallyInvocableType(MethodType mtype) {
         if (!isStaticallyNameable(mtype.returnType()))
             return false;
-        for (Class<?> ptype : mtype.parameterArray())
+        for (Class<?> ptype : mtype.ptypes())
             if (!isStaticallyNameable(ptype))
                 return false;
         return true;

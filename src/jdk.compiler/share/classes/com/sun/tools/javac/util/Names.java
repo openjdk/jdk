@@ -225,6 +225,7 @@ public class Names {
 
     public final Name.Table table;
 
+    @SuppressWarnings("this-escape")
     public Names(Context context) {
         Options options = Options.instance(context);
         table = createTable(options);
@@ -422,11 +423,19 @@ public class Names {
         return table.fromString(s);
     }
 
-    public Name fromUtf(byte[] cs) {
+    public Name fromUtf(byte[] cs) throws InvalidUtfException {
         return table.fromUtf(cs);
     }
 
-    public Name fromUtf(byte[] cs, int start, int len) {
-        return table.fromUtf(cs, start, len);
+    public Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation) throws InvalidUtfException {
+        return table.fromUtf(cs, start, len, validation);
+    }
+
+    public Name fromUtfLax(byte[] cs, int start, int len) {
+        try {
+            return table.fromUtf(cs, start, len, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 }

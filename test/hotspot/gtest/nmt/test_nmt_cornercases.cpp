@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@
 
 // Check NMT header for integrity, as well as expected type and size.
 static void check_expected_malloc_header(const void* payload, MEMFLAGS type, size_t size) {
-  const MallocHeader* hdr = MallocTracker::malloc_header(payload);
-  hdr->assert_block_integrity();
+  const MallocHeader* hdr = MallocHeader::resolve_checked(payload);
   EXPECT_EQ(hdr->size(), size);
   EXPECT_EQ(hdr->flags(), type);
 }
@@ -70,7 +69,7 @@ static void check_failing_realloc(size_t failing_request_size) {
   EXPECT_NULL(p2);
 
   // original allocation should still be intact
-  GtestUtils::check_range(p, first_size);
+  EXPECT_RANGE_IS_MARKED(p, first_size);
   if (nmt_enabled) {
     check_expected_malloc_header(p, mtTest, first_size);
   }
@@ -103,12 +102,14 @@ static void* do_realloc(void* p, size_t old_size, size_t new_size, uint8_t old_c
 
   // Check old content, and possibly zapped area (if block grew)
   if (old_size < new_size) {
-    GtestUtils::check_range((char*)p2, old_size, old_content);
+    EXPECT_RANGE_IS_MARKED_WITH(p2, old_size, old_content);
 #ifdef ASSERT
-    GtestUtils::check_range((char*)p2 + old_size, new_size - old_size, uninitBlockPad);
+    if (MemTracker::enabled()) {
+      EXPECT_RANGE_IS_MARKED_WITH((char*)p2 + old_size, new_size - old_size, uninitBlockPad);
+    }
 #endif
   } else {
-    GtestUtils::check_range((char*)p2, new_size, old_content);
+    EXPECT_RANGE_IS_MARKED_WITH(p2, new_size, old_content);
   }
 
   return p2;
@@ -140,4 +141,17 @@ TEST_VM(NMT, random_reallocs) {
   }
 
   os::free(p);
+}
+
+TEST_VM(NMT, HeaderKeepsIntegrityAfterRevival) {
+  if (!MemTracker::enabled()) {
+    return;
+  }
+  size_t some_size = 16;
+  void* p = os::malloc(some_size, mtTest);
+  ASSERT_NOT_NULL(p) << "Failed to malloc()";
+  MallocHeader* hdr = MallocTracker::malloc_header(p);
+  hdr->mark_block_as_dead();
+  hdr->revive();
+  check_expected_malloc_header(p, mtTest, some_size);
 }

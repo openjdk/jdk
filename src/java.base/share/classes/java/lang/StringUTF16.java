@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,28 +412,25 @@ final class StringUTF16 {
     }
 
     public static int hashCode(byte[] value) {
-        int h = 0;
-        int length = value.length >> 1;
-        for (int i = 0; i < length; i++) {
-            h = 31 * h + getChar(value, i);
-        }
-        return h;
+        return switch (value.length) {
+            case 0 -> 0;
+            case 2 -> getChar(value, 0);
+            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length >> 1, 0, ArraysSupport.T_CHAR);
+        };
     }
 
-    public static int indexOf(byte[] value, int ch, int fromIndex) {
-        int max = value.length >> 1;
-        if (fromIndex < 0) {
-            fromIndex = 0;
-        } else if (fromIndex >= max) {
-            // Note: fromIndex might be near -1>>>1.
+    public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
+        fromIndex = Math.max(fromIndex, 0);
+        toIndex = Math.min(toIndex, value.length >> 1);
+        if (fromIndex >= toIndex) {
             return -1;
         }
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
-            return indexOfChar(value, ch, fromIndex, max);
+            return indexOfChar(value, ch, fromIndex, toIndex);
         } else {
-            return indexOfSupplementary(value, ch, fromIndex, max);
+            return indexOfSupplementary(value, ch, fromIndex, toIndex);
         }
     }
 

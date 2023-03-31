@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ import sun.security.util.SecurityConstants;
 
 import java.lang.constant.ConstantDescs;
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
@@ -59,6 +59,7 @@ import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -231,6 +232,12 @@ public class MethodHandles {
      * {@code PRIVATE} access but no {@code MODULE} access.
      * <p>
      * The resulting {@code Lookup} object has no {@code ORIGINAL} access.
+     *
+     * @apiNote The {@code Lookup} object returned by this method is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
+     * of {@code targetClass}. Extreme caution should be taken when opening a package
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code targetClass}'s module.
      *
      * @param targetClass the target class
      * @param caller the caller lookup object
@@ -705,7 +712,8 @@ public class MethodHandles {
      * (See the Java Virtual Machine Specification, section {@jvms 4.10.1.9}.)
      * <p>
      * The JVM represents constructors and static initializer blocks as internal methods
-     * with special names ({@code "<init>"} and {@code "<clinit>"}).
+     * with special names ({@value ConstantDescs#INIT_NAME} and {@value
+     * ConstantDescs#CLASS_INIT_NAME}).
      * The internal syntax of invocation instructions allows them to refer to such internal
      * methods as if they were normal methods, but the JVM bytecode verifier rejects them.
      * A lookup of such an internal method will produce a {@code NoSuchMethodException}.
@@ -850,7 +858,7 @@ public class MethodHandles {
      * <p>
      * {@link MethodHandles#privateLookupIn(Class, Lookup) MethodHandles.privateLookupIn(T.class, lookup)}
      * can be used to teleport a {@code lookup} from class {@code C} to class {@code T}
-     * and create a new {@code Lookup} with <a href="#privacc">private access</a>
+     * and produce a new {@code Lookup} with <a href="#privacc">private access</a>
      * if the lookup class is allowed to do <em>deep reflection</em> on {@code T}.
      * The {@code lookup} must have {@link #MODULE} and {@link #PRIVATE} access
      * to call {@code privateLookupIn}.
@@ -868,6 +876,12 @@ public class MethodHandles {
      * it cannot be used to obtain another private {@code Lookup} by calling
      * {@link MethodHandles#privateLookupIn(Class, Lookup) privateLookupIn}
      * because it has no {@code MODULE} access.
+     * <p>
+     * The {@code Lookup} object returned by {@code privateLookupIn} is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
+     * of {@code T}. Extreme caution should be taken when opening a package
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code M2}.
      *
      * <h2><a id="module-access-check"></a>Cross-module access checks</h2>
      *
@@ -2320,7 +2334,7 @@ public class MethodHandles {
          * before calling this factory method.
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeClassDefiner(byte[] bytes) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
@@ -2338,7 +2352,7 @@ public class MethodHandles {
          * @return ClassDefiner that defines a hidden class of the given bytes.
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
@@ -2359,7 +2373,7 @@ public class MethodHandles {
          * @return ClassDefiner that defines a hidden class of the given bytes and options
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes,
                                             Set<ClassOption> options,
@@ -2755,7 +2769,7 @@ assertEquals("[x, y, z]", pb.command().toString());
             if (refc.isArray()) {
                 throw new NoSuchMethodException("no constructor for array class: " + refc.getName());
             }
-            String name = "<init>";
+            String name = ConstantDescs.INIT_NAME;
             MemberName ctor = resolveOrFail(REF_newInvokeSpecial, refc, name, type);
             return getDirectConstructor(refc, ctor);
         }
@@ -2797,6 +2811,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * This method returns when {@code targetClass} is fully initialized, or
          * when {@code targetClass} is being initialized by the current thread.
          *
+         * @param <T> the type of the class to be initialized
          * @param targetClass the class to be initialized
          * @return {@code targetClass} that has been initialized, or that is being
          *         initialized by the current thread.
@@ -2812,7 +2827,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @since 15
          * @jvms 5.5 Initialization
          */
-        public Class<?> ensureInitialized(Class<?> targetClass) throws IllegalAccessException {
+        public <T> Class<T> ensureInitialized(Class<T> targetClass) throws IllegalAccessException {
             if (targetClass.isPrimitive())
                 throw new IllegalArgumentException(targetClass + " is a primitive class");
             if (targetClass.isArray())
@@ -2912,8 +2927,9 @@ assertEquals("[x, y, z]", pb.command().toString());
          * <p>
          * Otherwise, {@code targetClass} is not accessible.
          *
+         * @param <T> the type of the class to be access-checked
          * @param targetClass the class to be access-checked
-         * @return the class that has been access-checked
+         * @return {@code targetClass} that has been access-checked
          * @throws IllegalAccessException if the class is not accessible from the lookup class
          * and previous lookup class, if present, using the allowed access modes.
          * @throws SecurityException if a security manager is present and it
@@ -2922,7 +2938,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @since 9
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
-        public Class<?> accessClass(Class<?> targetClass) throws IllegalAccessException {
+        public <T> Class<T> accessClass(Class<T> targetClass) throws IllegalAccessException {
             if (!isClassAccessible(targetClass)) {
                 throw makeAccessException(targetClass);
             }
@@ -2951,7 +2967,8 @@ assertEquals("[x, y, z]", pb.command().toString());
          * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
          * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * <p style="font-size:smaller;">
-         * <em>(Note:  JVM internal methods named {@code "<init>"} are not visible to this API,
+         * <em>(Note:  JVM internal methods named {@value ConstantDescs#INIT_NAME}
+         * are not visible to this API,
          * even though the {@code invokespecial} instruction can refer to them
          * in special circumstances.  Use {@link #findConstructor findConstructor}
          * to access instance initialization methods in a safe manner.)</em>
@@ -3989,7 +4006,7 @@ return mh1;
                 !refc.isInterface() &&
                 refc != lookupClass().getSuperclass() &&
                 refc.isAssignableFrom(lookupClass())) {
-                assert(!method.getName().equals("<init>"));  // not this code path
+                assert(!method.getName().equals(ConstantDescs.INIT_NAME));  // not this code path
 
                 // Per JVMS 6.5, desc. of invokespecial instruction:
                 // If the method is in a superclass of the LC,
@@ -5169,7 +5186,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @return a method handle which inserts an additional argument,
      *         before calling the original method handle
      * @throws NullPointerException if the target or the {@code values} array is null
-     * @throws IllegalArgumentException if (@code pos) is less than {@code 0} or greater than
+     * @throws IllegalArgumentException if {@code pos} is less than {@code 0} or greater than
      *         {@code N - L} where {@code N} is the arity of the target method handle and {@code L}
      *         is the length of the values array.
      * @throws ClassCastException if an argument does not match the corresponding bound parameter
@@ -6744,25 +6761,19 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     private static List<Class<?>> longestParameterList(Stream<MethodHandle> mhs, int skipSize) {
-        final List<Class<?>> empty = List.of();
-        final List<Class<?>> longest = mhs.filter(Objects::nonNull).
+        return mhs.filter(Objects::nonNull)
                 // take only those that can contribute to a common suffix because they are longer than the prefix
-                        map(MethodHandle::type).
-                        filter(t -> t.parameterCount() > skipSize).
-                        map(MethodType::parameterList).
-                        reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
-        return longest.isEmpty() ? empty : longest.subList(skipSize, longest.size());
-    }
-
-    private static List<Class<?>> longestParameterList(List<List<Class<?>>> lists) {
-        final List<Class<?>> empty = List.of();
-        return lists.stream().reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
+                .map(MethodHandle::type)
+                .filter(t -> t.parameterCount() > skipSize)
+                .max(Comparator.comparingInt(MethodType::parameterCount))
+                .map(methodType -> List.of(Arrays.copyOfRange(methodType.ptypes(), skipSize, methodType.parameterCount())))
+                .orElse(List.of());
     }
 
     private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
         final List<Class<?>> longest1 = longestParameterList(Stream.of(step, pred, fini).flatMap(List::stream), cpSize);
         final List<Class<?>> longest2 = longestParameterList(init.stream(), 0);
-        return longestParameterList(List.of(longest1, longest2));
+        return longest1.size() >= longest2.size() ? longest1 : longest2;
     }
 
     private static void loopChecks1b(List<MethodHandle> init, List<Class<?>> commonSuffix) {
@@ -7910,29 +7921,32 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *     access modes {@code get} and {@code set} for {@code long} and
      *     {@code double} on 32-bit platforms.
      * <li>atomic update access modes for {@code int}, {@code long},
-     *     {@code float}, {@code double} or {@link MemoryAddress}.
+     *     {@code float}, {@code double} or {@link MemorySegment}.
      *     (Future major platform releases of the JDK may support additional
      *     types for certain currently unsupported access modes.)
-     * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemoryAddress}.
+     * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
      *     (Future major platform releases of the JDK may support additional
      *     numeric types for certain currently unsupported access modes.)
-     * <li>bitwise atomic update access modes for {@code int}, {@code long} and {@link MemoryAddress}.
+     * <li>bitwise atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
      *     (Future major platform releases of the JDK may support additional
      *     numeric types for certain currently unsupported access modes.)
      * </ul>
      *
-     * If {@code T} is {@code float}, {@code double} or {@link MemoryAddress} then atomic
+     * If {@code T} is {@code float}, {@code double} or {@link MemorySegment} then atomic
      * update access modes compare values using their bitwise representation
      * (see {@link Float#floatToRawIntBits},
-     * {@link Double#doubleToRawLongBits} and {@link MemoryAddress#toRawLongValue()}, respectively).
+     * {@link Double#doubleToRawLongBits} and {@link MemorySegment#address()}, respectively).
      * <p>
      * Alternatively, a memory access operation is <em>partially aligned</em> if it occurs at a memory address {@code A}
      * which is only compatible with the alignment constraint {@code B}; in such cases, access for anything other than the
      * {@code get} and {@code set} access modes will result in an {@code IllegalStateException}. If access is partially aligned,
      * atomic access is only guaranteed with respect to the largest power of two that divides the GCD of {@code A} and {@code S}.
      * <p>
-     * Finally, in all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
+     * In all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
      * {@code IllegalStateException} is thrown, irrespective of the access mode being used.
+     * <p>
+     * Finally, if {@code T} is {@code MemorySegment} all write access modes throw {@link IllegalArgumentException}
+     * unless the value to be written is a {@linkplain MemorySegment#isNative() native} memory segment.
      *
      * @param layout the value layout for which a memory access handle is to be obtained.
      * @return the new memory segment view var handle.

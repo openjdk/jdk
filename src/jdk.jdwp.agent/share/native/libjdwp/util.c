@@ -243,6 +243,7 @@ util_initialize(JNIEnv *env)
         }
         localSystemThreadGroup = groups[0];
         saveGlobalRef(env, localSystemThreadGroup, &(gdata->systemThreadGroup));
+        jvmtiDeallocate(groups);
 
         /* Get some basic Java property values we will need at some point */
         gdata->property_java_version
@@ -1734,7 +1735,7 @@ getSpecialJvmti(void)
     jvmtiCapabilities caps;
 
     rc = JVM_FUNC_PTR(gdata->jvm,GetEnv)
-                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION_1);
+                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION);
     if (rc != JNI_OK) {
         return NULL;
     }

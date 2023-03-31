@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2023" "JDK 20-ea" "JDK Commands"
+.TH "JAVA" "1" "2023" "JDK 21-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -187,7 +187,7 @@ with new values added and old values removed.
 You\[aq]ll get an error message if you use a value of \f[I]N\f[R] that
 is no longer supported.
 The supported values of \f[I]N\f[R] are the current Java SE release
-(\f[V]20\f[R]) and a limited number of previous releases, detailed in
+(\f[V]21\f[R]) and a limited number of previous releases, detailed in
 the command-line help for \f[V]javac\f[R], under the \f[V]--source\f[R]
 and \f[V]--release\f[R] options.
 .RE
@@ -415,8 +415,8 @@ If you are expected to specify the percentage, then use a number from 0
 to 1.
 For example, specify \f[V]0.25\f[R] for 25%.
 .PP
-The following sections describe the options that are obsolete,
-deprecated, and removed:
+The following sections describe the options that are deprecated,
+obsolete, and removed:
 .IP \[bu] 2
 \f[B]Deprecated Java Options\f[R]: Accepted and acted upon --- a warning
 is issued when they\[aq]re used.
@@ -441,17 +441,22 @@ either \f[V]--\f[R]\f[I]name\f[R]\f[V]=\f[R]\f[I]value\f[R] or
 Loads the specified native agent library.
 After the library name, a comma-separated list of options specific to
 the library can be used.
+If the option \f[V]-agentlib:foo\f[R] is specified, then the JVM
+attempts to load the library named \f[V]foo\f[R] using the platform
+specific naming conventions and locations:
 .RS
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] If the option \f[V]-agentlib:foo\f[R] is
-specified, then the JVM attempts to load the library named
-\f[V]libfoo.so\f[R] in the location specified by the
-\f[V]LD_LIBRARY_PATH\f[R] system variable (on macOS this variable is
-\f[V]DYLD_LIBRARY_PATH\f[R]).
+\f[B]Linux and other POSIX-like platforms:\f[R] The JVM attempts to load
+the library named \f[V]libfoo.so\f[R] in the location specified by the
+\f[V]LD_LIBRARY_PATH\f[R] system variable.
 .IP \[bu] 2
-\f[B]Windows:\f[R] If the option \f[V]-agentlib:foo\f[R] is specified,
-then the JVM attempts to load the library named \f[V]foo.dll\f[R] in the
-location specified by the \f[V]PATH\f[R] system variable.
+\f[B]macOS:\f[R] The JVM attempts to load the library named
+\f[V]libfoo.dylib\f[R] in the location specified by the
+\f[V]DYLD_LIBRARY_PATH\f[R] system variable.
+.IP \[bu] 2
+\f[B]Windows:\f[R] The JVM attempts to load the library named
+\f[V]foo.dll\f[R] in the location specified by the \f[V]PATH\f[R] system
+variable.
 .RS 2
 .PP
 The following example shows how to load the Java Debug Wire Protocol
@@ -811,10 +816,6 @@ A JNI call was made without checking for a pending exception from a
 previous JNI call, and the current call is not safe when an exception
 may be pending.
 .IP \[bu] 2
-The number of JNI local references existing when a JNI function
-terminates exceeds the number guaranteed to be available.
-See the \f[V]EnsureLocalcapacity\f[R] function.
-.IP \[bu] 2
 A class descriptor is in decorated format (\f[V]Lname;\f[R]) when it
 should not be.
 .IP \[bu] 2
@@ -966,7 +967,7 @@ running user cleanup code (such as closing database connections) at
 shutdown, even if the JVM terminates abruptly.
 .RS
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R]
+\f[B]Non-Windows:\f[R]
 .RS 2
 .IP \[bu] 2
 The JVM catches signals to implement shutdown hooks for unexpected
@@ -1012,13 +1013,13 @@ process \f[V]CTRL_C_EVENT\f[R], \f[V]CTRL_CLOSE_EVENT\f[R],
 .PP
 There are two consequences of specifying \f[V]-Xrs\f[R]:
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] \f[V]SIGQUIT\f[R] thread dumps aren\[aq]t
+\f[B]Non-Windows:\f[R] \f[V]SIGQUIT\f[R] thread dumps aren\[aq]t
 available.
 .IP \[bu] 2
 \f[B]Windows:\f[R] Ctrl + Break thread dumps aren\[aq]t available.
 .PP
 User code is responsible for causing shutdown hooks to run, for example,
-by calling the \f[V]System.exit()\f[R] when the JVM is to be terminated.
+by calling \f[V]System.exit()\f[R] when the JVM is to be terminated.
 .RE
 .TP
 \f[V]-Xshare:\f[R]\f[I]mode\f[R]
@@ -1069,7 +1070,7 @@ Shows settings related to system properties.
 Shows the settings of the JVM.
 .TP
 \f[V]system\f[R]
-\f[B]Linux:\f[R] Shows host system or container configuration and
+\f[B]Linux only:\f[R] Shows host system or container configuration and
 continues.
 .RE
 .TP
@@ -1080,12 +1081,17 @@ or \f[V]M\f[R] to indicate MB, or \f[V]g\f[R] or \f[V]G\f[R] to indicate
 GB.
 The actual size may be rounded up to a multiple of the system page size
 as required by the operating system.
-The default value depends on the platform:
+The default value depends on the platform.
+For example:
 .RS
 .IP \[bu] 2
-Linux/x64 (64-bit): 1024 KB
+Linux/x64: 1024 KB
 .IP \[bu] 2
-macOS (64-bit): 1024 KB
+Linux/Aarch64: 2048 KB
+.IP \[bu] 2
+macOS/x64: 1024 KB
+.IP \[bu] 2
+macOS/Aarch64: 2048 KB
 .IP \[bu] 2
 Windows: The default value depends on virtual memory
 .PP
@@ -1251,8 +1257,8 @@ the identifier of the process is specified as \f[V]%p\f[R]):
 \f[V]-XX:ErrorFile=./hs_err_pid%p.log\f[R]
 .RE
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] The following example shows how to set the
-error log to \f[V]/var/log/java/java_error.log\f[R]:
+\f[B]Non-Windows:\f[R] The following example shows how to set the error
+log to \f[V]/var/log/java/java_error.log\f[R]:
 .RS 2
 .RS
 .PP
@@ -1274,7 +1280,7 @@ Otherwise, if the file can\[aq]t be created in the specified directory
 (due to insufficient space, permission problem, or another issue), then
 the file is created in the temporary directory for the operating system:
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] The temporary directory is \f[V]/tmp\f[R].
+\f[B]Non-Windows:\f[R] The temporary directory is \f[V]/tmp\f[R].
 .IP \[bu] 2
 \f[B]Windows:\f[R] The temporary directory is specified by the value of
 the \f[V]TMP\f[R] environment variable; if that environment variable
@@ -1406,7 +1412,7 @@ Disables the attempt to set the soft limit for the number of open file
 descriptors to the hard limit.
 By default, this option is enabled on all platforms, but is ignored on
 Windows.
-The only time that you may need to disable this is on Mac OS, where its
+The only time that you may need to disable this is on macOS, where its
 use imposes a maximum of 10240, which is lower than the actual system
 maximum.
 .TP
@@ -1485,7 +1491,7 @@ If the string contains spaces, then it must be enclosed in quotation
 marks.
 .RS
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] The following example shows how the
+\f[B]Non-Windows:\f[R] The following example shows how the
 \f[V]-XX:OnError\f[R] option can be used to run the \f[V]gcore\f[R]
 command to create a core image, and start the \f[V]gdb\f[R] debugger to
 attach to the process in case of an irrecoverable error (the
@@ -1729,12 +1735,17 @@ Sets the Java thread stack size (in kilobytes).
 Use of a scaling suffix, such as \f[V]k\f[R], results in the scaling of
 the kilobytes value so that \f[V]-XX:ThreadStackSize=1k\f[R] sets the
 Java thread stack size to 1024*1024 bytes or 1 megabyte.
-The default value depends on the platform:
+The default value depends on the platform.
+For example:
 .RS
 .IP \[bu] 2
-Linux/x64 (64-bit): 1024 KB
+Linux/x64: 1024 KB
 .IP \[bu] 2
-macOS (64-bit): 1024 KB
+Linux/Aarch64: 2048 KB
+.IP \[bu] 2
+macOS/x64: 1024 KB
+.IP \[bu] 2
+macOS/Aarch64: 2048 KB
 .IP \[bu] 2
 Windows: The default value depends on virtual memory
 .PP
@@ -1772,13 +1783,13 @@ See the \f[V]-XX:ObjectAlignmentInBytes\f[R] option.
 .RE
 .TP
 \f[V]-XX:-UseContainerSupport\f[R]
-The VM now provides automatic container detection support, which allows
-the VM to determine the amount of memory and number of processors that
-are available to a Java process running in docker containers.
+\f[B]Linux only:\f[R] The VM now provides automatic container detection
+support, which allows the VM to determine the amount of memory and
+number of processors that are available to a Java process running in
+docker containers.
 It uses this information to allocate system resources.
-This support is only available on Linux x64 platforms.
-If supported, the default for this flag is \f[V]true\f[R], and container
-support is enabled by default.
+The default for this flag is \f[V]true\f[R], and container support is
+enabled by default.
 It can be disabled with \f[V]-XX:-UseContainerSupport\f[R].
 .RS
 .PP
@@ -1822,7 +1833,8 @@ the OS moves other pages around to create huge pages; this option is
 made available for experimentation.
 .TP
 \f[V]-XX:+AllowUserSignalHandlers\f[R]
-Enables installation of signal handlers by the application.
+\f[B]Non-Windows:\f[R] Enables installation of signal handlers by the
+application.
 By default, this option is disabled and the application isn\[aq]t
 allowed to install signal handlers.
 .TP
@@ -2512,6 +2524,22 @@ instructions.
 Flags that control intrinsics now require the option
 \f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
 .TP
+\f[V]-XX:+UseChaCha20Intrinsics\f[R]
+Enable ChaCha20 intrinsics.
+This option is on by default for supported platforms.
+To disable ChaCha20 intrinsics, specify
+\f[V]-XX:-UseChaCha20Intrinsics\f[R].
+Flags that control intrinsics now require the option
+\f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
+.TP
+\f[V]-XX:+UsePoly1305Intrinsics\f[R]
+Enable Poly1305 intrinsics.
+This option is on by default for supported platforms.
+To disable Poly1305 intrinsics, specify
+\f[V]-XX:-UsePoly1305Intrinsics\f[R].
+Flags that control intrinsics now require the option
+\f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
+.TP
 \f[V]-XX:+UseBASE64Intrinsics\f[R]
 Controls the use of accelerated BASE64 encoding routines for
 \f[V]java.util.Base64\f[R].
@@ -2782,8 +2810,8 @@ The following example shows how to set the default file explicitly
 \f[V]-XX:HeapDumpPath=./java_pid%p.hprof\f[R]
 .RE
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] The following example shows how to set the
-heap dump file to \f[V]/var/log/java/java_heapdump.hprof\f[R]:
+\f[B]Non-Windows:\f[R] The following example shows how to set the heap
+dump file to \f[V]/var/log/java/java_heapdump.hprof\f[R]:
 .RS 2
 .RS
 .PP
@@ -2807,8 +2835,8 @@ By default, the file is created in the current working directory, and
 it\[aq]s named \f[V]hotspot.log\f[R].
 .RS
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] The following example shows how to set the
-log file to \f[V]/var/log/java/hotspot.log\f[R]:
+\f[B]Non-Windows:\f[R] The following example shows how to set the log
+file to \f[V]/var/log/java/hotspot.log\f[R]:
 .RS 2
 .RS
 .PP
@@ -2831,7 +2859,7 @@ Enables printing of a class instance histogram after one of the
 following events:
 .RS
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] \f[V]Control+Break\f[R]
+\f[B]Non-Windows:\f[R] \f[V]Control+\[rs]\f[R] (\f[V]SIGQUIT\f[R])
 .IP \[bu] 2
 \f[B]Windows:\f[R] \f[V]Control+C\f[R] (\f[V]SIGTERM\f[R])
 .PP
@@ -2848,7 +2876,7 @@ Enables printing of \f[V]java.util.concurrent\f[R] locks after one of
 the following events:
 .RS
 .IP \[bu] 2
-\f[B]Linux and macOS:\f[R] \f[V]Control+Break\f[R]
+\f[B]Non-Windows:\f[R] \f[V]Control+\[rs]\f[R] (\f[V]SIGQUIT\f[R])
 .IP \[bu] 2
 \f[B]Windows:\f[R] \f[V]Control+C\f[R] (\f[V]SIGTERM\f[R])
 .PP
@@ -3777,6 +3805,14 @@ Controlled \f[I]relaxed strong encapsulation\f[R], as defined in
 This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 [https://openjdk.org/jeps/396] and made obsolete in JDK 17 by \f[B]JEP
 403\f[R] [https://openjdk.org/jeps/403].
+.SH REMOVED JAVA OPTIONS
+.PP
+These \f[V]java\f[R] options have been removed in JDK 21 and using them
+results in an error of:
+.RS
+.PP
+\f[V]Unrecognized VM option\f[R] \f[I]option-name\f[R]
+.RE
 .TP
 \f[V]-XX:+ExtendedDTraceProbes\f[R]
 \f[B]Linux and macOS:\f[R] Enables additional \f[V]dtrace\f[R] tool
@@ -3786,12 +3822,12 @@ standard probes.
 Use the combination of these flags instead:
 \f[V]-XX:+DTraceMethodProbes\f[R], \f[V]-XX:+DTraceAllocProbes\f[R],
 \f[V]-XX:+DTraceMonitorProbes\f[R].
-.SH REMOVED JAVA OPTIONS
-.PP
-No documented java options have been removed in JDK 20.
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[VB]java\f[B] Command, Release 20\f[R]
+[https://docs.oracle.com/en/java/javase/20/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[VB]java\f[B] Command, Release 19\f[R]
 [https://docs.oracle.com/en/java/javase/19/docs/specs/man/java.html]

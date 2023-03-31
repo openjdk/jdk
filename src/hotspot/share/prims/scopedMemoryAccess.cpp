@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,17 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "classfile/vmSymbols.hpp"
+#include "jni.h"
 #include "jvm.h"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
+#include "prims/stackwalk.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/deoptimization.hpp"
-#include "prims/stackwalk.hpp"
-
 
 class CloseScopedMemoryFindOopClosure : public OopClosure {
   oop _deopt;
@@ -81,7 +80,7 @@ public:
 
   void do_thread(Thread* thread) {
 
-    JavaThread* jt = (JavaThread*)thread;
+    JavaThread* jt = JavaThread::cast(thread);
 
     if (!jt->has_last_Java_frame()) {
       return;
@@ -98,12 +97,12 @@ public:
     }
 
     ResourceMark rm;
-    if (_deopt != NULL && last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
+    if (_deopt != nullptr && last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
       CloseScopedMemoryFindOopClosure cl(_deopt);
       CompiledMethod* cm = last_frame.cb()->as_compiled_method();
 
       /* FIXME: this doesn't work if reachability fences are violated by C2
-      last_frame.oops_do(&cl, NULL, &register_map);
+      last_frame.oops_do(&cl, nullptr, &register_map);
       if (cl.found()) {
            //Found the deopt oop in a compiled method; deoptimize.
            Deoptimization::deoptimize(jt, last_frame);

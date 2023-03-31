@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,13 +579,14 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     public String getApproveButtonToolTipText(JFileChooser fc) {
         String tooltipText = fc.getApproveButtonToolTipText();
-        if(tooltipText != null) {
+        if (tooltipText != null) {
             return tooltipText;
         }
 
-        if(fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
+        if (fc.getDialogType() == JFileChooser.OPEN_DIALOG
+                || fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return openButtonToolTipText;
-        } else if(fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
+        } else if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonToolTipText;
         }
         return null;
@@ -908,7 +909,8 @@ public class BasicFileChooserUI extends FileChooserUI {
         int mnemonic = fc.getApproveButtonMnemonic();
         if (mnemonic > 0) {
             return mnemonic;
-        } else if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
+        } else if (fc.getDialogType() == JFileChooser.OPEN_DIALOG
+                || fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return openButtonMnemonic;
         } else if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonMnemonic;
@@ -922,7 +924,8 @@ public class BasicFileChooserUI extends FileChooserUI {
         String buttonText = fc.getApproveButtonText();
         if (buttonText != null) {
             return buttonText;
-        } else if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
+        } else if (fc.getDialogType() == JFileChooser.OPEN_DIALOG
+                || fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return openButtonText;
         } else if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonText;
@@ -1408,22 +1411,25 @@ public class BasicFileChooserUI extends FileChooserUI {
     private void changeDirectory(File dir) {
         JFileChooser fc = getFileChooser();
         // Traverse shortcuts on Windows
-        if (dir != null && FilePane.usesShellFolder(fc)) {
+        if (dir != null) {
             try {
-                ShellFolder shellFolder = ShellFolder.getShellFolder(dir);
-
-                if (shellFolder.isLink()) {
-                    File linkedTo = shellFolder.getLinkLocation();
-
-                    // If linkedTo is null we try to use dir
-                    if (linkedTo != null) {
-                        if (fc.isTraversable(linkedTo)) {
-                            dir = linkedTo;
-                        } else {
-                            return;
+                File linkedTo = null;
+                if (FilePane.usesShellFolder(fc)) {
+                    ShellFolder shellFolder = ShellFolder.getShellFolder(dir);
+                    if (shellFolder.isLink()) {
+                        linkedTo = shellFolder.getLinkLocation();
+                        if (linkedTo == null) {
+                            dir = shellFolder;
                         }
+                    }
+                } else if ( fc.getFileSystemView().isLink(dir)){
+                    linkedTo = fc.getFileSystemView().getLinkLocation(dir);
+                }
+                if (linkedTo != null) {
+                    if (fc.isTraversable(linkedTo)) {
+                        dir = linkedTo;
                     } else {
-                        dir = shellFolder;
+                        return;
                     }
                 }
             } catch (FileNotFoundException ex) {

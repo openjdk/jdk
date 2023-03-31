@@ -1441,9 +1441,14 @@ Zone Antarctica/Palmer	0	-	-00	1965
 # Milne gives 4:56:16.4 for Bogotá time in 1899.  He writes,
 # "A variation of fifteen minutes in the public clocks of Bogota is not rare."
 
+# From Alois Treindl (2022-11-10):
+# End of time change in Colombia 1993 ... should be 6 February 24h ...
+# DECRETO 267 DE 1993
+# https://www.suin-juriscol.gov.co/viewDocument.asp?ruta=Decretos/1061335
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	CO	1992	only	-	May	 3	0:00	1:00	-
-Rule	CO	1993	only	-	Apr	 4	0:00	0	-
+Rule	CO	1992	only	-	May	 3	 0:00	1:00	-
+Rule	CO	1993	only	-	Feb	 6	24:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 		#STDOFF	-4:56:16.4
 Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,30 +226,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
     }
 
     private void readColorPalette(int sizeOfPalette) throws IOException {
-        final int UNIT_SIZE = 1024000;
-        if (sizeOfPalette < UNIT_SIZE) {
-            palette = new byte[sizeOfPalette];
-            iis.readFully(palette, 0, sizeOfPalette);
-        } else {
-            int bytesToRead = sizeOfPalette;
-            int bytesRead = 0;
-            List<byte[]> bufs = new ArrayList<>();
-            while (bytesToRead != 0) {
-                int sz = Math.min(bytesToRead, UNIT_SIZE);
-                byte[] unit = new byte[sz];
-                iis.readFully(unit, 0, sz);
-                bufs.add(unit);
-                bytesRead += sz;
-                bytesToRead -= sz;
-            }
-            byte[] paletteData = new byte[bytesRead];
-            int copiedBytes = 0;
-            for (byte[] ba : bufs) {
-                System.arraycopy(ba, 0, paletteData, copiedBytes, ba.length);
-                copiedBytes += ba.length;
-            }
-            palette = paletteData;
-        }
+        palette = ReaderUtil.staggeredReadByteStream(iis, sizeOfPalette);
     }
 
     /**
@@ -615,8 +592,10 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             height = Math.abs(height);
         }
 
-        if (metadata.compression == BI_RGB) {
-            long imageDataSize = ((long)width * height * (bitsPerPixel / 8));
+        if (metadata.compression == BI_RGB &&
+            metadata.paletteSize == 0 &&
+            metadata.bitsPerPixel >= 16) {
+            long imageDataSize = (((long)width * height * bitsPerPixel) / 8);
             if (imageDataSize > (bitmapFileSize - bitmapOffset)) {
                 throw new IIOException(I18N.getString("BMPImageReader9"));
             }
@@ -630,25 +609,20 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             iis.mark();
             iis.skipBytes(profileData - size);
-            byte[] profile = new byte[profileSize];
-            iis.readFully(profile, 0, profileSize);
+            byte[] profile = ReaderUtil.
+                    staggeredReadByteStream(iis, profileSize);
             iis.reset();
 
-            try {
-                if (metadata.colorSpace == PROFILE_LINKED &&
-                    isLinkedProfileAllowed() &&
-                    !isUncOrDevicePath(profile))
-                {
-                    String path = new String(profile, "windows-1252");
+            if (metadata.colorSpace == PROFILE_LINKED &&
+                isLinkedProfileAllowed())
+            {
+                String path = new String(profile, "windows-1252");
 
-                    colorSpace =
-                        new ICC_ColorSpace(ICC_Profile.getInstance(path));
-                } else {
-                    colorSpace =
-                        new ICC_ColorSpace(ICC_Profile.getInstance(profile));
-                }
-            } catch (Exception e) {
-                colorSpace = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+                colorSpace =
+                    new ICC_ColorSpace(ICC_Profile.getInstance(path));
+            } else if (metadata.colorSpace == PROFILE_EMBEDDED) {
+                colorSpace =
+                    new ICC_ColorSpace(ICC_Profile.getInstance(profile));
             }
         }
 
@@ -2063,73 +2037,20 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         public void readAborted(ImageReader src) {}
     }
 
-    private static Boolean isLinkedProfileDisabled = null;
+    private static Boolean isLinkedProfileAllowed = null;
 
     @SuppressWarnings("removal")
     private static boolean isLinkedProfileAllowed() {
-        if (isLinkedProfileDisabled == null) {
+        if (isLinkedProfileAllowed == null) {
             PrivilegedAction<Boolean> a = new PrivilegedAction<Boolean>() {
                 @Override
                 public Boolean run() {
-                    return Boolean.getBoolean("sun.imageio.plugins.bmp.disableLinkedProfiles");
+                    return Boolean.
+                        getBoolean("sun.imageio.bmp.enableLinkedProfiles");
                 }
             };
-            isLinkedProfileDisabled = AccessController.doPrivileged(a);
+            isLinkedProfileAllowed = AccessController.doPrivileged(a);
         }
-        return !isLinkedProfileDisabled;
-    }
-
-    private static Boolean isWindowsPlatform = null;
-
-    /**
-     * Verifies whether the byte array contains a unc path.
-     * Non-UNC path examples:
-     *  c:\path\to\file  - simple notation
-     *  \\?\c:\path\to\file - long notation
-     *
-     * UNC path examples:
-     *  \\server\share - a UNC path in simple notation
-     *  \\?\UNC\server\share - a UNC path in long notation
-     *  \\.\some\device - a path to device.
-     */
-    @SuppressWarnings("removal")
-    private static boolean isUncOrDevicePath(byte[] p) {
-        if (isWindowsPlatform == null) {
-            PrivilegedAction<Boolean> a = new PrivilegedAction<Boolean>() {
-                @Override
-                public Boolean run() {
-                    String osname = System.getProperty("os.name");
-                    return (osname != null &&
-                            osname.toLowerCase().startsWith("win"));
-                }
-            };
-            isWindowsPlatform = AccessController.doPrivileged(a);
-        }
-
-        if (!isWindowsPlatform) {
-            /* no need for the check on platforms except windows */
-            return false;
-        }
-
-        /* normalize prefix of the path */
-        if (p[0] == '/') p[0] = '\\';
-        if (p[1] == '/') p[1] = '\\';
-        if (p[3] == '/') p[3] = '\\';
-
-
-        if ((p[0] == '\\') && (p[1] == '\\')) {
-            if ((p[2] == '?') && (p[3] == '\\')) {
-                // long path: whether unc or local
-                return ((p[4] == 'U' || p[4] == 'u') &&
-                        (p[5] == 'N' || p[5] == 'n') &&
-                        (p[6] == 'C' || p[6] == 'c'));
-            } else {
-                // device path or short unc notation
-                return true;
-            }
-        } else {
-            return false;
-        }
+        return isLinkedProfileAllowed;
     }
 }
-

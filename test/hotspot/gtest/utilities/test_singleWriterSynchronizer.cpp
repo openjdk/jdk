@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"

@@ -25,8 +25,9 @@
 #include "utilities/align.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include <limits>
 #include "unittest.hpp"
+
+#include <limits>
 
 // A few arbitrarily chosen values to test the align functions on.
 static constexpr uint64_t values[] = {1, 3, 10, 345, 1023, 1024, 1025, 23909034, INT_MAX, uint64_t(-1) / 2, uint64_t(-1) / 2 + 100, uint64_t(-1)};

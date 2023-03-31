@@ -26,7 +26,6 @@
 package sun.security.pkcs;
 
 import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.util.Date;
 
 import sun.security.x509.CertificateExtensions;
@@ -530,12 +529,12 @@ public class PKCS9Attribute implements DerEncoder {
      * should be encoded as <code>T61String</code>s.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         DerOutputStream temp = new DerOutputStream();
         temp.putOID(oid);
         switch (index) {
         case -1:    // Unknown
-            temp.write((byte[])value);
+            temp.writeBytes((byte[])value);
             break;
         case 1:     // email address
         case 2:     // unstructured name

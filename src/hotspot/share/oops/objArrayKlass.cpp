@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,26 +58,26 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
                                                       int n, Klass* element_klass, TRAPS) {
 
   // Eagerly allocate the direct array supertype.
-  Klass* super_klass = NULL;
+  Klass* super_klass = nullptr;
   if (!Universe::is_bootstrapping() || vmClasses::Object_klass_loaded()) {
     Klass* element_super = element_klass->super();
-    if (element_super != NULL) {
+    if (element_super != nullptr) {
       // The element type has a direct super.  E.g., String[] has direct super of Object[].
       super_klass = element_super->array_klass_or_null();
-      bool supers_exist = super_klass != NULL;
+      bool supers_exist = super_klass != nullptr;
       // Also, see if the element has secondary supertypes.
       // We need an array type for each.
       const Array<Klass*>* element_supers = element_klass->secondary_supers();
       for( int i = element_supers->length()-1; i >= 0; i-- ) {
         Klass* elem_super = element_supers->at(i);
-        if (elem_super->array_klass_or_null() == NULL) {
+        if (elem_super->array_klass_or_null() == nullptr) {
           supers_exist = false;
           break;
         }
       }
       if (!supers_exist) {
         // Oops.  Not allocated yet.  Back out, allocate it, and retry.
-        Klass* ek = NULL;
+        Klass* ek = nullptr;
         {
           MutexUnlocker mu(MultiArray_lock);
           super_klass = element_super->array_klass(CHECK_NULL);
@@ -97,7 +97,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
   }
 
   // Create type name for klass.
-  Symbol* name = NULL;
+  Symbol* name = nullptr;
   {
     ResourceMark rm(THREAD);
     char *name_str = element_klass->name()->as_C_string();
@@ -121,13 +121,13 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
   ObjArrayKlass* oak = ObjArrayKlass::allocate(loader_data, n, element_klass, name, CHECK_NULL);
 
   ModuleEntry* module = oak->module();
-  assert(module != NULL, "No module entry for array");
+  assert(module != nullptr, "No module entry for array");
 
   // Call complete_create_array_klass after all instance variables has been initialized.
   ArrayKlass::complete_create_array_klass(oak, super_klass, module, CHECK_NULL);
 
   // Add all classes to our internal class loader list here,
-  // including classes in the bootstrap (NULL) class loader.
+  // including classes in the bootstrap (null) class loader.
   // Do this step after creating the mirror so that if the
   // mirror creation fails, loaded_classes_do() doesn't find
   // an array class without a mirror.
@@ -146,7 +146,7 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   } else {
     bk = element_klass;
   }
-  assert(bk != NULL && (bk->is_instance_klass() || bk->is_typeArray_klass()), "invalid bottom klass");
+  assert(bk != nullptr && (bk->is_instance_klass() || bk->is_typeArray_klass()), "invalid bottom klass");
   set_bottom_klass(bk);
   set_class_loader_data(bk->class_loader_data());
 
@@ -291,17 +291,17 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
   if (UseCompressedOops) {
     size_t src_offset = (size_t) objArrayOopDesc::obj_at_offset<narrowOop>(src_pos);
     size_t dst_offset = (size_t) objArrayOopDesc::obj_at_offset<narrowOop>(dst_pos);
-    assert(arrayOopDesc::obj_offset_to_raw<narrowOop>(s, src_offset, NULL) ==
+    assert(arrayOopDesc::obj_offset_to_raw<narrowOop>(s, src_offset, nullptr) ==
            objArrayOop(s)->obj_at_addr<narrowOop>(src_pos), "sanity");
-    assert(arrayOopDesc::obj_offset_to_raw<narrowOop>(d, dst_offset, NULL) ==
+    assert(arrayOopDesc::obj_offset_to_raw<narrowOop>(d, dst_offset, nullptr) ==
            objArrayOop(d)->obj_at_addr<narrowOop>(dst_pos), "sanity");
     do_copy(s, src_offset, d, dst_offset, length, CHECK);
   } else {
     size_t src_offset = (size_t) objArrayOopDesc::obj_at_offset<oop>(src_pos);
     size_t dst_offset = (size_t) objArrayOopDesc::obj_at_offset<oop>(dst_pos);
-    assert(arrayOopDesc::obj_offset_to_raw<oop>(s, src_offset, NULL) ==
+    assert(arrayOopDesc::obj_offset_to_raw<oop>(s, src_offset, nullptr) ==
            objArrayOop(s)->obj_at_addr<oop>(src_pos), "sanity");
-    assert(arrayOopDesc::obj_offset_to_raw<oop>(d, dst_offset, NULL) ==
+    assert(arrayOopDesc::obj_offset_to_raw<oop>(d, dst_offset, nullptr) ==
            objArrayOop(d)->obj_at_addr<oop>(dst_pos), "sanity");
     do_copy(s, src_offset, d, dst_offset, length, CHECK);
   }
@@ -315,7 +315,7 @@ Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
   if (dim == n) return this;
 
   // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == NULL) {
+  if (higher_dimension_acquire() == nullptr) {
 
     ResourceMark rm(THREAD);
     {
@@ -323,7 +323,7 @@ Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
       MutexLocker mu(THREAD, MultiArray_lock);
 
       // Check if another thread beat us
-      if (higher_dimension() == NULL) {
+      if (higher_dimension() == nullptr) {
 
         // Create multi-dim klass object and link them together
         Klass* k =
@@ -349,8 +349,8 @@ Klass* ObjArrayKlass::array_klass_or_null(int n) {
   if (dim == n) return this;
 
   // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == NULL) {
-    return NULL;
+  if (higher_dimension_acquire() == nullptr) {
+    return nullptr;
   }
 
   ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
@@ -375,15 +375,15 @@ bool ObjArrayKlass::can_be_primary_super_slow() const {
 
 GrowableArray<Klass*>* ObjArrayKlass::compute_secondary_supers(int num_extra_slots,
                                                                Array<InstanceKlass*>* transitive_interfaces) {
-  assert(transitive_interfaces == NULL, "sanity");
+  assert(transitive_interfaces == nullptr, "sanity");
   // interfaces = { cloneable_klass, serializable_klass, elemSuper[], ... };
   const Array<Klass*>* elem_supers = element_klass()->secondary_supers();
-  int num_elem_supers = elem_supers == NULL ? 0 : elem_supers->length();
+  int num_elem_supers = elem_supers == nullptr ? 0 : elem_supers->length();
   int num_secondaries = num_extra_slots + 2 + num_elem_supers;
   if (num_secondaries == 2) {
     // Must share this for correct bootstrapping!
     set_secondary_supers(Universe::the_array_interfaces_array());
-    return NULL;
+    return nullptr;
   } else {
     GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(num_elem_supers+2);
     secondaries->push(vmClasses::Cloneable_klass());
@@ -391,7 +391,7 @@ GrowableArray<Klass*>* ObjArrayKlass::compute_secondary_supers(int num_extra_slo
     for (int i = 0; i < num_elem_supers; i++) {
       Klass* elem_super = elem_supers->at(i);
       Klass* array_super = elem_super->array_klass_or_null();
-      assert(array_super != NULL, "must already have been created");
+      assert(array_super != nullptr, "must already have been created");
       secondaries->push(array_super);
     }
     return secondaries;
@@ -410,7 +410,7 @@ void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 
 jint ObjArrayKlass::compute_modifier_flags() const {
   // The modifier for an objectArray is the same as its element
-  if (element_klass() == NULL) {
+  if (element_klass() == nullptr) {
     assert(Universe::is_bootstrapping(), "partial objArray only at startup");
     return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
   }
@@ -422,13 +422,13 @@ jint ObjArrayKlass::compute_modifier_flags() const {
 }
 
 ModuleEntry* ObjArrayKlass::module() const {
-  assert(bottom_klass() != NULL, "ObjArrayKlass returned unexpected NULL bottom_klass");
+  assert(bottom_klass() != nullptr, "ObjArrayKlass returned unexpected null bottom_klass");
   // The array is defined in the module of its bottom class
   return bottom_klass()->module();
 }
 
 PackageEntry* ObjArrayKlass::package() const {
-  assert(bottom_klass() != NULL, "ObjArrayKlass returned unexpected NULL bottom_klass");
+  assert(bottom_klass() != nullptr, "ObjArrayKlass returned unexpected null bottom_klass");
   return bottom_klass()->package();
 }
 
@@ -459,11 +459,11 @@ void ObjArrayKlass::oop_print_on(oop obj, outputStream* st) {
   int print_len = MIN2((intx) oa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
     st->print(" - %3d : ", index);
-    if (oa->obj_at(index) != NULL) {
+    if (oa->obj_at(index) != nullptr) {
       oa->obj_at(index)->print_value_on(st);
       st->cr();
     } else {
-      st->print_cr("NULL");
+      st->print_cr("null");
     }
   }
   int remaining = oa->length() - print_len;
@@ -480,10 +480,10 @@ void ObjArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
   element_klass()->print_value_on(st);
   int len = objArrayOop(obj)->length();
   st->print("[%d] ", len);
-  if (obj != NULL) {
+  if (obj != nullptr) {
     obj->print_address_on(st);
   } else {
-    st->print_cr("NULL");
+    st->print_cr("null");
   }
 }
 

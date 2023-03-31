@@ -33,6 +33,7 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
@@ -229,8 +230,8 @@ public:
 
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
-  G1RedirtyCardsQueueSet* _rdcqs;
-  PreservedMarksSet* _preserved_marks_set;
+  G1RedirtyCardsQueueSet _rdcqs;
+  PreservedMarksSet _preserved_marks_set;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
   size_t _young_cset_length;
@@ -241,16 +242,14 @@ class G1ParScanThreadStateSet : public StackObj {
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
-                          G1RedirtyCardsQueueSet* rdcqs,
-                          PreservedMarksSet* preserved_marks_set,
                           uint n_workers,
                           size_t young_cset_length,
                           size_t optional_cset_length,
                           G1EvacFailureRegions* evac_failure_regions);
   ~G1ParScanThreadStateSet();
 
-  G1RedirtyCardsQueueSet* rdcqs() { return _rdcqs; }
-  PreservedMarksSet* preserved_marks_set() { return _preserved_marks_set; }
+  G1RedirtyCardsQueueSet* rdcqs() { return &_rdcqs; }
+  PreservedMarksSet* preserved_marks_set() { return &_preserved_marks_set; }
 
   void flush_stats();
   void record_unused_optional_region(HeapRegion* hr);

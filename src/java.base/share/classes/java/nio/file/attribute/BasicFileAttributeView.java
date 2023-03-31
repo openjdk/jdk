@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public interface BasicFileAttributeView
      *
      * <p> This method updates the file's timestamp attributes. The values are
      * converted to the epoch and precision supported by the file system.
-     * Converting from finer to coarser granularities result in precision loss.
+     * Converting from finer to coarser granularities results in precision loss.
      * The behavior of this method when attempting to set a timestamp that is
      * not supported or to a value that is outside the range supported by the
      * underlying file store is not defined. It may or not fail by throwing an

@@ -37,6 +37,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.annotations.Measurement;
+import java.nio.ByteBuffer;
 
 @Measurement(iterations = 3, time = 10)
 @Warmup(iterations = 3, time = 10)
@@ -49,7 +50,7 @@ public class Poly1305DigestBench extends CryptoBase {
 
     private byte[][] data;
     int index = 0;
-    private static MethodHandle polyEngineInit, polyEngineUpdate, polyEngineFinal;
+    private static MethodHandle polyEngineInit, polyEngineUpdate, polyEngineUpdateBuf, polyEngineFinal;
     private static Object polyObj;
 
     static {
@@ -68,6 +69,10 @@ public class Poly1305DigestBench extends CryptoBase {
             m.setAccessible(true);
             polyEngineUpdate = lookup.unreflect(m);
 
+            m = polyClazz.getDeclaredMethod("engineUpdate", ByteBuffer.class);
+            m.setAccessible(true);
+            polyEngineUpdateBuf = lookup.unreflect(m);
+
             m = polyClazz.getDeclaredMethod("engineDoFinal");
             m.setAccessible(true);
             polyEngineFinal = lookup.unreflect(m);
@@ -83,12 +88,25 @@ public class Poly1305DigestBench extends CryptoBase {
     }
 
     @Benchmark
-    public byte[] digest() {
+    public byte[] digestBytes() {
         try {
             byte[] d = data[index];
             index = (index +1) % SET_SIZE;
             polyEngineInit.invoke(polyObj, new SecretKeySpec(d, 0, 32, "Poly1305"), null);
             polyEngineUpdate.invoke(polyObj, d, 0, d.length);
+            return (byte[])polyEngineFinal.invoke(polyObj);
+        } catch (Throwable ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    @Benchmark
+    public byte[] digestBuffer() {
+        try {
+            byte[] d = data[index];
+            index = (index +1) % SET_SIZE;
+            polyEngineInit.invoke(polyObj, new SecretKeySpec(d, 0, 32, "Poly1305"), null);
+            polyEngineUpdateBuf.invoke(polyObj, ByteBuffer.wrap(d, 0, d.length));
             return (byte[])polyEngineFinal.invoke(polyObj);
         } catch (Throwable ex) {
             throw new RuntimeException(ex);

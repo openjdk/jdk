@@ -334,7 +334,7 @@ public:
     return _index;
   }
 
-  // Allocation (return NULL if full)
+  // Allocation (return null if full)
   inline HeapWord* allocate(size_t word_size, ShenandoahAllocRequest::Type type);
 
   inline void clear_live_data();

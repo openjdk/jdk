@@ -45,36 +45,23 @@ public class PeerAddrChange extends PeerAddressChangeNotification
 
     private Association association;
 
-    /* assocId is used to lookup the association before the notification is
+    /* assocId is used to look up the association before the notification is
      * returned to user code */
-    private int assocId;
-    private SocketAddress address;
-    private AddressChangeEvent event;
+    private final int assocId;
+    private final SocketAddress address;
+    private final AddressChangeEvent event;
 
     /* Invoked from native */
     private PeerAddrChange(int assocId, SocketAddress address, int intEvent) {
-        switch (intEvent) {
-            case SCTP_ADDR_AVAILABLE :
-                this.event = AddressChangeEvent.ADDR_AVAILABLE;
-                break;
-            case SCTP_ADDR_UNREACHABLE :
-                this.event = AddressChangeEvent.ADDR_UNREACHABLE;
-                break;
-            case SCTP_ADDR_REMOVED :
-                this.event = AddressChangeEvent.ADDR_REMOVED;
-                break;
-            case SCTP_ADDR_ADDED :
-                this.event = AddressChangeEvent.ADDR_ADDED;
-                break;
-            case SCTP_ADDR_MADE_PRIM :
-                this.event = AddressChangeEvent.ADDR_MADE_PRIMARY;
-                break;
-            case SCTP_ADDR_CONFIRMED :
-                this.event = AddressChangeEvent.ADDR_CONFIRMED;
-                break;
-            default:
-                throw new AssertionError("Unknown event type");
-        }
+        this.event = switch (intEvent) {
+            case SCTP_ADDR_AVAILABLE   -> AddressChangeEvent.ADDR_AVAILABLE;
+            case SCTP_ADDR_UNREACHABLE -> AddressChangeEvent.ADDR_UNREACHABLE;
+            case SCTP_ADDR_REMOVED     -> AddressChangeEvent.ADDR_REMOVED;
+            case SCTP_ADDR_ADDED       -> AddressChangeEvent.ADDR_ADDED;
+            case SCTP_ADDR_MADE_PRIM   -> AddressChangeEvent.ADDR_MADE_PRIMARY;
+            case SCTP_ADDR_CONFIRMED   -> AddressChangeEvent.ADDR_CONFIRMED;
+            default -> throw new AssertionError("Unknown event type");
+        };
         this.assocId = assocId;
         this.address = address;
     }
@@ -103,18 +90,15 @@ public class PeerAddrChange extends PeerAddressChangeNotification
 
     @Override
     public AddressChangeEvent event() {
-        assert event != null;
         return event;
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(" [");
-        sb.append("Address: ").append(address);
-        sb.append(", Association:").append(association);
-        sb.append(", Event: ").append(event).append("]");
-        return sb.toString();
+        return super.toString() + " [" +
+                "Address: " + address +
+                ", Association:" + association +
+                ", Event: " + event + "]";
     }
 }
 

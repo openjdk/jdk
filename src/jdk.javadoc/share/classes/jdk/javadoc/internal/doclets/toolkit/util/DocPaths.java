@@ -98,7 +98,7 @@ public class DocPaths {
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
     /** The name of the default jQuery javascript file. */
-    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.0.min.js");
+    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.1.min.js");
 
     /** The name of the default jQuery UI stylesheet file. */
     public static final DocPath JQUERY_UI_CSS = DocPath.create("jquery-ui.min.css");

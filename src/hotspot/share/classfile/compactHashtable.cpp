@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
+
 #include <sys/stat.h>
 
 #if INCLUDE_CDS
@@ -55,8 +56,8 @@ CompactHashtableWriter::CompactHashtableWriter(int num_entries,
   }
 
   _stats = stats;
-  _compact_buckets = NULL;
-  _compact_entries = NULL;
+  _compact_buckets = nullptr;
+  _compact_entries = nullptr;
   _num_empty_buckets = 0;
   _num_value_only_buckets = 0;
   _num_other_buckets = 0;
@@ -238,8 +239,8 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   if (_fd < 0) {
     quit("Unable to open hashtable dump file", filename);
   }
-  _base = os::map_memory(_fd, filename, 0, NULL, _size, true, false);
-  if (_base == NULL) {
+  _base = os::map_memory(_fd, filename, 0, nullptr, _size, true, false);
+  if (_base == nullptr) {
     quit("Unable to map hashtable dump file", filename);
   }
   _p = _base;

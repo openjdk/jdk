@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ public class TestHeapDump {
             Events.assertField(e, "gcBeforeDump").equal(true);
             Events.assertField(e, "onOutOfMemoryError").equal(false);
             Events.assertField(e, "size").equal(Files.size(path));
+            Events.assertField(e, "compression").below(1);
+            Events.assertField(e, "overwrite").equal(false);
             System.out.println(e);
         }
     }

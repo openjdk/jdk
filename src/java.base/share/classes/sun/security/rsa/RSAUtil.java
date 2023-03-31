@@ -170,8 +170,7 @@ public class RSAUtil {
      * Encode the digest, return the to-be-signed data.
      * Also used by the PKCS#11 provider.
      */
-    public static byte[] encodeSignature(ObjectIdentifier oid, byte[] digest)
-            throws IOException {
+    public static byte[] encodeSignature(ObjectIdentifier oid, byte[] digest) {
         DerOutputStream out = new DerOutputStream();
         new AlgorithmId(oid).encode(out);
         out.putOctetString(digest);

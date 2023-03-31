@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2938,7 +2938,12 @@ public final class Files {
      * a size of {@code 0} if it exists.
      *
      * <p> The {@code Writer} methods to write text throw {@code IOException}
-     * if the text cannot be encoded using the specified charset.
+     * if the text cannot be encoded using the specified charset. Due to
+     * buffering, an {@code IOException} caused by an encoding error
+     * (unmappable-character or malformed-input) may be thrown when {@linkplain
+     * BufferedWriter#write(char[],int,int) writing}, {@linkplain
+     * BufferedWriter#flush flushing}, or {@linkplain BufferedWriter#close
+     * closing} the buffered writer.
      *
      * @param   path
      *          the path to the file
@@ -4098,7 +4103,7 @@ public final class Files {
         // 3) the file size is such that all bytes can be indexed by int values
         //    (this limitation is imposed by ByteBuffer)
         if (path.getFileSystem() == FileSystems.getDefault() &&
-            FileChannelLinesSpliterator.SUPPORTED_CHARSET_NAMES.contains(cs.name())) {
+            FileChannelLinesSpliterator.SUPPORTED_CHARSETS.contains(cs)) {
             FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
 
             Stream<String> fcls = createFileChannelLinesStream(fc, cs);

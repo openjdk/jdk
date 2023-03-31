@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,21 @@
 /*
  * @test
  * @bug 4495742
- * @ignore JSSE supported cipher suites are changed with CR 6916074,
- *     need to update this test case in JDK 7 soon
- * @run main/timeout=180 TestAllSuites
+ * @library /test/lib
+ *
+ * @run main/othervm/timeout=180 TestAllSuites TLSv1.1
+ * @run main/othervm/timeout=180 TestAllSuites TLSv1.2
+ * @run main/othervm/timeout=180 TestAllSuites TLSv1.3
+ *
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
  *
- * Iterate through all the suites using both TLS and SSLv3, and turn
- * SSLv2Hello off and on.  Exchange some bytes and shutdown.
+ * Iterate through all the suites, exchange some bytes and shutdown.
  *
  * @author Brad Wetmore
  */
+
+import jdk.test.lib.security.SecurityUtils;
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
@@ -42,185 +46,158 @@ import java.io.*;
 import java.security.*;
 import java.nio.*;
 import java.util.*;
+import java.util.Arrays;
 
 public class TestAllSuites {
 
-    private static boolean debug = false;
+    private static final boolean DEBUG = Boolean.getBoolean("test.debug");
 
-    private SSLContext sslc;
-    private SSLEngine ssle1;    // client
-    private SSLEngine ssle2;    // server
+    private final SSLContext SSL_CONTEXT;
+    private final String PROTOCOL;
+    private SSLEngine clientEngine;
+    private SSLEngine serverEngine;
 
-    private static String pathToStores = "../etc";
-    private static String keyStoreFile = "keystore";
-    private static String trustStoreFile = "truststore";
-    private static String passwd = "passphrase";
+    private static final String PATH_TO_STORES = "../etc";
+    private static final String KEYSTORE_FILENAME = "keystore";
+    private static final String TRUSTSTORE_FILENAME = "truststore";
 
-    private static String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
+    private static final String KEYSTORE_PATH =
+            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
+                "/" + KEYSTORE_FILENAME;
+    private static final String TRUSTSTORE_PATH =
+            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
+                "/" + TRUSTSTORE_FILENAME;
 
-    private ByteBuffer appOut1;         // write side of ssle1
-    private ByteBuffer appIn1;          // read side of ssle1
-    private ByteBuffer appOut2;         // write side of ssle2
-    private ByteBuffer appIn2;          // read side of ssle2
+    private ByteBuffer clientOut;
+    private ByteBuffer clientIn;
+    private ByteBuffer serverOut;
+    private ByteBuffer serverIn;
 
-    private ByteBuffer oneToTwo;        // "reliable" transport ssle1->ssle2
-    private ByteBuffer twoToOne;        // "reliable" transport ssle2->ssle1
+    private ByteBuffer clientToServer;
+    private ByteBuffer serverToClient;
 
-    String [][] protocols = new String [][] {
-        { "SSLv3" },
-        { "TLSv1" },
-        { "SSLv3", "SSLv2Hello"},
-        { "TLSv1", "SSLv2Hello"}
-    };
 
-    /*
-     * Majority of the test case is here, setup is done below.
-     */
+    private void createSSLEngines() {
+        clientEngine = SSL_CONTEXT.createSSLEngine("client", 1);
+        clientEngine.setUseClientMode(true);
 
-    private void createSSLEngines() throws Exception {
-        ssle1 = sslc.createSSLEngine("client", 1);
-        ssle1.setUseClientMode(true);
+        serverEngine = SSL_CONTEXT.createSSLEngine("server", 2);
+        serverEngine.setUseClientMode(false);
 
-        ssle2 = sslc.createSSLEngine("server", 2);
-        ssle2.setUseClientMode(false);
+        clientEngine.setEnabledProtocols(new String[]{PROTOCOL});
+        serverEngine.setEnabledProtocols(new String[]{PROTOCOL});
     }
 
     private void test() throws Exception {
-
-        createSSLEngines();
-        String [] suites = ssle1.getSupportedCipherSuites();
-
-        for (int i = 0; i < suites.length; i++) {
-            for (int j = 0; j < protocols.length; j++) {
-                createSSLEngines();
-                runTest(suites[i], protocols[j]);
-            }
+        String [] suites = clientEngine.getEnabledCipherSuites();
+        System.out.println("Enabled cipher suites for protocol " + PROTOCOL +
+                ": " + Arrays.toString(suites));
+        for (String suite: suites){
+            // Need to recreate engines to override enabled ciphers
+            createSSLEngines();
+            runTest(suite);
         }
     }
 
-    private void runTest(String suite, String [] protocols) throws Exception {
+    private void runTest(String suite) throws Exception {
 
         boolean dataDone = false;
 
         System.out.println("======================================");
-        System.out.println("Testing: " + suite);
-        for (int i = 0; i < protocols.length; i++) {
-            System.out.print(protocols[i] + " ");
-        }
+        System.out.printf("Testing: %s with %s%n", PROTOCOL, suite);
 
-        /*
-         * Don't run the Kerberized suites for now.
-         */
-        if (suite.startsWith("TLS_KRB5")) {
-            System.out.println("Ignoring Kerberized suite");
-            return;
-        }
+        String [] suites = new String [] { suite };
 
-        /*
-         * Don't run the SCSV suite
-         */
-        if (suite.equals("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
+        if(suite.equals("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
             System.out.println("Ignoring SCSV suite");
             return;
         }
 
-
-        if (!suite.contains("DH_anon")) {
-            ssle2.setNeedClientAuth(true);
-        }
-
-        String [] suites = new String [] { suite };
-
-        ssle1.setEnabledCipherSuites(suites);
-        ssle2.setEnabledCipherSuites(suites);
-
-        ssle1.setEnabledProtocols(protocols);
-        ssle2.setEnabledProtocols(protocols);
+        clientEngine.setEnabledCipherSuites(suites);
+        serverEngine.setEnabledCipherSuites(suites);
 
         createBuffers();
 
-        SSLEngineResult result1;        // ssle1's results from last operation
-        SSLEngineResult result2;        // ssle2's results from last operation
+        SSLEngineResult clientResult;        // clientEngine's results from last operation
+        SSLEngineResult serverResult;        // serverEngine's results from last operation
 
         Date start = new Date();
-        while (!isEngineClosed(ssle1) || !isEngineClosed(ssle2)) {
+        while (!isEngineClosed(clientEngine) || !isEngineClosed(serverEngine)) {
 
             log("----------------");
 
-            result1 = ssle1.wrap(appOut1, oneToTwo);
-            result2 = ssle2.wrap(appOut2, twoToOne);
+            clientResult = clientEngine.wrap(clientOut, clientToServer);
+            serverResult = serverEngine.wrap(serverOut, serverToClient);
 
-            log("wrap1:  " + result1);
-            log("oneToTwo  = " + oneToTwo);
+            log("Client engine wrap result:  " + clientResult);
+            log("clientToServer  = " + clientToServer);
             log("");
 
-            log("wrap2:  " + result2);
-            log("twoToOne  = " + twoToOne);
+            log("Server engine wrap result:  " + serverResult);
+            log("serverToClient  = " + serverToClient);
 
-            runDelegatedTasks(result1, ssle1);
-            runDelegatedTasks(result2, ssle2);
+            runDelegatedTasks(clientResult, clientEngine);
+            runDelegatedTasks(serverResult, serverEngine);
 
-            oneToTwo.flip();
-            twoToOne.flip();
+            clientToServer.flip();
+            serverToClient.flip();
 
             log("----");
 
-            result1 = ssle1.unwrap(twoToOne, appIn1);
-            result2 = ssle2.unwrap(oneToTwo, appIn2);
+            clientResult = clientEngine.unwrap(serverToClient, clientIn);
+            serverResult = serverEngine.unwrap(clientToServer, serverIn);
 
-            log("unwrap1: " + result1);
-            log("twoToOne  = " + twoToOne);
+            log("Client engine unrap result: " + clientResult);
+            log("serverToClient  = " + serverToClient);
             log("");
 
-            log("unwrap2: " + result2);
-            log("oneToTwo  = " + oneToTwo);
+            log("Server engine unwrap result: " + serverResult);
+            log("clientToServer  = " + clientToServer);
 
-            runDelegatedTasks(result1, ssle1);
-            runDelegatedTasks(result2, ssle2);
+            runDelegatedTasks(clientResult, clientEngine);
+            runDelegatedTasks(serverResult, serverEngine);
 
-            oneToTwo.compact();
-            twoToOne.compact();
+            clientToServer.compact();
+            serverToClient.compact();
 
             /*
-             * If we've transfered all the data between app1 and app2,
+             * If we've transferred all the data between client and server
              * we try to close and see what that gets us.
              */
-            if (!dataDone && (appOut1.limit() == appIn2.position()) &&
-                    (appOut2.limit() == appIn1.position())) {
+            if (!dataDone && (clientOut.limit() == serverIn.position()) &&
+                    (serverOut.limit() == clientIn.position())) {
 
-                checkTransfer(appOut1, appIn2);
-                checkTransfer(appOut2, appIn1);
+                checkTransfer(clientOut, serverIn);
+                checkTransfer(serverOut, clientIn);
 
-                log("Closing ssle1's *OUTBOUND*...");
-                ssle1.closeOutbound();
+                clientEngine.closeOutbound();
+                serverEngine.closeOutbound();
                 dataDone = true;
             }
         }
+
+        System.out.println("Negotiated protocol: " + clientEngine.getSession().getProtocol());
+        System.out.println("Negotiated cipher: " + clientEngine.getSession().getCipherSuite());
 
         /*
          * Just for grins, try closing again, make sure nothing
          * strange is happening after we're closed.
          */
-        ssle1.closeInbound();
-        ssle1.closeOutbound();
+        clientEngine.closeInbound();
+        clientEngine.closeOutbound();
 
-        ssle2.closeInbound();
-        ssle2.closeOutbound();
+        serverEngine.closeInbound();
+        serverEngine.closeOutbound();
 
-        appOut1.rewind();
-        appIn1.clear();
-        oneToTwo.clear();
+        clientOut.rewind();
+        clientIn.clear();
+        clientToServer.clear();
 
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(result1);
+        clientResult = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientResult);
 
-        result1 = ssle1.unwrap(oneToTwo, appIn1);
-        checkResult(result1);
+        clientResult = clientEngine.unwrap(clientToServer, clientIn);
+        checkResult(clientResult);
 
         System.out.println("Test Passed.");
         System.out.println("\n======================================");
@@ -244,13 +221,18 @@ public class TestAllSuites {
 
     public static void main(String args[]) throws Exception {
 
-        TestAllSuites tas;
+        if (args.length < 1) {
+            throw new RuntimeException("Missing TLS protocol parameter.");
+        }
 
-        tas = new TestAllSuites();
+        switch(args[0]) {
+            case "TLSv1.1" -> SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
+            case "TLSv1.3" -> SecurityUtils.addToDisabledTlsAlgs("TLSv1.2");
+        }
 
-        tas.createSSLEngines();
-
-        tas.test();
+        TestAllSuites testAllSuites = new TestAllSuites(args[0]);
+        testAllSuites.createSSLEngines();
+        testAllSuites.test();
 
         System.out.println("All Tests Passed.");
         System.out.println("Elapsed time: " + elapsed / 1000.0);
@@ -262,8 +244,9 @@ public class TestAllSuites {
      * **********************************************************
      */
 
-    public TestAllSuites() throws Exception {
-        sslc = getSSLContext(keyFilename, trustFilename);
+    public TestAllSuites(String protocol) throws Exception {
+        PROTOCOL = protocol;
+        SSL_CONTEXT = getSSLContext(KEYSTORE_PATH, TRUSTSTORE_PATH);
     }
 
     /*
@@ -286,7 +269,7 @@ public class TestAllSuites {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
 
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
+        SSLContext sslCtx = SSLContext.getInstance(PROTOCOL);
 
         sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
@@ -296,21 +279,21 @@ public class TestAllSuites {
     private void createBuffers() {
         // Size the buffers as appropriate.
 
-        SSLSession session = ssle1.getSession();
+        SSLSession session = clientEngine.getSession();
         int appBufferMax = session.getApplicationBufferSize();
         int netBufferMax = session.getPacketBufferSize();
 
-        appIn1 = ByteBuffer.allocateDirect(appBufferMax + 50);
-        appIn2 = ByteBuffer.allocateDirect(appBufferMax + 50);
+        clientIn = ByteBuffer.allocateDirect(appBufferMax + 50);
+        serverIn = ByteBuffer.allocateDirect(appBufferMax + 50);
 
-        oneToTwo = ByteBuffer.allocateDirect(netBufferMax);
-        twoToOne = ByteBuffer.allocateDirect(netBufferMax);
+        clientToServer = ByteBuffer.allocateDirect(netBufferMax);
+        serverToClient = ByteBuffer.allocateDirect(netBufferMax);
 
-        appOut1 = ByteBuffer.wrap("Hi Engine2, I'm SSLEngine1".getBytes());
-        appOut2 = ByteBuffer.wrap("Hello Engine1, I'm SSLEngine2".getBytes());
+        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
+        serverOut = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
 
-        log("AppOut1 = " + appOut1);
-        log("AppOut2 = " + appOut2);
+        log("ClientOut = " + clientOut);
+        log("ServerOut = " + serverOut);
         log("");
     }
 
@@ -348,7 +331,7 @@ public class TestAllSuites {
     }
 
     private static void log(String str) {
-        if (debug) {
+        if (DEBUG) {
             System.out.println(str);
         }
     }

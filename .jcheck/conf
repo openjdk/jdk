@@ -1,7 +1,7 @@
 [general]
 project=jdk
 jbs=JDK
-version=20
+version=21
 
 [checks]
 error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace,problemlists

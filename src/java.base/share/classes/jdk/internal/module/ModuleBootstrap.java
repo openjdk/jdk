@@ -789,7 +789,7 @@ public final class ModuleBootstrap {
     private static void addEnableNativeAccess(ModuleLayer layer) {
         for (String name : NATIVE_ACCESS_MODULES) {
             if (name.equals("ALL-UNNAMED")) {
-                JLA.addEnableNativeAccessAllUnnamed();
+                JLA.addEnableNativeAccessToAllUnnamed();
             } else {
                 Optional<Module> module = layer.findModule(name);
                 if (module.isPresent()) {

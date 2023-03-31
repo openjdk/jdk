@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ class ConstantPool : public Metadata {
   // generics support
   Symbol* generic_signature() const {
     return (_generic_signature_index == 0) ?
-      (Symbol*)NULL : symbol_at(_generic_signature_index);
+      nullptr : symbol_at(_generic_signature_index);
   }
   u2 generic_signature_index() const                   { return _generic_signature_index; }
   void set_generic_signature_index(u2 sig_index)       { _generic_signature_index = sig_index; }
@@ -194,7 +194,7 @@ class ConstantPool : public Metadata {
   // source file name
   Symbol* source_file_name() const {
     return (_source_file_name_index == 0) ?
-      (Symbol*)NULL : symbol_at(_source_file_name_index);
+      nullptr : symbol_at(_source_file_name_index);
   }
   u2 source_file_name_index() const                    { return _source_file_name_index; }
   void set_source_file_name_index(u2 sourcefile_index) { _source_file_name_index = sourcefile_index; }
@@ -236,6 +236,9 @@ class ConstantPool : public Metadata {
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
   objArrayOop resolved_references_or_null()  const;
+  oop resolved_reference_at(int obj_index) const;
+  oop set_resolved_reference_at(int index, oop new_value);
+
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
@@ -253,25 +256,11 @@ class ConstantPool : public Metadata {
   static int  decode_invokedynamic_index(int i) { assert(is_invokedynamic_index(i),  ""); return ~i; }
   static int  encode_invokedynamic_index(int i) { assert(!is_invokedynamic_index(i), ""); return ~i; }
 
-
-  // The invokedynamic points at a CP cache entry.  This entry points back
-  // at the original CP entry (CONSTANT_InvokeDynamic) and also (via f2) at an entry
-  // in the resolved_references array (which provides the appendix argument).
-  int invokedynamic_cp_cache_index(int indy_index) const {
-    assert(is_invokedynamic_index(indy_index), "should be a invokedynamic index");
-    int cache_index = decode_invokedynamic_index(indy_index);
-    return cache_index;
-  }
-  ConstantPoolCacheEntry* invokedynamic_cp_cache_entry_at(int indy_index) const {
-    // decode index that invokedynamic points to.
-    int cp_cache_index = invokedynamic_cp_cache_index(indy_index);
-    return cache()->entry_at(cp_cache_index);
-  }
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
   // From there, uncached_name/signature_ref_at will get the name/type.
   int invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-    return invokedynamic_cp_cache_entry_at(indy_index)->constant_pool_index();
+    return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
   }
 
   // Assembly code support
@@ -474,7 +463,7 @@ class ConstantPool : public Metadata {
     // behind our back, lest we later load stale values thru the oop.
     // we might want a volatile_obj_at in ObjArrayKlass.
     int obj_index = cp_to_object_index(which);
-    return resolved_references()->obj_at(obj_index);
+    return resolved_reference_at(obj_index);
   }
 
   Symbol* unresolved_string_at(int which) {
@@ -562,7 +551,7 @@ class ConstantPool : public Metadata {
     operands->at_put(n+1, extract_high_short_from_int(offset));
   }
   static int operand_array_length(Array<u2>* operands) {
-    if (operands == NULL || operands->length() == 0)  return 0;
+    if (operands == nullptr || operands->length() == 0)  return 0;
     int second_part = operand_offset_at(operands, 0);
     return (second_part / 2);
   }
@@ -694,7 +683,7 @@ class ConstantPool : public Metadata {
 
 #if INCLUDE_CDS
   // CDS support
-  void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
+  objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
   bool maybe_archive_resolved_klass_at(int cp_index);
   void remove_unshareable_info();
@@ -713,17 +702,17 @@ class ConstantPool : public Metadata {
   // Resolve late bound constants.
   oop resolve_constant_at(int index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, nullptr, THREAD);
   }
 
   oop resolve_cached_constant_at(int cache_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, _no_index_sentinel, cache_index, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, _no_index_sentinel, cache_index, nullptr, THREAD);
   }
 
   oop resolve_possibly_cached_constant_at(int pool_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, pool_index, _possible_index_sentinel, NULL, THREAD);
+    return resolve_constant_at_impl(h_this, pool_index, _possible_index_sentinel, nullptr, THREAD);
   }
 
   oop find_cached_constant_at(int pool_index, bool& found_it, TRAPS) {
@@ -808,7 +797,7 @@ class ConstantPool : public Metadata {
  private:
 
   void set_resolved_references(OopHandle s) { _cache->set_resolved_references(s); }
-  Array<u2>* reference_map() const        {  return (_cache == NULL) ? NULL :  _cache->reference_map(); }
+  Array<u2>* reference_map() const        {  return (_cache == nullptr) ? nullptr :  _cache->reference_map(); }
   void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
 
   Symbol* impl_name_ref_at(int which, bool uncached);
@@ -924,6 +913,17 @@ class ConstantPool : public Metadata {
   void print_entry_on(int index, outputStream* st);
 
   const char* internal_name() const { return "{constant pool}"; }
+
+  // ResolvedIndyEntry getters
+  ResolvedIndyEntry* resolved_indy_entry_at(int index) {
+    return cache()->resolved_indy_entry_at(index);
+  }
+  int resolved_indy_entries_length() {
+    return cache()->resolved_indy_entries_length();
+  }
+  oop resolved_reference_from_indy(int index) {
+    return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
+  }
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

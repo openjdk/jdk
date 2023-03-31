@@ -3113,7 +3113,7 @@ public class RegExTest {
     /**
      * Checks the handling of some escape sequences that the Pattern
      * class should process instead of the java compiler. These are
-     * not in the file because the escapes should be be processed
+     * not in the file because the escapes should be processed
      * by the Pattern class when the regex is compiled.
      */
     @Test

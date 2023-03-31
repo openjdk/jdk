@@ -86,7 +86,7 @@ public class ExtendedKeyUsageExtension extends Extension {
     private Vector<ObjectIdentifier> keyUsages;
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (keyUsages == null || keyUsages.isEmpty()) {
             this.extensionValue = null;
             return;
@@ -108,8 +108,7 @@ public class ExtendedKeyUsageExtension extends Extension {
      *
      * @param keyUsages the Vector of KeyUsages (ObjectIdentifiers)
      */
-    public ExtendedKeyUsageExtension(Vector<ObjectIdentifier> keyUsages)
-    throws IOException {
+    public ExtendedKeyUsageExtension(Vector<ObjectIdentifier> keyUsages) {
         this(Boolean.FALSE, keyUsages);
     }
 
@@ -121,8 +120,7 @@ public class ExtendedKeyUsageExtension extends Extension {
      * @param keyUsages the Vector of KeyUsages (ObjectIdentifiers),
      *                  cannot be null or empty.
      */
-    public ExtendedKeyUsageExtension(Boolean critical, Vector<ObjectIdentifier> keyUsages)
-            throws IOException {
+    public ExtendedKeyUsageExtension(Boolean critical, Vector<ObjectIdentifier> keyUsages) {
         if (keyUsages == null || keyUsages.isEmpty()) {
             throw new IllegalArgumentException(
                     "key usages cannot be null or empty");
@@ -188,10 +186,9 @@ public class ExtendedKeyUsageExtension extends Extension {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.ExtendedKeyUsage_Id;
           critical = false;

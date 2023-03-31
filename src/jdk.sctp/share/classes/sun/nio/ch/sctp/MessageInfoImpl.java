@@ -156,15 +156,13 @@ public class MessageInfoImpl extends MessageInfo {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(super.toString());
-        sb.append( "[Address: ").append(address)
-          .append(", Association: ").append(association)
-          .append(", Assoc ID: ").append(assocId)
-          .append(", Bytes: ").append(bytes)
-          .append(", Stream Number: ").append(streamNumber)
-          .append(", Complete: ").append(complete)
-          .append(", isUnordered: ").append(unordered)
-          .append("]");
-        return sb.toString();
+        return super.toString() + "[Address: " + address +
+                ", Association: " + association +
+                ", Assoc ID: " + assocId +
+                ", Bytes: " + bytes +
+                ", Stream Number: " + streamNumber +
+                ", Complete: " + complete +
+                ", isUnordered: " + unordered +
+                "]";
     }
 }

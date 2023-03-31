@@ -93,10 +93,9 @@ public class CRLDistributionPointsExtension extends Extension {
      * DistributionPoint; the criticality is set to false.
      *
      * @param distributionPoints the list of distribution points
-     * @throws IOException on error
      */
     public CRLDistributionPointsExtension(
-        List<DistributionPoint> distributionPoints) throws IOException {
+            List<DistributionPoint> distributionPoints) {
 
         this(false, distributionPoints);
     }
@@ -108,10 +107,9 @@ public class CRLDistributionPointsExtension extends Extension {
      * @param isCritical the criticality setting.
      * @param distributionPoints the list of distribution points,
      *                           cannot be null or empty.
-     * @throws IOException on error
      */
     public CRLDistributionPointsExtension(boolean isCritical,
-        List<DistributionPoint> distributionPoints) throws IOException {
+        List<DistributionPoint> distributionPoints) {
 
         this(PKIXExtensions.CRLDistributionPoints_Id, isCritical,
             distributionPoints, NAME);
@@ -122,7 +120,7 @@ public class CRLDistributionPointsExtension extends Extension {
      */
     protected CRLDistributionPointsExtension(ObjectIdentifier extensionId,
             boolean isCritical, List<DistributionPoint> distributionPoints,
-            String extensionName) throws IOException {
+            String extensionName) {
 
         if (distributionPoints == null || distributionPoints.isEmpty()) {
             throw new IllegalArgumentException(
@@ -189,10 +187,9 @@ public class CRLDistributionPointsExtension extends Extension {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         encode(out, PKIXExtensions.CRLDistributionPoints_Id, false);
     }
 
@@ -201,7 +198,7 @@ public class CRLDistributionPointsExtension extends Extension {
      * (Also called by the subclass)
      */
     protected void encode(DerOutputStream out, ObjectIdentifier extensionId,
-            boolean isCritical) throws IOException {
+            boolean isCritical) {
 
         if (this.extensionValue == null) {
             this.extensionId = extensionId;
@@ -221,7 +218,7 @@ public class CRLDistributionPointsExtension extends Extension {
 
 
      // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (distributionPoints.isEmpty()) {
             this.extensionValue = null;
         } else {

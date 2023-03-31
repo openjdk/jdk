@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
@@ -62,6 +64,10 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   // if this method contains a methodHandle call site
   raw_push(FP, LR);
   sub_slow(SP, SP, frame_size_in_bytes);
+
+  // Insert nmethod entry barrier into frame.
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(this);
 }
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
@@ -257,7 +263,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 
   // Load displaced header and object from the lock
   ldr(hdr, Address(disp_hdr, mark_offset));
-  // If hdr is NULL, we've got recursive locking and there's nothing more to do
+  // If hdr is null, we've got recursive locking and there's nothing more to do
   cbz(hdr, done);
 
   // load object
