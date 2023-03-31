@@ -243,7 +243,7 @@ public class CorruptedZipFiles {
 
     /*
      * Validate that a ZipException is thrown if the last CEN header is
-     * not immediatly followed by the start of the 'End of central directory' record
+     * not immediately followed by the start of the 'End of central directory' record
      */
     @Test
     public void insufficientFilenameLength() throws IOException {
