@@ -2814,7 +2814,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
 
   Node* kls = load_klass_from_mirror(cls, false, nullptr, 0);
   kls = null_check(kls);
-  if (stopped()) return true;  // argument was like int.class
+  if (stopped())  return true;  // argument was like int.class
 
   Node* test = nullptr;
   if (LibraryCallKit::klass_needs_init_guard(kls)) {
@@ -2829,10 +2829,10 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     test = _gvn.transform(new SubINode(inst, bits));
     // The 'test' is non-zero if we need to take a slow path.
   }
-  Node *obj = new_instance(kls, test);
+  Node* obj = new_instance(kls, test);
 
 #ifdef INCLUDE_JVMTI
-
+  // Check if JvmtiExport::_should_post_vm_object_alloc is enabled and post notifications
   IdealKit ideal(this);
 
   Node* ONE = ideal.ConI(1);
