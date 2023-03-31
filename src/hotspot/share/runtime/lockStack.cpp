@@ -32,9 +32,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
 
-const size_t LockStack::lock_stack_offset =      in_bytes(JavaThread::lock_stack_offset());
-const size_t LockStack::lock_stack_top_offset =  in_bytes(JavaThread::lock_stack_top_offset());
-const size_t LockStack::lock_stack_base_offset = in_bytes(JavaThread::lock_stack_base_offset());
+const int LockStack::lock_stack_offset =      in_bytes(JavaThread::lock_stack_offset());
+const int LockStack::lock_stack_top_offset =  in_bytes(JavaThread::lock_stack_top_offset());
+const int LockStack::lock_stack_base_offset = in_bytes(JavaThread::lock_stack_base_offset());
 
 LockStack::LockStack(JavaThread* jt) :
   _top(lock_stack_base_offset), _base()
