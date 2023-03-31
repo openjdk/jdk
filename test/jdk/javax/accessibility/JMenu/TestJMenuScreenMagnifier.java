@@ -45,11 +45,9 @@ public class TestJMenuScreenMagnifier {
             "1) Enable Screen magnifier on theMac \n\n" +
                 "System Preference -> Accessibility -> Zoom -> " +
                 "Select ( Enable Hover Text) \n\n" +
-            "2) Run with -Djavax.accessibility.screen_magnifier_present=true" +
-                " option. \n\n" +
-            "3) Move the mouse over the \"File\" or \"Edit\" menu by pressing  " +
+            "2) Move the mouse over the \"File\" or \"Edit\" menu by pressing  " +
                 "\"cmd\" button.\n\n" +
-            "4) If magnified label is visible, Press Pass else Fail.";
+            "3) If magnified label is visible, Press Pass else Fail.";
 
     public static void main(String[] args) throws InterruptedException,
              InvocationTargetException {
