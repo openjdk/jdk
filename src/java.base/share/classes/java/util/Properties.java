@@ -989,6 +989,8 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      * @see    #storeToXML(OutputStream, String, String)
+     * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
+     *         Encoding in Entities</a>
      * @since 1.5
      */
     public synchronized void loadFromXML(InputStream in)
@@ -1067,6 +1069,8 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      * @see    #loadFromXML(InputStream)
+     * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
+     *         Encoding in Entities</a>
      * @since 1.5
      */
     public void storeToXML(OutputStream os, String comment, String encoding)
@@ -1116,6 +1120,8 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * @spec https://www.w3.org/TR/xml Extensible Markup Language (XML) 1.0 (Fifth Edition)
      * @see    #loadFromXML(InputStream)
+     * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
+     *         Encoding in Entities</a>
      * @since 10
      */
     public void storeToXML(OutputStream os, String comment, Charset charset)

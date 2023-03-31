@@ -77,6 +77,8 @@ import sun.reflect.misc.ReflectUtil;
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see ObjectStreamField
+ * @see <a href="{@docRoot}/../specs/serialization/class.html">
+ *      <cite>Java Object Serialization Specification,</cite> Section 4, "Class Descriptors"</a>
  * @since   1.1
  */
 public final class ObjectStreamClass implements Serializable {
