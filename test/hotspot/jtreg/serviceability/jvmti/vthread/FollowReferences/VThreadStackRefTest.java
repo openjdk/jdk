@@ -31,19 +31,16 @@
  *      -agentlib:VThreadStackRefTest
  *      VThreadStackRefTest
  */
-
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Stream;
 import java.util.concurrent.CountDownLatch;
 
 public class VThreadStackRefTest {
-    private static native void test(Class<?>... classes);
-    private static native int getRefCount(int index);
-	private static native long getRefThreadID(int index);
 
 	static volatile boolean timeToStop = false;
 	static int i = -1;
-	
+
     public static void main(String[] args) throws InterruptedException {
         CountDownLatch dumpedLatch = new CountDownLatch(1);
         Thread vthreadMounted = Thread.ofVirtual().start(() -> {
@@ -63,6 +60,15 @@ public class VThreadStackRefTest {
             await(dumpedLatch);
             System.out.println(referenced.getClass());
         });
+        Thread vthreadJNIUnmounted = Thread.ofVirtual().start(() -> {
+			createObjAndCallback(VThreadUnmountedJNIReferenced.class,
+			    new Runnable() {
+					public void run() {
+						await(dumpedLatch);
+					}
+				});
+        });
+
         Thread vthreadEnded = Thread.ofVirtual().start(() -> {
             Object referenced = new VThreadUnmountedEnded();
             System.out.println(referenced.getClass());
@@ -70,7 +76,7 @@ public class VThreadStackRefTest {
         Thread pthread = Thread.ofPlatform().start(() -> {
             Object referenced = new PThreadReferenced();
             System.out.println(referenced.getClass());
-			
+
             await(dumpedLatch);
             System.out.println(referenced.getClass());
         });
@@ -78,12 +84,16 @@ public class VThreadStackRefTest {
 
         Thread.sleep(2000); // wait for reference and unmount
 
-		Class[] testClasses = new Class[] {
-			VThreadUnmountedEnded.class,	// expected to be unreported as stack local
-			VThreadMountedReferenced.class,
-			VThreadUnmountedReferenced.class,
-			PThreadReferenced.class
+		TestCase[] testCases = new TestCase[] {
+			new TestCase(VThreadMountedReferenced.class, 1, vthreadMounted.getId()),
+			new TestCase(VThreadUnmountedReferenced.class, 1, vthreadUnmounted.getId()),
+			new TestCase(VThreadUnmountedJNIReferenced.class, 1, vthreadJNIUnmounted.getId()),
+			new TestCase(PThreadReferenced.class, 1, pthread.getId()),
+			// expected to be unreported as stack local
+			new TestCase(VThreadUnmountedEnded.class, 0, 0)
 		};
+
+		Class[] testClasses = Stream.of(testCases).map(c -> c.cls()).toArray(Class[]::new);
 		System.out.println("test classes:");
 		for (int i = 0; i < testClasses.length; i++) {
 			System.out.println("  - (" + i + ") " + testClasses[i]);
@@ -93,21 +103,26 @@ public class VThreadStackRefTest {
         dumpedLatch.countDown();
         vthreadMounted.join();
         vthreadUnmounted.join();
+		vthreadJNIUnmounted.join();
         pthread.join();
-		//verify(testClasses)
-		
-		for (int i = 0; i < testClasses.length; i++) {
-			System.out.println(" (" + i + ") " + testClasses[i]
-			                   + ": ref count = " + getRefCount(i)
-							   + ", thread id = " + getRefThreadID(i));
+
+		boolean failed = false;
+		for (int i = 0; i < testCases.length; i++) {
+			int refCount = getRefCount(i);
+			long threadId = getRefThreadID(i);
+			System.out.println(" (" + i + ") " + testCases[i].cls()
+			                   + ": ref count = " + refCount
+							   + " (expected " + testCases[i].expectedCount() + ")"
+							   + ", thread id = " + threadId
+							   + " (expected " + testCases[i].expectedThreadId() + ")");
+			if (refCount != testCases[i].expectedCount()
+				    || threadId != testCases[i].expectedThreadId()) {
+				failed = true;
+			}
 		}
-		
-/*		
-        if (count[0] != 1 || count[1] != 1 || count[2] != 1) {
-            System.err.println("did not find expected references: VThreadMountedReferenced: " + count[0] + ", VThreadUnmountedReferenced: " + count[1] + ", PThreadReferenced: " + count[2]);
-            System.exit(1);
+		if (failed) {
+			throw new RuntimeException("Test failed");
         }
-*/
     }
 
     private static void await(CountDownLatch dumpedLatch) {
@@ -118,9 +133,22 @@ public class VThreadStackRefTest {
         }
     }
 
+    private static native void test(Class<?>... classes);
+    private static native int getRefCount(int index);
+    private static native long getRefThreadID(int index);
+
+    // creates object of the the specified class (local JNI) and calls the provided callback.
+    private static native void createObjAndCallback(Class cls, Runnable callback);
+
+
+    private record TestCase(Class cls, int expectedCount, long expectedThreadId) {
+    }
+
     public static class VThreadMountedReferenced {
     }
     public static class VThreadUnmountedReferenced {
+    }
+    public static class VThreadUnmountedJNIReferenced {
     }
     public static class VThreadUnmountedEnded {
     }

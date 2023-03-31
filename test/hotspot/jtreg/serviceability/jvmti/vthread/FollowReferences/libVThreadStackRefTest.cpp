@@ -47,9 +47,9 @@ struct RefCounters {
     jint testClassCount;
 	jint *count;
 	jlong *threadId;
-	
+
 	RefCounters(): testClassCount(0), count(nullptr) {}
-	
+
 	void init(jint testClassCount) {
 	    this->testClassCount = testClassCount;
 		count = new jint[testClassCount];
@@ -115,6 +115,19 @@ Java_VThreadStackRefTest_getRefThreadID(JNIEnv* env, jclass clazz, jint index) {
 	return refCounters.threadId[index];
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_VThreadStackRefTest_createObjAndCallback(JNIEnv* env, jclass clazz, jclass cls, jobject callback) {
+    jobject jobj = env->AllocObject(cls);
+
+    jclass callbackClass = env->GetObjectClass(callback);
+    jmethodID mid = env->GetMethodID(callbackClass, "run", "()V");
+    if (mid == nullptr) {
+        // allow caller to handle the exception
+        return;
+    }
+    env->CallVoidMethod(callback, mid);
+}
+
 extern "C" JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     if (vm->GetEnv(reinterpret_cast<void **>(&jvmti), JVMTI_VERSION) != JNI_OK || !jvmti) {
@@ -124,7 +137,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     jvmtiCapabilities capabilities;
     memset(&capabilities, 0, sizeof(capabilities));
     capabilities.can_tag_objects = 1;
-	//capabilities.can_support_virtual_threads = 1;
+    //capabilities.can_support_virtual_threads = 1;
     checkJvmti(jvmti->AddCapabilities(&capabilities), "adding capabilities");
     return JVMTI_ERROR_NONE;
-} 
+}

@@ -2269,6 +2269,7 @@ bool StackRootCollector::set_thread(JavaThread* jt, oop o) {
 }
 
 bool StackRootCollector::set_vthread(oop vthreadObj) {
+  assert(java_lang_Thread::thread(vthreadObj) != nullptr, "must be");
   return set_thread(java_lang_Thread::thread(vthreadObj), vthreadObj);
 }
 
@@ -2860,9 +2861,8 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
                                                       JNILocalRootsClosure* blk)
 {
   oop threadObj = java_thread->threadObj();
-  oop mounted_vt = java_thread->jvmti_vthread();
-  if (mounted_vt == threadObj
-      || (mounted_vt != nullptr && !JvmtiEnvBase::is_vthread_alive(mounted_vt))) {
+  oop mounted_vt = java_thread->is_vthread_mounted() ? java_thread->vthread() : nullptr;
+  if (mounted_vt != nullptr && !JvmtiEnvBase::is_vthread_alive(mounted_vt)) {
     mounted_vt = nullptr;
   }
   assert(threadObj != nullptr, "sanity check");
