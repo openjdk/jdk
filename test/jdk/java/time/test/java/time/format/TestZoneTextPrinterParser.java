@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8081022 8151876 8166875 8189784 8206980
+ * @bug 8081022 8151876 8166875 8189784 8206980 8278434
  * @key randomness
  */
 
@@ -58,6 +58,11 @@ import org.testng.annotations.Test;
  */
 @Test
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
+
+    private static final Locale[] SAMPLE_LOCALES = {
+        Locale.US, Locale.UK, Locale.FRANCE, Locale.GERMANY, Locale.ITALY, Locale.forLanguageTag("es"),
+        Locale.forLanguageTag("pt-BR"), Locale.forLanguageTag("ru"),
+        Locale.CHINA, Locale.TAIWAN, Locale.JAPAN, Locale.KOREA, Locale.ROOT};
 
     protected static DateTimeFormatter getFormatter(Locale locale, TextStyle style) {
         return new DateTimeFormatterBuilder().appendZoneText(style)
@@ -68,7 +73,6 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     public void test_printText() {
         Random r = RandomFactory.getRandom();
         int N = 8;
-        Locale[] locales = Locale.getAvailableLocales();
         Set<String> zids = ZoneRulesProvider.getAvailableZoneIds();
         ZonedDateTime zdt = ZonedDateTime.now();
 
@@ -83,7 +87,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                 zdt = zdt.withZoneSameLocal(ZoneId.of(zid));
                 TimeZone tz = TimeZone.getTimeZone(zid);
                 boolean isDST = tz.inDaylightTime(new Date(zdt.toInstant().toEpochMilli()));
-                for (Locale locale : locales) {
+                for (Locale locale : SAMPLE_LOCALES) {
                     String longDisplayName = tz.getDisplayName(isDST, TimeZone.LONG, locale);
                     String shortDisplayName = tz.getDisplayName(isDST, TimeZone.SHORT, locale);
                     if ((longDisplayName.startsWith("GMT+") && shortDisplayName.startsWith("GMT+"))
@@ -116,9 +120,8 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     }
 
     public void test_ParseText() {
-        Locale[] locales = new Locale[] { Locale.ENGLISH, Locale.JAPANESE, Locale.FRENCH };
         Set<String> zids = ZoneRulesProvider.getAvailableZoneIds();
-        for (Locale locale : locales) {
+        for (Locale locale : SAMPLE_LOCALES) {
             parseText(zids, locale, TextStyle.FULL, false);
             parseText(zids, locale, TextStyle.FULL, true);
             parseText(zids, locale, TextStyle.SHORT, false);
