@@ -2171,7 +2171,7 @@ const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* 
   return false;
 }
 
-// Do Vector::rearrange needs preparation of the shuffle argument
+// Return true if Vector::rearrange needs preparation of the shuffle argument
 const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
   switch (elem_bt) {
     case T_BYTE:  return false;

@@ -200,7 +200,7 @@ abstract class AbstractVector<E> extends Vector<E> {
         return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
                                      getClass(), etype, length(),
                                      dvtype, dtype, dlength,
-                                  this, dsp,
+                                     this, dsp,
                                      AbstractVector::toShuffle0);
     }
 
