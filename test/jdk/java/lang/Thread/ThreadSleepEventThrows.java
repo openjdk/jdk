@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary Test Thread.sleep when emitting the JFR ThreadSleepEvent throws OOME
+ * @summary Test Thread.sleep when emitting the JFR jdk.ThreadSleep event throws OOME
  * @modules java.base/jdk.internal.event
  * @compile/module=java.base jdk/internal/event/ThreadSleepEvent.java
  * @run junit ThreadSleepEventThrows
