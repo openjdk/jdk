@@ -42,6 +42,7 @@ import jdk.internal.foreign.abi.Binding.Dup;
 import jdk.internal.foreign.abi.Binding.UnboxAddress;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
+import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
@@ -70,6 +71,8 @@ import static jdk.internal.classfile.TypeKind.*;
 public class BindingSpecializer {
     private static final String DUMP_CLASSES_DIR
         = GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR");
+    private static final boolean PERFORM_VERIFICATION
+        = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION");
 
     // Bunch of helper constants
     private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
@@ -200,6 +203,14 @@ public class BindingSpecializer {
                 Files.write(dumpPath, bytes);
             } catch (IOException e) {
                 throw new InternalError(e);
+            }
+        }
+
+        if (PERFORM_VERIFICATION) {
+            List<VerifyError> errors = Classfile.parse(bytes).verify(null);
+            if (!errors.isEmpty()) {
+                errors.forEach(System.err::println);
+                throw new IllegalStateException("Verification error(s)");
             }
         }
 
