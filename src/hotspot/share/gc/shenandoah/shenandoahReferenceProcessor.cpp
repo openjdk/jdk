@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
@@ -59,16 +60,43 @@ static const char* reference_type_name(ReferenceType type) {
 }
 
 template <typename T>
+static void card_mark_barrier(T* field, oop value) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(heap->is_in_or_null(value), "Should be in heap");
+  if (heap->mode()->is_generational() && heap->is_in_old(field) && heap->is_in_young(value)) {
+    // We expect this to really be needed only during global collections. Young collections
+    // discover j.l.r.Refs in the old generation during scanning of dirty cards
+    // and these point to (as yet unmarked) referents in the young generation (see
+    // ShenandoahReferenceProcessor::should_discover). Those cards will continue to
+    // remain dirty on account of this cross-generational pointer to the referent.
+    // Similarly, old collections will never discover j.l.r.Refs in the young generation.
+    // It is only global collections that discover in both generations. Here we can
+    // end up with a j.l.R in the old generation on the discovered list that
+    // is not already on a dirty card, but which may here end up with a successor in
+    // the discovered list that is in the young generation. This is the singular case
+    // where the card needs to be dirtied here. We, however, skip the extra global'ness check
+    // and always mark the card (redundantly during young collections).
+    // The asserts below check the expected invariants based on the description above.
+    assert(!heap->active_generation()->is_old(), "Expecting only young or global");
+    assert(heap->card_scan()->is_card_dirty(reinterpret_cast<HeapWord*>(field))
+           || heap->active_generation()->is_global(), "Expecting already dirty if young");
+    heap->card_scan()->mark_card_as_dirty(reinterpret_cast<HeapWord*>(field));
+  }
+}
+
+template <typename T>
 static void set_oop_field(T* field, oop value);
 
 template <>
 void set_oop_field<oop>(oop* field, oop value) {
   *field = value;
+  card_mark_barrier(field, value);
 }
 
 template <>
 void set_oop_field<narrowOop>(narrowOop* field, oop value) {
   *field = CompressedOops::encode(value);
+  card_mark_barrier(field, value);
 }
 
 static oop lrb(oop obj) {
