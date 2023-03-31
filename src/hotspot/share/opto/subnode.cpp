@@ -1999,7 +1999,7 @@ Node* SubINoUnderflowNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeInt* base_type = t1;
   jint sub_con = t2->get_con();
   if ((sub_con > 0 && (java_subtract(base_type->_lo, sub_con) < base_type->_lo)) ||
-      (sub_con < 0 && (java_subtract(base_type->_hi, sub_con) < base_type->_hi))) {
+      (sub_con < 0 && (java_subtract(base_type->_hi, sub_con) > base_type->_hi))) {
     return new SubINode(in(1), in(2));
   }
 
