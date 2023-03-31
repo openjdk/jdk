@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,28 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.graph.*;
+import com.sun.hotspot.igv.graph.Diagram;
+import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.graph.Selector;
+import java.util.function.UnaryOperator;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class SplitFilter extends AbstractFilter {
+public class EditPropertyFilter extends AbstractFilter {
 
     private String name;
     private Selector selector;
-    private String[] propertyNames;
+    private final String inputPropertyName;
+    private final String outputPropertyName;
+    private final UnaryOperator<String> editFunction;
 
-    public SplitFilter(String name, Selector selector, String[] propertyNames) {
+    public EditPropertyFilter(String name, Selector selector,
+                              String inputPropertyName, String outputPropertyName,
+                              UnaryOperator<String> editFunction) {
         this.name = name;
         this.selector = selector;
-        this.propertyNames = propertyNames;
+        this.inputPropertyName = inputPropertyName;
+        this.outputPropertyName = outputPropertyName;
+        this.editFunction = editFunction;
     }
 
     @Override
@@ -48,25 +53,12 @@ public class SplitFilter extends AbstractFilter {
     }
 
     @Override
-    public void apply(Diagram d) {
-        List<Figure> list = selector.selected(d);
-
+    public void apply(Diagram diagram) {
+        List<Figure> list = selector.selected(diagram);
         for (Figure f : list) {
-            String s = AbstractFilter.getFirstMatchingProperty(f, propertyNames);
-            for (OutputSlot os : f.getOutputSlots()) {
-                for (FigureConnection c : os.getConnections()) {
-                    InputSlot is = c.getInputSlot();
-                    if (f.getInputNode() != null) {
-                        is.getSource().addSourceNode(f.getInputNode());
-                        is.setColor(f.getColor());
-                    }
-                    if (s != null) {
-                        is.setShortName(s);
-                    }
-                }
-            }
-
-            d.removeFigure(f);
+            String inputVal = f.getProperties().get(inputPropertyName);
+            String outputVal = editFunction.apply(inputVal);
+            f.getProperties().setProperty(outputPropertyName, outputVal);
         }
     }
 }
