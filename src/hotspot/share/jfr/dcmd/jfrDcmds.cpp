@@ -367,15 +367,15 @@ GrowableArray<const char*>* JfrDCmd::argument_name_array() const {
 JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* output,
                                                                bool heap) : DCmdWithParser(output, heap),
   _repository_path("repositorypath", "Path to repository,.e.g \\\"My Repository\\\"", "STRING", false, NULL),
-  _dump_path("dumppath", "Path to dump,.e.g \\\"My Dump path\\\"", "STRING", false, NULL),
-  _stack_depth("stackdepth", "Stack Depth", "JULONG", false, "64"),
+  _dump_path("dumppath", "Path to dump, e.g. \\\"My Dump path\\\"", "STRING", false, NULL),
+  _stack_depth("stackdepth", "Stack depth", "JULONG", false, "64"),
   _global_buffer_count("globalbuffercount", "Number of global buffers,", "JULONG", false, "20"),
   _global_buffer_size("globalbuffersize", "Size of a global buffers,", "MEMORY SIZE", false, "512k"),
   _thread_buffer_size("thread_buffer_size", "Size of a thread buffer", "MEMORY SIZE", false, "8k"),
   _memory_size("memorysize", "Overall memory size, ", "MEMORY SIZE", false, "10m"),
   _max_chunk_size("maxchunksize", "Size of an individual disk chunk", "MEMORY SIZE", false, "12m"),
-  _sample_threads("samplethreads", "Activate Thread sampling", "BOOLEAN", false, "true"),
-  _preserve_repository("preserve-repository", "Preserve disk repository after JVM exit", "BOOLEAN", false, "false"),
+  _sample_threads("samplethreads", "Activate thread sampling", "BOOLEAN", false, "true"),
+  _preserve_repository("preserve-repository", "Preserve the disk repository after JVM exit", "BOOLEAN", false, "false"),
   _verbose(true) {
   _dcmdparser.add_dcmd_option(&_repository_path);
   _dcmdparser.add_dcmd_option(&_dump_path);
