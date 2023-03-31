@@ -6257,6 +6257,10 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
 
 #ifdef ASSERT
   {
+    // The following checks rely on the fact that LockStack is only ever modified by
+    // its owning stack, even if the lock got inflated concurrently; removal of LockStack
+    // entries after inflation will happen delayed in that case.
+
     // Check for lock-stack underflow.
     Label stack_ok;
     ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
@@ -6272,12 +6276,13 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
     ldr(t1, Address(rthread, t1));
     cmpoop(t1, obj);
     br(Assembler::EQ, tos_ok);
+    STOP("Top of lock-stack does not match the unlocked object");
     bind(tos_ok);
   }
   {
     // Check that hdr is fast-locked.
     Label hdr_ok;
-    ands(zr, hdr, markWord::lock_mask_in_place);
+    tst(hdr, markWord::lock_mask_in_place);
     br(Assembler::EQ, hdr_ok);
     STOP("Header is not fast-locked");
     bind(hdr_ok);
