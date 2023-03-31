@@ -2294,8 +2294,8 @@ void HeapDumper::set_error(char const* error) {
 
 // Called by out-of-memory error reporting by a single Java thread
 // outside of a JVM safepoint
-void HeapDumper::dump_heap_from_oome() {
-  HeapDumper::dump_heap(true);
+void HeapDumper::dump_heap_from_oome(bool overwrite) {
+  HeapDumper::dump_heap(true, overwrite);
 }
 
 // Called by error reporting by a single Java thread outside of a JVM safepoint,
@@ -2307,7 +2307,7 @@ void HeapDumper::dump_heap() {
   HeapDumper::dump_heap(false);
 }
 
-void HeapDumper::dump_heap(bool oome) {
+void HeapDumper::dump_heap(bool oome, bool overwrite) {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   static uint dump_file_seq = 0;
   char* my_path;
@@ -2381,6 +2381,6 @@ void HeapDumper::dump_heap(bool oome) {
 
   HeapDumper dumper(false /* no GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
-  dumper.dump(my_path, tty, HeapDumpGzipLevel);
+  dumper.dump(my_path, tty, HeapDumpGzipLevel, overwrite);
   os::free(my_path);
 }

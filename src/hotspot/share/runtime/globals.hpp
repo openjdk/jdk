@@ -563,6 +563,10 @@ const int ObjectAlignmentInBytes = 8;
           "compression. Otherwise the level must be between 1 and 9.")      \
           range(0, 9)                                                       \
                                                                             \
+  product(bool, HeapDumpOverwrite, false, MANAGEABLE,                       \
+          "When HeapDumpOnOutOfMemoryError is on, overwrite if the dump "   \
+          "file exists")                                                    \
+                                                                            \
   product(ccstr, NativeMemoryTracking, DEBUG_ONLY("summary") NOT_DEBUG("off"), \
           "Native memory tracking options")                                 \
                                                                             \

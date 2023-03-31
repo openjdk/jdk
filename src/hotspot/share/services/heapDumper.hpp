@@ -49,7 +49,7 @@ class HeapDumper : public StackObj {
   // internal timer.
   elapsedTimer* timer()                 { return &_t; }
 
-  static void dump_heap(bool oome);
+  static void dump_heap(bool oome, bool overwrite = false);
 
  public:
   HeapDumper(bool gc_before_heap_dump) :
@@ -68,7 +68,7 @@ class HeapDumper : public StackObj {
 
   static void dump_heap()    NOT_SERVICES_RETURN;
 
-  static void dump_heap_from_oome()    NOT_SERVICES_RETURN;
+  static void dump_heap_from_oome(bool overwrite = false)    NOT_SERVICES_RETURN;
 
   // Parallel thread number for heap dump, initialize based on active processor count.
   static uint default_num_of_dump_threads() {
