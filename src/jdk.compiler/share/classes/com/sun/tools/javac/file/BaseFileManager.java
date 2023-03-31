@@ -41,6 +41,8 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,10 +56,12 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -87,9 +91,12 @@ public abstract class BaseFileManager implements JavaFileManager {
         options = Options.instance(context);
         classLoaderClass = options.get("procloader");
 
-        // Avoid initializing Lint
+        // Detect Lint options, but use Options.isLintSet() to avoid initializing the Lint class
         boolean warn = options.isLintSet("path");
         locations.update(log, warn, FSInfo.instance(context));
+        synchronized (this) {
+            outputFilesWritten = options.isLintSet("output-file-clash") ? new HashSet<>() : null;
+        }
 
         // Setting this option is an indication that close() should defer actually closing
         // the file manager until after a specified period of inactivity.
@@ -132,6 +139,9 @@ public abstract class BaseFileManager implements JavaFileManager {
     protected String classLoaderClass;
 
     protected final Locations locations;
+
+    // This is non-null when output file clash detection is enabled
+    private HashSet<Path> outputFilesWritten;
 
     /**
      * A flag for clients to use to indicate that this file manager should
@@ -467,6 +477,11 @@ public abstract class BaseFileManager implements JavaFileManager {
         contentCache.remove(file);
     }
 
+    public synchronized void resetOutputFilesWritten() {
+        if (outputFilesWritten != null)
+            outputFilesWritten.clear();
+    }
+
     protected final Map<JavaFileObject, ContentCacheEntry> contentCache = new HashMap<>();
 
     protected static class ContentCacheEntry {
@@ -511,5 +526,30 @@ public abstract class BaseFileManager implements JavaFileManager {
         for (T t : it)
             Objects.requireNonNull(t);
         return it;
+    }
+
+// Output File Clash Detection
+
+    /** Record the fact that we have started writing to an output file.
+     */
+    // Note: individual files can be accessed concurrently, so we synchronize here
+    synchronized void newOutputToPath(Path path) throws IOException {
+
+        // Is output file clash detection enabled?
+        if (outputFilesWritten == null)
+            return;
+
+        // Get the "canonical" version of the file's path; we are assuming
+        // here that two clashing files will resolve to the same real path.
+        Path realPath;
+        try {
+            realPath = path.toRealPath();
+        } catch (NoSuchFileException e) {
+            return;         // should never happen except on broken filesystems
+        }
+
+        // Check whether we've already opened this file for output
+        if (!outputFilesWritten.add(realPath))
+            log.warning(LintCategory.OUTPUT_FILE_CLASH, Warnings.OutputFileClash(path));
     }
 }

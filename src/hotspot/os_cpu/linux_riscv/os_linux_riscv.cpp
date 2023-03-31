@@ -84,7 +84,10 @@ NOINLINE address os::current_stack_pointer() {
 
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
-  return (char*) -1;
+  // even in its subfields (as defined by the CPU immediate fields,
+  // if the CPU splits constants across multiple instructions).
+
+  return (char*) 0xffffffffffff;
 }
 
 address os::Posix::ucontext_get_pc(const ucontext_t * uc) {

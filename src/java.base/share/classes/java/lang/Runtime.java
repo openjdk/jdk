@@ -349,6 +349,10 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
@@ -396,6 +400,10 @@ public class Runtime {
      *
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
@@ -458,6 +466,10 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      * @since 1.3
      */
@@ -503,6 +515,10 @@ public class Runtime {
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      */
     public Process exec(String[] cmdarray) throws IOException {
@@ -545,6 +561,10 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      */
@@ -640,6 +660,10 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      * @since 1.3
