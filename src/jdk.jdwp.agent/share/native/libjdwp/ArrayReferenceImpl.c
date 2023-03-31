@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <stdalign.h>
 #include "util.h"
 #include "ArrayReferenceImpl.h"
 #include "inStream.h"
