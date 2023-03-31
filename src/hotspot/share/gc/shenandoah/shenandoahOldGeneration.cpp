@@ -255,6 +255,9 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   uint nworkers = workers->active_workers();
 
   log_debug(gc)("Starting (or resuming) coalesce-and-fill of old heap regions");
+  // This code will see the same set of regions to fill on each resumption as it did
+  // on the initial run. That's okay because each region keeps track of its own coalesce
+  // and fill state. Regions that were filled on a prior attempt will not try to fill again.
   uint coalesce_and_fill_regions_count = old_heuristics->get_coalesce_and_fill_candidates(_coalesce_and_fill_region_array);
   assert(coalesce_and_fill_regions_count <= heap->num_regions(), "Sanity");
   ShenandoahConcurrentCoalesceAndFillTask task(nworkers, _coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
@@ -263,6 +266,7 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   if (task.is_completed()) {
     // Remember that we're done with coalesce-and-fill.
     heap->set_prepare_for_old_mark_in_progress(false);
+    old_heuristics->abandon_collection_candidates();
     transition_to(BOOTSTRAPPING);
     return true;
   } else {
@@ -323,7 +327,8 @@ const char* ShenandoahOldGeneration::state_name(State state) {
     case FILLING:       return "Coalescing";
     case BOOTSTRAPPING: return "Bootstrapping";
     case MARKING:       return "Marking";
-    case WAITING:       return "Waiting";
+    case WAITING_FOR_EVAC:  return "Waiting for evacuation";
+    case WAITING_FOR_FILL:  return "Waiting for fill";
     default:
       ShouldNotReachHere();
       return "Unknown";
@@ -358,46 +363,54 @@ void ShenandoahOldGeneration::transition_to(State new_state) {
 //               |   |            v
 //               |   |          +-----------------+     +--------------------+
 //               |   |          |     FILLING     | <-> |      YOUNG GC      |
-//               |   |          |                 |     | (RSet Uses Bitmap) |
-//               |   |          +-----------------+     +--------------------+
-//               |   |            |
-//               |   |            | Reset Bitmap
-//               |   |            v
-//               |   |          +-----------------+
-//               |   |          |    BOOTSTRAP    |
-//               |   |          |                 |
-//               |   |          +-----------------+
-//               |   |            |
-//               |   |            | Continue Marking
-//               |   |            v
-//               |   |          +-----------------+     +----------------------+
-//               |   |          |    MARKING      | <-> |       YOUNG GC       |
-//               |   +----------|                 |     | (RSet Parses Region) |
-//               |              +-----------------+     +----------------------+
-//               |                |
-//               |                | Has Candidates
-//               |                v
-//               |              +-----------------+
-//               |              |     WAITING     |
-//               +------------- |                 |
+//               |   |    +---> |                 |     | (RSet Uses Bitmap) |
+//               |   |    |     +-----------------+     +--------------------+
+//               |   |    |       |
+//               |   |    |       | Reset Bitmap
+//               |   |    |       v
+//               |   |    |     +-----------------+
+//               |   |    |     |    BOOTSTRAP    |
+//               |   |    |     |                 |
+//               |   |    |     +-----------------+
+//               |   |    |       |
+//               |   |    |       | Continue Marking
+//               |   |    |       v
+//               |   |    |     +-----------------+     +----------------------+
+//               |   |    |     |    MARKING      | <-> |       YOUNG GC       |
+//               |   +----|-----|                 |     | (RSet Parses Region) |
+//               |        |     +-----------------+     +----------------------+
+//               |        |       |
+//               |        |       | Has Candidates
+//               |        |       v
+//               |        |     +-----------------+
+//               |        |     |    WAITING FOR  |
+//               +--------|---- |    EVACUATIONS  |
+//                        |     +-----------------+
+//                        |       |
+//                        |       | All Candidates are Pinned
+//                        |       v
+//                        |     +-----------------+
+//                        |     |    WAITING FOR  |
+//                        +-----|    FILLING      |
 //                              +-----------------+
 //
 bool ShenandoahOldGeneration::validate_transition(State new_state) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   switch (new_state) {
     case IDLE:
+      assert(_state == MARKING || _state == WAITING_FOR_EVAC, "Must come from marking or evacuating.");
       assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot become idle during old mark.");
       assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot become idle with collection candidates");
       assert(!heap->is_prepare_for_old_mark_in_progress(), "Cannot become idle while making old generation parseable.");
       assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot become idle when setup for bootstrapping.");
       return true;
     case FILLING:
-      assert(_state == IDLE, "Cannot begin filling without first being idle.");
+      assert(_state == IDLE || _state == WAITING_FOR_FILL, "Cannot begin filling without first completing evacuations.");
       assert(heap->is_prepare_for_old_mark_in_progress(), "Should be preparing for old mark now.");
       return true;
     case BOOTSTRAPPING:
       assert(_state == FILLING, "Cannot reset bitmap without making old regions parseable.");
-      // assert(heap->young_generation()->old_gen_task_queues() != nullptr, "Cannot bootstrap without old mark queues.");
+      assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot bootstrap with mixed collection candidates");
       assert(!heap->is_prepare_for_old_mark_in_progress(), "Cannot still be making old regions parseable.");
       return true;
     case MARKING:
@@ -405,9 +418,13 @@ bool ShenandoahOldGeneration::validate_transition(State new_state) {
       assert(heap->young_generation()->old_gen_task_queues() != nullptr, "Young generation needs old mark queues.");
       assert(heap->is_concurrent_old_mark_in_progress(), "Should be marking old now.");
       return true;
-    case WAITING:
+    case WAITING_FOR_EVAC:
       assert(_state == MARKING, "Cannot have old collection candidates without first marking.");
       assert(_old_heuristics->unprocessed_old_collection_candidates() > 0, "Must have collection candidates here.");
+      return true;
+    case WAITING_FOR_FILL:
+      assert(_state == MARKING || _state == WAITING_FOR_EVAC, "Cannot begin filling without first marking or evacuating.");
+      assert(_old_heuristics->unprocessed_old_collection_candidates() > 0, "Cannot wait for fill without something to fill.");
       return true;
     default:
       ShouldNotReachHere();

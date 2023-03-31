@@ -112,10 +112,37 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   }
 
   if (unprocessed_old_collection_candidates() == 0) {
+    // We have added the last of our collection candidates to a mixed collection.
     _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
+  } else if (included_old_regions == 0) {
+    // We have candidates, but none were included for evacuation - are they all pinned?
+    // or did we just not have enough room for any of them in this collection set?
+    // We don't want a region with a stuck pin to prevent subsequent old collections, so
+    // if they are all pinned we transition to a state that will allow us to make these uncollected
+    // (pinned) regions parseable.
+    if (all_candidates_are_pinned()) {
+      log_info(gc)("All candidate regions " UINT32_FORMAT " are pinned.", unprocessed_old_collection_candidates());
+      _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_FILL);
+    }
   }
 
   return (included_old_regions > 0);
+}
+
+bool ShenandoahOldHeuristics::all_candidates_are_pinned() {
+#ifdef ASSERT
+  if (uint(os::random()) % 100 < ShenandoahCoalesceChance) {
+    return true;
+  }
+#endif
+
+  for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; ++i) {
+    auto region = _region_data[i]._region;
+    if (!region->is_pinned()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
@@ -273,7 +300,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   if (unprocessed_old_collection_candidates() == 0) {
     _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
   } else {
-    _old_generation->transition_to(ShenandoahOldGeneration::WAITING);
+    _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_EVAC);
   }
 }
 
@@ -349,7 +376,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   //
   // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
   // For example, we could choose to abandon the previous old collection before it has completed evacuations.
-  if (unprocessed_old_collection_candidates() > 0) {
+  if (!_old_generation->can_start_gc()) {
     return false;
   }
 

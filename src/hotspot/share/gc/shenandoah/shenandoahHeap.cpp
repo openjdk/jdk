@@ -678,7 +678,7 @@ ShenandoahOldHeuristics* ShenandoahHeap::old_heuristics() {
 }
 
 bool ShenandoahHeap::doing_mixed_evacuations() {
-  return old_heuristics()->unprocessed_old_collection_candidates() > 0;
+  return _old_generation->state() == ShenandoahOldGeneration::WAITING_FOR_EVAC;
 }
 
 bool ShenandoahHeap::is_old_bitmap_stable() const {
@@ -1068,10 +1068,7 @@ void ShenandoahHeap::cancel_old_gc() {
 }
 
 bool ShenandoahHeap::is_old_gc_active() {
-  return is_concurrent_old_mark_in_progress()
-         || is_prepare_for_old_mark_in_progress()
-         || old_heuristics()->unprocessed_old_collection_candidates() > 0
-         || young_generation()->old_gen_task_queues() != nullptr;
+  return _old_generation->state() != ShenandoahOldGeneration::IDLE;
 }
 
 void ShenandoahHeap::coalesce_and_fill_old_regions() {

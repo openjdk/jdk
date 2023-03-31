@@ -161,6 +161,7 @@ public:
 
  private:
   void slide_pinned_regions_to_front();
+  bool all_candidates_are_pinned();
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP

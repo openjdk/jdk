@@ -67,6 +67,10 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
     _collection_set->clear();
   }
 
+  ShenandoahOldGeneration::State old_generation_state() {
+    return _heap->old_generation()->state();
+  }
+
   size_t make_garbage(size_t region_idx, size_t garbage_bytes) {
     ShenandoahHeapLocker locker(_heap->lock());
     ShenandoahHeapRegion* region = _heap->get_region(region_idx);
@@ -311,4 +315,24 @@ TEST_VM_F(ShenandoahOldHeuristicTest, unpinned_region_is_middle) {
   EXPECT_EQ(_heuristics->unprocessed_old_collection_candidates(), 0UL);
 }
 
+TEST_VM_F(ShenandoahOldHeuristicTest, all_candidates_are_pinned) {
+  SKIP_IF_NOT_SHENANDOAH();
+
+  size_t g1 = make_garbage_above_threshold(0);
+  size_t g2 = make_garbage_above_threshold(1);
+  size_t g3 = make_garbage_above_threshold(2);
+
+  make_pinned(0);
+  make_pinned(1);
+  make_pinned(2);
+  _heuristics->prepare_for_old_collections();
+  _heuristics->prime_collection_set(_collection_set);
+
+  // In the case when all candidates are pinned, we want to abandon
+  // this set of mixed collection candidates so that another old collection
+  // can run. This is meant to defend against "bad" JNI code that permanently
+  // leaves an old region in the pinned state.
+  EXPECT_EQ(_collection_set->count(), 0UL);
+  EXPECT_EQ(old_generation_state(), ShenandoahOldGeneration::WAITING_FOR_FILL);
+}
 #undef SKIP_IF_NOT_SHENANDOAH

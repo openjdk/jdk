@@ -249,9 +249,8 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
   // accumulate there until they can be promoted.  This increases the young-gen marking and evacuation work.
 
   // Do not fill up old-gen memory with promotions.  Reserve some amount of memory for compaction purposes.
-  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
   size_t young_evac_reserve_max = 0;
-  if (old_heuristics->unprocessed_old_collection_candidates() > 0) {
+  if (heap->doing_mixed_evacuations()) {
     // Compute old_evacuation_reserve: how much memory are we reserving to hold the results of
     // evacuating old-gen heap regions?  In order to sustain a consistent pace of young-gen collections,
     // the goal is to maintain a consistent value for this parameter (when the candidate set is not

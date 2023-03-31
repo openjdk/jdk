@@ -451,6 +451,15 @@
   product(bool, ShenandoahAllocFailureALot, false, DIAGNOSTIC,              \
           "Testing: make lots of artificial allocation failures.")          \
                                                                             \
+  product(uintx, ShenandoahCoalesceChance, 0, DIAGNOSTIC,                   \
+          "Testing: Abandon remaining mixed collections with this "         \
+          "likelihood. Following each mixed collection, abandon all "       \
+          "remaining mixed collection candidate regions with likelihood "   \
+          "ShenandoahCoalesceChance. Abandoning a mixed collection will "   \
+          "cause the old regions to be made parseable, rather than being "  \
+          "evacuated.")                                                     \
+          range(0, 100)                                                     \
+                                                                            \
   product(intx, ShenandoahMarkScanPrefetch, 32, EXPERIMENTAL,               \
           "How many objects to prefetch ahead when traversing mark bitmaps."\
           "Set to 0 to disable prefetching.")                               \
