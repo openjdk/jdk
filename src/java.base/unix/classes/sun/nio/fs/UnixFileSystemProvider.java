@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public abstract class UnixFileSystemProvider
     private final UnixFileSystem theFileSystem;
 
     public UnixFileSystemProvider() {
-        theFileSystem = newFileSystem(StaticProperty.userDir());
+        theFileSystem = newFileSystem();
     }
 
     UnixFileSystem theFileSystem() {
@@ -83,9 +83,9 @@ public abstract class UnixFileSystemProvider
     }
 
     /**
-     * Constructs a new file system using the given default directory.
+     * Constructs a new file system.
      */
-    abstract UnixFileSystem newFileSystem(String dir);
+    abstract UnixFileSystem newFileSystem();
 
     @Override
     public final String getScheme() {
