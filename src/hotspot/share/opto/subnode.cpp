@@ -1951,3 +1951,121 @@ Node* ReverseLNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+const Type* SubINoUnderflowNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+
+  if(t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  // Compute int-range after subtraction, where we prevent
+  // underflow (clamp to min_jint) and overflow (clamp to max_jint).
+  const TypeInt* base_type = t1->is_int();
+  jint sub_con = t2->is_int()->get_con();
+  jint lo = base_type->_lo;
+  jint hi = base_type->_hi;
+  jint lo_sub = java_subtract(lo, sub_con);
+  jint hi_sub = java_subtract(hi, sub_con);
+  if (sub_con > 0) {
+    if (lo < lo_sub) {
+      lo_sub = min_jint; // underflow
+    }
+    if (hi < hi_sub) {
+      hi_sub = min_jint; // underflow
+    }
+  } else {
+    if (lo > lo_sub) {
+      lo_sub = max_jint; // overflow
+    }
+    if (hi > hi_sub) {
+      hi_sub = max_jint; // overflow
+    }
+  }
+  return TypeInt::make(lo_sub, hi_sub, Type::WidenMax);
+}
+
+Node* SubINoUnderflowNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeInt* t1 = phase->type(in(1))->isa_int();
+  const TypeInt* t2 = phase->type(in(2))->isa_int();
+
+  // Check if we still have integer inputs.
+  if(t1 == nullptr || t2 == nullptr) {
+    return nullptr;
+  }
+
+  // Check if we have overflow. If not, make to regular SubI.
+  const TypeInt* base_type = t1;
+  jint sub_con = t2->get_con();
+  if ((sub_con > 0 && (java_subtract(base_type->_lo, sub_con) < base_type->_lo)) ||
+      (sub_con < 0 && (java_subtract(base_type->_hi, sub_con) < base_type->_hi))) {
+    return new SubINode(in(1), in(2));
+  }
+
+  // Collapse: SubINoUnderflow( SubINoUnderflow(x, sub1_con), sub_con )
+  SubINoUnderflowNode* sub1 = in(1)->isa_SubINoUnderflow();
+  if (sub1 != nullptr) {
+    const TypeInt* t12 = phase->type(sub1->in(2))->isa_int();
+    if (t12 != nullptr && ((sub_con > 0) == (t12->get_con() > 0))) {
+      // sub1 still has a constant subtraction, and it has the same sign.
+      jint sub1_con = t12->get_con();
+      jint sub_sum = java_add(sub_con, sub1_con);
+      // Check for add over/underflow.
+      if ((sub_con > 0) == (sub_sum > 0)) {
+        return new SubINoUnderflowNode(sub1->in(1), phase->intcon(sub_sum));
+      }
+    }
+  }
+
+  // After loop-opts, we need to turn this node into a CMoveI construct.
+  if (!phase->C->post_loop_opts_phase()) {
+    phase->C->record_for_post_loop_opts_igvn(this);
+    return nullptr;
+  } else {
+    // We have this pattern:
+    //
+    //     in(1)     in(2)
+    //       |         |
+    //     SubINoUnderflow
+    //
+    // And transform it into:
+    //
+    //            in(1)          in(2)
+    //             | |             |
+    //          +--+ +---+         |
+    //          |        |         |
+    //          |      sub_with_underflow (SubI)
+    //          |        |           |
+    //        underflow_cmp          |
+    //          |                    |
+    //        underflow_bool [lt/gt] |
+    //          |                    |
+    //          +----+  +------------+
+    //               |  |
+    //               |  | underflow_clamp (min_jint/max_jint)
+    //               |  |  |
+    //              CMoveINode ([min_jint..hi] / [lo..max_jing])
+    //
+    // We preserve the best type we now know for CMoveI. Let's hope this is enough,
+    // since CMoveI is not smart enough to improve types after this. For example if
+    // sub_with_underflow does not underflow anymore, but has an overlapping type
+    // range with in(1), then the cmp/bool will not constant fold, and the CMoveI
+    // will take the union of the types of sub_with_underflow and underflow_clamp,
+    // even though at runtime the type would always be that of sub_with_underflow.
+    const TypeInt* no_underflow_type = phase->type(this)->is_int();
+    Node* underflow_clamp = phase->intcon((sub_con > 0) ? min_jint : max_jint);
+    Node* cmovei = new CMoveINode(nullptr, nullptr, underflow_clamp, no_underflow_type);
+
+    // Hook sub_with_underflow, so that it cannot die when we transform underflow_cmp.
+    Node* sub_with_underflow = phase->transform(new SubINode(in(1), in(2)));
+    cmovei->init_req(2, sub_with_underflow);
+
+    Node* underflow_cmp = phase->transform(new CmpINode(in(1), sub_with_underflow));
+    BoolTest::mask bt = (sub_con) > 0 ? BoolTest::lt : BoolTest::gt;
+    Node* underflow_bool = phase->transform(new BoolNode(underflow_cmp, bt));
+    cmovei->init_req(1, underflow_bool);
+
+    return cmovei;
+  }
+}

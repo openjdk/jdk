@@ -26,6 +26,7 @@
 #define SHARE_OPTO_SUBNODE_HPP
 
 #include "opto/node.hpp"
+#include "opto/connode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
 
@@ -587,6 +588,22 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//-------------------------------SubINoUnderflowNode--------------------------------
+// Subtraction, but instead of underflow/overflow, we clamp to min_int/max_jint.
+// This allows proper type propagation. Eventually we turn this into a CMoveI
+// construct. But CMoveI is not as good at type propagation, so we transform only
+// after loop-opts.
+class SubINoUnderflowNode : public Node {
+public:
+  SubINoUnderflowNode(Node* in1, ConINode* in2) : Node(nullptr, in1, in2) {
+    init_class_id(Class_SubINoUnderflow);
+  }
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeInt::INT; }
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 #endif // SHARE_OPTO_SUBNODE_HPP
