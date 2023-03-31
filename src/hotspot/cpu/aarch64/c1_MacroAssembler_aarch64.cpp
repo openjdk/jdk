@@ -145,6 +145,10 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 
   if (UseFastLocking) {
     ldr(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+    // We cannot use tbnz here, the target might be too far away and cannot
+    // be encoded.
+    tst(hdr, markWord::monitor_value);
+    br(Assembler::NE, slow_case);
     fast_unlock(obj, hdr, rscratch1, rscratch2, slow_case);
   } else {
     // test if object header is pointing to the displaced header, and if so, restore

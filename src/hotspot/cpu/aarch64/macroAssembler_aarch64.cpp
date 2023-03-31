@@ -6255,8 +6255,34 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
   assert(UseFastLocking, "only used with fast-locking");
   assert_different_registers(obj, hdr, t1, t2);
 
-  // Load the expected old header (lock-bits cleared to indicate 'locked') into hdr
-  andr(hdr, hdr, ~markWord::lock_mask_in_place);
+#ifdef ASSERT
+  {
+    // Check for lock-stack underflow.
+    Label stack_ok;
+    ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
+    cmpw(t1, (unsigned)LockStack::start_offset());
+    br(Assembler::GT, stack_ok);
+    STOP("Lock-stack underflow");
+    bind(stack_ok);
+  }
+  {
+    // Check if the top of the lock-stack matches the unlocked object.
+    Label tos_ok;
+    subw(t1, t1, oopSize);
+    ldr(t1, Address(rthread, t1));
+    cmpoop(t1, obj);
+    br(Assembler::EQ, tos_ok);
+    bind(tos_ok);
+  }
+  {
+    // Check that hdr is fast-locked.
+    Label hdr_ok;
+    ands(zr, hdr, markWord::lock_mask_in_place);
+    br(Assembler::EQ, hdr_ok);
+    STOP("Header is not fast-locked");
+    bind(hdr_ok);
+  }
+#endif
 
   // Load the new header (unlocked) into t1
   orr(t1, hdr, markWord::unlocked_value);

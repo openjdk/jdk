@@ -1940,6 +1940,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
         __ ldr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+        __ tbnz(old_hdr, exact_log2(markWord::monitor_value), slow_path_unlock);
         __ fast_unlock(obj_reg, old_hdr, swap_reg, rscratch1, slow_path_unlock);
       } else {
         // get address of the stack lock

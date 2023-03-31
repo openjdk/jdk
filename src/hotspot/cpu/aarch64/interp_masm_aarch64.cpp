@@ -878,14 +878,19 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
       // Check for non-symmetric locking. This is allowed by the spec and the interpreter
       // must handle it.
-      Register tmp = header_reg;
+      Register tmp = rscratch1;
+      // First check for lock-stack underflow.
       ldrw(tmp, Address(rthread, JavaThread::lock_stack_top_offset()));
+      cmpw(tmp, (unsigned)LockStack::start_offset());
+      br(Assembler::LE, slow_case);
+      // Then check if the top of the lock-stack matches the unlocked object.
       subw(tmp, tmp, oopSize);
       ldr(tmp, Address(rthread, tmp));
       cmpoop(tmp, obj_reg);
       br(Assembler::NE, slow_case);
 
       ldr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      tbnz(header_reg, exact_log2(markWord::monitor_value), slow_case);
       fast_unlock(obj_reg, header_reg, swap_reg, rscratch1, slow_case);
       b(count);
       bind(slow_case);
