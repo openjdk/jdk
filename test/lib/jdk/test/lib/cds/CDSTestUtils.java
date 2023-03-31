@@ -628,19 +628,19 @@ public class CDSTestUtils {
     }
 
     static boolean maybeAddOption(String cmd, boolean hasGCOption, ArrayList<String> cmdline) {
-      Pattern gc = Pattern.compile("-XX:+.*GC");
+      Pattern gc = Pattern.compile("^-XX:\\+.*GC");
       Matcher m = gc.matcher(cmd);
-      if (m.find() && !hasGCOption) {
+      if (m.matches() && !hasGCOption) {
         cmdline.add(cmd);
         return true;
-      } else if (!m.find()) {
+      } else if (!m.matches()) {
         cmdline.add(cmd);
       }
       return hasGCOption;
     }
 
     public static boolean hasGCOption(List<String> cmd) {
-      Pattern gc = Pattern.compile("-XX:+.*GC");
+      Pattern gc = Pattern.compile("^-XX:\\+.*GC");
       for (String s : cmd) {
         Matcher m = gc.matcher(s);
         if (m.find()) {
