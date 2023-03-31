@@ -40,9 +40,9 @@ private:
   // TODO: It would be very useful if JavaThread::lock_stack_offset() and friends were constexpr,
   // but this is currently not the case because we're using offset_of() which is non-constexpr,
   // GCC would warn about non-standard-layout types if we were using offsetof() (which *is* constexpr).
-  static const size_t lock_stack_offset;
-  static const size_t lock_stack_top_offset;
-  static const size_t lock_stack_base_offset;
+  static const int lock_stack_offset;
+  static const int lock_stack_top_offset;
+  static const int lock_stack_base_offset;
 
   // The offset of the next element, in bytes, relative to the JavaThread structure.
   // We do this instead of a simple index into the array because this allows for
