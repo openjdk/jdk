@@ -39,22 +39,25 @@ import com.sun.tools.attach.VirtualMachine;
 import java.util.concurrent.ThreadFactory;
 import jdk.test.whitebox.WhiteBox;
 
-// The TestedThread just mimics some thread activity, but it is important
+// The TestTask mimics some thread activity, but it is important
 // to have sleep() calls to provide yielding as some frequency of virtual
 // thread mount state transitions is needed for this test scenario.
-class TestedThread extends Thread {
+class TestTask implements Runnable {
+    private String name;
     private volatile boolean threadReady = false;
     private volatile boolean shouldFinish = false;
 
     // make thread with specific name
-    public TestedThread(String name) {
-        super(name);
+    public TestTask(String name) {
+        this.name = name;
     }
 
     // run thread continuously
     public void run() {
         // run in a loop
         threadReady = true;
+        System.out.println("# Started: " + name);
+
         int i = 0;
         int n = 1000;
         while (!shouldFinish) {
@@ -86,9 +89,9 @@ class TestedThread extends Thread {
  * The testing scenario consists of a number of serialized test cycles.
  * Each cycle has initially zero virtual threads and has the following steps:
  *  - disable notifyJvmti events mode
- *  - start the platform launcher thread which starts N of virtual thread
- *  - enable notifyJvmti events mode after about hapf of virtual thread started
- *  - then shut the virtual threads down
+ *  - start N virtual thread
+ *  - enable notifyJvmti events mode
+ *  - shut the virtual threads down
  * The JVMTI agent is loaded at a start-up or at a dynamic attach.
  * It collects events:
  *  - VirtualThreadStart, VirtualThreadEnd, ThreadStart and ThreadEnd
@@ -110,36 +113,33 @@ public class ToggleNotifyJvmtiTest {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interruption in TestedThread.sleep: \n\t" + e);
+            throw new RuntimeException("Interruption in TestTask.sleep: \n\t" + e);
         }
     }
 
-    static TestedThread[] threads = new TestedThread[VTHREADS_CNT];
-    static Thread vts[] = new Thread[VTHREADS_CNT];
+    static TestTask[] tasks = new TestTask[VTHREADS_CNT];
+    static Thread vthreads[] = new Thread[VTHREADS_CNT];
 
-    static private void startThread(int i) {
-        String name = "TestedThread" + i;
-        TestedThread thread = new TestedThread(name);
-        vts[i] = Thread.ofVirtual().name(name).start(thread);
-        thread.ensureReady();
-        threads[i] = thread;
-        log("# Java: started vthread: " + name);
+    static private void startVirtualThread(int i) {
+        String name = "TestTask" + i;
+        TestTask task = new TestTask(name);
+        vthreads[i] = Thread.ofVirtual().name(name).start(task);
+        tasks[i] = task;
     }
 
-    static synchronized private void startThreads() {
+    static private void startVirtualThreads() {
         log("\n# Java: Starting vthreads");
         for (int i = 0; i < VTHREADS_CNT; i++) {
-            sleep(1);
-            startThread(i);
+            startVirtualThread(i);
         }
     }
 
-    static private synchronized void finishThreads() {
+    static private void finishVirtualThreads() {
         try {
             for (int i = 0; i < VTHREADS_CNT; i++) {
-                TestedThread thread = threads[i];
-                thread.letFinish();
-                vts[i].join();
+                tasks[i].ensureReady();
+                tasks[i].letFinish();
+                vthreads[i].join();
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -151,7 +151,7 @@ public class ToggleNotifyJvmtiTest {
         if (!status) {
             throw new RuntimeException("Java: failed to set VirtualThreadsNotifyJvmtiMode: " + enable);
         }
-        log("# main: SetNotifyJvmtiEvents: #" + iter + " enable: " + enable);
+        log("\n# main: SetNotifyJvmtiEvents: #" + iter + " enable: " + enable);
     }
 
     // Accumulative results after each finished test cycle.
@@ -169,16 +169,12 @@ public class ToggleNotifyJvmtiTest {
         // It is unsafe to do so if any virtual threads are executed.
         setVirtualThreadsNotifyJvmtiMode(iter, false);
 
-        Thread tt = Thread.ofPlatform().name("StartThreadsTest").start(ToggleNotifyJvmtiTest::startThreads);
-        sleep(20); // give some time for launcher thread to start
+        startVirtualThreads();
 
         // We want this somewhere in the middle of virtual threads execution.
         setVirtualThreadsNotifyJvmtiMode(iter, true);
-        sleep(20); // give some time for virtual threads to execute
 
-        finishThreads();
-        tt.join();
-        sleep(20); // give some time for virtual threads to finish
+        finishVirtualThreads();
 
         log("\n# Java: Finished test cycle #" + iter);
         printResults();
