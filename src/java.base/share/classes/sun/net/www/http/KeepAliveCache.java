@@ -172,6 +172,8 @@ public class KeepAliveCache
                         // different default for server and proxy
                         keepAliveTimeout = http.getUsingProxy() ? 60 : 5;
                     }
+                } else if (keepAliveTimeout == -2) {
+                    keepAliveTimeout = 0;
                 }
                 // at this point keepAliveTimeout is the number of seconds to keep
                 // alive, which could be 0, if the user specified 0 for the property
