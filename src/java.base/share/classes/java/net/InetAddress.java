@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Arrays;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
@@ -934,10 +935,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     // a holder for cached addresses with required metadata
-    private static final class CachedAddresses  implements Addresses, Comparable<CachedAddresses> {
+    private static class CachedAddresses  implements Addresses, Comparable<CachedAddresses> {
         private static final AtomicLong seq = new AtomicLong();
         final String host;
-        final InetAddress[] inetAddresses;
+        volatile InetAddress[] inetAddresses;
         final long expiryTime; // time of expiry (in terms of System.nanoTime())
         final long id = seq.incrementAndGet(); // each instance is unique
 
@@ -966,6 +967,41 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             if (diff > 0L) return 1;
             // ties are broken using unique id
             return Long.compare(this.id, other.id);
+        }
+    }
+
+    private static final class ValidAddresses extends CachedAddresses {
+        /**
+         * Time to refresh (in terms of System.nanoTime()).
+         */
+        private volatile long refreshTime;
+        /**
+         * only one thread is doing lookup to name service
+         * for particular host at any time.
+         */
+        private final Lock lookupLock = new ReentrantLock();
+
+        ValidAddresses(String host, InetAddress[] inetAddresses,
+                       long expiryTime, long refreshTime)
+        {
+            super(host, inetAddresses, expiryTime);
+            this.refreshTime = refreshTime;
+        }
+
+        @Override
+        public InetAddress[] get() throws UnknownHostException {
+            long now = System.nanoTime();
+            if ((refreshTime - now) < 0L && lookupLock.tryLock()) {
+                try {
+                    // cachePolicy is in [s] - we need [ns]
+                    refreshTime = now + InetAddressCachePolicy.get() * 1000_000_000L;
+                    inetAddresses = getAddressesFromNameService(host);
+                } catch (UnknownHostException ignore) {
+                } finally {
+                    lookupLock.unlock();
+                }
+            }
+            return super.get();
         }
     }
 
@@ -1013,14 +1049,29 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     if (cachePolicy == InetAddressCachePolicy.NEVER) {
                         cache.remove(host, this);
                     } else {
-                        CachedAddresses cachedAddresses = new CachedAddresses(
-                            host,
-                            inetAddresses,
-                            cachePolicy == InetAddressCachePolicy.FOREVER
-                            ? 0L
-                            // cachePolicy is in [s] - we need [ns]
-                            : System.nanoTime() + 1000_000_000L * cachePolicy
-                        );
+                        long now = System.nanoTime();
+                        long expiryTime =
+                                cachePolicy == InetAddressCachePolicy.FOREVER ?
+                                0L
+                                // cachePolicy is in [s] - we need [ns]
+                                : now + 1000_000_000L * cachePolicy;
+                        CachedAddresses cachedAddresses;
+                        if (InetAddressCachePolicy.getExtended() > 0 &&
+                                ex == null && expiryTime > 0)
+                        {
+                            long refreshTime = expiryTime;
+                            //  cacheExtendedPolicy is in [s] - we need [ns]
+                            expiryTime = now + 1000_000_000L *
+                                    InetAddressCachePolicy.getExtended();
+                            cachedAddresses = new ValidAddresses(host,
+                                                                 inetAddresses,
+                                                                 expiryTime,
+                                                                 refreshTime);
+                        } else {
+                            cachedAddresses = new CachedAddresses(host,
+                                                                  inetAddresses,
+                                                                  expiryTime);
+                        }
                         if (cache.replace(host, this, cachedAddresses) &&
                             cachePolicy != InetAddressCachePolicy.FOREVER) {
                             // schedule expiry
