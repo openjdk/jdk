@@ -26,6 +26,7 @@
  * @bug 8304982
  * @summary Check if a warning is logged with COMPAT locale provider
  * @run main/othervm -Djava.locale.providers=COMPAT CompatWarning
+ * @run main/othervm -Djava.locale.providers=JRE CompatWarning
  */
 
 import java.io.File;

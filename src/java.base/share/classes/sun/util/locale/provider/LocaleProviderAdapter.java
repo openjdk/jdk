@@ -131,7 +131,7 @@ public abstract class LocaleProviderAdapter {
             String[] types = order.split(",");
             for (String type : types) {
                 type = type.trim().toUpperCase(Locale.ROOT);
-                if (type.equals("COMPAT")) {
+                if (type.equals("COMPAT") || type.equals("JRE")) {
                     compatWarningMessage = "COMPAT locale provider will be removed in a future release";
                     type = "JRE";
                 }
