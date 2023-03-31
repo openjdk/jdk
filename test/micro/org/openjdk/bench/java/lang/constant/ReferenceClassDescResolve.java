@@ -28,7 +28,6 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
@@ -37,8 +36,11 @@ import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.constant.ConstantDescs.*;
+
 /**
- * Compare array clone with equivalent System.arraycopy-based routines
+ * Measure the throughput of {@link ClassDesc#resolveConstantDesc} for different
+ * reference types.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -48,93 +50,22 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 public class ReferenceClassDescResolve {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-
-    static Class<?> resolve(MethodHandles.Lookup lookup, ClassDesc cd) throws ReflectiveOperationException {
-        if (cd.isPrimitive()) {
-            return (Class<?>) cd.resolveConstantDesc(lookup);
-        }
-        return resolveReference(lookup, cd);
-    }
-
-    static Class<?> resolveReference(MethodHandles.Lookup lookup, ClassDesc cd) throws ReflectiveOperationException {
-        if (cd.isArray()) {
-            var desc = cd.descriptorString();
-            if (desc.charAt(desc.length() - 1) != ';') {
-                // Primitive arrays
-                return lookup.findClass(desc);
-            }
-            int depth = 0;
-            while (desc.charAt(depth) == '[') {
-                depth++;
-            }
-            Class<?> clazz = lookup.findClass(desc.substring(depth + 1, desc.length() - 1).replace('/', '.'));
-            for (int i = 0; i < depth; i++)
-                clazz = clazz.arrayType();
-            return clazz;
-        }
-        var desc = cd.descriptorString();
-        return lookup.findClass(desc.substring(1, desc.length() - 1).replace('/', '.'));
-    }
-
-    public enum Kind {
-        CLASS(String.class),
-        CLASS_ARRAY(Integer[][].class),
-        PRIMITIVE_ARRAY(long[][][].class);
-
-        final ClassDesc desc;
-
-        Kind(Class<?> clz) {
-            this.desc = clz.describeConstable().orElseThrow();
-        }
-    }
-
-    public enum Implementation {
-        OLD {
-            @Override
-            Class<?> call(MethodHandles.Lookup lookup, ClassDesc cd) throws ReflectiveOperationException {
-                ClassDesc c = cd;
-                var desc = c.descriptorString();
-                int depth = 0;
-                while (desc.charAt(depth) == '[') {
-                    depth++;
-                }
-                for (int i = 0; i < depth; i++)
-                    c = c.componentType();
-
-                if (c.isPrimitive())
-                    return lookup.findClass(desc);
-                else {
-                    desc = c.descriptorString();
-                    Class<?> clazz = lookup.findClass(desc.substring(1, desc.length() - 1).replace('/', '.'));
-                    for (int i = 0; i < depth; i++)
-                        clazz = clazz.arrayType();
-                    return clazz;
-                }
-            }
-        },
-        NEW {
-            @Override
-            Class<?> call(MethodHandles.Lookup lookup, ClassDesc cd) throws ReflectiveOperationException {
-                return resolveReference(lookup, cd);
-            }
-        },
-        REFERENCE {
-            @Override
-            Class<?> call(MethodHandles.Lookup lookup, ClassDesc cd) throws ReflectiveOperationException {
-                return (Class<?>) cd.resolveConstantDesc(lookup);
-            }
-        };
-
-        abstract Class<?> call(MethodHandles.Lookup lookup, ClassDesc cd) throws ReflectiveOperationException;
-    }
-
-    @Param
-    public Kind kind;
-    @Param
-    public Implementation implementation;
+    private static final ClassDesc CLASS_OR_INTERFACE = CD_String;
+    private static final ClassDesc REFERENCE_ARRAY = CD_Integer.arrayType(2);
+    private static final ClassDesc PRIMITIVE_ARRAY = CD_int.arrayType(3);
 
     @Benchmark
-    public Class<?> bench() throws ReflectiveOperationException {
-        return implementation.call(LOOKUP, kind.desc);
+    public Class<?> resolveClassOrInterface() throws ReflectiveOperationException {
+        return (Class<?>) CLASS_OR_INTERFACE.resolveConstantDesc(LOOKUP);
+    }
+
+    @Benchmark
+    public Class<?> resolveReferenceArray() throws ReflectiveOperationException {
+        return (Class<?>) REFERENCE_ARRAY.resolveConstantDesc(LOOKUP);
+    }
+
+    @Benchmark
+    public Class<?> resolvePrimitiveArray() throws ReflectiveOperationException {
+        return (Class<?>) PRIMITIVE_ARRAY.resolveConstantDesc(LOOKUP);
     }
 }
