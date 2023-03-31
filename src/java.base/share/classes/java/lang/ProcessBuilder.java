@@ -190,6 +190,9 @@ import jdk.internal.event.ProcessStartEvent;
 
 public final class ProcessBuilder
 {
+    // Lazily and racy initialize when needed, racy is ok, any logger is ok
+    private static System.Logger LOGGER;
+
     private List<String> command;
     private File directory;
     private Map<String,String> environment;
@@ -1067,6 +1070,19 @@ public final class ProcessBuilder
      *
      * @throws IOException if an I/O error occurs
      *
+     * @implNote
+     * In the reference implementation, logging of the command, arguments, directory,
+     * stack trace, and process id can be enabled.
+     * The logged information may contain sensitive security information and the potential exposure
+     * of the information should be carefully reviewed.
+     * Logging of the information is enabled when the logging level of the
+     * {@linkplain System#getLogger(String) system logger} named {@code java.lang.ProcessBuilder}
+     * is {@link System.Logger.Level#DEBUG Level.DEBUG} or {@link System.Logger.Level#TRACE Level.TRACE}.
+     * When enabled for {@code Level.DEBUG} only the process id, directory, command, and stack trace
+     * are logged.
+     * When enabled for {@code Level.TRACE} the arguments are included with the process id,
+     * directory, command, and stack trace.
+     *
      * @see Runtime#exec(String[], String[], java.io.File)
      */
     public Process start() throws IOException {
@@ -1118,6 +1134,21 @@ public final class ProcessBuilder
                 event.command = String.join(" ", cmdarray);
                 event.pid = process.pid();
                 event.commit();
+            }
+            // Racy initialization for logging; errors in configuration may throw exceptions
+            System.Logger logger = LOGGER;
+            if (logger == null) {
+                LOGGER = logger = System.getLogger("java.lang.ProcessBuilder");
+            }
+            if (logger.isLoggable(System.Logger.Level.DEBUG)) {
+                boolean detail = logger.isLoggable(System.Logger.Level.TRACE);
+                var level = (detail) ? System.Logger.Level.TRACE : System.Logger.Level.DEBUG;
+                var cmdargs = (detail) ? String.join("\" \"", cmdarray) : cmdarray[0];
+                RuntimeException stackTraceEx = new RuntimeException("ProcessBuilder.start() debug");
+                LOGGER.log(level, "ProcessBuilder.start(): pid: " + process.pid() +
+                        ", dir: " + dir +
+                        ", cmd: \"" + cmdargs + "\"",
+                        stackTraceEx);
             }
             return process;
         } catch (IOException | IllegalArgumentException e) {
@@ -1262,6 +1293,10 @@ public final class ProcessBuilder
      *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes
+     *
+     * @implNote
+     * In the reference implementation, logging of each process created can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @throws IOException if an I/O error occurs
      * @since 9

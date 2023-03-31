@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,60 +23,38 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import com.sun.hotspot.igv.graph.*;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class FilterSetting {
+public class RemoveEmptySlotsFilter extends AbstractFilter {
 
-    private Set<Filter> filters;
     private String name;
+    private Selector selector;
 
-    public FilterSetting() {
-        this(null);
-    }
-
-    public FilterSetting(String name) {
+    public RemoveEmptySlotsFilter(String name, Selector selector) {
         this.name = name;
-        filters = new HashSet<>();
+        this.selector = selector;
     }
 
-    public Set<Filter> getFilters() {
-        return Collections.unmodifiableSet(filters);
-    }
-
-    public void addFilter(Filter f) {
-        assert !filters.contains(f);
-        filters.add(f);
-    }
-
-    public void removeFilter(Filter f) {
-        assert filters.contains(f);
-        filters.remove(f);
-    }
-
-    public boolean containsFilter(Filter f) {
-        return filters.contains(f);
-    }
-
+    @Override
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getFilterCount() {
-        return filters.size();
-    }
-
     @Override
-    public String toString() {
-        return getName();
+    public void apply(Diagram diagram) {
+        List<Figure> list = selector.selected(diagram);
+        for (Figure f : list) {
+            List<InputSlot> empty = new ArrayList<>();
+            for (InputSlot is : f.getInputSlots()) {
+                if (is.getConnections().isEmpty()) {
+                    empty.add(is);
+                }
+            }
+            for (InputSlot is : empty) {
+                f.removeSlot(is);
+            }
+        }
     }
 }

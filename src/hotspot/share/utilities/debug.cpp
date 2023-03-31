@@ -76,8 +76,19 @@ static intx g_asserting_thread = 0;
 static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-// Set to suppress secondary error reporting.
-bool Debugging = false;
+int DebuggingContext::_enabled = 0; // Initially disabled.
+
+DebuggingContext::DebuggingContext() {
+  _enabled += 1;                // Increase nesting count.
+}
+
+DebuggingContext::~DebuggingContext() {
+  if (is_enabled()) {
+    _enabled -= 1;              // Decrease nesting count.
+  } else {
+    fatal("Debugging nesting confusion");
+  }
+}
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -166,7 +177,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -188,7 +198,6 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 }
 
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -208,7 +217,6 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
 
@@ -278,13 +286,11 @@ void report_java_out_of_memory(const char* message) {
 
 class Command : public StackObj {
  private:
-  ResourceMark rm;
-  bool debug_save;
+  ResourceMark _rm;
+  DebuggingContext _debugging;
  public:
   static int level;
   Command(const char* str) {
-    debug_save = Debugging;
-    Debugging = true;
     if (level++ > 0)  return;
     tty->cr();
     tty->print_cr("\"Executing %s\"", str);
@@ -292,7 +298,6 @@ class Command : public StackObj {
 
   ~Command() {
     tty->flush();
-    Debugging = debug_save;
     level--;
   }
 };
