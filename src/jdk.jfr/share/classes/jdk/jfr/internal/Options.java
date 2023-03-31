@@ -52,7 +52,7 @@ public final class Options {
     private static final int DEFAULT_STACK_DEPTH = 64;
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
     private static final SafePath DEFAULT_DUMP_PATH = null;
-    private static final boolean DEFAULT_PRESERVE_REPOSITORY = true;
+    private static final boolean DEFAULT_PRESERVE_REPOSITORY = false;
 
     private static long memorySize;
     private static long globalBufferSize;

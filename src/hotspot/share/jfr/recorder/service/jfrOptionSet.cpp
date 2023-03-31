@@ -257,7 +257,7 @@ static DCmdArgument<bool> _dcmd_retransform(
 
 static DCmdArgument<bool> _dcmd_preserve_repository(
   "preserve-repository",
-  "If the disk repository should be deleted when the JVM exits)",
+  "Preserve disk repository after JVM exit",
   "BOOLEAN",
   false,
   default_preserve_repository);

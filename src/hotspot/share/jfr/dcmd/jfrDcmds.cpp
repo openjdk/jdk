@@ -375,7 +375,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _memory_size("memorysize", "Overall memory size, ", "MEMORY SIZE", false, "10m"),
   _max_chunk_size("maxchunksize", "Size of an individual disk chunk", "MEMORY SIZE", false, "12m"),
   _sample_threads("samplethreads", "Activate Thread sampling", "BOOLEAN", false, "true"),
-  _preserve_repository("preserve-repository", "Delete disk repository files on exit", "BOOLEAN", false, "false"),
+  _preserve_repository("preserve-repository", "Preserve disk repository after JVM exit", "BOOLEAN", false, "false"),
   _verbose(true) {
   _dcmdparser.add_dcmd_option(&_repository_path);
   _dcmdparser.add_dcmd_option(&_dump_path);
@@ -506,9 +506,6 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
     if (_memory_size.is_set()) {
       memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value()._size, CHECK);
     }
-    if (_preserve_repository.is_set()) {
-      preserve_repository = JfrJavaSupport::new_java_lang_Boolean(_preserve_repository.value(), CHECK);
-    }
     if (_sample_threads.is_set()) {
       bool startup = DCmd_Source_Internal == source;
       if (startup) {
@@ -518,6 +515,9 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
         output()->print_cr("");
       }
     }
+  }
+  if (_preserve_repository.is_set()) {
+    preserve_repository = JfrJavaSupport::new_java_lang_Boolean(_preserve_repository.value(), CHECK);
   }
 
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdConfigure";
