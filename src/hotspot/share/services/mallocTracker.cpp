@@ -209,13 +209,15 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   const MallocHeader* likely_dead_block = nullptr;
   const MallocHeader* likely_live_block = nullptr;
   {
-    const MallocHeader* candidate = (const MallocHeader*)(align_down(addr, 16));
-    const MallocHeader* const end = candidate - 0x1001; // stop searching after 4k
-    for (; candidate >= end; candidate--) {
-      if (!os::is_readable_pointer(candidate)) {
+    const size_t smallest_possible_alignment = sizeof(void*);
+    const uint8_t* here = align_down(addr, smallest_possible_alignment);
+    const uint8_t* const end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
+    for (; here >= end; here -= smallest_possible_alignment) {
+      if (!os::is_readable_pointer(here)) {
         // Probably OOB, give up
         return false;
       }
+      const MallocHeader* const candidate = (const MallocHeader*)here;
       if (!candidate->looks_valid()) {
         // This is definitely not a header, go on to the next candidate.
         continue;
