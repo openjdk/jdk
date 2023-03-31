@@ -474,7 +474,8 @@ const TypeFunc *OptoRuntime::new_instance_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::allocate_instance_Type() {
+#if INCLUDE_JVMTI
+const TypeFunc *OptoRuntime::notify_allocation_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL; // Klass to be allocated
@@ -488,7 +489,7 @@ const TypeFunc *OptoRuntime::allocate_instance_Type() {
 
    return TypeFunc::make(domain, range);
 }
-
+#endif
 
 const TypeFunc *OptoRuntime::athrow_Type() {
   // create input type (domain)

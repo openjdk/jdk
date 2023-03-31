@@ -136,7 +136,7 @@ class OptoRuntime : public AllStatic {
   static address _slow_arraycopy_Java;
   static address _register_finalizer_Java;
 #if INCLUDE_JVMTI
-  static address _allocate_instance;
+  static address _notify_allocation;
   static address _notify_jvmti_mount;
   static address _notify_jvmti_unmount;
 #endif
@@ -214,7 +214,7 @@ private:
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
 #if INCLUDE_JVMTI
-  static address allocate_instance()                     { return _allocate_instance; }
+  static address notify_allocation()                     { return _notify_allocation; }
   static address notify_jvmti_mount()                    { return _notify_jvmti_mount; }
   static address notify_jvmti_unmount()                  { return _notify_jvmti_unmount; }
 #endif
@@ -233,7 +233,6 @@ private:
   // ======================================================
 
   static const TypeFunc* new_instance_Type(); // object allocation (slow case)
-  static const TypeFunc* allocate_instance_Type(); // object allocation with VMObjectAlloc enabled
   static const TypeFunc* new_array_Type ();   // [a]newarray (slow case)
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
   static const TypeFunc* multianewarray2_Type(); // multianewarray
@@ -306,6 +305,7 @@ private:
 
   JFR_ONLY(static const TypeFunc* class_id_load_barrier_Type();)
 #if INCLUDE_JVMTI
+  static const TypeFunc* notify_allocation_Type();
   static const TypeFunc* notify_jvmti_Type();
 #endif
 

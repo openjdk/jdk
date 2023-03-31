@@ -629,17 +629,9 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 }
 
 #if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::allocate_instance(oopDesc* o, JavaThread* current))
-  JvmtiVMObjectAllocEventCollector oam;
-  ResourceMark rm;
-  tty->print_cr("Called allocate_instance with JvmtiVMObjectAllocEventCollector");
-  o->print();
-  tty->print_cr("Classs  >>>>>>");
-  instanceOop i = InstanceKlass::allocate_instance(o, CHECK);
-  tty->print_cr("Result: ");
-  i->print();
-  tty->print_cr("Result: >>>>>>>>>>>>");
-  current->set_vm_result(i);
+JRT_ENTRY(void, SharedRuntime::notify_allocation(oopDesc* o, JavaThread* current))
+  JvmtiVMObjectAllocEventCollector jvmec;
+  JvmtiExport::vm_object_alloc_event_collector(o);
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
