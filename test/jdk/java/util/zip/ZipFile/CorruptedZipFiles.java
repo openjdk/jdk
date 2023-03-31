@@ -118,9 +118,8 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * An End of Central Directory header with a CEN size exceeding
-     * past the offset of the End record itself should be rejected with
-     * a ZipException.
+     * Validate that a ZipException is thrown when the 'End of Central Directory'
+     * (END) header has a CEN size exceeding past the offset of the END record
      */
     @Test
     public void excessiveCENSize() throws IOException {
@@ -129,9 +128,9 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * An End of Central Directory header with a CEN offset incoherent
-     * with the position calculated by subtracting the CEN size from
-     * the End position should be rejected with a ZipException.
+     * Validate that a ZipException is thrown when the 'End of Central Directory'
+     * (END) header has a CEN offset incoherent with the position calculated
+     * by subtracting the CEN size from the END offset.
      */
     @Test
     public void excessiveCENOffset() throws IOException {
@@ -140,8 +139,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A CEN header with an unexpected signature should be rejected
-     * with a ZipException.
+     * Validate that a ZipException is thrown when a A CEN header has an unexpected signature
      */
     @Test
     public void invalidCENSignature() throws IOException {
@@ -151,8 +149,8 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A CEN header where the general purpose bit flag 0 ('encrypted')
-     * is set should be rejected with a ZipException
+     * Validate that a ZipException is thrown when a CEN header has the 'general
+     * purpose bit flag 0' ('encrypted') set.
      */
     @Test
     public void encryptedEntry() throws IOException {
@@ -161,8 +159,9 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A File name length which makes the CEN header overflow into the
-     * End of central directory record should be rejected with a ZipException.
+     * Validate that a ZipException is thrown when a CEN header has a
+     * file name length which makes the CEN header overflow into the
+     * 'End of central directory' record.
      */
     @Test
     public void excessiveFileNameLength() throws IOException {
@@ -172,8 +171,9 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A File name length which makes the CEN header overflow into the
-     * End of central directory record should be rejected with a ZipException.
+     * Validate that a ZipException is thrown when a CEN header has a
+     * file name length which makes the CEN header overflow into the
+     * 'End of central directory' record.
      */
     @Test
     public void excessiveFileNameLength2() throws IOException {
@@ -182,8 +182,8 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * If the last CEN header is not immediatly followed by the start
-     * of the End record, this should be rejected with a ZipException.
+     * Validate that a ZipException is thrown if the last CEN header is
+     * not immediatly followed by the start of the 'End of central directory' record
      */
     @Test
     public void insufficientFilenameLength() throws IOException {
@@ -193,8 +193,9 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * An Extra field length which makes the CEN header overflow into the
-     * End of central directory record should be rejected with a ZipException.
+     * Validate that a ZipException is thrown if a CEN header has an
+     * extra field length which makes the CEN header overflow into the
+     * End of central directory record.
      */
     @Test
     public void excessiveExtraFieldLength() throws IOException {
@@ -204,8 +205,9 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * An Extra field length which makes the CEN header overflow into the
-     * End of central directory record should be rejected with a ZipException.
+     * Validate that a ZipException is thrown if a CEN header has an
+     * extra field length which makes the CEN header overflow into the
+     * End of central directory record.
      */
     @Test
     public void excessiveExtraFieldLength2() throws IOException {
@@ -214,8 +216,8 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A File comment length which makes the CEN header overflow into the
-     * End of central directory record should be rejected with a ZipException.
+     * Validate that a ZipException is thrown when a CEN header has a comment length
+     * which overflows into the 'End of central directory' record
      */
     @Test
     public void excessiveCommentLength() throws IOException {
@@ -225,8 +227,8 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A CEN header with an unsupported compression method should be rejected
-     * with a ZipException.
+     * Validate that a ZipException is thrown when a CEN header has a
+     * compression method field which is unsupported by the implementation
      */
     @Test
     public void unsupportedCompressionMethod() throws IOException {
@@ -235,8 +237,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A LOC header with an unexpected signature should be rejected
-     * with a ZipException.
+     * Validate that a ZipException is thrown when a LOC header has an unexpected signature
      */
     @Test
     public void invalidLOCSignature() throws IOException {
