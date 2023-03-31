@@ -124,6 +124,7 @@ public class JavadocTokenizer extends JavaTokenizer {
                 firstLine = false;
             } else {
                 sb.append('\n');
+                offsetMap.add(sb.length(), line.position());
             }
             while (line.isAvailable()) {
                 offsetMap.add(sb.length(), line.position());
