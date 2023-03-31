@@ -271,6 +271,7 @@ public class InternalFrameDemo extends DemoModule {
 
         windowTitleField = new JTextField(getString("InternalFrameDemo.frame_label"));
         windowTitleLabel = new JLabel(getString("InternalFrameDemo.title_text_field_label"));
+        windowTitleLabel.setLabelFor(windowTitleField);
 
         p.setLayout(new BoxLayout(p, BoxLayout.X_AXIS));
         p.add(Box.createRigidArea(HGAP5));
