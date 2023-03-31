@@ -1187,7 +1187,7 @@
     <Field type="string" name="options" label="Options" />
     <Field type="boolean" name="dynamic" label="Dynamic" description="If the library attached to the JVM dynamically during runtime, i.e. not at startup" />
     <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
-    <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the JVMTI VMInit event callback. If no VMInit callback is specified, the duration is 0. For a dynamically loaded agent, the duration of executing the call to Agent_OnAttach." />
+    <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the JVMTI VMInit event callback. If no VMInit callback is specified, the duration is 0. For a dynamically loaded agent, it is the duration of executing the call to Agent_OnAttach." />
     <Field type="string" name="path" label="Path" description="The path of the library" />
   </Event>
 

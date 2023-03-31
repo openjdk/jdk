@@ -105,8 +105,10 @@ void Agent::set_os_lib(void* os_lib) {
 
 void Agent::set_os_lib_path(const char* path) {
   assert(path != nullptr, "invariant");
-  assert(_os_lib_path == nullptr, "invariant");
-  _os_lib_path = copy_string(path);
+  if (_os_lib_path == nullptr) {
+    _os_lib_path = copy_string(path);
+  }
+  assert(strcmp(_os_lib_path, path) == 0, "invariant");
 }
 
 const char* Agent::os_lib_path() const {
