@@ -56,12 +56,14 @@ public class CorruptedZipFiles {
     // Copy of the template ZIP for modification by each test
     private byte[] copy;
 
+    // Litte-endian ByteBuffer for manipulating the ZIP copy
+    private ByteBuffer buffer;
+
     // Some well-known locations in the ZIP
     private static int endpos, cenpos, locpos;
 
     // The path used when reading/writing the corrupted ZIP to disk
     private Path zip = Path.of("corrupted.zip");
-    private ByteBuffer buffer;
 
     /*
      * Make a sample ZIP and calculate some known offsets into this ZIP
