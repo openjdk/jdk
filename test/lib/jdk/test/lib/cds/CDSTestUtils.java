@@ -34,8 +34,12 @@ import java.nio.file.StandardCopyOption;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -424,7 +428,8 @@ public class CDSTestUtils {
     public static OutputAnalyzer runWithArchive(CDSOptions opts)
         throws Exception {
 
-        ArrayList<String> cmd = opts.getRuntimePrefix();
+        ArrayList<String> cmd = new ArrayList<String>();
+        cmd.addAll(opts.prefix);
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
 
@@ -599,10 +604,72 @@ public class CDSTestUtils {
         return new File(dir, name);
     }
 
+    // Check commandline for the last instance of Xshare to see if the process can load
+    // a CDS archive
+    public static boolean maybeRunningWithArchive(List<String> cmd) {
+      // -Xshare only works for the java executable
+      if (!cmd.get(0).equals(JDKToolFinder.getJDKTool("java")) || cmd.size() < 2) {
+        return false;
+      }
+
+      Pattern share = Pattern.compile("-Xshare:.*");
+      String lastXShare = "";
+      for (String s : cmd) {
+        Matcher m = share.matcher(s);
+        if (m.find()) {
+          lastXShare = s;
+        }
+      }
+
+      if (lastXShare.equals("-Xshare:dump") || lastXShare.equals("-Xshare:off")) {
+        return false;
+      }
+      return true;
+    }
+
+    static boolean maybeAddOption(String cmd, boolean hasGCOption, ArrayList<String> cmdline) {
+      Pattern gc = Pattern.compile("-XX:+.*GC");
+      Matcher m = gc.matcher(cmd);
+      if (m.find() && !hasGCOption) {
+        cmdline.add(cmd);
+        return true;
+      } else if (!m.find()) {
+        cmdline.add(cmd);
+      }
+      return hasGCOption;
+    }
+
+    public static boolean hasGCOption(List<String> cmd) {
+      Pattern gc = Pattern.compile("-XX:+.*GC");
+      for (String s : cmd) {
+        Matcher m = gc.matcher(s);
+        if (m.find()) {
+          return true;
+        }
+      }
+      return false;
+    }
 
     // ============================= Logging
     public static OutputAnalyzer executeAndLog(ProcessBuilder pb, String logName) throws Exception {
         long started = System.currentTimeMillis();
+
+        // Handle and insert test.cds.runtime.options
+        List<String> cmd = pb.command();
+        ArrayList<String> cdsRuntimeOpts = new ArrayList<String>();
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts != null && maybeRunningWithArchive(cmd)) {
+          // There cannot be multiple GC options in the command line so some
+          // options may be ignored
+          boolean hasGCOption = hasGCOption(cmd);
+          for (String s : jtropts.split(",")) {
+              if (!CDSOptions.disabledRuntimePrefixes.contains(s)) {
+                hasGCOption = maybeAddOption(s, hasGCOption, cdsRuntimeOpts);
+              }
+          }
+          pb.command().addAll(1, cdsRuntimeOpts);
+        }
+
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         String logFileNameStem =
             String.format("%04d", getNextLogCounter()) + "-" + logName;
