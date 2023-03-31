@@ -541,6 +541,7 @@ final class VirtualThread extends BaseVirtualThread {
         }
 
         // bind thread to container
+        assert threadContainer() == null;
         setThreadContainer(container);
 
         // start thread

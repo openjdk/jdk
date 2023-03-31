@@ -38,8 +38,6 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 import jdk.internal.event.ThreadSleepEvent;
 import jdk.internal.misc.StructureViolationExceptions;
 import jdk.internal.misc.TerminatingThreadLocal;

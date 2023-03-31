@@ -62,7 +62,7 @@ class TraceVirtualThreadLocals {
     }
 
     /**
-     * Runs a task in a virutal thread, returning a String with any output printed
+     * Run a task in a virtual thread, returning a String with any output printed
      * to standard output.
      */
     private static String run(Runnable task) throws Exception {
