@@ -695,7 +695,7 @@ Java_java_util_prefs_MacOSXPreferencesFile_addChildToNode
     beforeAdd = CFDictionaryContainsKey(parent, child);
     CFDictionaryAddValue(parent, child, node);
     if (!beforeAdd)
-        beforeAdd = CFDictionaryContainsKey(parent, child);
+        beforeAdd = CFDictionaryContainsKey(parent, child) ? JNI_TRUE : JNI_FALSE;
     else
         beforeAdd = JNI_FALSE;
     CFPreferencesSetValue(topKey, topValue, name, user, host);
