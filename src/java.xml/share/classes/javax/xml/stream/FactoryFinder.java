@@ -254,7 +254,7 @@ class FactoryFinder {
         }
 
         // try to read from the configuration file
-        String factoryClassName = SecuritySupport.readConfig(factoryId);
+        String factoryClassName = SecuritySupport.readConfig(factoryId, true);
         if (factoryClassName != null) {
             return newInstance(type, factoryClassName, cl, true);
         }
