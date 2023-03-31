@@ -25,12 +25,14 @@
  * @test
  * @bug 8288109
  * @summary Tests for HttpExchange set/getAttribute
+ * @library /test/lib
  * @run junit/othervm ExchangeAttributeTest
  */
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +40,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -82,8 +85,13 @@ public class ExchangeAttributeTest {
 
     // --- infra ---
 
-    static URI uri(HttpServer server, String path) {
-        return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
+    static URI uri(HttpServer server, String path) throws URISyntaxException {
+        return URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(server.getAddress().getPort())
+                .path(path)
+                .build();
     }
 
     /**
