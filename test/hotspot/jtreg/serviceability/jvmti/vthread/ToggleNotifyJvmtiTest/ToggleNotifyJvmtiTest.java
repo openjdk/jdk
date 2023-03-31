@@ -87,9 +87,9 @@ class TestTask implements Runnable {
 
 /*
  * The testing scenario consists of a number of serialized test cycles.
- * Each cycle has initially zero virtual threads and has the following steps:
+ * Each cycle has initially zero virtual threads and the following steps:
  *  - disable notifyJvmti events mode
- *  - start N virtual thread
+ *  - start N virtual threads
  *  - enable notifyJvmti events mode
  *  - shut the virtual threads down
  * The JVMTI agent is loaded at a start-up or at a dynamic attach.
@@ -120,17 +120,13 @@ public class ToggleNotifyJvmtiTest {
     static TestTask[] tasks = new TestTask[VTHREADS_CNT];
     static Thread vthreads[] = new Thread[VTHREADS_CNT];
 
-    static private void startVirtualThread(int i) {
-        String name = "TestTask" + i;
-        TestTask task = new TestTask(name);
-        vthreads[i] = Thread.ofVirtual().name(name).start(task);
-        tasks[i] = task;
-    }
-
     static private void startVirtualThreads() {
         log("\n# Java: Starting vthreads");
         for (int i = 0; i < VTHREADS_CNT; i++) {
-            startVirtualThread(i);
+            String name = "TestTask" + i;
+            TestTask task = new TestTask(name);
+            vthreads[i] = Thread.ofVirtual().name(name).start(task);
+            tasks[i] = task;
         }
     }
 
