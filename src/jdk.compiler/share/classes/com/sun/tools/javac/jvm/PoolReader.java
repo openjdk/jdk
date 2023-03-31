@@ -122,21 +122,21 @@ public class PoolReader {
     }
 
     /**
-     * Get class name without resolving.
+     * Get class name without resolving
      */
     <Z> Z peekClassName(int index, Utf8Mapper<Z> mapper) {
         return peekItemName(index, mapper);
     }
 
     /**
-     * Get package name without resolving.
+     * Get package name without resolving
      */
     <Z> Z peekPackageName(int index, Utf8Mapper<Z> mapper) {
         return peekItemName(index, mapper);
     }
 
     /**
-     * Get module name without resolving.
+     * Get module name without resolving
      */
     <Z> Z peekModuleName(int index, Utf8Mapper<Z> mapper) {
         return peekItemName(index, mapper);

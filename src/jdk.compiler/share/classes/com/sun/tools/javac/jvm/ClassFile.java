@@ -150,11 +150,12 @@ public class ClassFile {
      * Note: the naming is the inverse of that used by JVMS 4.2 The Internal Form Of Names,
      * which defines "internal name" to be the form using "/" instead of "."
      */
-    public static byte[] internalize(byte[] buf, int off, int len) {
+    public static byte[] internalize(byte[] buf, int offset, int len) {
         byte[] translated = new byte[len];
-        for (int i = 0; i < len; i++) {
-            byte b = buf[off++];
-            translated[i] = b == (byte)'/' ? (byte)'.' : b;
+        for (int j = 0; j < len; j++) {
+            byte b = buf[offset + j];
+            if (b == '/') translated[j] = (byte) '.';
+            else translated[j] = b;
         }
         return translated;
     }

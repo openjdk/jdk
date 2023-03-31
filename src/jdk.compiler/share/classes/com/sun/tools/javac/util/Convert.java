@@ -364,6 +364,7 @@ public class Convert {
 
 /* Conversion routines for qualified name splitting
  */
+
     /** Return the last part of a qualified name.
      *  @param name the qualified name
      *  @return the last part of the qualified name
@@ -382,7 +383,7 @@ public class Convert {
     }
 
     /** Return the package name of a class name, excluding the trailing '.',
-     *  or "" if not existent.
+     *  "" if not existent.
      */
     public static Name packagePart(Name classname) {
         int end = Math.max(classname.lastIndexOfAscii('.'), 0);

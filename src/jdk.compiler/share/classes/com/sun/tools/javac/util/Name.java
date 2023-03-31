@@ -56,6 +56,13 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         this.table = table;
     }
 
+// PoolConstant
+
+    @Override
+    public final int poolTag() {
+        return ClassFile.CONSTANT_Utf8;
+    }
+
 // CharSequence
 
     @Override
@@ -110,13 +117,6 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
     @DefinedBy(Api.LANGUAGE_MODEL)
     @Override
     public abstract int hashCode();
-
-// PoolConstant
-
-    @Override
-    public final int poolTag() {
-        return ClassFile.CONSTANT_Utf8;
-    }
 
 // Comparable
 
@@ -197,10 +197,10 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
      *  The implementation in {@link Name} populates a new byte array of length
      *  {@link #getUtf8Length} with data from {@link #getUtf8Bytes}.
      */
-    public byte[] toUtf8() {
-        byte[] buf = new byte[getUtf8Length()];
-        getUtf8Bytes(buf, 0);
-        return buf;
+    public byte[] toUtf() {
+        byte[] bs = new byte[getUtf8Length()];
+        getUtf8Bytes(bs, 0);
+        return bs;
     }
 
     /** Get the length of the Modified UTF-8 encoding of this name.
@@ -223,8 +223,8 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
 
     /** Decode this name's Modified UTF-8 encoding into something.
      */
-    public <T> T map(NameMapper<T> mapper) {
-        byte[] buf = toUtf8();
+    public <X> X map(NameMapper<X> mapper) {
+        byte[] buf = toUtf();
         return mapper.map(buf, 0, buf.length);
     }
 

@@ -381,7 +381,7 @@ public class PoolWriter {
                 case ClassFile.CONSTANT_Utf8: {
                     Name name = (Name)c;
                     poolbuf.appendByte(tag);
-                    byte[] bs = name.toUtf8();
+                    byte[] bs = name.toUtf();
                     poolbuf.appendChar(bs.length);
                     poolbuf.appendBytes(bs, 0, bs.length);
                     if (overflowString == null && bs.length > MAX_STRING_LENGTH) {

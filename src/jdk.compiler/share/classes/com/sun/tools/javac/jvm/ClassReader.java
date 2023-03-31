@@ -1237,7 +1237,7 @@ public class ClassReader {
                             ListBuffer<Name> impls = new ListBuffer<>();
                             for (int i = 0; i < nimpls; i++) {
                                 impls.append(poolReader.peekClassName(nextChar(), this::classNameMapper));
-                                provides.add(new InterimProvidesDirective(srvc, impls.toList()));
+                            provides.add(new InterimProvidesDirective(srvc, impls.toList()));
                             }
                         }
                         interimProvides = provides.toList();
