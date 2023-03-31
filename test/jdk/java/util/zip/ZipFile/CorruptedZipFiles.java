@@ -53,7 +53,7 @@ public class CorruptedZipFiles {
     /*
      * Byte array holding a valid template ZIP.
      *
-     * This 'good' ZIP file has the following structure:
+     * The 'good' ZIP file has the following structure:
      *
      * 0000 LOCAL HEADER #1       04034B50
      * 0004 Extract Zip Spec      14 '2.0'
