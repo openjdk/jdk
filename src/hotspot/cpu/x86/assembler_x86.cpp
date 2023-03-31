@@ -5564,7 +5564,7 @@ void Assembler::punpcklqdq(XMMRegister dst, XMMRegister src) {
 void Assembler::vpunpcklqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(vector_len == AVX_128bit && VM_Version::supports_avx() ||
          vector_len == AVX_256bit && VM_Version::supports_avx2() ||
-         vector_len == AVX_512bit && VM_Version::supports_avx512bw(), "");
+         vector_len == AVX_512bit && VM_Version::supports_evex(), "");
   InstructionAttr attributes(vector_len, /* rex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_rex_vex_w_reverted();
   int encode = simd_prefix_and_encode(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
@@ -5910,9 +5910,9 @@ void Assembler::palignr(XMMRegister dst, XMMRegister src, int imm8) {
 }
 
 void Assembler::vpalignr(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len) {
-  assert(vector_len == AVX_128bit? VM_Version::supports_avx() :
-         vector_len == AVX_256bit? VM_Version::supports_avx2() :
-         0, "");
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
+         vector_len == AVX_256bit ? VM_Version::supports_avx2() :
+         vector_len == AVX_512bit ? VM_Version::supports_avx512bw() : false, "");
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = simd_prefix_and_encode(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x0F, (0xC0 | encode), imm8);
