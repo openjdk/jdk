@@ -21,55 +21,56 @@
  * questions.
  */
 
-#include "gc/noop/noopHeap.hpp"
-
 #ifndef SHARE_GC_NOOP_NOOPFREELIST_H
 #define SHARE_GC_NOOP_NOOPFREELIST_H
 
-struct Node: public CHeapObj<mtGC> {
+#include "memory/allocation.hpp"
+#include "gc/shared/markBitMap.inline.hpp"
+
+struct NoopNode: public CHeapObj<mtGC> {
 private:
     HeapWord* _start;
     size_t _size = 0;
-    Node* _prev;
-    Node* _next;
+    NoopNode* _prev;
+    NoopNode* _next;
 public:
-    Node(HeapWord* start, size_t size, Node* next = nullptr, Node* prev = nullptr): _start(start), _size(size), _prev(prev), _next(next) {}
+    NoopNode(HeapWord* start, size_t size, NoopNode* next = nullptr, NoopNode* prev = nullptr): _start(start), _size(size), _prev(prev), _next(next) {}
 
     inline HeapWord* start() const { return _start; }
 
     inline size_t size() const { return _size; }
 
-    inline Node* next() const { return _next; }
+    inline NoopNode* next() const { return _next; }
 
-    inline Node* prev() const { return _prev; }
+    inline NoopNode* prev() const { return _prev; }
 
-    inline void setNext(Node* next) { _next = next; }
+    inline void setNext(NoopNode* next) { _next = next; }
 
-    inline void setPrev(Node* prev) { _prev = prev; }
+    inline void setPrev(NoopNode* prev) { _prev = prev; }
 
     inline void setSize(size_t size) { _size = size; }
 };
 
 class NoopFreeList: public CHeapObj<mtGC> {
 private:
-    Node* _head;
-    Node* _tail;
+    NoopNode* _head;
+    NoopNode* _tail;
     MarkBitMap* _free_chunk_bitmap;
     static const size_t _chunk_size_alignment = 2;
 public:
-    NoopFreeList(Node* head, MarkBitMap* fc);
+    NoopFreeList(NoopNode* head, MarkBitMap* fc);
 
-    static void link_next(Node* cur, Node* next);
-    static void unlink(Node* node);
+    static void link_next(NoopNode* cur, NoopNode* next);
+    static void unlink(NoopNode* NoopNode);
 
-    void append(Node* node);
+    void append(NoopNode* NoopNode);
 
     static size_t adjust_chunk_size(size_t size);
 
-    void slice_node(Node* node, size_t size);
+    void slice_node(NoopNode* node, size_t size);
     
     //Pop from list
-    Node* getFirstFit(size_t size);
+    NoopNode* getFirstFit(size_t size);
     
 
     //Align to MAX2(size, MinBlockSize)

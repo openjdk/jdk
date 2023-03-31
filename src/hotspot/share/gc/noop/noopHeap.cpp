@@ -86,7 +86,7 @@ jint NoopHeap::initialize() {
     _bitmap_region = MemRegion((HeapWord*) (bitmap_space.base()),
 			bitmap_space.size() / HeapWordSize);
 
-    _mark_bitmap->initialize(committed_region, _bitmap_region);
+    _mark_bitmap.initialize(committed_region, _bitmap_region);
 
     // Mark bitmap reserve and initialization(No large page)
     ReservedSpace fc_bitmap_space(bitmap_size);
@@ -94,9 +94,11 @@ jint NoopHeap::initialize() {
     _fc_bitmap_region = MemRegion((HeapWord*) (fc_bitmap_space.base()),
 			fc_bitmap_space.size() / HeapWordSize);
 
-    _free_chunk_bitmap->initialize(committed_region, _fc_bitmap_region);
+    _free_chunk_bitmap.initialize(committed_region, _fc_bitmap_region);
 
     //Initialize space
+    //_free_list_space = new NoopFreeListSpace(&_free_chunk_bitmap);
+    //_free_list_space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
     _space = new ContiguousSpace();
     _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
 
@@ -306,7 +308,7 @@ void NoopHeap::mark() {
     // would scan the outgoing references, mark them, and push newly-marked
     // objects to stack for further processing.
     NoopMarkStack stack;
-    ScanOopClosure cl(&stack, _mark_bitmap);
+    ScanOopClosure cl(&stack, &_mark_bitmap);
 
     //Not all roots
     do_roots(&cl, false);

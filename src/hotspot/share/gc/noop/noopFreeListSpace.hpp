@@ -27,7 +27,6 @@
 #include "gc/shared/space.hpp"
 #include "gc/noop/noopFreeList.hpp"
 
-
 class NoopFreeListSpace: public CompactibleSpace {
     friend class VMStructs;
 private:
@@ -35,9 +34,29 @@ private:
     NoopFreeList* _free_list;
 public:
 
+    NoopFreeListSpace(MarkBitMap* bitmap): _free_chunk_bitmap(bitmap), _free_list(NULL) {}
+
+    //Useless virtual methods
+    virtual MemRegion used_region() const { return MemRegion(); }
+    virtual void mangle_unused_area() {}
+    virtual void mangle_unused_area_complete() {}
+    virtual size_t used() const            { return 0; }
+    virtual size_t free() const            { return 0; }
+    virtual void verify() const {}
+    virtual void reset_after_compaction() {}
+    virtual void prepare_for_compaction(CompactPoint* cp) {}
+    virtual HeapWord* block_start_const(const void* p) const { return (HeapWord*)0; }
+    virtual size_t block_size(const HeapWord* addr) const { return 0; }
+
+    //Space walking
+    virtual void object_iterate(ObjectClosure* blk) {}
+    virtual bool block_is_obj(const HeapWord* addr) const { return true; }
+    virtual bool is_free_block(const HeapWord* p) const { return false; }
+    virtual HeapWord* par_allocate(size_t word_size) { return bottom(); }
+
     using CompactibleSpace::initialize;
 
-    virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space, MarkBitMap* fc_bitmap);
+    virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
     virtual HeapWord* allocate(size_t size);
 

@@ -31,6 +31,7 @@
 #include "memory/virtualspace.hpp"
 #include "gc/noop/noopBarrierSet.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
+#include "gc/noop/noopFreeListSpace.hpp"
 
 class NoopHeap: public CollectedHeap {
     friend class VMStructs;
@@ -39,6 +40,7 @@ private:
     GCMemoryManager _memory_manager;
     MemoryPool* _pool;
     ContiguousSpace* _space;
+    NoopFreeListSpace* _free_list_space;
     VirtualSpace _virtual_space;
     size_t _max_tlab_size;
 
@@ -52,11 +54,11 @@ private:
     volatile size_t _last_heap_print;
 
     //Mark bitmap
-    MarkBitMap* _mark_bitmap;
+    MarkBitMap _mark_bitmap;
     MemRegion _bitmap_region;
 
     //FreeChunkBitmap
-    MarkBitMap* _free_chunk_bitmap;
+    MarkBitMap _free_chunk_bitmap;
     MemRegion _fc_bitmap_region;
 
     void prologue();
