@@ -153,9 +153,11 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
+#if INCLUDE_JVMTI
   gen(env, _notify_allocation              , notify_allocation_Type       , SharedRuntime::notify_allocation,    0 , true, false);
   gen(env, _notify_jvmti_mount             , notify_jvmti_Type            , SharedRuntime::notify_jvmti_mount,   0 , true, false);
   gen(env, _notify_jvmti_unmount           , notify_jvmti_Type            , SharedRuntime::notify_jvmti_unmount, 0 , true, false);
+#endif
   gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
   gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false);
   gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false);
