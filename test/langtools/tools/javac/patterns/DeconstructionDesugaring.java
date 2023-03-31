@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8291769 8301858
+ * @bug 8291769 8301858 8304694
  * @summary Verify more complex switches work properly
  * @compile --enable-preview -source ${jdk.version} DeconstructionDesugaring.java
  * @run main/othervm --enable-preview DeconstructionDesugaring
@@ -45,6 +45,8 @@ public class DeconstructionDesugaring {
         assertEquals(runCheckExpressionWithUnconditional1(new R5(null)), 3);
         assertEquals(runCheckExpressionWithUnconditionalAndParams(new R1(42)), 1);
         assertEquals(runCheckExpressionWithUnconditionalAndParams(new R1(new Object())), 2);
+        assertEquals(runFallThrough(new R6(1, 1)), 0);
+        assertEquals(runFallThrough(new R6(0, 0)), 1);
     }
 
     private void test(ToIntFunction<Object> task) {
@@ -113,6 +115,15 @@ public class DeconstructionDesugaring {
                 return meth_O(o);
         }
     }
+
+    public static int runFallThrough(R6 r) {
+        switch (r) {
+            case R6(var v1, var v2) when v1 != 0: return 0;
+            case R6(var v1, var v2):
+        }
+        return 1;
+    }
+
     public static int meth_I(Integer i) { return 1; }
     public static int meth_O(Object o) { return 2;}
 
@@ -134,4 +145,5 @@ public class DeconstructionDesugaring {
 
     record R4(Super o) {}
     record R5(R4 o) {}
+    record R6(int i1, int i2) {}
 }

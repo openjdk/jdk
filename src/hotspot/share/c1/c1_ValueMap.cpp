@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ Value ValueMap::find_insert(Value x) {
   LoadField* lf = value->as_LoadField();                                                 \
   bool must_kill = lf != NULL                                                            \
                    && lf->field()->holder() == field->holder()                           \
-                   && (all_offsets || lf->field()->offset() == field->offset());
+                   && (all_offsets || lf->field()->offset_in_bytes() == field->offset_in_bytes());
 
 
 void ValueMap::kill_memory() {

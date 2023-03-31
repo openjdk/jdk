@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,8 @@ final class CompilerToVM {
 
     native HotSpotResolvedJavaType lookupClass(Class<?> javaClass);
 
+    native HotSpotResolvedJavaType lookupJClass(long jclass);
+
     /**
      * Resolves the entry at index {@code cpi} in {@code constantPool} to an interned String object.
      *
@@ -461,9 +463,10 @@ final class CompilerToVM {
      * {@code info} are:
      *
      * <pre>
-     *     [ flags,  // fieldDescriptor::access_flags()
-     *       offset, // fieldDescriptor::offset()
-     *       index   // fieldDescriptor::index()
+     *     [ aflags,  // fieldDescriptor::access_flags()
+     *       offset,  // fieldDescriptor::offset()
+     *       index,   // fieldDescriptor::index()
+     *       fflags   // fieldDescriptor::field_flags()
      *     ]
      * </pre>
      *
@@ -1040,6 +1043,12 @@ final class CompilerToVM {
     }
 
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+
+    HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
+        return getDeclaredFieldsInfo(klass, klass.getKlassPointer());
+    }
+
+    native HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
      * Reads the current value of a static field of {@code declaringKlass}. Extra sanity checking is
