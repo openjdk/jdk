@@ -50,7 +50,67 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CorruptedZipFiles {
 
-    // Byte array holding a valid template ZIP
+    /*
+     * Byte array holding a valid template ZIP.
+     *
+     * This 'good' ZIP file has the following structure:
+     *
+     * 0000 LOCAL HEADER #1       04034B50
+     * 0004 Extract Zip Spec      14 '2.0'
+     * 0005 Extract OS            00 'MS-DOS'
+     * 0006 General Purpose Flag  0808
+     *      [Bits 1-2]            0 'Normal Compression'
+     *      [Bit  3]              1 'Streamed'
+     *      [Bit 11]              1 'Language Encoding'
+     * 0008 Compression Method    0008 'Deflated'
+     * 000A Last Mod Time         567F7D07 'Fri Mar 31 15:40:14 2023'
+     * 000E CRC                   00000000
+     * 0012 Compressed Length     00000000
+     * 0016 Uncompressed Length   00000000
+     * 001A Filename Length       0001
+     * 001C Extra Length          0000
+     * 001E Filename              'x'
+     * 001F PAYLOAD               ...
+     *
+     * 0022 STREAMING DATA HEADER 08074B50
+     * 0026 CRC                   8CDC1683
+     * 002A Compressed Length     00000003
+     * 002E Uncompressed Length   00000001
+     *
+     * 0032 CENTRAL HEADER #1     02014B50
+     * 0036 Created Zip Spec      14 '2.0'
+     * 0037 Created OS            00 'MS-DOS'
+     * 0038 Extract Zip Spec      14 '2.0'
+     * 0039 Extract OS            00 'MS-DOS'
+     * 003A General Purpose Flag  0808
+     *      [Bits 1-2]            0 'Normal Compression'
+     *      [Bit  3]              1 'Streamed'
+     *      [Bit 11]              1 'Language Encoding'
+     * 003C Compression Method    0008 'Deflated'
+     * 003E Last Mod Time         567F7D07 'Fri Mar 31 15:40:14 2023'
+     * 0042 CRC                   8CDC1683
+     * 0046 Compressed Length     00000003
+     * 004A Uncompressed Length   00000001
+     * 004E Filename Length       0001
+     * 0050 Extra Length          0000
+     * 0052 Comment Length        0000
+     * 0054 Disk Start            0000
+     * 0056 Int File Attributes   0000
+     *      [Bit 0]               0 'Binary Data'
+     * 0058 Ext File Attributes   00000000
+     * 005C Local Header Offset   00000000
+     * 0060 Filename              'x'
+     *
+     * 0061 END CENTRAL HEADER    06054B50
+     * 0065 Number of this disk   0000
+     * 0067 Central Dir Disk no   0000
+     * 0069 Entries in this disk  0001
+     * 006B Total Entries         0001
+     * 006D Size of Central Dir   0000002F
+     * 0071 Offset to Central Dir 00000032
+     * 0075 Comment Length        0000
+     *
+     */
     private static byte[] template;
 
     // Copy of the template ZIP for modification by each test
