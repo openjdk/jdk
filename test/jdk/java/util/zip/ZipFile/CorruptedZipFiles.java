@@ -178,7 +178,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when the 'End of Central Directory'
+     * A ZipException is thrown when the 'End of Central Directory'
      * (END) header has a CEN size exceeding past the offset of the END record
      */
     @Test
@@ -188,7 +188,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when the 'End of Central Directory'
+     * A ZipException is thrown when the 'End of Central Directory'
      * (END) header has a CEN offset incoherent with the position calculated
      * by subtracting the CEN size from the END offset.
      */
@@ -199,7 +199,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when a CEN header has an unexpected signature
+     * A ZipException is thrown when a CEN header has an unexpected signature
      */
     @Test
     public void invalidCENSignature() throws IOException {
@@ -209,8 +209,8 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when a CEN header has the 'general
-     * purpose bit flag 0' ('encrypted') set.
+     * A ZipException is thrown when a CEN header has the
+     * 'general purpose bit flag 0' ('encrypted') set.
      */
     @Test
     public void encryptedEntry() throws IOException {
@@ -219,8 +219,8 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when a CEN header has a
-     * file name length which makes the CEN header overflow into the
+     * A ZipException is thrown when a CEN header has a file name
+     *  length which makes the CEN header overflow into the
      * 'End of central directory' record.
      */
     @Test
@@ -231,7 +231,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when a CEN header has a
+     * A ZipException is thrown when a CEN header has a
      * file name length which makes the CEN header overflow into the
      * 'End of central directory' record.
      */
@@ -242,8 +242,8 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown if the last CEN header is
-     * not immediately followed by the start of the 'End of central directory' record
+     * A ZipException is thrown if the last CEN header is not immediately
+     * followed by the start of the 'End of central directory' record
      */
     @Test
     public void insufficientFilenameLength() throws IOException {
@@ -253,7 +253,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown if a CEN header has an
+     * A ZipException is thrown if a CEN header has an
      * extra field length which makes the CEN header overflow into the
      * End of central directory record.
      */
@@ -265,7 +265,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown if a CEN header has an
+     * A ZipException is thrown if a CEN header has an
      * extra field length which makes the CEN header overflow into the
      * End of central directory record.
      */
@@ -276,7 +276,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when a CEN header has a comment length
+     * A ZipException is thrown when a CEN header has a comment length
      * which overflows into the 'End of central directory' record
      */
     @Test
@@ -287,7 +287,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when a CEN header has a
+     * A ZipException is thrown when a CEN header has a
      * compression method field which is unsupported by the implementation
      */
     @Test
@@ -297,7 +297,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when a LOC header has an unexpected signature
+     * A ZipException is thrown when a LOC header has an unexpected signature
      */
     @Test
     public void invalidLOCSignature() throws IOException {
