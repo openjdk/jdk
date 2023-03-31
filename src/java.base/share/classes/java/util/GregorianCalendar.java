@@ -3015,15 +3015,8 @@ public class GregorianCalendar extends Calendar {
      * For example, dayInMinWeek(4, 6, 3) returns false since Wednesday
      * is not between the minimum week given by [Friday, Saturday,
      * Sunday, Monday, Tuesday].
-     *
-     * @throws IllegalArgumentException if either startDay or endDay are not between
-     * 1 and 7 inclusive (Calendar.SUNDAY to Calendar.SATURDAY)
      */
     private boolean dayInMinWeek (int day, int startDay, int endDay) {
-        if (endDay > 7 || endDay < 1 || startDay > 7 || startDay < 1) {
-            throw new IllegalArgumentException("Start day or end day is not " +
-                    "a valid day of the week");
-        }
         if (endDay >= startDay) {
             // dayInMinWeek(6, 3, 5), check that 6 is
             // between 3 4 5
