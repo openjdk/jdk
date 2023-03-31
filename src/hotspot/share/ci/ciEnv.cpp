@@ -516,16 +516,10 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   }
 
   Klass* found_klass;
-  {
-    ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
-    MutexLocker ml(current, Compile_lock);
-    Klass* kls;
-    if (!require_local) {
-      kls = SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
-    } else {
-      kls = SystemDictionary::find_instance_or_array_klass(current, sym, loader, domain);
-    }
-    found_klass = kls;
+  if (!require_local) {
+    found_klass = SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
+  } else {
+    found_klass = SystemDictionary::find_instance_or_array_klass(current, sym, loader, domain);
   }
 
   // If we fail to find an array klass, look again for its element type.

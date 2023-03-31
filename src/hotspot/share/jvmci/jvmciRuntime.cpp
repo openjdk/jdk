@@ -1672,14 +1672,10 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
   }
 
   Klass* found_klass;
-  {
-    ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
-    MutexLocker ml(THREAD, Compile_lock);
-    if (!require_local) {
-      found_klass = SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
-    } else {
-      found_klass = SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain);
-    }
+  if (!require_local) {
+    found_klass = SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
+  } else {
+    found_klass = SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain);
   }
 
   // If we fail to find an array klass, look again for its element type.

@@ -1353,11 +1353,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* name,
     // before references to the initiating class loader.
     loader_data->record_dependency(loaded_class);
 
-    { // Grabbing the Compile_lock prevents systemDictionary updates
-      // during compilations.
-      MutexLocker mu(THREAD, Compile_lock);
-      update_dictionary(THREAD, loaded_class, loader_data);
-    }
+    update_dictionary(THREAD, loaded_class, loader_data);
 
     if (JvmtiExport::should_post_class_load()) {
       JvmtiExport::post_class_load(THREAD, loaded_class);
@@ -1418,12 +1414,9 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // Add to class hierarchy, and do possible deoptimizations.
   k->add_to_hierarchy(THREAD);
 
-  {
-    MutexLocker mu_r(THREAD, Compile_lock);
-    // Add to systemDictionary - so other classes can see it.
-    // Grabs and releases SystemDictionary_lock
-    update_dictionary(THREAD, k, loader_data);
-  }
+  // Add to systemDictionary - so other classes can see it.
+  // Grabs and releases SystemDictionary_lock
+  update_dictionary(THREAD, k, loader_data);
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
@@ -1684,19 +1677,16 @@ void SystemDictionary::check_constraints(InstanceKlass* k,
 void SystemDictionary::update_dictionary(JavaThread* current,
                                          InstanceKlass* k,
                                          ClassLoaderData* loader_data) {
-  // Compile_lock prevents systemDictionary updates during compilations
-  assert_locked_or_safepoint(Compile_lock);
-  Symbol* name  = k->name();
-
-  MutexLocker mu1(SystemDictionary_lock);
+  MonitorLocker mu1(SystemDictionary_lock);
 
   // Make a new dictionary entry.
+  Symbol* name  = k->name();
   Dictionary* dictionary = loader_data->dictionary();
   InstanceKlass* sd_check = dictionary->find_class(current, name);
   if (sd_check == nullptr) {
     dictionary->add_klass(current, name, k);
   }
-  SystemDictionary_lock->notify_all();
+  mu1.notify_all();
 }
 
 
