@@ -2841,7 +2841,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
 
   ideal.sync_kit(this);
   ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE); {
-    const TypeFunc *tf = OptoRuntime::allocate_instance_Type();
+    const TypeFunc *tf = OptoRuntime::notify_allocation_Type();
     address funcAddr = OptoRuntime::notify_allocation();
     sync_kit(ideal);
     Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "notify_allocation", TypePtr::BOTTOM, obj);

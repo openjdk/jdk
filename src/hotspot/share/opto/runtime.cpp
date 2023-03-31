@@ -110,7 +110,7 @@ address OptoRuntime::_rethrow_Java                                = nullptr;
 address OptoRuntime::_slow_arraycopy_Java                         = nullptr;
 address OptoRuntime::_register_finalizer_Java                     = nullptr;
 #if INCLUDE_JVMTI
-address OptoRuntime::_allocate_instance                           = nullptr;
+address OptoRuntime::_notify_allocation                           = nullptr;
 address OptoRuntime::_notify_jvmti_mount                          = nullptr;
 address OptoRuntime::_notify_jvmti_unmount                        = nullptr;
 #endif
@@ -153,7 +153,7 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
-  gen(env, _allocate_instance              , allocate_instance_Type       , SharedRuntime::allocate_instance,    0 , true, false);
+  gen(env, _notify_allocation              , notify_allocation_Type       , SharedRuntime::notify_allocation,    0 , true, false);
   gen(env, _notify_jvmti_mount             , notify_jvmti_Type            , SharedRuntime::notify_jvmti_mount,   0 , true, false);
   gen(env, _notify_jvmti_unmount           , notify_jvmti_Type            , SharedRuntime::notify_jvmti_unmount, 0 , true, false);
   gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
