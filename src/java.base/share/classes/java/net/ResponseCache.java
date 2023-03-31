@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public abstract class ResponseCache {
      *            network resource
      * @param rqstMethod a {@code String} representing the request
      *            method
-     * @param rqstHeaders - a Map from request header
+     * @param rqstHeaders a Map from request header
      *            field names to lists of field values representing
      *            the current request headers
      * @return a {@code CacheResponse} instance if available
@@ -157,7 +157,7 @@ public abstract class ResponseCache {
      *
      * @param uri a {@code URI} used to reference the requested
      *            network resource
-     * @param conn - a URLConnection instance that is used to fetch
+     * @param conn a URLConnection instance that is used to fetch
      *            the response to be cached
      * @return a {@code CacheRequest} for recording the
      *            response to be cached. Null return indicates that

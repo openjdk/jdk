@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
@@ -60,9 +61,9 @@ int TemplateInterpreter::InterpreterCodeSize = 320*K;
 
 #undef  __
 #ifdef PRODUCT
-  #define __ _masm->
+  #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 #else
-  #define __ _masm->
+  #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 //  #define __ (Verbose ? (_masm->block_comment(FILE_AND_LINE),_masm):_masm)->
 #endif
 
@@ -649,14 +650,19 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   }
 
   Register cache  = Z_tmp_1;
-  Register size   = Z_tmp_1;
-  Register offset = Z_tmp_2;
-  const int flags_offset = in_bytes(ConstantPoolCache::base_offset() +
-                                    ConstantPoolCacheEntry::flags_offset());
-  __ get_cache_and_index_at_bcp(cache, offset, 1, index_size);
+  Register size   = Z_tmp_2;
+  Register index  = Z_tmp_2;
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(cache, index);
+    __ z_llgh(size, in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
+  } else {
+    const int flags_offset = in_bytes(ConstantPoolCache::base_offset() +
+                                      ConstantPoolCacheEntry::flags_offset());
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
 
-  // #args is in rightmost byte of the _flags field.
-  __ z_llgc(size, Address(cache, offset, flags_offset+(sizeof(size_t)-1)));
+    // #args is in rightmost byte of the _flags field.
+    __ z_llgc(size, Address(cache, index, flags_offset + (sizeof(size_t) - 1)));
+  }
   __ z_sllg(size, size, Interpreter::logStackElementSize); // Each argument size in bytes.
   __ z_agr(Z_esp, size);                                   // Pop arguments.
 

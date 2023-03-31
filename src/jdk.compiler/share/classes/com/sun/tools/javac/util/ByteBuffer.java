@@ -272,9 +272,10 @@ public class ByteBuffer {
     }
 
     /** Convert contents to name.
+     *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
      */
-    public Name toName(Names names) {
-        return names.fromUtf(elems, 0, length);
+    public Name toName(Names names) throws InvalidUtfException {
+        return names.fromUtf(elems, 0, length, Convert.Validation.STRICT);
     }
 
     /** Verify there are at least the specified number of bytes in this buffer at the specified offset.
