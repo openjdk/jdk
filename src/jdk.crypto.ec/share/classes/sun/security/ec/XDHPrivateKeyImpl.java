@@ -110,7 +110,8 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
             return new XDHPublicKeyImpl(params,
                     new XECOperations(params).computePublic(k.clone()));
         } catch (InvalidKeyException e) {
-            throw new ProviderException("Should not happen", e);
+            throw new ProviderException(
+                    "Unexpected error calculating public key", e);
         }
     }
 }

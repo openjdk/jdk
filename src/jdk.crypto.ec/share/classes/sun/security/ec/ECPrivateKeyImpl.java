@@ -214,7 +214,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         try {
             return new ECPublicKeyImpl(w, ecParams);
         } catch (InvalidKeyException e) {
-            throw new ProviderException("Should not happen", e);
+            throw new ProviderException(
+                    "Unexpected error calculating public key", e);
         }
     }
 }
