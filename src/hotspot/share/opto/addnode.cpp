@@ -1091,9 +1091,10 @@ Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Force a right-spline graph
   Node* l = in(1);
   Node* r = in(2);
+
   // Transform  MaxI1(MaxI2(a, b), c)  into  MaxI1(a, MaxI2(b, c))
   // to force a right-spline graph for the rest of MaxINode::Ideal().
-  if (l->Opcode() == Op_MaxI) {
+  if (l->Opcode() == Op_MaxI && !l->is_reduction()) {
     assert(l != l->in(1), "dead loop in MaxINode::Ideal");
     r = phase->transform(new MaxINode(l->in(2), r));
     l = l->in(1);
@@ -1131,7 +1132,7 @@ Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   const TypeInt* tx = phase->type(x)->isa_int();
 
-  if (r->Opcode() == Op_MaxI) {
+  if (r->Opcode() == Op_MaxI && !r->is_reduction()) {
     assert(r != r->in(2), "dead loop in MaxINode::Ideal");
     y = r->in(1);
     // Check final part of MAX tree
@@ -1174,9 +1175,10 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Force a right-spline graph
   Node *l = in(1);
   Node *r = in(2);
+
   // Transform  MinI1( MinI2(a,b), c)  into  MinI1( a, MinI2(b,c) )
   // to force a right-spline graph for the rest of MinINode::Ideal().
-  if( l->Opcode() == Op_MinI ) {
+  if( l->Opcode() == Op_MinI && !l->is_reduction()) {
     assert( l != l->in(1), "dead loop in MinINode::Ideal" );
     r = phase->transform(new MinINode(l->in(2),r));
     l = l->in(1);
@@ -1214,7 +1216,7 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   const TypeInt* tx = phase->type(x)->isa_int();
 
-  if( r->Opcode() == Op_MinI ) {
+  if( r->Opcode() == Op_MinI && !r->is_reduction()) {
     assert( r != r->in(2), "dead loop in MinINode::Ideal" );
     y = r->in(1);
     // Check final part of MIN tree
