@@ -2811,21 +2811,21 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   null_check_receiver();  // null-check, then ignore
   Node* cls = null_check(argument(1));
   if (stopped())  return true;
-  Node *kls = load_klass_from_mirror(cls, false, nullptr, 0);
-  kls = null_check(kls);
-  if (stopped())
-    return true;  // argument was like int.class
 
-  Node *test = nullptr;
+  Node* kls = load_klass_from_mirror(cls, false, nullptr, 0);
+  kls = null_check(kls);
+  if (stopped()) return true;  // argument was like int.class
+
+  Node* test = nullptr;
   if (LibraryCallKit::klass_needs_init_guard(kls)) {
     // Note:  The argument might still be an illegal value like
     // Serializable.class or Object[].class.   The runtime will handle it.
     // But we must make an explicit check for initialization.
-    Node *insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
+    Node* insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
     // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
     // can generate code to load it as unsigned byte.
-    Node *inst = make_load(nullptr, insp, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
-    Node *bits = intcon(InstanceKlass::fully_initialized);
+    Node* inst = make_load(nullptr, insp, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
+    Node* bits = intcon(InstanceKlass::fully_initialized);
     test = _gvn.transform(new SubINode(inst, bits));
     // The 'test' is non-zero if we need to take a slow path.
   }
@@ -2836,8 +2836,8 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   IdealKit ideal(this);
 
   Node* ONE = ideal.ConI(1);
-  Node *addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_post_vm_object_alloc));
-  Node *should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
+  Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_post_vm_object_alloc));
+  Node* should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.sync_kit(this);
   ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE); {
