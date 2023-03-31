@@ -2290,6 +2290,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     } else {
       // Limit is not constant.
       assert(loop_head->unrolled_count() != 1 || has_ctrl(opaq), "should have opaque for first unroll");
+      DEBUG_ONLY( BoolTest::mask bt = loop_end->test_trip(); )
+      assert((stride_con > 0) ? (bt == BoolTest::lt) : (bt == BoolTest::gt), "test mask corresponds to stride");
       new_limit = new SubINoUnderflowNode(limit, stride->as_ConI());
       register_new_node(new_limit, ctrl);
     }

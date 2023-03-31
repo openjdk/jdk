@@ -2062,7 +2062,7 @@ Node* SubINoUnderflowNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     cmovei->init_req(2, sub_with_underflow);
 
     Node* underflow_cmp = phase->transform(new CmpINode(in(1), sub_with_underflow));
-    BoolTest::mask bt = (sub_con) > 0 ? BoolTest::lt : BoolTest::gt;
+    BoolTest::mask bt = (sub_con > 0) ? BoolTest::lt : BoolTest::gt;
     Node* underflow_bool = phase->transform(new BoolNode(underflow_cmp, bt));
     cmovei->init_req(1, underflow_bool);
 
