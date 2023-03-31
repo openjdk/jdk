@@ -2901,8 +2901,13 @@ void jio_print(const char* s, size_t len) {
   if (Arguments::vfprintf_hook() != nullptr) {
     jio_fprintf(defaultStream::output_stream(), "%.*s", (int)len, s);
   } else {
-    // Make an unused local variable to avoid warning from gcc compiler.
-    ssize_t count = os::write(defaultStream::output_fd(), s, (int)len);
+    ssize_t size = (ssize_t)len;
+    while (size > 0) {
+      // Make an unused local variable to avoid warning from gcc compiler.
+      ssize_t count = os::write(defaultStream::output_fd(), s, (int)size);
+      s += count;
+      size -= count;
+    }
   }
 }
 
