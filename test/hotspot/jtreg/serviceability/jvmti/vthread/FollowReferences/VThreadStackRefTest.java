@@ -38,19 +38,19 @@ import java.util.concurrent.CountDownLatch;
 
 public class VThreadStackRefTest {
 
-	static volatile boolean timeToStop = false;
-	static int i = -1;
+    static volatile boolean timeToStop = false;
+    static int i = -1;
 
     public static void main(String[] args) throws InterruptedException {
         CountDownLatch dumpedLatch = new CountDownLatch(1);
         Thread vthreadMounted = Thread.ofVirtual().start(() -> {
             Object referenced = new VThreadMountedReferenced();
             System.out.println(referenced.getClass());
-			while (!timeToStop) {
-				if (++i == 10000) {
-					i = 0;
-				}
-			}
+            while (!timeToStop) {
+                if (++i == 10000) {
+                    i = 0;
+                }
+            }
             await(dumpedLatch);
             System.out.println(referenced.getClass());
         });
@@ -61,12 +61,12 @@ public class VThreadStackRefTest {
             System.out.println(referenced.getClass());
         });
         Thread vthreadJNIUnmounted = Thread.ofVirtual().start(() -> {
-			createObjAndCallback(VThreadUnmountedJNIReferenced.class,
-			    new Runnable() {
-					public void run() {
-						await(dumpedLatch);
-					}
-				});
+            createObjAndCallback(VThreadUnmountedJNIReferenced.class,
+                new Runnable() {
+                    public void run() {
+                        await(dumpedLatch);
+                    }
+                });
         });
 
         Thread vthreadEnded = Thread.ofVirtual().start(() -> {
@@ -84,44 +84,44 @@ public class VThreadStackRefTest {
 
         Thread.sleep(2000); // wait for reference and unmount
 
-		TestCase[] testCases = new TestCase[] {
-			new TestCase(VThreadMountedReferenced.class, 1, vthreadMounted.getId()),
-			new TestCase(VThreadUnmountedReferenced.class, 1, vthreadUnmounted.getId()),
-			new TestCase(VThreadUnmountedJNIReferenced.class, 1, vthreadJNIUnmounted.getId()),
-			new TestCase(PThreadReferenced.class, 1, pthread.getId()),
-			// expected to be unreported as stack local
-			new TestCase(VThreadUnmountedEnded.class, 0, 0)
-		};
+        TestCase[] testCases = new TestCase[] {
+            new TestCase(VThreadMountedReferenced.class, 1, vthreadMounted.getId()),
+            new TestCase(VThreadUnmountedReferenced.class, 1, vthreadUnmounted.getId()),
+            new TestCase(VThreadUnmountedJNIReferenced.class, 1, vthreadJNIUnmounted.getId()),
+            new TestCase(PThreadReferenced.class, 1, pthread.getId()),
+            // expected to be unreported as stack local
+            new TestCase(VThreadUnmountedEnded.class, 0, 0)
+        };
 
-		Class[] testClasses = Stream.of(testCases).map(c -> c.cls()).toArray(Class[]::new);
-		System.out.println("test classes:");
-		for (int i = 0; i < testClasses.length; i++) {
-			System.out.println("  - (" + i + ") " + testClasses[i]);
-		}
+        Class[] testClasses = Stream.of(testCases).map(c -> c.cls()).toArray(Class[]::new);
+        System.out.println("test classes:");
+        for (int i = 0; i < testClasses.length; i++) {
+            System.out.println("  - (" + i + ") " + testClasses[i]);
+        }
         test(testClasses);
-		timeToStop = true;
+        timeToStop = true;
         dumpedLatch.countDown();
         vthreadMounted.join();
         vthreadUnmounted.join();
-		vthreadJNIUnmounted.join();
+        vthreadJNIUnmounted.join();
         pthread.join();
 
-		boolean failed = false;
-		for (int i = 0; i < testCases.length; i++) {
-			int refCount = getRefCount(i);
-			long threadId = getRefThreadID(i);
-			System.out.println(" (" + i + ") " + testCases[i].cls()
-			                   + ": ref count = " + refCount
-							   + " (expected " + testCases[i].expectedCount() + ")"
-							   + ", thread id = " + threadId
-							   + " (expected " + testCases[i].expectedThreadId() + ")");
-			if (refCount != testCases[i].expectedCount()
-				    || threadId != testCases[i].expectedThreadId()) {
-				failed = true;
-			}
-		}
-		if (failed) {
-			throw new RuntimeException("Test failed");
+        boolean failed = false;
+        for (int i = 0; i < testCases.length; i++) {
+            int refCount = getRefCount(i);
+            long threadId = getRefThreadID(i);
+            System.out.println(" (" + i + ") " + testCases[i].cls()
+                               + ": ref count = " + refCount
+                               + " (expected " + testCases[i].expectedCount() + ")"
+                               + ", thread id = " + threadId
+                               + " (expected " + testCases[i].expectedThreadId() + ")");
+            if (refCount != testCases[i].expectedCount()
+                    || threadId != testCases[i].expectedThreadId()) {
+                failed = true;
+            }
+        }
+        if (failed) {
+            throw new RuntimeException("Test failed");
         }
     }
 
