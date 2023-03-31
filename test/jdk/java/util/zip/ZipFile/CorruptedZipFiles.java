@@ -199,7 +199,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * Validate that a ZipException is thrown when a A CEN header has an unexpected signature
+     * Validate that a ZipException is thrown when a CEN header has an unexpected signature
      */
     @Test
     public void invalidCENSignature() throws IOException {
