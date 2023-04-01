@@ -2830,13 +2830,12 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     // The 'test' is non-zero if we need to take a slow path.
   }
   Node* obj = new_instance(kls, test);
-
 #ifdef INCLUDE_JVMTI
   // Check if JvmtiExport::_should_post_vm_object_alloc is enabled and post notifications
   IdealKit ideal(this);
-
+  IdealVariable result(ideal); ideal.declarations_done();
   Node* ONE = ideal.ConI(1);
-  Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_post_vm_object_alloc));
+  Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_post_allocation_notifications));
   Node* should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.sync_kit(this);
@@ -2844,15 +2843,26 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     const TypeFunc *tf = OptoRuntime::notify_allocation_Type();
     address funcAddr = OptoRuntime::notify_allocation();
     sync_kit(ideal);
-    Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "notify_allocation", TypePtr::BOTTOM, obj);
+    // _multianewarray is needed to don't crash in escape.cpp:1034 assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
+    Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_multianewarray", TypePtr::BOTTOM, obj);
+    ideal.sync_kit(this);
+    sync_kit(ideal);
+    ideal.set(result,_gvn.transform(new ProjNode(call, TypeFunc::Parms+0)));
+    ideal.sync_kit(this);
+  } ideal.else_(); {
+    sync_kit(ideal);
+    ideal.set(result,obj);
     ideal.sync_kit(this);
   } ideal.end_if();
   final_sync(ideal);
+
+  set_result(ideal.value(result));
+  return true;
+#else
+  set_result(obj);
+  return true;
 #endif //INCLUDE_JVMTI
 
-  set_result(obj);
-
-  return true;
 }
 
 //------------------------inline_native_time_funcs--------------

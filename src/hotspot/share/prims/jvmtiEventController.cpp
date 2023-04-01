@@ -724,6 +724,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
     // set global should_post_on_exceptions
     JvmtiExport::set_should_post_on_exceptions((any_env_thread_enabled & SHOULD_POST_ON_EXCEPTIONS_BITS) != 0);
 
+    JvmtiExport::_should_post_allocation_notifications = JvmtiExport::should_post_vm_object_alloc();
   }
 
   EC_TRACE(("[-] # recompute enabled - after " JULONG_FORMAT_X, any_env_thread_enabled));

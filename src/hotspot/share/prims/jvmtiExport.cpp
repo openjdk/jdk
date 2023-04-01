@@ -1038,6 +1038,9 @@ bool JvmtiExport::has_early_class_hook_env() {
 }
 
 bool JvmtiExport::_should_post_class_file_load_hook = false;
+// The vm_
+bool JvmtiExport::_should_post_allocation_notifications = true;
+
 
 // this entry is for class file load hook on class load, redefine and retransform
 bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,

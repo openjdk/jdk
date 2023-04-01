@@ -63,18 +63,6 @@ class ThreadsList;
     NOT_JVMTI(return false);                                              \
   }
 
-#define JVMTI_SUPPORT_PUBLIC_FLAG(key)                                    \
-  public:                                                                 \
-  static bool  _##key;                                                    \
-  inline static void set_##key(bool on) {                                 \
-    JVMTI_ONLY(_##key = (on != 0));                                       \
-    NOT_JVMTI(report_unsupported(on));                                    \
-  }                                                                       \
-  inline static bool key() {                                              \
-    JVMTI_ONLY(return _##key);                                            \
-    NOT_JVMTI(return false);                                              \
-  }
-
 
 // This class contains the JVMTI interface for the rest of hotspot.
 //
@@ -141,7 +129,7 @@ class JvmtiExport : public AllStatic {
   // we are holding objects on the heap - need to talk to GC - e.g.
   // breakpoint info
   JVMTI_SUPPORT_FLAG(should_clean_up_heap_objects)
-  JVMTI_SUPPORT_PUBLIC_FLAG(should_post_vm_object_alloc)
+  JVMTI_SUPPORT_FLAG(should_post_vm_object_alloc)
   JVMTI_SUPPORT_FLAG(should_post_sampled_object_alloc)
 
   JVMTI_SUPPORT_FLAG(should_post_vthread_start)
@@ -407,6 +395,9 @@ class JvmtiExport : public AllStatic {
       record_vm_internal_object_allocation(object);
     }
   }
+
+  // Used by C2 to post vm_object_alloc
+  static bool _should_post_allocation_notifications;
 
   static void record_sampled_internal_object_allocation(oop object) NOT_JVMTI_RETURN;
   // Post objects collected by sampled_object_alloc_event_collector.

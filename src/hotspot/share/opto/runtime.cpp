@@ -480,12 +480,12 @@ const TypeFunc *OptoRuntime::new_instance_Type() {
 const TypeFunc *OptoRuntime::notify_allocation_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL; // Klass to be allocated
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
 
    // create result type (range)
    fields = TypeTuple::fields(1);
-   fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL; // Returned oop
+   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // Returned oop
 
    const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
 
