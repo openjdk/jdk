@@ -75,7 +75,7 @@ void LockStack::verify(const char* msg) const {
 
 void LockStack::verify_no_thread(const char* msg) const {
   assert(UseFastLocking && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
-  assert((_top <  end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
+  assert((_top <=  end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
   assert((_top >= start_offset()), "lockstack underflow: _topt %d end_offset %d", _top, start_offset());
   int top = to_index(_top);
   for (int i = 0; i < top; i++) {
