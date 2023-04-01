@@ -508,19 +508,8 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     return unloaded_klass;
   }
 
-  Handle loader;
-  Handle domain;
-  if (accessing_klass != nullptr) {
-    loader = Handle(current, accessing_klass->loader());
-    domain = Handle(current, accessing_klass->protection_domain());
-  }
-
-  Klass* found_klass;
-  if (!require_local) {
-    found_klass = SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
-  } else {
-    found_klass = SystemDictionary::find_instance_or_array_klass(current, sym, loader, domain);
-  }
+  Klass* found_klass = SystemDictionary::find_constrained_or_local_klass(current, sym,
+                                               accessing_klass->get_Klass(), require_local);
 
   // If we fail to find an array klass, look again for its element type.
   // The element type may be available either locally or via constraints.
