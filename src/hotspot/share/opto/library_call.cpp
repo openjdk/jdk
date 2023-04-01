@@ -2847,13 +2847,9 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     // _multianewarray is needed to don't crash in escape.cpp:1034 assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
     Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_multianewarray", TypePtr::BOTTOM, obj);
     ideal.sync_kit(this);
-    sync_kit(ideal);
     ideal.set(result,_gvn.transform(new ProjNode(call, TypeFunc::Parms+0)));
-    ideal.sync_kit(this);
   } ideal.else_(); {
-    sync_kit(ideal);
     ideal.set(result,obj);
-    ideal.sync_kit(this);
   } ideal.end_if();
   final_sync(ideal);
 
