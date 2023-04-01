@@ -2831,7 +2831,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   }
   Node* obj = new_instance(kls, test);
 #ifdef INCLUDE_JVMTI
-  // Check if JvmtiExport::_should_post_vm_object_alloc is enabled and post notifications
+  // Check if JvmtiExport::_should_post_allocation_notifications is enabled and post notifications
   IdealKit ideal(this);
   IdealVariable result(ideal); ideal.declarations_done();
   Node* ONE = ideal.ConI(1);
@@ -2843,6 +2843,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     const TypeFunc *tf = OptoRuntime::notify_allocation_Type();
     address funcAddr = OptoRuntime::notify_allocation();
     sync_kit(ideal);
+    // TODO fix
     // _multianewarray is needed to don't crash in escape.cpp:1034 assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
     Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_multianewarray", TypePtr::BOTTOM, obj);
     ideal.sync_kit(this);
