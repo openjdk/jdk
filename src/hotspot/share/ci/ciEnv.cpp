@@ -509,7 +509,8 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   }
 
   Klass* found_klass = SystemDictionary::find_constrained_or_local_klass(current, sym,
-                                               accessing_klass->get_Klass(), require_local);
+                                               (accessing_klass == nullptr) ? nullptr : accessing_klass->get_Klass(),
+                                               require_local);
 
   // If we fail to find an array klass, look again for its element type.
   // The element type may be available either locally or via constraints.
