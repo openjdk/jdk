@@ -138,13 +138,13 @@ abstract class AbstractMask<E> extends VectorMask<E> {
 
     @Override
     @ForceInline
-    public VectorMask<E> andNot(VectorMask<E> m) {
+    public final VectorMask<E> andNot(VectorMask<E> m) {
         return and(m.not());
     }
 
     @Override
     @ForceInline
-    public VectorMask<E> xorNot(VectorMask<E> m) {
+    public final VectorMask<E> xorNot(VectorMask<E> m) {
         return xor(m.not());
     }
 
