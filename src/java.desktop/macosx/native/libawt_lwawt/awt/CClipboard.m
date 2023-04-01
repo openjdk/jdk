@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,15 +136,16 @@ JNI_COCOA_ENTER(env);
     jint nElements = (*env)->GetArrayLength(env, inTypes);
     NSMutableArray *formatArray = [NSMutableArray arrayWithCapacity:nElements];
     jlong *elements = (*env)->GetPrimitiveArrayCritical(env, inTypes, NULL);
+    if (elements != NULL) {
+        for (i = 0; i < nElements; i++) {
+            NSString *pbFormat = formatForIndex(elements[i]);
+            if (pbFormat)
+                [formatArray addObject:pbFormat];
+        }
 
-    for (i = 0; i < nElements; i++) {
-        NSString *pbFormat = formatForIndex(elements[i]);
-        if (pbFormat)
-            [formatArray addObject:pbFormat];
+        (*env)->ReleasePrimitiveArrayCritical(env, inTypes, elements, JNI_ABORT);
+        [[CClipboard sharedClipboard] declareTypes:formatArray withOwner:inJavaClip jniEnv:env];
     }
-
-    (*env)->ReleasePrimitiveArrayCritical(env, inTypes, elements, JNI_ABORT);
-    [[CClipboard sharedClipboard] declareTypes:formatArray withOwner:inJavaClip jniEnv:env];
 JNI_COCOA_EXIT(env);
 }
 
@@ -226,7 +227,7 @@ JNI_COCOA_ENTER(env);
         }
     }
 
-    (*env)->ReleaseLongArrayElements(env, returnValue, saveFormats, JNI_COMMIT);
+    (*env)->ReleaseLongArrayElements(env, returnValue, saveFormats, 0);
 JNI_COCOA_EXIT(env);
     return returnValue;
 }

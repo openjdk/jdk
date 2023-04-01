@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,20 +63,29 @@ ifeq ($(BASE_OS), OL)
     LINUX_VERSION := OL6.4
   endif
 else ifeq ($(BASE_OS), Fedora)
-  DEFAULT_OS_VERSION := 27
-  ifeq ($(BASE_OS_VERSION), )
-    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
-  endif
-  ifeq ($(filter x86_64 armhfp, $(ARCH)), )
-    FEDORA_TYPE := fedora-secondary
+  ifeq ($(ARCH), riscv64)
+    DEFAULT_OS_VERSION := rawhide/68692
+    ifeq ($(BASE_OS_VERSION), )
+      BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
+    endif
+    BASE_URL := http://fedora.riscv.rocks/repos-dist/$(BASE_OS_VERSION)/$(ARCH)/Packages/
   else
-    FEDORA_TYPE := fedora/linux
-  endif
-  ARCHIVED := $(shell [ $(BASE_OS_VERSION) -lt $(DEFAULT_OS_VERSION) ] && echo true)
-  ifeq ($(ARCHIVED),true)
-    BASE_URL := https://archives.fedoraproject.org/pub/archive/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
-  else
-    BASE_URL := https://dl.fedoraproject.org/pub/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
+    DEFAULT_OS_VERSION := 27
+    LATEST_ARCHIVED_OS_VERSION := 35
+    ifeq ($(BASE_OS_VERSION), )
+      BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
+    endif
+    ifeq ($(filter x86_64 armhfp, $(ARCH)), )
+      FEDORA_TYPE := fedora-secondary
+    else
+      FEDORA_TYPE := fedora/linux
+    endif
+    NOT_ARCHIVED := $(shell [ $(BASE_OS_VERSION) -gt $(LATEST_ARCHIVED_OS_VERSION) ] && echo true)
+    ifeq ($(NOT_ARCHIVED),true)
+      BASE_URL := https://dl.fedoraproject.org/pub/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
+    else
+      BASE_URL := https://archives.fedoraproject.org/pub/archive/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
+    endif
   endif
   LINUX_VERSION := Fedora_$(BASE_OS_VERSION)
 else
@@ -87,8 +96,17 @@ endif
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 11.2.0
-ifeq ($(GCC_VER), 11.2.0)
+GCC_VER := 11.3.0
+ifeq ($(GCC_VER), 11.3.0)
+  gcc_ver := gcc-11.3.0
+  binutils_ver := binutils-2.39
+  ccache_ver := ccache-3.7.12
+  mpfr_ver := mpfr-4.1.1
+  gmp_ver := gmp-6.2.1
+  mpc_ver := mpc-1.2.1
+  gdb_ver := gdb-11.2
+  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+else ifeq ($(GCC_VER), 11.2.0)
   gcc_ver := gcc-11.2.0
   binutils_ver := binutils-2.37
   ccache_ver := ccache-3.7.12
@@ -189,7 +207,7 @@ RPM_LIST := \
     libXi libXi-devel \
     libXdmcp libXdmcp-devel \
     libXau libXau-devel \
-    libgcc \
+    libgcc libxcrypt \
     zlib zlib-devel \
     libffi libffi-devel \
     fontconfig fontconfig-devel \
@@ -245,7 +263,7 @@ define Download
   $$($(1)_CFG) : $$($(1)_FILE)
 	mkdir -p $$(SRCDIR)
 	tar -C $$(SRCDIR) -xf $$<
-	$$(foreach p,$$(abspath $$(wildcard patches/$$(notdir $$($(1)_DIR)).patch)), \
+	$$(foreach p,$$(abspath $$(wildcard patches/$$(ARCH)-$$(notdir $$($(1)_DIR)).patch)), \
 	  echo PATCHING $$(p) ; \
 	  patch -d $$($(1)_DIR) -p1 -i $$(p) ; \
 	)
@@ -414,6 +432,12 @@ $(gcc) \
 # wants.
 $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
 
+ifneq ($(ARCH), riscv64)
+  # gold is not available for riscv64 for some reason,
+  # and subsequent linking will fail if we try to enable it.
+  LINKER_CONFIG := --enable-gold=default
+endif
+
 # Makefile creation. Simply run configure in build dir.
 # Setting CFLAGS to -O2 generates a much faster ld.
 $(bfdmakes) \
@@ -426,11 +450,11 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
 	  $(PATHPRE) $(ENVS) CFLAGS="-O2 $(CFLAGS)" \
 	      $(BINUTILS_CFG) \
 	      $(CONFIG) \
+	      $(LINKER_CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
 	      --program-prefix=$(TARGET)- \
 	      --enable-multilib \
-	      --enable-gold=default \
 	      --enable-threads \
 	      --enable-plugins \
 	) > $(@D)/log.config 2>&1
@@ -494,7 +518,7 @@ ifeq ($(ARCH), armhfp)
   $(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG +=  --with-float=hard
 endif
 
-ifneq ($(filter ppc64 ppc64le s390x, $(ARCH)), )
+ifneq ($(filter riscv64 ppc64 ppc64le s390x, $(ARCH)), )
   # We only support 64-bit on these platforms anyway
   CONFIG += --disable-multilib
 endif

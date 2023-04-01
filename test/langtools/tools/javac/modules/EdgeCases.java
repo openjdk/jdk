@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045 8177311 8241519
+ * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045 8177311 8241519 8297988
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -39,6 +39,7 @@
 import java.io.BufferedWriter;
 import java.io.Writer;
 import java.nio.file.Files;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -65,10 +66,13 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskListener;
 //import com.sun.source.util.JavacTask; // conflicts with toolbox.JavacTask
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symtab;
+import java.util.ArrayList;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -377,7 +381,7 @@ public class EdgeCases extends ModuleTestBase {
             .getOutputLines(OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "- compiler.err.cant.access: <error>.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.illegal.start.of.class.file))",
+                "- compiler.err.cant.access: <error>.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.bad.class.truncated.at.offset: 0))",
                 "1 error");
 
         if (!expected.equals(log)) {
@@ -1045,6 +1049,108 @@ public class EdgeCases extends ModuleTestBase {
 
         if (!expected.equals(log))
             throw new Exception("expected output not found: " + log);
+    }
+
+    @Test //JDK-8297988
+    public void testExportedNameCheckFromSourceNoEvent(Path base) throws Exception {
+        //when validating "exports", javac may parse source(s) from the package to check their
+        //package name. The AST produced by this parse are thrown away, so listeners should not
+        //be notified:
+        Path src = base.resolve("src");
+        Path m = src.resolve("m");
+        tb.writeJavaFiles(m,
+                          """
+                          module m {
+                              exports test;
+                          }
+                          """,
+                          """
+                          package test;
+                          public class Test {}
+                          """,
+                          """
+                          package impl;
+                          public class Impl {
+                              void t() {
+                                  test.Test t;
+                              }
+                          }
+                          """);
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        record TestCase(Path[] files, String... expectedLog){}
+        String nameSeparator = FileSystems.getDefault().getSeparator();
+
+        TestCase[] testCases = new TestCase[] {
+            new TestCase(new Path[] {m.resolve("module-info.java")},
+                         "COMPILATION:started:<none>",
+                         "PARSE:started:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "PARSE:finished:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "ENTER:started:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "ENTER:finished:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "ANALYZE:started:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "ANALYZE:finished:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "COMPILATION:finished:<none>"),
+            new TestCase(new Path[] {m.resolve("module-info.java"),
+                                     m.resolve("impl").resolve("Impl.java")},
+                         "COMPILATION:started:<none>",
+                         "PARSE:started:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "PARSE:finished:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "PARSE:started:testExportedNameCheckFromSourceNoEvent/src/m/impl/Impl.java",
+                         "PARSE:finished:testExportedNameCheckFromSourceNoEvent/src/m/impl/Impl.java",
+                         "ENTER:started:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "ENTER:started:testExportedNameCheckFromSourceNoEvent/src/m/impl/Impl.java",
+                         "ENTER:finished:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "ENTER:finished:testExportedNameCheckFromSourceNoEvent/src/m/impl/Impl.java",
+                         "ANALYZE:started:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "ANALYZE:finished:testExportedNameCheckFromSourceNoEvent/src/m/module-info.java",
+                         "ANALYZE:started:testExportedNameCheckFromSourceNoEvent/src/m/impl/Impl.java",
+                         "PARSE:started:testExportedNameCheckFromSourceNoEvent/src/m/test/Test.java",
+                         "PARSE:finished:testExportedNameCheckFromSourceNoEvent/src/m/test/Test.java",
+                         "ENTER:started:testExportedNameCheckFromSourceNoEvent/src/m/test/Test.java",
+                         "ENTER:finished:testExportedNameCheckFromSourceNoEvent/src/m/test/Test.java",
+                         "ANALYZE:finished:testExportedNameCheckFromSourceNoEvent/src/m/impl/Impl.java",
+                         "ANALYZE:started:testExportedNameCheckFromSourceNoEvent/src/m/test/Test.java",
+                         "ANALYZE:finished:testExportedNameCheckFromSourceNoEvent/src/m/test/Test.java",
+                         "COMPILATION:finished:<none>")
+        };
+
+        for (TestCase tc : testCases) {
+            List<String> log = new ArrayList<>();
+
+            new JavacTask(tb)
+                    .outdir(classes)
+                    .options("--source-path", m.toString(),
+                             "-XDshould-stop.ifNoError=FLOW")
+                    .callback(task -> {
+                        task.addTaskListener(new TaskListener() {
+                            @Override
+                            public void started(TaskEvent e) {
+                                record(e, "started");
+                            }
+                            @Override
+                            public void finished(TaskEvent e) {
+                                record(e, "finished");
+                            }
+                            private void record(TaskEvent e, String phase) {
+                                JavaFileObject source = e.getSourceFile();
+                                String sourceName = source != null ? source.getName()
+                                                                           .replace(nameSeparator, "/")
+                                                                   : "<none>";
+                                log.add(e.getKind() + ":" + phase + ":" + sourceName);
+                            }
+                        });
+                    })
+                    .files(tc.files)
+                    .run()
+                    .writeAll();
+
+            if (!List.of(tc.expectedLog).equals(log)) {
+                throw new AssertionError("Unexpected log, got: " + log +
+                                         ", expected: " + List.of(tc.expectedLog));
+            }
+        }
     }
 
 }

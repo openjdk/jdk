@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4953553 8002277
+ * @bug 4953553 8002277 8288050
  * @summary Ensure that InvalidKeyException is thrown when decrypting
  * without parameters as javadoc has stated.
  * @author Valerie Peng
@@ -54,6 +54,8 @@ public class DecryptWithoutParameters {
         "PBEWithHmacSHA256AndAES_128",
         "PBEWithHmacSHA384AndAES_128",
         "PBEWithHmacSHA512AndAES_128",
+        "PBEWithHmacSHA512/224AndAES_128",
+        "PBEWithHmacSHA512/256AndAES_128",
     };
 
     // return true if Cipher.init() fails with

@@ -52,7 +52,7 @@ public class AccessibleJTabbedPaneTest extends AccessibleComponentTest {
         INSTRUCTIONS = "INSTRUCTIONS:\n"
                 + "Check a11y of JTabbedPane.\n\n"
                 + "Turn screen reader on, and tab to the JTabbedPane.\n"
-                + "Use page up and page down arrow buttons to move through the tabs.\n\n"
+                + "Use the left and right arrow buttons to move through the tabs.\n\n"
                 + "If you can hear selected tab names tab further and press PASS, otherwise press FAIL.\n";
 
         JTabbedPane tabbedPane = new JTabbedPane();

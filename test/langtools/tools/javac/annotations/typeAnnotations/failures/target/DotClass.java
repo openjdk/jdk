@@ -30,7 +30,7 @@ class T0x1E {
 }
 
 class ClassLiterals {
-    public static void main(String[] args) {
+    public static void meth() {
         if (String.class != @A String.class) throw new Error();
         if (@A int.class != int.class) throw new Error();
         if (@A int.class != Integer.TYPE) throw new Error();

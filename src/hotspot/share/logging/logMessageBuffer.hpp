@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ class LogMessageBuffer : public StackObj {
   // It is, however, possible to specify a prefix per LogMessageBuffer,
   // using set_prefix(). Lines added to the LogMessageBuffer after a prefix
   // function has been set will be prefixed automatically.
-  // Setting this to NULL will disable prefixing.
+  // Setting this to nullptr will disable prefixing.
   void set_prefix(size_t (*prefix_fn)(char*, size_t)) {
     _prefix_fn = prefix_fn;
   }

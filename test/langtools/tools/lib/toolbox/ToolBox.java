@@ -71,8 +71,7 @@ import javax.tools.ToolProvider;
 
 /**
  * Utility methods and classes for writing jtreg tests for
- * javac, javah, javap, and sjavac. (For javadoc support,
- * see JavadocTester.)
+ * javac, javah, and javap. (For javadoc support, see JavadocTester.)
  *
  * <p>There is support for common file operations similar to
  * shell commands like cat, cp, diff, mv, rm, grep.
@@ -990,4 +989,3 @@ public class ToolBox {
         }
     }
 }
-

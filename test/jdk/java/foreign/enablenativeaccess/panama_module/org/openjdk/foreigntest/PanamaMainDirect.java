@@ -24,6 +24,7 @@
 package org.openjdk.foreigntest;
 
 import java.lang.foreign.*;
+import java.lang.foreign.SegmentScope;
 
 public class PanamaMainDirect {
     public static void main(String[] args) {
@@ -39,7 +40,7 @@ public class PanamaMainDirect {
 
     public static void testDirectAccessMemorySegment() {
         System.out.println("Trying to get MemorySegment");
-        MemorySegment.ofAddress(MemoryAddress.NULL, 4000, MemorySession.global());
+        MemorySegment.ofAddress(0, 4000, SegmentScope.global());
         System.out.println("Got MemorySegment");
    }
 }

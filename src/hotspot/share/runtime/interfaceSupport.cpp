@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ void InterfaceSupport::gc_alot() {
   if (!thread->is_Java_thread()) return; // Avoid concurrent calls
   // Check for new, not quite initialized thread. A thread in new mode cannot initiate a GC.
   JavaThread *current_thread = JavaThread::cast(thread);
-  if (current_thread->active_handles() == NULL) return;
+  if (current_thread->active_handles() == nullptr) return;
 
   // Short-circuit any possible re-entrant gc-a-lot attempt
   if (thread->skip_gcalot()) return;
@@ -220,7 +220,7 @@ void InterfaceSupport::verify_stack() {
       // In case of exceptions we might not have a runtime_stub on
       // top of stack, hence, all callee-saved registers are not going
       // to be setup correctly, hence, we cannot do stack verify
-    if (cb != NULL && !(cb->is_runtime_stub() || cb->is_uncommon_trap_stub())) return;
+    if (cb != nullptr && !(cb->is_runtime_stub() || cb->is_uncommon_trap_stub())) return;
 
     for (; !sfs.is_done(); sfs.next()) {
       sfs.current()->verify(sfs.register_map());

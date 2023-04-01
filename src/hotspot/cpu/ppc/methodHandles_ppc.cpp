@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -135,12 +135,10 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     // JVMTI events, such as single-stepping, are implemented partly by avoiding running
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
-    __ verify_thread();
     __ lwz(temp, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
     __ cmplwi(CCR0, temp, 0);
     __ beq(CCR0, run_compiled_code);
-    // Null method test is replicated below in compiled case,
-    // it might be able to address across the verify_thread()
+    // Null method test is replicated below in compiled case.
     __ cmplwi(CCR0, R19_method, 0);
     __ beq(CCR0, L_no_such_method);
     __ ld(target, in_bytes(Method::interpreter_entry_offset()), R19_method);
@@ -301,7 +299,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     }
     Register R19_member = R19_method;  // MemberName ptr; incoming method ptr is dead now
     __ ld(R19_member, RegisterOrConstant((intptr_t)8), R15_argbase);
-    __ add(R15_argbase, Interpreter::stackElementSize, R15_argbase);
+    __ addi(R15_argbase, R15_argbase, Interpreter::stackElementSize);
     generate_method_handle_dispatch(_masm, iid, tmp_recv, R19_member, not_for_compiler_entry);
   }
 

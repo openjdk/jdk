@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
@@ -31,6 +30,7 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -78,7 +78,7 @@ static size_t get_dump_directory() {
   }
   const size_t path_len = strlen(_path_buffer);
   const int result = jio_snprintf(_path_buffer + path_len,
-                                  sizeof(_path_buffer),
+                                  sizeof(_path_buffer) - path_len,
                                   "%s",
                                   os::file_separator());
   return (result == -1) ? 0 : strlen(_path_buffer);

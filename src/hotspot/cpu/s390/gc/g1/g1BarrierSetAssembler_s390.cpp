@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -397,10 +397,10 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ z_ltgr(tmp1, value);
   __ z_bre(Ldone);          // Use NULL result as-is.
 
-  __ z_nill(value, ~JNIHandles::weak_tag_mask);
+  __ z_nill(value, ~JNIHandles::tag_mask);
   __ z_lg(value, 0, value); // Resolve (untagged) jobject.
 
-  __ z_tmll(tmp1, JNIHandles::weak_tag_mask); // Test for jweak tag.
+  __ z_tmll(tmp1, JNIHandles::TypeTag::weak_global); // Test for jweak tag.
   __ z_braz(Lnot_weak);
   __ verify_oop(value, FILE_AND_LINE);
   DecoratorSet decorators = IN_NATIVE | ON_PHANTOM_OOP_REF;

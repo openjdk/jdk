@@ -28,6 +28,8 @@ package sun.security.x509;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Objects;
+
 import sun.security.util.*;
 
 /**
@@ -167,15 +169,14 @@ public class Extension implements java.security.cert.Extension, DerEncoder {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
 
-        if (extensionId == null)
-            throw new IOException("Null OID to encode for the extension!");
-        if (extensionValue == null)
-            throw new IOException("No value to encode for the extension!");
+        Objects.requireNonNull(extensionId,
+                "No OID to encode for the extension");
+        Objects.requireNonNull(extensionValue,
+                "No value to encode for the extension");
 
         DerOutputStream dos = new DerOutputStream();
 

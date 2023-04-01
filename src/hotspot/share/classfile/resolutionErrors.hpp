@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,11 @@ class ResolutionErrorEntry;
 // ResolutionError objects are used to record errors encountered during
 // constant pool resolution (JVMS 5.4.3).
 
-// This value is added to the cpCache index of an invokedynamic instruction when
-// storing the resolution error resulting from that invokedynamic instruction.
-// This prevents issues where the cpCache index is the same as the constant pool
-// index of another entry in the table.
-const int CPCACHE_INDEX_MANGLE_VALUE = 1000000;
-
 class ResolutionErrorTable : AllStatic {
 
 public:
-
   static void add_entry(const constantPoolHandle& pool, int which, Symbol* error, Symbol* message,
-                 Symbol* cause, Symbol* cause_msg);
+                        Symbol* cause, Symbol* cause_msg);
 
   static void add_entry(const constantPoolHandle& pool, int which, const char* message);
 
@@ -56,6 +49,12 @@ public:
   // RedefineClasses support - remove obsolete constant pool entry
   static void delete_entry(ConstantPool* c);
 
+  // This value is added to the cpCache index of an invokedynamic instruction when
+  // storing the resolution error resulting from that invokedynamic instruction.
+  // This prevents issues where the cpCache index is the same as the constant pool
+  // index of another entry in the table.
+  static const int CPCACHE_INDEX_MANGLE_VALUE = 1000000;
+
   // This function is used to encode an index to differentiate it from a
   // constant pool index.  It assumes it is being called with a cpCache index
   // (that is less than 0).
@@ -63,35 +62,27 @@ public:
     assert(index < 0, "Unexpected non-negative cpCache index");
     return index + CPCACHE_INDEX_MANGLE_VALUE;
   }
-
-  static uintptr_t convert_key(const constantPoolHandle& pool, int cp_index) {
-    return (uintptr_t) (pool() + cp_index);
-  }
 };
 
 
 class ResolutionErrorEntry : public CHeapObj<mtClass> {
  private:
-  int               _cp_index;
   Symbol*           _error;
   Symbol*           _message;
   Symbol*           _cause;
   Symbol*           _cause_msg;
-  ConstantPool*     _pool;
   const char*       _nest_host_error;
 
+  NONCOPYABLE(ResolutionErrorEntry);
+
  public:
+    ResolutionErrorEntry(Symbol* error, Symbol* message, Symbol* cause, Symbol* cause_msg);
 
-    ResolutionErrorEntry(ConstantPool* pool, int cp_index, Symbol* error, Symbol* message,
-      Symbol* cause, Symbol* cause_msg);
-
-    ResolutionErrorEntry(ConstantPool* pool, int cp_index, const char* message):
-        _cp_index(cp_index),
+    ResolutionErrorEntry(const char* message):
         _error(nullptr),
         _message(nullptr),
         _cause(nullptr),
         _cause_msg(nullptr),
-        _pool(pool),
         _nest_host_error(message) {}
 
     ~ResolutionErrorEntry();
@@ -101,14 +92,11 @@ class ResolutionErrorEntry : public CHeapObj<mtClass> {
     }
 
 
-  ConstantPool*      pool() const               { return _pool; }
-  int                cp_index() const           { return _cp_index; }
   Symbol*            error() const              { return _error; }
   Symbol*            message() const            { return _message; }
   Symbol*            cause() const              { return _cause; }
   Symbol*            cause_msg() const          { return _cause_msg; }
   const char*        nest_host_error() const    { return _nest_host_error; }
-
 };
 
 #endif // SHARE_CLASSFILE_RESOLUTIONERRORS_HPP

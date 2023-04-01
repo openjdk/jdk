@@ -86,9 +86,9 @@ public class OIDName implements GeneralNameInterface {
      * Encode the OID name into the DerOutputStream.
      *
      * @param out the DER stream to encode the OIDName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putOID(oid);
     }
 

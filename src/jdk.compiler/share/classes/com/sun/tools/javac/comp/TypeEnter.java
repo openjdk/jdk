@@ -122,6 +122,7 @@ public class TypeEnter implements Completer {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected TypeEnter(Context context) {
         context.put(typeEnterKey, this);
         names = Names.instance(context);
@@ -353,7 +354,8 @@ public class TypeEnter implements Completer {
                     log.error(Errors.NoJavaLang);
                     throw new Abort();
                 }
-                importAll(make.at(tree.pos()).Import(make.QualIdent(javaLang), false), javaLang, env);
+                importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
+                    javaLang, env);
 
                 JCModuleDecl decl = tree.getModuleDecl();
 
@@ -406,7 +408,7 @@ public class TypeEnter implements Completer {
         }
 
         private void doImport(JCImport tree) {
-            JCFieldAccess imp = (JCFieldAccess)tree.qualid;
+            JCFieldAccess imp = tree.qualid;
             Name name = TreeInfo.name(imp);
 
             // Create a local environment pointing to this tree to disable
@@ -845,7 +847,7 @@ public class TypeEnter implements Completer {
 
             fillPermits(tree, baseEnv);
 
-            Set<Type> interfaceSet = new HashSet<>();
+            Set<Symbol> interfaceSet = new HashSet<>();
 
             for (JCExpression iface : tree.implementing) {
                 Type it = iface.type;
@@ -996,10 +998,8 @@ public class TypeEnter implements Completer {
 
                     memberEnter.memberEnter(field, env);
 
-                    sym.createRecordComponent(rc, field,
-                            field.mods.annotations.isEmpty() ?
-                                    List.nil() :
-                                    new TreeCopier<JCTree>(make.at(field.pos)).copy(field.mods.annotations));
+                    JCVariableDecl rcDecl = new TreeCopier<JCTree>(make.at(field.pos)).copy(field);
+                    sym.createRecordComponent(rc, rcDecl, field.sym);
                 }
 
                 enterThisAndSuper(sym, env);
@@ -1379,7 +1379,7 @@ public class TypeEnter implements Completer {
 
         @Override
         public List<Name> superArgs() {
-            List<JCVariableDecl> params = make.Params(constructorType().getParameterTypes(), constructorSymbol());
+            List<JCVariableDecl> params = make.Params(constructorSymbol());
             if (!enclosingType().hasTag(NONE)) {
                 params = params.tail;
             }

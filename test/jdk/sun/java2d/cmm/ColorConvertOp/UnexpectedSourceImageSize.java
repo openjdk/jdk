@@ -44,6 +44,7 @@ import static java.awt.image.BufferedImage.TYPE_USHORT_GRAY;
  * @test
  * @bug 8264666
  * @summary No exception or errors should occur in ColorConvertOp.filter().
+ * @run main/othervm/timeout=600 UnexpectedSourceImageSize
  */
 public final class UnexpectedSourceImageSize {
 

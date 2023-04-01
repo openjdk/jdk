@@ -91,7 +91,7 @@
     (IS_SAFE_SIZE_MUL(sizeof(type), (n)) ? (new type[(size_t)(n)]) : throw std::bad_alloc())
 
 #define SAFE_SIZE_NEW_ARRAY2(type, n, m) \
-    (IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_MUL(sizeof(type), (n) * (m)) ? \
+    (IS_SAFE_SIZE_MUL((m), (n)) && IS_SAFE_SIZE_MUL(sizeof(type), (size_t)(n) * (size_t)(m)) ? \
      (new type[(size_t)(n) * (size_t)(m)]) : throw std::bad_alloc())
 
 /*

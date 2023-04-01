@@ -763,7 +763,7 @@ public class PNGImageReader extends ImageReader {
                 // verify the chunk length
                 if (chunkLength < 0) {
                     throw new IIOException("Invalid chunk length " + chunkLength);
-                };
+                }
 
                 try {
                     /*

@@ -67,7 +67,7 @@ public interface AccessibleComponent {
      * Sets the background color of this object.
      *
      * @param  c the new color for the background
-     * @see #setBackground
+     * @see #getBackground
      */
     public void setBackground(Color c);
 

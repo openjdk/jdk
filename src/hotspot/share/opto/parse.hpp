@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,12 +76,12 @@ protected:
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
                             int caller_bci,
-                            NOT_PRODUCT_ARG(bool& should_delay)
+                            bool& should_delay,
                             ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
                                 int caller_bci,
-                                NOT_PRODUCT_ARG(bool& should_delay)
+                                bool& should_delay,
                                 ciCallProfile& profile);
   bool        is_not_reached(ciMethod* callee_method,
                              ciMethod* caller_method,
@@ -188,14 +188,14 @@ class Parse : public GraphKit {
     void set_start_map(SafePointNode* m)   { assert(!is_merged(), ""); _start_map = m; }
 
     // True after any predecessor flows control into this block
-    bool is_merged() const                 { return _start_map != NULL; }
+    bool is_merged() const                 { return _start_map != nullptr; }
 
 #ifdef ASSERT
     // True after backedge predecessor flows control into this block
     bool has_merged_backedge() const       { return _has_merged_backedge; }
     void mark_merged_backedge(Block* pred) {
       assert(is_SEL_head(), "should be loop head");
-      if (pred != NULL && is_SEL_backedge(pred)) {
+      if (pred != nullptr && is_SEL_backedge(pred)) {
         assert(is_parsed(), "block should be parsed before merging backedges");
         _has_merged_backedge = true;
       }
@@ -222,6 +222,29 @@ class Parse : public GraphKit {
     int start_sp() const                   { return flow()->stack_size(); }
 
     bool is_loop_head() const              { return flow()->is_loop_head(); }
+    bool is_in_irreducible_loop() const {
+      return flow()->is_in_irreducible_loop();
+    }
+    bool is_irreducible_loop_entry() const {
+      return flow()->is_irreducible_loop_head() || flow()->is_irreducible_loop_secondary_entry();
+    }
+    void copy_irreducible_status_to(RegionNode* region, const JVMState* jvms) {
+      assert(!is_irreducible_loop_entry() || is_in_irreducible_loop(), "entry is part of irreducible loop");
+      if (is_in_irreducible_loop()) {
+        // The block is in an irreducible loop of this method, so it is possible that this
+        // region becomes an irreducible loop entry. (no guarantee)
+        region->set_loop_status(RegionNode::LoopStatus::MaybeIrreducibleEntry);
+      } else if (jvms->caller() != nullptr) {
+        // The block is not in an irreducible loop of this method, hence it cannot ever
+        // be the entry of an irreducible loop. But it may be inside an irreducible loop
+        // of a caller of this inlined method. (limited guarantee)
+        assert(region->loop_status() == RegionNode::LoopStatus::NeverIrreducibleEntry, "status not changed");
+      } else {
+        // The block is not in an irreducible loop of this method, and there is no outer
+        // method. This region will never be in an irreducible loop (strong guarantee)
+        region->set_loop_status(RegionNode::LoopStatus::Reducible);
+      }
+    }
     bool is_SEL_head() const               { return flow()->is_single_entry_loop_head(); }
     bool is_SEL_backedge(Block* pred) const{ return is_SEL_head() && pred->rpo() >= rpo(); }
     bool is_invariant_local(uint i) const  {
@@ -262,7 +285,7 @@ class Parse : public GraphKit {
     // path number ("pnum").
     int add_new_path();
 
-    // Initialize me by recording the parser's map.  My own map must be NULL.
+    // Initialize me by recording the parser's map.  My own map must be null.
     void record_state(Parse* outer);
   };
 
@@ -382,7 +405,7 @@ class Parse : public GraphKit {
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
   Node*    alloc_with_final() const   { return _alloc_with_final; }
   void set_alloc_with_final(Node* n)  {
-    assert((_alloc_with_final == NULL) || (_alloc_with_final == n), "different init objects?");
+    assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");
     _alloc_with_final = n;
   }
 
@@ -409,7 +432,7 @@ class Parse : public GraphKit {
   Block* start_block() {
     return rpo_at(flow()->start_block()->rpo());
   }
-  // Can return NULL if the flow pass did not complete a block.
+  // Can return null if the flow pass did not complete a block.
   Block* successor_for_bci(int bci) {
     return block()->successor_for_bci(bci);
   }
@@ -608,7 +631,7 @@ class UnstableIfTrap {
 
 public:
   UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _modified(false) {
-    assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
+    assert(_unc != nullptr && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
           "invalid uncommon_trap call!");
     _next_bci = path != nullptr ? path->start() : -1;
   }

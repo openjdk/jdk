@@ -2,8 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8262891 8272776
  * @summary Check null handling for non-pattern switches.
- * @compile --enable-preview -source ${jdk.version} NullSwitch.java
- * @run main/othervm --enable-preview NullSwitch
+ * @enablePreview
  */
 
 public class NullSwitch {
@@ -26,9 +25,6 @@ public class NullSwitch {
         assertEquals(100, matchingSwitch3(0));
         assertEquals(-1, matchingSwitch3(null));
         assertEquals(-2, matchingSwitch3(0.0));
-        assertEquals(0, matchingSwitch4(""));
-        assertEquals(1, matchingSwitch4(null));
-        assertEquals(1, matchingSwitch4(0.0));
         assertEquals(0, matchingSwitch5(""));
         assertEquals(1, matchingSwitch5("a"));
         assertEquals(100, matchingSwitch5(0));
@@ -93,7 +89,8 @@ public class NullSwitch {
     private int matchingSwitch1(Object obj) {
         return switch (obj) {
             case String s -> s.length();
-            case null, Integer i -> i == null ? -1 : 100 + i;
+            case Integer i -> 100 + i;
+            case null -> -1;
             default -> -2;
         };
     }
@@ -108,23 +105,17 @@ public class NullSwitch {
     private int matchingSwitch3(Object obj) {
         return switch (obj) {
             case String s -> s.length();
-            case Integer i, null -> i == null ? -1 : 100 + i;
+            case Integer i -> 100 + i;
+            case null -> -1;
             default -> -2;
-        };
-    }
-
-    private int matchingSwitch4(Object obj) {
-        return switch (obj) {
-            case String s -> 0;
-            case default, null -> 1;
         };
     }
 
     private int matchingSwitch5(Object obj) {
         return switch (obj) {
             case String s: yield s.length();
-            case null:
-            case Integer i: yield i == null ? -1 : 100 + i;
+            case null: yield -1;
+            case Integer i: yield 100 + i;
             default: yield -2;
         };
     }
@@ -132,7 +123,7 @@ public class NullSwitch {
     private int matchingSwitch6(Object obj) {
         return switch (obj) {
             case String s: yield 0;
-            case null:
+            case null: yield 1;
             default: yield 1;
         };
     }
@@ -140,8 +131,8 @@ public class NullSwitch {
     private int matchingSwitch7(Object obj) {
         return switch (obj) {
             case String s: yield s.length();
-            case Integer i:
-            case null: yield i == null ? -1 : 100 + i;
+            case Integer i: yield 100 + i;
+            case null: yield -1;
             default: yield -2;
         };
     }
@@ -149,22 +140,24 @@ public class NullSwitch {
     private int matchingSwitch8(Object obj) {
         return switch (obj) {
             case String s: yield 0;
-            default:
-            case null: yield 1;
+            case null:
+            default: yield 1;
         };
     }
 
     private int matchingSwitch9a(Object obj) {
         return switch (obj) {
             case String s: yield 0;
-            case null, Object o: yield 1;
+            case null: yield 1;
+            case Object o: yield 1;
         };
     }
 
     private int matchingSwitch10a(Object obj) {
         switch (obj) {
             case String s: return 0;
-            case null, Object o: return 1;
+            case null: return 1;
+            case Object o: return 1;
         }
     }
 
@@ -215,8 +208,8 @@ public class NullSwitch {
     private int matchingSwitch13(Object obj) {
         try {
             switch (obj) {
-                default: return 1;
                 case String s: return 0;
+                default: return 1;
             }
         } catch (NullPointerException ex) {
             return 2;

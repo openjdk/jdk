@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class TsaSigner {
     /**
      * Sign data.
      *
-     * @returns the time-stamping response data
+     * @return the time-stamping response data
      */
     public byte[] sign() throws Exception {
         TsaParam requestParam = parseRequestParam();
@@ -228,7 +228,7 @@ public class TsaSigner {
             PKCS7 p7 = new PKCS7(new AlgorithmId[] { digestAlgoId },
                     eContentInfo, signerCertChain,
                     new SignerInfo[] { signerInfo });
-            ByteArrayOutputStream signedDataOut = new ByteArrayOutputStream();
+            DerOutputStream signedDataOut = new DerOutputStream();
             p7.encodeSignedData(signedDataOut);
             byte[] signedData = signedDataOut.toByteArray();
             debug("Signed data", signedData);

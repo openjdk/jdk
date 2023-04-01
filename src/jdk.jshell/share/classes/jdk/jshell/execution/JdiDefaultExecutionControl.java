@@ -48,6 +48,7 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
+import java.util.stream.Stream;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionEnv;
 import static jdk.jshell.execution.Util.remoteInputOutput;
@@ -96,10 +97,15 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             // timeout on I/O-socket
             listener.setSoTimeout(timeout);
             int port = listener.getLocalPort();
+            List<String> augmentedremoteVMOptions =
+                    Stream.concat(env.extraRemoteVMOptions().stream(),
+                                  //disable System.console():
+                                  List.of("-Djdk.console=java.base").stream())
+                          .toList();
 
             // Set-up the JDI connection
             JdiInitiator jdii = new JdiInitiator(port,
-                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host,
+                    augmentedremoteVMOptions, remoteAgent, isLaunch, host,
                     timeout, Collections.emptyMap());
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();

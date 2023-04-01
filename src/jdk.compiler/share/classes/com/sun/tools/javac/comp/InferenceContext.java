@@ -27,7 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -551,7 +550,7 @@ public class InferenceContext {
      * This is why the tree is used as the key of the map below. This map
      * stores a Type per AST.
      */
-    Map<JCTree, Type> captureTypeCache = new HashMap<>();
+    Map<JCTree, Type> captureTypeCache = new LinkedHashMap<>();
 
     Type cachedCapture(JCTree tree, Type t, boolean readOnly) {
         Type captured = captureTypeCache.get(tree);

@@ -617,6 +617,9 @@ public class BasicTableUI extends TableUI
                 }
                 */
             } else if (key == CANCEL_EDITING) {
+                if (table.isEditing()) {
+                    table.getCellEditor().cancelCellEditing();
+                }
                 table.removeEditor();
             } else if (key == SELECT_ALL) {
                 table.selectAll();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package java.util.zip;
 
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -32,6 +31,8 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.DirectBuffer;
+
+import static java.util.zip.ZipUtils.NIO_ACCESS;
 
 /**
  * A class that can be used to compute the CRC-32C of a data stream.
@@ -149,7 +150,7 @@ public final class CRC32C implements Checksum {
         if (b == null) {
             throw new NullPointerException();
         }
-        Preconditions.checkFromIndexSize(len, off, b.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, b.length, Preconditions.AIOOBE_FORMATTER);
         crc = updateBytes(crc, b, off, (off + len));
     }
 
@@ -171,11 +172,12 @@ public final class CRC32C implements Checksum {
         }
 
         if (buffer.isDirect()) {
+            NIO_ACCESS.acquireSession(buffer);
             try {
-                crc = updateDirectByteBuffer(crc, ((DirectBuffer) buffer).address(),
+                crc = updateDirectByteBuffer(crc, ((DirectBuffer)buffer).address(),
                         pos, limit);
             } finally {
-                Reference.reachabilityFence(buffer);
+                NIO_ACCESS.releaseSession(buffer);
             }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(),

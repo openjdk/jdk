@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @enablePreview
  * @modules jdk.incubator.concurrent
  * @library /test/lib
- * @run testng/othervm StructuredThreadDumpTest
+ * @run junit/othervm StructuredThreadDumpTest
  */
 
 import jdk.incubator.concurrent.StructuredTaskScope;
@@ -43,17 +43,17 @@ import java.util.stream.Stream;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.HotSpotDiagnosticMXBean.ThreadDumpFormat;
 import jdk.test.lib.threaddump.ThreadDump;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class StructuredThreadDumpTest {
+class StructuredThreadDumpTest {
 
     /**
      * Test that a thread dump with a tree of task scopes contains a thread grouping for
      * each task scope.
      */
     @Test
-    public void testTree() throws Exception {
+    void testTree() throws Exception {
         ThreadFactory factory = Thread.ofVirtual().factory();
         try (var scope = new StructuredTaskScope<>("scope", factory)) {
             Thread thread1 = fork(scope, "child-scope-A");
@@ -95,7 +95,7 @@ public class StructuredThreadDumpTest {
      * each task scope.
      */
     @Test
-    public void testNested() throws Exception {
+    void testNested() throws Exception {
         ThreadFactory factory = Thread.ofVirtual().factory();
         try (var scope1 = new StructuredTaskScope<>("scope-A", factory)) {
             Thread thread1 = fork(scope1);

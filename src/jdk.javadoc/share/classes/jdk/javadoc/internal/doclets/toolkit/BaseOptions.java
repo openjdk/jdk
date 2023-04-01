@@ -419,7 +419,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-excludedocfilessubdir", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        addToSet(excludedDocFileDirs, args.get(0));
+                        excludedDocFileDirs.addAll(List.of(args.get(0).split("[,:]")));
                         return true;
                     }
                 },
@@ -536,7 +536,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-noqualifier", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        addToSet(excludedQualifiers, args.get(0));
+                        excludedQualifiers.addAll(List.of(args.get(0).split("[,:]")));
                         return true;
                     }
                 },
@@ -762,15 +762,6 @@ public abstract class BaseOptions {
             }
         }
         return true;
-    }
-
-    private void addToSet(Set<String> s, String str) {
-        StringTokenizer st = new StringTokenizer(str, ":");
-        String current;
-        while (st.hasMoreTokens()) {
-            current = st.nextToken();
-            s.add(current);
-        }
     }
 
     /**

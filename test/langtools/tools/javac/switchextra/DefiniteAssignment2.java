@@ -5,7 +5,7 @@
  */
 public class DefiniteAssignment2 {
 
-    public static void main(String[] args) {
+    public static void meth() {
         int a = 0;
         E e = E.A;
 

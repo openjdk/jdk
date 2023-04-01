@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -37,7 +37,7 @@
 #include "utilities/xmlstream.hpp"
 
 
-Symbol* vmSymbols::_type_signatures[T_VOID+1] = { NULL /*, NULL...*/ };
+Symbol* vmSymbols::_type_signatures[T_VOID+1] = { nullptr /*, nullptr...*/ };
 
 inline int compare_symbol(const Symbol* a, const Symbol* b) {
   if (a == b)  return 0;
@@ -102,7 +102,7 @@ void vmSymbols::initialize() {
 #ifdef ASSERT
     for (int i = (int)T_BOOLEAN; i < (int)T_VOID+1; i++) {
       Symbol* s = _type_signatures[i];
-      if (s == NULL)  continue;
+      if (s == nullptr)  continue;
       SignatureStream ss(s, false);
       assert(ss.type() == i, "matching signature");
       assert(!ss.is_reference(), "no single-char signature for T_OBJECT, etc.");
@@ -140,7 +140,7 @@ void vmSymbols::initialize() {
 #ifdef ASSERT
   {
     // Spot-check correspondence between strings, symbols, and enums:
-    assert(Symbol::_vm_symbols[NO_SID] == NULL, "must be");
+    assert(Symbol::_vm_symbols[NO_SID] == nullptr, "must be");
     const char* str = "java/lang/Object";
     TempNewSymbol jlo = SymbolTable::new_permanent_symbol(str);
     assert(strncmp(str, (char*)jlo->base(), jlo->utf8_length()) == 0, "");
@@ -293,6 +293,6 @@ vmSymbolID vmSymbols::find_sid(const Symbol* symbol) {
 
 vmSymbolID vmSymbols::find_sid(const char* symbol_name) {
   Symbol* symbol = SymbolTable::probe(symbol_name, (int) strlen(symbol_name));
-  if (symbol == NULL)  return vmSymbolID::NO_SID;
+  if (symbol == nullptr)  return vmSymbolID::NO_SID;
   return find_sid(symbol);
 }

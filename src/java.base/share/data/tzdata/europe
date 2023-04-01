@@ -1126,7 +1126,30 @@ Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 # "National Park" by Executive Order:
 # http://naalakkersuisut.gl/~/media/Nanoq/Files/Attached%20Files/Engelske-tekster/Legislation/Executive%20Order%20National%20Park.rtf
 # It is their only National Park.
+
+# From Jonas Nyrup (2022-11-24):
+# On last Saturday in October 2023 when DST ends America/Nuuk will switch
+# from -03/-02 to -02/-01
+# https://sermitsiaq.ag/forslagtidsforskel-danmark-mindskes-sommertid-beholdes
+# ...
+# https://sermitsiaq.ag/groenland-skifte-tidszone-trods-bekymringer
 #
+# From Jürgen Appel (2022-11-25):
+# https://ina.gl/samlinger/oversigt-over-samlinger/samling/dagsordener/dagsorden.aspx?lang=da&day=24-11-2022
+# If I understand this correctly, from the next planned switch to
+# summer time, Greenland will permanently stay at that time, i.e. no
+# switch back to winter time in 2023 will occur.
+#
+# From Paul Eggert (2022-11-28):
+# The official document in Danish
+# https://naalakkersuisut.gl/-/media/naalakkersuisut/filer/kundgoerelser/2022/11/2511/31_da_inatsisartutlov-om-tidens-bestemmelse.pdf?la=da&hash=A33597D8A38CC7038465241119EF34F3
+# says standard time for Greenland is -02, that Naalakkersuisut can lay down
+# rules for DST and can require some areas to use a different time zone,
+# and that this all takes effect 2023-03-25 22:00.  The abovementioned
+# "bekymringer" URL says the intent is no transition March 25, that
+# Greenland will not go back to winter time in fall 2023, and that
+# only America/Nuuk is affected (though further changes may occur).
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Thule	1991	1992	-	Mar	lastSun	2:00	1:00	D
 Rule	Thule	1991	1992	-	Sep	lastSun	2:00	0	S
@@ -1149,7 +1172,8 @@ Zone America/Scoresbysund -1:27:52 -	LMT	1916 Jul 28 # Ittoqqortoormiit
 			-1:00	EU	-01/+00
 Zone America/Nuuk	-3:26:56 -	LMT	1916 Jul 28 # Godthåb
 			-3:00	-	-03	1980 Apr  6  2:00
-			-3:00	EU	-03/-02
+			-3:00	EU	-03/-02	2023 Mar 25 22:00
+			-2:00	-	-02
 Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik
 			-4:00	Thule	A%sT
 

@@ -84,7 +84,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         return middleWidget.isHitAt(localLocation);
     }
 
-    public FigureWidget(final Figure f, DiagramScene scene, Widget parent) {
+    public FigureWidget(final Figure f, DiagramScene scene) {
         super(scene);
 
         assert this.getScene() != null;
@@ -93,7 +93,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.figure = f;
         this.setCheckClipping(true);
         this.diagramScene = scene;
-        parent.addChild(this);
 
         Widget outer = new Widget(scene);
         outer.setBackground(f.getColor());
@@ -107,7 +106,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         middleWidget.setBackground(f.getColor());
         middleWidget.setOpaque(true);
         middleWidget.getActions().addAction(new DoubleClickAction(this));
-        middleWidget.setCheckClipping(true);
+        middleWidget.setCheckClipping(false);
 
         dummyTop = new Widget(scene);
         int extraTopHeight =
@@ -138,6 +137,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
             lw.setBorder(BorderFactory.createEmptyBorder());
+            lw.setCheckClipping(false);
         }
 
         if (getFigure().getWarning() != null) {

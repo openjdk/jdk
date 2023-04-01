@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +31,7 @@ import java.util.ListResourceBundle;
  * Array. You also need to update MAX_CODE for error strings
  * and MAX_WARNING for warnings ( Needed for only information
  * purpose )
+ * @LastModified: May 2022
  */
 public class XSLTErrorResources_zh_CN extends ListResourceBundle
 {
@@ -1332,7 +1333,6 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
   // Note to translators:  The following messages provide usage information
   // for the Xalan Process command line.  "Process" is the name of a Java class,
   // and should not be translated.
-  { "xslProc_option", "Xalan-J \u547D\u4EE4\u884C Process \u7C7B\u9009\u9879:"},
   { "xslProc_option", "Xalan-J \u547D\u4EE4\u884C Process \u7C7B\u9009\u9879:"},
   { "xslProc_invalid_xsltc_option", "XSLTC \u6A21\u5F0F\u4E0B\u4E0D\u652F\u6301\u9009\u9879{0}\u3002"},
   { "xslProc_invalid_xalan_option", "\u9009\u9879{0}\u53EA\u80FD\u4E0E -XSLTC \u4E00\u8D77\u4F7F\u7528\u3002"},

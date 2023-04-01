@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_v
 
   LIR_Opr xor_res = gen->new_pointer_register();
   LIR_Opr xor_shift_res = gen->new_pointer_register();
-  if (TwoOperandLIRForm) {
+  if (two_operand_lir_form) {
     __ move(addr, xor_res);
     __ logical_xor(xor_res, new_val, xor_res);
     __ move(xor_res, xor_shift_res);

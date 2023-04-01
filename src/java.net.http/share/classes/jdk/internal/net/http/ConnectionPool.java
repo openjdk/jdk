@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,13 @@ import java.util.stream.Collectors;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
+import static jdk.internal.net.http.HttpClientImpl.KEEP_ALIVE_TIMEOUT; //seconds
 
 /**
  * Http 1.1 connection pool.
  */
 final class ConnectionPool {
 
-    static final long KEEP_ALIVE = Utils.getIntegerNetProperty(
-            "jdk.httpclient.keepalive.timeout", 1200); // seconds
     static final long MAX_POOL_SIZE = Utils.getIntegerNetProperty(
             "jdk.httpclient.connectionPoolSize", 0); // unbounded
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
@@ -168,7 +167,7 @@ final class ConnectionPool {
      * Returns the connection to the pool.
      */
     void returnToPool(HttpConnection conn) {
-        returnToPool(conn, Instant.now(), KEEP_ALIVE);
+        returnToPool(conn, Instant.now(), KEEP_ALIVE_TIMEOUT);
     }
 
     // Called also by whitebox tests
@@ -378,7 +377,7 @@ final class ConnectionPool {
         // should only be called while holding a synchronization
         // lock on the ConnectionPool
         void add(HttpConnection conn) {
-            add(conn, Instant.now(), KEEP_ALIVE);
+            add(conn, Instant.now(), KEEP_ALIVE_TIMEOUT);
         }
 
         // Used by whitebox test.

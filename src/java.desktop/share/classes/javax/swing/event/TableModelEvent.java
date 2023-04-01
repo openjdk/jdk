@@ -198,14 +198,14 @@ public class TableModelEvent extends java.util.EventObject
      *
      * @return an integer signifying the first row changed
      */
-    public int getFirstRow() { return firstRow; };
+    public int getFirstRow() { return firstRow; }
 
     /**
      * Returns the last row that changed.
      *
      * @return an integer signifying the last row changed
      */
-    public int getLastRow() { return lastRow; };
+    public int getLastRow() { return lastRow; }
 
     /**
      *  Returns the column for the event.  If the return
@@ -214,7 +214,7 @@ public class TableModelEvent extends java.util.EventObject
      *
      * @return an integer signifying which column is affected by this event
      */
-    public int getColumn() { return column; };
+    public int getColumn() { return column; }
 
     /**
      *  Returns the type of event - one of: INSERT, UPDATE and DELETE.

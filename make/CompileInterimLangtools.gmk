@@ -125,5 +125,20 @@ $(foreach m, $(INTERIM_LANGTOOLS_BASE_MODULES), \
 )
 
 ################################################################################
+# Setup the compilation of the javac server build tool. Technically, this is not
+# really "interim" langtools, but just like it, it is needed henceforth for all
+# java compilation using the interim compiler.
+$(eval $(call SetupJavaCompilation, BUILD_JAVAC_SERVER, \
+    COMPILER := bootjdk, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
+    SRC := $(TOPDIR)/make/langtools/tools, \
+    INCLUDES := javacserver, \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_javacserver_classes, \
+))
+
+TARGETS += $(BUILD_JAVAC_SERVER)
+
+################################################################################
+
 
 all: $(TARGETS)

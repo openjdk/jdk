@@ -135,30 +135,6 @@ public class ValueConversionsTest {
     }
 
     @Test
-    public void testCast() throws Throwable {
-        Class<?>[] types = { Object.class, Serializable.class, String.class, Number.class, Integer.class };
-        Object[] objects = { new Object(), Boolean.FALSE,      "hello",      (Long)12L,    (Integer)6    };
-        for (Class<?> dst : types) {
-            MethodHandle caster = ValueConversions.cast().bindTo(dst);
-            assertEquals(caster.type(), MethodHandles.identity(Object.class).type());
-            for (Object obj : objects) {
-                Class<?> src = obj.getClass();
-                boolean canCast = dst.isAssignableFrom(src);
-                try {
-                    Object result = caster.invokeExact(obj);
-                    if (canCast)
-                        assertEquals(obj, result);
-                    else
-                        assertEquals("cast should not have succeeded", dst, obj);
-                } catch (ClassCastException ex) {
-                    if (canCast)
-                        throw ex;
-                }
-            }
-        }
-    }
-
-    @Test
     public void testConvert() throws Throwable {
         for (long tval = 0, ctr = 0;;) {
             if (++ctr > 99999)  throw new AssertionError("too many test values");

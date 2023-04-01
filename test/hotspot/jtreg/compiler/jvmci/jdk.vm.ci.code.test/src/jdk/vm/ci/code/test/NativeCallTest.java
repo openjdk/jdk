@@ -159,7 +159,13 @@ public class NativeCallTest extends CodeInstallationTest {
                 asm.emitCallPrologue(cc, values);
                 asm.emitCall(addr);
                 asm.emitCallEpilogue(cc);
-                asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
+                if (returnClazz == float.class) {
+                    asm.emitFloatRet(((RegisterValue) cc.getReturn()).getRegister());
+                } else if (returnClazz == int.class) {
+                    asm.emitIntRet(((RegisterValue) cc.getReturn()).getRegister());
+                } else {
+                    assert false : "Unimplemented return type: " + returnClazz;
+                }
             }, getMethod(name, types), values);
         } catch (Throwable e) {
             e.printStackTrace();

@@ -852,11 +852,6 @@ public abstract class FontConfiguration {
         return parts;
     }
 
-    protected String[] split(String sequence) {
-        Vector<String> v = splitSequence(sequence);
-        return v.toArray(new String[0]);
-    }
-
     ////////////////////////////////////////////////////////////////////////
     // Methods for extracting information from the fontconfig data for AWT//
     ////////////////////////////////////////////////////////////////////////

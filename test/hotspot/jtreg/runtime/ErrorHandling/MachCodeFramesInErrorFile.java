@@ -34,6 +34,7 @@
  * @run driver MachCodeFramesInErrorFile
  */
 
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -126,12 +127,8 @@ public class MachCodeFramesInErrorFile {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         // Extract hs_err_pid file.
-        String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-        if (hs_err_file == null) {
-            output.reportDiagnosticSummary();
-            throw new RuntimeException("Did not find hs_err_pid file in output");
-        }
-        Path hsErrPath = Paths.get(hs_err_file);
+        File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output);
+        Path hsErrPath = hs_err_file.toPath();
         if (!Files.exists(hsErrPath)) {
             throw new RuntimeException("hs_err_pid file missing at " + hsErrPath + ".\n");
         }

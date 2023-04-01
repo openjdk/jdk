@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ const char* C2Compiler::retry_no_iterative_escape_analysis() {
 const char* C2Compiler::retry_class_loading_during_parsing() {
   return "retry class loading during parsing";
 }
+
+void compiler_stubs_init(bool in_compiler_thread);
+
 bool C2Compiler::init_c2_runtime() {
 
   // Check assumptions used while running ADLC
@@ -73,6 +76,8 @@ bool C2Compiler::init_c2_runtime() {
   }
 
   DEBUG_ONLY( Node::init_NodeProperty(); )
+
+  compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
 
   Compile::pd_compiler2_init();
 
@@ -113,7 +118,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
     Compile C(env, target, entry_bci, options, directive);
 
     // Check result and retry if appropriate.
-    if (C.failure_reason() != NULL) {
+    if (C.failure_reason() != nullptr) {
       if (C.failure_reason_is(retry_class_loading_during_parsing())) {
         env->report_failure(C.failure_reason());
         continue;  // retry
@@ -180,26 +185,12 @@ void C2Compiler::print_timers() {
   Compile::print_timers();
 }
 
-bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virtual) {
+bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   vmIntrinsics::ID id = method->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (id < vmIntrinsics::FIRST_ID || id > vmIntrinsics::LAST_COMPILER_INLINE) {
     return false;
-  }
-
-  // Only Object.hashCode and Object.clone intrinsics implement also a virtual
-  // dispatch because calling both methods is expensive but both methods are
-  // frequently overridden. All other intrinsics implement only a non-virtual
-  // dispatch.
-  if (is_virtual) {
-    switch (id) {
-    case vmIntrinsics::_hashCode:
-    case vmIntrinsics::_clone:
-      break;
-    default:
-      return false;
-    }
   }
 
   switch (id) {
@@ -221,12 +212,15 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_equalsU:
     if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
     break;
+  case vmIntrinsics::_vectorizedHashCode:
+    if (!Matcher::match_rule_supported(Op_VectorizedHashCode)) return false;
+    break;
   case vmIntrinsics::_equalsB:
   case vmIntrinsics::_equalsC:
     if (!Matcher::match_rule_supported(Op_AryEq)) return false;
     break;
   case vmIntrinsics::_copyMemory:
-    if (StubRoutines::unsafe_arraycopy() == NULL) return false;
+    if (StubRoutines::unsafe_arraycopy() == nullptr) return false;
     break;
   case vmIntrinsics::_encodeAsciiArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
@@ -480,7 +474,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     if (!Matcher::match_rule_supported(Op_UMulHiL)) return false;
     break;
   case vmIntrinsics::_getCallerClass:
-    if (vmClasses::reflect_CallerSensitive_klass() == NULL) return false;
+    if (vmClasses::reflect_CallerSensitive_klass() == nullptr) return false;
     break;
   case vmIntrinsics::_onSpinWait:
     if (!Matcher::match_rule_supported(Op_OnSpinWait)) return false;
@@ -680,8 +674,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
-  case vmIntrinsics::_extentLocalCache:
-  case vmIntrinsics::_setExtentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
+  case vmIntrinsics::_setScopedValueCache:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getEventWriter:
@@ -737,8 +731,10 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
+  case vmIntrinsics::_chacha20Block:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
+  case vmIntrinsics::_poly1305_processBlocks:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -777,8 +773,14 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_VectorExtract:
   case vmIntrinsics::_VectorMaskOp:
   case vmIntrinsics::_IndexVector:
+  case vmIntrinsics::_IndexPartiallyInUpperRange:
     return EnableVectorSupport;
   case vmIntrinsics::_blackhole:
+#if INCLUDE_JVMTI
+  case vmIntrinsics::_notifyJvmtiMount:
+  case vmIntrinsics::_notifyJvmtiUnmount:
+  case vmIntrinsics::_notifyJvmtiHideFrames:
+#endif
     break;
 
   default:

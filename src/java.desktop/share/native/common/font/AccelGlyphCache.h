@@ -91,7 +91,7 @@ void
 AccelGlyphCache_Free(GlyphCacheInfo *cache);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif /* AccelGlyphCache_h_Included */

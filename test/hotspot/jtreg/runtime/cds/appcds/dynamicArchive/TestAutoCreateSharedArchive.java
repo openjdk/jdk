@@ -336,8 +336,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_WORLD)
                       .shouldContain("The shared archive file version " + hex(version2) + " does not match the required version " + hex(currentCDSVersion))
-                      .shouldContain("UseSharedSpaces: The shared archive file has the wrong version")
-                      .shouldContain("UseSharedSpaces: Initialize dynamic archive failed")
+                      .shouldContain("The shared archive file has the wrong version")
+                      .shouldContain("Initialize dynamic archive failed")
                       .shouldContain("Dumping shared data to file");
             });
         ft2 = Files.getLastModifiedTime(Paths.get(modVersion));
@@ -400,7 +400,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed")
+                    output.shouldContain("Header checksum verification failed")
                           .shouldContain("Unable to use shared archive: invalid archive")
                           .shouldNotContain("Dumping shared data to file");
                 } else {
@@ -605,7 +605,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed");
+                    output.shouldContain("Header checksum verification failed");
                 }
                 output.shouldContain(HELLO_WORLD)
                       .shouldContain("Dumping shared data to file");
@@ -634,7 +634,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_WORLD);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed");
+                    output.shouldContain("Header checksum verification failed");
                 }
                 output.shouldContain("Unable to map shared spaces")
                       .shouldNotContain("Dumping shared data to file");

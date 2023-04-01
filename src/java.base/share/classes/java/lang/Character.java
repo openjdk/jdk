@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
 import static java.lang.constant.ConstantDescs.CD_char;
-import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**
@@ -9375,7 +9374,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointAt(char[] a, int index, int limit) {
-        if (index >= limit || limit < 0 || limit > a.length) {
+        if (index >= limit || index < 0 || limit > a.length) {
             throw new IndexOutOfBoundsException();
         }
         return codePointAtImpl(a, index, limit);
@@ -9478,7 +9477,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointBefore(char[] a, int index, int start) {
-        if (index <= start || start < 0 || start >= a.length) {
+        if (index <= start || start < 0 || index > a.length) {
             throw new IndexOutOfBoundsException();
         }
         return codePointBeforeImpl(a, index, start);
@@ -9688,7 +9687,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointCount(char[] a, int offset, int count) {
-        Objects.checkFromIndexSize(count, offset, a.length);
+        Objects.checkFromIndexSize(offset, count, a.length);
         return codePointCountImpl(a, offset, count);
     }
 
@@ -10780,6 +10779,113 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     public static boolean isIdentifierIgnorable(int codePoint) {
         return CharacterData.of(codePoint).isIdentifierIgnorable(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an Emoji.
+     * <p>
+     * A character is considered to be an Emoji if and only if it has the {@code Emoji}
+     * property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Emoji;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmoji(int codePoint) {
+        return CharacterData.of(codePoint).isEmoji(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) has the
+     * Emoji Presentation property by default.
+     * <p>
+     * A character is considered to have the Emoji Presentation property if and
+     * only if it has the {@code Emoji_Presentation} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character has the Emoji Presentation
+     *          property; {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmojiPresentation(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiPresentation(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an
+     * Emoji Modifier.
+     * <p>
+     * A character is considered to be an Emoji Modifier if and only if it has
+     * the {@code Emoji_Modifier} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Emoji Modifier;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmojiModifier(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiModifier(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an
+     * Emoji Modifier Base.
+     * <p>
+     * A character is considered to be an Emoji Modifier Base if and only if it has
+     * the {@code Emoji_Modifier_Base} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Emoji Modifier Base;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmojiModifierBase(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiModifierBase(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is an
+     * Emoji Component.
+     * <p>
+     * A character is considered to be an Emoji Component if and only if it has
+     * the {@code Emoji_Component} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Emoji Component;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isEmojiComponent(int codePoint) {
+        return CharacterData.of(codePoint).isEmojiComponent(codePoint);
+    }
+
+    /**
+     * Determines if the specified character (Unicode code point) is
+     * an Extended Pictographic.
+     * <p>
+     * A character is considered to be an Extended Pictographic if and only if it has
+     * the {@code Extended_Pictographic} property, defined in
+     * <a href="https://unicode.org/reports/tr51/#Emoji_Properties_and_Data_Files">
+     * Unicode Emoji (Technical Standard #51)</a>.
+     *
+     * @param   codePoint the character (Unicode code point) to be tested.
+     * @return  {@code true} if the character is an Extended Pictographic;
+     *          {@code false} otherwise.
+     * @since   21
+     */
+    public static boolean isExtendedPictographic(int codePoint) {
+        return CharacterData.of(codePoint).isExtendedPictographic(codePoint);
     }
 
     /**

@@ -26,6 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import sun.security.util.*;
 
@@ -35,7 +36,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificatePolicyMap {
+public class CertificatePolicyMap implements DerEncoder {
     private final CertificatePolicyId issuerDomain;
     private final CertificatePolicyId subjectDomain;
 
@@ -47,8 +48,8 @@ public class CertificatePolicyMap {
      */
     public CertificatePolicyMap(CertificatePolicyId issuer,
                                 CertificatePolicyId subject) {
-        this.issuerDomain = issuer;
-        this.subjectDomain = subject;
+        this.issuerDomain = Objects.requireNonNull(issuer);
+        this.subjectDomain = Objects.requireNonNull(subject);
     }
 
     /**
@@ -93,9 +94,9 @@ public class CertificatePolicyMap {
      * Write the CertificatePolicyMap to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the object to.
-     * @exception IOException on errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
 
         issuerDomain.encode(tmp);

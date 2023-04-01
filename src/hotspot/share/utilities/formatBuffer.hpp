@@ -27,6 +27,7 @@
 
 #include "jvm_io.h"
 #include "utilities/globalDefinitions.hpp"
+
 #include <stdarg.h>
 
 // Simple class to format the ctor arguments into a fixed-sized buffer.

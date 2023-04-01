@@ -41,9 +41,7 @@ public enum GC {
         @Override
         public Runnable get() {
             return () -> {
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.g1RunConcurrentGC();
             };
         }
 
@@ -67,13 +65,15 @@ public enum GC {
         @Override
         public Runnable get() {
             return () -> {
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.concurrentGCAcquireControl();
+                try {
+                    WHITE_BOX.youngGC();
+                    WHITE_BOX.youngGC();
+                    WHITE_BOX.concurrentGCRunTo(WHITE_BOX.AFTER_MARKING_STARTED);
+                    WHITE_BOX.concurrentGCRunToIdle();
+                } finally {
+                    WHITE_BOX.concurrentGCReleaseControl();
+                }
             };
         }
 
@@ -141,19 +141,18 @@ public enum GC {
         @Override
         public Runnable get() {
             return () -> {
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-
-                WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                // Provoking Mixed GC
-                WHITE_BOX.youngGC();// second evacuation pause will be mixed
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.concurrentGCAcquireControl();
+                try {
+                    WHITE_BOX.youngGC();
+                    WHITE_BOX.youngGC();
+                    WHITE_BOX.concurrentGCRunTo(WHITE_BOX.AFTER_MARKING_STARTED);
+                    WHITE_BOX.concurrentGCRunToIdle();
+                    WHITE_BOX.youngGC();
+                    // Provoking Mixed GC
+                    WHITE_BOX.youngGC();// second evacuation pause will be mixed
+                } finally {
+                    WHITE_BOX.concurrentGCReleaseControl();
+                }
             };
         }
 

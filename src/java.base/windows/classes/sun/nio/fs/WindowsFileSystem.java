@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.nio.file.spi.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.io.IOException;
+import jdk.internal.util.StaticProperty;
 
 class WindowsFileSystem
     extends FileSystem
@@ -42,12 +43,11 @@ class WindowsFileSystem
     private final String defaultRoot;
 
     // package-private
-    WindowsFileSystem(WindowsFileSystemProvider provider,
-                      String dir)
-    {
+    WindowsFileSystem(WindowsFileSystemProvider provider) {
         this.provider = provider;
 
         // parse default directory and check it is absolute
+        String dir = StaticProperty.userDir();
         WindowsPathParser.Result result = WindowsPathParser.parse(dir);
 
         if ((result.type() != WindowsPathType.ABSOLUTE) &&
@@ -203,8 +203,7 @@ class WindowsFileSystem
     }
 
     // supported views
-    private static final Set<String> supportedFileAttributeViews = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("basic", "dos", "acl", "owner", "user")));
+    private static final Set<String> supportedFileAttributeViews = Set.of("basic", "dos", "acl", "owner", "user");
 
     @Override
     public Set<String> supportedFileAttributeViews() {

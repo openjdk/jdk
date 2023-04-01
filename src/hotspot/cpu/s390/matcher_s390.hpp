@@ -153,6 +153,16 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
+  // Some architecture needs a helper to check for alltrue vector
+  static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
+    return false;
+  }
+
+  // BoolTest mask for vector test intrinsics
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
+    return BoolTest::illegal;
+  }
+
   // Returns pre-selection estimated size of a vector operation.
   static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
     switch(vopc) {

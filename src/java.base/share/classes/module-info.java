@@ -152,6 +152,7 @@ module java.base {
         jdk.compiler,
         jdk.incubator.concurrent, // participates in preview features
         jdk.incubator.vector, // participates in preview features
+        jdk.jartool, // participates in preview features
         jdk.jdi,
         jdk.jfr,
         jdk.jshell,
@@ -166,11 +167,17 @@ module java.base {
         jdk.jartool,
         jdk.jlink,
         jdk.jfr,
-        jdk.net;
+        jdk.net,
+        jdk.incubator.concurrent,
+        jdk.sctp,
+        jdk.crypto.cryptoki;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
     exports jdk.internal.event to
         jdk.jfr;
+    exports jdk.internal.io to
+        jdk.internal.le,
+        jdk.jshell;
     exports jdk.internal.jimage to
         jdk.jlink;
     exports jdk.internal.jimage.decompressor to
@@ -184,14 +191,23 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.org.objectweb.asm to
+    exports jdk.internal.classfile to
         jdk.jartool,
-        jdk.jfr,
         jdk.jlink,
         jdk.jshell;
-    exports jdk.internal.org.objectweb.asm.tree to
-        jdk.jfr,
+    exports jdk.internal.classfile.attribute to
+        jdk.jartool,
         jdk.jlink;
+    exports jdk.internal.classfile.constantpool to
+        jdk.jartool,
+        jdk.jlink;
+    exports jdk.internal.classfile.instruction to
+        jdk.jlink,
+        jdk.jshell;
+    exports jdk.internal.org.objectweb.asm to
+        jdk.jfr;
+    exports jdk.internal.org.objectweb.asm.tree to
+        jdk.jfr;
     exports jdk.internal.org.objectweb.asm.util to
         jdk.jfr;
     exports jdk.internal.org.objectweb.asm.commons to
@@ -245,12 +261,14 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm to
         java.management,
+        jdk.incubator.concurrent,
         jdk.internal.jvmstat,
         jdk.management,
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
         java.instrument,
         jdk.internal.vm.ci,
+        jdk.incubator.concurrent,
         jdk.incubator.vector,
         jdk.jfr,
         jdk.unsupported;
@@ -264,6 +282,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.random to
         jdk.random;
+    exports jdk.internal.util to
+        java.desktop;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;
@@ -305,7 +325,8 @@ module java.base {
     exports sun.security.action to
         java.desktop,
         java.security.jgss,
-        jdk.crypto.ec;
+        jdk.crypto.ec,
+        jdk.incubator.concurrent;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
@@ -403,6 +424,7 @@ module java.base {
 
     // JDK-internal service types
 
+    uses jdk.internal.io.JdkConsoleProvider;
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;

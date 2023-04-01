@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public:
   }
 
   static bool match(const char* pattern, Symbol* sym) {
-    return (pattern == NULL || sym->is_star_match(pattern));
+    return (pattern == nullptr || sym->is_star_match(pattern));
   }
 
   void print_klass_name(InstanceKlass* ik) {
@@ -147,7 +147,7 @@ void ClassPrinter::print_flags_help(outputStream* os) {
 }
 
 void ClassPrinter::print_classes(const char* class_name_pattern, int flags, outputStream* os) {
-  KlassPrintClosure closure(class_name_pattern, NULL, NULL, true, flags, os);
+  KlassPrintClosure closure(class_name_pattern, nullptr, nullptr, true, flags, os);
   ClassLoaderDataGraph::classes_do(&closure);
 }
 
@@ -158,9 +158,9 @@ void ClassPrinter::print_methods(const char* class_name_pattern,
   const char* method_signature_pattern;
 
   const char* colon = strchr(method_pattern, ':');
-  if (colon == NULL) {
+  if (colon == nullptr) {
     method_name_pattern = method_pattern;
-    method_signature_pattern = NULL;
+    method_signature_pattern = nullptr;
   } else {
     ptrdiff_t name_pat_len = colon - method_pattern;
     assert(name_pat_len >= 0, "sanity");

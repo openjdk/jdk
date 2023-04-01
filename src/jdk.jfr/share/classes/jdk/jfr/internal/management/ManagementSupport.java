@@ -51,6 +51,7 @@ import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.consumer.AbstractEventStream;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.instrument.JDKEvents;
@@ -177,5 +178,19 @@ public final class ManagementSupport {
             confs,
             false
         );
+    }
+
+    // An EventStream is passive, so a stop() method doesn't fit well in the API.
+    // RemoteRecordingStream::stop() implementation need to prevent stream
+    // from being closed, so this method is needed
+    public static void setCloseOnComplete(EventStream stream, boolean closeOnComplete) {
+        AbstractEventStream aes = (AbstractEventStream) stream;
+        aes.setCloseOnComplete(closeOnComplete);
+    }
+
+    // Internal method needed to block parser
+    public static StreamBarrier activateStreamBarrier(EventStream stream) {
+        EventDirectoryStream aes = (EventDirectoryStream) stream;
+        return aes.activateStreamBarrier();
     }
 }

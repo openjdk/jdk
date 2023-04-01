@@ -54,12 +54,12 @@ public final class ExtractAction extends ModelAwareAction {
 
     @Override
     protected String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ExtractAction");
+        return NbBundle.getMessage(ExtractAction.class, "HINT_ExtractAction");
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ExtractAction");
+        return NbBundle.getMessage(ExtractAction.class, "CTL_ExtractAction");
     }
 
     @Override

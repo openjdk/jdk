@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "jvm.h"
 
 #ifndef PRODUCT
 

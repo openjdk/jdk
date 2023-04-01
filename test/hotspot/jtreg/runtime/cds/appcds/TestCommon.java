@@ -42,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -357,6 +358,8 @@ public class TestCommon extends CDSTestUtils {
         if (n > 0) {
             firstJar = firstJar.substring(0, n);
         }
+        // get the real path in case the firstJar is specified as a relative path
+        firstJar = Paths.get(firstJar).toRealPath().toString();
         String classDir = System.getProperty("test.classes");
         String expected = getOutputDir() + File.separator;
 

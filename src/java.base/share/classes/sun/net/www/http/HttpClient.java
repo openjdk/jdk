@@ -34,7 +34,6 @@ import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetworkClient;
-import sun.net.ProgressSource;
 import sun.net.www.MessageHeader;
 import sun.net.www.HeaderParser;
 import sun.net.www.MeteredStream;
@@ -741,7 +740,7 @@ public class HttpClient extends NetworkClient {
     /** Parse the first line of the HTTP request.  It usually looks
         something like: {@literal "HTTP/1.0 <number> comment\r\n"}. */
 
-    public boolean parseHTTP(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
+    public boolean parseHTTP(MessageHeader responses, HttpURLConnection httpuc)
     throws IOException {
         /* If "HTTP/*" is found in the beginning, return true.  Let
          * HttpURLConnection parse the mime header itself.
@@ -758,7 +757,7 @@ public class HttpClient extends NetworkClient {
                 serverInput = new HttpCaptureInputStream(serverInput, capture);
             }
             serverInput = new BufferedInputStream(serverInput);
-            return (parseHTTPHeader(responses, pi, httpuc));
+            return (parseHTTPHeader(responses, httpuc));
         } catch (SocketTimeoutException stex) {
             // We don't want to retry the request when the app. sets a timeout
             // but don't close the server if timeout while waiting for 100-continue
@@ -785,7 +784,7 @@ public class HttpClient extends NetworkClient {
                     checkTunneling(httpuc);
                     afterConnect();
                     writeRequests(requests, poster);
-                    return parseHTTP(responses, pi, httpuc);
+                    return parseHTTP(responses, httpuc);
                 }
             }
             throw e;
@@ -805,7 +804,7 @@ public class HttpClient extends NetworkClient {
         }
     }
 
-    private boolean parseHTTPHeader(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
+    private boolean parseHTTPHeader(MessageHeader responses, HttpURLConnection httpuc)
     throws IOException {
         /* If "HTTP/*" is found in the beginning, return true.  Let
          * HttpURLConnection parse the mime header itself.
@@ -951,7 +950,7 @@ public class HttpClient extends NetworkClient {
                         checkTunneling(httpuc);
                         afterConnect();
                         writeRequests(requests, poster);
-                        return parseHTTP(responses, pi, httpuc);
+                        return parseHTTP(responses, httpuc);
                     }
                 }
                 throw new SocketException("Unexpected end of file from server");
@@ -994,7 +993,7 @@ public class HttpClient extends NetworkClient {
                 || (code >= 102 && code <= 199)) {
             logFinest("Ignoring interim informational 1xx response: " + code);
             responses.reset();
-            return parseHTTPHeader(responses, pi, httpuc);
+            return parseHTTPHeader(responses, httpuc);
         }
 
         long cl = -1;
@@ -1067,11 +1066,6 @@ public class HttpClient extends NetworkClient {
             // In this case, content length is well known, so it is okay
             // to wrap the input stream with KeepAliveStream/MeteredStream.
 
-            if (pi != null) {
-                // Progress monitor is enabled
-                pi.setContentType(responses.findValue("content-type"));
-            }
-
             // If disableKeepAlive == true, the client will not be returned
             // to the cache. But we still need to use a keepalive stream to
             // allow the multi-message authentication exchange on the connection
@@ -1079,39 +1073,13 @@ public class HttpClient extends NetworkClient {
             if (useKeepAliveStream)   {
                 // Wrap KeepAliveStream if keep alive is enabled.
                 logFinest("KeepAlive stream used: " + url);
-                serverInput = new KeepAliveStream(serverInput, pi, cl, this);
+                serverInput = new KeepAliveStream(serverInput, cl, this);
                 failedOnce = false;
             }
             else        {
-                serverInput = new MeteredStream(serverInput, pi, cl);
+                serverInput = new MeteredStream(serverInput, cl);
             }
         }
-        else if (cl == -1)  {
-            // In this case, content length is unknown - the input
-            // stream would simply be a regular InputStream or
-            // ChunkedInputStream.
-
-            if (pi != null) {
-                // Progress monitoring is enabled.
-
-                pi.setContentType(responses.findValue("content-type"));
-
-                // Wrap MeteredStream for tracking indeterministic
-                // progress, even if the input stream is ChunkedInputStream.
-                serverInput = new MeteredStream(serverInput, pi, cl);
-            }
-            else    {
-                // Progress monitoring is disabled, and there is no
-                // need to wrap an unknown length input stream.
-
-                // ** This is an no-op **
-            }
-        }
-        else    {
-            if (pi != null)
-                pi.finishTracking();
-        }
-
         return ret;
     }
 

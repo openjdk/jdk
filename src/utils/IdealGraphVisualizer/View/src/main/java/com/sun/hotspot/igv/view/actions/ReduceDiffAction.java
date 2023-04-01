@@ -52,12 +52,12 @@ public final class ReduceDiffAction extends ModelAwareAction {
 
     @Override
     protected String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ReduceDiffAction");
+        return NbBundle.getMessage(ReduceDiffAction.class, "HINT_ReduceDiffAction");
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ReduceDiffAction");
+        return NbBundle.getMessage(ReduceDiffAction.class, "CTL_ReduceDiffAction");
     }
 
     @Override

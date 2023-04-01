@@ -67,7 +67,8 @@ import java.util.Set;
 import java.util.StringJoiner;
 import jdk.internal.access.JavaNetHttpCookieAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.net.*;
+import sun.net.NetProperties;
+import sun.net.NetworkClient;
 import sun.net.util.IPAddressUtil;
 import sun.net.www.*;
 import sun.net.www.http.HttpClient;
@@ -383,9 +384,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     boolean isUserProxyAuth;
 
     String serverAuthKey, proxyAuthKey;
-
-    /* Progress source */
-    protected ProgressSource pi;
 
     /* all the response headers we get back */
     private MessageHeader responses;
@@ -1331,7 +1329,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
 
             try {
-                http.parseHTTP(responses, pi, this);
+                http.parseHTTP(responses, this);
             } catch (SocketTimeoutException se) {
                 if (!enforceTimeOut) {
                     throw se;
@@ -1662,14 +1660,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     return cachedInputStream;
                 }
 
-                // Check if URL should be metered
-                boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, method);
-
-                if (meteredInput)   {
-                    pi = new ProgressSource(url, method);
-                    pi.beginTracking();
-                }
-
                 /* REMIND: This exists to fix the HttpsURLConnection subclass.
                  * Hotjava needs to run on JDK1.1FCS.  Do proper fix once a
                  * proper solution for SSL can be found.
@@ -1679,7 +1669,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 if (!streaming()) {
                     writeRequests();
                 }
-                http.parseHTTP(responses, pi, this);
+                http.parseHTTP(responses, this);
                 if (logger.isLoggable(PlatformLogger.Level.FINE)) {
                     logger.fine(responses.toString());
                 }
@@ -1932,18 +1922,17 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     continue;
                 }
 
-                try {
-                    cl = Long.parseLong(responses.findValue("content-length"));
-                } catch (Exception exc) { };
+                final String contentLengthVal = responses.findValue("content-length");
+                if (contentLengthVal != null) {
+                    try {
+                        cl = Long.parseLong(contentLengthVal);
+                    } catch (NumberFormatException nfe) { }
+                }
 
                 if (method.equals("HEAD") || cl == 0 ||
                     respCode == HTTP_NOT_MODIFIED ||
                     respCode == HTTP_NO_CONTENT) {
 
-                    if (pi != null) {
-                        pi.finishTracking();
-                        pi = null;
-                    }
                     http.finished();
                     http = null;
                     inputStream = new EmptyInputStream();
@@ -1996,8 +1985,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 return inputStream;
             } while (redirects < maxRedirects);
 
-            throw new ProtocolException("Server redirected too many " +
-                                        " times ("+ redirects + ")");
+            throw new ProtocolException("Server redirected too many times (" +
+                    redirects + ")");
         } catch (RuntimeException e) {
             disconnectInternal();
             rememberedException = e;
@@ -2019,6 +2008,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
             if (serverAuthKey != null) {
                 AuthenticationInfo.endAuthRequest(serverAuthKey);
+            }
+            if (proxyAuthentication != null) {
+                proxyAuthentication.disposeContext();
+            }
+            if (serverAuthentication != null) {
+                serverAuthentication.disposeContext();
             }
         }
     }
@@ -2163,9 +2158,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 sendCONNECTRequest();
                 responses.reset();
 
-                // There is no need to track progress in HTTP Tunneling,
-                // so ProgressSource is null.
-                http.parseHTTP(responses, null, this);
+                http.parseHTTP(responses, this);
 
                 /* Log the response to the CONNECT */
                 if (logger.isLoggable(PlatformLogger.Level.FINE)) {
@@ -2264,6 +2257,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         } finally  {
             if (proxyAuthKey != null) {
                 AuthenticationInfo.endAuthRequest(proxyAuthKey);
+            }
+            if (proxyAuthentication != null) {
+                proxyAuthentication.disposeContext();
             }
         }
 
@@ -2515,6 +2511,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
             if (ret != null) {
                 if (!ret.setHeaders(this, p, raw)) {
+                    ret.disposeContext();
                     ret = null;
                 }
             }
@@ -2687,6 +2684,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             if (ret != null ) {
                 if (!ret.setHeaders(this, p, raw)) {
+                    ret.disposeContext();
                     ret = null;
                 }
             }
@@ -2713,6 +2711,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     DigestAuthentication da = (DigestAuthentication)
                         currentProxyCredentials;
                     da.checkResponse (raw, method, getRequestURI());
+                    currentProxyCredentials.disposeContext();
                     currentProxyCredentials = null;
                 }
             }
@@ -2723,6 +2722,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     DigestAuthentication da = (DigestAuthentication)
                         currentServerCredentials;
                     da.checkResponse (raw, method, url);
+                    currentServerCredentials.disposeContext();
                     currentServerCredentials = null;
                 }
             }
@@ -3042,10 +3042,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private void disconnectInternal() {
         responseCode = -1;
         inputStream = null;
-        if (pi != null) {
-            pi.finishTracking();
-            pi = null;
-        }
         if (http != null) {
             http.closeServer();
             http = null;
@@ -3059,10 +3055,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     public void disconnect() {
 
         responseCode = -1;
-        if (pi != null) {
-            pi.finishTracking();
-            pi = null;
-        }
 
         if (http != null) {
             /*

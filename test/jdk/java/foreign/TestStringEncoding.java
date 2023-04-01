@@ -22,16 +22,16 @@
  *
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.SegmentAllocator;
+
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng TestStringEncoding
  */
 
@@ -39,9 +39,8 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
     public void testStrings(String testString, int expectedByteLength) {
-        try (MemorySession session = MemorySession.openConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(expectedByteLength, session);
-            MemorySegment text = allocator.allocateUtf8String(testString);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment text = arena.allocateUtf8String(testString);
 
             assertEquals(text.byteSize(), expectedByteLength);
 

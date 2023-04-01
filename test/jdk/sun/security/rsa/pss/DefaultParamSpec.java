@@ -49,8 +49,8 @@ public class DefaultParamSpec {
                         new MGF1ParameterSpec("SHA-384"),
                         48, PSSParameterSpec.TRAILER_FIELD_BC)));
 
-        X509CRLImpl crl = new X509CRLImpl(
-                new X500Name("CN=Issuer"), new Date(), new Date());
-        crl.sign(kpg.generateKeyPair().getPrivate(), "RSASSA-PSS");
+        X509CRLImpl crl = X509CRLImpl.newSigned(
+                new X509CRLImpl.TBSCertList(new X500Name("CN=Issuer"), new Date(), new Date()),
+                kpg.generateKeyPair().getPrivate(), "RSASSA-PSS");
     }
 }

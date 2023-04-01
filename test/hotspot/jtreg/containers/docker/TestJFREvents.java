@@ -51,6 +51,7 @@ public class TestJFREvents {
     private static final String TEST_ENV_VARIABLE = "UNIQUE_VARIABLE_ABC592903XYZ";
     private static final String TEST_ENV_VALUE = "unique_value_abc592903xyz";
     private static final int availableCPUs = Runtime.getRuntime().availableProcessors();
+    private static final int UNKNOWN = -100;
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
@@ -82,18 +83,32 @@ public class TestJFREvents {
     }
 
     private static void containerInfoTestCase() throws Exception {
+        long hostTotalMemory = getHostTotalMemory();
+        System.out.println("Debug: Host total memory is " + hostTotalMemory);
         // Leave one CPU for system and tools, otherwise this test may be unstable.
         // Try the memory sizes that were verified by testMemory tests before.
         int maxNrOfAvailableCpus = availableCPUs - 1;
         for (int cpus = 1; cpus < maxNrOfAvailableCpus; cpus *= 2) {
             for (int mem : new int[]{ 200, 500, 1024 }) {
-                testContainerInfo(cpus, mem);
+                testContainerInfo(cpus, mem, hostTotalMemory);
             }
         }
     }
 
-    private static void testContainerInfo(int expectedCPUs, int expectedMemoryMB) throws Exception {
-        Common.logNewTestCase("ContainerInfo: --cpus = " + expectedCPUs + " --memory=" + expectedMemoryMB + "m");
+    private static long getHostTotalMemory() throws Exception {
+        DockerRunOptions opts = Common.newOpts(imageName);
+
+        String hostMem = Common.run(opts).firstMatch("total physical memory: (\\d+)", 1);
+        try {
+            return Long.parseLong(hostMem);
+        } catch (NumberFormatException e) {
+            System.out.println("Could not parse total physical memory '" + hostMem + "' returning " + UNKNOWN);
+            return UNKNOWN;
+        }
+    }
+
+    private static void testContainerInfo(int expectedCPUs, int expectedMemoryMB, long hostTotalMemory) throws Exception {
+        Common.logNewTestCase("ContainerInfo: --cpus=" + expectedCPUs + " --memory=" + expectedMemoryMB + "m");
         String eventName = "jdk.ContainerConfiguration";
         long expectedSlicePeriod = 100000; // default slice period
         long expectedMemoryLimit = expectedMemoryMB * 1024 * 1024;
@@ -102,6 +117,7 @@ public class TestJFREvents {
         String cpuQuotaFld = "cpuQuota";
         String cpuSlicePeriodFld = "cpuSlicePeriod";
         String memoryLimitFld = "memoryLimit";
+        String totalMem = "hostTotalMemory";
 
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
@@ -112,7 +128,8 @@ public class TestJFREvents {
             .shouldContain(cpuCountFld + " = " + expectedCPUs)
             .shouldContain(cpuSlicePeriodFld + " = " + expectedSlicePeriod)
             .shouldContain(cpuQuotaFld + " = " + expectedCPUs * expectedSlicePeriod)
-            .shouldContain(memoryLimitFld + " = " + expectedMemoryLimit);
+            .shouldContain(memoryLimitFld + " = " + expectedMemoryLimit)
+            .shouldContain(totalMem + " = " + hostTotalMemory);
     }
 
     private static void testCpuUsage() throws Exception {

@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SERIAL_VMSTRUCTS_SERIAL_HPP
 #define SHARE_GC_SERIAL_VMSTRUCTS_SERIAL_HPP
 
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 
@@ -37,7 +38,7 @@
   nonstatic_field(TenuredGeneration,           _capacity_at_prologue,  size_t)                  \
   nonstatic_field(TenuredGeneration,           _used_at_prologue,      size_t)                  \
   nonstatic_field(TenuredGeneration,           _min_heap_delta_bytes,  size_t)                  \
-  nonstatic_field(TenuredGeneration,           _the_space,             ContiguousSpace*)        \
+  nonstatic_field(TenuredGeneration,           _the_space,             TenuredSpace*)           \
                                                                                                 \
   nonstatic_field(DefNewGeneration,            _old_gen,               Generation*)             \
   nonstatic_field(DefNewGeneration,            _tenuring_threshold,    uint)                    \
@@ -59,25 +60,24 @@
   nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_threshold, HeapWord*)               \
   nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_index,     size_t)                  \
                                                                                                 \
-  nonstatic_field(OffsetTableContigSpace,      _offsets,               BlockOffsetArray)
+  nonstatic_field(TenuredSpace,                _offsets,               BlockOffsetArray)
 
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
                           declare_integer_type)                               \
   declare_type(SerialHeap,                   GenCollectedHeap)                \
   declare_type(TenuredGeneration,            Generation)                      \
-  declare_type(TenuredSpace,                 OffsetTableContigSpace)          \
-  declare_type(OffsetTableContigSpace,       ContiguousSpace)                 \
+  declare_type(TenuredSpace,                 ContiguousSpace)                 \
                                                                               \
   declare_type(DefNewGeneration,             Generation)                      \
+  declare_type(CardTableRS, CardTable)                                        \
                                                                               \
   declare_toplevel_type(TenuredGeneration*)                                   \
   declare_toplevel_type(BlockOffsetSharedArray)                               \
   declare_toplevel_type(BlockOffsetTable)                                     \
            declare_type(BlockOffsetArray,             BlockOffsetTable)       \
            declare_type(BlockOffsetArrayContigSpace,  BlockOffsetArray)       \
-  declare_toplevel_type(BlockOffsetSharedArray*)                              \
-  declare_toplevel_type(OffsetTableContigSpace*)
+  declare_toplevel_type(BlockOffsetSharedArray*)
 
 #define VM_INT_CONSTANTS_SERIALGC(declare_constant,                           \
                                   declare_constant_with_value)

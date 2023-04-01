@@ -183,6 +183,25 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
+  // Without predicated input, an all-one vector is needed for the alltrue vector test
+  static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
+    return is_alltrue && !is_predicate;
+  }
+
+  // BoolTest mask for vector test intrinsics
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
+    if (!is_alltrue) {
+      return BoolTest::ne;
+    }
+    if (!is_predicate) {
+      return BoolTest::lt;
+    }
+    if ((vlen == 8 && !VM_Version::supports_avx512dq()) || vlen < 8) {
+      return BoolTest::eq;
+    }
+    return BoolTest::lt;
+  }
+
   // Returns pre-selection estimated size of a vector operation.
   // Currently, it's a rudimentary heuristic based on emitted code size for complex
   // IR nodes used by unroll policy. Idea is to constrain unrolling factor and prevent

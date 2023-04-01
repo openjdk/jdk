@@ -26,18 +26,16 @@
  * @summary Test virtual thread park when scheduler is a fixed thread pool
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} ParkWithFixedThreadPool.java
- * @run testng/othervm --enable-preview ParkWithFixedThreadPool
+ * @enablePreview
+ * @run main ParkWithFixedThreadPool
  */
+
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.LockSupport;
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
 
 public class ParkWithFixedThreadPool {
-    @Test
-    public static void multipleThreadPoolParkTest() throws Exception {
+    public static void main(String[] args) throws Exception {
         try (ExecutorService scheduler = Executors.newFixedThreadPool(8)) {
             int vthreadCount = 300;
             Thread[] vthreads = new Thread[vthreadCount];

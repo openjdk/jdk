@@ -368,7 +368,8 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
   // Patch this nmethod atomically.
   if (Assembler::reachable_from_branch_at(verified_entry, dest)) {
     ptrdiff_t offset = dest - verified_entry;
-    guarantee(is_imm_in_range(offset, 20, 1), "offset is too large to be patched in one jal insrusction."); // 1M
+    guarantee(Assembler::is_simm21(offset) && ((offset % 2) == 0),
+              "offset is too large to be patched in one jal instruction."); // 1M
 
     uint32_t insn = 0;
     address pInsn = (address)&insn;
@@ -444,8 +445,16 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
+int NativePostCallNop::displacement() const {
+  // Discard the high 32 bits
+  return (int)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
+}
+
 void NativePostCallNop::patch(jint diff) {
-  // unsupported for now
+  assert(diff != 0, "must be");
+  assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
+
+  MacroAssembler::patch_imm_in_li32(addr_at(4), diff);
 }
 
 void NativeDeoptInstruction::verify() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,8 @@ DECLARE_SRCOVER_MASKBLIT(IntArgb, FourByteAbgrPre);
 DECLARE_ALPHA_MASKBLIT(IntArgb, FourByteAbgrPre);
 DECLARE_SRCOVER_MASKBLIT(IntArgbPre, FourByteAbgrPre);
 DECLARE_ALPHA_MASKBLIT(IntArgbPre, FourByteAbgrPre);
+DECLARE_SRCOVER_MASKBLIT(FourByteAbgrPre, IntArgbPre);
+DECLARE_ALPHA_MASKBLIT(FourByteAbgrPre, IntArgbPre);
 DECLARE_ALPHA_MASKBLIT(IntRgb, FourByteAbgrPre);
 DECLARE_SOLID_DRAWGLYPHLISTAA(FourByteAbgrPre);
 DECLARE_SOLID_DRAWGLYPHLISTLCD(FourByteAbgrPre);
@@ -103,6 +105,8 @@ NativePrimitive FourByteAbgrPrePrimitives[] = {
     REGISTER_ALPHA_MASKBLIT(IntArgb, FourByteAbgrPre),
     REGISTER_SRCOVER_MASKBLIT(IntArgbPre, FourByteAbgrPre),
     REGISTER_ALPHA_MASKBLIT(IntArgbPre, FourByteAbgrPre),
+    REGISTER_SRCOVER_MASKBLIT(FourByteAbgrPre, IntArgbPre),
+    REGISTER_ALPHA_MASKBLIT(FourByteAbgrPre, IntArgbPre),
     REGISTER_ALPHA_MASKBLIT(IntRgb, FourByteAbgrPre),
     REGISTER_SOLID_DRAWGLYPHLISTAA(FourByteAbgrPre),
     REGISTER_SOLID_DRAWGLYPHLISTLCD(FourByteAbgrPre),
@@ -176,6 +180,10 @@ DEFINE_ALPHA_MASKBLIT(IntArgb, FourByteAbgrPre, 4ByteArgb)
 DEFINE_SRCOVER_MASKBLIT(IntArgbPre, FourByteAbgrPre, 4ByteArgb)
 
 DEFINE_ALPHA_MASKBLIT(IntArgbPre, FourByteAbgrPre, 4ByteArgb)
+
+DEFINE_SRCOVER_MASKBLIT(FourByteAbgrPre, IntArgbPre, 4ByteArgb)
+
+DEFINE_ALPHA_MASKBLIT(FourByteAbgrPre, IntArgbPre, 4ByteArgb)
 
 DEFINE_ALPHA_MASKBLIT(IntRgb, FourByteAbgrPre, 4ByteArgb)
 

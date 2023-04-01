@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestProperty extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestProperty tester = new TestProperty();
+        var tester = new TestProperty();
         tester.runTests();
     }
 
@@ -61,7 +61,7 @@ public class TestProperty extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#getGood()"><code>getGood()</code></a></li>
                     <li><a href="#setGood(pkg.MyObj)"><code>setGood(MyObj)</code></a></li>
                     <li><a href="#goodProperty()"><code>goodProperty()</code></a></li>
@@ -78,7 +78,7 @@ public class TestProperty extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#getBad()"><code>getBad()</code></a></li>
                     <li><a href="#setBad(pkg.MyObj%5B%5D)"><code>setBad(MyObj[])</code></a></li>
                     <li><a href="#badProperty()"><code>badProperty()</code></a></li>
@@ -117,7 +117,7 @@ public class TestProperty extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#getList()"><code>getList()</code></a></li>
                     <li><a href="#setList(java.util.List)"><code>setList(List)</code></a></li>
                     <li><a href="#listProperty()"><code>listProperty()</code></a></li>

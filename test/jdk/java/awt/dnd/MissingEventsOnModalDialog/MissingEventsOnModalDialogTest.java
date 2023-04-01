@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,10 @@ public class MissingEventsOnModalDialogTest {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
+        robot.waitForIdle();
         sourceFrame.toFront();
         robot.waitForIdle();
+        robot.delay(1000);
 
         Point point = getCenterPoint(sourceFrame);
         robot.mouseMove(point.x, point.y);
@@ -100,7 +102,7 @@ public class MissingEventsOnModalDialogTest {
 
         mouseDragAndDrop(robot, point, getCenterPoint(targetFrame));
 
-        long time = System.currentTimeMillis() + 1000;
+        long time = System.currentTimeMillis() + 2000;
 
         while (!passed) {
             if (time < System.currentTimeMillis()) {
@@ -141,13 +143,13 @@ public class MissingEventsOnModalDialogTest {
         int dx = (x2 - x1) / N;
         int dy = (y2 - y1) / N;
 
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
 
         for (int i = 0; i < N; i++) {
             robot.mouseMove(x += dx, y += dy);
         }
 
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
     private static class TestDragGestureListener implements DragGestureListener {
@@ -238,27 +240,23 @@ public class MissingEventsOnModalDialogTest {
 
     private static void clickOnDialog(Dialog dialog) {
         try {
-            long time = System.currentTimeMillis() + 200;
-
-            while (!dialog.isVisible()) {
-                if (time < System.currentTimeMillis()) {
-                    throw new RuntimeException("Dialog is not visible!");
-                }
-                Thread.sleep(10);
-            }
             Robot robot = new Robot();
             robot.setAutoDelay(50);
             robot.waitForIdle();
-            robot.delay(200);
+            robot.delay(1000);
+            if (!dialog.isVisible()) {
+                throw new RuntimeException("Dialog is not visible!");
+            }
 
             Point point = getCenterPoint(dialog);
 
             robot.mouseMove(point.x, point.y);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            dialog.dispose();
         }
     }
 

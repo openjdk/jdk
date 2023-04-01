@@ -92,9 +92,8 @@ public class UniqueIdentity {
      *
      * @param out the DerOutputStream to marshal the contents to.
      * @param tag encode it under the following tag.
-     * @exception IOException on errors.
      */
-    public void encode(DerOutputStream out, byte tag) throws IOException {
+    public void encode(DerOutputStream out, byte tag) {
         byte[] bytes = id.toByteArray();
         int excessBits = bytes.length*8 - id.length();
 
@@ -102,7 +101,7 @@ public class UniqueIdentity {
         out.putLength(bytes.length + 1);
 
         out.write(excessBits);
-        out.write(bytes);
+        out.writeBytes(bytes);
     }
 
     /**

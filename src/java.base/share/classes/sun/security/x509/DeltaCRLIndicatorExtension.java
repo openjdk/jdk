@@ -69,7 +69,7 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
      *
      * @param crlNum the value to be set for the extension.
      */
-    public DeltaCRLIndicatorExtension(int crlNum) throws IOException {
+    public DeltaCRLIndicatorExtension(int crlNum) {
         super(PKIXExtensions.DeltaCRLIndicator_Id, true,
             BigInteger.valueOf(crlNum), NAME, LABEL);
     }
@@ -80,7 +80,7 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
      *
      * @param crlNum the value to be set for the extension.
      */
-    public DeltaCRLIndicatorExtension(BigInteger crlNum) throws IOException {
+    public DeltaCRLIndicatorExtension(BigInteger crlNum) {
         super(PKIXExtensions.DeltaCRLIndicator_Id, true, crlNum, NAME, LABEL);
     }
 
@@ -102,10 +102,9 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
      * Writes the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         super.encode(out, PKIXExtensions.DeltaCRLIndicator_Id, true);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -109,11 +110,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-
-#include CPU_HEADER(vmStructs)
-#include OS_HEADER(vmStructs)
-#include OS_CPU_HEADER(vmStructs)
-
 #ifdef COMPILER2
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -141,6 +137,10 @@
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
 #endif // COMPILER2
+
+#include CPU_HEADER(vmStructs)
+#include OS_HEADER(vmStructs)
+#include OS_CPU_HEADER(vmStructs)
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.
@@ -221,13 +221,14 @@
   nonstatic_field(ConstantPoolCache,           _reference_map,                                Array<u2>*)                            \
   nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
+  nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
+  nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _local_interfaces,                             Array<InstanceKlass*>*)                \
   nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<InstanceKlass*>*)                \
-  nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
-  nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
+  nonstatic_field(InstanceKlass,               _fieldinfo_stream,                             Array<u1>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       const char*)                           \
   nonstatic_field(InstanceKlass,               _inner_classes,                                Array<jushort>*)                       \
@@ -236,8 +237,8 @@
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
-  nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
-  nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
+  volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
+  volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
   nonstatic_field(InstanceKlass,               _reference_type,                               u1)                                    \
   volatile_nonstatic_field(InstanceKlass,      _oop_map_cache,                                OopMapCache*)                          \
@@ -381,12 +382,6 @@
      static_field(CompressedKlassPointers,     _narrow_klass._base,                           address)                               \
      static_field(CompressedKlassPointers,     _narrow_klass._shift,                          int)                                   \
                                                                                                                                      \
-  /******/                                                                                                                           \
-  /* os */                                                                                                                           \
-  /******/                                                                                                                           \
-                                                                                                                                     \
-     static_field(os,                          _polling_page,                                 address)                               \
-                                                                                                                                     \
   /**********/                                                                                                                       \
   /* Memory */                                                                                                                       \
   /**********/                                                                                                                       \
@@ -480,6 +475,8 @@
                                                                                                                                      \
   nonstatic_field(Array<Klass*>,               _length,                                       int)                                   \
   nonstatic_field(Array<Klass*>,               _data[0],                                      Klass*)                                \
+  nonstatic_field(Array<ResolvedIndyEntry>,    _length,                                       int)                                   \
+  nonstatic_field(Array<ResolvedIndyEntry>,    _data[0],                                      ResolvedIndyEntry)                     \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* GrowableArrays  */                                                                                                              \
@@ -542,8 +539,10 @@
      static_field(StubRoutines,                _counterMode_AESCrypt,                         address)                               \
      static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                   address)                               \
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
+     static_field(StubRoutines,                _chacha20Block,                                address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
      static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
+     static_field(StubRoutines,                _poly1305_processBlocks,                       address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
@@ -709,7 +708,7 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _jvmti_vthread,                                OopHandle)                             \
-  nonstatic_field(JavaThread,                  _extentLocalCache,                              OopHandle)                             \
+  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
@@ -813,7 +812,7 @@
                                                                                                                                      \
   nonstatic_field(ciMethod,                    _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(ciMethod,                    _interpreter_throwout_count,                   int)                                   \
-  nonstatic_field(ciMethod,                    _instructions_size,                            int)                                   \
+  nonstatic_field(ciMethod,                    _inline_instructions_size,                     int)                                   \
                                                                                                                                      \
   nonstatic_field(ciMethodData,                _data_size,                                    int)                                   \
   nonstatic_field(ciMethodData,                _state,                                        u_char)                                \
@@ -1024,12 +1023,13 @@
   /* Array<T> */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  nonstatic_field(Array<int>,                  _length,                                       int)                                   \
-  unchecked_nonstatic_field(Array<int>,        _data,                                         sizeof(int))                           \
-  unchecked_nonstatic_field(Array<u1>,         _data,                                         sizeof(u1))                            \
-  unchecked_nonstatic_field(Array<u2>,         _data,                                         sizeof(u2))                            \
-  unchecked_nonstatic_field(Array<Method*>,    _data,                                         sizeof(Method*))                       \
-  unchecked_nonstatic_field(Array<Klass*>,     _data,                                         sizeof(Klass*))                        \
+  nonstatic_field(Array<int>,                         _length,                                int)                                   \
+  unchecked_nonstatic_field(Array<int>,               _data,                                  sizeof(int))                           \
+  unchecked_nonstatic_field(Array<u1>,                _data,                                  sizeof(u1))                            \
+  unchecked_nonstatic_field(Array<u2>,                _data,                                  sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<Method*>,           _data,                                  sizeof(Method*))                       \
+  unchecked_nonstatic_field(Array<Klass*>,            _data,                                  sizeof(Klass*))                        \
+  unchecked_nonstatic_field(Array<ResolvedIndyEntry>, _data,                                  sizeof(ResolvedIndyEntry))             \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
@@ -1065,12 +1065,11 @@
   nonstatic_field(CompileTask,                 _method,                                       Method*)                               \
   nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
   nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
-  nonstatic_field(CompileTask,                 _compile_id,                                   uint)                                  \
+  nonstatic_field(CompileTask,                 _compile_id,                                   int)                                   \
   nonstatic_field(CompileTask,                 _num_inlined_bytecodes,                        int)                                   \
   nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
   nonstatic_field(CompileTask,                 _prev,                                         CompileTask*)                          \
                                                                                                                                      \
-  nonstatic_field(vframeArray,                 _next,                                         vframeArray*)                          \
   nonstatic_field(vframeArray,                 _original,                                     frame)                                 \
   nonstatic_field(vframeArray,                 _caller,                                       frame)                                 \
   nonstatic_field(vframeArray,                 _frames,                                       int)                                   \
@@ -1565,11 +1564,10 @@
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
-  declare_c2_type(BlackholeNode, MemBarNode)                              \
+  declare_c2_type(BlackholeNode, MultiNode)                               \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
-  declare_c2_type(Opaque2Node, Node)                                      \
   declare_c2_type(PartialSubtypeCheckNode, Node)                          \
   declare_c2_type(MoveI2FNode, Node)                                      \
   declare_c2_type(MoveL2DNode, Node)                                      \
@@ -1771,6 +1769,8 @@
   declare_c2_type(CompressVNode, VectorNode)                              \
   declare_c2_type(CompressMNode, VectorNode)                              \
   declare_c2_type(ExpandVNode, VectorNode)                                \
+  declare_c2_type(CompressBitsVNode, VectorNode)                          \
+  declare_c2_type(ExpandBitsVNode, VectorNode)                            \
   declare_c2_type(MulReductionVDNode, ReductionNode)                      \
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
@@ -1876,7 +1876,7 @@
   declare_c2_type(XorVMaskNode, VectorNode)                               \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
-  declare_c2_type(VectorTestNode, Node)                                   \
+  declare_c2_type(VectorTestNode, CmpNode)                                \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \
@@ -1959,6 +1959,7 @@
             declare_type(Array<u2>, MetaspaceObj)                         \
             declare_type(Array<Klass*>, MetaspaceObj)                     \
             declare_type(Array<Method*>, MetaspaceObj)                    \
+            declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
                                                                           \
    declare_toplevel_type(BitMap)                                          \
             declare_type(BitMapView, BitMap)                              \
@@ -1975,6 +1976,7 @@
   declare_toplevel_type(RuntimeBlob*)                                     \
   declare_toplevel_type(CompressedWriteStream*)                           \
   declare_toplevel_type(ConstantPoolCacheEntry)                           \
+  declare_toplevel_type(ResolvedIndyEntry)                                \
   declare_toplevel_type(elapsedTimer)                                     \
   declare_toplevel_type(frame)                                            \
   declare_toplevel_type(intptr_t*)                                        \
@@ -2099,12 +2101,6 @@
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
-  declare_constant(JVM_ACC_PROMOTED_FLAGS)                                \
-  declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
-  declare_constant(JVM_ACC_FIELD_MODIFICATION_WATCHED)                    \
-  declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
-  declare_constant(JVM_ACC_FIELD_STABLE)                                  \
-  declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \
@@ -2236,24 +2232,6 @@
   /*************************************/                                 \
                                                                           \
                                                                           \
-  /*************************************/                                 \
-  /* FieldInfo FieldOffset enum        */                                 \
-  /*************************************/                                 \
-                                                                          \
-  declare_constant(FieldInfo::access_flags_offset)                        \
-  declare_constant(FieldInfo::name_index_offset)                          \
-  declare_constant(FieldInfo::signature_index_offset)                     \
-  declare_constant(FieldInfo::initval_index_offset)                       \
-  declare_constant(FieldInfo::low_packed_offset)                          \
-  declare_constant(FieldInfo::high_packed_offset)                         \
-  declare_constant(FieldInfo::field_slots)                                \
-                                                                          \
-  /*************************************/                                 \
-  /* FieldInfo tag constants           */                                 \
-  /*************************************/                                 \
-                                                                          \
-  declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
-  declare_preprocessor_constant("FIELDINFO_TAG_OFFSET", FIELDINFO_TAG_OFFSET) \
                                                                           \
   /************************************************/                      \
   /* InstanceKlass InnerClassAttributeOffset enum */                      \
@@ -2322,6 +2300,17 @@
   declare_constant(JavaThreadStatus::PARKED_TIMED)                        \
   declare_constant(JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)            \
   declare_constant(JavaThreadStatus::TERMINATED)                          \
+                                                                          \
+                                                                          \
+  /******************************/                                        \
+  /* FieldFlags enum            */                                        \
+  /******************************/                                        \
+                                                                          \
+  declare_constant(FieldInfo::FieldFlags::_ff_initialized)                \
+  declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
+  declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
+  declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
+  declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
                                                                           \
   /******************************/                                        \
   /* Debug info                 */                                        \
@@ -3078,7 +3067,7 @@ void VMStructs::init() {
 static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool isRecurse) {
   {
     VMTypeEntry* types = origtypes;
-    while (types->typeName != NULL) {
+    while (types->typeName != nullptr) {
       if (strcmp(typeName, types->typeName) == 0) {
         // Found it
         return 1;
@@ -3099,13 +3088,13 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     }
     FREE_C_HEAP_ARRAY(char, s);
   }
-  const char* start = NULL;
+  const char* start = nullptr;
   if (strstr(typeName, "GrowableArray<") == typeName) {
     start = typeName + strlen("GrowableArray<");
   } else if (strstr(typeName, "Array<") == typeName) {
     start = typeName + strlen("Array<");
   }
-  if (start != NULL) {
+  if (start != nullptr) {
     const char * end = strrchr(typeName, '>');
     int len = end - start + 1;
     char * s = NEW_C_HEAP_ARRAY(char, len, mtInternal);

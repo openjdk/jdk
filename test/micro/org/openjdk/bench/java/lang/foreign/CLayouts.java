@@ -23,10 +23,9 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.MethodHandle;
@@ -67,17 +66,17 @@ public class CLayouts {
     /**
      * The {@code T*} native type.
      */
-    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS;
+    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.asUnbounded();
 
     private static Linker LINKER = Linker.nativeLinker();
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
-            LINKER.defaultLookup().lookup("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+            LINKER.defaultLookup().find("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
 
     private static final MethodHandle MALLOC = LINKER.downcallHandle(
-            LINKER.defaultLookup().lookup("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+            LINKER.defaultLookup().find("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS.asUnbounded(), ValueLayout.JAVA_LONG));
 
-    public static void freeMemory(Addressable address) {
+    public static void freeMemory(MemorySegment address) {
         try {
             FREE.invokeExact(address);
         } catch (Throwable ex) {
@@ -85,9 +84,9 @@ public class CLayouts {
         }
     }
 
-    public static MemoryAddress allocateMemory(long size) {
+    public static MemorySegment allocateMemory(long size) {
         try {
-            return (MemoryAddress)MALLOC.invokeExact(size);
+            return (MemorySegment)MALLOC.invokeExact(size);
         } catch (Throwable ex) {
             throw new IllegalStateException(ex);
         }

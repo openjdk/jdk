@@ -257,7 +257,7 @@ public class JImageReadTest {
     /**
      * Return true if the name is one of the meta-data names
      * @param name a name
-     * @return return true if starts with either /packages or /modules
+     * @return true if starts with either /packages or /modules
      */
     static boolean isMetaName(String name) {
         return name.startsWith("/modules")

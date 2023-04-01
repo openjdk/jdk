@@ -65,7 +65,7 @@ public class AuthorityKeyIdentifierExtension extends Extension {
     private SerialNumber        serialNum = null;
 
     // Encode only the extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (id == null && names == null && serialNum == null) {
             this.extensionValue = null;
             return;
@@ -78,15 +78,11 @@ public class AuthorityKeyIdentifierExtension extends Extension {
             tmp.writeImplicit(DerValue.createTag(DerValue.TAG_CONTEXT,
                               false, TAG_ID), tmp1);
         }
-        try {
-            if (names != null) {
-                DerOutputStream tmp1 = new DerOutputStream();
-                names.encode(tmp1);
-                tmp.writeImplicit(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                  true, TAG_NAMES), tmp1);
-            }
-        } catch (Exception e) {
-            throw new IOException(e.toString());
+        if (names != null) {
+            DerOutputStream tmp1 = new DerOutputStream();
+            names.encode(tmp1);
+            tmp.writeImplicit(DerValue.createTag(DerValue.TAG_CONTEXT,
+                              true, TAG_NAMES), tmp1);
         }
         if (serialNum != null) {
             DerOutputStream tmp1 = new DerOutputStream();
@@ -99,18 +95,20 @@ public class AuthorityKeyIdentifierExtension extends Extension {
     }
 
     /**
-     * The default constructor for this extension.  Null parameters make
-     * the element optional (not present).
+     * The default constructor for this extension. At least one parameter
+     * must be non null. Null parameters make the element optional (not present).
      *
      * @param kid the KeyIdentifier associated with this extension.
      * @param names the GeneralNames associated with this extension
      * @param sn the CertificateSerialNumber associated with
      *        this extension.
-     * @exception IOException on error.
      */
     public AuthorityKeyIdentifierExtension(KeyIdentifier kid, GeneralNames names,
-                                           SerialNumber sn)
-    throws IOException {
+                                           SerialNumber sn) {
+        if (kid == null && names == null && sn == null) {
+            throw new IllegalArgumentException(
+                    "AuthorityKeyIdentifierExtension cannot be empty");
+        }
         this.id = kid;
         this.names = names;
         this.serialNum = sn;
@@ -201,10 +199,9 @@ public class AuthorityKeyIdentifierExtension extends Extension {
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on error.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             extensionId = PKIXExtensions.AuthorityKey_Id;
             critical = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ static void send_event(const FinalizerEntry* fe, const InstanceKlass* ik, const 
   const char* const url = fe != nullptr ? fe->codesource() : nullptr;
   const traceid url_symbol_id = url != NULL ? JfrSymbolTable::add(url) : 0;
   EventFinalizerStatistics event(UNTIMED);
+  event.set_starttime(timestamp);
   event.set_endtime(timestamp);
   event.set_finalizableClass(ik);
   event.set_codeSource(url_symbol_id);
