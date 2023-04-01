@@ -639,7 +639,6 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * and same source indexes, in the same order.
      *
      * @return whether this vector is identical to some other object
-     * @see #eq
      */
     @Override
     public final boolean equals(Object obj) {
