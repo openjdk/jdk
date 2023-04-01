@@ -69,8 +69,6 @@ compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
-compiler/sharedstubs/SharedStubToInterpTest.java 8304681 generic-all
-
 #############################################################################
 
 # :hotspot_gc
@@ -169,5 +167,4 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
-vmTestbase/nsk/stress/except/except012.java 8297977 generic-all
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64

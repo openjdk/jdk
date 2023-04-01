@@ -2183,7 +2183,7 @@ void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_vali
                                           XMMRegister dst, XMMRegister src,
                                           XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                                           XMMRegister xmm_0, XMMRegister xmm_1) {
-  int permconst[] = {1, 14};
+  const int permconst[] = {1, 14};
   XMMRegister wsrc = src;
   XMMRegister wdst = xmm_0;
   XMMRegister wtmp = (xmm_1 == xnoreg) ? xmm_0: xmm_1;
@@ -2276,6 +2276,14 @@ XMMRegister C2_MacroAssembler::get_lane(BasicType typ, XMMRegister dst, XMMRegis
   }
 }
 
+void C2_MacroAssembler::movsxl(BasicType typ, Register dst) {
+  if (typ == T_BYTE) {
+    movsbl(dst, dst);
+  } else if (typ == T_SHORT) {
+    movswl(dst, dst);
+  }
+}
+
 void C2_MacroAssembler::get_elem(BasicType typ, Register dst, XMMRegister src, int elemindex) {
   int esize =  type2aelembytes(typ);
   int elem_per_lane = 16/esize;
@@ -2287,13 +2295,11 @@ void C2_MacroAssembler::get_elem(BasicType typ, Register dst, XMMRegister src, i
       movq(dst, src);
     } else {
       movdl(dst, src);
-      if (typ == T_BYTE)
-        movsbl(dst, dst);
-      else if (typ == T_SHORT)
-        movswl(dst, dst);
+      movsxl(typ, dst);
     }
   } else {
     extract(typ, dst, src, eindex);
+    movsxl(typ, dst);
   }
 }
 
@@ -3279,9 +3285,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   }
 
   // For "renaming" for readibility of the code
-  XMMRegister vcoef[] = { vcoef0, vcoef1, vcoef2, vcoef3 },
-              vresult[] = { vresult0, vresult1, vresult2, vresult3 },
-              vtmp[] = { vtmp0, vtmp1, vtmp2, vtmp3 };
+  const XMMRegister vcoef[] = { vcoef0, vcoef1, vcoef2, vcoef3 },
+                    vresult[] = { vresult0, vresult1, vresult2, vresult3 },
+                    vtmp[] = { vtmp0, vtmp1, vtmp2, vtmp3 };
 
   const int elsize = arrays_hashcode_elsize(eltype);
 
@@ -6089,3 +6095,14 @@ void C2_MacroAssembler::rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XM
   evpshufb(dst, ktmp, xtmp3, shuffle, true, vlen_enc);
 }
 
+void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst,
+                                                   XMMRegister shuffle, XMMRegister src, int vlen_enc) {
+  if (vlen_enc == AVX_128bit) {
+    vpermilps(dst, src, shuffle, vlen_enc);
+  } else if (bt == T_INT) {
+    vpermd(dst, shuffle, src, vlen_enc);
+  } else {
+    assert(bt == T_FLOAT, "");
+    vpermps(dst, shuffle, src, vlen_enc);
+  }
+}
