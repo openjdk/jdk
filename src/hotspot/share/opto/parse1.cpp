@@ -2210,49 +2210,26 @@ PhiNode *Parse::ensure_memory_phi(int idx, bool nocreate) {
 
 // Passive Materialization
 // ------------------------
-// C2 has to materialize a virtual object at the merging point because the object has been materialized in
-// any other predecessor. For instance:
+// Materialize an object at the phi node because at least one of its predecessors has materialized the object.
+// Since C2 PEA does not eliminate the original allocation, we skip passive materializaiton and keep using it.
+// The only problem is partial redudancy. JDK-8287061 should address this issue.
 //
-// obj(virtual)     obj(materialized)
-//              \      /
-// Reion(,c1,c2) |    |
-//      \        |    |
-//       \c      |    |
-//   o3 = Phi   (o1, o2)
+// PEA split a object based on its escapement. At the merging point, the original object is NonEscape, or it has already
+// been materialized before. the phi is 'reducible Object-Phi' in JDK-828706 and the original object is scalar replaceable!
 //
-// Node* var is o1;
-// r[pnum] is c1;
+// obj' = PHI(Region, OriginalObj, ClonedObj)
+// and OriginalObj is NonEscape but NSR; CloendObj is Global/ArgEscape
 //
-// There are 2 cases:
-// 1) materialize m from map().
-// 2) materialize n from newin.
-// so from_map is either from current map or newin of merge_common().
-// for case 1, the control of from_map is Region, so we need to adjust it to c1.
+// JDK-8287061 transforms it to =>
+// obj' = PHI(Region, null, ClonedObj)
+// selector = PHI(Region, 0, 1)
 //
-// Regarding compile-time state, We also need to consider ABIO(in(1)) and Memory(in(2)) of from_map.
-// we reverse the iteration order in merge_common(). For the time being, we haven't merged ABIO and Memory yet.
-// I.e. we use (Ctrl, ABIO, Memory) of from_map before merging.
+// since OriginalObj is NonEscape, it is replaced by scalars.
 //
 Node* Parse::ensure_object_materialized(Node* var, PEAState& state, SafePointNode* from_map, RegionNode* r, int pnum) {
-  GraphKit kit(from_map->jvms());
-  bool update_ctrl = from_map == map();
-
-  if (update_ctrl) {
-    assert(kit.control() == r, "sanity");
-    kit.set_control(r->in(pnum));
-  } else {
-    assert(kit.control() == r->in(pnum), "sanity");
-  }
-
-  EscapedState* es = state.materialize(&kit, var);
-  Node* mv = es->get_materialized_value();
-  assert(kit.control() == mv->in(0), "sanity");
-  r->set_req(pnum, mv->in(0));
-
-  if (update_ctrl) {
-    kit.set_control(r);
-  }
-  return mv;
+  // skip passive materialize for time being.
+  // if JDK-8287061 can guarantee to replace the orignial allocation, we don't need to worry about partial redundancy.
+  return var;
 }
 
 //------------------------------call_register_finalizer-----------------------
