@@ -2000,6 +2000,14 @@ bool Arguments::check_vm_args_consistency() {
                 "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
     return false;
   }
+
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM)
+  if (UseFastLocking) {
+    FLAG_SET_CMDLINE(UseFastLocking, false);
+    warning("Fast locking not supported on this platform");
+  }
+#endif
+
   return status;
 }
 
