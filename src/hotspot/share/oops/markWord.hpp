@@ -172,7 +172,7 @@ class markWord {
     return markWord(value() | unlocked_value);
   }
   bool has_locker() const {
-    return !UseFastLocking && ((value() & lock_mask_in_place) == locked_value);
+    return LockingMode == 1 && ((value() & lock_mask_in_place) == locked_value);
   }
   BasicLock* locker() const {
     assert(has_locker(), "check");
@@ -180,7 +180,7 @@ class markWord {
   }
 
   bool is_fast_locked() const {
-    return UseFastLocking && ((value() & lock_mask_in_place) == locked_value);
+    return LockingMode == 2 && ((value() & lock_mask_in_place) == locked_value);
   }
   markWord set_fast_locked() const {
     // Clear the lock_mask_in_place bits to set locked_value:
@@ -197,8 +197,8 @@ class markWord {
   }
   bool has_displaced_mark_helper() const {
     intptr_t lockbits = value() & lock_mask_in_place;
-    return UseFastLocking ? lockbits == monitor_value   // monitor?
-                    : (lockbits & unlocked_value) == 0; // monitor | stack-locked?
+    return LockingMode == 2 ? lockbits == monitor_value   // monitor?
+                            : (lockbits & unlocked_value) == 0; // monitor | stack-locked?
   }
   markWord displaced_mark_helper() const;
   void set_displaced_mark_helper(markWord m) const;

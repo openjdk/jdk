@@ -1223,7 +1223,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
       jcc(Assembler::notZero, slow_case);
     }
 
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
 #ifdef _LP64
       const Register thread = r15_thread;
 #else
@@ -1233,7 +1233,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
       // Load object header, prepare for CAS from unlocked to locked.
       movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       fast_lock_impl(obj_reg, swap_reg, thread, tmp_reg, slow_case);
-    } else {
+    } else if (LockingMode == 1) {
       // Load immediate 1 into swap_reg %rax
       movl(swap_reg, 1);
 
@@ -1294,7 +1294,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
       call_VM(noreg,
               CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
               obj_reg);
@@ -1335,7 +1335,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     save_bcp(); // Save in case of exception
 
-    if (!UseFastLocking) {
+    if (LockingMode != 2) {
       // Convert from BasicObjectLock structure to object and BasicLock
       // structure Store the BasicLock address into %rax
       lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
@@ -1347,7 +1347,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     // Free entry
     movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
 
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
 #ifdef _LP64
       const Register thread = r15_thread;
 #else
@@ -1363,7 +1363,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
       movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
       fast_unlock_impl(obj_reg, swap_reg, header_reg, slow_case);
-    } else {
+    } else if (LockingMode == 1) {
       // Load the old header from BasicLock structure
       movptr(header_reg, Address(swap_reg,
                                  BasicLock::displaced_header_offset_in_bytes()));

@@ -1975,8 +1975,12 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(bool, UseFastLocking, false, EXPERIMENTAL,                        \
-                "Use fast-locking instead of stack-locking")                \
+  product(int, LockingMode, 1, EXPERIMENTAL,                                \
+          "Select locking mode: "                                           \
+          "0: monitors only, "                                              \
+          "1: monitors & traditional stack-locking (default), "             \
+          "2: monitors & new lightweight locking")                          \
+          range(0, 2)                                                       \
 
 // end of RUNTIME_FLAGS
 

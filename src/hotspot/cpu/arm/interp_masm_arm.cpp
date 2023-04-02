@@ -889,7 +889,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
       b(slow_case, ne);
     }
 
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
 
       log_trace(fastlock2)("InterpreterMacroAssembler lock fast");
 
@@ -897,7 +897,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
 
       b(done);
 
-    } else {
+    } else if (LockingMode == 1) {
 
       // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
       // That would be acceptable as ether CAS or slow case path is taken in that case.
@@ -966,7 +966,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
       // Pass oop, not lock, in fast lock case. call_VM wants R1 though.
       push(R1);
       mov(R1, Robj);
@@ -1008,7 +1008,7 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
     // Free entry
     str(Rzero, Address(Rlock, obj_offset));
 
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
 
       log_trace(fastlock2)("InterpreterMacroAssembler unlock fast");
 
@@ -1026,7 +1026,7 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
 
       b(done);
 
-    } else {
+    } else if (LockingMode == 1) {
 
       // Load the old header from BasicLock structure
       ldr(Rmark, Address(Rlock, mark_offset));

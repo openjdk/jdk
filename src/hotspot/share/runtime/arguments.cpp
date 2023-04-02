@@ -2002,11 +2002,14 @@ bool Arguments::check_vm_args_consistency() {
   }
 
 #if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM)
-  if (UseFastLocking) {
-    FLAG_SET_CMDLINE(UseFastLocking, false);
-    warning("Fast locking not supported on this platform");
+  if (LockingMode == 2) {
+    FLAG_SET_CMDLINE(LockingMode, 1);
+    warning("New lightweight locking not supported on this platform");
   }
 #endif
+  if (UseHeavyMonitors) {
+    FLAG_SET_CMDLINE(LockingMode, 0);
+  }
 
   return status;
 }

@@ -210,7 +210,7 @@ public class Threads {
 
     // refer to Threads::owning_thread_from_monitor_owner
     public JavaThread owningThreadFromMonitor(Address o) {
-        assert(!VM.getVM().getCommandLineBooleanFlag("UseFastLocking"));
+        assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() != 2);
         if (o == null) return null;
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
@@ -228,7 +228,7 @@ public class Threads {
     }
 
     public JavaThread owningThreadFromMonitor(ObjectMonitor monitor) {
-        if (VM.getVM().getCommandLineBooleanFlag("UseFastLocking")) {
+        if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == 2) {
             if (monitor.isOwnedAnonymous()) {
                 OopHandle object = monitor.object();
                 for (int i = 0; i < getNumberOfThreads(); i++) {

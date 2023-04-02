@@ -1391,7 +1391,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 
 JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner) {
-  assert(!UseFastLocking, "only with stack-locking");
+  assert(LockingMode != 2, "Not with new lightweight locking");
   // null owner means not locked so we can skip the search
   if (owner == nullptr) return nullptr;
 
@@ -1423,7 +1423,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
 
 JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
   assert(SafepointSynchronize::is_at_safepoint(), "not safe outside of safepoint");
-  assert(UseFastLocking, "Only with fast-locking");
+  assert(LockingMode == 2, "Only with new lightweight locking");
   for (JavaThread* q : *t_list) {
     if (q->lock_stack().contains(obj)) {
       return q;
@@ -1433,7 +1433,7 @@ JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
 }
 
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  if (UseFastLocking) {
+  if (LockingMode == 2) {
     if (monitor->is_owner_anonymous()) {
       return owning_thread_from_object(t_list, monitor->object());
     } else {

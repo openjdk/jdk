@@ -1671,10 +1671,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ ld(obj_reg, Address(oop_handle_reg, 0));
 
     if (!UseHeavyMonitors) {
-      if (UseFastLocking) {
+      if (LockingMode == 2) {
         __ ld(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
         __ fast_lock(obj_reg, swap_reg, tmp, t0, slow_path_lock);
-      } else {
+      } else if (LockingMode == 1) {
         // Load (object->mark() | 1) into swap_reg % x10
         __ ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
         __ ori(swap_reg, t0, 1);
@@ -1795,7 +1795,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     Label done, not_recursive;
 
-    if (!UseHeavyMonitors && !UseFastLocking) {
+    if (LockingMode == 1) {
       // Simple recursive lock?
       __ ld(t0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
       __ bnez(t0, not_recursive);
@@ -1811,10 +1811,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     if (!UseHeavyMonitors) {
-      if (UseFastLocking) {
+      if (LockingMode == 2) {
         __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
         __ fast_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
-      } else {
+      } else if (LockingMode == 1) {
         // get address of the stack lock
         __ la(x10, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
         //  get old displaced header

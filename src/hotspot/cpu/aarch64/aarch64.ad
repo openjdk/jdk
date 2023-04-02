@@ -3840,10 +3840,10 @@ encode %{
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
     if (!UseHeavyMonitors) {
-      if (UseFastLocking) {
+      if (LockingMode == 2) {
         __ fast_lock(oop, disp_hdr, tmp, rscratch1, no_count);
         __ b(count);
-      } else {
+      } else if (LockingMode == 1) {
         // Set tmp to be (markWord of object | UNLOCK_VALUE).
         __ orr(tmp, disp_hdr, markWord::unlocked_value);
 
@@ -3889,7 +3889,7 @@ encode %{
     __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
                /*release*/ true, /*weak*/ false, rscratch1); // Sets flags for result
 
-    if (!UseFastLocking) {
+    if (LockingMode != 2) {
       // Store a non-null value into the box to avoid looking like a re-entrant
       // lock. The fast-path monitor unlock code checks for
       // markWord::monitor_value so use markWord::unused_mark which has the
@@ -3929,7 +3929,7 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
-    if (!UseHeavyMonitors && !UseFastLocking) {
+    if (LockingMode == 1) {
       // Find the lock address and load the displaced header from the stack.
       __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
@@ -3943,10 +3943,10 @@ encode %{
     __ tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
 
     if (!UseHeavyMonitors) {
-      if (UseFastLocking) {
+      if (LockingMode == 2) {
         __ fast_unlock(oop, tmp, box, disp_hdr, no_count);
         __ b(count);
-      } else {
+      } else if (LockingMode == 1) {
         // Check if it is still a light weight lock, this is is true if we
         // see the stack address of the basicLock in the markWord of the
         // object.
@@ -3967,7 +3967,7 @@ encode %{
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
 
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
       // If the owner is anonymous, we need to fix it -- in an outline stub.
       Register tmp2 = disp_hdr;
       __ ldr(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));

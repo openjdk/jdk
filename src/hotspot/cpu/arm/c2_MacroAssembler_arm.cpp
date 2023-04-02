@@ -92,7 +92,7 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
     b(done, ne);
   }
 
-  if (UseFastLocking) {
+  if (LockingMode == 2) {
     log_trace(fastlock2)("C2_MacroAssembler::lock fast");
 
     fast_lock_2(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
@@ -102,7 +102,7 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
     // Success: set Z
     cmp(Roop, Roop);
 
-  } else {
+  } else if (LockingMode == 1) {
 
     Register Rmark      = Rscratch2;
 
@@ -144,7 +144,7 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
 
   Label done;
 
-  if (UseFastLocking) {
+  if (LockingMode == 2) {
     log_trace(fastlock2)("C2_MacroAssembler::unlock fast");
 
 
@@ -155,7 +155,7 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
     cmp(Roop, Roop); // Success: Set Z
     // Fall through
 
-  } else {
+  } else if (LockingMode == 1) {
 
     Register Rmark      = Rscratch2;
 

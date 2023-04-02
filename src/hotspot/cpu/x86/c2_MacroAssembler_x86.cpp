@@ -602,10 +602,10 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   jcc(Assembler::notZero, IsInflated);
 
   if (!UseHeavyMonitors) {
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
       fast_lock_impl(objReg, tmpReg, thread, scrReg, NO_COUNT);
       jmp(COUNT);
-    } else {
+    } else if (LockingMode == 1) {
       // Attempt stack-locking ...
       orptr (tmpReg, markWord::unlocked_value);
       movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
@@ -766,7 +766,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   }
 #endif
 
-  if (!UseHeavyMonitors && !UseFastLocking) {
+  if (LockingMode == 1) {
     cmpptr(Address(boxReg, 0), NULL_WORD);                            // Examine the displaced header
     jcc   (Assembler::zero, COUNT);                                   // 0 indicates recursive stack-lock
   }
@@ -774,7 +774,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   if (!UseHeavyMonitors) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
     jcc(Assembler::zero, Stacked);
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
       // If the owner is ANONYMOUS, we need to fix it -  in an outline stub.
       testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) ObjectMonitor::ANONYMOUS_OWNER);
 #ifdef _LP64
@@ -913,11 +913,11 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 #endif
   if (!UseHeavyMonitors) {
     bind  (Stacked);
-    if (UseFastLocking) {
+    if (LockingMode == 2) {
       mov(boxReg, tmpReg);
       fast_unlock_impl(objReg, boxReg, tmpReg, NO_COUNT);
       jmp(COUNT);
-    } else {
+    } else if (LockingMode == 1) {
       movptr(tmpReg, Address (boxReg, 0));      // re-fetch
       lock();
       cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
