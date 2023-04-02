@@ -74,7 +74,15 @@
     object_field(HotSpotResolvedJavaFieldImpl, type, "Ljdk/vm/ci/meta/JavaType;")                             \
     object_field(HotSpotResolvedJavaFieldImpl, holder, "Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")   \
     int_field(HotSpotResolvedJavaFieldImpl, offset)                                                           \
-    int_field(HotSpotResolvedJavaFieldImpl, modifiers)                                                        \
+  end_class                                                                                                   \
+  start_class(FieldInfo, jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl_FieldInfo)                           \
+    int_field(FieldInfo, nameIndex)                                                                           \
+    int_field(FieldInfo, signatureIndex)                                                                      \
+    int_field(FieldInfo, offset)                                                                              \
+    int_field(FieldInfo, classfileFlags)                                                                      \
+    int_field(FieldInfo, internalFlags)                                                                       \
+    int_field(FieldInfo, initializerIndex)                                                                    \
+    jvmci_constructor(FieldInfo, "(IIIIII)V")                                                                 \
   end_class                                                                                                   \
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
     long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \

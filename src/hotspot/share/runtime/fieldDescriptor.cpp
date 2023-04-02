@@ -39,18 +39,7 @@ Symbol* fieldDescriptor::generic_signature() const {
   if (!has_generic_signature()) {
     return nullptr;
   }
-
-  int idx = 0;
-  InstanceKlass* ik = field_holder();
-  for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-    if (idx == _index) {
-      return fs.generic_signature();
-    } else {
-      idx ++;
-    }
-  }
-  assert(false, "should never happen");
-  return vmSymbols::void_signature(); // return a default value (for code analyzers)
+  return _cp->symbol_at(_fieldinfo.generic_signature_index());
 }
 
 bool fieldDescriptor::is_trusted_final() const {
@@ -106,30 +95,14 @@ void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
     // but that's ok because of constant pool merging.
     assert(field_holder() == ik || ik->is_scratch_class(), "must be already initialized to this class");
   }
-  FieldInfo* f = ik->field(index);
-  _access_flags = accessFlags_from(f->access_flags());
-  guarantee(f->name_index() != 0 && f->signature_index() != 0, "bad constant pool index for fieldDescriptor");
-  _index = index;
-  verify();
+  _fieldinfo= ik->field(index);
+  assert((int)_fieldinfo.index() == index, "just checking");
+  guarantee(_fieldinfo.name_index() != 0 && _fieldinfo.signature_index() != 0, "bad constant pool index for fieldDescriptor");
 }
-
-#ifndef PRODUCT
-
-void fieldDescriptor::verify() const {
-  if (_cp.is_null()) {
-    assert(_index == badInt, "constructor must be called");  // see constructor
-  } else {
-    assert(_index >= 0, "good index");
-    assert(access_flags().is_internal() ||
-           _index < field_holder()->java_fields_count(), "oob");
-  }
-}
-
-#endif /* PRODUCT */
 
 void fieldDescriptor::print_on(outputStream* st) const {
   access_flags().print_on(st);
-  if (access_flags().is_internal()) st->print("internal ");
+  if (field_flags().is_injected()) st->print("injected ");
   name()->print_value_on(st);
   st->print(" ");
   signature()->print_value_on(st);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.module.ModuleInfoWriter;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.util.ModuleInfoWriter;
 
 /*
  * @test
@@ -53,10 +53,16 @@ import jdk.test.lib.util.JarUtils;
  * and checks that sun.tools.ProcessHelper.getMainClass(pid) method returns a correct main class.                                                                                                                               return a .
  *
  * @requires os.family == "linux"
- * @library /test/lib
  * @modules jdk.jcmd/sun.tools.common:+open
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.java.lang.constant
  *          java.base/jdk.internal.module
+ * @library /test/lib
  * @build test.TestProcess
+ *        jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.util.ModuleInfoWriter
  * @run main/othervm TestProcessHelper
  */
 public class TestProcessHelper {

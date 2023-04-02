@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
@@ -51,7 +52,8 @@
 #define BLOCK_COMMENT(str)
 #define BIND(label)        __ bind(label);
 #else
-#define __ (PRODUCT_ONLY(false&&)Verbose ? (_masm->block_comment(FILE_AND_LINE),_masm):_masm)->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
+// #define __ (PRODUCT_ONLY(false&&)Verbose ? (_masm->block_comment(FILE_AND_LINE),_masm):_masm)->
 #define BLOCK_COMMENT(str) __ block_comment(str)
 #define BIND(label)        __ bind(label); BLOCK_COMMENT(#label ":")
 #endif
@@ -2416,13 +2418,71 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
   }
 }
 
+void TemplateTable::load_invokedynamic_entry(Register method) {
+  const Register cache    = Z_tmp_1;
+  const Register index    = Z_tmp_3;
+  const Register appendix = Z_R1_scratch;
+  assert_different_registers(cache, index, appendix, method);
+
+  Label resolved;
+  __ load_resolved_indy_entry(cache, index);
+  __ z_lg(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+
+  // The invokedynamic is unresolved iff method is NULL
+  __ z_clgij(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
+  Bytecodes::Code code = bytecode();
+  // Call to the interpreter runtime to resolve invokedynamic
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ load_const_optimized(Z_ARG2, (int)code);
+  __ call_VM(noreg, entry, Z_ARG2);
+  // Update registers with resolved info
+  __ load_resolved_indy_entry(cache, index);
+  __ z_lg(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+#ifdef ASSERT
+  __ z_clgij(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
+  __ stop("should be resolved by now");
+#endif // ASSERT
+  __ bind(resolved);
+
+  Label L_no_push;
+  __ z_llgc(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
+  __ testbit(index, ResolvedIndyEntry::has_appendix_shift);
+  __ z_bfalse(L_no_push);
+  // get appendix
+  __ z_llgh(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
+  // Push the appendix as a trailing parameter.
+  // This must be done before we get the receiver,
+  // since the parameter_size includes it.
+  __ load_resolved_reference_at_index(appendix, index);
+  __ verify_oop(appendix);
+  __ push_ptr(appendix);  // Push appendix (MethodType, CallSite, etc.).
+  __ bind(L_no_push);
+
+  // Compute return type.
+  Register ret_type = index;
+  __ z_llgc(ret_type, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())));
+
+  const address table_addr = (address)Interpreter::invoke_return_entry_table_for(code);
+  __ load_absolute_address(Z_R14, table_addr);
+
+  const int bit_shift = LogBytesPerWord;           // Size of each table entry.
+  // const int r_bitpos  = 63 - bit_shift;
+  // const int l_bitpos  = r_bitpos - ConstantPoolCacheEntry::tos_state_bits + 1;
+  // const int n_rotate  = bit_shift-ConstantPoolCacheEntry::tos_state_shift;
+  // __ rotate_then_insert(ret_type, Z_R0_scratch, l_bitpos, r_bitpos, n_rotate, true);
+  // Make sure we don't need to mask flags for tos_state after the above shift.
+  __ z_sllg(ret_type, ret_type, bit_shift);
+  ConstantPoolCacheEntry::verify_tos_state_shift();
+  __ z_lg(Z_R14, Address(Z_R14, ret_type));
+}
+
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register method,
                                                Register itable_index,
                                                Register flags,
                                                bool is_invokevirtual,
                                                bool is_invokevfinal, // unused
-                                               bool is_invokedynamic) {
+                                               bool is_invokedynamic /* unused */) {
   BLOCK_COMMENT("load_invoke_cp_cache_entry {");
   // Setup registers.
   const Register cache     = Z_ARG1;
@@ -2445,7 +2505,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
      __ get_cache_and_index_at_bcp(cache, cpe_offset, 1);
   } else {
     // Need to resolve.
-    resolve_cache_and_index(byte_no, cache, cpe_offset, is_invokedynamic ? sizeof(u4) : sizeof(u2));
+    resolve_cache_and_index(byte_no, cache, cpe_offset, sizeof(u2));
   }
   __ z_lg(method, Address(cache, cpe_offset, method_offset));
 
@@ -3382,7 +3442,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   // Determine flags.
   const Bytecodes::Code code = bytecode();
   const bool is_invokeinterface  = code == Bytecodes::_invokeinterface;
-  const bool is_invokedynamic    = code == Bytecodes::_invokedynamic;
+  const bool is_invokedynamic    = false; // should not reach here with invokedynamic
   const bool is_invokehandle     = code == Bytecodes::_invokehandle;
   const bool is_invokevirtual    = code == Bytecodes::_invokevirtual;
   const bool is_invokespecial    = code == Bytecodes::_invokespecial;
@@ -3399,7 +3459,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
 
   // Maybe push appendix to arguments.
-  if (is_invokedynamic || is_invokehandle) {
+  if (is_invokehandle) {
     Label L_no_push;
     Register resolved_reference = Z_R1_scratch;
     __ testbit(flags, ConstantPoolCacheEntry::has_appendix_shift);
@@ -3698,9 +3758,8 @@ void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
 
   const Register Rmethod   = Z_tmp_2;
-  const Register Rcallsite = Z_tmp_1;
 
-  prepare_invoke(byte_no, Rmethod, Rcallsite);
+  load_invokedynamic_entry(Rmethod);
 
   // Rmethod: CallSite object (from f1)
   // Rcallsite: MH.linkToCallSite method (from f2)
