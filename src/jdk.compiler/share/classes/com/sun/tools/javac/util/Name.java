@@ -66,7 +66,9 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
 // CharSequence
 
     @Override
-    public abstract int length();
+    public int length() {
+        return toString().length();
+    }
 
     /**
      *  {@inheritDoc}
@@ -128,20 +130,26 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
      *  @see String#compareTo
      */
     @Override
-    public abstract int compareTo(Name name);
+    public int compareTo(Name name) {
+        return toString().compareTo(name.toString());
+    }
 
 // Other methods
 
     /** Return the concatenation of this name and the given name.
      *  The given name must come from the same table as this one.
      */
-    public abstract Name append(Name name);
+    public Name append(Name name) {
+        return table.fromString(toString() + name.toString());
+    }
 
     /** Return the concatenation of this name, the given ASCII
      *  character, and the given name.
      *  The given name must come from the same table as this one.
      */
-    public abstract Name append(char c, Name name);
+    public Name append(char c, Name name) {
+        return table.fromString(toString() + c + name.toString());
+    }
 
     /** Determine if this is the empty name.
      *  <p>
