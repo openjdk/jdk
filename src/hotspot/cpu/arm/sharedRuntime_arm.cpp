@@ -645,6 +645,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   address c2i_entry = __ pc();
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
+  __ flush();
   return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
 }
 
@@ -1153,35 +1154,41 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    const Register mark = tmp;
-    // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
-    // That would be acceptable as either CAS or slow case path is taken in that case
+    if (UseFastLocking) {
+      log_trace(fastlock2)("SharedRuntime lock fast");
+      __ fast_lock_2(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                     0x7 /* savemask */, slow_lock);
+      // Fall through to lock_done
+    } else {
+      const Register mark = tmp;
+      // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
+      // That would be acceptable as either CAS or slow case path is taken in that case
 
-    __ ldr(mark, Address(sync_obj, oopDesc::mark_offset_in_bytes()));
-    __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    __ tst(mark, markWord::unlocked_value);
-    __ b(fast_lock, ne);
+      __ ldr(mark, Address(sync_obj, oopDesc::mark_offset_in_bytes()));
+      __ sub(disp_hdr, FP, lock_slot_fp_offset);
+      __ tst(mark, markWord::unlocked_value);
+      __ b(fast_lock, ne);
 
-    // Check for recursive lock
-    // See comments in InterpreterMacroAssembler::lock_object for
-    // explanations on the fast recursive locking check.
-    // Check independently the low bits and the distance to SP
-    // -1- test low 2 bits
-    __ movs(Rtemp, AsmOperand(mark, lsl, 30));
-    // -2- test (hdr - SP) if the low two bits are 0
-    __ sub(Rtemp, mark, SP, eq);
-    __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-    // If still 'eq' then recursive locking OK
-    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
-    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-    __ b(lock_done, eq);
-    __ b(slow_lock);
+      // Check for recursive lock
+      // See comments in InterpreterMacroAssembler::lock_object for
+      // explanations on the fast recursive locking check.
+      // Check independently the low bits and the distance to SP
+      // -1- test low 2 bits
+      __ movs(Rtemp, AsmOperand(mark, lsl, 30));
+      // -2- test (hdr - SP) if the low two bits are 0
+      __ sub(Rtemp, mark, SP, eq);
+      __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
+      // If still 'eq' then recursive locking OK
+      // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+      __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+      __ b(lock_done, eq);
+      __ b(slow_lock);
 
-    __ bind(fast_lock);
-    __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+      __ bind(fast_lock);
+      __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
 
-    __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
-
+      __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
+    }
     __ bind(lock_done);
   }
 
@@ -1232,14 +1239,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
-    __ ldr(sync_obj, Address(sync_handle));
+    if (UseFastLocking) {
+      log_trace(fastlock2)("SharedRuntime unlock fast");
+      __ fast_unlock_2(sync_obj, R2, tmp, Rtemp, 7, slow_unlock);
+      // Fall through
+    } else {
+      // See C1_MacroAssembler::unlock_object() for more comments
+      __ ldr(sync_obj, Address(sync_handle));
 
-    // See C1_MacroAssembler::unlock_object() for more comments
-    __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-    __ cbz(R2, unlock_done);
+      // See C1_MacroAssembler::unlock_object() for more comments
+      __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+      __ cbz(R2, unlock_done);
 
-    __ cas_for_lock_release(disp_hdr, R2, sync_obj, Rtemp, slow_unlock);
-
+      __ cas_for_lock_release(disp_hdr, R2, sync_obj, Rtemp, slow_unlock);
+    }
     __ bind(unlock_done);
   }
 
