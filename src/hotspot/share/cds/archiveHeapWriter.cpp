@@ -510,39 +510,41 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
   Metadata** top = (Metadata**) _requested_top; // exclusive
   heap_info->ptrmap()->resize(top - bottom);
 
+  BitMap::idx_t max_idx = 32; // paranoid - don't make it too small
   for (int i = 0; i < _native_pointers->length(); i++) {
     NativePointerInfo info = _native_pointers->at(i);
     oop src_obj = info._src_obj;
     int field_offset = info._field_offset;
     HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(src_obj);
-    if (true) {
-      // requested_field_addr = the address of this field in the requested space
-      oop requested_obj = requested_obj_from_buffer_offset(p->buffer_offset());
-      Metadata** requested_field_addr = (Metadata**)(cast_from_oop<address>(requested_obj) + field_offset);
-      assert(bottom <= requested_field_addr && requested_field_addr < top, "range check");
+    // requested_field_addr = the address of this field in the requested space
+    oop requested_obj = requested_obj_from_buffer_offset(p->buffer_offset());
+    Metadata** requested_field_addr = (Metadata**)(cast_from_oop<address>(requested_obj) + field_offset);
+    assert(bottom <= requested_field_addr && requested_field_addr < top, "range check");
 
-      // Mark this field in the bitmap
-      BitMap::idx_t idx = requested_field_addr - bottom;
-      heap_info->ptrmap()->set_bit(idx);
-      num_non_null_ptrs ++;
+    // Mark this field in the bitmap
+    BitMap::idx_t idx = requested_field_addr - bottom;
+    heap_info->ptrmap()->set_bit(idx);
+    num_non_null_ptrs ++;
 
-      // Set the native pointer to the requested address of the metadata (at runtime, the metadata will have
-      // this address if the RO/RW regions are mapped at the default location).
-
-      Metadata** buffered_field_addr = requested_addr_to_buffered_addr(requested_field_addr);
-      Metadata* native_ptr = *buffered_field_addr;
-      assert(native_ptr != nullptr, "sanity");
-
-      address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
-      address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);
-      *buffered_field_addr = (Metadata*)requested_native_ptr;
+    if (max_idx < idx) {
+      max_idx = idx;
     }
+
+    // Set the native pointer to the requested address of the metadata (at runtime, the metadata will have
+    // this address if the RO/RW regions are mapped at the default location).
+
+    Metadata** buffered_field_addr = requested_addr_to_buffered_addr(requested_field_addr);
+    Metadata* native_ptr = *buffered_field_addr;
+    assert(native_ptr != nullptr, "sanity");
+
+    address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
+    address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);
+    *buffered_field_addr = (Metadata*)requested_native_ptr;
   }
 
-  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers for heap region",
-                      num_non_null_ptrs);
-
-  // FIXME Resize bitmap to remove trailing zeros
+  heap_info->ptrmap()->resize(max_idx + 1);
+  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers for heap region (" SIZE_FORMAT " bits)",
+                      num_non_null_ptrs, size_t(heap_info->ptrmap()->size()));
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

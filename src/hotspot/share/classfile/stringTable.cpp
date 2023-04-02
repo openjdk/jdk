@@ -101,25 +101,6 @@ typedef CompactHashtable<
   java_lang_String::equals> SharedStringTable;
 
 static SharedStringTable _shared_table;
-
-void print_all_strings() {
-#if 0
-  ResourceMark rm;
-  objArrayOop array = (objArrayOop)(_shared_strings_array.resolve());
-  if (array != nullptr) {
-    for (int i = 0; i < array->length(); i++) {
-      oop s = array->obj_at(i);
-      tty->print("%d: ", i);
-      if (s != nullptr) {
-        s->print_value_on(tty);
-      } else {
-        tty->print("NULL");
-      }
-      tty->cr();
-    }
-  }
-#endif
-}
 #endif
 
 // --------------------------------------------------------------------------
@@ -253,9 +234,6 @@ void StringTable::create_table() {
 #if INCLUDE_CDS_JAVA_HEAP
   if (ArchiveHeapLoader::is_in_use()) {
     _shared_strings_array = OopHandle(Universe::vm_global(), HeapShared::get_root(_shared_strings_array_root_index));
-    if (UseNewCode) {
-      print_all_strings();
-    }
   }
 #endif
 }
@@ -909,9 +887,6 @@ oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_
 
   writer.dump(&_shared_table, "string");
 
-  if (UseNewCode) {
-    print_all_strings();
-  }
   return array;
 }
 

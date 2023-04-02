@@ -2214,10 +2214,6 @@ bool G1CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return true;
 }
 
-bool G1CollectedHeap::is_archived_object(oop object) const {
-  return object != NULL && heap_region_containing(object)->is_archive();
-}
-
 class PrintRegionClosure: public HeapRegionClosure {
   outputStream* _st;
 public:

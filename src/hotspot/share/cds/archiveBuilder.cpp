@@ -1167,7 +1167,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), heap_info,
                                               bitmap_size_in_bytes);
 
-  if (heap_info->is_used()) { // FIXME - change name
+  if (heap_info->is_used()) {
     _total_heap_region_size = mapinfo->write_heap_region(heap_info);
   }
 

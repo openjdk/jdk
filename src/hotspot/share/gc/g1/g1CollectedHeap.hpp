@@ -1281,8 +1281,6 @@ public:
 
   WorkerThreads* safepoint_workers() override { return _workers; }
 
-  bool is_archived_object(oop object) const override;
-
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption
   // parameter. The values for that parameter, and their meanings,
