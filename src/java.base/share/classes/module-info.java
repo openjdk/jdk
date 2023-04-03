@@ -199,21 +199,22 @@ module java.base {
         jdk.jshell;
     exports jdk.internal.classfile.attribute to
         jdk.jartool,
-        jdk.jdeps;
+        jdk.jdeps,
+        jdk.jlink;
     exports jdk.internal.classfile.constantpool to
         jdk.jartool,
-        jdk.jdeps;
+        jdk.jdeps,
+        jdk.jlink;
     exports jdk.internal.classfile.instruction to
         jdk.jdeps,
+        jdk.jlink,
         jdk.jshell;
     exports jdk.internal.classfile.java.lang.constant to
         jdk.jdeps;
     exports jdk.internal.org.objectweb.asm to
-        jdk.jfr,
-        jdk.jlink;
+        jdk.jfr;
     exports jdk.internal.org.objectweb.asm.tree to
-        jdk.jfr,
-        jdk.jlink;
+        jdk.jfr;
     exports jdk.internal.org.objectweb.asm.util to
         jdk.jfr;
     exports jdk.internal.org.objectweb.asm.commons to

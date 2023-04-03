@@ -80,6 +80,7 @@ public class CompileStates extends HashMap<Env<AttrContext>, CompileStates.Compi
 
     protected transient Context context;
 
+    @SuppressWarnings("this-escape")
     public CompileStates(Context context) {
         this.context = context;
         context.put(compileStatesKey, this);

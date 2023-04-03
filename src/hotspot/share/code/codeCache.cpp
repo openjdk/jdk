@@ -628,9 +628,6 @@ void CodeCache::commit(CodeBlob* cb) {
   if (cb->is_adapter_blob()) {
     heap->set_adapter_count(heap->adapter_count() + 1);
   }
-
-  // flush the hardware I-cache
-  ICache::invalidate_range(cb->content_begin(), cb->content_size());
 }
 
 bool CodeCache::contains(void *p) {
@@ -1255,8 +1252,8 @@ void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassD
   // can happen
   NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
-    Klass* d = str.klass();
-    InstanceKlass::cast(d)->mark_dependent_nmethods(deopt_scope, changes);
+    InstanceKlass* d = str.klass();
+    d->mark_dependent_nmethods(deopt_scope, changes);
   }
 
 #ifndef PRODUCT

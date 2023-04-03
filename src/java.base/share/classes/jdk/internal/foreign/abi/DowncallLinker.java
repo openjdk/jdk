@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public class DowncallLinker {
         MethodHandle handle = JLIA.nativeMethodHandle(nep);
 
         if (USE_SPEC) {
-            handle = BindingSpecializer.specialize(handle, callingSequence, abi);
+            handle = BindingSpecializer.specializeDowncall(handle, callingSequence, abi);
          } else {
             Map<VMStorage, Integer> argIndexMap = SharedUtils.indexMap(argMoves);
             Map<VMStorage, Integer> retIndexMap = SharedUtils.indexMap(retMoves);
@@ -198,4 +198,3 @@ public class DowncallLinker {
         }
     }
 }
-

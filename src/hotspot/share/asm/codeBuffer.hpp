@@ -715,7 +715,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   void log_section_sizes(const char* name);
 
   // Make a set of stubs final. It can create/optimize stubs.
-  void finalize_stubs();
+  bool finalize_stubs();
 
   // Request for a shared stub to the interpreter
   void shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset);

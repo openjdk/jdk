@@ -647,10 +647,15 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_transitive_interfaces(nullptr);
   set_local_interfaces(nullptr);
 
-  if (fields() != nullptr && !fields()->is_shared()) {
-    MetadataFactory::free_array<jushort>(loader_data, fields());
+  if (fieldinfo_stream() != nullptr && !fieldinfo_stream()->is_shared()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_stream());
   }
-  set_fields(nullptr, 0);
+  set_fieldinfo_stream(nullptr);
+
+  if (fields_status() != nullptr && !fields_status()->is_shared()) {
+    MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
+  }
+  set_fields_status(nullptr);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
@@ -981,18 +986,18 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   // If the initialization error is OOM, this might not work, but if GC kicks in
   // this would be still be helpful.
   JavaThread* THREAD = current;
-  Handle cause = java_lang_Throwable::get_cause_with_stack_trace(exception, THREAD);
-  if (HAS_PENDING_EXCEPTION || cause.is_null()) {
-    CLEAR_PENDING_EXCEPTION;
+  Handle init_error = java_lang_Throwable::create_initialization_error(current, exception);
+  ResourceMark rm(THREAD);
+  if (init_error.is_null()) {
+    log_trace(class, init)("Initialization error is null for class %s", external_name());
     return;
   }
 
   MutexLocker ml(THREAD, ClassInitError_lock);
-  OopHandle elem = OopHandle(Universe::vm_global(), cause());
-  bool created = false;
+  OopHandle elem = OopHandle(Universe::vm_global(), init_error());
+  bool created;
   _initialization_error_table.put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
-  ResourceMark rm(THREAD);
   log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 
@@ -1393,6 +1398,18 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
   return i;
 }
 
+instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
+  Klass* k = java_lang_Class::as_Klass(java_class);
+  if (k == nullptr) {
+    ResourceMark rm(THREAD);
+    THROW_(vmSymbols::java_lang_InstantiationException(), nullptr);
+  }
+  InstanceKlass* ik = cast(k);
+  ik->check_valid_for_instantiation(false, CHECK_NULL);
+  ik->initialize(CHECK_NULL);
+  return ik->allocate_instance(THREAD);
+}
+
 instanceHandle InstanceKlass::allocate_instance_handle(TRAPS) {
   return instanceHandle(THREAD, allocate_instance(THREAD));
 }
@@ -1519,6 +1536,16 @@ void InstanceKlass::mask_for(const methodHandle& method, int bci,
 bool InstanceKlass::contains_field_offset(int offset) {
   fieldDescriptor fd;
   return find_field_from_offset(offset, false, &fd);
+}
+
+FieldInfo InstanceKlass::field(int index) const {
+  for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+    if (fs.index() == index) {
+      return fs.to_FieldInfo();
+    }
+  }
+  fatal("Field not found");
+  return FieldInfo();
 }
 
 bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
@@ -2412,7 +2439,21 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 #if INCLUDE_JVMTI
   it->push(&_previous_versions);
 #endif
-  it->push(&_methods);
+#if INCLUDE_CDS
+  // For "old" classes with methods containing the jsr bytecode, the _methods array will
+  // be rewritten during runtime (see Rewriter::rewrite_jsrs()). So setting the _methods to
+  // be writable. The length check on the _methods is necessary because classes which
+  // don't have any methods share the Universe::_the_empty_method_array which is in the RO region.
+  if (_methods != nullptr && _methods->length() > 0 &&
+      !can_be_verified_at_dumptime() && methods_contain_jsr_bytecode()) {
+    // To handle jsr bytecode, new Method* maybe stored into _methods
+    it->push(&_methods, MetaspaceClosure::_writable);
+  } else {
+#endif
+    it->push(&_methods);
+#if INCLUDE_CDS
+  }
+#endif
   it->push(&_default_methods);
   it->push(&_local_interfaces);
   it->push(&_transitive_interfaces);
@@ -2423,8 +2464,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_default_vtable_indices);
   }
 
-  // _fields might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
-  it->push(&_fields, MetaspaceClosure::_writable);
+  it->push(&_fieldinfo_stream);
+  // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
+  it->push(&_fields_status, MetaspaceClosure::_writable);
 
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
@@ -2619,6 +2661,21 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     }
   }
   return true;
+}
+
+bool InstanceKlass::methods_contain_jsr_bytecode() const {
+  Thread* thread = Thread::current();
+  for (int i = 0; i < _methods->length(); i++) {
+    methodHandle m(thread, _methods->at(i));
+    BytecodeStream bcs(m);
+    while (!bcs.is_last_bytecode()) {
+      Bytecodes::Code opcode = bcs.next();
+      if (opcode == Bytecodes::_jsr || opcode == Bytecodes::_jsr_w) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 #endif // INCLUDE_CDS
 
