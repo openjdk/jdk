@@ -29,7 +29,7 @@
  * @summary PhaseIdealLoop::peeled_dom_test_elim wrongly moves a non-dominated test out of a loop together with control dependent data nodes.
  *          This results in a crash due to an out of bounds read of an array.
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:-TieredCompilation -XX:+StressGCM
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestPeelingRemoveDominatedTest compiler.loopopts.TestPeelingRemoveDominatedTest
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestPeelingRemoveDominatedTest::* compiler.loopopts.TestPeelingRemoveDominatedTest
  */
 
 package compiler.loopopts;
