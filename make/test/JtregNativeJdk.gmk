@@ -76,6 +76,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLinkerInvokerModule := -I$(TEST_LIB_NATIVE_SRC)
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libLoaderLookupInvoker := -I$(TEST_LIB_NATIVE_SRC)
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := -I$(TEST_LIB_NATIVE_SRC)
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libCaptureCallState := Ws2_32.lib
 
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTracePinnedThreads := jvm.lib
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := $(WIN_LIB_JAVA)

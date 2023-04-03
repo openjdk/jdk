@@ -24,33 +24,57 @@
 #include <errno.h>
 
 #ifdef _WIN64
+#include <Windows.h>
+#include <Winsock2.h>
+
 #define EXPORT __declspec(dllexport)
 #else
 #define EXPORT
 #endif
 
-EXPORT void set_errno_V(int value) {
-    errno = value;
+EXPORT void set_errno_V(int capture_state_value) {
+    errno = capture_state_value;
 }
 
-EXPORT int set_errno_I(int value) {
-    errno = value;
-    return 42;
+EXPORT void get_errno_V(int* value_out, void (*cb)(void)) {
+    cb();
+    *value_out = errno;
 }
 
-EXPORT double set_errno_D(int value) {
-    errno = value;
-    return 42.0;
+EXPORT int set_errno_I(int capture_state_value, int test_value) {
+    errno = capture_state_value;
+    return test_value;
+}
+
+EXPORT int get_errno_I(int* value_out, int (*cb)(void)) {
+    int i = cb();
+    *value_out = errno;
+    return i;
+}
+
+EXPORT double set_errno_D(int capture_state_value, double test_value) {
+    errno = capture_state_value;
+    return test_value;
+}
+
+EXPORT double get_errno_D(int* value_out, double (*cb)(void)) {
+    double d = cb();
+    *value_out = errno;
+    return d;
 }
 
 struct SL {
     long long x;
 };
 
-EXPORT struct SL set_errno_SL(int value) {
-    errno = value;
-    struct SL s;
-    s.x = 42;
+EXPORT struct SL set_errno_SL(int capture_state_value, struct SL test_value) {
+    errno = capture_state_value;
+    return test_value;
+}
+
+EXPORT struct SL get_errno_SL(int* value_out, struct SL (*cb)(void)) {
+    struct SL s = cb();
+    *value_out = errno;
     return s;
 }
 
@@ -59,11 +83,14 @@ struct SLL {
     long long y;
 };
 
-EXPORT struct SLL set_errno_SLL(int value) {
-    errno = value;
-    struct SLL s;
-    s.x = 42;
-    s.y = 42;
+EXPORT struct SLL set_errno_SLL(int capture_state_value, struct SLL test_value) {
+    errno = capture_state_value;
+    return test_value;
+}
+
+EXPORT struct SLL get_errno_SLL(int* value_out, struct SLL (*cb)(void)) {
+    struct SLL s = cb();
+    *value_out = errno;
     return s;
 }
 
@@ -73,12 +100,14 @@ struct SLLL {
     long long z;
 };
 
-EXPORT struct SLLL set_errno_SLLL(int value) {
-    errno = value;
-    struct SLLL s;
-    s.x = 42;
-    s.y = 42;
-    s.z = 42;
+EXPORT struct SLLL set_errno_SLLL(int capture_state_value, struct SLLL test_value) {
+    errno = capture_state_value;
+    return test_value;
+}
+
+EXPORT struct SLLL get_errno_SLLL(int* value_out, struct SLLL (*cb)(void)) {
+    struct SLLL s = cb();
+    *value_out = errno;
     return s;
 }
 
@@ -86,10 +115,14 @@ struct SD {
     double x;
 };
 
-EXPORT struct SD set_errno_SD(int value) {
-    errno = value;
-    struct SD s;
-    s.x = 42.0;
+EXPORT struct SD set_errno_SD(int capture_state_value, struct SD test_value) {
+    errno = capture_state_value;
+    return test_value;
+}
+
+EXPORT struct SD get_errno_SD(int* value_out, struct SD (*cb)(void)) {
+    struct SD s = cb();
+    *value_out = errno;
     return s;
 }
 
@@ -98,11 +131,14 @@ struct SDD {
     double y;
 };
 
-EXPORT struct SDD set_errno_SDD(int value) {
-    errno = value;
-    struct SDD s;
-    s.x = 42.0;
-    s.y = 42.0;
+EXPORT struct SDD set_errno_SDD(int capture_state_value, struct SDD test_value) {
+    errno = capture_state_value;
+    return test_value;
+}
+
+EXPORT struct SDD get_errno_SDD(int* value_out, struct SDD (*cb)(void)) {
+    struct SDD s = cb();
+    *value_out = errno;
     return s;
 }
 
@@ -112,11 +148,23 @@ struct SDDD {
     double z;
 };
 
-EXPORT struct SDDD set_errno_SDDD(int value) {
-    errno = value;
-    struct SDDD s;
-    s.x = 42.0;
-    s.y = 42.0;
-    s.z = 42.0;
+EXPORT struct SDDD set_errno_SDDD(int capture_state_value, struct SDDD test_value) {
+    errno = capture_state_value;
+    return test_value;
+}
+
+EXPORT struct SDDD get_errno_SDDD(int* value_out, struct SDDD (*cb)(void)) {
+    struct SDDD s = cb();
+    *value_out = errno;
     return s;
 }
+
+#ifdef _WIN64
+EXPORT void set_last_error(int capture_state_value) {
+    SetLastError(capture_state_value);
+}
+
+EXPORT void set_wsa_last_error(int capture_state_value) {
+    WSASetLastError(capture_state_value);
+}
+#endif
