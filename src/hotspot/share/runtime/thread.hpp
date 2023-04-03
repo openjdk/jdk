@@ -638,7 +638,7 @@ protected:
   bool in_asgct() const { return _in_asgct; }
   void set_in_asgct(bool value) { _in_asgct = value; }
   static bool current_in_asgct() {
-    Thread *cur = Thread::current();
+    Thread *cur = Thread::current_or_null();
     return cur != nullptr && cur->in_asgct();
   }
 };
@@ -648,7 +648,7 @@ class ThreadInAsgct {
   Thread* _thread;
  public:
   ThreadInAsgct(Thread* thread) : _thread(thread) {
-    assert(thread != NULL, "invariant");
+    assert(thread != nullptr, "invariant");
     assert(!thread->in_asgct(), "invariant");
     thread->set_in_asgct(true);
   }
