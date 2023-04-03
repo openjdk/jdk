@@ -1819,9 +1819,10 @@ public final class Matcher implements MatchResult {
     int getMatchedGroupIndex(String name) {
         Objects.requireNonNull(name, "Group name");
         checkMatch();
-        if (!namedGroups().containsKey(name))
+        Integer index = namedGroups().get(name);
+        if (index == null)
             throw new IllegalArgumentException("No group with name <" + name + ">");
-        return namedGroups().get(name);
+        return index;
     }
 
     private void checkGroup(int group) {
