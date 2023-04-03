@@ -160,7 +160,6 @@ class StartNode;
 class State;
 class StoreNode;
 class SubNode;
-class SubINoUnderflowNode;
 class SubTypeCheckNode;
 class Type;
 class TypeNode;
@@ -751,11 +750,10 @@ public:
         DEFINE_CLASS_ID(OuterStripMinedLoop, Loop, 2)
 
     DEFINE_CLASS_ID(Sub,   Node, 6)
-      DEFINE_CLASS_ID(Cmp,            Sub, 0)
-        DEFINE_CLASS_ID(FastLock,        Cmp, 0)
-        DEFINE_CLASS_ID(FastUnlock,      Cmp, 1)
-        DEFINE_CLASS_ID(SubTypeCheck,    Cmp, 2)
-      DEFINE_CLASS_ID(SubINoUnderflow, Sub, 1)
+      DEFINE_CLASS_ID(Cmp,   Sub, 0)
+        DEFINE_CLASS_ID(FastLock,   Cmp, 0)
+        DEFINE_CLASS_ID(FastUnlock, Cmp, 1)
+        DEFINE_CLASS_ID(SubTypeCheck,Cmp, 2)
 
     DEFINE_CLASS_ID(MergeMem, Node, 7)
     DEFINE_CLASS_ID(Bool,     Node, 8)
@@ -944,7 +942,6 @@ public:
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
-  DEFINE_CLASS_QUERY(SubINoUnderflow)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
   DEFINE_CLASS_QUERY(Vector)
