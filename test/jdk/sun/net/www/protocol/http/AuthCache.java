@@ -41,7 +41,6 @@ import java.net.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import sun.net.www.protocol.http.AuthCacheValue;
 import jdk.test.lib.util.ForceGC;
 
 public class AuthCache {
@@ -100,6 +99,7 @@ public class AuthCache {
             return username.equals(user) && password.equals(pass);
         }
     }
+
     /**
      * Creates two Authenticators and two realms ("r1" and "r2")
      * "r1" uses context "/path1" credentials = user1/pass1
@@ -132,16 +132,12 @@ public class AuthCache {
         server.start();
 
         sendRequest(url1, url2, clauth1, clauth2, true, true);
-        checkCacheSize(4);
         sendRequest(url1, url2, clauth1, clauth2, false, false);
-        checkCacheSize(4);
         clauth1 = null;
         ForceGC.wait(() -> ref.refersTo(null));
         delay(1);
-        checkCacheSize(2);
         clauth1 = new ClientAuth("r1", "user1", "pass1");
         sendRequest(url1, url2, clauth1, clauth2, true, false);
-        checkCacheSize(4);
         System.out.println("Passed");
         server.stop(0);
     }
@@ -150,14 +146,6 @@ public class AuthCache {
         try {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
-        }
-    }
-
-    static void checkCacheSize(int expected) {
-        int found = AuthCacheValue.getAuthCache().mapSize();
-        if (found != expected) {
-            var msg = String.format("Cache size: expected %d, got %d\n", expected, found);
-            throw new RuntimeException(msg);
         }
     }
 

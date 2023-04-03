@@ -29,6 +29,7 @@ import java.net.Authenticator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Michael McMahon
