@@ -4447,7 +4447,7 @@ void PhaseIdealLoop::build_and_optimize() {
     assert(C->unique() == unique, "non-optimize _mode made Nodes? ? ?");
     return;
   }
-  DEBUG_ONLY( if(VerifyLoopOptimizations) { verify(); } );
+  DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
   if (TraceLoopOpts && C->has_loops()) {
     _ltree_root->dump();
   }
@@ -4519,7 +4519,7 @@ void PhaseIdealLoop::build_and_optimize() {
   if (!C->major_progress() && SplitIfBlocks && do_split_ifs) {
     visited.clear();
     split_if_with_blocks( visited, nstack);
-    DEBUG_ONLY( if(VerifyLoopOptimizations) { verify(); } );
+    DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
   }
 
   if (!C->major_progress() && do_expensive_nodes && process_expensive_nodes()) {
