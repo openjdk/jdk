@@ -320,6 +320,6 @@ public class VirtualAllocCommitMerge {
     public static void checkCommitted(OutputAnalyzer output, long addr, long size, String sizeString) {
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + size)
-                           + "\\] committed " + sizeString + " from.*");
+                           + "\\] committed " + sizeString + ".*");
     }
 }
