@@ -215,7 +215,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     for (; here >= end; here -= smallest_possible_alignment) {
       if (!os::is_readable_pointer(here)) {
         // Probably OOB, give up
-        return false;
+        break;
       }
       const MallocHeader* const candidate = (const MallocHeader*)here;
       if (!candidate->looks_valid()) {
