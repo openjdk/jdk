@@ -135,7 +135,7 @@ public class CallArranger {
     public static UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
         Bindings bindings = getBindings(mt, cDesc, true, options);
         final boolean dropReturn = false; /* need the return value as well */
-        return SharedUtils.arrangeUpcallHelper(mt, bindings.isInMemoryReturn, dropReturn, CWindows,
+        return SharedUtils.arrangeUpcallHelper(bindings.isInMemoryReturn, dropReturn, CWindows,
                 bindings.callingSequence);
     }
 

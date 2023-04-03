@@ -85,7 +85,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         LinkerOptions optionSet = LinkerOptions.forUpcall(function, options);
 
         MethodType type = function.toMethodType();
-        if (!type.equals(target.type())) {
+        MethodType expectedType = type;
+        if (optionSet.hasCapturedCallState()) {
+            expectedType = expectedType.insertParameterTypes(0, MemorySegment.class); // capture state segment
+        }
+        if (!expectedType.equals(target.type())) {
             throw new IllegalArgumentException("Wrong method handle type: " + target.type());
         }
 

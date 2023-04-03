@@ -162,11 +162,18 @@ public final class SharedUtils {
      * @param target the target handle to adapt
      * @return the adapted handle
      */
-    private static MethodHandle adaptUpcallForIMR(MethodHandle target, boolean dropReturn) {
+    private static MethodHandle adaptUpcallForIMR(MethodHandle target, boolean dropReturn, boolean hasCaptureCallState) {
         if (target.type().returnType() != MemorySegment.class)
             throw new IllegalArgumentException("Must return MemorySegment for IMR");
 
         target = collectArguments(MH_BUFFER_COPY, 1, target); // (MemorySegment, ...) MemorySegment
+
+        if (hasCaptureCallState) {
+            assert target.type().parameterType(1) == MemorySegment.class;
+            // IMR is an ABI figment, so the capture state segment which
+            // is inserted artificially by CallingSequenceBuilder should appear before it
+            target = swapArguments(target, 0, 1);
+        }
 
         if (dropReturn) { // no handling for return value, need to drop it
             target = dropReturn(target);
@@ -179,20 +186,22 @@ public final class SharedUtils {
         return target;
     }
 
-    public static UpcallStubFactory arrangeUpcallHelper(MethodType targetType, boolean isInMemoryReturn, boolean dropReturn,
+    public static UpcallStubFactory arrangeUpcallHelper(boolean isInMemoryReturn, boolean dropReturn,
                                                         ABIDescriptor abi, CallingSequence callingSequence) {
-        if (isInMemoryReturn) {
-            // simulate the adaptation to get the type
-            MethodHandle fakeTarget = MethodHandles.empty(targetType);
-            targetType = adaptUpcallForIMR(fakeTarget, dropReturn).type();
+        MethodType targetType = callingSequence.calleeMethodType();
+        if (callingSequence.needsReturnBuffer()) {
+            // return buffer is picked up by the wrapper class
+            // so it doesn't go to the target.
+            assert targetType.parameterType(0) == MemorySegment.class;
+            targetType = targetType.dropParameterTypes(0, 1);
         }
-
         UpcallStubFactory factory = UpcallLinker.makeFactory(targetType, abi, callingSequence);
 
         if (isInMemoryReturn) {
             final UpcallStubFactory finalFactory = factory;
+            boolean hasCaptureCallState = callingSequence.capturedStateMask() != 0;
             factory = (target, scope) -> {
-                target = adaptUpcallForIMR(target, dropReturn);
+                target = adaptUpcallForIMR(target, dropReturn, hasCaptureCallState);
                 return finalFactory.makeStub(target, scope);
             };
         }

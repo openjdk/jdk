@@ -124,7 +124,7 @@ public class LinuxRISCV64CallArranger {
     public static UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
         Bindings bindings = getBindings(mt, cDesc, true, options);
         final boolean dropReturn = true; /* drop return, since we don't have bindings for it */
-        return SharedUtils.arrangeUpcallHelper(mt, bindings.isInMemoryReturn, dropReturn, CLinux,
+        return SharedUtils.arrangeUpcallHelper(bindings.isInMemoryReturn, dropReturn, CLinux,
                 bindings.callingSequence);
     }
 

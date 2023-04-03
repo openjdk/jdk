@@ -163,8 +163,16 @@ EXPORT struct SDDD get_errno_SDDD(int* value_out, struct SDDD (*cb)(void)) {
 EXPORT void set_last_error(int capture_state_value) {
     SetLastError(capture_state_value);
 }
+EXPORT void get_last_error(int* value_out, void (*cb)(void)) {
+    cb();
+    *value_out = GetLastError();
+}
 
 EXPORT void set_wsa_last_error(int capture_state_value) {
     WSASetLastError(capture_state_value);
+}
+EXPORT void get_wsa_last_error(int* value_out, void (*cb)(void)) {
+    cb();
+    *value_out = WSAGetLastError();
 }
 #endif
