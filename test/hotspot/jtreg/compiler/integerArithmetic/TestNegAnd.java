@@ -29,7 +29,7 @@
  *
  * @library /test/lib
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand="dontinline,TestNegAnd::test*" TestNegAnd
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestNegAnd::test* TestNegAnd
  *
  */
 

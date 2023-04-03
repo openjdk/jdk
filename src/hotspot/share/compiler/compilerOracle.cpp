@@ -794,6 +794,7 @@ void CompilerOracle::print_parse_error(char* error_msg, char* original_line) {
   tty->print_cr("Error: %s", error_msg);
   tty->print_cr("Line: '%s'", original_line);
   print_tip();
+  assert(false, "CompilerOracle::print_parse_error");
 }
 
 class LineCopy : StackObj {
