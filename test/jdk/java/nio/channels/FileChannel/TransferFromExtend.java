@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8303260
- * @summary Test transferFrom to a position greater than size
+ * @summary Test transferFrom to a position greater than the file size
  * @library .. /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run junit TransferFromExtend
@@ -86,17 +86,15 @@ public class TransferFromExtend {
         return paramProvider(1, 64*1024);
     }
 
-    //
-    // Test the direct and memory-mapped paths. At present the direct path
-    // is implemented only on Linux. The mapped path will be taken only if
-    // there is no direct path and the size of the transfer is more than
-    // sun.nio.ch.FileChannelImpl::MAPPED_TRANSFER_THRESHOLD (16K).
-    // This method therefore tests the direct path on Linux and the mapped
-    // path on other platforms.
-    //
+    /*
+     * This method tests the optimized path for transferring from a file
+     * source to a file destination.
+     */
     @ParameterizedTest
     @MethodSource("fastParamProvider")
-    void fromFast(long initialPosition, int bufSize, long offset) throws IOException {
+    void fromFileChannel(long initialPosition, int bufSize, long offset)
+        throws IOException
+    {
         Path file = Files.createTempFile(DIR, "foo", "bar");
         try (FileChannel src = FileChannel.open(file, DELETE_ON_CLOSE,
                                                 READ, WRITE)) {
@@ -109,7 +107,7 @@ public class TransferFromExtend {
                 assertTrue(n >= 0, n + " < " + 0);
                 total += n;
             }
-            transferFrom(src, src.size(), initialPosition, offset, bytes);
+            testTransferFrom(src, src.size(), initialPosition, offset, bytes);
         }
     }
 
@@ -120,12 +118,13 @@ public class TransferFromExtend {
     @ParameterizedTest
     @MethodSource("readingByteChannelParamProvider")
     void fromReadingByteChannel(long initialPosition, int bufSize, long offset)
-        throws IOException {
+        throws IOException
+    {
         byte[] bytes = new byte[bufSize];
         RND.nextBytes(bytes);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         try (ReadableByteChannel src = Channels.newChannel(bais)) {
-            transferFrom(src, bufSize, initialPosition, offset, bytes);
+            testTransferFrom(src, bufSize, initialPosition, offset, bytes);
         }
     }
 
@@ -138,9 +137,11 @@ public class TransferFromExtend {
      * @param offset     the offset beyong the end of the target channel
      * @param bytes      the bytes expected to be transferred
      */
-    private static void transferFrom(ReadableByteChannel src, long count,
-                                     long initialPos, long offset, byte[] bytes)
-        throws IOException {
+    private static void testTransferFrom(ReadableByteChannel src, long count,
+                                         long initialPos, long offset,
+                                         byte[] bytes)
+        throws IOException
+    {
         Path file = Files.createTempFile(DIR, "foo", "bar");
         try (FileChannel target = FileChannel.open(file, DELETE_ON_CLOSE,
                                                    READ, WRITE)) {
@@ -150,7 +151,7 @@ public class TransferFromExtend {
             long position = target.size() + offset;
             long transferred = target.transferFrom(src, position, count);
             assertTrue(transferred >= 0, "transferFrom returned negative");
-            assertFalse(transferred > count, transferred + " > " + count);
+            assertFalse(count < transferred, count + " < " + transferred);
             ByteBuffer buf = ByteBuffer.allocate((int)transferred);
             target.read(buf, position);
             assertArrayEquals(Arrays.copyOf(bytes, (int)transferred),

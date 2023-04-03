@@ -821,7 +821,7 @@ public abstract class FileChannel
      *         The buffer from which bytes are to be transferred
      *
      * @param  position
-     *         The file position at which the transfer is to begin;
+     *         The position at which the transfer is to begin;
      *         must be non-negative
      *
      * @return  The number of bytes written, possibly zero
