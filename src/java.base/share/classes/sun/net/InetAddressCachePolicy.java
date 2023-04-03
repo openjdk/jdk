@@ -37,11 +37,11 @@ public final class InetAddressCachePolicy {
     private static final String cachePolicyPropFallback =
         "sun.net.inetaddr.ttl";
 
-    // Controls the cache extended policy for successful lookups only
-    private static final String cacheExtendedPolicyProp =
-        "networkaddress.cache.extended.ttl";
-    private static final String cacheExtendedPolicyPropFallback =
-        "sun.net.inetaddr.extended.ttl";
+    // Controls the cache stale policy for successful lookups only
+    private static final String cacheStalePolicyProp =
+        "networkaddress.cache.stale.ttl";
+    private static final String cacheStalePolicyPropFallback =
+        "sun.net.inetaddr.stale.ttl";
 
     // Controls the cache policy for negative lookups only
     private static final String negativeCachePolicyProp =
@@ -66,13 +66,13 @@ public final class InetAddressCachePolicy {
      */
     private static volatile int cachePolicy = FOREVER;
 
-    /* The Java-level namelookup cache extended policy for successful lookups:
+    /* The Java-level namelookup cache stale policy for successful lookups:
      *
      * any positive value: the number of seconds to cache an address for
      *
      * default value is never (NEVER).
      */
-    private static volatile int extendedCachePolicy = NEVER;
+    private static volatile int staleCachePolicy = NEVER;
 
     /* The Java-level namelookup cache policy for negative lookups:
      *
@@ -121,10 +121,10 @@ public final class InetAddressCachePolicy {
         }
         long max = TimeUnit.DAYS.toSeconds(7);
         if (cachePolicy > 0 && cachePolicy < max) {
-            tmp = getProperty(cacheExtendedPolicyProp,
-                              cacheExtendedPolicyPropFallback);
+            tmp = getProperty(cacheStalePolicyProp,
+                              cacheStalePolicyPropFallback);
             if (tmp != null && tmp > cachePolicy) {
-                extendedCachePolicy = (int) Math.max(tmp, max);
+                staleCachePolicy = (int) Math.max(tmp, max);
             }
         }
     }
@@ -163,8 +163,8 @@ public final class InetAddressCachePolicy {
         return cachePolicy;
     }
 
-    public static int getExtended() {
-        return extendedCachePolicy;
+    public static int getStale() {
+        return staleCachePolicy;
     }
 
     public static int getNegative() {

@@ -939,7 +939,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         private static final AtomicLong seq = new AtomicLong();
         final String host;
         volatile InetAddress[] inetAddresses;
-        final long expiryTime; // time of expiry (in terms of System.nanoTime())
+        /**
+         * Time of expiry (in terms of System.nanoTime()). Can be modified only
+         * when the record is not added to the "expirySet".
+         */
+        volatile long expiryTime;
         final long id = seq.incrementAndGet(); // each instance is unique
 
         CachedAddresses(String host, InetAddress[] inetAddresses, long expiryTime) {
@@ -968,6 +972,26 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             // ties are broken using unique id
             return Long.compare(this.id, other.id);
         }
+
+        /**
+         * Checks if the current cache record is expired or not. Expired records
+         * are removed from the expirySet and cache.
+         */
+        public boolean expired(long now) {
+            // compare difference of time instants rather than
+            // time instants directly, to avoid possible overflow.
+            // (see System.nanoTime() recommendations...)
+            if ((expiryTime - now) < 0L) {
+                // ConcurrentSkipListSet uses weakly consistent iterator,
+                // so removing while iterating is OK...
+                if (expirySet.remove(this)) {
+                    // ... remove from cache
+                    cache.remove(host, this);
+                }
+                return true;
+            }
+            return false;
+        }
     }
 
     private static final class ValidAddresses extends CachedAddresses {
@@ -976,20 +1000,28 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
          */
         private volatile long refreshTime;
         /**
+         * For how long the stale data should be used after TTL expiration.
+         * Initially equal to the expiryTime, but increased over time after each
+         * successful lookup.
+         */
+        private volatile long staleTime;
+
+        /**
          * only one thread is doing lookup to name service
          * for particular host at any time.
          */
         private final Lock lookupLock = new ReentrantLock();
 
         ValidAddresses(String host, InetAddress[] inetAddresses,
-                       long expiryTime, long refreshTime)
+                       long staleTime, long refreshTime)
         {
-            super(host, inetAddresses, expiryTime);
+            super(host, inetAddresses, staleTime);
             this.refreshTime = refreshTime;
+            this.staleTime = staleTime;
         }
 
         @Override
-        public InetAddress[] get() throws UnknownHostException {
+        public InetAddress[] get() {
             long now = System.nanoTime();
             if ((refreshTime - now) < 0L && lookupLock.tryLock()) {
                 try {
@@ -997,12 +1029,41 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     refreshTime = now + InetAddressCachePolicy.get() * 1000_000_000L;
                     // getAddressesFromNameService returns non-empty/non-null value
                     inetAddresses = getAddressesFromNameService(host);
+                    // don't update the "expirySet", will do that later
+                    staleTime = refreshTime + InetAddressCachePolicy.getStale() * 1000_000_000L;
                 } catch (UnknownHostException ignore) {
                 } finally {
                     lookupLock.unlock();
                 }
             }
             return inetAddresses;
+        }
+
+        /**
+         * Overrides the parent method to skip deleting the record from the
+         * cache if the staled data can still be used. Note to update the
+         * "expiryTime" field we have to remove the record from the expirySet
+         * and add it back. It is not necessary to remove/add it here, we can do
+         * that in the "get()" method above, but extracting it minimizes
+         * contention on "expirySet".
+         */
+        @Override
+        public boolean expired(long now) {
+            // compare difference of time instants rather than
+            // time instants directly, to avoid possible overflow.
+            // (see System.nanoTime() recommendations...)
+            if ((expiryTime - now) < 0L) {
+                if ((staleTime - now) < 0L) {
+                    return super.expired(now);
+                }
+                // ConcurrentSkipListSet uses weakly consistent iterator,
+                // so removing while iterating is OK...
+                if (expirySet.remove(this)) {
+                    expiryTime = staleTime;
+                    expirySet.add(this);
+                }
+            }
+            return false;
         }
     }
 
@@ -1057,13 +1118,13 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                                 // cachePolicy is in [s] - we need [ns]
                                 : now + 1000_000_000L * cachePolicy;
                         CachedAddresses cachedAddresses;
-                        if (InetAddressCachePolicy.getExtended() > 0 &&
+                        if (InetAddressCachePolicy.getStale() > 0 &&
                                 ex == null && expiryTime > 0)
                         {
                             long refreshTime = expiryTime;
-                            //  cacheExtendedPolicy is in [s] - we need [ns]
-                            expiryTime = now + 1000_000_000L *
-                                    InetAddressCachePolicy.getExtended();
+                            //  staleCachePolicy is in [s] - we need [ns]
+                            expiryTime = refreshTime + 1000_000_000L *
+                                    InetAddressCachePolicy.getStale();
                             cachedAddresses = new ValidAddresses(host,
                                                                  inetAddresses,
                                                                  expiryTime,
@@ -1669,17 +1730,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         // by expiry time so we only need to iterate the prefix of the NavigableSet...
         long now = System.nanoTime();
         for (CachedAddresses caddrs : expirySet) {
-            // compare difference of time instants rather than
-            // time instants directly, to avoid possible overflow.
-            // (see System.nanoTime() recommendations...)
-            if ((caddrs.expiryTime - now) < 0L) {
-                // ConcurrentSkipListSet uses weakly consistent iterator,
-                // so removing while iterating is OK...
-                if (expirySet.remove(caddrs)) {
-                    // ... remove from cache
-                    cache.remove(caddrs.host, caddrs);
-                }
-            } else {
+            if (!caddrs.expired(now)) {
                 // we encountered 1st element that expires in future
                 break;
             }

@@ -42,22 +42,22 @@ import impl.SimpleResolverProviderImpl;
  * @run testng/othervm -Djava.security.properties=${test.src}/props/ForeverCache.props
  *  -Dtest.cachingDisabled=false AddressesCachingTest
  * @run testng/othervm
- *  -Djava.security.properties=${test.src}/props/NeverCacheIgnoreMinusExtended.props
+ *  -Djava.security.properties=${test.src}/props/NeverCacheIgnoreMinusStale.props
  *  -Dtest.cachingDisabled=true AddressesCachingTest
  * @run testng/othervm
- *  -Djava.security.properties=${test.src}/props/NeverCacheIgnorePositiveExtended.props
+ *  -Djava.security.properties=${test.src}/props/NeverCacheIgnorePositiveStale.props
  *  -Dtest.cachingDisabled=true AddressesCachingTest
  * @run testng/othervm
- *  -Djava.security.properties=${test.src}/props/NeverCacheIgnoreZeroExtended.props
+ *  -Djava.security.properties=${test.src}/props/NeverCacheIgnoreZeroStale.props
  *  -Dtest.cachingDisabled=true AddressesCachingTest
  * @run testng/othervm
- *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnoreMinusExtended.props
+ *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnoreMinusStale.props
  *  -Dtest.cachingDisabled=false AddressesCachingTest
  * @run testng/othervm
- *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnorePositiveExtended.props
+ *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnorePositiveStale.props
  *  -Dtest.cachingDisabled=false AddressesCachingTest
  * @run testng/othervm
- *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnoreZeroExtended.props
+ *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnoreZeroStale.props
  *  -Dtest.cachingDisabled=false AddressesCachingTest
  */
 public class AddressesCachingTest {

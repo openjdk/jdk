@@ -33,14 +33,14 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @summary Test that extended InetAddress caching security properties work as
+ * @summary Test that stale InetAddress caching security properties work as
  *          expected when a custom resolver is installed.
  * @library lib providers/simple
  * @build test.library/testlib.ResolutionRegistry
- *  simple.provider/impl.SimpleResolverProviderImpl AddressesExtendedCachingTest
- * @run testng/othervm -Djava.security.properties=${test.src}/props/CacheExtended.props AddressesExtendedCachingTest
+ *  simple.provider/impl.SimpleResolverProviderImpl AddressesStaleCachingTest
+ * @run testng/othervm -Djava.security.properties=${test.src}/props/CacheStale.props AddressesStaleCachingTest
  */
-public class AddressesExtendedCachingTest {
+public class AddressesStaleCachingTest {
 
     private static class Lookup {
         private final byte[] address;
@@ -53,7 +53,7 @@ public class AddressesExtendedCachingTest {
     }
 
     /**
-     * Validates successful and unsuccessful lookups when the extended cache is
+     * Validates successful and unsuccessful lookups when the stale cache is
      * enabled.
      */
     @Test
@@ -61,19 +61,19 @@ public class AddressesExtendedCachingTest {
         // The first request is to save the data into the cache
         Lookup first = doLookup(false);
 
-        Thread.sleep(10000); // intentionally big delay > x2 extended property
+        Thread.sleep(10000); // intentionally big delay > x2 stale property
         // The refreshTime is expired, we will do the successful lookup.
         Lookup second = doLookup(false);
         Assert.assertNotEquals(first.timestamp, second.timestamp,
                                "Two lookups are expected");
 
-        Thread.sleep(10000); // intentionally big delay > x2 extended property
+        Thread.sleep(10000); // intentionally big delay > x2 stale property
         // The refreshTime is expired again, we will do the failed lookup.
         Lookup third = doLookup(true);
         Assert.assertNotEquals(second.timestamp, third.timestamp,
                                "Two lookups are expected");
 
-        // The extended cache is enabled, so we should get valid/same data for
+        // The stale cache is enabled, so we should get valid/same data for
         // all requests(even for the failed request).
         Assert.assertEquals(first.address, second.address,
                             "Same address is expected");
