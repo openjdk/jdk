@@ -21,3 +21,5 @@ NashornProfile.txt
 /.project
 /.classpath
 /.cproject
+__.idea/
+**/hs_err_pid*.log
