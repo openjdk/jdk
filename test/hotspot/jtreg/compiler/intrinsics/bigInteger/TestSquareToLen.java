@@ -30,10 +30,10 @@
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
  *      -XX:CompileCommand=exclude,compiler.intrinsics.bigInteger.TestSquareToLen::main
- *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestSquareToLen::base_multiply,ccstr,DisableIntrinsic,_squareToLen
- *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstr,DisableIntrinsic,_squareToLen
- *      -XX:CompileCommand=option,java.math.BigInteger::square,ccstr,DisableIntrinsic,_squareToLen
- *      -XX:CompileCommand=option,java.math.BigInteger::squareToLen,ccstr,DisableIntrinsic,_squareToLen
+ *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestSquareToLen::base_multiply,ccstrlist,DisableIntrinsic,_squareToLen
+ *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstrlist,DisableIntrinsic,_squareToLen
+ *      -XX:CompileCommand=option,java.math.BigInteger::square,ccstrlist,DisableIntrinsic,_squareToLen
+ *      -XX:CompileCommand=option,java.math.BigInteger::squareToLen,ccstrlist,DisableIntrinsic,_squareToLen
  *      -XX:CompileCommand=inline,java.math.BigInteger::multiply
  *      -XX:CompileCommand=inline,java.math.BigInteger::square
  *      -XX:CompileCommand=inline,java.math.BigInteger::squareToLen
