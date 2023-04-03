@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,6 +599,7 @@ public class GregorianCalendar extends Calendar {
      * {@link Locale.Category#FORMAT FORMAT} locale.
      *
      * @param zone the given time zone.
+     * @throws NullPointerException if {@code zone} is {@code null}
      */
     public GregorianCalendar(TimeZone zone) {
         this(zone, Locale.getDefault(Locale.Category.FORMAT));
@@ -609,6 +610,7 @@ public class GregorianCalendar extends Calendar {
      * in the default time zone with the given locale.
      *
      * @param aLocale the given locale.
+     * @throws NullPointerException if {@code aLocale} is {@code null}
      */
     public GregorianCalendar(Locale aLocale) {
         this(TimeZone.getDefaultRef(), aLocale);
@@ -621,6 +623,8 @@ public class GregorianCalendar extends Calendar {
      *
      * @param zone the given time zone.
      * @param aLocale the given locale.
+     * @throws NullPointerException if either {@code zone} or {@code aLocale}
+     * is {@code null}
      */
     public GregorianCalendar(TimeZone zone, Locale aLocale) {
         super(zone, aLocale);
