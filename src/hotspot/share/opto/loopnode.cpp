@@ -4821,7 +4821,7 @@ GrowableArray<IdealLoopTree*> IdealLoopTree::collect_sorted_children() const {
   IdealLoopTree* child = _child;
   while (child != nullptr) {
     assert(child->_parent == this, "all must be children of this");
-    children.insert_sorted<&compare_tree>(child);
+    children.insert_sorted<compare_tree>(child);
     child = child->_next;
   }
   return children;
