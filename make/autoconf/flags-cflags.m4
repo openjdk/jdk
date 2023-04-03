@@ -82,7 +82,7 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
     SET_SHARED_LIBRARY_NAME=''
     SET_SHARED_LIBRARY_MAPFILE=''
 
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     SHARED_LIBRARY_FLAGS="-dll"
     SET_EXECUTABLE_ORIGIN=''
     SET_SHARED_LIBRARY_ORIGIN=''
@@ -145,7 +145,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g1"
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
   fi
 
@@ -161,7 +161,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
 AC_DEFUN([FLAGS_SETUP_WARNINGS],
 [
   # Set default value.
-  if test "x$TOOLCHAIN_TYPE" != xxlc; then
+  if test "x$TOOLCHAIN_TYPE" != xxlc -a "x$TOOLCHAIN_TYPE" != xmscl; then
     WARNINGS_AS_ERRORS_DEFAULT=true
   else
     WARNINGS_AS_ERRORS_DEFAULT=false
@@ -214,6 +214,20 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
       DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
+      ;;
+
+    mscl)
+      DISABLE_WARNING_PREFIX="-Wno-"
+      BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
+      CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+
+      # Additional warnings that are not activated by -Wall and -Wextra
+      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare -Wreorder \
+          -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
+      WARNINGS_ENABLE_ALL="-W4 -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
+
+      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
+
       ;;
 
     xlc)
@@ -314,7 +328,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     # FIXME: Value below not verified.
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-qnoopt"
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     C_O_FLAG_HIGHEST_JVM="-O2 -Oy-"
     C_O_FLAG_HIGHEST="-O2"
     C_O_FLAG_HI="-O1"
@@ -490,7 +504,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     ALWAYS_DEFINES_JVM="-D_REENTRANT"
     ALWAYS_DEFINES_JDK="-D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     # Access APIs for Windows 8 and above
     # see https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
     ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
@@ -564,12 +578,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # compilation of all source files regardless of the active code page on Windows.
     TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -permissive- -utf-8 -MP"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -utf-8 -Zc:wchar_t-"
+  elif test "x$TOOLCHAIN_TYPE" = xmscl; then
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:strictStrings"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:strictStrings -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
     LANGSTD_CFLAGS="-std=c11"
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     LANGSTD_CFLAGS="-std:c11"
   fi
   TOOLCHAIN_CFLAGS_JDK_CONLY="$LANGSTD_CFLAGS $TOOLCHAIN_CFLAGS_JDK_CONLY"
@@ -577,7 +594,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   # CXXFLAGS C++ language level for all of JDK, including Hotspot.
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
     LANGSTD_CXXFLAGS="-std=c++14"
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     LANGSTD_CXXFLAGS="-std:c++14"
   else
     AC_MSG_ERROR([Don't know how to enable C++14 for this toolchain])
@@ -593,7 +610,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXXFLAGS"
     WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_CXXFLAGS"
 
-  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+  elif test "x$TOOLCHAIN_TYPE" = xclang -o "x$TOOLCHAIN_TYPE" = xmscl; then
     WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -642,7 +659,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # libjvm with -qpic=large and link with -bbigtoc.
     JVM_PICFLAG="-qpic=large"
     JDK_PICFLAG="-qpic"
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     PICFLAG=""
   fi
 
@@ -706,7 +723,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   fi
 
   # toolchain dependent, per-cpu
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     if test "x$FLAGS_CPU" = xaarch64; then
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_ARM64_ -Darm64"
     elif test "x$FLAGS_CPU" = xx86_64; then
@@ -782,7 +799,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       $1_CFLAGS_CPU_JVM="-qarch=ppc64"
     fi
 
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     if test "x$FLAGS_CPU" = xx86; then
       $1_CFLAGS_CPU_JVM="-arch:IA32"
     elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
@@ -801,7 +818,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     REPRODUCIBLE_CFLAGS="-experimental:deterministic"
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${REPRODUCIBLE_CFLAGS}],
         PREFIX: $3,
@@ -824,6 +841,17 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       # the __FILE__ macro resolve to paths relative to the workspace root.
       workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
       FILE_MACRO_CFLAGS="-fmacro-prefix-map=${workspace_root_trailing_slash}="
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
+          PREFIX: $3,
+          IF_FALSE: [
+              FILE_MACRO_CFLAGS=
+          ]
+      )
+    elif test "x$TOOLCHAIN_TYPE" = xmscl; then
+      # Check if compiler supports -fmacro-prefix-map. If so, use that to make
+      # the __FILE__ macro resolve to paths relative to the workspace root.
+      workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
+      FILE_MACRO_CFLAGS="-clang:-fmacro-prefix-map=${workspace_root_trailing_slash}="
       FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
           PREFIX: $3,
           IF_FALSE: [

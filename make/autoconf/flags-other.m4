@@ -79,7 +79,7 @@ AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
 AC_DEFUN([FLAGS_SETUP_RCFLAGS],
 [
   # On Windows, we need to set RC flags.
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     RCFLAGS="-nologo"
     if test "x$DEBUG_LEVEL" = xrelease; then
       RCFLAGS="$RCFLAGS -DNDEBUG"
@@ -105,7 +105,7 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS],
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     # Force preprocessor to run, just to make sure
     BASIC_ASFLAGS="-x assembler-with-cpp"
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
     BASIC_ASFLAGS="-nologo -c"
   fi
   AC_SUBST(BASIC_ASFLAGS)

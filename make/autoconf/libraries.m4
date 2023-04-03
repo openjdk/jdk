@@ -131,7 +131,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
 
   BASIC_JDKLIB_LIBS=""
   BASIC_JDKLIB_LIBS_TARGET=""
-  if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
+  if test "x$TOOLCHAIN_TYPE" != xmicrosoft -a "x$TOOLCHAIN_TYPE" != xmscl; then
     BASIC_JDKLIB_LIBS="-ljava -ljvm"
   fi
 

@@ -447,7 +447,7 @@ define SetupCompileNativeFileBody
     $$($1_OBJ): $$($1_OBJ_DEPS) | $$($$($1_BASE)_BUILD_INFO)
 	$$(call LogInfo, Compiling $$($1_FILENAME) (for $$($$($1_BASE)_BASENAME)))
 	$$(call MakeDir, $$(@D))
-        ifneq ($(TOOLCHAIN_TYPE), microsoft)
+        ifeq ($(findstring $(TOOLCHAIN_TYPE), microsoft mscl), )
 	  $$(call ExecuteWithLog, $$@, $$(call MakeCommandRelative, \
 	      $$($1_COMPILER) $$(GENDEPS_FLAGS) \
 	      $$(addsuffix .tmp, $$($1_DEPS_FILE)) \
@@ -882,7 +882,7 @@ define SetupNativeCompilationBody
 
   ifneq ($$($1_PRECOMPILED_HEADER), )
     ifeq ($(USE_PRECOMPILED_HEADER), true)
-      ifeq ($(TOOLCHAIN_TYPE), microsoft)
+      ifneq ($(findstring $(TOOLCHAIN_TYPE), microsoft mscl), )
         $1_PCH_FILE := $$($1_OBJECT_DIR)/$1.pch
         $1_GENERATED_PCH_SRC := $$($1_OBJECT_DIR)/$1_pch.cpp
         $1_GENERATED_PCH_OBJ := $$($1_OBJECT_DIR)/$1_pch$(OBJ_SUFFIX)

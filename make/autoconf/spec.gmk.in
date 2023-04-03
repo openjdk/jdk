@@ -164,6 +164,11 @@ ifeq (@TOOLCHAIN_TYPE@, microsoft)
   # Visual Studio tools.
   export PATH := @TOOLCHAIN_PATH@:$(PATH)
 endif
+ifeq (@TOOLCHAIN_TYPE@, mscl)
+  # The Visual Studio toolchain needs the PATH to be adjusted to include
+  # Visual Studio tools.
+  export PATH := @TOOLCHAIN_PATH@:$(PATH)
+endif
 
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
 SYSROOT_LDFLAGS := @SYSROOT_LDFLAGS@
