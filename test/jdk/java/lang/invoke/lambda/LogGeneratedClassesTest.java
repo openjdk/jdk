@@ -124,7 +124,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-cp", "..",
                                "-Duser.dir=" + testDir.toAbsolutePath(),
                                "-Djava.security.manager=allow",
-                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
+                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                "com.example.TestLambda");
         // 2 our own class files. We don't care about the others
         assertEquals(Files.find(
@@ -148,7 +148,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-cp", "..",
                                "-Duser.dir=" + testDir.toAbsolutePath(),
                                "-Djava.security.manager=allow",
-                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
+                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                "com.example.TestLambda");
 
         // The dump directory will be created if not exist
@@ -172,10 +172,10 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-cp", "..",
                                "-Duser.dir=" + testDir.toAbsolutePath(),
                                "-Djava.security.manager=allow",
-                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
+                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
-                                  .filter(s -> s.contains("is not a directory"))
+                                  .filter(s -> s.contains("java.nio.file.FileAlreadyExistsException"))
                                   .count(),
                      1, "only show error once");
         assertTrue(tr.exitValue !=0);
@@ -234,7 +234,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                    "-cp", "..",
                                    "-Duser.dir=" + testDir.toAbsolutePath(),
                                    "-Djava.security.manager=allow",
-                                   "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
+                                   "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
                                       .filter(s -> s.contains("is not writable"))
@@ -256,7 +256,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-cp", "..",
                                "-Duser.dir=" + testDir.toAbsolutePath(),
                                "-Djava.security.manager=allow",
-                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
+                               "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                longFQCN);
         assertEquals(tr.testOutput.stream()
                                   .filter(s -> s.startsWith("WARNING: Exception"))
