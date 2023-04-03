@@ -370,7 +370,11 @@ public final class ClassReaderImpl
         p += 2;
         for (int i = 0; i < cnt; ++i) {
             int len = readInt(p + 2);
-            p += 6 + len;
+            p += 6;
+            if (len < 0 || len > classfileLength - p) {
+                throw new IllegalArgumentException("attribute " + readUtf8Entry(p - 6).stringValue() + " too big to handle");
+            }
+            p += len;
         }
         return p;
     }
