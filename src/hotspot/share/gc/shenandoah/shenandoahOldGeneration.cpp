@@ -398,32 +398,32 @@ bool ShenandoahOldGeneration::validate_transition(State new_state) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   switch (new_state) {
     case IDLE:
-      assert(_state == MARKING || _state == WAITING_FOR_EVAC, "Must come from marking or evacuating.");
+      // GC cancellation can send us back to IDLE from any state.
       assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot become idle during old mark.");
       assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot become idle with collection candidates");
       assert(!heap->is_prepare_for_old_mark_in_progress(), "Cannot become idle while making old generation parseable.");
       assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot become idle when setup for bootstrapping.");
       return true;
     case FILLING:
-      assert(_state == IDLE || _state == WAITING_FOR_FILL, "Cannot begin filling without first completing evacuations.");
+      assert(_state == IDLE || _state == WAITING_FOR_FILL, "Cannot begin filling without first completing evacuations, state is '%s'", state_name(_state));
       assert(heap->is_prepare_for_old_mark_in_progress(), "Should be preparing for old mark now.");
       return true;
     case BOOTSTRAPPING:
-      assert(_state == FILLING, "Cannot reset bitmap without making old regions parseable.");
+      assert(_state == FILLING, "Cannot reset bitmap without making old regions parseable, state is '%s'", state_name(_state));
       assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot bootstrap with mixed collection candidates");
       assert(!heap->is_prepare_for_old_mark_in_progress(), "Cannot still be making old regions parseable.");
       return true;
     case MARKING:
-      assert(_state == BOOTSTRAPPING, "Must have finished bootstrapping before marking.");
+      assert(_state == BOOTSTRAPPING, "Must have finished bootstrapping before marking, state is '%s'", state_name(_state));
       assert(heap->young_generation()->old_gen_task_queues() != nullptr, "Young generation needs old mark queues.");
       assert(heap->is_concurrent_old_mark_in_progress(), "Should be marking old now.");
       return true;
     case WAITING_FOR_EVAC:
-      assert(_state == MARKING, "Cannot have old collection candidates without first marking.");
+      assert(_state == MARKING, "Cannot have old collection candidates without first marking, state is '%s'", state_name(_state));
       assert(_old_heuristics->unprocessed_old_collection_candidates() > 0, "Must have collection candidates here.");
       return true;
     case WAITING_FOR_FILL:
-      assert(_state == MARKING || _state == WAITING_FOR_EVAC, "Cannot begin filling without first marking or evacuating.");
+      assert(_state == MARKING || _state == WAITING_FOR_EVAC, "Cannot begin filling without first marking or evacuating, state is '%s'", state_name(_state));
       assert(_old_heuristics->unprocessed_old_collection_candidates() > 0, "Cannot wait for fill without something to fill.");
       return true;
     default:
