@@ -196,12 +196,10 @@ public final class ClassFileDumper {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public Path run() {
-                    if (!Files.exists(path)) {
-                        try {
-                            Files.createDirectories(path);
-                        } catch (IOException ex) {
-                            throw new UncheckedIOException("Fail to create " + path, ex);
-                        }
+                    try {
+                        Files.createDirectories(path);
+                    } catch (IOException ex) {
+                        throw new UncheckedIOException("Fail to create " + path, ex);
                     }
                     if (!Files.isDirectory(path)) {
                         throw new IllegalArgumentException("Path " + path + " is not a directory");
@@ -213,7 +211,7 @@ public final class ClassFileDumper {
             });
     }
 
-    private static HexFormat HEX = HexFormat.of().withUpperCase();
+    private static final HexFormat HEX = HexFormat.of().withUpperCase();
     private static final Set<Character> BAD_CHARS = Set.of('\\', ':', '*', '?', '"', '<', '>', '|');
 
     private static String encodeForFilename(String className) {
@@ -223,7 +221,7 @@ public final class ClassFileDumper {
             char c = className.charAt(i);
             // control characters
             if (c <= 31 || BAD_CHARS.contains(c)) {
-                sb.append("%");
+                sb.append('%');
                 HEX.toHexDigits(sb, (byte)c);
             } else {
                 sb.append(c);
