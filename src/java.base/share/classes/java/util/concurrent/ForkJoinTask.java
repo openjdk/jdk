@@ -275,13 +275,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     private static final int MARKER         = 1 << 30; // utility marker
     private static final int HAVE_EXCEPTION = DONE | ABNORMAL | THROWN;
 
-    private static final int UNCOMPENSATE   = 1 << 16; // helpJoin return sentinel
+    private static final int UNCOMPENSATE   = 1 << 16; // helpJoin sentinel
     private static final int SMASK          = 0xffff;  // short bits for tags
-
-    // flags for "how" arguments in awaitDone and callers
-    private static final int RAN            = 1 <<  0;
-    private static final int INTERRUPTIBLE  = 1 <<  1;
-    private static final int TIMED          = 1 <<  2;
 
     // Fields
     volatile int status;                // accessed directly by pool and workers
@@ -396,12 +391,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      *
      * @param pool if nonnull, the pool of ForkJoinWorkerThread caller
      * @param compensation result from a helping method
-     * @param how flags for TIMED, INTERRUPTIBLE
-     * @param deadline if timed, timeout deadline
+     * @param interruptible if wait is interruptible
+     * @param deadline if nonzero, timeout deadline
      * @return ABNORMAL if interrupted, 0 on timeout, else status on exit
      */
-    private int awaitDone(ForkJoinPool pool, int compensation, int how,
-                          long deadline) {
+    private int awaitDone(ForkJoinPool pool, int compensation,
+                          boolean interruptible, long deadline) {
         int s, interrupts = 0;                // < 0 : throw; > 0 : re-interrupt
         boolean queued = false;
         Aux node = null;
@@ -421,24 +416,23 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             }
             if (queued) {                     // await signal or interrupt
                 LockSupport.setCurrentBlocker(this);
-                for (;;) {
+                for (long ns;;) {
                     if ((s = status) < 0)
                         break;
-                    else if (interrupts < 0) {
+                    if (interrupts < 0) {
                         s = ABNORMAL;         // interrupted and not done
                         break;
                     }
-                    else if (Thread.interrupted()) {
+                    if (Thread.interrupted()) {
                         if (!ForkJoinPool.poolIsStopping(pool))
-                            interrupts = (how & INTERRUPTIBLE) != 0 ? -1 : 1;
+                            interrupts = interruptible ? -1 : 1;
                         else {
                             interrupts = 1;   // re-assert if cleared
                             cancelIgnoringExceptions(this);
                         }
                     }
-                    else if ((how & TIMED) != 0) {
-                        long ns = deadline - System.nanoTime();
-                        if (ns <= 0L) {
+                    else if (deadline != 0L) {
+                        if ((ns = deadline - System.nanoTime()) <= 0) {
                             s = 0;
                             break;
                         }
@@ -465,11 +459,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * Tries applicable helping steps while joining this task,
      * otherwise invokes blocking version of awaitDone
      *
-     * @param how flags for RAN, TIMED, INTERRUPTIBLE
-     * @param deadline if timed, timeout deadline
+     * @param interruptible if wait is interruptible
+     * @param deadline if nonzero, timeout deadline
      * @return ABNORMAL if interrupted, else status on exit
      */
-    private int awaitDone(int how, long deadline) {
+    private int awaitDone(boolean interruptible, long deadline) {
         int s = 0;
         ForkJoinWorkerThread wt; ForkJoinPool p; ForkJoinPool.WorkQueue q;
         Thread t; boolean internal;
@@ -483,11 +477,18 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         if (p != null &&
             (s = ((this instanceof CountedCompleter) ?
                   p.helpComplete(this, q, internal) :
-                  p.helpJoin(this, q, internal,
-                             !(this instanceof InterruptibleTask) &&
-                             (how & RAN) == 0))) < 0)
+                  (this instanceof InterruptibleTask) && !internal ? status :
+                  p.helpJoin(this, q, internal))) < 0)
             return s;
-        return awaitDone(internal ? p : null, s, how, deadline);
+        return awaitDone(internal ? p : null, s, interruptible, deadline);
+    }
+
+    /**
+     * Convert timeout value to deadline, avoiding zero
+     */
+    static long nanosTimeoutToDeadline(long nanos) {
+        long deadline = System.nanoTime() + nanos;
+        return (deadline == 0L) ? 1L : deadline;
     }
 
     /**
@@ -714,7 +715,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     public final V join() {
         int s;
         if ((s = status) >= 0)
-            s = awaitDone(0, 0L);
+            s = awaitDone(false, 0L);
         if ((s & ABNORMAL) != 0)
             reportException(s);
         return getRawResult();
@@ -732,7 +733,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         int s;
         doExec();
         if ((s = status) >= 0)
-            s = awaitDone(RAN, 0L);
+            s = awaitDone(false, 0L);
         if ((s & ABNORMAL) != 0)
             reportException(s);
         return getRawResult();
@@ -762,14 +763,14 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         t2.fork();
         t1.doExec();
         if ((s1 = t1.status) >= 0)
-            s1 = t1.awaitDone(RAN, 0L);
+            s1 = t1.awaitDone(false, 0L);
         if ((s1 & ABNORMAL) != 0) {
             cancelIgnoringExceptions(t2);
             t1.reportException(s1);
         }
         else {
             if ((s2 = t2.status) >= 0)
-                s2 = t2.awaitDone(0, 0L);
+                s2 = t2.awaitDone(false, 0L);
             if ((s2 & ABNORMAL) != 0)
                 t2.reportException(s2);
         }
@@ -794,16 +795,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         Throwable ex = null;
         int last = tasks.length - 1;
         for (int i = last; i >= 0; --i) {
-            ForkJoinTask<?> t;
+            ForkJoinTask<?> t; int s;
             if ((t = tasks[i]) == null) {
                 ex = new NullPointerException();
                 break;
             }
             if (i == 0) {
-                int s;
                 t.doExec();
                 if ((s = t.status) >= 0)
-                    s = t.awaitDone(RAN, 0L);
+                    s = t.awaitDone(false, 0L);
                 if ((s & ABNORMAL) != 0)
                     ex = t.getException(s);
                 break;
@@ -812,11 +812,10 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         if (ex == null) {
             for (int i = 1; i <= last; ++i) {
-                ForkJoinTask<?> t;
+                ForkJoinTask<?> t; int s;
                 if ((t = tasks[i]) != null) {
-                    int s;
                     if ((s = t.status) >= 0)
-                        s = t.awaitDone(0, 0L);
+                        s = t.awaitDone(false, 0L);
                     if ((s & ABNORMAL) != 0 && (ex = t.getException(s)) != null)
                         break;
                 }
@@ -858,16 +857,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         Throwable ex = null;
         int last = ts.size() - 1;  // nearly same as array version
         for (int i = last; i >= 0; --i) {
-            ForkJoinTask<?> t;
+            ForkJoinTask<?> t; int s;
             if ((t = ts.get(i)) == null) {
                 ex = new NullPointerException();
                 break;
             }
             if (i == 0) {
-                int s;
                 t.doExec();
                 if ((s = t.status) >= 0)
-                    s = t.awaitDone(RAN, 0L);
+                    s = t.awaitDone(false, 0L);
                 if ((s & ABNORMAL) != 0)
                     ex = t.getException(s);
                 break;
@@ -876,11 +874,10 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         if (ex == null) {
             for (int i = 1; i <= last; ++i) {
-                ForkJoinTask<?> t;
+                ForkJoinTask<?> t; int s;
                 if ((t = ts.get(i)) != null) {
-                    int s;
                     if ((s = t.status) >= 0)
-                        s = t.awaitDone(0, 0L);
+                        s = t.awaitDone(false, 0L);
                     if ((s & ABNORMAL) != 0 && (ex = t.getException(s)) != null)
                         break;
                 }
@@ -1059,7 +1056,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         int s;
         if ((s = status) >= 0)
             s = ((Thread.interrupted()) ? ABNORMAL :
-                 awaitDone(INTERRUPTIBLE, 0L));
+                 awaitDone(true, 0L));
         if ((s & ABNORMAL) != 0)
             reportExecutionException(s);
         return getRawResult();
@@ -1087,7 +1084,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             if (Thread.interrupted())
                 s = ABNORMAL;
             else if (nanos > 0L)
-                s = awaitDone(INTERRUPTIBLE | TIMED, nanos + System.nanoTime());
+                s = awaitDone(true, nanosTimeoutToDeadline(nanos));
         }
         if (s >= 0 || (s & ABNORMAL) != 0)
             reportExecutionException(s);
@@ -1102,7 +1099,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public final void quietlyJoin() {
         if (status >= 0)
-            awaitDone(0, 0L);
+            awaitDone(false, 0L);
     }
 
     /**
@@ -1113,7 +1110,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     public final void quietlyInvoke() {
         doExec();
         if (status >= 0)
-            awaitDone(RAN, 0L);
+            awaitDone(false, 0L);
     }
 
     /**
@@ -1136,7 +1133,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             if (Thread.interrupted())
                 s = ABNORMAL;
             else if (nanos > 0L)
-                s = awaitDone(INTERRUPTIBLE | TIMED, nanos + System.nanoTime());
+                s = awaitDone(true, nanosTimeoutToDeadline(nanos));
         }
         if (s == ABNORMAL)
             throw new InterruptedException();
@@ -1158,21 +1155,21 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         int s;
         long nanos = unit.toNanos(timeout);
         if ((s = status) >= 0 && nanos > 0L)
-            s = awaitDone(TIMED, nanos + System.nanoTime());
+            s = awaitDone(false, nanosTimeoutToDeadline(nanos));
         return (s < 0);
     }
 
     /**
      * Utility for possibly-timed ForkJoinPool.invokeAll
      */
-    final void quietlyJoinPoolInvokeAllTask(boolean timed, long deadline)
+    final void quietlyJoinPoolInvokeAllTask(long deadline)
         throws InterruptedException {
         int s;
         if ((s = status) >= 0) {
             if (Thread.interrupted())
                 s = ABNORMAL;
-            else if (!timed || deadline - System.nanoTime() > 0L)
-                s = awaitDone(INTERRUPTIBLE | (timed ? TIMED : 0), deadline);
+            else if (deadline == 0L || deadline - System.nanoTime() > 0L)
+                s = awaitDone(true, deadline);
             if (s == ABNORMAL)
                 throw new InterruptedException();
             else if (s >= 0)
