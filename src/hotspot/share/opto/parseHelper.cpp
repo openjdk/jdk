@@ -363,13 +363,12 @@ void VirtualState::set_field(ciField* field, Node* val) {
   ShouldNotReachHere();
 }
 
-ObjectState& VirtualState::merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
-                                 RegionNode* r, int pnum) {
-  assert(newin.is_virtual(), "only support VirtualState");
-  VirtualState* vs = static_cast<VirtualState*>(&newin);
+ObjectState& VirtualState::merge(ObjectState* newin, GraphKit* kit, RegionNode* r, int pnum) {
+  assert(newin->is_virtual(), "only support VirtualState");
 
-  if (this != vs) {
-    ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
+  if (this != newin) {
+    VirtualState* vs = static_cast<VirtualState*>(newin);
+    ciInstanceKlass* ik = _oop_type->is_instptr()->instance_klass();
     assert(nfields() == ik->nof_nonstatic_fields(), "_nfields should be consistent with instanceKlass");
 
     for (int i = 0; i < nfields(); ++i) {
@@ -680,3 +679,39 @@ void PEAState::validate() const {
   });
 }
 #endif
+
+MergeProcessor::MergeProcessor(PEAState& target) : _state(target) {
+}
+void MergeProcessor::merge(const PEAState& newin, GraphKit* kit, RegionNode* region, int pnum) {
+  // intersection of two aliases
+  Unique_Node_List alias1;
+  Unique_Node_List alias2;
+
+  _state.aliases()->iterate([&](Node* alias, ObjID obj) {
+                             alias1.push(alias);
+                             return true;
+                           });
+  newin.aliases()->iterate([&](Node* alias, ObjID obj) {
+                            alias2.push(alias);
+                            return true;
+                          });
+  VectorSet set = alias1.member_set();
+  set &= alias2.member_set();
+  alias1.remove_useless_nodes(set);
+
+  for (uint i = 0; i < alias1.size(); ++i) {
+    Node* var = alias1.at(i);
+    VirtualState* vs1 = _state.as_virtual(var);
+    VirtualState* vs2 = newin.as_virtual(var);
+    if (vs1 != nullptr && vs2 != nullptr) {
+      vs1->merge(vs2, kit, region, pnum);
+    }
+  }
+}
+
+MergeProcessor::~MergeProcessor() {
+
+}
+
+void MergeProcessor::process_phi(PhiNode* phi) {
+}

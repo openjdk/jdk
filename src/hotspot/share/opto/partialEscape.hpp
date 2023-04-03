@@ -58,8 +58,7 @@ class ObjectState {
 
   int ref_cnt() const { return _refcnt; }
 
-  virtual ObjectState& merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
-                             RegionNode* region, int pnum) = 0;
+  virtual ObjectState& merge(ObjectState* newin, GraphKit* kit, RegionNode* region, int pnum) = 0;
 };
 
 class VirtualState: public ObjectState {
@@ -88,8 +87,7 @@ class VirtualState: public ObjectState {
     return _entries[idx];
   }
 
-  ObjectState& merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
-                     RegionNode* region, int pnum) override;
+  ObjectState& merge(ObjectState* newin, GraphKit* kit, RegionNode* region, int pnum) override;
 #ifndef PRODUCT
   void print_on(outputStream* os) const;
 #endif
@@ -106,8 +104,7 @@ class EscapedState: public ObjectState {
   ObjectState* clone() const override {
     return new EscapedState(_materialized);
   }
-  ObjectState& merge(ObjectState& newin,GraphKit* kit, const TypeOopPtr* oop_type,
-                     RegionNode* region, int pnum) override {
+  ObjectState& merge(ObjectState* newin,GraphKit* kit, RegionNode* region, int pnum) override {
     return *this;
   }
 };
@@ -167,6 +164,22 @@ class PEAState {
   void add_new_allocation(Node* obj);
   EscapedState* materialize(GraphKit* kit, Node* var);
 
+  const PEAMap<Node*, ObjID>* aliases() const {
+    return &_alias;
+  }
+
+  VirtualState* as_virtual(Node* var) const {
+    ObjID id = is_alias(var);
+    if (id != nullptr) {
+      ObjectState* os = get_object_state(id);
+
+      if (os->is_virtual()) {
+        return static_cast<VirtualState*>(os);
+      }
+    }
+    return nullptr;
+  }
+
 #ifndef PRODUCT
   void print_on(outputStream* os) const;
 #endif
@@ -176,4 +189,15 @@ class PEAState {
 #endif
 };
 
+class MergeProcessor {
+ private:
+  GrowableArray<ObjID> _live; // live objects
+  PEAState& _state; //
+
+ public:
+  MergeProcessor(PEAState& target);
+  ~MergeProcessor(); // purge all objects which are not in live.
+  void merge(const PEAState& newin, GraphKit* kit, RegionNode* region, int pnum);
+  void process_phi(PhiNode* phi);
+};
 #endif // SHARE_OPTO_PARTIAL_ESCAPE_HPP
