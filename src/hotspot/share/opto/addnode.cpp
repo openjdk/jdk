@@ -1258,6 +1258,48 @@ const Type *MinINode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::make( MIN2(r0->_lo,r1->_lo), MIN2(r0->_hi,r1->_hi), MAX2(r0->_widen,r1->_widen) );
 }
 
+const Type* MaxLNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeLong* r0 = t0->is_long();
+  const TypeLong* r1 = t1->is_long();
+
+  return TypeLong::make( MAX2(r0->_lo,r1->_lo), MAX2(r0->_hi,r1->_hi), MAX2(r0->_widen,r1->_widen) );
+}
+
+Node* MaxLNode::Identity(PhaseGVN* phase) {
+  const TypeLong* t1 = phase->type(in(1))->is_long();
+  const TypeLong* t2 = phase->type(in(2))->is_long();
+
+  // Can we determine minimum statically?
+  if (t1->_lo >= t2->_hi) {
+    return in(1);
+  } else if (t2->_lo >= t1->_hi) {
+    return in(2);
+  }
+
+  return MaxNode::Identity(phase);
+}
+
+const Type* MinLNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeLong* r0 = t0->is_long();
+  const TypeLong* r1 = t1->is_long();
+
+  return TypeLong::make( MIN2(r0->_lo,r1->_lo), MIN2(r0->_hi,r1->_hi), MIN2(r0->_widen,r1->_widen) );
+}
+
+Node* MinLNode::Identity(PhaseGVN* phase) {
+  const TypeLong* t1 = phase->type(in(1))->is_long();
+  const TypeLong* t2 = phase->type(in(2))->is_long();
+
+  // Can we determine minimum statically?
+  if (t1->_lo >= t2->_hi) {
+    return in(2);
+  } else if (t2->_lo >= t1->_hi) {
+    return in(1);
+  }
+
+  return MaxNode::Identity(phase);
+}
+
 //------------------------------add_ring---------------------------------------
 const Type *MinFNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeF *r0 = t0->is_float_constant();
