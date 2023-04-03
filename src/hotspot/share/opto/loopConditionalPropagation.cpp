@@ -22,6 +22,7 @@
  *
  */
 
+#include "node.hpp"
 #include "precompiled.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/rootnode.hpp"
@@ -337,8 +338,16 @@ private:
       _updates.at(i)._after = t;
     }
 
+    void set_prev_type_at(int i, const Type* t) {
+      _updates.at(i)._before = t;
+    }
+
     bool contains(Node* n) const {
       return find(n) != -1;
+    }
+
+    void remove_at(int i) {
+      _updates.remove_at(i);
     }
 
     int find(const Node* n) const {
@@ -351,6 +360,10 @@ private:
 
     TypeUpdate* prev() const {
       return _prev;
+    }
+
+    void set_prev(TypeUpdate* prev) {
+      _prev = prev;
     }
 
     Node* control() const {
@@ -368,6 +381,9 @@ private:
       return false;
     }
     if (u->is_Phi()) {
+      if (u->in(0) ==  c) {
+        return true;
+      }
       _control_dependent_node.set(u->in(0)->_idx);
       _control_dependent_node.set(u->_idx);
       return false;
@@ -414,105 +430,82 @@ private:
           Node* cmp = u->unique_out();
           _wq.push(cmp);
         }
+        if (u->is_Region()) {
+          for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
+            Node* uu = u->fast_out(j);
+            if (uu->is_Phi() && valid_use(uu, c, n)) {
+              _wq.push(uu);
+            }
+          }
+        }
       }
     }
   }
 
   void set_type(Node* n, const Type* t, const Type* old_t, int rpo) {
-    if (UseNewCode2) {
-      set_type(_current_ctrl, n, old_t, t);
-    }
+    set_type(_current_ctrl, n, old_t, t);
     PhaseTransform::set_type(n, t);
-    if (UseNewCode3) {
-      _current_types = _current_types->set_type(n, t, rpo);
-    }
   }
 
+  void set_type_tree(Node* n, const Type* t, const Type* old_t, int rpo) {
+    assert(UseNewCode3, "");
+    PhaseTransform::set_type(n, t);
+    _current_types = _current_types->set_type(n, t, rpo);
+  }
+
+  Type_Array _types_tree_clone;
   Type_Array _types_clone;
 
   GrowableArray<TypeUpdate*> _stack;
 
   void sync_from_tree(Node* c) {
-    if (UseNewCode2) {
-      if (UseNewCode3) {
-        for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
-          _types_clone.map(i, PhaseTransform::_types.fast_lookup(i));
-        }
-      }
-      {
-        TypeUpdate** updates_ptr = updates_at(_current_ctrl);
-        TypeUpdate* updates = nullptr;
-        if (updates_ptr != nullptr) {
-          updates = *updates_ptr;
-        }
-        Node* lca = _phase->dom_lca_internal(_current_ctrl, c);
-        updates_ptr = updates_at(lca);
-        TypeUpdate* lca_updates = nullptr;
-        if (updates_ptr != nullptr) {
-          lca_updates = *updates_ptr;
-        }
-        while (updates != lca_updates) {
-          assert(updates != nullptr,"");
-          assert(lca_updates == nullptr || !_phase->is_dominator(updates->control(), lca_updates->control()), "");
+    _current_types = types_at_ctrl(c);
+    assert(_current_types != nullptr, "");
+    TreeNode::Iterator iter(types_at_ctrl(_current_ctrl_tree), _current_types);
+    while (iter.next()) {
+      Node* node = iter.node();
+      const Type* t = iter.type2();
+      PhaseTransform::set_type(node, t);
+    }
+    _current_ctrl_tree = c;
+  }
 
-          for (int i = 0; i < updates->length(); ++i) {
-            Node* n = updates->node_at(i);
-            const Type* t = updates->prev_type_at(i);
-            if (UseNewCode3) {
-              _types_clone.map(n->_idx, t);
-            } else {
-              PhaseTransform::set_type(n, t);
-            }
-          }
-          updates = updates->prev();
+  void sync(Node* c) {
+    Node* lca = _phase->dom_lca_internal(_current_ctrl, c);
+    TypeUpdate* lca_updates = updates_at(lca);
+    {
+      TypeUpdate* updates = updates_at(_current_ctrl);
+      while (updates != lca_updates) {
+        assert(updates != nullptr, "");
+        assert(lca_updates == nullptr || !_phase->is_dominator(updates->control(), lca_updates->control()), "");
+
+        for (int i = 0; i < updates->length(); ++i) {
+          Node* n = updates->node_at(i);
+          const Type* t = updates->prev_type_at(i);
+          PhaseTransform::set_type(n, t);
         }
-        {
-          TypeUpdate** updates_ptr = updates_at(c);
-          TypeUpdate* updates = nullptr;
-          if (updates_ptr != nullptr) {
-            updates = *updates_ptr;
-          }
-          assert(_stack.length() == 0, "");
-          while (updates != lca_updates) {
-            assert(updates != nullptr, "");
-            assert(lca_updates == nullptr || !_phase->is_dominator(updates->control(), lca_updates->control()), "");
-            _stack.push(updates);
-            updates = updates->prev();
-          }
-          while (_stack.length() > 0) {
-            TypeUpdate* updates = _stack.pop();
-            for (int i = 0; i < updates->length(); ++i) {
-              Node* n = updates->node_at(i);
-              const Type* t = updates->type_at(i);
-              if (UseNewCode3) {
-                _types_clone.map(n->_idx, t);
-              } else {
-                PhaseTransform::set_type(n, t);
-              }
-            }
-          }
-        }
+        updates = updates->prev();
       }
     }
-    if (UseNewCode3) {
-      _current_types = types_at_ctrl(c);
-      assert(_current_types != nullptr, "");
-      TreeNode::Iterator iter(types_at_ctrl(_current_ctrl), _current_types);
-      while (iter.next()) {
-        Node* node = iter.node();
-        const Type* t = iter.type2();
-        PhaseTransform::set_type(node, t);
+    {
+      TypeUpdate* updates = updates_at(c);
+      assert(_stack.length() == 0, "");
+      while (updates != lca_updates) {
+        assert(updates != nullptr, "");
+        assert(lca_updates == nullptr || !_phase->is_dominator(updates->control(), lca_updates->control()), "");
+        _stack.push(updates);
+        updates = updates->prev();
+      }
+      while (_stack.length() > 0) {
+        TypeUpdate* updates = _stack.pop();
+        for (int i = 0; i < updates->length(); ++i) {
+          Node* n = updates->node_at(i);
+          const Type* t = updates->type_at(i);
+          PhaseTransform::set_type(n, t);
+        }
       }
     }
     _current_ctrl = c;
-    if (UseNewCode2 && UseNewCode3) {
-      for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
-        if (PhaseTransform::_types.fast_lookup(i) != _types_clone.fast_lookup(i)) {
-          tty->print("@ %d ", i); PhaseTransform::_types.fast_lookup(i)->dump(); _types_clone.fast_lookup(i)->dump(); tty->cr();
-        }
-        assert(PhaseTransform::_types.fast_lookup(i) == _types_clone.fast_lookup(i), "");
-      }
-    }
   }
 
   PhaseIdealLoop* _phase;
@@ -524,6 +517,7 @@ private:
   Node_List _rpo_list;
   TreeNode* _current_types;
   Node* _current_ctrl;
+  Node* _current_ctrl_tree;
 #ifdef ASSERT
   VectorSet _conditions;
 #endif
@@ -531,12 +525,15 @@ private:
   Unique_Node_List _wq2;
 
   VectorSet _updated_type;
+  bool _progress;
+  bool _old_version;
 
 public:
   PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list)
   : PhaseIterGVN(&phase->igvn()),
     _types(8, 1000000),
     _updates(nullptr),
+    _types_tree_clone(Thread::current()->resource_area()),
     _types_clone(Thread::current()->resource_area()),
     _phase(phase),
     _visited(visited),
@@ -545,7 +542,9 @@ public:
     _rpo_list(rpo_list),
     _current_types(nullptr),
     _current_ctrl(phase->C->root()),
-    _prev_updates(nullptr),
+    _current_ctrl_tree(phase->C->root()),
+    _progress(true),
+    _old_version(true),
     _current_updates(nullptr),
     _dom_updates(nullptr) {
     assert(nstack.is_empty(), "");
@@ -571,12 +570,11 @@ public:
 
   void analyze() {
     bool progress = true;
-    bool progress2 = true;
     int iterations = 0;
     int extra_rounds = 0;
     int extra_rounds2 = 0;
     bool has_infinite_loop = false;
-    while (progress) {
+    while (progress || _progress) {
       iterations++;
       assert(iterations - extra_rounds - extra_rounds2 >= 0, "");
       assert(iterations - extra_rounds2 <= 2 || _phase->ltree_root()->_child != nullptr || has_infinite_loop, "");
@@ -584,414 +582,36 @@ public:
       assert(iterations < 100, "");
 
       progress = false;
-      progress2 = false;
       bool extra = false;
       bool extra2 = false;
+      _progress = false;
 
-      _control_dependent_node.clear();
+//      _control_dependent_node.clear();
+
+      if (UseNewCode2 && UseNewCode3) {
+        for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
+          _types_clone.map(i, PhaseTransform::_types.fast_lookup(i));
+        }
+        for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
+          _types_tree_clone.map(i, PhaseTransform::_types.fast_lookup(i));
+        }
+      }
+
 
       for (int i = _rpo_list.size() - 1; i >= 0; i--) {
         int rpo = _rpo_list.size() - 1 - i;
         Node* c = _rpo_list.at(i);
-        _known_updates.set(c->_idx);
-
         has_infinite_loop = has_infinite_loop || (c->Opcode() == Op_NeverBranch);
 
-        Node* dom = _phase->idom(c);
-        TreeNode* types_at_dom = nullptr;
-        if (UseNewCode3) {
-          types_at_dom = types_at_ctrl(dom);
-        }
-
-//        if (!(c->is_Region() || c->is_Proj())) {
-//          ShouldNotReachHere();
-//          _types_at_ctrl.Insert(c, types_at_dom);
-//          continue;
-//        }
-
         if (UseNewCode2) {
-          TypeUpdate** prev_updates_ptr = updates_at(c);
-          if (prev_updates_ptr != nullptr) {
-            _prev_updates = *prev_updates_ptr;
-            assert(iterations > 0, "");
-          } else {
-            _prev_updates = nullptr;
-          }
-          TypeUpdate** dom_updates_ptr = updates_at(dom);
-          if (dom_updates_ptr != nullptr) {
-            _dom_updates = *dom_updates_ptr;
-            _current_updates = _dom_updates;
-            _updates->put(c, _current_updates);
-          } else {
-            _dom_updates = nullptr;
-            _current_updates = nullptr;
-            if (prev_updates_ptr != nullptr) {
-              assert(iterations > 0, "");
-              *prev_updates_ptr = new TypeUpdate(_dom_updates, c);
-            }
-          }
-        }
-
-        TreeNode* prev_types_at_c = nullptr;
-        if (UseNewCode3) {
-          prev_types_at_c = (TreeNode*)_types_at_ctrl[c];
-        }
-        TreeNode* types_at_c = types_at_dom;
-        if (c->is_Region()) {
-          if (UseNewCode2) {
-            assert(_wq2.size() == 0, "");
-            Node* in = c->in(1);
-            Node* ctrl = in;
-            TypeUpdate** updates_ptr = updates_at(ctrl);
-            TypeUpdate* updates = nullptr;
-            if (updates_ptr != nullptr) {
-              updates = *updates_ptr;
-            }
-            while(updates != _dom_updates  && (_dom_updates == nullptr || !_phase->is_dominator(updates->control(), _dom_updates->control()))) {
-              assert(updates != nullptr, "");
-              for (int j = 0; j < updates->length(); ++j) {
-                Node* n = updates->node_at(j);
-                if (_current_updates != nullptr && _current_updates->control() == c && _current_updates->contains(n)) {
-                  continue;
-                }
-                const Type* t = updates->type_at(j);
-                uint k = 2;
-                for (; k < c->req(); k++) {
-                  Node* other_in = c->in(k);
-                  const Type* type_at_in = find_type_between(n, other_in, dom);
-                  if (type_at_in == nullptr) {
-                    break;
-                  }
-                  t = t->meet_speculative(type_at_in);
-                }
-                if (k == c->req()) {
-                  const Type* prev_t = t;
-                  const Type* current_type = find_prev_type_between(n, in, dom);
-                  if (_prev_updates != nullptr) {
-                    const Type* prev_round_t = _prev_updates->type_if_present(n);
-                    if (prev_round_t == nullptr) {
-                      prev_round_t = current_type;
-                    }
-                    t = t->filter(prev_round_t);
-                    assert(t == prev_t, "");
-                    t = saturate(t, prev_round_t, nullptr);
-                    if (c->is_Loop() && t != prev_round_t) {
-                      extra = true;
-                    }
-                    t = t->filter(current_type);
-                  }
-
-                  if (t != current_type) {
-                    set_type(c, n, current_type, t);
-                    if (UseNewCode3) {
-                      _wq2.push(n);
-                    }
-                  }
-                }
-              }
-              updates = updates->prev();
-            }
-          }
-          if (UseNewCode3) {
-            Node* in = c->in(1);
-            TreeNode* types_at_in1 = types_at_ctrl(in);
-            if (types_at_in1 != nullptr) {
-              TreeNode::Iterator iter(types_at_dom, types_at_in1);
-              while (iter.next()) {
-                Node* node = iter.node();
-                uint j = 2;
-                const Type* t = iter.type2();
-                const Type* current_type = types_at_dom->get_type(node);
-                assert(!UseNewCode2 || current_type == get_type(dom, node), "");
-                for (; j < c->req(); j++) {
-                  in = c->in(j);
-                  TreeNode* types_at_in = types_at_ctrl(in);
-                  if (types_at_in == nullptr) {
-                    assert(!c->is_Loop() && (_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in)), "");
-                    break;
-                  }
-                  const Type* type_at_in = types_at_in->get_type(node);
-                  assert(!UseNewCode2 || type_at_in == get_type(in, node), "");
-                  if (type_at_in == current_type) {
-                    break;
-                  }
-                  t = t->meet_speculative(type_at_in);
-                }
-                if (j == c->req()) {
-                  if (prev_types_at_c != nullptr) {
-                    const Type* prev_t = t;
-                    t = t->filter(prev_types_at_c->get_type(node));
-                    assert(t == prev_t, "");
-                    t = saturate(t, prev_types_at_c->get_type(node), nullptr);
-                    if (c->is_Loop() && t != prev_types_at_c->get_type(node)) {
-                      ShouldNotReachHere();
-                      extra = true;
-                    }
-                    t = t->filter(current_type);
-                  }
-
-                  if (t != current_type) {
-                    assert(!UseNewCode2 || types_at_c->get_type(node) == get_type(dom, node), "");
-                    if (types_at_c->get_type(node) != t) {
-#ifdef ASSERT
-                      assert(narrows_type(types_at_c->get_type(node), t), "");
-#endif
-                      types_at_c = types_at_c->set_type(node, t, rpo);
-                      assert(!UseNewCode2 || t == get_type(c, node), "");
-//                    set_type(c, node, t);
-                      enqueue_uses(node, c);
-                      assert(!UseNewCode2 || _wq2.member(node), "");
-                      if (UseNewCode2) {
-                        _wq2.remove(node);
-                      }
-                    } else {
-                      ShouldNotReachHere();
-                    }
-                  }
-                }
-              }
-              assert(_wq2.size() == 0, "");
-            } else {
-              assert(!c->is_Loop() && (_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in)), "");
-            }
-          }
-        } else if (c->is_IfProj()) {
-          Node* iff = c->in(0);
-          assert(iff->is_If(), "");
-          if (!(iff->is_CountedLoopEnd() && iff->as_CountedLoopEnd()->loopnode() != nullptr &&
-                iff->as_CountedLoopEnd()->loopnode()->is_strip_mined())) {
-            Node* bol = iff->in(1);
-            if (iff->is_OuterStripMinedLoopEnd()) {
-              assert(iff->in(0)->in(0)->in(0)->is_CountedLoopEnd(), "");
-              bol = iff->in(0)->in(0)->in(0)->in(1);
-            }
-            if (bol->Opcode() == Op_Opaque4) {
-              bol = bol->in(1);
-            }
-            if (bol->is_Bool()) {
-              Node* cmp = bol->in(1);
-              if (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU ||
-                  cmp->Opcode() == Op_CmpL || cmp->Opcode() == Op_CmpUL) {
-                Node* cmp1 = cmp->in(1);
-                Node* cmp2 = cmp->in(2);
-                sync_from_tree(iff);
-                // narrowing the type of a LoadRange could cause a range check to optimize out and a Load to be hoisted above
-                // checks that guarantee its within bounds
-                if (cmp1->Opcode() != Op_LoadRange) {
-                  types_at_c = analyze_if(rpo, c, types_at_c, cmp, cmp1);
-                }
-                if (cmp2->Opcode() != Op_LoadRange) {
-                  types_at_c = analyze_if(rpo, c, types_at_c, cmp, cmp2);
-                }
-              }
-            }
-          }
-        } else if (c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray() &&
-                   c->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
-          sync_from_tree(dom);
-          AllocateArrayNode* alloc = c->in(0)->in(0)->in(0)->as_AllocateArray();
-          Node* length = alloc->in(AllocateArrayNode::ALength);
-          Node* klass = alloc->in(AllocateNode::KlassNode);
-          const Type* klass_t = PhaseTransform::type(klass);
-          assert(!UseNewCode3 || klass_t == types_at_c->get_type(klass), "");
-          if (klass_t != Type::TOP) {
-            const TypeOopPtr* ary_type = klass_t->is_klassptr()->as_instance_type();
-            const TypeInt* length_type = PhaseTransform::type(length)->isa_int();
-            assert(!UseNewCode3 || types_at_c->get_type(length) == PhaseTransform::type(length), "");
-            if (ary_type->isa_aryptr() && length_type != nullptr) {
-              const Type* narrow_length_type = ary_type->is_aryptr()->narrow_size_type(length_type);
-              narrow_length_type = narrow_length_type->filter(length_type);
-              assert(narrows_type(length_type, narrow_length_type), "");
-              if (narrow_length_type != length_type) {
-                if (UseNewCode3) {
-                  types_at_c = types_at_c->set_type(length, narrow_length_type, rpo);
-                }
-                if (UseNewCode2) {
-                  set_type(c, length, length_type, narrow_length_type);
-                }
-                enqueue_uses(length, c);
-              }
-            }
-          }
-        }
-        if (_control_dependent_node.test(c->_idx)) {
-          for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
-            Node* u = c->fast_out(i);
-//          if (u->is_Phi() && _visited.test(u->_idx)) {
-//            _wq.push(u);
-//          }
-//            assert(!UseNewCode3 || _visited.test(u->_idx) == _phase->has_node(u), "");
-            if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && (_phase->has_node(u) && (!UseNewCode3 || _visited.test(u->_idx))) && _control_dependent_node.test(u->_idx)) {
-              _wq.push(u);
-            }
-          }
-        }
-
-        if (UseNewCode3) {
-          set_types_at_ctrl(c, types_at_c);
-        }
-
-        sync_from_tree(c);
-        while (_wq.size() > 0) {
-          Node* n = _wq.pop();
-          const Type* t = n->Value(this);
-          if (n->is_Phi() ) {
-            const Type* prev_type = nullptr;
-            if (UseNewCode3) {
-              prev_type = prev_types_at_c != nullptr ? prev_types_at_c->get_type(n): nullptr;
-#ifdef  ASSERT
-              if (UseNewCode2) {
-                const Type* prev_type_verif = (_prev_updates != nullptr ? _prev_updates->type_if_present(n) : nullptr);
-                if (prev_type_verif == nullptr) {
-                  prev_type_verif = PhaseTransform::type(n);
-                } else {
-                  assert(prev_type != nullptr, "");
-                }
-                assert(prev_type == nullptr || prev_type_verif == prev_type, "");
-              }
-#endif
-            } else if (UseNewCode2) {
-              prev_type = _prev_updates == nullptr ? nullptr : _prev_updates->type_if_present(n);
-            }
-            if (prev_type != nullptr) {
-              const Type* prev_t = t;
-              t = t->filter(prev_type);
-              assert(t == prev_t, "");
-              if (!(n->in(0)->is_CountedLoop() && n->in(0)->as_CountedLoop()->phi() == n &&
-                    n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
-                t = saturate(t, prev_type, nullptr);
-              }
-              if (c->is_Loop() && t != prev_type) {
-                extra = true;
-              }
-            }
-          }
-          t = t->filter(PhaseTransform::type(n));
-          if (t != PhaseTransform::type(n)) {
-#ifdef ASSERT
-            assert(narrows_type(PhaseTransform::type(n), t), "");
-#endif
-            set_type(n, t, PhaseTransform::type(n), rpo);
-            enqueue_uses(n, c);
-          }
-        }
-        if (UseNewCode2) {
-          if (_prev_updates != nullptr && _prev_updates->control() == c) {
-            TypeUpdate* new_updates = _current_updates;
-            int dups = 0;
-            for (int j = 0; j < _prev_updates->length(); ++j) {
-              Node* n = _prev_updates->node_at(j);
-              if (new_updates->control() != c) {
-                if (UseNewCode3) {
-                  remove_type(c, n);
-                }
-              } else {
-                int idx = new_updates->find(n);
-                if (idx == -1) {
-                  if (UseNewCode3) {
-                    remove_type(c, n);
-                  }
-//              const Type* t = PhaseTransform::type(n);
-//              const Type* old_t = get_type(c, n);
-//              if (old_t != t) {
-////                tty->print("XXX updating at"); c->dump();
-////                n->dump();
-////                tty->print("with "); t->dump(); tty->cr();
-//                set_type(c, n, old_t, t);
-//              }
-                } else {
-                  if (new_updates->type_at(idx) != _prev_updates->type_at(j)) {
-                    if (UseNewCode3) {
-                      progress2 = true;
-                    } else {
-                      progress = true;
-                    }
-                  }
-                  dups++;
-                }
-              }
-            }
-            if (new_updates->control() == c && new_updates->length() - dups > 0) {
-              if (UseNewCode3) {
-                progress2 = true;
-              } else {
-                progress = true;
-              }
-            }
-          } else {
-            if (UseNewCode3) {
-              progress2 = progress2 || (_current_updates != nullptr && _current_updates->control() == c);
-            } else {
-              progress = progress || (_current_updates != nullptr && _current_updates->control() == c);
-            }
-          }
+          _old_version = false;
+          one_iteration(iterations, rpo, c, progress, has_infinite_loop, extra, extra2);
         }
         if (UseNewCode3) {
-          if (types_at_c != _current_types) {
-            set_types_at_ctrl(c, _current_types);
-            types_at_c = _current_types;
-          }
-
-          if (prev_types_at_c == nullptr && types_at_c != types_at_dom) {
-            progress = true;
-          } else if (prev_types_at_c != nullptr && TreeNode::Iterator(prev_types_at_c, types_at_c).next()) {
-            progress = true;
-#ifdef ASSERT
-            sync_from_tree(C->root());
-            TreeNode::Iterator iter(prev_types_at_c, types_at_c);
-            int last_expected = (_phase->ltree_root()->_child != nullptr || has_infinite_loop) ? 3 : 2;
-            if (iterations == last_expected) {
-              while (iter.next() && !extra) {
-                if (iter.node()->bottom_type()->make_oopptr() &&
-                    PhaseTransform::type(iter.node()) != iter.node()->Value(this) &&
-                    iter.type1() == PhaseTransform::type(iter.node()) &&
-                    iter.type2() == iter.node()->Value(this)) {
-                  extra2 = true;
-                }
-              }
-            }
-#endif
-          }
-#ifdef ASSERT
-          if (prev_types_at_c != nullptr || (types_at_c != types_at_dom)) {
-            if (PrintLoopConditionalPropagation) {
-              TreeNode::Iterator iter(types_at_dom, types_at_c);
-              bool failure = false;
-              while (iter.next()) {
-                const Type* t1 = iter.type1();
-                const Type* t2 = iter.type2();
-                tty->print("@ iteration %d for node %d at control %d: ", iterations, iter.node()->_idx, c->_idx);
-                tty->print(" ");
-                t1->dump();
-                tty->print(" - ");
-                t2->dump();
-                tty->cr();
-              }
-            }
-            {
-              TreeNode::Iterator iter(prev_types_at_c != nullptr ? prev_types_at_c : types_at_dom, types_at_c);
-              bool failure = false;
-              while (iter.next()) {
-                const Type* t1 = iter.type1();
-                const Type* t2 = iter.type2();
-                if (!narrows_type(t1, t2)) {
-                  failure = true;
-                  if (PrintLoopConditionalPropagation) {
-                    tty->print("XXX ");
-                    tty->print("@ iteration %d for node %d at control %d: ", iterations, iter.node()->_idx, c->_idx);
-                    tty->print(" ");
-                    t1->dump();
-                    tty->print(" - ");
-                    t2->dump();
-                    tty->cr();
-                  }
-                }
-              }
-              assert(!failure, "");
-            }
-          }
-#endif
+          _old_version = true;
+          one_iteration_tree(iterations, rpo, c, progress, has_infinite_loop, extra, extra2);
         }
+
       }
       if (extra) {
         extra_rounds++;
@@ -999,7 +619,7 @@ public:
       if (extra2) {
         extra_rounds2++;
       }
-      assert(!(UseNewCode2 && UseNewCode3) || progress == progress2, "");
+      assert(!(UseNewCode2 && UseNewCode3) || !_progress || progress, "");
 //      if (C->has_loops()) {
 //        if (iterations == 2) {
 //          break;
@@ -1026,25 +646,503 @@ public:
 //      }
     }
 
-    sync_from_tree(C->root());
+    if (UseNewCode2 && UseNewCode3) {
+      for (int i = _rpo_list.size() - 1; i >= 0; i--) {
+        int rpo = _rpo_list.size() - 1 - i;
+        Node* c = _rpo_list.at(i);
+        Node* dom = _phase->idom(c);
+        TreeNode* types_at_dom = types_at_ctrl(dom);
+        TreeNode* types_at_c = types_at_ctrl(c);
+        TreeNode::Iterator iter(types_at_dom, types_at_c);
+        TypeUpdate* updates = updates_at(c);
+        assert((types_at_c == types_at_dom) ==
+               !(updates != nullptr && updates->control() == c && updates->length() != 0), "");
+        int count = 0;
+        while (iter.next()) {
+          assert(updates->control() == c, "");
+          Node* node = iter.node();
+          int idx = updates->find(node);
+          assert(idx != -1, "");
+          assert(iter.type1() == updates->prev_type_at(idx), "");
+          assert(iter.type2() == updates->type_at(idx), "");
+          count++;
+        }
+        int count2 = 0;
+        if (updates != nullptr && updates->control() == c) {
+          for (int j = 0; j < updates->length(); ++j) {
+            Node* n = updates->node_at(j);
+            assert(types_at_c->get_type(n) == updates->type_at(j), "");
+            assert(types_at_dom->get_type(n) == updates->prev_type_at(j), "");
+            if (updates->prev_type_at(j) != updates->type_at(j)) {
+              count2++;
+            }
+          }
+          assert(count == count2, "");
+        }
+      }
+    }
+
+    if (UseNewCode2) {
+      sync(C->root());
+    }
+    if (UseNewCode3) {
+      sync_from_tree(C->root());
+    }
   }
 
-  TypeUpdate** updates_at(Node* c) const {
-    return _updates->get(known_updates(c));
+  void one_iteration_tree(int iterations, int rpo, Node* c, bool& progress, bool has_infinite_loop, bool& extra, bool& extra2) {
+    if (UseNewCode2) {
+      for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
+        PhaseTransform::_types.map(i, _types_tree_clone.fast_lookup(i));
+      }
+    }
+
+    Node* dom = _phase->idom(c);
+    TreeNode* types_at_dom = types_at_ctrl(dom);
+
+
+    TreeNode* prev_types_at_c = (TreeNode*) _types_at_ctrl[c];
+    TreeNode* types_at_c = types_at_dom;
+    if (c->is_Region()) {
+      Node* in = c->in(1);
+      TreeNode* types_at_in1 = types_at_ctrl(in);
+      if (types_at_in1 != nullptr) {
+        TreeNode::Iterator iter(types_at_dom, types_at_in1);
+        while (iter.next()) {
+          Node* node = iter.node();
+          uint j = 2;
+          const Type* t = iter.type2();
+          const Type* current_type = types_at_dom->get_type(node);
+          for (; j < c->req(); j++) {
+            in = c->in(j);
+            TreeNode* types_at_in = types_at_ctrl(in);
+            if (types_at_in == nullptr) {
+              assert(!c->is_Loop() && (_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in)), "");
+              break;
+            }
+            const Type* type_at_in = types_at_in->get_type(node);
+            if (type_at_in == current_type) {
+              break;
+            }
+            t = t->meet_speculative(type_at_in);
+          }
+          if (j == c->req()) {
+            if (prev_types_at_c != nullptr) {
+              const Type* prev_t = t;
+              t = t->filter(prev_types_at_c->get_type(node));
+              assert(t == prev_t, "");
+              t = saturate(t, prev_types_at_c->get_type(node), nullptr);
+              if (c->is_Loop() && t != prev_types_at_c->get_type(node)) {
+                ShouldNotReachHere();
+                extra = true;
+              }
+              t = t->filter(current_type);
+            }
+
+            if (t != current_type) {
+              if (types_at_c->get_type(node) != t) {
+#ifdef ASSERT
+                assert(narrows_type(types_at_c->get_type(node), t), "");
+#endif
+                types_at_c = types_at_c->set_type(node, t, rpo);
+//                      assert(!UseNewCode2 || t == get_type(c, node), "");
+//                    set_type(c, node, t);
+                enqueue_uses(node, c);
+              } else {
+                ShouldNotReachHere();
+              }
+            }
+          }
+        }
+      } else {
+        assert(!c->is_Loop() && (_phase->get_loop(c)->_irreducible || _phase->is_dominator(c, in)), "");
+      }
+    } else if (c->is_IfProj()) {
+      Node* iff = c->in(0);
+      assert(iff->is_If(), "");
+      if (!(iff->is_CountedLoopEnd() && iff->as_CountedLoopEnd()->loopnode() != nullptr &&
+            iff->as_CountedLoopEnd()->loopnode()->is_strip_mined())) {
+        Node* bol = iff->in(1);
+        if (iff->is_OuterStripMinedLoopEnd()) {
+          assert(iff->in(0)->in(0)->in(0)->is_CountedLoopEnd(), "");
+          bol = iff->in(0)->in(0)->in(0)->in(1);
+        }
+        if (bol->Opcode() == Op_Opaque4) {
+          bol = bol->in(1);
+        }
+        if (bol->is_Bool()) {
+          Node* cmp = bol->in(1);
+          if (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU ||
+              cmp->Opcode() == Op_CmpL || cmp->Opcode() == Op_CmpUL) {
+            Node* cmp1 = cmp->in(1);
+            Node* cmp2 = cmp->in(2);
+            sync_from_tree(iff);
+            // narrowing the type of a LoadRange could cause a range check to optimize out and a Load to be hoisted above
+            // checks that guarantee its within bounds
+            if (cmp1->Opcode() != Op_LoadRange) {
+              types_at_c = analyze_if_tree(rpo, c, types_at_c, cmp, cmp1);
+            }
+            if (cmp2->Opcode() != Op_LoadRange) {
+              types_at_c = analyze_if_tree(rpo, c, types_at_c, cmp, cmp2);
+            }
+          }
+        }
+      }
+    } else if (c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray() &&
+               c->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
+      AllocateArrayNode* alloc = c->in(0)->in(0)->in(0)->as_AllocateArray();
+      sync_from_tree(dom);
+      types_at_c = analyze_allocate_array_tree(rpo, c, types_at_c, alloc);
+    }
+    if (_control_dependent_node.test(c->_idx) || true) {
+      for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
+        Node* u = c->fast_out(i);
+
+        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && _visited.test(u->_idx) /*&& _control_dependent_node.test(u->_idx)*/) {
+          _wq.push(u);
+        }
+      }
+    }
+
+    set_types_at_ctrl(c, types_at_c);
+
+    sync_from_tree(c);
+    while (_wq.size() > 0) {
+      Node* n = _wq.pop();
+      const Type* t = n->Value(this);
+      if (n->is_Phi() ) {
+        const Type* prev_type = nullptr;
+        prev_type = prev_types_at_c != nullptr ? prev_types_at_c->get_type(n): nullptr;
+        if (prev_type != nullptr) {
+          const Type* prev_t = t;
+          t = t->filter(prev_type);
+//          assert(t == prev_t, "");
+          if (!(n->in(0)->is_CountedLoop() && n->in(0)->as_CountedLoop()->phi() == n &&
+                n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
+            t = saturate(t, prev_type, nullptr);
+          }
+          if (c->is_Loop() && t != prev_type) {
+            extra = true;
+          }
+        }
+      }
+      t = t->filter(PhaseTransform::type(n));
+      if (t != PhaseTransform::type(n)) {
+#ifdef ASSERT
+        assert(narrows_type(PhaseTransform::type(n), t), "");
+#endif
+        set_type_tree(n, t, PhaseTransform::type(n), rpo);
+        enqueue_uses(n, c);
+      }
+    }
+    if (types_at_c != _current_types) {
+      set_types_at_ctrl(c, _current_types);
+      types_at_c = _current_types;
+    }
+
+    if (prev_types_at_c == nullptr && types_at_c != types_at_dom) {
+      progress = true;
+    } else if (prev_types_at_c != nullptr && TreeNode::Iterator(prev_types_at_c, types_at_c).next()) {
+      progress = true;
+#ifdef ASSERT
+      sync_from_tree(C->root());
+      TreeNode::Iterator iter(prev_types_at_c, types_at_c);
+      int last_expected = (_phase->ltree_root()->_child != nullptr || has_infinite_loop) ? 3 : 2;
+      if (iterations == last_expected) {
+        while (iter.next() && !extra) {
+          if (iter.node()->bottom_type()->make_oopptr() &&
+              PhaseTransform::type(iter.node()) != iter.node()->Value(this) &&
+              iter.type1() == PhaseTransform::type(iter.node()) &&
+              iter.type2() == iter.node()->Value(this)) {
+            extra2 = true;
+          }
+        }
+      }
+#endif
+    }
+#ifdef ASSERT
+    if (prev_types_at_c != nullptr || (types_at_c != types_at_dom)) {
+      if (PrintLoopConditionalPropagation) {
+        TreeNode::Iterator iter(types_at_dom, types_at_c);
+        bool failure = false;
+        while (iter.next()) {
+          const Type* t1 = iter.type1();
+          const Type* t2 = iter.type2();
+          tty->print("@ iteration %d for node %d at control %d: ", iterations, iter.node()->_idx, c->_idx);
+          tty->print(" ");
+          t1->dump();
+          tty->print(" - ");
+          t2->dump();
+          tty->cr();
+        }
+      }
+      {
+        TreeNode::Iterator iter(prev_types_at_c != nullptr ? prev_types_at_c : types_at_dom, types_at_c);
+        bool failure = false;
+        while (iter.next()) {
+          const Type* t1 = iter.type1();
+          const Type* t2 = iter.type2();
+          if (!narrows_type(t1, t2)) {
+            failure = true;
+            if (PrintLoopConditionalPropagation) {
+              tty->print("XXX ");
+              tty->print("@ iteration %d for node %d at control %d: ", iterations, iter.node()->_idx, c->_idx);
+              tty->print(" ");
+              t1->dump();
+              tty->print(" - ");
+              t2->dump();
+              tty->cr();
+            }
+          }
+        }
+        assert(!failure, "");
+      }
+#endif
+    }
+    if (UseNewCode2) {
+      for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
+        _types_tree_clone.map(i, PhaseTransform::_types.fast_lookup(i));
+      }
+    }
   }
+
+  void one_iteration(int iterations, int rpo, Node* c, bool& progress, bool has_infinite_loop, bool& extra, bool& extra2) {
+    if (UseNewCode3) {
+      for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
+        PhaseTransform::_types.map(i, _types_clone.fast_lookup(i));
+      }
+    }
+
+    _known_updates.set(c->_idx);
+
+    Node* dom = _phase->idom(c);
+    _current_updates = updates_at(c);
+    _dom_updates = updates_at(dom);
+    if (_current_updates == nullptr) {
+      _current_updates = _dom_updates;
+      if (_current_updates != nullptr) {
+        _updates->put(c, _current_updates);
+      }
+    } else {
+      assert(iterations > 1, "");
+      if (_current_updates == _dom_updates) {
+//              _updates->put(c, _current_updates);
+      } else if (_current_updates->control() != c) {
+        assert(_dom_updates != nullptr, "");
+        _current_updates = _dom_updates;
+        _updates->put(c, _current_updates);
+      } else {
+        sync(dom);
+        for (int j = 0; j < _current_updates->length();) {
+          Node* n = _current_updates->node_at(j);
+          const Type* dom_t = PhaseTransform::type(n);
+          const Type* t = _current_updates->type_at(j);
+          const Type* new_t = t->filter(dom_t);
+          if (new_t == dom_t) {
+            _current_updates->remove_at(j);
+          } else {
+            _current_updates->set_prev_type_at(j, dom_t);
+            _current_updates->set_type_at(j, new_t);
+            if (new_t != t) {
+              enqueue_uses(n, c);
+            }
+            j++;
+          }
+        }
+        assert(_dom_updates == nullptr || !_phase->is_dominator(_current_updates->control(), _dom_updates->control()), "");
+        _current_updates->set_prev(_dom_updates);
+      }
+    }
+
+    if (c->is_Region()) {
+      Node* in = c->in(1);
+      Node* ctrl = in;
+      TypeUpdate* updates = updates_at(ctrl);
+      assert(updates != nullptr || _dom_updates == nullptr || _phase->is_dominator(c, in), "");
+      while(updates != nullptr && updates != _dom_updates && (_dom_updates == nullptr || !_phase->is_dominator(updates->control(), _dom_updates->control()))) {
+        for (int j = 0; j < updates->length(); ++j) {
+          Node* n = updates->node_at(j);
+          if (_current_updates != nullptr && _current_updates->control() == c && _current_updates->contains(n)) {
+            continue;
+          }
+          const Type* t = updates->type_at(j);
+          uint k = 2;
+          for (; k < c->req(); k++) {
+            Node* other_in = c->in(k);
+            const Type* type_at_in = find_type_between(n, other_in, dom);
+            if (type_at_in == nullptr) {
+              break;
+            }
+            t = t->meet_speculative(type_at_in);
+          }
+          if (k == c->req()) {
+            const Type* prev_t = t;
+            const Type* current_type = find_prev_type_between(n, in, dom);
+            if (iterations > 1) {
+              const Type* prev_round_t = current_type;
+              t = t->filter(prev_round_t);
+              assert(t == prev_t, "");
+              t = saturate(t, prev_round_t, nullptr);
+              if (c->is_Loop() && t != prev_round_t) {
+                extra = true;
+              }
+              t = t->filter(current_type);
+            }
+
+            if (t != current_type) {
+              assert(narrows_type(current_type, t), "");
+              if (record_update(c, n, current_type, t)) {
+                enqueue_uses(n, c);
+              }
+            }
+          }
+        }
+        updates = updates->prev();
+        assert(updates != nullptr || _dom_updates == nullptr || _phase->is_dominator(c, in), "");
+      }
+    } else if (c->is_IfProj()) {
+      Node* iff = c->in(0);
+      assert(iff->is_If(), "");
+      if (!(iff->is_CountedLoopEnd() && iff->as_CountedLoopEnd()->loopnode() != nullptr &&
+            iff->as_CountedLoopEnd()->loopnode()->is_strip_mined())) {
+        Node* bol = iff->in(1);
+        if (iff->is_OuterStripMinedLoopEnd()) {
+          assert(iff->in(0)->in(0)->in(0)->is_CountedLoopEnd(), "");
+          bol = iff->in(0)->in(0)->in(0)->in(1);
+        }
+        if (bol->Opcode() == Op_Opaque4) {
+          bol = bol->in(1);
+        }
+        if (bol->is_Bool()) {
+          Node* cmp = bol->in(1);
+          if (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU ||
+              cmp->Opcode() == Op_CmpL || cmp->Opcode() == Op_CmpUL) {
+            Node* cmp1 = cmp->in(1);
+            Node* cmp2 = cmp->in(2);
+            sync(iff);
+            // narrowing the type of a LoadRange could cause a range check to optimize out and a Load to be hoisted above
+            // checks that guarantee its within bounds
+            if (cmp1->Opcode() != Op_LoadRange) {
+              analyze_if(c, cmp, cmp1);
+            }
+            if (cmp2->Opcode() != Op_LoadRange) {
+              analyze_if(c, cmp, cmp2);
+            }
+          }
+        }
+      }
+    } else if (c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray() &&
+               c->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
+      AllocateArrayNode* alloc = c->in(0)->in(0)->in(0)->as_AllocateArray();
+      sync(dom);
+      analyze_allocate_array(rpo, c, alloc);
+    }
+    if (_control_dependent_node.test(c->_idx) || true) {
+      for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
+        Node* u = c->fast_out(i);
+        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (!UseNewCode3 || _visited.test(u->_idx)) /*&& _control_dependent_node.test(u->_idx)*/) {
+          _wq.push(u);
+        }
+      }
+    }
+
+    sync(c);
+    while (_wq.size() > 0) {
+      Node* n = _wq.pop();
+      const Type* t = n->Value(this);
+      if (n->is_Phi() ) {
+        const Type* prev_type = PhaseTransform::type(n);
+        if (prev_type != nullptr) {
+          const Type* prev_t = t;
+          t = t->filter(prev_type);
+          assert(t == prev_t, "");
+          if (!(n->in(0)->is_CountedLoop() && n->in(0)->as_CountedLoop()->phi() == n &&
+                n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
+            t = saturate(t, prev_type, nullptr);
+          }
+          if (c->is_Loop() && t != prev_type) {
+            extra = true;
+          }
+        }
+      }
+      t = t->filter(PhaseTransform::type(n));
+      if (t != PhaseTransform::type(n)) {
+#ifdef ASSERT
+        assert(narrows_type(PhaseTransform::type(n), t), "");
+#endif
+        set_type(n, t, PhaseTransform::type(n), rpo);
+        enqueue_uses(n, c);
+      }
+    }
+
+    if (UseNewCode3) {
+      for (uint i = 0; i < PhaseTransform::_types.Size(); ++i) {
+        _types_clone.map(i, PhaseTransform::_types.fast_lookup(i));
+      }
+    }
+  }
+
+  TreeNode* analyze_allocate_array_tree(int rpo, Node* c, TreeNode* types_at_c, const AllocateArrayNode* alloc) {
+    Node* length = alloc->in(AllocateArrayNode::ALength);
+    Node* klass = alloc->in(AllocateNode::KlassNode);
+    const Type* klass_t = types_at_c->get_type(klass);
+    if (klass_t != Type::TOP) {
+      const TypeOopPtr* ary_type = klass_t->is_klassptr()->as_instance_type();
+      const TypeInt* length_type = types_at_c->get_type(length)->isa_int();
+      if (ary_type->isa_aryptr() && length_type != nullptr) {
+        const Type* narrow_length_type = ary_type->is_aryptr()->narrow_size_type(length_type);
+        narrow_length_type = narrow_length_type->filter(length_type);
+        assert(narrows_type(length_type, narrow_length_type), "");
+        if (narrow_length_type != length_type) {
+          types_at_c = types_at_c->set_type(length, narrow_length_type, rpo);
+          enqueue_uses(length, c);
+        }
+      }
+    }
+    return types_at_c;
+  }
+
+  void analyze_allocate_array(int rpo, Node* c, const AllocateArrayNode* alloc) {
+    Node* length = alloc->in(AllocateArrayNode::ALength);
+    Node* klass = alloc->in(AllocateNode::KlassNode);
+    const Type* klass_t = PhaseTransform::type(klass);
+    if (klass_t != Type::TOP) {
+      const TypeOopPtr* ary_type = klass_t->is_klassptr()->as_instance_type();
+      const TypeInt* length_type = PhaseTransform::type(length)->isa_int();
+      if (ary_type->isa_aryptr() && length_type != nullptr) {
+        const Type* narrow_length_type = ary_type->is_aryptr()->narrow_size_type(length_type);
+        narrow_length_type = narrow_length_type->filter(length_type);
+        assert(narrows_type(length_type, narrow_length_type), "");
+        if (narrow_length_type != length_type) {
+          if (record_update(c, length, length_type, narrow_length_type)) {
+            enqueue_uses(length, c);
+          }
+        }
+      }
+    }
+  }
+
+  TypeUpdate* updates_at(Node* c) const {
+    TypeUpdate** updates_ptr = _updates->get(known_updates(c));
+    if (updates_ptr == nullptr) {
+      return nullptr;
+    }
+    return *updates_ptr;
+  }
+
+  const Type* type_if_present(Node* c, Node* n) const {
+    TypeUpdate* updates = updates_at(c);
+    if (updates == nullptr) {
+      return nullptr;
+    }
+    return updates->type_if_present(n);
+  }
+
 
   const Type* find_type_between(Node* n, Node* c, Node* dom) const {
     assert(_phase->is_dominator(dom, c), "");
-    TypeUpdate** updates_ptr = updates_at(c);
-    TypeUpdate* updates = nullptr;
-    if (updates_ptr != nullptr) {
-      updates = *updates_ptr;
-    }
-    updates_ptr = updates_at(dom);
-    TypeUpdate* dom_updates = nullptr;
-    if (updates_ptr != nullptr) {
-      dom_updates = *updates_ptr;
-    }
+    TypeUpdate* updates = updates_at(c);
+    TypeUpdate* dom_updates = updates_at(dom);
     while(updates != dom_updates) {
       assert(updates != nullptr,"");
       assert(dom_updates == nullptr || !_phase->is_dominator(updates->control(), dom_updates->control()), "");
@@ -1059,16 +1157,8 @@ public:
 
   const Type* find_prev_type_between(Node* n, Node* c, Node* dom) const {
     assert(_phase->is_dominator(dom, c), "");
-    TypeUpdate** updates_ptr = updates_at(c);
-    TypeUpdate* updates = nullptr;
-    if (updates_ptr != nullptr) {
-      updates = *updates_ptr;
-    }
-    updates_ptr = updates_at(dom);
-    TypeUpdate* dom_updates = nullptr;
-    if (updates_ptr != nullptr) {
-      dom_updates = *updates_ptr;
-    }
+    TypeUpdate* updates = updates_at(c);
+    TypeUpdate* dom_updates = updates_at(dom);
     const Type* res = nullptr;
     while(updates != dom_updates) {
       assert(updates != nullptr,"");
@@ -1082,23 +1172,16 @@ public:
     return res;
   }
 
-  void set_type(Node* c, Node* n, const Type* old_t, const Type* t) {
+  bool set_type(Node* c, Node* n, const Type* old_t, const Type* t) {
     assert(UseNewCode2, "");
-    if (UseNewCode3 && !_updated_type.test_set(n->_idx)) {
-      Node* root = _phase->C->root();
-      assert(old_t == PhaseTransform::type(n), "");
-      _types.put(ControlDataPair(root, n), PhaseTransform::type(n));
-      _types.maybe_grow();
-//      record_update(root, n, nullptr, old_t);
-    }
-    ControlDataPair pair = ControlDataPair(c, n);
-    if (UseNewCode3 && _types.put(pair, t)) {
-      _types.maybe_grow();
-    }
-    record_update(c, n, old_t, t);
+//    ControlDataPair pair = ControlDataPair(c, n);
+//    if (_types.put(pair, t)) {
+//      _types.maybe_grow();
+//    }
+    return record_update(c, n, old_t, t);
   }
 
-  void record_update(Node* c, Node* n, const Type* old_t, const Type* new_t) {
+  bool record_update(Node* c, Node* n, const Type* old_t, const Type* new_t) {
     assert(UseNewCode2, "");
     if (_current_updates == _dom_updates) {
       _current_updates = new TypeUpdate(_dom_updates, c);
@@ -1106,13 +1189,19 @@ public:
     }
     int i = _current_updates->find(n);
     if (i == -1) {
+      _progress = true;
       _current_updates->push_node(n, old_t, new_t);
-    } else {
+      return true;
+    } else if (_current_updates->type_at(i) != new_t) {
+      _progress = true;
       _current_updates->set_type_at(i, new_t);
+      return true;
     }
+    return false;
   }
 
   const Type* get_type(Node* c, Node* n) {
+    ShouldNotReachHere();
     assert(UseNewCode2 && UseNewCode3, "");
     if (!_updated_type.test(n->_idx)){
       return PhaseTransform::type(n);
@@ -1154,33 +1243,62 @@ public:
     }
   }
 
-  TreeNode* analyze_if(int rpo, Node* c, TreeNode* types_at_c, const Node* cmp, Node* n) {
+  TreeNode* analyze_if_tree(int rpo, Node* c, TreeNode* types_at_c, const Node* cmp, Node* n) {
     const Type* t = IfNode::filtered_int_type(this, n, c, (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU) ? T_INT : T_LONG);
     if (t != nullptr) {
-      const Type* n_t = PhaseTransform::type(n);
-      assert(!UseNewCode3 || types_at_c->get_type(n) == n_t || types_at_c != types_at_ctrl(c), "");
-//      assert((prev_updates != nullptr && prev_updates->contains(n)) || n_t == PhaseTransform::type(n), "");
-//      assert(prev_updates == nullptr || !prev_updates->contains(n) || prev_updates->type_at(prev_updates->find(n)) == n_t, "");
+      const Type* n_t = types_at_c->get_type(n);
       const Type* new_n_t = n_t->filter(t);
       assert(narrows_type(n_t, new_n_t), "");
       if (n_t != new_n_t) {
 #ifdef ASSERT
         _conditions.set(c->_idx);
 #endif
-        if (UseNewCode3) {
-          types_at_c = types_at_c->set_type(n, new_n_t, rpo);
-        }
-        if (UseNewCode2) {
-          set_type(c, n, n_t, new_n_t);
-        }
+        types_at_c = types_at_c->set_type(n, new_n_t, rpo);
         enqueue_uses(n, c);
       }
       if (n->Opcode() == Op_ConvL2I) {
         Node* in = n->in(1);
         const Type* in_t;
-        if (UseNewCode3) {
-          in_t = types_at_c->get_type(in);
-        } else {
+        in_t = types_at_c->get_type(in);
+        if (in_t->isa_long() && in_t->is_long()->_lo >= min_jint && in_t->is_long()->_hi <= max_jint) {
+          const Type* t_as_long = t->isa_int() ? TypeLong::make(t->is_int()->_lo, t->is_int()->_hi, t->is_int()->_widen) : Type::TOP;
+          const Type* new_in_t = in_t->filter(t_as_long);
+          assert(narrows_type(in_t, new_in_t), "");
+          if (in_t != new_in_t) {
+#ifdef ASSERT
+            _conditions.set(c->_idx);
+#endif
+            types_at_c = types_at_c->set_type(in, new_in_t, rpo);
+            enqueue_uses(in, c);
+          }
+        }
+      }
+    }
+    return types_at_c;
+  }
+
+  void analyze_if(Node* c, const Node* cmp, Node* n) {
+    const Type* t = IfNode::filtered_int_type(this, n, c, (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU) ? T_INT : T_LONG);
+    if (t != nullptr) {
+      const Type* n_t = type_if_present(c, n);
+      if (n_t == nullptr) {
+        n_t = PhaseTransform::type(n);
+      }
+      const Type* new_n_t = n_t->filter(t);
+      assert(narrows_type(n_t, new_n_t), "");
+      if (n_t != new_n_t) {
+#ifdef ASSERT
+        _conditions.set(c->_idx);
+#endif
+        if (record_update(c, n, n_t, new_n_t)) {
+          enqueue_uses(n, c);
+        }
+      }
+      if (n->Opcode() == Op_ConvL2I) {
+        Node* in = n->in(1);
+        const Type* in_t;
+        in_t = type_if_present(c, in);
+        if (in_t == nullptr) {
           in_t = PhaseTransform::type(in);
         }
         if (in_t->isa_long() && in_t->is_long()->_lo >= min_jint && in_t->is_long()->_hi <= max_jint) {
@@ -1191,24 +1309,13 @@ public:
 #ifdef ASSERT
             _conditions.set(c->_idx);
 #endif
-//            tty->print_cr("XXXX");
-//            in->dump();
-//            c->dump();
-//            in_t->dump(); tty->cr();
-//            new_in_t->dump(); tty->cr();
-//            tty->print_cr("XXXX");
-            if (UseNewCode3) {
-              types_at_c = types_at_c->set_type(in, new_in_t, rpo);
+            if (record_update(c, in, in_t, new_in_t)) {
+              enqueue_uses(in, c);
             }
-            if (UseNewCode2) {
-              set_type(c, in, in_t, new_in_t);
-            }
-            enqueue_uses(in, c);
           }
         }
       }
     }
-    return types_at_c;
   }
 
   bool narrows_type(const Type* old_t, const Type* new_t) {
@@ -1244,6 +1351,12 @@ public:
       return false;
     }
 
+//    if (new_int->hi_as_long() == old_int->hi_as_long() &&
+//        new_int->lo_as_long() == old_int->lo_as_long() &&
+//        new_int->widen_limit() > old_int->widen_limit()) {
+//      return false;
+//    }
+
     return true;
   }
 
@@ -1255,7 +1368,7 @@ public:
 
       if (UseNewCode3) {
         TreeNode* types = types_at_ctrl(c);
-        assert(!UseNewCode2 || (types->get_type(c) == Type::TOP) == ((updates_at(c) != nullptr && (*updates_at(c))->type_if_present(c) == Type::TOP)), "");
+        assert(!UseNewCode2 || (types->get_type(c) == Type::TOP) == (type_if_present(c, c) == Type::TOP), "");
         if (types->get_type(c) == Type::TOP) {
           assert(c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray(), "");
           replace_node(c, _phase->C->top());
@@ -1263,16 +1376,12 @@ public:
           continue;
         }
       } else if (UseNewCode2) {
-        TypeUpdate** updates_ptr = updates_at(c);
-        if (updates_ptr != nullptr) {
-          TypeUpdate* updates = *updates_ptr;
-          int idx = updates->find(c);
-          if (idx != -1 && updates->type_at(idx) == Type::TOP) {
-            assert(c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray(), "");
-            replace_node(c, _phase->C->top());
-            _phase->C->set_major_progress();
-            continue;
-          }
+        const Type* t = type_if_present(c, c);
+        if (t == Type::TOP) {
+          assert(c->is_CatchProj() && c->in(0)->in(0)->in(0)->is_AllocateArray(), "");
+          replace_node(c, _phase->C->top());
+          _phase->C->set_major_progress();
+          continue;
         }
       }
 
@@ -1335,25 +1444,13 @@ public:
           TreeNode* types = types_at_ctrl(c);
           const Type* cmp_t = types->get_type(cmp);
           if (!cmp_t->singleton()) {
-            assert(!UseNewCode2 || updates_at(c) == nullptr || !(*updates_at(c))->contains(cmp) ||
-                           !(*updates_at(c))->type_if_present(cmp)->singleton(), "");
+            assert(!UseNewCode2 || type_if_present(c, cmp) == nullptr || !type_if_present(c, cmp)->singleton(), "");
             return false;
           }
-          assert(!UseNewCode2 || (updates_at(c) != nullptr && (*updates_at(c))->type_if_present(cmp)->singleton()), "");
+          assert(!UseNewCode2 || type_if_present(c, cmp)->singleton(), "");
         } else if (UseNewCode2) {
-          TypeUpdate** updates_ptr = updates_at(c);
-          if (updates_ptr != nullptr) {
-            TypeUpdate* updates = *updates_ptr;
-            int idx = updates->find(cmp);
-            if (idx != -1) {
-              const Type* cmp_t = updates->type_at(idx);
-              if (!cmp_t->singleton()) {
-                return false;
-              }
-            } else {
-              return false;
-            }
-          } else {
+          const Type* cmp_t = type_if_present(c, cmp);
+          if (cmp_t == nullptr || !cmp_t->singleton()) {
             return false;
           }
         }
@@ -1523,25 +1620,22 @@ public:
           processed++;
           Node* node = iter.node();
           const Type* t = iter.type2();
-          assert(!UseNewCode2 || (updates_at(c) != nullptr && (*updates_at(c))->control() == c && (*updates_at(c))->type_if_present(node) == t), "");
+          assert(!UseNewCode2 || (updates_at(c) != nullptr && updates_at(c)->control() == c && updates_at(c)->type_if_present(node) == t), "");
           if (transform_when_top_seen(c, iter.node(), t)) {
             progress = true;
           }
         }
-        assert(!UseNewCode2 || processed != 0 || updates_at(c) == nullptr || (*updates_at(c))->control() != c || (*updates_at(c))->length() == 0, "");
-        assert(!UseNewCode2 || processed == 0 || (updates_at(c) != nullptr && (*updates_at(c))->control() == c && processed == (*updates_at(c))->length()), "");
+        assert(!UseNewCode2 || processed != 0 || updates_at(c) == nullptr || updates_at(c)->control() != c || updates_at(c)->length() == 0, "");
+        assert(!UseNewCode2 || processed == 0 || (updates_at(c) != nullptr && updates_at(c)->control() == c && processed == updates_at(c)->length()), "");
       }
     } else if (UseNewCode2) {
-      TypeUpdate** updates_ptr = updates_at(c);
-      if (updates_ptr != nullptr) {
-        TypeUpdate* updates = *updates_ptr;
-        if (updates->control() == c) {
-          for (int i = 0; i < updates->length(); ++i) {
-            Node* node = updates->node_at(i);
-            const Type* t = updates->type_at(i);
-            if (transform_when_top_seen(c, node, t)) {
-              progress = true;
-            }
+      TypeUpdate* updates = updates_at(c);
+      if (updates != nullptr && updates->control() == c) {
+        for (int i = 0; i < updates->length(); ++i) {
+          Node* node = updates->node_at(i);
+          const Type* t = updates->type_at(i);
+          if (transform_when_top_seen(c, node, t)) {
+            progress = true;
           }
         }
       }
@@ -1556,25 +1650,22 @@ public:
         Node* node = iter.node();
         const Type* t = iter.type2();
         const Type* prev_t = iter.type1();
-        assert(!UseNewCode2 || (updates_at(c) != nullptr && (*updates_at(c))->control() == c && (*updates_at(c))->type_if_present(node) == t), "");
+        assert(!UseNewCode2 || (updates_at(c) != nullptr && updates_at(c)->control() == c && updates_at(c)->type_if_present(node) == t), "");
         if (transform_when_constant_seen(c, iter.node(), t, prev_t)) {
           progress = true;
         }
       }
-      assert(!UseNewCode2 || processed != 0 || updates_at(c) == nullptr || (*updates_at(c))->control() != c || (*updates_at(c))->length() == 0, "");
-      assert(!UseNewCode2 || processed == 0 || (updates_at(c) != nullptr && (*updates_at(c))->control() == c && processed == (*updates_at(c))->length()), "");
+      assert(!UseNewCode2 || processed != 0 || updates_at(c) == nullptr || updates_at(c)->control() != c || updates_at(c)->length() == 0, "");
+      assert(!UseNewCode2 || processed == 0 || (updates_at(c) != nullptr && updates_at(c)->control() == c && processed == updates_at(c)->length()), "");
     } else if (UseNewCode2) {
-      TypeUpdate** updates_ptr = updates_at(c);
-      if (updates_ptr != nullptr) {
-        TypeUpdate* updates = *updates_ptr;
-        if (updates->control() == c) {
-          for (int i = 0; i < updates->length(); ++i) {
-            Node* node = updates->node_at(i);
-            const Type* t = updates->type_at(i);
-            const Type* prev_t = updates->prev_type_at(i);
-            if (transform_when_constant_seen(c, node, t, prev_t)) {
-              progress = true;
-            }
+      TypeUpdate* updates = updates_at(c);
+      if (updates != nullptr && updates->control() == c) {
+        for (int i = 0; i < updates->length(); ++i) {
+          Node* node = updates->node_at(i);
+          const Type* t = updates->type_at(i);
+          const Type* prev_t = updates->prev_type_at(i);
+          if (transform_when_constant_seen(c, node, t, prev_t)) {
+            progress = true;
           }
         }
       }
@@ -1588,7 +1679,7 @@ public:
           if (iff->proj_out(bol_t->get_con()) == c) {
             _wq.push(c);
             assert(!UseNewCode3 || types_at_ctrl(iff)->get_type(c) != Type::TOP, "");
-            assert(!UseNewCode2 || !(updates_at(c) != nullptr && (*updates_at(c))->type_if_present(c) == Type::TOP), "");
+            assert(!UseNewCode2 || !(updates_at(c) != nullptr && updates_at(c)->type_if_present(c) == Type::TOP), "");
           }
         } else {
           _wq.push(c);
@@ -1602,51 +1693,34 @@ public:
   }
   const Type* type(const Node* n, Node* c) const {
     assert(c->is_CFG(), "");
-    assert(_current_ctrl->is_Region() && _current_ctrl->find_edge(c) != -1, "");
     const Type* res = nullptr;
-    if (UseNewCode2) {
+    if (!_old_version) {
+      assert(_current_ctrl->is_Region() && _current_ctrl->find_edge(c) != -1, "");
       Node* dom = _phase->idom(_current_ctrl);
-      TypeUpdate** updates_ptr = updates_at(c);
-      TypeUpdate* updates = nullptr;
-      if (updates_ptr != nullptr) {
-        updates = *updates_ptr;
-      }
-      updates_ptr = updates_at(dom);
-      TypeUpdate* dom_updates = nullptr;
-      if (updates_ptr != nullptr) {
-        dom_updates = *updates_ptr;
-      }
-      while (updates != dom_updates && (dom_updates == nullptr || !_phase->is_dominator(updates->control(), dom_updates->control()))) {
-        assert(updates != nullptr, "");
-        if (updates == _current_updates && _current_updates->control() == _current_ctrl && _prev_updates != nullptr) {
-          int idx = _prev_updates->find(n);
-          if (idx != -1) {
-            res = _prev_updates->type_at(idx);
-            break;
-          }
-        } else {
-          int idx = updates->find(n);
-          if (idx != -1) {
-            res = updates->type_at(idx);
-            break;
-          }
+      TypeUpdate* updates = updates_at(c);
+      TypeUpdate* dom_updates = updates_at(dom);
+      assert(updates != nullptr || dom_updates == nullptr || _phase->is_dominator(_current_ctrl, c), "");
+      while (updates != nullptr && updates != dom_updates && (dom_updates == nullptr || !_phase->is_dominator(updates->control(), dom_updates->control()))) {
+        int idx = updates->find(n);
+        if (idx != -1) {
+          res = updates->type_at(idx);
+          break;
         }
         updates = updates->prev();
+        assert(updates != nullptr || dom_updates == nullptr || _phase->is_dominator(_current_ctrl, c), "");
       }
       if (res == nullptr) {
         res = PhaseTransform::type(n);
       }
-    }
-    if (UseNewCode3) {
+    } else {
+      assert(_current_ctrl_tree->is_Region() && _current_ctrl_tree->find_edge(c) != -1, "");
       TreeNode* types;
       for (;;) {
-        if (c == _current_ctrl) {
-          assert(!UseNewCode2 || res == PhaseTransform::type(n), "");
+        if (c == _current_ctrl_tree) {
           return PhaseTransform::type(n);
         }
         types = (TreeNode*) _types_at_ctrl[c];
         if (types != nullptr) {
-          assert(!UseNewCode2 || res == types->get_type(n), "");
           return types->get_type(n);
         }
         c = _phase->idom(c);
@@ -1657,7 +1731,6 @@ public:
 
   virtual PhaseConditionalPropagation* is_ConditionalPropagation() { return this; }
 
-  TypeUpdate* _prev_updates;
   TypeUpdate* _current_updates;
   TypeUpdate* _dom_updates;
 };
