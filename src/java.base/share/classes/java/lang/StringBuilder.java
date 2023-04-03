@@ -446,6 +446,28 @@ public final class StringBuilder
         return this;
     }
 
+    /**
+     * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
+     */
+    @Override
+    public StringBuilder repeat(int codePoint, int count) {
+        super.repeat(codePoint, count);
+        return this;
+    }
+
+    /**
+     * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
+     */
+    @Override
+    public StringBuilder repeat(CharSequence cs, int count) {
+        super.repeat(cs, count);
+        return this;
+    }
+
     @Override
     @IntrinsicCandidate
     public String toString() {

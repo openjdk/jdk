@@ -433,18 +433,14 @@ class Direct$Type$Buffer$RW$$BO$
 
     public String toString(int start, int end) {
         Objects.checkFromToIndex(start, end, limit());
-        try {
-            int len = end - start;
-            char[] ca = new char[len];
-            CharBuffer cb = CharBuffer.wrap(ca);
-            CharBuffer db = this.duplicate();
-            db.position(start);
-            db.limit(end);
-            cb.put(db);
-            return new String(ca);
-        } catch (StringIndexOutOfBoundsException x) {
-            throw new IndexOutOfBoundsException();
-        }
+        int len = end - start;
+        char[] ca = new char[len];
+        CharBuffer cb = CharBuffer.wrap(ca);
+        CharBuffer db = this.duplicate();
+        db.position(start);
+        db.limit(end);
+        cb.put(db);
+        return new String(ca);
     }
 
 

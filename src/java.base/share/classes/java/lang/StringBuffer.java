@@ -708,6 +708,28 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
         return this;
     }
 
+    /**
+     * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
+     */
+    @Override
+    public synchronized StringBuffer repeat(int codePoint, int count) {
+        super.repeat(codePoint, count);
+        return this;
+    }
+
+    /**
+     * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
+     */
+    @Override
+    public synchronized StringBuffer repeat(CharSequence cs, int count) {
+        super.repeat(cs, count);
+        return this;
+    }
+
     @Override
     @IntrinsicCandidate
     public synchronized String toString() {
