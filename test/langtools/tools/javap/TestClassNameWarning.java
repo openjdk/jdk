@@ -177,7 +177,7 @@ public class TestClassNameWarning extends TestRunner {
         ClassFile cf2 = new ClassFile(
                 cf.magic, cf.minor_version, cf.major_version, cf.constant_pool,
                 cf.access_flags,
-                0, // this_class,
+                cf.this_class,
                 cf.super_class, cf.interfaces, cf.fields, cf.methods, cf.attributes);
         new ClassWriter().write(cf2, Files.newOutputStream(classes.resolve("Z.class")));
 
