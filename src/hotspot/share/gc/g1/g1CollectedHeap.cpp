@@ -2108,14 +2108,11 @@ bool G1CollectedHeap::try_collect_fullgc(GCCause::Cause cause,
       return op.gc_succeeded();
     }
 
-    uint full_gc_count = 0;
     {
       MutexLocker ml(Heap_lock);
-      full_gc_count = total_full_collections();
-    }
-
-    if (counters_before.total_full_collections() != full_gc_count) {
-      return true;
+      if (counters_before.total_full_collections() != total_full_collections()) {
+        return true;
+      }
     }
 
     if (GCLocker::is_active_and_needs_gc()) {

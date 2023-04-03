@@ -219,18 +219,11 @@ public class TestJNICriticalStressTest {
         new Thread(new SystemGCWorker()).start();
 
         long durationMS = (long) (1000 * durationSec);
-        long start = System.currentTimeMillis();
-        long now = start;
-        long soFar = now - start;
-        while (soFar < durationMS) {
-            try {
-                Thread.sleep(durationMS - soFar);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
-            }
-            now = System.currentTimeMillis();
-            soFar = now - start;
+        try {
+            Thread.sleep(durationMS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            exit(-1);
         }
    }
 }
