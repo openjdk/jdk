@@ -88,14 +88,46 @@ public abstract class CharToGlyphMapper {
 
     public abstract int getNumGlyphs();
 
-    public abstract void charsToGlyphs(int count,
-                                       char[] unicodes, int[] glyphs);
+    private boolean charsToGlyphs(int count, char[] unicodes, int[] glyphs, boolean checkShaping) {
+        for (int i = 0; i < count; i++) {
+            int code = unicodes[i]; // char is unsigned.
+            if (code >= HI_SURROGATE_START && code <= HI_SURROGATE_END && i < count - 1) {
+                char low = unicodes[i + 1];
+                if (low >= LO_SURROGATE_START && low <= LO_SURROGATE_END) {
+                    code = (code - HI_SURROGATE_START) * 0x400 + low - LO_SURROGATE_START + 0x10000;
+                    glyphs[i + 1] = INVISIBLE_GLYPH_ID;
+                }
+            }
 
-    public abstract boolean charsToGlyphsNS(int count,
-                                            char[] unicodes, int[] glyphs);
+            glyphs[i] = charToGlyph(code);
 
-    public abstract void charsToGlyphs(int count,
-                                       int[] unicodes, int[] glyphs);
+            if (code >= FontUtilities.MIN_LAYOUT_CHARCODE) {
+                if (checkShaping &&
+                        (FontUtilities.isComplexCharCode(code) ||
+                         CharToGlyphMapper.isVariationSelector(code))) {
+                    return true;
+                } else if (code >= 0x10000) {
+                    i++; // Empty glyph slot after surrogate.
+                }
+            }
+        }
+        return false;
+    }
+
+    public void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
+        charsToGlyphs(count, unicodes, glyphs, false);
+    }
+
+    public boolean charsToGlyphsNS(int count, char[] unicodes, int[] glyphs) {
+        return charsToGlyphs(count, unicodes, glyphs, true);
+    }
+
+    public void charsToGlyphs(int count,
+                              int[] unicodes, int[] glyphs) {
+        for (int i = 0; i < count; i++) {
+            glyphs[i] = charToGlyph(unicodes[i]);
+        }
+    }
 
     public static boolean isVariationSelector(int charCode) {
         return ((charCode >= VSS_START && charCode <= VSS_END) ||
