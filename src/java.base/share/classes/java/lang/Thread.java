@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2816,6 +2816,18 @@ public class Thread implements Runnable {
      */
     boolean isTerminated() {
         return threadState() == State.TERMINATED;
+    }
+
+    /**
+     * Called by HotSpot to set the state to terminated.
+     */
+    synchronized void setTerminated() {
+        // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
+        holder.threadStatus = jdk.internal.misc.VM.terminated();
+        // Clear the native thread instance - this makes isAlive return false and allows the join()
+        // to complete once we've done the notify_all below
+        eetop = 0;
+        notifyAll();
     }
 
     /**

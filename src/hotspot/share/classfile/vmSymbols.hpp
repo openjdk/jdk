@@ -402,6 +402,7 @@
   template(runWith_method_name,                       "runWith")                                  \
   template(interrupt_method_name,                     "interrupt")                                \
   template(exit_method_name,                          "exit")                                     \
+  template(setTerminated_method_name,                 "setTerminated")                            \
   template(remove_method_name,                        "remove")                                   \
   template(parent_name,                               "parent")                                   \
   template(maxPriority_name,                          "maxPriority")                              \

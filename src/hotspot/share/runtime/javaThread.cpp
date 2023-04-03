@@ -728,15 +728,29 @@ static void ensure_join(JavaThread* thread) {
   // We do not need to grab the Threads_lock, since we are operating on ourself.
   Handle threadObj(thread, thread->threadObj());
   assert(threadObj.not_null(), "java thread object must exist");
-  ObjectLocker lock(threadObj, thread);
-  // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
-  java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
-  // Clear the native thread instance - this makes isAlive return false and allows the join()
-  // to complete once we've done the notify_all below
-  java_lang_Thread::set_thread(threadObj(), nullptr);
-  lock.notify_all(thread);
+
+  if (thread->can_call_java()) {
+    // Call synchronized java_lang_Thread.setTerminated() to lock and notify
+    // other threads that know about this one.
+    JavaValue result(T_VOID);
+    Klass* thread_klass = vmClasses::Thread_klass();
+    JavaCalls::call_virtual(&result,
+                            threadObj, thread_klass,
+                            vmSymbols::setTerminated_method_name(),
+                            vmSymbols::void_method_signature(),
+                            thread);
+  } else {
+    // This is a compiler thread or another internal JavaThread. No need to lock this thread.
+    // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
+    java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
+    // Clear the native thread instance - this makes isAlive return false and allows the join()
+    // to complete once we've done the notify_all below
+    java_lang_Thread::set_thread(threadObj(), nullptr);
+  }
+
   // Ignore pending exception, since we are exiting anyway
   thread->clear_pending_exception();
+
 }
 
 static bool is_daemon(oop threadObj) {

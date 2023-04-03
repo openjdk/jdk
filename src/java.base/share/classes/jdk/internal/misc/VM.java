@@ -349,6 +349,8 @@ public class VM {
         }
     }
 
+    public static int terminated() { return JVMTI_THREAD_STATE_TERMINATED; }
+
     /* The threadStatus field is set by the VM at state transition
      * in the hotspot implementation. Its value is set according to
      * the JVM TI specification GetThreadState function.
