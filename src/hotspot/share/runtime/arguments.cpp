@@ -64,6 +64,7 @@
 #include "utilities/parseInteger.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -558,8 +559,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
 
-  { "G1ConcRSLogCacheSize",    JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "G1ConcRSHotCardLimit",   JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1UsePreventiveGC",            JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(22) },
+  { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -2152,6 +2154,8 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
 
   os::init_container_support();
 
+  SystemMemoryBarrier::initialize();
+
   // Do final processing now that all arguments have been parsed
   result = finalize_vm_init_args(patch_mod_javabase);
   if (result != JNI_OK) {
@@ -3591,7 +3595,7 @@ static bool use_vm_log() {
   if (LogCompilation || !FLAG_IS_DEFAULT(LogFile) ||
       PrintCompilation || PrintInlining || PrintDependencies || PrintNativeNMethods ||
       PrintDebugInfo || PrintRelocations || PrintNMethods || PrintExceptionHandlers ||
-      PrintAssembly || TraceDeoptimization || TraceDependencies ||
+      PrintAssembly || TraceDeoptimization ||
       (VerifyDependencies && FLAG_IS_CMDLINE(VerifyDependencies))) {
     return true;
   }
@@ -4004,10 +4008,9 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     FLAG_SET_DEFAULT(PrintNMTStatistics, false);
   }
 
-  if (TraceDependencies && VerifyDependencies) {
-    if (!FLAG_IS_DEFAULT(TraceDependencies)) {
-      warning("TraceDependencies results may be inflated by VerifyDependencies");
-    }
+  bool trace_dependencies = log_is_enabled(Debug, dependencies);
+  if (trace_dependencies && VerifyDependencies) {
+    warning("dependency logging results may be inflated by VerifyDependencies");
   }
 
   apply_debugger_ergo();

@@ -501,7 +501,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
     debug_phase(_gc_par_phases[RemoveSelfForwards], 2);
   }
 
-  trace_phase(_gc_par_phases[RedirtyCards]);
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
   if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
