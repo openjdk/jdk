@@ -27,6 +27,7 @@ package sun.net;
 
 import java.security.PrivilegedAction;
 import java.security.Security;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("removal")
 public final class InetAddressCachePolicy {
@@ -118,12 +119,12 @@ public final class InetAddressCachePolicy {
             negativeCachePolicy = tmp < 0 ? FOREVER : tmp;
             propertyNegativeSet = true;
         }
-        if (cachePolicy > 0) {
+        long max = TimeUnit.DAYS.toSeconds(7);
+        if (cachePolicy > 0 && cachePolicy < max) {
             tmp = getProperty(cacheExtendedPolicyProp,
                               cacheExtendedPolicyPropFallback);
-
             if (tmp != null && tmp > cachePolicy) {
-                extendedCachePolicy = tmp;
+                extendedCachePolicy = (int) Math.max(tmp, max);
             }
         }
     }
