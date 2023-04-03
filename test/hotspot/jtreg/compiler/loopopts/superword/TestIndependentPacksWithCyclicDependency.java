@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8304042
- * @summary Test some examples with indepenednet packs with cyclic dependency
+ * @summary Test some examples with independent packs with cyclic dependency
  *          between the packs.
  * @requires vm.compiler2.enabled
  * @requires vm.bits == 64
