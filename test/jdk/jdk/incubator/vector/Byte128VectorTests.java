@@ -5925,7 +5925,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Byte128VectorTests::bandNot);
     }
 
-    static boolean bxorNot(boolean a, boolean b) {
+    static boolean beq(boolean a, boolean b) {
         return (a == b);
     }
 
@@ -5938,10 +5938,10 @@ public class Byte128VectorTests extends AbstractVectorTest {
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             var av = SPECIES.loadMask(a, i);
             var bv = SPECIES.loadMask(b, i);
-            var cv = av.xorNot(bv);
+            var cv = av.eq(bv);
             cv.intoArray(r, i);
         }
-        assertArraysEquals(r, a, b, Byte128VectorTests::bxorNot);
+        assertArraysEquals(r, a, b, Byte128VectorTests::beq);
     }
 
     @Test(dataProvider = "maskProvider")

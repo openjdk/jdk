@@ -4935,7 +4935,7 @@ public class Float64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, Float64VectorTests::bandNot);
     }
 
-    static boolean bxorNot(boolean a, boolean b) {
+    static boolean beq(boolean a, boolean b) {
         return (a == b);
     }
 
@@ -4948,10 +4948,10 @@ public class Float64VectorTests extends AbstractVectorTest {
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             var av = SPECIES.loadMask(a, i);
             var bv = SPECIES.loadMask(b, i);
-            var cv = av.xorNot(bv);
+            var cv = av.eq(bv);
             cv.intoArray(r, i);
         }
-        assertArraysEquals(r, a, b, Float64VectorTests::bxorNot);
+        assertArraysEquals(r, a, b, Float64VectorTests::beq);
     }
 
     @Test(dataProvider = "maskProvider")

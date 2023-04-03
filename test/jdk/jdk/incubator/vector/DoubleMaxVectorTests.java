@@ -4961,7 +4961,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, DoubleMaxVectorTests::bandNot);
     }
 
-    static boolean bxorNot(boolean a, boolean b) {
+    static boolean beq(boolean a, boolean b) {
         return (a == b);
     }
 
@@ -4974,10 +4974,10 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         for (int i = 0; i < a.length; i += SPECIES.length()) {
             var av = SPECIES.loadMask(a, i);
             var bv = SPECIES.loadMask(b, i);
-            var cv = av.xorNot(bv);
+            var cv = av.eq(bv);
             cv.intoArray(r, i);
         }
-        assertArraysEquals(r, a, b, DoubleMaxVectorTests::bxorNot);
+        assertArraysEquals(r, a, b, DoubleMaxVectorTests::beq);
     }
 
     @Test(dataProvider = "maskProvider")
