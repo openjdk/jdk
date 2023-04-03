@@ -56,6 +56,15 @@ public:
   int data_offset(uint32_t loc) const;
 };
 
+struct CapturableState {
+  enum {
+    NONE = 0,
+    LAST_ERROR = 1,
+    WSA_LAST_ERROR = 1 << 1,
+    ERRNO = 1 << 2
+  };
+};
+
 class CallingConventionClosure {
 public:
   virtual int calling_convention(const BasicType* sig_bt, VMStorage* regs, int num_args) const = 0;

@@ -38,6 +38,7 @@ import jdk.internal.foreign.abi.Binding.VMStore;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -121,6 +122,11 @@ public class CallingSequenceBuilder {
             callerMethodType = mt;
             calleeMethodType = computeCalleeTypeForDowncall();
         } else { // forUpcall == true
+            if (linkerOptions.hasCapturedCallState()) {
+                addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                        Binding.vmLoad(abi.capturedStateStorage(), long.class),
+                        Binding.boxAddress(Linker.Option.captureStateLayout())));
+            }
             if (needsReturnBuffer) {
                 addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
                         Binding.vmLoad(abi.retBufAddrStorage(), long.class),

@@ -36,14 +36,17 @@ private:
   static JavaThread* maybe_attach_and_get_thread();
 
   static JavaThread* on_entry(UpcallStub::FrameData* context);
-  static void on_exit(UpcallStub::FrameData* context);
+  static void on_exit(UpcallStub::FrameData* context,
+                      int32_t* captured_state_ptr, int captured_state_mask);
+  static void capture_state(int32_t* value_ptr, int captured_state_mask);
 public:
   static address make_upcall_stub(jobject mh, Method* entry,
                                   BasicType* in_sig_bt, int total_in_args,
                                   BasicType* out_sig_bt, int total_out_args,
                                   BasicType ret_type,
                                   jobject jabi, jobject jconv,
-                                  bool needs_return_buffer, int ret_buf_size);
+                                  bool needs_return_buffer, int ret_buf_size,
+                                  int captured_state_mask);
 };
 
 #endif // SHARE_VM_PRIMS_UPCALLLINKER_HPP

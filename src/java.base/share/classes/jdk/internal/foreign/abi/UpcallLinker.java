@@ -105,7 +105,8 @@ public class UpcallLinker {
             checkPrimitive(doBindings.type());
             doBindings = insertArguments(exactInvoker(doBindings.type()), 0, doBindings);
             long entryPoint = makeUpcallStub(doBindings, abi, conv,
-                    callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize());
+                    callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize(),
+                    callingSequence.capturedStateMask());
             return UpcallStubs.makeUpcall(entryPoint, scope);
         };
     }
@@ -212,7 +213,8 @@ public class UpcallLinker {
     private record CallRegs(VMStorage[] argRegs, VMStorage[] retRegs) {}
 
     static native long makeUpcallStub(MethodHandle mh, ABIDescriptor abi, CallRegs conv,
-                                      boolean needsReturnBuffer, long returnBufferSize);
+                                      boolean needsReturnBuffer, long returnBufferSize,
+                                      int capturedStateMask);
 
     private static native void registerNatives();
     static {

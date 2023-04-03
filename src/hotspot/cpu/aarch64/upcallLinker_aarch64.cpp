@@ -122,7 +122,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
-                                       bool needs_return_buffer, int ret_buf_size) {
+                                       bool needs_return_buffer, int ret_buf_size,
+                                       int captured_state_mask) {
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
@@ -173,6 +174,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     locs.set(StubLocations::RETURN_BUFFER, abi._scratch1);
   }
 
+  int captured_state_offset = -1;
+  if (captured_state_mask != 0) {
+    captured_state_offset = frame_bottom_offset;
+    frame_bottom_offset += (sizeof(int32_t) * 3);
+  }
+
   int frame_size = frame_bottom_offset;
   frame_size = align_up(frame_size, StackAlignmentInBytes);
 
@@ -181,6 +188,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   //
   // FP-> |                     |
   //      |---------------------| = frame_bottom_offset = frame_size
+  //      | (optional)          |
+  //      | captured_state      |
+  //      |---------------------| = captured_state_offset
   //      | (optional)          |
   //      | ret_buf             |
   //      |---------------------| = ret_buf_offset
@@ -228,6 +238,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   if (needs_return_buffer) {
     assert(ret_buf_offset != -1, "no return buffer allocated");
     __ lea(as_Register(locs.get(StubLocations::RETURN_BUFFER)), Address(sp, ret_buf_offset));
+  }
+  if (captured_state_mask != 0) {
+    assert(captured_state_offset != -1, "no capture state allocated");
+    __ lea(as_Register(locs.get(StubLocations::CAPTURED_STATE_BUFFER)), Address(rsp, captured_state_offset));
   }
   arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0, locs);
   __ block_comment("} argument shuffle");
@@ -292,6 +306,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   __ block_comment("{ on_exit");
   __ lea(c_rarg0, Address(sp, frame_data_offset));
+    if (captured_state_mask != 0) {
+    __ lea(c_rarg1, Address(rsp, captured_state_offset));
+  } else {
+    __ ldr(c_rarg1, NULL_WORD);
+  }
+  __ movw(c_rarg2, captured_state_mask);
   // stack already aligned
   __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_exit));
   __ blr(rscratch1);

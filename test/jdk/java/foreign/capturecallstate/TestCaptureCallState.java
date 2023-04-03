@@ -107,8 +107,8 @@ public class TestCaptureCallState extends NativeTestHelper {
                                             JAVA_DOUBLE.withName("z"), 42D)));
 
         if (IS_WINDOWS) {
-            cases.add(new SaveValuesCase("SetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "GetLastError", o -> {}));
-            cases.add(new SaveValuesCase("WSASetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "WSAGetLastError", o -> {}));
+            cases.add(new SaveValuesCase("SetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "LastError", o -> {}));
+            cases.add(new SaveValuesCase("WSASetLastError", FunctionDescriptor.ofVoid(JAVA_INT), "WSALastError", o -> {}));
         }
 
         return cases.stream().map(tc -> new Object[] {tc}).toArray(Object[][]::new);
@@ -129,4 +129,3 @@ public class TestCaptureCallState extends NativeTestHelper {
     }
 
 }
-

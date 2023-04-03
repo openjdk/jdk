@@ -83,8 +83,8 @@ public class TestIllegalLink extends NativeTestHelper {
     public static Object[][] illegalCaptureState() {
         if (!IS_WINDOWS) {
             return new Object[][]{
-                { "GetLastError" },
-                { "WSAGetLastError" },
+                { "LastError" },
+                { "WSALastError" },
             };
         }
         return new Object[][]{};
@@ -94,7 +94,6 @@ public class TestIllegalLink extends NativeTestHelper {
     public static Object[][] downcallOnlyOptions() {
         return new Object[][]{
             { Linker.Option.firstVariadicArg(0) },
-            { Linker.Option.captureCallState("errno") },
             { Linker.Option.isTrivial() },
         };
     }

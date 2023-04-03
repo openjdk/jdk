@@ -135,6 +135,10 @@ public class LinkerOptions {
         public void validateForDowncall(FunctionDescriptor descriptor) {
             // done during construction
         }
+        @Override
+        public void validateForUpcall(FunctionDescriptor descriptor) {
+            // done during construction
+        }
     }
 
     public record IsTrivial() implements LinkerOptionImpl {

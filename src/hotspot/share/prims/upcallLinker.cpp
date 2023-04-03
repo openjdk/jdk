@@ -27,11 +27,18 @@
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/foreignGlobals.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <cerrno>
+#ifdef _WIN64
+#include <Windows.h>
+#include <Winsock2.h>
+#endif
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 
@@ -112,7 +119,7 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
 }
 
 // modelled after JavaCallWrapper::~JavaCallWrapper
-void UpcallLinker::on_exit(UpcallStub::FrameData* context) {
+void UpcallLinker::on_exit(UpcallStub::FrameData* context, int32_t* captured_state_ptr, int captured_state_mask) {
   JavaThread* thread = context->thread;
   assert(thread == JavaThread::current(), "must still be the same thread");
 
@@ -133,6 +140,9 @@ void UpcallLinker::on_exit(UpcallStub::FrameData* context) {
   JNIHandleBlock::release_block(context->new_handles, thread);
 
   assert(!thread->has_pending_exception(), "Upcall can not throw an exception");
+
+  // do this last to prevent VM operations from overwriting the values again
+  capture_state(captured_state_ptr, captured_state_mask);
 }
 
 void UpcallLinker::handle_uncaught_exception(oop exception) {
@@ -143,8 +153,26 @@ void UpcallLinker::handle_uncaught_exception(oop exception) {
   ShouldNotReachHere();
 }
 
+void UpcallLinker::capture_state(int32_t* value_ptr, int captured_state_mask) {
+  assert(value_ptr != nullptr || captured_state_mask == 0, "value ptr null when capturing state");
+  // keep in synch with jdk.internal.foreign.abi.PreservableValues
+#ifdef _WIN64
+  if (captured_state_mask & CapturableState::LAST_ERROR) {
+    SetLastError(*value_ptr);
+  }
+  value_ptr++;
+  if (captured_state_mask & CapturableState::WSA_LAST_ERROR) {
+    WSASetLastError(*value_ptr);
+  }
+  value_ptr++;
+#endif
+  if (captured_state_mask & CapturableState::ERRNO) {
+    errno = *value_ptr;
+  }
+}
+
 JVM_ENTRY(jlong, UL_MakeUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobject abi, jobject conv,
-                                                 jboolean needs_return_buffer, jlong ret_buf_size))
+                                   jboolean needs_return_buffer, jlong ret_buf_size, jint captured_state_mask))
   ResourceMark rm(THREAD);
   Handle mh_h(THREAD, JNIHandles::resolve(mh));
   jobject mh_j = JNIHandles::make_global(mh_h);
@@ -180,14 +208,15 @@ JVM_ENTRY(jlong, UL_MakeUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobje
   int total_in_args = total_out_args - 1;
 
   return (jlong) UpcallLinker::make_upcall_stub(
-    mh_j, entry, in_sig_bt, total_in_args, out_sig_bt, total_out_args, ret_type, abi, conv, needs_return_buffer, checked_cast<int>(ret_buf_size));
+    mh_j, entry, in_sig_bt, total_in_args, out_sig_bt, total_out_args, ret_type,
+    abi, conv, needs_return_buffer, checked_cast<int>(ret_buf_size), captured_state_mask);
 JVM_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod UL_methods[] = {
-  {CC "makeUpcallStub", CC "(" "Ljava/lang/invoke/MethodHandle;" "L" FOREIGN_ABI "ABIDescriptor;" "L" FOREIGN_ABI "UpcallLinker$CallRegs;" "ZJ)J", FN_PTR(UL_MakeUpcallStub)},
+  {CC "makeUpcallStub", CC "(" "Ljava/lang/invoke/MethodHandle;" "L" FOREIGN_ABI "ABIDescriptor;" "L" FOREIGN_ABI "UpcallLinker$CallRegs;" "ZJI)J", FN_PTR(UL_MakeUpcallStub)},
 };
 
 /**

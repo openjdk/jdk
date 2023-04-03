@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "downcallLinker.hpp"
+#include "prims/foreignGlobals.hpp"
 
 #include <cerrno>
 #ifdef _WIN64
@@ -32,23 +33,17 @@
 
 void DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask) {
   // keep in synch with jdk.internal.foreign.abi.PreservableValues
-  enum PreservableValues {
-    NONE = 0,
-    GET_LAST_ERROR = 1,
-    WSA_GET_LAST_ERROR = 1 << 1,
-    ERRNO = 1 << 2
-  };
 #ifdef _WIN64
-  if (captured_state_mask & GET_LAST_ERROR) {
+  if (captured_state_mask & CapturableState::LAST_ERROR) {
     *value_ptr = GetLastError();
   }
   value_ptr++;
-  if (captured_state_mask & WSA_GET_LAST_ERROR) {
+  if (captured_state_mask & CapturableState::WSA_LAST_ERROR) {
     *value_ptr = WSAGetLastError();
   }
   value_ptr++;
 #endif
-  if (captured_state_mask & ERRNO) {
+  if (captured_state_mask & CapturableState::ERRNO) {
     *value_ptr = errno;
   }
 }
