@@ -228,7 +228,10 @@ public class Thread implements Runnable {
 
     /* Reserved for exclusive use by the JVM. Cannot be moved to the FieldHolder
        as it needs to be set by the VM before executing the constructor that
-       will create the FieldHolder.
+       will create the FieldHolder. The historically named `eetop`holds the address
+       of the underlying VM JavaThread, and is set to non-zero when the thread is started,
+       and reset to zero when the thread terminates. A non-zero value indicates this thread
+       isAlive().
     */
     private long eetop;
 
@@ -1840,9 +1843,11 @@ public class Thread implements Runnable {
 
     /**
      * Returns true if this thread is alive.
-     * This method is non-final so it can be overridden.
+     * This method is non-final so it can be overridden by VirtualThread.
+     * This method needs to be synchronized to ensure that thread termination
+     * happens-before isAlive() returning false.
      */
-    boolean alive() {
+    synchronized boolean alive() {
         return eetop != 0;
     }
 
