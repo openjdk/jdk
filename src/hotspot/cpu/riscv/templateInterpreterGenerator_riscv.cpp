@@ -761,7 +761,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset_in_bytes()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
   __ sub(t0, xlocals, fp);
-  __ srli(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
+  __ srai(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
   // Store relativized xlocals, see frame::interpreter_frame_locals().
   __ sd(t0, Address(sp, 2 * wordSize));
 
