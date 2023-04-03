@@ -572,8 +572,8 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
         Node* use = fast_out(j);
 
-        if(use->req() != req() && use->is_Phi()) {
-          assert(use->in(0) == this, "");
+        if (use->req() != req() && use->is_Phi()) {
+          assert(use->in(0) == this, "unexpected control input");
           igvn->hash_delete(use);          // Yank from hash before hacking edges
           use->set_req_X(i, nullptr, igvn);// Correct DU info
           use->del_req(i);                 // Yank path from Phis
