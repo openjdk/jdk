@@ -1319,20 +1319,23 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             // Expect: 100-Continue was set, so check the return code for
             // Acceptance
             int oldTimeout = http.getReadTimeout();
-            boolean enforceTimeOut = false;
             boolean timedOut = false;
-            if (oldTimeout <= 0) {
+            if (oldTimeout <= 0 || oldTimeout > 5000) {
+                if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                    logger.fine("Timeout currently set to " + oldTimeout +" temporarily setting it to 5 seconds");
+                }
                 // 5s read timeout in case the server doesn't understand
                 // Expect: 100-Continue
                 http.setReadTimeout(5000);
-                enforceTimeOut = true;
             }
 
             try {
                 http.parseHTTP(responses, this);
             } catch (SocketTimeoutException se) {
-                if (!enforceTimeOut) {
-                    throw se;
+                if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                    logger.fine(
+                            "SocketTimeoutException caught, will attempt to send body regardless"
+                    );
                 }
                 timedOut = true;
                 http.setIgnoreContinue(true);
@@ -1350,14 +1353,23 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         // Response code is 2nd token on the line
                         if (sa.length > 1)
                             responseCode = Integer.parseInt(sa[1]);
+                        if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                            logger.fine("response code received " + responseCode);
+                        }
                     } catch (NumberFormatException numberFormatException) {
                     }
                 }
                 if (responseCode != 100) {
+                    // responseCode will be returned to caller
                     throw new ProtocolException("Server rejected operation");
                 }
             }
 
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                logger.fine("Restoring original timeout : " + oldTimeout);
+            }
+
+            http.setIgnoreContinue(true);
             http.setReadTimeout(oldTimeout);
 
             responseCode = -1;
@@ -1440,6 +1452,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
 
             if (expectContinue) {
+                http.setIgnoreContinue(false);
                 expect100Continue();
             }
             ps = (PrintStream)http.getOutputStream();
