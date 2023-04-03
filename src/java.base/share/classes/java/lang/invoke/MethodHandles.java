@@ -2384,14 +2384,15 @@ public class MethodHandles {
          * before calling this factory method.
          *
          * @param bytes   class bytes
+         * @param dumper dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes.
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
          * {@code bytes} denotes a class in a different package than the lookup class
          */
-        ClassDefiner makeHiddenClassDefiner(byte[] bytes) {
+        ClassDefiner makeHiddenClassDefiner(byte[] bytes, ClassFileDumper dumper) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, Set.of(), false, defaultDumper());
+            return makeHiddenClassDefiner(cf, Set.of(), false, dumper);
         }
 
         /**
@@ -2410,25 +2411,11 @@ public class MethodHandles {
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
          * {@code bytes} denotes a class in a different package than the lookup class
          */
-        ClassDefiner makeHiddenClassDefiner(byte[] bytes,
-                                            Set<ClassOption> options,
-                                            boolean accessVmAnnotations) {
+        private ClassDefiner makeHiddenClassDefiner(byte[] bytes,
+                                                    Set<ClassOption> options,
+                                                    boolean accessVmAnnotations) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
             return makeHiddenClassDefiner(cf, options, accessVmAnnotations, defaultDumper());
-        }
-
-        /**
-         * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
-         * from the given bytes and the given options.  No package name check on the given bytes.
-         *
-         * @param name    internal name which specifies the prefix of the hidden class
-         * @param bytes   class bytes
-         * @param options class options
-         * @return ClassDefiner that defines a hidden class of the given bytes and options.
-         */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options) {
-            // skip name and access flags validation
-            return makeHiddenClassDefiner(name, bytes, options, defaultDumper());
         }
 
         /**
@@ -2524,18 +2511,10 @@ public class MethodHandles {
                     if (dumper.isEnabled()) {
                         String name = internalName();
                         if (c != null) {
-                            String cn = c.getName();
-                            int suffixIdx = cn.lastIndexOf('/');
-                            if (suffixIdx > 0) {
-                                assert ((classFlags & HIDDEN_CLASS) != 0);
-                                name += '.' + cn.substring(suffixIdx + 1);
-                            } else {
-                                assert ((classFlags & HIDDEN_CLASS) == 0);
-                            }
+                            dumper.dumpClass(name, c, bytes);
                         } else {
-                            name += ".failed-" + dumper.incrementAndGetCounter();
+                            dumper.dumpFailedClass(name, bytes);
                         }
-                        dumper.dumpClass(name, bytes);
                     }
                 }
             }

@@ -37,7 +37,6 @@ import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Set;
 
 import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
@@ -80,9 +79,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final String[] SER_HOSTILE_EXCEPTIONS = new String[] {NAME_NOT_SERIALIZABLE_EXCEPTION};
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
-
-    // Used to ensure that dumped class files for failed definitions have a unique class name
-    private static final AtomicInteger counter = new AtomicInteger();
 
     // For dumping generated classes to disk, for debugging purposes
     private static final ClassFileDumper lambdaProxyClassFileDumper;

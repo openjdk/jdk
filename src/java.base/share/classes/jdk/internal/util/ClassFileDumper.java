@@ -25,7 +25,6 @@
 package jdk.internal.util;
 
 import jdk.internal.misc.VM;
-import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
 import java.io.FilePermission;
@@ -43,11 +42,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Helper class to log normal and hidden classes defined via Lookup::defineClass
- * and Lookup::defineHiddenClass API
+ * ClassFile dumper utility class to log normal and hidden classes.
  *
  * @implNote
- * <p> Because this class is called by MethodHandleStatics, LambdaForms generation
+ * Because this class is called by MethodHandleStatics, LambdaForms generation
  * and LambdaMetafactory, make use of lambda lead to recursive calls cause stack overflow.
  */
 public final class ClassFileDumper {
@@ -136,31 +134,52 @@ public final class ClassFileDumper {
         return dumpDir;
     }
 
-    public int incrementAndGetCounter() {
-        return counter.incrementAndGet();
-    }
-
     public Path pathname(String internalName) {
         return dumpDir.resolve(encodeForFilename(internalName) + ".class");
     }
 
-    @SuppressWarnings("removal")
-    public void dumpClass(String internalName, final byte[] classBytes) {
+    /**
+     * This method determines the path name from the given name and {@code Class}
+     * object.  If it is a hidden class, it will dump the given bytes at
+     * a path of the given name with a suffix "." concatenated
+     * with the suffix of the hidden class name.
+     */
+    public void dumpClass(String name, Class<?> c, byte[] bytes) {
         if (!isEnabled()) return;
 
+        String cn = c.getName();
+        int suffixIdx = cn.lastIndexOf('/');
+        if (suffixIdx > 0) {
+            name += '.' + cn.substring(suffixIdx + 1);
+        }
+        write(pathname(name), bytes);
+    }
+
+    /**
+     * This method dumps the given bytes at a path of the given name with
+     * a suffix ".failed-$COUNTER" where $COUNTER will be incremented
+     * for each time this method is called.
+     */
+    public void dumpFailedClass(String name, byte[] bytes) {
+        if (!isEnabled()) return;
+
+        write(pathname(name + ".failed-" + counter.incrementAndGet()), bytes);
+    }
+
+    @SuppressWarnings("removal")
+    private void write(Path path, byte[] bytes) {
         AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override public Void run() {
-                    Path file = pathname(internalName);
                     try {
-                        Path dir = file.getParent();
+                        Path dir = path.getParent();
                         Files.createDirectories(dir);
-                        Files.write(file, classBytes);
+                        Files.write(path, bytes);
                     } catch (Exception ex) {
                         if (VM.isModuleSystemInited()) {
                             // log only when lambda is ready to use
                             System.getLogger(ClassFileDumper.class.getName())
                                   .log(System.Logger.Level.WARNING, "Exception writing to " +
-                                          file.toString() + " " + ex.getMessage());
+                                          path.toString() + " " + ex.getMessage());
                         }
                         // simply don't care if this operation failed
                     }
@@ -179,7 +198,7 @@ public final class ClassFileDumper {
                 public Path run() {
                     if (!Files.exists(path)) {
                         try {
-                            Files.createDirectory(path);
+                            Files.createDirectories(path);
                         } catch (IOException ex) {
                             throw new UncheckedIOException("Fail to create " + path, ex);
                         }
