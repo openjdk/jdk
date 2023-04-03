@@ -102,13 +102,8 @@ public class StringNameTable extends Name.Table {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (obj == this)
-                return true;
-            if (obj == null || obj.getClass() != getClass())
-                return false;
-            final NameImpl that = (NameImpl)obj;
-            return that.table == table && that.string.equals(string);
+        protected boolean nameEquals(Name that) {
+            return ((NameImpl)that).string.equals(string);
         }
 
         @Override

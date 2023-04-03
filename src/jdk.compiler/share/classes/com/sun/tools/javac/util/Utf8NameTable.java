@@ -119,10 +119,8 @@ public abstract class Utf8NameTable extends Name.Table {
     // javax.lang.model.element.Name
 
         @Override
-        public boolean equals(Object other) {
-            return (other instanceof NameImpl name)
-              && table == name.table
-              && getNameIndex() == name.getNameIndex();
+        protected boolean nameEquals(Name that) {
+            return ((NameImpl)that).getNameIndex() == getNameIndex();
         }
 
         @Override

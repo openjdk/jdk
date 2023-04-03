@@ -114,11 +114,27 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     @Override
-    public abstract boolean equals(Object obj);
+    public final boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (obj == null || obj.getClass() != getClass())
+            return false;
+        final Name that = (Name)obj;
+        return table == that.table && nameEquals(that);
+    }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     @Override
     public abstract int hashCode();
+
+    /**
+     * Subclass check for equality.
+     *
+     * <p>
+     * This method can assume that the given instance is the same type
+     * as this instance and is associated to the same {@link Table}.
+     */
+    protected abstract boolean nameEquals(Name that);
 
 // Comparable
 
