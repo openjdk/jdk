@@ -1612,6 +1612,10 @@ void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
   java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
 }
 
+int java_lang_Thread::is_in_VTMS_transition_offset() {
+  return _jvmti_is_in_VTMS_transition_offset;
+}
+
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
   assert(java_thread != nullptr, "need a java_lang_Thread pointer here");
   java_thread->obj_field_put(_scopedValueBindings_offset, nullptr);

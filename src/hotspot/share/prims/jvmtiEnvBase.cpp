@@ -1567,11 +1567,6 @@ private:
     for (JavaThread* jt : ThreadsListHandle()) {
       if (jt->is_in_VTMS_transition()) {
         count++;
-        oop  vt_oop = jt->vthread();
-        if (vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop)) {
-          // restore VTMS transition bit in j.l.Thread object
-          java_lang_Thread::set_is_in_VTMS_transition(vt_oop, true);
-        }
         continue; // no need in JvmtiThreadState correction below if in transition
       }
       if (_whitebox_used) {

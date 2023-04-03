@@ -3927,6 +3927,8 @@ JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hi
   }
   if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     thread->set_is_in_VTMS_transition(hide);
+    oop vt = JNIHandles::resolve_external_guard(vthread);
+    java_lang_Thread::set_is_in_VTMS_transition(vt, hide);
     return;
   }
   if (hide) {
@@ -3949,6 +3951,8 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
   }
   if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
     thread->set_is_in_VTMS_transition(hide);
+    oop vt = JNIHandles::resolve_external_guard(vthread);
+    java_lang_Thread::set_is_in_VTMS_transition(vt, hide);
     return;
   }
   if (hide) {
