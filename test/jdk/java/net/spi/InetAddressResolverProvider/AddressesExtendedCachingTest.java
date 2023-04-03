@@ -52,25 +52,39 @@ public class AddressesExtendedCachingTest {
         }
     }
 
+    /**
+     * Validates successful and unsuccessful lookups when the extended cache is
+     * enabled.
+     */
     @Test
     public void testRefresh() throws Exception{
+        // The first request is to save the data into the cache
         Lookup first = doLookup(false);
 
         Thread.sleep(10000); // intentionally big delay > x2 extended property
+        // The refreshTime is expired, we will do the successful lookup.
         Lookup second = doLookup(false);
         Assert.assertNotEquals(first.timestamp, second.timestamp,
                                "Two lookups are expected");
 
         Thread.sleep(10000); // intentionally big delay > x2 extended property
+        // The refreshTime is expired again, we will do the failed lookup.
         Lookup third = doLookup(true);
         Assert.assertNotEquals(second.timestamp, third.timestamp,
                                "Two lookups are expected");
+
+        // The extended cache is enabled, so we should get valid/same data for
+        // all requests(even for the failed request).
         Assert.assertEquals(first.address, second.address,
                             "Same address is expected");
         Assert.assertEquals(second.address, third.address,
                             "Same address is expected");
     }
 
+    /**
+     * Validates that only one thread is blocked during "refresh", all others
+     * will continue to use the "stale" data.
+     */
     @Test
     public void testOnlyOneThreadIsBlockedDuringRefresh() throws Exception {
         doLookup(false);
