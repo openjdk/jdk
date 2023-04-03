@@ -693,6 +693,10 @@ void JavaThread::run() {
 
   }
 
+  if (AlwaysPreTouchStacks) {
+    pretouch_stack();
+  }
+
   // We call another function to do the rest so we are sure that the stack addresses used
   // from there will be lower than the stack base just computed.
   thread_main_inner();
@@ -2116,6 +2120,25 @@ void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
     // we report.
     vm_exit_during_initialization("java.lang.OutOfMemoryError",
                                   os::native_thread_creation_failed_msg());
+  }
+}
+
+void JavaThread::pretouch_stack() {
+  // Given an established java thread stack with usable area followed by
+  // shadow zone and reserved/yellow/red zone, pretouch the usable area ranging
+  // from the current frame down to the start of the shadow zone.
+  const address end = _stack_overflow_state.shadow_zone_safe_limit();
+  if (is_in_full_stack(end)) {
+    char* p1 = (char*) alloca(1);
+    address here = (address) &p1;
+    if (is_in_full_stack(here) && here > end) {
+      size_t to_alloc = here - end;
+      char* p2 = (char*) alloca(to_alloc);
+      log_trace(os, thread)("Pretouching thread stack from " PTR_FORMAT " to " PTR_FORMAT ".",
+                            p2i(p2), p2i(end));
+      os::pretouch_memory(p2, p2 + to_alloc,
+                          NOT_AIX(os::vm_page_size()) AIX_ONLY(4096));
+    }
   }
 }
 
