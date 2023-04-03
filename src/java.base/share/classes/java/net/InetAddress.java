@@ -995,13 +995,14 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 try {
                     // cachePolicy is in [s] - we need [ns]
                     refreshTime = now + InetAddressCachePolicy.get() * 1000_000_000L;
+                    // getAddressesFromNameService returns non-empty/non-null value
                     inetAddresses = getAddressesFromNameService(host);
                 } catch (UnknownHostException ignore) {
                 } finally {
                     lookupLock.unlock();
                 }
             }
-            return super.get();
+            return inetAddresses;
         }
     }
 

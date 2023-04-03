@@ -118,7 +118,7 @@ public final class InetAddressCachePolicy {
             negativeCachePolicy = tmp < 0 ? FOREVER : tmp;
             propertyNegativeSet = true;
         }
-        if (cachePolicy > 0) { // TODO or equal=0?
+        if (cachePolicy > 0) {
             tmp = getProperty(cacheExtendedPolicyProp,
                               cacheExtendedPolicyPropFallback);
 
