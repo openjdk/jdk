@@ -4945,7 +4945,7 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "maskCompareOpProvider")
-    static void maskXorNotFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    static void maskEqFloatMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
         boolean[] r = new boolean[a.length];

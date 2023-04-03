@@ -5963,7 +5963,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "maskCompareOpProvider")
-    static void maskXorNotInt256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    static void maskEqInt256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
         boolean[] r = new boolean[a.length];

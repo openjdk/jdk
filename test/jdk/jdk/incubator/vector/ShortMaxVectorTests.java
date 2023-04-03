@@ -5915,7 +5915,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "maskCompareOpProvider")
-    static void maskXorNotShortMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    static void maskEqShortMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
         boolean[] r = new boolean[a.length];

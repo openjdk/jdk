@@ -5849,7 +5849,7 @@ public class Long512VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "maskCompareOpProvider")
-    static void maskXorNotLong512VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+    static void maskEqLong512VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
         boolean[] a = fa.apply(SPECIES.length());
         boolean[] b = fb.apply(SPECIES.length());
         boolean[] r = new boolean[a.length];
