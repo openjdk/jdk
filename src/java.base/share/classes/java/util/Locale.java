@@ -3587,7 +3587,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @param priorityList user's Language Priority List in which each language
      *     tag is sorted in descending order based on priority or weight
-     * @param tags language tangs used for matching
+     * @param tags language tags used for matching
      * @return the best matching language tag chosen based on priority or
      *     weight, or {@code null} if nothing matches.
      * @throws NullPointerException if {@code priorityList} or {@code tags} is

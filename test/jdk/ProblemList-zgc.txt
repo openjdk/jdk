@@ -28,5 +28,3 @@
 #############################################################################
 
 java/util/concurrent/locks/Lock/OOMEInAQS.java 8298066 windows-x64
-
-com/sun/jdi/ThreadMemoryLeakTest.java 8304436 generic-all
