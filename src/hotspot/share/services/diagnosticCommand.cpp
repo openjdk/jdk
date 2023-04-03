@@ -470,11 +470,14 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                "using the given compression level. 1 (recommended) is the fastest, "
                "9 the strongest compression.", "INT", false, "1"),
   _overwrite("-overwrite", "If specified, the dump file will be overwritten if it exists",
-           "BOOLEAN", false, "false") {
+           "BOOLEAN", false, "false"),
+  _parallel("-parallel", "Number of parallel dump thread, it should be less than ParallelGCThread",
+            "INT", false, "1") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_gzip);
   _dcmdparser.add_dcmd_option(&_overwrite);
+  _dcmdparser.add_dcmd_option(&_parallel);
 }
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
@@ -488,12 +491,12 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
       return;
     }
   }
-
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value());
+  uint num_dump_thread = _parallel.is_set() ? (uint)_parallel.value() : HeapDumper::default_num_of_dump_threads();
+  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), num_dump_thread);
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
