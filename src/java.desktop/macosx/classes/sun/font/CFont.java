@@ -71,12 +71,6 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
        throw new InternalError("Not implemented");
     }
 
-    GeneralPath getGlyphVectorOutline(long pScalerContext,
-                                               int[] glyphs, int numGlyphs,
-                                               float x, float y) {
-       throw new InternalError("Not implemented");
-    }
-
     @Override
     protected byte[] getTableBytes(int tag) {
         return getTableBytesNative(getNativeFontPtr(), tag);

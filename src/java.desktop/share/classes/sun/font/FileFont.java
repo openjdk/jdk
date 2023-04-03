@@ -221,15 +221,6 @@ public abstract class FileFont extends PhysicalFont {
         }
     }
 
-    GeneralPath getGlyphVectorOutline(long pScalerContext, int[] glyphs, int numGlyphs, float x, float y) {
-        try {
-            return getScaler().getGlyphVectorOutline(pScalerContext, glyphs, numGlyphs, x, y);
-        } catch (FontScalerException fe) {
-            scaler = FontScaler.getNullScaler();
-            return getGlyphVectorOutline(pScalerContext, glyphs, numGlyphs, x, y);
-        }
-    }
-
     public GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
                                               float x, float y) {
         try {

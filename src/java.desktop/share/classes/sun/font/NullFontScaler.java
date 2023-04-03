@@ -59,11 +59,6 @@ class NullFontScaler extends FontScaler {
         return new GeneralPath();
     }
 
-    GeneralPath getGlyphVectorOutline(long pScalerContext, int[] glyphs,
-        int numGlyphs, float x, float y) {
-        return new GeneralPath();
-    }
-
     GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
                                        float x, float y) {
         return new GlyphRenderData();

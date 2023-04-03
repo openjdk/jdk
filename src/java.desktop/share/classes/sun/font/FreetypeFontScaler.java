@@ -148,21 +148,6 @@ class FreetypeFontScaler extends FontScaler {
             getGlyphOutline(0L, glyphCode, x,y);
     }
 
-    synchronized GeneralPath getGlyphVectorOutline(
-                     long pScalerContext, int[] glyphs, int numGlyphs,
-                     float x, float y) throws FontScalerException {
-        if (nativeScaler != 0L) {
-            return getGlyphVectorOutlineNative(font.get(),
-                                               pScalerContext,
-                                               nativeScaler,
-                                               glyphs,
-                                               numGlyphs,
-                                               x, y);
-        }
-        return FontScaler
-            .getNullScaler().getGlyphVectorOutline(0L, glyphs, numGlyphs, x, y);
-    }
-
     synchronized GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
                                                     float x, float y) throws FontScalerException {
         if (nativeScaler != 0L) {
@@ -265,9 +250,6 @@ class FreetypeFontScaler extends FontScaler {
     private native GeneralPath getGlyphOutlineNative(Font2D font,
             long pScalerContext, long pScaler,
             int glyphCode, float x, float y);
-    private native GeneralPath getGlyphVectorOutlineNative(Font2D font,
-            long pScalerContext, long pScaler,
-            int[] glyphs, int numGlyphs, float x, float y);
     private native void getGlyphRenderDataNative(Font2D font, long pScalerContext,
             long pScaler, int glyphCode,
             float x, float y, GlyphRenderData result);

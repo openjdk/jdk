@@ -73,9 +73,6 @@ public abstract class FontStrike {
     abstract GeneralPath
         getGlyphOutline(int glyphCode, float x, float y);
 
-    abstract GeneralPath
-        getGlyphVectorOutline(int[] glyphs, float x, float y);
-
     abstract GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y);
 
     int getSlot0GlyphImagePtrs(int[] glyphCodes, long[] images, int len, int slotMask, int slotShift) {

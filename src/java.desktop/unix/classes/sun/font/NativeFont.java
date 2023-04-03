@@ -286,12 +286,6 @@ public class NativeFont extends PhysicalFont {
         throw new RuntimeException("this should be called on the strike");
     }
 
-    public  GeneralPath getGlyphVectorOutline(long pScalerContext,
-                                              int[] glyphs, int numGlyphs,
-                                              float x,  float y) {
-        return null;
-    }
-
     private native int countGlyphs(byte[] platformNameBytes, int ptSize);
 
     public int getNumGlyphs() {

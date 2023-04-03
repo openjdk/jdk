@@ -213,11 +213,6 @@ public class EmojiFont extends Font2D {
         }
 
         @Override
-        GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-            return null; // TODO this is broken and should be removed?
-        }
-
-        @Override
         GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y) {
             FontStrike strike = getStrikeForGlyph(glyphCode);
             return strike.getGlyphRenderData(glyphCode >>> 1, x, y);

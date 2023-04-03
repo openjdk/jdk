@@ -175,45 +175,6 @@ public final class CompositeStrike extends FontStrike {
         }
     }
 
-    /* The physical font slot for each glyph is encoded in the glyph ID
-     * To be as efficient as possible we find a run of glyphs from the
-     * same slot and create a temporary array of these glyphs decoded
-     * to the slot. The slot font is then queried for the GeneralPath
-     * for that run of glyphs. GeneralPaths from each run are appended
-     * to create the shape for the whole glyph array.
-     */
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        GeneralPath path = null;
-        GeneralPath gp;
-        int glyphIndex = 0;
-        int[] tmpGlyphs;
-
-        while (glyphIndex < glyphs.length) {
-            int start = glyphIndex;
-            int slot = compFont.decodeSlot(glyphs[glyphIndex]);
-            while (glyphIndex < glyphs.length &&
-                   (compFont.decodeSlot(glyphs[glyphIndex+1])) == slot) {
-                glyphIndex++;
-            }
-            int tmpLen = glyphIndex-start+1;
-            tmpGlyphs = new int[tmpLen];
-            for (int i=0;i<tmpLen;i++) {
-                tmpGlyphs[i] = compFont.decodeGlyphCode(glyphs[i]);
-            }
-            gp = getStrikeForSlot(slot).getGlyphVectorOutline(tmpGlyphs, x, y);
-            if (path == null) {
-                path = gp;
-            } else if (gp != null) {
-                path.append(gp, false);
-            }
-        }
-        if (path == null) {
-            return new GeneralPath();
-        } else {
-            return path;
-        }
-    }
-
     GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y) {
         FontStrike strike = getStrikeForGlyph(glyphCode);
         return strike.getGlyphRenderData(compFont.decodeGlyphCode(glyphCode), x, y);

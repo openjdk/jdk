@@ -108,7 +108,4 @@ public abstract class PhysicalFont extends Font2D {
     abstract GeneralPath getGlyphOutline(long pScalerContext, int glyphCode,
                                          float x, float y);
 
-    abstract GeneralPath getGlyphVectorOutline(long pScalerContext,
-                                               int[] glyphs, int numGlyphs,
-                                               float x, float y);
 }

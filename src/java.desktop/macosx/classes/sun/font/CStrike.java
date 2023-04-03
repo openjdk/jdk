@@ -220,11 +220,6 @@ public final class CStrike extends PhysicalStrike {
         return getNativeGlyphOutline(getNativeStrikePtr(), glyphCode, x, y);
     }
 
-    // should implement, however not called though any path that is publicly exposed
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        throw new Error("not implemented yet");
-    }
-
     GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y) {
         GlyphRenderData result = new GlyphRenderData();
         getNativeGlyphRenderData(getNativeStrikePtr(), glyphCode, x, y, result);

@@ -966,12 +966,6 @@ public class FileFontStrike extends PhysicalStrike {
         return grd;
     }
 
-
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        return fileFont.getGlyphVectorOutline(pScalerContext,
-                                              glyphs, glyphs.length, x, y);
-    }
-
     protected void adjustPoint(Point2D.Float pt) {
         if (invertDevTx != null) {
             invertDevTx.deltaTransform(pt, pt);

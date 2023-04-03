@@ -164,10 +164,6 @@ public abstract class FontScaler implements DisposerRecord {
                                          float x, float y)
                 throws FontScalerException;
 
-    abstract GeneralPath getGlyphVectorOutline(long pScalerContext, int[] glyphs,
-                                               int numGlyphs, float x, float y)
-                throws FontScalerException;
-
     abstract GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
                                                 float x, float y)
                 throws FontScalerException;

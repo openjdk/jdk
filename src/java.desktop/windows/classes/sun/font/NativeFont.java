@@ -79,12 +79,6 @@ public class NativeFont extends PhysicalFont {
         return null;
     }
 
-    public  GeneralPath getGlyphVectorOutline(long pScalerContext,
-                                              int[] glyphs, int numGlyphs,
-                                              float x, float y) {
-        return null;
-    }
-
     public GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
                                               float x, float y) {
         return null;
