@@ -58,11 +58,11 @@ public class CompatWarning {
         public void publish(LogRecord record) {
             var level = record.getLevel();
             var msg = record.getMessage();
-            System.out.println("""
+            System.out.printf("""
                 LogRecord emitted:
                     Level: %s
                     Message: %s
-                """.formatted(level, msg));
+                """, level, msg);
             if (level == Level.WARNING && WARNING.equals(msg)) {
                 logged = true;
             }
