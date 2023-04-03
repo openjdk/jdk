@@ -226,7 +226,10 @@ public class Thread implements Runnable {
         registerNatives();
     }
 
-    /* Reserved for exclusive use by the JVM, maybe move to FieldHolder */
+    /* Reserved for exclusive use by the JVM. Cannot be moved to FieldHolder
+       as it needs to be set by the VM before executing the constructor that
+       will set FieldHolder.
+    */
     private long eetop;
 
     // thread id
@@ -1840,9 +1843,8 @@ public class Thread implements Runnable {
      * This method is non-final so it can be overridden.
      */
     boolean alive() {
-        return isAlive0();
+        return eetop != 0;
     }
-    private native boolean isAlive0();
 
     /**
      * Throws {@code UnsupportedOperationException}.
