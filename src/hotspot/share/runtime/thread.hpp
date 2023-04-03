@@ -638,7 +638,7 @@ protected:
   bool in_asgct() const { return _in_asgct; }
   void set_in_asgct(bool value) { _in_asgct = value; }
   static bool current_in_asgct() {
-    Thread *cur = Thread::current_or_null();
+    Thread *cur = Thread::current_or_null_safe();
     return cur != nullptr && cur->in_asgct();
   }
 };
