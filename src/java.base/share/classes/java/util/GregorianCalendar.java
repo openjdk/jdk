@@ -623,8 +623,7 @@ public class GregorianCalendar extends Calendar {
      *
      * @param zone the given time zone.
      * @param aLocale the given locale.
-     * @throws NullPointerException if either {@code zone} or {@code aLocale}
-     * is {@code null}
+     * @throws NullPointerException if {@code zone} or {@code aLocale} is {@code null}
      */
     public GregorianCalendar(TimeZone zone, Locale aLocale) {
         super(zone, aLocale);
