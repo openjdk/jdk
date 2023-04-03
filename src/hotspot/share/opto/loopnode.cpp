@@ -4645,39 +4645,37 @@ void PhaseIdealLoop::print_statistics() {
 #endif
 
 #ifdef ASSERT
-//------------------------------verify-----------------------------------------
 // Build a verify-only PhaseIdealLoop, and see that it agrees with "this".
 void PhaseIdealLoop::verify() const {
   ResourceMark rm;
   int old_progress = C->major_progress();
-  bool fail = false;
+  bool success = true;
 
   PhaseIdealLoop phase_verify(_igvn, this);
 
   // Verify ctrl and idom of every node.
-  fail |= verify_idom_and_nodes(C->root(), &phase_verify);
+  success &= verify_idom_and_nodes(C->root(), &phase_verify);
 
   // Verify loop-tree.
-  fail |= _ltree_root->verify_tree(phase_verify._ltree_root);
+  success &= _ltree_root->verify_tree(phase_verify._ltree_root);
 
-  assert(!fail, "verify loops failed");
+  assert(success, "VerifyLoopOptimizations failed");
 
   // Major progress was cleared by creating a verify version of PhaseIdealLoop.
   C->restore_major_progress(old_progress);
 }
 
-//------------------------------verify_idom_and_nodes-----------------------------
 // Perform a BFS starting at n, through all inputs.
 // Call verify_idom and verify_node on all nodes of BFS traversal.
 bool PhaseIdealLoop::verify_idom_and_nodes(Node* root, const PhaseIdealLoop* phase_verify) const {
   Unique_Node_List worklist;
   worklist.push(root);
-  bool fail = false;
+  bool success = true;
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     // process node
-    fail |= verify_idom(n, phase_verify);
-    fail |= verify_nodes(n, phase_verify);
+    success &= verify_idom(n, phase_verify);
+    success &= verify_nodes(n, phase_verify);
     // visit inputs
     for (uint j = 0; j < n->req(); j++) {
       if (n->in(j) != nullptr) {
@@ -4685,21 +4683,20 @@ bool PhaseIdealLoop::verify_idom_and_nodes(Node* root, const PhaseIdealLoop* pha
       }
     }
   }
-  return fail;
+  return success;
 }
 
-//------------------------------verify_idom---------------------------------
 // Verify dominator structure (IDOM).
 bool PhaseIdealLoop::verify_idom(Node* n, const PhaseIdealLoop* phase_verify) const {
   // Verify IDOM for all CFG nodes (except root).
   if (!n->is_CFG() || n->is_Root()) {
-    return false; // pass
+    return true; // pass
   }
 
   if (n->_idx >= _idom_size) {
     tty->print("CFG Node with no idom: ");
     n->dump();
-    return true; // fail
+    return false; // fail
   }
 
   // Broken part of VerifyLoopOptimizations (C)
@@ -4720,10 +4717,9 @@ bool PhaseIdealLoop::verify_idom(Node* n, const PhaseIdealLoop* phase_verify) co
     tty->cr();
   }
   */
-  return false; // pass
+  return true; // pass
 }
 
-//------------------------------verify_nodes---------------------------------
 // Verify "_nodes": control and loop membership.
 //  (0) _nodes[i] == nullptr -> node not reachable.
 //  (1) has_ctrl -> check lowest bit. 1 -> data node. 0 -> ctrl node.
@@ -4739,22 +4735,22 @@ bool PhaseIdealLoop::verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) c
       tty->print_cr("Was reachable in only one. this %d, verify %d.",
                  _nodes[i] != nullptr, phase_verify->_nodes[i] != nullptr);
       n->dump();
-      return true; // fail
+      return false; // fail
     }
     // Not reachable for both.
-    return false; // pass
+    return true; // pass
   }
 
   if (n->is_CFG() == has_ctrl(n)) {
     tty->print_cr("Exactly one should be true: %d for is_CFG, %d for has_ctrl.", n->is_CFG(), has_ctrl(n));
     n->dump();
-    return true; // fail
+    return false; // fail
   }
 
   if (has_ctrl(n) != phase_verify->has_ctrl(n)) {
     tty->print_cr("Mismatch has_ctrl: %d for this, %d for verify.", has_ctrl(n), phase_verify->has_ctrl(n));
     n->dump();
-    return true; // fail
+    return false; // fail
   } else if (has_ctrl(n)) {
     assert(phase_verify->has_ctrl(n), "sanity");
     // n is a data node.
@@ -4783,7 +4779,7 @@ bool PhaseIdealLoop::verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) c
       tty->cr();
     }
     */
-    return false; // pass
+    return true; // pass
   } else {
     assert(!phase_verify->has_ctrl(n), "sanity");
     // n is a ctrl node.
@@ -4811,26 +4807,26 @@ bool PhaseIdealLoop::verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) c
       }
     }
     */
-    return false; // pass
+    return true; // pass
   }
 }
 
-void IdealLoopTree::collect_children(GrowableArray<IdealLoopTree*> &children) const {
-  children.clear();
+int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
+  assert(a != nullptr && b != nullptr, "must be");
+  return a->_head->_idx - b->_head->_idx;
+}
+
+GrowableArray<IdealLoopTree*> IdealLoopTree::collect_sorted_children() const {
+  GrowableArray<IdealLoopTree*> children;
   IdealLoopTree* child = _child;
   while (child != nullptr) {
     assert(child->_parent == this, "all must be children of this");
-    children.push(child);
+    children.insert_sorted<&compare_tree>(child);
     child = child->_next;
   }
+  return children;
 }
 
-int compare_tree(IdealLoopTree** a, IdealLoopTree** b) {
-  assert((*a) != nullptr && (*b) != nullptr, "must be");
-  return (*a)->_head->_idx - (*b)->_head->_idx;
-}
-
-//------------------------------verify_tree------------------------------------
 // Verify that tree structures match. Because the CFG can change, siblings
 // within the loop tree can be reordered. We attempt to deal with that by
 // reordering the verify's loop tree if possible.
@@ -4839,14 +4835,10 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
   assert(this->_parent != nullptr || this->_next == nullptr, "is_root_loop implies has_no_sibling");
 
   // Collect the children
-  GrowableArray<IdealLoopTree*> children;
-  GrowableArray<IdealLoopTree*> children_verify;
-  collect_children(children);
-  loop_verify->collect_children(children_verify);
-  children.sort(compare_tree);
-  children_verify.sort(compare_tree);
+  GrowableArray<IdealLoopTree*> children = collect_sorted_children();
+  GrowableArray<IdealLoopTree*> children_verify = loop_verify->collect_sorted_children();
 
-  bool fail = false;
+  bool success = true;
 
   // Compare the two children lists
   for (int i = 0, j = 0; i < children.length() || j < children_verify.length(); ) {
@@ -4870,12 +4862,12 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
     }
     // Process the two children, or potentially log the failure if we only found one.
     if (child_verify == nullptr) {
-      if (child_verify->_irreducible && Compile::current()->major_progress()) {
+      if (child->_irreducible && Compile::current()->major_progress()) {
         // Irreducible loops can pick a different header (one of its entries).
       } else {
-        tty->print_cr("We have loop that verify does not have");
+        tty->print_cr("We have a loop that verify does not have");
         child->dump();
-        fail = true;
+        success = false;
       }
       i++; // step for this
     } else if (child == nullptr) {
@@ -4887,14 +4879,14 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
         // infinite loop only for "child_verify". Only finding it with "child" would
         // mean that we lost it, which is not ok.
       } else {
-        tty->print_cr("Verify has loop that we do not have");
+        tty->print_cr("Verify has a loop that we do not have");
         child_verify->dump();
-        fail = true;
+        success = false;
       }
       j++; // step for verify
     } else {
       assert(child->_head == child_verify->_head, "We have both and they are equal");
-      fail |= child->verify_tree(child_verify); // Recursion
+      success &= child->verify_tree(child_verify); // Recursion
       i++; // step for this
       j++; // step for verify
     }
@@ -4919,7 +4911,7 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
     Node* back     = cl->back_control();
     assert(ctrl != nullptr && ctrl->is_CFG(), "sane loop in-ctrl");
     assert(back != nullptr && back->is_CFG(), "sane loop backedge");
-    Node* loopexit = cl->loopexit(); // assert implied
+    cl->loopexit(); // assert implied
   }
 
   // Broken part of VerifyLoopOptimizations (E)
@@ -4971,7 +4963,7 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
     assert( !fail, "loop body mismatch" );
   }
   */
-  return fail;
+  return success;
 }
 #endif
 

@@ -794,7 +794,7 @@ public:
 #endif
 
 #ifdef ASSERT
-  void collect_children(GrowableArray<IdealLoopTree*> &children) const;
+  GrowableArray<IdealLoopTree*> collect_sorted_children() const;
   bool verify_tree(IdealLoopTree* loop_verify) const;
 #endif
 
