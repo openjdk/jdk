@@ -75,7 +75,7 @@ void ValueType::initialize() {
 
   VALUE_TYPE(intZero     , IntConstant   , 0);
   VALUE_TYPE(intOne      , IntConstant   , 1);
-  VALUE_TYPE(objectNull  , ObjectConstant, ciNullObject::Make());
+  VALUE_TYPE(objectNull  , ObjectConstant, ciNullObject::make());
 
 #undef VALUE_TYPE
 #undef VALUE_TYPE_STORAGE
