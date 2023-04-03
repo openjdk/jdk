@@ -402,6 +402,9 @@ public class Names {
     }
 
     protected Name.Table createTable(Options options) {
+        boolean useStringTable = options.isSet("useStringTable");
+        if (useStringTable)
+            return StringNameTable.create(this);
         boolean useUnsharedTable = options.isSet("useUnsharedTable");
         if (useUnsharedTable)
             return UnsharedNameTable.create(this);
