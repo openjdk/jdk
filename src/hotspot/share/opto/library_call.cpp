@@ -2830,7 +2830,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     // The 'test' is non-zero if we need to take a slow path.
   }
   Node* obj = new_instance(kls, test);
-#ifdef INCLUDE_JVMTI
+#if INCLUDE_JVMTI
   // Check if JvmtiExport::_should_post_allocation_notifications is enabled and post notifications
   IdealKit ideal(this);
   IdealVariable result(ideal); ideal.declarations_done();

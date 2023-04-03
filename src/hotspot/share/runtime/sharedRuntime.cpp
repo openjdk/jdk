@@ -635,6 +635,7 @@ JRT_ENTRY(void, SharedRuntime::notify_allocation(oopDesc* o, JavaThread* current
     JvmtiExport::post_vm_object_alloc(current, o);
   }
   current->set_vm_result(h());
+  assert(!HAS_PENDING_EXCEPTION, "Unexpected exception");
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
