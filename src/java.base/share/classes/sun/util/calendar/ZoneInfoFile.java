@@ -722,9 +722,8 @@ public final class ZoneInfoFile {
                 checksum = (int)sum.getValue();
             }
         }
-
-            return new ZoneInfo(zoneId, rawOffset, dstSavings, checksum, transitions,
-                                offsets, params, willGMTOffsetChange);
+        return new ZoneInfo(zoneId, rawOffset, dstSavings, checksum, transitions,
+                            offsets, params, willGMTOffsetChange);
     }
 
     private static int getStandardOffset(long[] standardTransitions,
