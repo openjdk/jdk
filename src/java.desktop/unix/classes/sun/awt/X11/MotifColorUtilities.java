@@ -27,9 +27,10 @@ package sun.awt.X11;
 
 import java.awt.*;
 import java.io.*;
+
+import jdk.internal.util.OperatingSystem;
 import sun.security.action.GetPropertyAction;
 import java.security.AccessController;
-import sun.awt.OSInfo;
 
 /**
   *
@@ -437,7 +438,7 @@ class MotifColorUtilities {
 
         // Solaris's default color is MEDIUM_COLOR (4)
         // AIX's default color is HIGH_COLOR (8)
-        int numOfColor = OSInfo.getOSType() == OSInfo.OSType.AIX ? 8 : 4;
+        int numOfColor = OperatingSystem.isAix() ? 8 : 4;
 
         int idx = resourceString.indexOf("ColorUse:");
         if (idx > -1) {
