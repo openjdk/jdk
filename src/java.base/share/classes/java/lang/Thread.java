@@ -2821,7 +2821,7 @@ public class Thread implements Runnable {
     /**
      * Called by HotSpot to set the state to terminated.
      */
-    synchronized void setTerminated() {
+    private synchronized void setTerminated() {
         // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
         holder.threadStatus = jdk.internal.misc.VM.terminated();
         // Clear the native thread instance - this makes isAlive return false and allows the join()

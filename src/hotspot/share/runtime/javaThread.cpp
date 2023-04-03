@@ -734,7 +734,7 @@ static void ensure_join(JavaThread* thread) {
     // other threads that know about this one.
     JavaValue result(T_VOID);
     Klass* thread_klass = vmClasses::Thread_klass();
-    JavaCalls::call_virtual(&result,
+    JavaCalls::call_special(&result,
                             threadObj, thread_klass,
                             vmSymbols::setTerminated_method_name(),
                             vmSymbols::void_method_signature(),
