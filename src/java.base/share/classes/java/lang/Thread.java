@@ -226,9 +226,9 @@ public class Thread implements Runnable {
         registerNatives();
     }
 
-    /* Reserved for exclusive use by the JVM. Cannot be moved to FieldHolder
+    /* Reserved for exclusive use by the JVM. Cannot be moved to the FieldHolder
        as it needs to be set by the VM before executing the constructor that
-       will set FieldHolder.
+       will create the FieldHolder.
     */
     private long eetop;
 
