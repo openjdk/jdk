@@ -142,8 +142,7 @@ void G1ConcurrentMarkThread::stop_service() {
   if (in_progress()) {
     // We are not allowed to abort the marking threads during root region scan.
     // Needs to be done separately.
-    _cm->root_regions()->abort();
-    _cm->root_regions()->wait_until_scan_finished();
+    _cm->root_region_scan_abort_and_wait();
 
     _cm->abort_marking_threads();
   }

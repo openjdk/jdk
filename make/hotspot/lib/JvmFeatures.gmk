@@ -169,8 +169,12 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
   # later on if desired
   JVM_OPTIMIZATION := HIGHEST_JVM
   ifeq ($(call isCompiler, gcc), true)
-    JVM_CFLAGS_FEATURES += -flto -fuse-linker-plugin
-    JVM_LDFLAGS_FEATURES += -flto -fuse-linker-plugin -fno-strict-aliasing
+    JVM_CFLAGS_FEATURES += -flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects
+    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=auto -fuse-linker-plugin -fno-strict-aliasing
+  endif
+else
+  ifeq ($(call isCompiler, gcc), true)
+    JVM_LDFLAGS_FEATURES += -O1
   endif
 endif
 

@@ -151,6 +151,18 @@ public class WhiteBox {
     return encodeConstantPoolIndyIndex0(index);
   }
 
+  private native int getIndyInfoLength0(Class<?> aClass);
+  public         int getIndyInfoLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getIndyInfoLength0(aClass);
+  }
+
+  private native int getIndyCPIndex0(Class<?> aClass, int index);
+  public         int getIndyCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getIndyCPIndex0(aClass, index);
+  }
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){

@@ -994,6 +994,11 @@ void G1ConcurrentMark::add_root_region(HeapRegion* r) {
   root_regions()->add(r->top_at_mark_start(), r->top());
 }
 
+void G1ConcurrentMark::root_region_scan_abort_and_wait() {
+  root_regions()->abort();
+  root_regions()->wait_until_scan_finished();
+}
+
 void G1ConcurrentMark::concurrent_cycle_start() {
   _gc_timer_cm->register_gc_start();
 
@@ -2000,8 +2005,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // be moving objects / updating references. So let's wait until
   // they are done. By telling them to abort, they should complete
   // early.
-  root_regions()->abort();
-  root_regions()->wait_until_scan_finished();
+  root_region_scan_abort_and_wait();
 
   // We haven't started a concurrent cycle no need to do anything; we might have
   // aborted the marking because of shutting down though. In this case the marking

@@ -98,6 +98,7 @@ runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
+runtime/Thread/TestAlwaysPreTouchStacks.java 8305416 generic-all
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -165,5 +166,4 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
-vmTestbase/nsk/stress/except/except012.java 8297977 generic-all
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
