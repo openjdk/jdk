@@ -37,7 +37,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -1551,7 +1556,118 @@ public class Exhaustiveness extends TestRunner {
                "1 error");
     }
 
+    private static final int NESTING_CONSTANT = 4;
+
+    Set<String> createDeeplyNestedVariants() {
+        Set<String> variants = new HashSet<>();
+        variants.add("C _");
+        variants.add("R(I _, I _, I _)");
+        for (int n = 0; n < NESTING_CONSTANT; n++) {
+            Set<String> newVariants = new HashSet<>();
+            for (String variant : variants) {
+                if (variant.contains(", I _")) {
+                    newVariants.add(variant.replaceFirst(", I _", ", C _"));
+                    newVariants.add(variant.replaceFirst(", I _", ", R(I _, I _, I _)"));
+                } else {
+                    newVariants.add(variant);
+                }
+            }
+            variants = newVariants;
+        }
+        for (int n = 0; n < NESTING_CONSTANT; n++) {
+            Set<String> newVariants = new HashSet<>();
+            for (String variant : variants) {
+                if (variant.contains("I _")) {
+                    newVariants.add(variant.replaceFirst("I _", "C _"));
+                    newVariants.add(variant.replaceFirst("I _", "R(I _, I _, I _)"));
+                } else {
+                    newVariants.add(variant);
+                }
+            }
+            variants = newVariants;
+        }
+        OUTER: for (int i = 0; i < NESTING_CONSTANT; i++) {
+            Iterator<String> it = variants.iterator();
+            while (it.hasNext()) {
+                String current = it.next();
+                if (current.contains("(I _, I _, I _)")) {
+                    it.remove();
+                    variants.add(current.replaceFirst("\\(I _, I _, I _\\)", "(C _, I _, C _)"));
+                    variants.add(current.replaceFirst("\\(I _, I _, I _\\)", "(C _, I _, R _)"));
+                    variants.add(current.replaceFirst("\\(I _, I _, I _\\)", "(R _, I _, C _)"));
+                    variants.add(current.replaceFirst("\\(I _, I _, I _\\)", "(R _, I _, R _)"));
+                    continue OUTER;
+                }
+            }
+        }
+
+        return variants;
+    }
+
+    String testCodeForVariants(Iterable<String> variants) {
+        StringBuilder cases = new StringBuilder();
+
+        for (String variant : variants) {
+            cases.append("case ");
+            String[] parts = variant.split("_");
+            for (int i = 0; i < parts.length; i++) {
+                cases.append(parts[i]);
+                if (i + 1 < parts.length || i == 0) {
+                    cases.append("v" + i);
+                }
+            }
+            cases.append(" -> System.err.println();\n");
+        }
+        String code = """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   final class C implements I {}
+                   record R(I c1, I c2, I c3) implements I {}
+
+                   void test(I i) {
+                       switch (i) {
+                           ${cases}
+                       }
+                   }
+               }
+               """.replace("${cases}", cases);
+
+        return code;
+    }
+
+    @Test
+    public void testDeeplyNestedExhaustive(Path base) throws Exception {
+        Set<String> variants = createDeeplyNestedVariants();
+        String code = testCodeForVariants(variants);
+
+        System.err.println("analyzing:");
+        System.err.println(code);
+        doTest(base,
+               new String[0],
+               code,
+               true);
+    }
+
+    @Test
+    public void testDeeplyNestedNotExhaustive(Path base) throws Exception {
+        List<String> variants = createDeeplyNestedVariants().stream().collect(Collectors.toCollection(ArrayList::new));
+        variants.remove((int) (Math.random() * variants.size()));
+        String code = testCodeForVariants(variants);
+
+        System.err.println("analyzing:");
+        System.err.println(code);
+        doTest(base,
+               new String[0],
+               code,
+               new String[] {null});
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
+        doTest(base, libraryCode, testCode, false, expectedErrors);
+    }
+
+    private void doTest(Path base, String[] libraryCode, String testCode, boolean stopAtFlow, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
 
@@ -1586,13 +1702,15 @@ public class Exhaustiveness extends TestRunner {
                              "-XDrawDiagnostics",
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
-                             "-XDshould-stop.at=FLOW")
+                             "-XDshould-stop.at=FLOW",
+                             stopAtFlow ? "-XDshould-stop.ifNoError=FLOW"
+                                        : "-XDnoop")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
                     .run(expectedErrors.length > 0 ? Task.Expect.FAIL : Task.Expect.SUCCESS)
                     .writeAll()
                     .getOutputLines(Task.OutputKind.DIRECT);
-        if (expectedErrors.length > 0 && !List.of(expectedErrors).equals(log)) {
+        if (expectedErrors.length > 0 && expectedErrors[0] != null && !List.of(expectedErrors).equals(log)) {
             throw new AssertionError("Incorrect errors, expected: " + List.of(expectedErrors) +
                                       ", actual: " + log);
         }
