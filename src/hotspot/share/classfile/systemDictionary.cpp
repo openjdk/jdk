@@ -1939,40 +1939,45 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
          iid != vmIntrinsics::_invokeGeneric,
          "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
 
+  InvokeMethodKey key(signature, iid_as_int);
   {
     MutexLocker ml(THREAD, InvokeMethodTable_lock);
-    InvokeMethodKey key(signature, iid_as_int);
     Method** met = _invoke_method_intrinsic_table.get(key);
     if (met != nullptr) {
       return *met;
     }
+  } // release lock
 
-    bool throw_error = false;
-    // This function could get an OOM but it is safe to call inside of a lock because
-    // throwing OutOfMemoryError doesn't call Java code.
-    methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
-    if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
-        // Generate a compiled form of the MH intrinsic
-        // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
-        AdapterHandlerLibrary::create_native_wrapper(m);
-        // Check if have the compiled code.
-        throw_error = (!m->has_compiled_code());
-    }
-
-    if (!throw_error) {
-      signature->make_permanent(); // The signature is never unloaded.
-      bool created = _invoke_method_intrinsic_table.put(key, m());
-      assert(created, "must be since we still hold the lock");
-      assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
-             m->code()->entry_point() == m->from_compiled_entry()),
-             "MH intrinsic invariant");
-      return m();
+  methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
+  if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
+    // Generate a compiled form of the MH intrinsic
+    // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
+    AdapterHandlerLibrary::create_native_wrapper(m);
+    // Check if have the compiled code.
+    if (!m->has_compiled_code()) {
+      THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+                     "Out of space in CodeCache for method handle intrinsic");
     }
   }
 
-  // Throw error outside of the lock.
-  THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
-                 "Out of space in CodeCache for method handle intrinsic");
+  {
+    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    signature->make_permanent(); // The signature is never unloaded.
+    bool created;
+    Method** met = _invoke_method_intrinsic_table.put_if_absent(key, m(), &created);
+    Method* result = *met;
+    if (!created) {
+      // There was already this method in the table.  Need to deallocate the one created here,
+      // and its associated small constant pool.
+      ClassLoaderData* method_cld = m->method_holder()->class_loader_data();
+      method_cld->add_to_deallocate_list(m->constants());
+      method_cld->add_to_deallocate_list(m());
+    }
+    assert(Arguments::is_interpreter_only() || (result->has_compiled_code() &&
+           result->code()->entry_point() == result->from_compiled_entry()),
+           "MH intrinsic invariant");
+    return result;
+  }
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.

@@ -135,8 +135,12 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   set_method_data(nullptr);
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
-  // The nmethod will be gone when we get here.
-  if (code() != nullptr) _code = nullptr;
+  // The nmethod will be gone when we get here, for redefinition but not
+  // for method handle intrinsics.
+  if (code() != nullptr) {
+    ((nmethod*)_code)->flush();
+    _code = nullptr;
+  }
 }
 
 void Method::release_C_heap_structures() {
@@ -1248,7 +1252,7 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   // small (generally < 100 bytes) and quick to make (and cached and shared)
   // so making them eagerly shouldn't be too expensive.
   AdapterHandlerEntry* adapter = AdapterHandlerLibrary::get_adapter(mh);
-  if (adapter == nullptr ) {
+  if (adapter == nullptr) {
     if (!is_init_completed()) {
       // Don't throw exceptions during VM initialization because java.lang.* classes
       // might not have been initialized, causing problems when constructing the
