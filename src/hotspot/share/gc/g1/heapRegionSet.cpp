@@ -37,11 +37,9 @@ void HeapRegionSetBase::verify_region(HeapRegion* hr) {
   assert(_checker == NULL || _checker->is_correct_type(hr), "Wrong type of region %u (%s) and set %s",
          hr->hrm_index(), hr->get_type_str(), name());
   assert(!hr->is_free() || hr->is_empty(), "Free region %u is not empty for set %s", hr->hrm_index(), name());
-#if 0
-  // What to do with this? I cannot remove "|| hr->is_archive()"
-  assert(!hr->is_empty() || hr->is_free() || hr->is_archive(),
-         "Empty region %u is not free or archive for set %s", hr->hrm_index(), name());
-#endif
+  assert(!hr->is_empty() || hr->is_free()
+         || hr->is_old(), // FIXME -- this should only be "old" regions used for CDS archive heap
+         "Empty region %u is not free or old (archive) for set %s", hr->hrm_index(), name());
 }
 #endif
 

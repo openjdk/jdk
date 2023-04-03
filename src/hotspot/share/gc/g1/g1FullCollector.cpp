@@ -257,8 +257,6 @@ void G1FullCollector::complete_collection() {
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
     _region_attr_table.set_free(hr->hrm_index());
-  } else if (hr->is_closed_archive()) {
-    _region_attr_table.set_skip_marking(hr->hrm_index());
   } else if (hr->is_pinned()) {
     _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {

@@ -561,7 +561,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   while (curr_region != NULL) {
     assert(curr_region->is_empty() && !curr_region->is_pinned(),
            "Region already in use (index %u)", curr_region->hrm_index());
-    curr_region->set_old(); // was 
+    curr_region->set_old();
     _hr_printer.alloc(curr_region);
     _old_set.add(curr_region);
 
@@ -580,7 +580,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   return true;
 }
 
-// TODO -- this function should be removed -- all the G1 regions within the
+// FIXME -- this function should be removed -- all the G1 regions within the
 // range should be full, except for the last region. However, it's OK
 // for the last region (an "old" region) to be not completely full, right??
 void G1CollectedHeap::fill_archive_regions(MemRegion range) {
@@ -1265,16 +1265,6 @@ public:
   const char* get_description() { return "Old Regions"; }
 };
 
-class ArchiveRegionSetChecker : public HeapRegionSetChecker {
-public:
-  void check_mt_safety() {
-    guarantee(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(),
-              "May only change archive regions during initialization or safepoint.");
-  }
-  bool is_correct_type(HeapRegion* hr) { return hr->is_archive(); }
-  const char* get_description() { return "Archive Regions"; }
-};
-
 class HumongousRegionSetChecker : public HeapRegionSetChecker {
 public:
   void check_mt_safety() {
@@ -1309,7 +1299,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _collection_pause_end(Ticks::now()),
   _soft_ref_policy(),
   _old_set("Old Region Set", new OldRegionSetChecker()),
-  _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(NULL),
   _listener(),
@@ -2295,7 +2284,6 @@ void G1CollectedHeap::print_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
                "CS=collection set, F=free, "
-               "OA=open archive, CA=closed archive, "
                "TAMS=top-at-mark-start, "
                "PB=parsable bottom");
   PrintRegionClosure blk(st);
@@ -2726,12 +2714,10 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
 }
 
 void G1CollectedHeap::remove_from_old_gen_sets(const uint old_regions_removed,
-                                               const uint archive_regions_removed,
                                                const uint humongous_regions_removed) {
-  if (old_regions_removed > 0 || archive_regions_removed > 0 || humongous_regions_removed > 0) {
+  if (old_regions_removed > 0 || humongous_regions_removed > 0) {
     MutexLocker x(OldSets_lock, Mutex::_no_safepoint_check_flag);
     _old_set.bulk_remove(old_regions_removed);
-    _archive_set.bulk_remove(archive_regions_removed);
     _humongous_set.bulk_remove(humongous_regions_removed);
   }
 
@@ -2822,9 +2808,7 @@ bool G1CollectedHeap::check_young_list_empty() {
 
 // Remove the given HeapRegion from the appropriate region set.
 void G1CollectedHeap::prepare_region_for_full_compaction(HeapRegion* hr) {
-   if (hr->is_archive()) {
-    _archive_set.remove(hr);
-  } else if (hr->is_humongous()) {
+   if (hr->is_humongous()) {
     _humongous_set.remove(hr);
   } else if (hr->is_old()) {
     _old_set.remove(hr);
@@ -2860,7 +2844,6 @@ private:
   bool _free_list_only;
 
   HeapRegionSet* _old_set;
-  HeapRegionSet* _archive_set;
   HeapRegionSet* _humongous_set;
 
   HeapRegionManager* _hrm;
@@ -2870,15 +2853,13 @@ private:
 public:
   RebuildRegionSetsClosure(bool free_list_only,
                            HeapRegionSet* old_set,
-                           HeapRegionSet* archive_set,
                            HeapRegionSet* humongous_set,
                            HeapRegionManager* hrm) :
-    _free_list_only(free_list_only), _old_set(old_set), _archive_set(archive_set),
+    _free_list_only(free_list_only), _old_set(old_set),
     _humongous_set(humongous_set), _hrm(hrm), _total_used(0) {
     assert(_hrm->num_free_regions() == 0, "pre-condition");
     if (!free_list_only) {
       assert(_old_set->is_empty(), "pre-condition");
-      assert(_archive_set->is_empty(), "pre-condition");
       assert(_humongous_set->is_empty(), "pre-condition");
     }
   }
@@ -2894,11 +2875,9 @@ public:
 
       if (r->is_humongous()) {
         _humongous_set->add(r);
-      } else if (r->is_archive()) {
-        _archive_set->add(r);
       } else {
         assert(r->is_young() || r->is_free() || r->is_old(), "invariant");
-        // We now move all (non-humongous, non-old, non-archive) regions to old gen,
+        // We now move all (non-humongous, non-old) regions to old gen,
         // and register them as such.
         r->move_to_old();
         _old_set->add(r);
@@ -2923,7 +2902,7 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
   }
 
   RebuildRegionSetsClosure cl(free_list_only,
-                              &_old_set, &_archive_set, &_humongous_set,
+                              &_old_set, &_humongous_set,
                               &_hrm);
   heap_region_iterate(&cl);
 
