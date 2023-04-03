@@ -189,8 +189,7 @@ public class CorruptedZipFiles {
 
     /*
      * A ZipException is thrown when the 'End of Central Directory'
-     * (END) header has a CEN offset incoherent with the position calculated
-     * by subtracting the CEN size from the END offset.
+     * (END) header has a CEN offset with an invalid value.
      */
     @Test
     public void excessiveCENOffset() throws IOException {
