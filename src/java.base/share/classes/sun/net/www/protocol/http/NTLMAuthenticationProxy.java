@@ -58,9 +58,9 @@ class NTLMAuthenticationProxy {
     AuthenticationInfo create(boolean isProxy,
                               URL url,
                               PasswordAuthentication pw,
-                              String authenticatorKey) {
+                              AuthCacheImpl authcache) {
         try {
-            return fourArgCtr.newInstance(isProxy, url, pw, authenticatorKey);
+            return fourArgCtr.newInstance(isProxy, url, pw, authcache);
         } catch (ReflectiveOperationException roe) {
             finest(roe);
         }
@@ -72,9 +72,9 @@ class NTLMAuthenticationProxy {
                               String host,
                               int port,
                               PasswordAuthentication pw,
-                              String authenticatorKey) {
+                              AuthCacheImpl authcache) {
         try {
-            return sixArgCtr.newInstance(isProxy, host, port, pw, authenticatorKey);
+            return sixArgCtr.newInstance(isProxy, host, port, pw, authcache);
         } catch (ReflectiveOperationException roe) {
             finest(roe);
         }
@@ -124,12 +124,12 @@ class NTLMAuthenticationProxy {
                 fourArg = cl.getConstructor(boolean.class,
                                              URL.class,
                                              PasswordAuthentication.class,
-                                             String.class);
+                                             AuthCacheImpl.class);
                 sixArg = cl.getConstructor(boolean.class,
                                             String.class,
                                             int.class,
                                             PasswordAuthentication.class,
-                                            String.class);
+                                            AuthCacheImpl.class);
                 supportsTA = cl.getDeclaredMethod(supportsTAStr);
                 isTrustedSite = cl.getDeclaredMethod(isTrustedSiteStr, java.net.URL.class);
                 return new NTLMAuthenticationProxy(fourArg,

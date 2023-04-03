@@ -38,7 +38,7 @@ import sun.net.www.MessageHeader;
 import sun.net.www.HeaderParser;
 import sun.net.www.MeteredStream;
 import sun.net.www.ParseUtil;
-import sun.net.www.protocol.http.AuthenticatorKeys;
+import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.util.logging.PlatformLogger;
 import static sun.net.www.protocol.http.HttpURLConnection.TunnelState.*;
@@ -116,6 +116,8 @@ public class HttpClient extends NetworkClient {
        The default value is 'true'. */
     private static final boolean cacheSPNEGOProp;
 
+    protected volatile AuthCacheImpl authcache;
+
     volatile boolean keepingAlive;    /* this is a keep-alive connection */
     volatile boolean disableKeepAlive;/* keep-alive has been disabled for this
                                          connection - this will be used when
@@ -166,8 +168,6 @@ public class HttpClient extends NetworkClient {
             logger.severe(msg);
         }
     }
-
-    protected volatile String authenticatorKey;
 
     /**
      * A NOP method kept for backwards binary compatibility
@@ -349,10 +349,9 @@ public class HttpClient extends NetworkClient {
                 }
             }
             if (ret != null) {
-                String ak = httpuc == null ? AuthenticatorKeys.DEFAULT
-                     : httpuc.getAuthenticatorKey();
+                AuthCacheImpl ak = httpuc == null ? null : httpuc.getAuthCache();
                 boolean compatible = Objects.equals(ret.proxy, p)
-                     && Objects.equals(ret.getAuthenticatorKey(), ak);
+                     && Objects.equals(ret.getAuthCache(), ak);
                 if (compatible) {
                     ret.lock();
                     try {
@@ -384,7 +383,7 @@ public class HttpClient extends NetworkClient {
         if (ret == null) {
             ret = new HttpClient(url, p, to);
             if (httpuc != null) {
-                ret.authenticatorKey = httpuc.getAuthenticatorKey();
+                ret.authcache = httpuc.getAuthCache();
             }
         } else {
             @SuppressWarnings("removal")
@@ -422,10 +421,8 @@ public class HttpClient extends NetworkClient {
             to, useCache, httpuc);
     }
 
-    public final String getAuthenticatorKey() {
-        String k = authenticatorKey;
-        if (k == null) return AuthenticatorKeys.DEFAULT;
-        return k;
+    public final AuthCacheImpl getAuthCache() {
+        return authcache;
     }
 
     /* return it to the cache as still usable, if:

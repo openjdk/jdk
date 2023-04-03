@@ -25,8 +25,7 @@
 
 package java.net;
 
-import sun.net.www.protocol.http.AuthenticatorKeys;
-import sun.net.www.protocol.http.AuthCacheValue;
+import sun.net.www.protocol.http.AuthCacheImpl;
 
 /**
  * The class Authenticator represents an object that knows how to obtain
@@ -73,13 +72,13 @@ class Authenticator {
     private String requestingScheme;
     private URL requestingURL;
     private RequestorType requestingAuthType;
-    private final String key = AuthenticatorKeys.computeKey(this);
+    private final AuthCacheImpl cache;
 
     /**
      * Constructor for subclasses to call.
      */
     public Authenticator() {
-        AuthCacheValue.registerAuthenticator(this);
+        this.cache = new AuthCacheImpl();
     }
 
     /**
@@ -580,10 +579,11 @@ class Authenticator {
         return requestingAuthType;
     }
 
-    static String getKey(Authenticator a) {
-        return a.key;
-    }
     static {
-        AuthenticatorKeys.setAuthenticatorKeyAccess(Authenticator::getKey);
+        AuthCacheImpl.setAuthCacheAccess(Authenticator::getCache);
+    }
+
+    static AuthCacheImpl getCache(Authenticator a) {
+        return a == null ? null : a.cache;
     }
 }

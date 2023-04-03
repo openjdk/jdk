@@ -39,6 +39,7 @@ import java.util.Properties;
 
 import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
+import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.AuthScheme;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.security.action.GetPropertyAction;
@@ -132,12 +133,12 @@ public class NTLMAuthentication extends AuthenticationInfo {
      * from a system property: "http.auth.ntlm.domain".
      */
     public NTLMAuthentication(boolean isProxy, URL url, PasswordAuthentication pw,
-                              String authenticatorKey) {
+                              AuthCacheImpl authcache) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
                 AuthScheme.NTLM,
                 url,
                 "",
-                Objects.requireNonNull(authenticatorKey));
+                authcache);
         init (pw);
     }
 
@@ -175,13 +176,13 @@ public class NTLMAuthentication extends AuthenticationInfo {
     */
     public NTLMAuthentication(boolean isProxy, String host, int port,
                               PasswordAuthentication pw,
-                              String authenticatorKey) {
+                              AuthCacheImpl authcache) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
                 AuthScheme.NTLM,
                 host,
                 port,
                 "",
-                Objects.requireNonNull(authenticatorKey));
+                authcache);
         init (pw);
     }
 

@@ -310,7 +310,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     protected Handler handler;
     protected Proxy instProxy;
     protected volatile Authenticator authenticator;
-    protected volatile String authenticatorKey;
+    protected volatile AuthCacheImpl authCache;
 
     private CookieHandler cookieHandler;
     private final ResponseCache cacheHandler;
@@ -539,16 +539,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         "Authenticator must be set before connecting");
             }
             authenticator = Objects.requireNonNull(auth);
-            authenticatorKey = AuthenticatorKeys.getKey(authenticator);
+            authCache = AuthCacheImpl.getAuthCacheAccess().getCache(authenticator);
         } finally {
             unlock();
         }
     }
 
-    public String getAuthenticatorKey() {
-        String k = authenticatorKey;
-        if (k == null) return AuthenticatorKeys.getKey(authenticator);
-        return k;
+    public AuthCacheImpl getAuthCache() {
+        return authCache;
     }
 
     /*
@@ -684,8 +682,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 requests.setIfNotSet("If-Modified-Since", fo.format(date));
             }
             // check for preemptive authorization
-            AuthenticationInfo sauth = AuthenticationInfo.getServerAuth(url,
-                                             getAuthenticatorKey());
+            AuthenticationInfo sauth = AuthenticationInfo.getServerAuth(url, authCache);
             if (sauth != null && sauth.supportsPreemptiveAuthorization() ) {
                 // Sets "Authorization"
                 requests.setIfNotSet(sauth.getHeaderName(), sauth.getHeaderValue(url,method));
@@ -1878,7 +1875,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                 URL u = newURL (url, path);
                                 DigestAuthentication d = new DigestAuthentication (
                                                    false, u, realm, "Digest", pw,
-                                                   digestparams, srv.authenticatorKey);
+                                                   digestparams, srv.authcache);
                                 d.addToCache ();
                             } catch (Exception e) {}
                         }
@@ -2333,7 +2330,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         AuthenticationInfo pauth
             = AuthenticationInfo.getProxyAuth(http.getProxyHostUsed(),
                                               http.getProxyPortUsed(),
-                                              getAuthenticatorKey());
+                                              authCache);
         if (pauth != null && pauth.supportsPreemptiveAuthorization()) {
             String value;
             if (pauth instanceof DigestAuthentication) {
@@ -2392,9 +2389,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             if (realm == null)
                 realm = "";
-            proxyAuthKey = AuthenticationInfo.getProxyAuthKey(host, port, realm,
-                                authScheme, getAuthenticatorKey());
-            ret = AuthenticationInfo.getProxyAuth(proxyAuthKey);
+            proxyAuthKey = AuthenticationInfo.getProxyAuthKey(host, port, realm, authScheme);
+            ret = AuthenticationInfo.getProxyAuth(proxyAuthKey, authCache);
             if (ret == null) {
                 switch (authScheme) {
                 case BASIC:
@@ -2418,7 +2414,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                     realm, scheme, url, RequestorType.PROXY);
                     if (a != null) {
                         ret = new BasicAuthentication(true, host, port, realm, a,
-                                             isUTF8, getAuthenticatorKey());
+                                             isUTF8, authCache);
                     }
                     break;
                 case DIGEST:
@@ -2431,7 +2427,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             new DigestAuthentication.Parameters();
                         ret = new DigestAuthentication(true, host, port, realm,
                                              scheme, a, params,
-                                             getAuthenticatorKey());
+                                             authCache);
                     }
                     break;
                 case NTLM:
@@ -2470,7 +2466,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         if (tryTransparentNTLMProxy ||
                               (!tryTransparentNTLMProxy && a != null)) {
                             ret = NTLMAuthenticationProxy.proxy.create(true, host,
-                                    port, a, getAuthenticatorKey());
+                                    port, a, authCache);
                         }
 
                         /* set to false so that we do not try again */
@@ -2503,7 +2499,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     String a = defaultAuth.authString(u, scheme, realm);
                     if (a != null) {
                         ret = new BasicAuthentication (true, host, port, realm, a,
-                                  getAuthenticatorKey());
+                                  authCache);
                         // not in cache by default - cache on success
                     }
                 } catch (java.net.MalformedURLException ignored) {
@@ -2563,9 +2559,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             domain = p.findValue ("domain");
             if (realm == null)
                 realm = "";
-            serverAuthKey = AuthenticationInfo.getServerAuthKey(url, realm, authScheme,
-                                               getAuthenticatorKey());
-            ret = AuthenticationInfo.getServerAuth(serverAuthKey);
+            serverAuthKey = AuthenticationInfo.getServerAuthKey(url, realm, authScheme);
+            ret = AuthenticationInfo.getServerAuth(serverAuthKey, authCache);
             InetAddress addr = null;
             if (ret == null) {
                 try {
@@ -2595,7 +2590,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             realm, scheme, url, RequestorType.SERVER);
                     if (a != null) {
                         ret = new BasicAuthentication(false, url, realm, a,
-                                    isUTF8, getAuthenticatorKey());
+                                    isUTF8, authCache);
                     }
                     break;
                 case DIGEST:
@@ -2607,7 +2602,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         digestparams = new DigestAuthentication.Parameters();
                         ret = new DigestAuthentication(false, url, realm, scheme,
                                     a, digestparams,
-                                    getAuthenticatorKey());
+                                    authCache);
                     }
                     break;
                 case NTLM:
@@ -2652,7 +2647,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         if (tryTransparentNTLMServer ||
                               (!tryTransparentNTLMServer && a != null)) {
                             ret = NTLMAuthenticationProxy.proxy.create(false,
-                                     url1, a, getAuthenticatorKey());
+                                     url1, a, authCache);
                         }
 
                         /* set to false so that we do not try again */
@@ -2677,7 +2672,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 String a = defaultAuth.authString(url, scheme, realm);
                 if (a != null) {
                     ret = new BasicAuthentication (false, url, realm, a,
-                                    getAuthenticatorKey());
+                                    authCache);
                     // not in cache by default - cache on success
                 }
             }
@@ -2928,7 +2923,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     // check for preemptive authorization
                     AuthenticationInfo sauth =
-                            AuthenticationInfo.getServerAuth(url, getAuthenticatorKey());
+                            AuthenticationInfo.getServerAuth(url, authCache);
                     if (sauth != null && sauth.supportsPreemptiveAuthorization() ) {
                         // Sets "Authorization"
                         requests.setIfNotSet(sauth.getHeaderName(), sauth.getHeaderValue(url,method));

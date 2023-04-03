@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.www.HeaderParser;
+import sun.net.www.protocol.http.AuthCacheImpl;
 import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
 import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
 import sun.security.action.GetPropertyAction;
@@ -82,7 +83,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
               hci.scheme.equalsIgnoreCase("Negotiate") ? NEGOTIATE : KERBEROS,
               hci.url,
               "",
-              AuthenticatorKeys.getKey(hci.authenticator));
+              AuthCacheImpl.getAuthCacheAccess().getCache(hci.authenticator));
         this.hci = hci;
     }
 

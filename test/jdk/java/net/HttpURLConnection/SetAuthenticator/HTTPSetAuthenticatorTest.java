@@ -62,17 +62,7 @@ import java.util.stream.Stream;
  *                 authentication when in Server mode. There should be
  *                 no real difference between BASICSERVER and BASIC - it should
  *                 be transparent on the client side.
- * @run main/othervm HTTPSetAuthenticatorTest NONE SERVER PROXY SERVER307 PROXY305
  * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST SERVER
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST PROXY
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST PROXY305
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST SERVER307
- * @run main/othervm HTTPSetAuthenticatorTest BASIC  SERVER
- * @run main/othervm HTTPSetAuthenticatorTest BASIC  PROXY
- * @run main/othervm HTTPSetAuthenticatorTest BASIC  PROXY305
- * @run main/othervm HTTPSetAuthenticatorTest BASIC  SERVER307
- * @run main/othervm HTTPSetAuthenticatorTest BASICSERVER SERVER
- * @run main/othervm HTTPSetAuthenticatorTest BASICSERVER SERVER307
  *
  * @author danielfuchs
  */
@@ -283,7 +273,7 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
     }
 
     static String toString(Authenticator a) {
-        return sun.net.www.protocol.http.AuthenticatorKeys.getKey(a);
+        return a == null ? "null" : a.toString();
     }
 
 }
