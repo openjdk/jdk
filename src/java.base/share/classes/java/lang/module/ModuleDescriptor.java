@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1630,10 +1630,10 @@ public class ModuleDescriptor
             String mn = req.name();
             if (name.equals(mn))
                 throw new IllegalArgumentException("Dependence on self");
-            if (requires.containsKey(mn))
+            if (requires.putIfAbsent(mn, req) != null) {
                 throw new IllegalStateException("Dependence upon " + mn
                                                 + " already declared");
-            requires.put(mn, req);
+            }
             return this;
         }
 
@@ -1745,11 +1745,10 @@ public class ModuleDescriptor
                                                  + " exported packages");
             }
             String source = e.source();
-            if (exports.containsKey(source)) {
+            if (exports.putIfAbsent(source, e) != null) {
                 throw new IllegalStateException("Exported package " + source
                                                  + " already declared");
             }
-            exports.put(source, e);
             packages.add(source);
             return this;
         }
@@ -1878,11 +1877,10 @@ public class ModuleDescriptor
                                                 + " declare open packages");
             }
             String source = obj.source();
-            if (opens.containsKey(source)) {
+            if (opens.putIfAbsent(source, obj) != null) {
                 throw new IllegalStateException("Open package " + source
                                                 + " already declared");
             }
-            opens.put(source, obj);
             packages.add(source);
             return this;
         }
@@ -2035,10 +2033,10 @@ public class ModuleDescriptor
          */
         public Builder provides(Provides p) {
             String service = p.service();
-            if (provides.containsKey(service))
+            if (provides.putIfAbsent(service, p) != null) {
                 throw new IllegalStateException("Providers of service "
                                                 + service + " already declared");
-            provides.put(service, p);
+            }
             p.providers().forEach(name -> packages.add(packageName(name)));
             return this;
         }
