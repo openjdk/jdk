@@ -51,9 +51,6 @@ ObjectConstant* objectNull   = NULL;
 
 
 void ValueType::initialize() {
-  // Note: Must initialize all types for each compilation
-  //       as they are allocated within a ResourceMark!
-
 #define VALUE_TYPE_STORAGE_NAME(name) name##_storage
 #define VALUE_TYPE_STORAGE(name, type) alignas(type) static uint8_t VALUE_TYPE_STORAGE_NAME(name)[sizeof(type)]
 #define VALUE_TYPE(name, type, ...)                                \
