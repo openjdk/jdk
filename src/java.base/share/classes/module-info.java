@@ -281,7 +281,8 @@ module java.base {
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
-        jdk.net;
+        jdk.net,
+        jdk.jlink;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;

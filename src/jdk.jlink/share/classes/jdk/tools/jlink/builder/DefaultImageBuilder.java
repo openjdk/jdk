@@ -56,6 +56,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.Platform;
@@ -174,7 +175,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
             if (value == null) {
                 throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
-            this.platform = Platform.parsePlatform(value);
+            try {
+                this.platform = Platform.parsePlatform(value);
+            } catch (IllegalArgumentException ile) {
+                throw new PluginException("ModuleTarget is malformed: " + ile.getMessage());
+            }
 
             checkResourcePool(files);
 
@@ -490,7 +495,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     private boolean isWindows() {
-        return platform.os() == Platform.OperatingSystem.WINDOWS;
+        return platform.os() == OperatingSystem.WINDOWS;
     }
 
     /**
@@ -567,7 +572,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Path binDir = root.resolve(BIN_DIRNAME);
         if (Files.exists(binDir.resolve("java")) ||
             Files.exists(binDir.resolve("java.exe"))) {
-            return new DefaultExecutableImage(root, retrieveModules(root), Platform.UNKNOWN);
+            return new DefaultExecutableImage(root, retrieveModules(root), Platform.runtime());
         }
         return null;
     }
