@@ -163,7 +163,8 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
             if (code < FontUtilities.MIN_LAYOUT_CHARCODE) {
                 continue;
             }
-            else if (FontUtilities.isComplexCharCode(code)) {
+            else if (FontUtilities.isComplexCharCode(code) ||
+                    CharToGlyphMapper.isVariationSelector(code)) {
                 return true;
             }
             else if (code >= 0x10000) {

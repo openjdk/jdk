@@ -41,10 +41,8 @@ import java.awt.geom.Rectangle2D;
  */
 public final class CompositeStrike extends FontStrike {
 
-    static final int SLOTMASK = 0xffffff;
-
     private CompositeFont compFont;
-    private PhysicalStrike[] strikes;
+    private FontStrike[] strikes;
     int numGlyphs = 0;
 
     CompositeStrike(CompositeFont font2D, FontStrikeDesc desc) {
@@ -62,22 +60,22 @@ public final class CompositeStrike extends FontStrike {
                 italic = 0.7f;
             }
         }
-        strikes = new PhysicalStrike[compFont.numSlots];
+        strikes = new FontStrike[compFont.numSlots];
     }
 
     /* do I need this (see Strike::compositeStrikeForGlyph) */
-    PhysicalStrike getStrikeForGlyph(int glyphCode) {
-        return getStrikeForSlot(glyphCode >>> 24);
+    FontStrike getStrikeForGlyph(int glyphCode) {
+        return getStrikeForSlot(compFont.decodeSlot(glyphCode));
     }
 
-    PhysicalStrike getStrikeForSlot(int slot) {
+    FontStrike getStrikeForSlot(int slot) {
         if (slot >= strikes.length) {
             slot = 0;
         }
-        PhysicalStrike strike = strikes[slot];
+        FontStrike strike = strikes[slot];
         if (strike == null) {
             strike =
-                (PhysicalStrike)(compFont.getSlotFont(slot).getStrike(desc));
+                compFont.getSlotFont(slot).getStrike(desc);
 
             strikes[slot] = strike;
         }
@@ -113,31 +111,32 @@ public final class CompositeStrike extends FontStrike {
      * physical font for that slot will substitute the missing glyph.
      */
     void getGlyphImagePtrs(int[] glyphCodes, long[] images, int  len) {
-        PhysicalStrike strike = getStrikeForSlot(0);
-        int numptrs = strike.getSlot0GlyphImagePtrs(glyphCodes, images, len);
+        FontStrike strike = getStrikeForSlot(0);
+        int numptrs = strike.getSlot0GlyphImagePtrs(glyphCodes, images, len,
+                compFont.slotMask, compFont.slotShift);
         if (numptrs == len) {
             return;
         }
         for (int i=numptrs; i< len; i++) {
             strike = getStrikeForGlyph(glyphCodes[i]);
-            images[i] = strike.getGlyphImagePtr(glyphCodes[i] & SLOTMASK);
+            images[i] = strike.getGlyphImagePtr(compFont.decodeGlyphCode(glyphCodes[i]));
         }
     }
 
 
     long getGlyphImagePtr(int glyphCode) {
-        PhysicalStrike strike = getStrikeForGlyph(glyphCode);
-        return strike.getGlyphImagePtr(glyphCode & SLOTMASK);
+        FontStrike strike = getStrikeForGlyph(glyphCode);
+        return strike.getGlyphImagePtr(compFont.decodeGlyphCode(glyphCode));
     }
 
     void getGlyphImageBounds(int glyphCode, Point2D.Float pt, Rectangle result) {
-        PhysicalStrike strike = getStrikeForGlyph(glyphCode);
-        strike.getGlyphImageBounds(glyphCode & SLOTMASK, pt, result);
+        FontStrike strike = getStrikeForGlyph(glyphCode);
+        strike.getGlyphImageBounds(compFont.decodeGlyphCode(glyphCode), pt, result);
     }
 
     Point2D.Float getGlyphMetrics(int glyphCode) {
-        PhysicalStrike strike = getStrikeForGlyph(glyphCode);
-        return strike.getGlyphMetrics(glyphCode & SLOTMASK);
+        FontStrike strike = getStrikeForGlyph(glyphCode);
+        return strike.getGlyphMetrics(compFont.decodeGlyphCode(glyphCode));
     }
 
     Point2D.Float getCharMetrics(char ch) {
@@ -145,8 +144,8 @@ public final class CompositeStrike extends FontStrike {
     }
 
     float getGlyphAdvance(int glyphCode) {
-        PhysicalStrike strike = getStrikeForGlyph(glyphCode);
-        return strike.getGlyphAdvance(glyphCode & SLOTMASK);
+        FontStrike strike = getStrikeForGlyph(glyphCode);
+        return strike.getGlyphAdvance(compFont.decodeGlyphCode(glyphCode));
     }
 
     /* REMIND where to cache?
@@ -161,14 +160,14 @@ public final class CompositeStrike extends FontStrike {
     }
 
     Rectangle2D.Float getGlyphOutlineBounds(int glyphCode) {
-        PhysicalStrike strike = getStrikeForGlyph(glyphCode);
-        return strike.getGlyphOutlineBounds(glyphCode & SLOTMASK);
+        FontStrike strike = getStrikeForGlyph(glyphCode);
+        return strike.getGlyphOutlineBounds(compFont.decodeGlyphCode(glyphCode));
     }
 
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
 
-        PhysicalStrike strike = getStrikeForGlyph(glyphCode);
-        GeneralPath path = strike.getGlyphOutline(glyphCode & SLOTMASK, x, y);
+        FontStrike strike = getStrikeForGlyph(glyphCode);
+        GeneralPath path = strike.getGlyphOutline(compFont.decodeGlyphCode(glyphCode), x, y);
         if (path == null) {
             return new GeneralPath();
         } else {
@@ -191,15 +190,15 @@ public final class CompositeStrike extends FontStrike {
 
         while (glyphIndex < glyphs.length) {
             int start = glyphIndex;
-            int slot = glyphs[glyphIndex] >>> 24;
+            int slot = compFont.decodeSlot(glyphs[glyphIndex]);
             while (glyphIndex < glyphs.length &&
-                   (glyphs[glyphIndex+1] >>> 24) == slot) {
+                   (compFont.decodeSlot(glyphs[glyphIndex+1])) == slot) {
                 glyphIndex++;
             }
             int tmpLen = glyphIndex-start+1;
             tmpGlyphs = new int[tmpLen];
             for (int i=0;i<tmpLen;i++) {
-                tmpGlyphs[i] = glyphs[i] & SLOTMASK;
+                tmpGlyphs[i] = compFont.decodeGlyphCode(glyphs[i]);
             }
             gp = getStrikeForSlot(slot).getGlyphVectorOutline(tmpGlyphs, x, y);
             if (path == null) {
@@ -216,7 +215,7 @@ public final class CompositeStrike extends FontStrike {
     }
 
     GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y) {
-        PhysicalStrike strike = getStrikeForGlyph(glyphCode);
-        return strike.getGlyphRenderData(glyphCode & SLOTMASK, x, y);
+        FontStrike strike = getStrikeForGlyph(glyphCode);
+        return strike.getGlyphRenderData(compFont.decodeGlyphCode(glyphCode), x, y);
     }
 }

@@ -34,37 +34,37 @@ package sun.font;
  * Iterates over runs of fonts in a CompositeFont, optionally taking script runs into account.
  */
 public final class FontRunIterator {
-    CompositeFont font;
-    char[] text;
-    int start;
-    int limit;
+    private Font2D font;
+    private char[] text;
+    private int limit;
 
-    CompositeGlyphMapper mapper; // handy cache
+    private CharToGlyphMapper mapper; // handy cache
 
-    int slot = -1;
-    int pos;
+    private int slot;
+    private int pos;
+    private Font2D.SlotInfo slotInfo;
 
-    public void init(CompositeFont font, char[] text, int start, int limit) {
+    public void init(Font2D font, char[] text, int start, int limit) {
         if (font == null || text == null || start < 0 || limit < start || limit > text.length) {
             throw new IllegalArgumentException();
         }
 
         this.font = font;
         this.text = text;
-        this.start = start;
         this.limit = limit;
 
-        this.mapper = (CompositeGlyphMapper)font.getMapper();
-        this.slot = -1;
+        this.mapper = font.getMapper();
+        this.slot = 0;
         this.pos = start;
+        this.slotInfo = null;
     }
 
-    public PhysicalFont getFont() {
-        return slot == -1 ? null : font.getSlotFont(slot);
+    public Font2D.SlotInfo getSlotInfo() {
+        return slotInfo;
     }
 
-    public int getGlyphMask() {
-        return slot << 24;
+    public int getSlot() {
+        return slot;
     }
 
     public int getPos() {
@@ -112,7 +112,7 @@ public final class FontRunIterator {
      * the data instead of pull it?
      */
 
-    public boolean next(int script, int lim) {
+    public boolean next(int lim) {
         if (pos == lim) {
             return false;
         }
@@ -120,8 +120,15 @@ public final class FontRunIterator {
         int ch = nextCodePoint(lim);
         int nch = nextCodePoint(lim);
         int vs = CharToGlyphMapper.isVariationSelector(nch) ? nch : 0;
-        int sl = mapper.charToVariationGlyph(ch, vs) & CompositeGlyphMapper.SLOTMASK;
-        slot = sl >>> 24;
+        int gl = mapper.charToVariationGlyph(ch, vs);
+        slotInfo = font.getSlotInfoForGlyph(gl);
+        int slotMask = slotInfo.getSlotMask();
+        slot = gl & slotMask;
+        if (slotInfo.slotShift == 0) {
+            // This is a non-composite font, so return early.
+            pos = lim;
+            return true;
+        }
         do {
             if (vs == 0) {
                 ch = nch;
@@ -130,24 +137,20 @@ public final class FontRunIterator {
             }
             nch = nextCodePoint(lim);
             vs = CharToGlyphMapper.isVariationSelector(nch) ? nch : 0;
-        } while(ch != DONE && isSameRun(ch, vs, sl));
+        } while(ch != DONE && isSameRun(ch, vs, slotMask));
         pushback(nch);
         pushback(ch);
 
         return true;
     }
 
-    private boolean isSameRun(int ch, int variationSelector, int currentSlot) {
+    private boolean isSameRun(int ch, int variationSelector, int slotMask) {
         // Every font is meant to be able to render format chars
         // So we make format chars stick to the current font run
         if (CMap.getFormatCharGlyph(ch) == CharToGlyphMapper.INVISIBLE_GLYPH_ID) {
             return true;
         }
-        return (mapper.charToVariationGlyph(ch, variationSelector) & CompositeGlyphMapper.SLOTMASK) == currentSlot;
-    }
-
-    public boolean next() {
-        return next(Script.COMMON, limit);
+        return (mapper.charToVariationGlyph(ch, variationSelector) & slotMask) == slot;
     }
 
     static final int SURROGATE_START = 0x10000;

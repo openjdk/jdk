@@ -162,7 +162,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         return ref.getNativePtr();
     }
 
-    public void layout(FontStrikeDesc desc, float[] mat, float ptSize, int gmask,
+    public void layout(FontStrikeDesc desc, float[] mat, float ptSize, int slot, int slotShift,
                        int baseIndex, TextRecord tr, int typo_flags,
                        Point2D.Float pt, GVData data) {
         Font2D font = key.font();
@@ -172,7 +172,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
             shape(font, strike, ptSize, mat, pFace,
                     tr.text, data, key.script(),
                     tr.start, tr.limit, baseIndex, pt,
-                    typo_flags, gmask);
+                    typo_flags, slot, slotShift);
         }
     }
 
@@ -182,7 +182,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
               long pFace,
               char[] chars, GVData data,
               int script, int offset, int limit,
-              int baseIndex, Point2D.Float pt, int typo_flags, int slot);
+              int baseIndex, Point2D.Float pt, int typo_flags, int slot, int slotShift);
 
     private static native long createFace(Font2D font,
                                           long platformNativeFontPtr);

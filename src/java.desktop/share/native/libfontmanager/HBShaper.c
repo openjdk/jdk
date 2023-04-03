@@ -69,7 +69,7 @@ static int init_JNI_IDs(JNIEnv *env) {
 // gmask is the composite font slot mask
 // baseindex is to be added to the character (code point) index.
 jboolean storeGVData(JNIEnv* env,
-                     jobject gvdata, jint slot,
+                     jobject gvdata, jint slot, jint slotShift,
                      jint baseIndex, int offset, jobject startPt,
                      int charCount, int glyphCount, hb_glyph_info_t *glyphInfo,
                      hb_glyph_position_t *glyphPos, float devScale) {
@@ -135,7 +135,7 @@ jboolean storeGVData(JNIEnv* env,
         int storei = i + initialCount;
         int cluster = glyphInfo[i].cluster - offset;
         indices[storei] = baseIndex + cluster;
-        glyphs[storei] = (unsigned int)(glyphInfo[i].codepoint | slot);
+        glyphs[storei] = (unsigned int)((glyphInfo[i].codepoint << slotShift) | slot);
         positions[storei*2] = startX + x + glyphPos[i].x_offset * scale;
         positions[(storei*2)+1] = startY + y - glyphPos[i].y_offset * scale;
         x += glyphPos[i].x_advance * scale;
@@ -240,7 +240,8 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      jint baseIndex,
      jobject startPt,
      jint flags,
-     jint slot) {
+     jint slot,
+     jint slotShift) {
 
      hb_buffer_t *buffer;
      hb_face_t* hbface;
@@ -303,7 +304,7 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      glyphInfo = hb_buffer_get_glyph_infos(buffer, 0);
      glyphPos = hb_buffer_get_glyph_positions(buffer, &buflen);
 
-     ret = storeGVData(env, gvdata, slot, baseIndex, offset, startPt,
+     ret = storeGVData(env, gvdata, slot, slotShift, baseIndex, offset, startPt,
                        limit - offset, glyphCount, glyphInfo, glyphPos,
                        jdkFontInfo->devScale);
 

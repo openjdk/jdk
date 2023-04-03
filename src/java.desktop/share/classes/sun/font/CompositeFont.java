@@ -26,6 +26,8 @@
 package sun.font;
 
 import java.awt.Font;
+import java.util.Arrays;
+import java.util.List;
 
 /* Remind: need to enhance to extend component list with a fallback
  * list, which is not used in metrics or queries on the composite, but
@@ -46,13 +48,14 @@ public final class CompositeFont extends Font2D {
     /* because components can be lazily initialised the components field is
      * private, to ensure all clients call getSlotFont()
      */
-    private PhysicalFont[] components;
+    private Font2D[] components;
     int numSlots;
     int numMetricsSlots;
     int[] exclusionRanges;
     int[] maxIndices;
     int numGlyphs = 0;
     int localeSlot = -1; // primary slot for this locale.
+    int slotShift, slotMask;
 
     /* See isStdComposite() for when/how this is used */
     boolean isStdComposite = true;
@@ -66,65 +69,58 @@ public final class CompositeFont extends Font2D {
         fullName = name;
         componentFileNames = compFileNames;
         componentNames = compNames;
-        if (compNames == null) {
-            numSlots = componentFileNames.length;
-        } else {
-            numSlots = componentNames.length;
-        }
-        /* We will limit the number of slots to 254.
-         * We store the slot for a glyph id in a byte and we may use one slot
-         * for an EUDC font, and we may also create a composite
+        /* We will limit the number of slots to 255.
+         * Previously we stored the slot for a glyph
+         * id in a byte, and we may create a composite
          * using this composite as a backup for a physical font.
-         * So we want to leave space for the two additional slots.
+         * That's not a problem anymore, as number of bits
+         * reserved for a slot index can vary (see #slotShift),
+         * but the more it takes, the less is left for actual
+         * glyph code, so we'll keep this limit for now.
          */
-         numSlots = (numSlots <= 254) ? numSlots : 254;
+        List<Font2D> additionalFallbackFonts = fm.getAdditionalFallbackFonts();
+        numSlots = Math.min(255, additionalFallbackFonts.size() +
+                (compNames != null ? compNames.length : compFileNames.length));
 
         /* Only the first "numMetricsSlots" slots are used for font metrics.
          * the rest are considered "fallback" slots".
          */
-        numMetricsSlots = metricsSlotCnt;
+        numMetricsSlots = Math.min(metricsSlotCnt, numSlots);
         exclusionRanges = exclRanges;
         maxIndices = maxIndexes;
 
+        components = new Font2D[numSlots];
+        deferredInitialisation = new boolean[numSlots];
+        if (defer) {
+            Arrays.fill(deferredInitialisation, 0, numMetricsSlots, true);
+            Arrays.fill(deferredInitialisation, numMetricsSlots +
+                    additionalFallbackFonts.size(), numSlots, true);
+        }
         /*
-         * See if this is a windows locale which has a system EUDC font.
-         * If so add it as the final fallback component of the composite.
+         * Insert additional fallback fonts if any.
          * The caller could be responsible for this, but for now it seems
          * better that it is handled internally to the CompositeFont class.
          */
-        if (fm.getEUDCFont() != null) {
+        if (!additionalFallbackFonts.isEmpty()) {
             int msCnt = numMetricsSlots;
-            int fbCnt = numSlots - msCnt;
-            numSlots++;
+            int adCnt = additionalFallbackFonts.size();
+            int fbCnt = numSlots - msCnt - adCnt;
             if (componentNames != null) {
                 componentNames = new String[numSlots];
                 System.arraycopy(compNames, 0, componentNames, 0, msCnt);
-                componentNames[msCnt] = fm.getEUDCFont().getFontName(null);
-                System.arraycopy(compNames, msCnt,
-                                 componentNames, msCnt+1, fbCnt);
+                for (int i = 0; i < adCnt; i++) {
+                    componentNames[msCnt + i] =
+                            additionalFallbackFonts.get(i).getFontName(null);
+                }
+                System.arraycopy(compNames, msCnt, componentNames, msCnt+adCnt, fbCnt);
             }
             if (componentFileNames != null) {
                 componentFileNames = new String[numSlots];
-                System.arraycopy(compFileNames, 0,
-                                  componentFileNames, 0, msCnt);
-                System.arraycopy(compFileNames, msCnt,
-                                  componentFileNames, msCnt+1, fbCnt);
+                System.arraycopy(compFileNames, 0, componentFileNames, 0, msCnt);
+                System.arraycopy(compFileNames, msCnt, componentFileNames, msCnt+adCnt, fbCnt);
             }
-            components = new PhysicalFont[numSlots];
-            components[msCnt] = fm.getEUDCFont();
-            deferredInitialisation = new boolean[numSlots];
-            if (defer) {
-                for (int i=0; i<numSlots-1; i++) {
-                    deferredInitialisation[i] = true;
-                }
-            }
-        } else {
-            components = new PhysicalFont[numSlots];
-            deferredInitialisation = new boolean[numSlots];
-            if (defer) {
-                for (int i=0; i<numSlots; i++) {
-                    deferredInitialisation[i] = true;
-                }
+            for (int i = 0; i < adCnt; i++) {
+                components[msCnt + i] = additionalFallbackFonts.get(i);
             }
         }
 
@@ -152,12 +148,13 @@ public final class CompositeFont extends Font2D {
         } else {
             familyName = fullName;
         }
+        initSlotMask();
     }
 
     /*
      * Build a composite from a set of individual slot fonts.
      */
-    CompositeFont(PhysicalFont[] slotFonts) {
+    CompositeFont(Font2D[] slotFonts) {
 
         isStdComposite = false;
         handle = new Font2DHandle(this);
@@ -168,23 +165,24 @@ public final class CompositeFont extends Font2D {
         numMetricsSlots = 1; /* Only the physical Font */
         numSlots = slotFonts.length;
 
-        components = new PhysicalFont[numSlots];
+        components = new Font2D[numSlots];
         System.arraycopy(slotFonts, 0, components, 0, numSlots);
         deferredInitialisation = new boolean[numSlots]; // all false.
+        initSlotMask();
     }
 
     /* This method is currently intended to be called only from
      * FontManager.getCompositeFontUIResource(Font)
-     * It creates a new CompositeFont with the contents of the Physical
+     * It creates a new CompositeFont with the contents of the
      * one pre-pended as slot 0.
      */
-    CompositeFont(PhysicalFont physFont, CompositeFont compFont) {
+    CompositeFont(Font2D font, CompositeFont compFont) {
 
         isStdComposite = false;
         handle = new Font2DHandle(this);
-        fullName = physFont.fullName;
-        familyName = physFont.familyName;
-        style = physFont.style;
+        fullName = font.fullName;
+        familyName = font.familyName;
+        style = font.style;
 
         numMetricsSlots = 1; /* Only the physical Font */
         numSlots = compFont.numSlots+1;
@@ -197,14 +195,14 @@ public final class CompositeFont extends Font2D {
          * and just need to discover that and mark it so.
          */
         synchronized (FontManagerFactory.getInstance()) {
-            components = new PhysicalFont[numSlots];
-            components[0] = physFont;
+            components = new Font2D[numSlots];
+            components[0] = font;
             System.arraycopy(compFont.components, 0,
                              components, 1, compFont.numSlots);
 
             if (compFont.componentNames != null) {
                 componentNames = new String[numSlots];
-                componentNames[0] = physFont.fullName;
+                componentNames[0] = font.fullName;
                 System.arraycopy(compFont.componentNames, 0,
                                  componentNames, 1, compFont.numSlots);
             }
@@ -219,6 +217,25 @@ public final class CompositeFont extends Font2D {
             System.arraycopy(compFont.deferredInitialisation, 0,
                              deferredInitialisation, 1, compFont.numSlots);
         }
+        initSlotMask();
+    }
+
+    private void initSlotMask() {
+        // slotShift = number of lowest bits encoding the slot index.
+        slotShift = 32 - Integer.numberOfLeadingZeros(numSlots - 1); // ceil(log2(numSlots))
+        slotMask = (1 << slotShift) - 1; // Mask for extracting the slot index.
+    }
+
+    int decodeSlot(int glyphCode) {
+        return glyphCode & slotMask;
+    }
+
+    int decodeGlyphCode(int glyphCode) {
+        return glyphCode >>> slotShift;
+    }
+
+    int compositeGlyphCode(int slot, int glyphCode) {
+        return (glyphCode << slotShift) | (slot & slotMask);
     }
 
     /* This is used for deferred initialisation, so that the components of
@@ -300,15 +317,10 @@ public final class CompositeFont extends Font2D {
                      * return composite font which cannot be casted to
                      * physical font.
                      */
-                    try {
-                        components[slot] =
-                            (PhysicalFont) fm.findFont2D(componentNames[slot],
-                                                         style,
-                                                FontManager.PHYSICAL_FALLBACK);
-                    } catch (ClassCastException cce) {
-                        /* Assign default physical font to the slot */
-                        components[slot] = fm.getDefaultPhysicalFont();
-                    }
+                    components[slot] =
+                        fm.findFont2D(componentNames[slot],
+                                                     style,
+                                            FontManager.PHYSICAL_FALLBACK);
                 }
             }
             deferredInitialisation[slot] = false;
@@ -316,7 +328,7 @@ public final class CompositeFont extends Font2D {
     }
 
     /* To called only by FontManager.replaceFont */
-    void replaceComponentFont(PhysicalFont oldFont, PhysicalFont newFont) {
+    void replaceComponentFont(Font2D oldFont, Font2D newFont) {
         if (components == null) {
             return;
         }
@@ -354,7 +366,7 @@ public final class CompositeFont extends Font2D {
     }
 
     public void getStyleMetrics(float pointSize, float[] metrics, int offset) {
-        PhysicalFont font = getSlotFont(0);
+        Font2D font = getSlotFont(0);
         if (font == null) { // possible?
             super.getStyleMetrics(pointSize, metrics, offset);
         } else {
@@ -366,7 +378,7 @@ public final class CompositeFont extends Font2D {
         return numSlots;
     }
 
-    public PhysicalFont getSlotFont(int slot) {
+    public Font2D getSlotFont(int slot) {
         /* This is essentially the runtime overhead for deferred font
          * initialisation: a boolean test on obtaining a slot font,
          * which will happen per slot, on initialisation of a strike
@@ -377,16 +389,12 @@ public final class CompositeFont extends Font2D {
         }
         SunFontManager fm = SunFontManager.getInstance();
         try {
-            PhysicalFont font = components[slot];
+            Font2D font = components[slot];
             if (font == null) {
-                try {
-                    font = (PhysicalFont) fm.
-                        findFont2D(componentNames[slot], style,
-                                   FontManager.PHYSICAL_FALLBACK);
-                    components[slot] = font;
-                } catch (ClassCastException cce) {
-                    font = fm.getDefaultPhysicalFont();
-                }
+                font = fm.
+                    findFont2D(componentNames[slot], style,
+                               FontManager.PHYSICAL_FALLBACK);
+                components[slot] = font;
             }
             return font;
         } catch (Exception e) {
@@ -413,13 +421,13 @@ public final class CompositeFont extends Font2D {
      * glyph elsewhere.
      */
     protected int getValidatedGlyphCode(int glyphCode) {
-        int slot = glyphCode >>> 24;
+        int slot = decodeSlot(glyphCode);
         if (slot >= numSlots) {
             return getMapper().getMissingGlyphCode();
         }
 
-        int slotglyphCode = glyphCode & CompositeStrike.SLOTMASK;
-        PhysicalFont slotFont = getSlotFont(slot);
+        int slotglyphCode = decodeGlyphCode(glyphCode);
+        Font2D slotFont = getSlotFont(slot);
         if (slotFont.getValidatedGlyphCode(slotglyphCode) ==
             slotFont.getMissingGlyphCode()) {
             return getMapper().getMissingGlyphCode();
@@ -486,6 +494,14 @@ public final class CompositeFont extends Font2D {
             }
         }
         return getSlotFont(localeSlot).useAAForPtSize(ptsize);
+    }
+
+    @Override
+    public SlotInfo getSlotInfoForGlyph(int glyphCode) {
+        SlotInfo info = getSlotFont(decodeSlot(glyphCode))
+                .getSlotInfoForGlyph(decodeGlyphCode(glyphCode));
+        info.slotShift += slotShift;
+        return info;
     }
 
     public String toString() {

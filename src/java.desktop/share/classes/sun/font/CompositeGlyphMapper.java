@@ -44,9 +44,6 @@ package sun.font;
 
 public class CompositeGlyphMapper extends CharToGlyphMapper {
 
-    public static final int SLOTMASK =  0xff000000;
-    public static final int GLYPHMASK = 0x00ffffff;
-
     public static final int NBLOCKS = 216;
     public static final int BLOCKSZ = 256;
     public static final int MAXUNICODE = NBLOCKS*BLOCKSZ;
@@ -67,10 +64,6 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
                       compFont.maxIndices != null;
     }
 
-    public int compositeGlyphCode(int slot, int glyphCode) {
-        return (slot << 24 | (glyphCode & GLYPHMASK));
-    }
-
     private void initMapper() {
         if (missingGlyph == CharToGlyphMapper.UNINITIALIZED_GLYPH) {
             if (glyphMaps == null) {
@@ -79,7 +72,7 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
             slotMappers = new CharToGlyphMapper[font.numSlots];
             /* This requires that slot 0 is never empty. */
             missingGlyph = font.getSlotFont(0).getMissingGlyphCode();
-            missingGlyph = compositeGlyphCode(0, missingGlyph);
+            missingGlyph = font.compositeGlyphCode(0, missingGlyph);
         }
     }
 
@@ -128,7 +121,7 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
                 CharToGlyphMapper mapper = getSlotMapper(slot);
                 int glyphCode = mapper.charToVariationGlyph(unicode, variationSelector);
                 if (glyphCode != mapper.getMissingGlyphCode()) {
-                    glyphCode = compositeGlyphCode(slot, glyphCode);
+                    glyphCode = font.compositeGlyphCode(slot, glyphCode);
                     if (variationSelector == 0) {
                         setCachedGlyphCode(unicode, glyphCode);
                     }
@@ -143,23 +136,10 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
     public int charToVariationGlyph(int unicode, int variationSelector) {
         if (variationSelector == 0) {
             return charToGlyph(unicode);
-        }
-        else {
+        } else {
             int glyph = convertToGlyph(unicode, variationSelector);
-            // Glyph variation not found, fallback to base glyph.
-            // In fallback from variation glyph we ignore excluded chars,
-            // this is needed for proper display of monochrome emoji (\ufe0e)
-            if (glyph == missingGlyph) {
-                for (int slot = 0; slot < font.numSlots; slot++) {
-                    CharToGlyphMapper mapper = getSlotMapper(slot);
-                    glyph = mapper.charToGlyph(unicode);
-                    if (glyph != mapper.getMissingGlyphCode()) {
-                        glyph = compositeGlyphCode(slot, glyph);
-                        break;
-                    }
-                }
-            }
-            return glyph;
+            // Fallback to base glyph if variation was not found.
+            return glyph != missingGlyph ? glyph : charToGlyph(unicode);
         }
     }
 
@@ -199,7 +179,7 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
             CharToGlyphMapper mapper = getSlotMapper(prefSlot);
             int glyphCode = mapper.charToGlyph(unicode);
             if (glyphCode != mapper.getMissingGlyphCode()) {
-                return compositeGlyphCode(prefSlot, glyphCode);
+                return font.compositeGlyphCode(prefSlot, glyphCode);
             }
         }
         return charToGlyph(unicode);

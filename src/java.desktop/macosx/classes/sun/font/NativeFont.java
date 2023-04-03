@@ -104,4 +104,8 @@ public class NativeFont extends PhysicalFont {
                                             int glyphCode) {
         return new Rectangle2D.Float(0f, 0f, 0f, 0f);
     }
+
+    public SlotInfo getSlotInfoForGlyph(int glyphCode) {
+        return new SlotInfo(getDelegateFont());
+    }
 }

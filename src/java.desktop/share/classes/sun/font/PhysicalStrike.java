@@ -114,10 +114,6 @@ public abstract class PhysicalStrike extends FontStrike {
         return getGlyphMetrics(physicalFont.getMapper().charToGlyph(ch));
     }
 
-    int getSlot0GlyphImagePtrs(int[] glyphCodes, long[] images, int  len) {
-        return 0;
-    }
-
     /* Used by the OpenType engine for mark positioning.
      */
     Point2D.Float getGlyphPoint(int glyphCode, int ptNumber) {

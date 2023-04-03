@@ -1082,7 +1082,10 @@ public class StandardGlyphVector extends GlyphVector {
             if (oglyphs[i] == 0xFFFE || oglyphs[i] == 0xFFFF) {
                 vglyphs[i] = oglyphs[i];
             } else {
-                vglyphs[i] = font2D.getValidatedGlyphCode(oglyphs[i]);
+                vglyphs[i] = font2D.getValidatedGlyphCode(
+                        font2D instanceof CompositeFont comp ?
+                                comp.compositeGlyphCode(0, oglyphs[i]) :
+                                oglyphs[i]);
             }
         }
         return vglyphs;

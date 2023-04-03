@@ -64,8 +64,8 @@ public class FCCompositeTest {
                 System.out.println("WARNING: Not CompositeFont");
                 return;
             }
-            PhysicalFont pf = ((CompositeFont)f2d).getSlotFont(0);
-            fullName = pf.getFontName(Locale.ENGLISH);
+            Font2D slot = ((CompositeFont)f2d).getSlotFont(0);
+            fullName = slot.getFontName(Locale.ENGLISH);
             System.out.println("PF="+fullName);
 
             String[] command = {"fc-match",

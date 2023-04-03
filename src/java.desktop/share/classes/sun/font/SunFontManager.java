@@ -296,9 +296,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return jreFontDirName;
     }
 
-    public TrueTypeFont getEUDCFont() {
+    public List<Font2D> getAdditionalFallbackFonts() {
         // Overridden in Windows.
-        return null;
+        return List.of();
     }
 
     /* Initialise ptrs used by JNI methods */
@@ -458,7 +458,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
 
         CompositeFont oldComp = (CompositeFont)handle.font2D;
-        PhysicalFont oldFont = oldComp.getSlotFont(0);
+        Font2D oldFont = oldComp.getSlotFont(0);
 
         if (family == null) {
             family = oldFont.getFamilyName(null);
@@ -468,16 +468,15 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
 
         Font2D newFont = findFont2D(family, style, NO_FALLBACK);
-        if (!(newFont instanceof PhysicalFont)) {
-            newFont = oldFont;
+        if (newFont == null) {
+            return handle;
         }
-        PhysicalFont physicalFont = (PhysicalFont)newFont;
         CompositeFont dialog2D =
             (CompositeFont)findFont2D("dialog", style, NO_FALLBACK);
         if (dialog2D == null) { /* shouldn't happen */
             return handle;
         }
-        CompositeFont compFont = new CompositeFont(physicalFont, dialog2D);
+        CompositeFont compFont = new CompositeFont(newFont, dialog2D);
         Font2DHandle newHandle = new Font2DHandle(compFont);
         return newHandle;
     }

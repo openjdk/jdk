@@ -78,4 +78,8 @@ public abstract class FontStrike {
 
     abstract GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y);
 
+    int getSlot0GlyphImagePtrs(int[] glyphCodes, long[] images, int len, int slotMask, int slotShift) {
+        return 0;
+    }
+
 }

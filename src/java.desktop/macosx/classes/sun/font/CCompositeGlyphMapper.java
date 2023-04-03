@@ -78,7 +78,7 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
             // - cascading font in OSX-speak. But we need to be
             //  know here that only the codes > 0 are really present.
             if (glyphCode > 0) {
-                glyphCode = compositeGlyphCode(slot, glyphCode);
+                glyphCode = font.compositeGlyphCode(slot, glyphCode);
                 return glyphCode;
             }
         }

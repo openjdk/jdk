@@ -570,4 +570,19 @@ public abstract class Font2D {
         }
     }
 
+    public static class SlotInfo {
+        public Font2D font;
+        public int slotShift;
+        public SlotInfo(Font2D font) {
+            this.font = font;
+        }
+        public int getSlotMask() {
+            return (1 << slotShift) - 1;
+        }
+    }
+
+    public SlotInfo getSlotInfoForGlyph(int glyphCode) {
+        return new SlotInfo(this);
+    }
+
 }

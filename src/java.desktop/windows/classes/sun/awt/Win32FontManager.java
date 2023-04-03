@@ -26,45 +26,40 @@
 
 package sun.awt;
 
-import java.awt.FontFormatException;
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
+import java.util.*;
+import java.util.List;
 
 import sun.awt.windows.WFontConfiguration;
-import sun.font.FontManager;
-import sun.font.SunFontManager;
-import sun.font.TrueTypeFont;
+import sun.font.*;
 
 /**
- * The X11 implementation of {@link FontManager}.
+ * The Win32 implementation of {@link FontManager}.
  */
 public final class Win32FontManager extends SunFontManager {
 
     @SuppressWarnings("removal")
-    private static final TrueTypeFont eudcFont =
-            AccessController.doPrivileged(new PrivilegedAction<TrueTypeFont>() {
-                public TrueTypeFont run() {
-                    String eudcFile = getEUDCFontFile();
-                    if (eudcFile != null) {
-                        try {
-                            /* Must use Java rasteriser since GDI doesn't
-                             * enumerate (allow direct use) of EUDC fonts.
-                             */
-                            return new TrueTypeFont(eudcFile, null, 0,
-                                                        true, false);
-                        } catch (FontFormatException e) {
-                        }
+    private static final List<Font2D> additionalFallbackFonts =
+            AccessController.doPrivileged((PrivilegedAction<List<Font2D>>) () -> {
+                List<Font2D> list = new ArrayList<>();
+                list.add(new EmojiFont());
+                // https://learn.microsoft.com/en-us/windows/win32/intl/end-user-defined-characters
+                String eudcFile = getEUDCFontFile();
+                if (eudcFile != null) {
+                    try {
+                        /* Must use Java rasteriser since GDI doesn't
+                         * enumerate (allow direct use) of EUDC fonts.
+                         */
+                        list.add(new TrueTypeFont(eudcFile, null, 0,
+                                true, false));
+                    } catch (FontFormatException e) {
                     }
-                    return null;
                 }
-            });
+                return Collections.unmodifiableList(list);
+    });
 
     /* Used on Windows to obtain from the windows registry the name
      * of a file containing the system EUFC font. If running in one of
@@ -74,8 +69,8 @@ public final class Win32FontManager extends SunFontManager {
      */
     private static native String getEUDCFontFile();
 
-    public TrueTypeFont getEUDCFont() {
-        return eudcFont;
+    public List<Font2D> getAdditionalFallbackFonts() {
+        return additionalFallbackFonts;
     }
 
     @SuppressWarnings("removal")

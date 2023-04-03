@@ -310,6 +310,10 @@ public class NativeFont extends PhysicalFont {
         return delegateFont;
     }
 
+    public SlotInfo getSlotInfoForGlyph(int glyphCode) {
+        return new SlotInfo(getDelegateFont());
+    }
+
     /* Specify that the dpi is 72x72, as this corresponds to JDK's
      * default user space. These are the 10th and 11th fields in the XLFD.
      * ptSize in XLFD is in 10th's of a point so multiply by 10,
