@@ -155,7 +155,7 @@ public class RequestFocusOwnerTest {
                 throw new RuntimeException(
                     "FAIL: CheckBox.hasFocus for Checkbox returns false after calling Checkbox.requestFocusInWindow");
             }
-			focusGained = false;
+            focusGained = false;
             EventQueue.invokeAndWait(() -> {
                 requestStatus = choice.requestFocusInWindow();
             });
@@ -176,7 +176,7 @@ public class RequestFocusOwnerTest {
                 throw new RuntimeException(
                     "FAIL: Choice.hasFocus for disabled Choice returns false after calling Choice.requestFocusInWindow");
             }
-			focusGained = false;
+            focusGained = false;
             EventQueue.invokeAndWait(() -> {
                 textField.setVisible(false);
                 requestStatus = textField.requestFocusInWindow();
