@@ -86,7 +86,7 @@ public interface ExecutionEnv {
      * Note: an execution engine may not support {@code JShellConsole}.
      *
      * @implSpec The default implementation of this method
-     *           return an empty {@code Optional}.
+     *           returns an empty {@code Optional}.
      *
      * @return returns console, or an empty {@code Optional} if none,
      *         never {@code null}
