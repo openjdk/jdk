@@ -38,7 +38,7 @@ import java.lang.ref.WeakReference;
  *  deletion without notice.</b>
  */
 public class UnsharedNameTable extends Utf8NameTable {
-    public static Name.Table create(Names names) {
+    public static UnsharedNameTable create(Names names) {
         return new UnsharedNameTable(names);
     }
 

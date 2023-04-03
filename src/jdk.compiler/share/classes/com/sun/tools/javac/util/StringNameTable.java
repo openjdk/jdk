@@ -41,7 +41,7 @@ public class StringNameTable extends Name.Table {
 
 // Factory
 
-    public static Name.Table create(Names names) {
+    public static StringNameTable create(Names names) {
         return new StringNameTable(names);
     }
 
