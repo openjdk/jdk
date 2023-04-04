@@ -378,6 +378,11 @@ Defaults to 4.
 Sets the argument `-timeoutHandlerTimeout` for JTReg. The default value is 0.
 This is only valid if the failure handler is built.
 
+#### JTREG_TEST_THREAD_FACTORY
+
+Sets the `-testThreadFactory` for JTReg. The source code of all plugins is located
+in `test/jtreg_test_thread_factory/'. The plugins is built as a part of test image.
+
 #### TEST_MODE
 
 The test mode (`agentvm` or `othervm`).
