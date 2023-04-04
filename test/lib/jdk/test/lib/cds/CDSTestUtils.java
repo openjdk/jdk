@@ -636,6 +636,23 @@ public class CDSTestUtils {
     }
 
     // Handle and insert test.cds.runtime.options to commandline
+    // The test.cds.runtime.options property is used to inject extra VM options to
+    // subprocesses launched by the CDS test cases using executeAndLog().
+    // The injection applies only to subprocess that:
+    //   - are launched by the standard java launcher (bin/java)
+    //   - are not dumping the CDS archive with -Xshare:dump
+    //   - do not explicitly disable CDS via -Xshare:off
+    //
+    // The main purpose of this property is to test the runtime loading of
+    // the CDS "archive heap region" with non-default garbage collectors. E.g.,
+    //
+    // jtreg -vmoptions:-Dtest.cds.runtime.options=-XX:+UnlockExperimentalVMOptions,-XX:+UseEpsilonGC \
+    //       test/hotspot/jtreg/runtime/cds
+    //
+    // Note that the injection is not applied to -Xshare:dump, so that the CDS archives
+    // will be dumped with G1, which is the only collector that supports dumping
+    // the archive heap region. Similarly, if a UseXxxGC option already exists in the command line,
+    // the UseXxxGC option added in test.cds.runtime.options will be ignored.
     public static void handleCDSRuntimeOptions(ProcessBuilder pb) {
         List<String> cmd = pb.command();
         String jtropts = System.getProperty("test.cds.runtime.options");
