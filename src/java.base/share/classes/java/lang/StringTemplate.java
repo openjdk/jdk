@@ -573,7 +573,7 @@ public interface StringTemplate {
          *
          * @param <R>  Processor's process result type
          */
-        static <R> Processor<R, RuntimeException> of(Function<StringTemplate, R> process) {
+        static <R> Processor<R, RuntimeException> of(Function<? super StringTemplate, ? extends R> process) {
             return process::apply;
         }
 

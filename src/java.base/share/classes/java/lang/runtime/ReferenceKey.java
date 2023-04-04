@@ -67,7 +67,7 @@ interface ReferenceKey<T> {
          * Saved hashcode of the key. Used when {@link WeakReference} is
          * null.
          */
-        int hashcode;
+        private final int hashcode;
 
         /**
          * Private constructor.
@@ -126,7 +126,7 @@ interface ReferenceKey<T> {
          * Saved hashcode of the key. Used when {@link SoftReference} is
          * null.
          */
-        int hashcode;
+        private final int hashcode;
 
         /**
          * Private constructor.
