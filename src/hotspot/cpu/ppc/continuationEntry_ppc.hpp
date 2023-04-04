@@ -29,7 +29,7 @@
 
 class ContinuationEntryPD {
   // This is needed to position the ContinuationEntry at the unextended sp of the entry frame
-  frame::abi_reg_args _abi;
+  frame::native_abi_reg_args _abi;
 };
 
 #endif // CPU_PPC_CONTINUATIONENTRY_PPC_HPP
