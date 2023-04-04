@@ -791,7 +791,11 @@ public:
 #ifndef PRODUCT
   void dump_head();       // Dump loop head only
   void dump();            // Dump this loop recursively
-  void verify_tree(IdealLoopTree *loop, const IdealLoopTree *parent) const;
+#endif
+
+#ifdef ASSERT
+  GrowableArray<IdealLoopTree*> collect_sorted_children() const;
+  bool verify_tree(IdealLoopTree* loop_verify) const;
 #endif
 
  private:
@@ -1697,8 +1701,6 @@ public:
   void dump_idom(Node* n, uint count) const;
   void get_idoms(Node* n, uint count, Unique_Node_List& idoms) const;
   void dump(IdealLoopTree* loop, uint rpo_idx, Node_List &rpo_list) const;
-  void verify() const;          // Major slow  :-)
-  void verify_compare(Node* n, const PhaseIdealLoop* loop_verify, VectorSet &visited) const;
   IdealLoopTree* get_loop_idx(Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
     return _nodes[n->_idx] ? (IdealLoopTree*)_nodes[n->_idx] : _ltree_root;
@@ -1710,6 +1712,13 @@ public:
   static volatile int _long_loop_candidates;
   static volatile int _long_loop_nests;
   static volatile int _long_loop_counted_loops;
+#endif
+
+#ifdef ASSERT
+  void verify() const;
+  bool verify_idom_and_nodes(Node* root, const PhaseIdealLoop* phase_verify) const;
+  bool verify_idom(Node* n, const PhaseIdealLoop* phase_verify) const;
+  bool verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) const;
 #endif
 
   void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;
