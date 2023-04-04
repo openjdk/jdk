@@ -64,22 +64,13 @@ static void card_mark_barrier(T* field, oop value) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->is_in_or_null(value), "Should be in heap");
   if (heap->mode()->is_generational() && heap->is_in_old(field) && heap->is_in_young(value)) {
-    // We expect this to really be needed only during global collections. Young collections
-    // discover j.l.r.Refs in the old generation during scanning of dirty cards
-    // and these point to (as yet unmarked) referents in the young generation (see
-    // ShenandoahReferenceProcessor::should_discover). Those cards will continue to
-    // remain dirty on account of this cross-generational pointer to the referent.
-    // Similarly, old collections will never discover j.l.r.Refs in the young generation.
-    // It is only global collections that discover in both generations. Here we can
-    // end up with a j.l.R in the old generation on the discovered list that
-    // is not already on a dirty card, but which may here end up with a successor in
-    // the discovered list that is in the young generation. This is the singular case
-    // where the card needs to be dirtied here. We, however, skip the extra global'ness check
-    // and always mark the card (redundantly during young collections).
-    // The asserts below check the expected invariants based on the description above.
-    assert(!heap->active_generation()->is_old(), "Expecting only young or global");
-    assert(heap->card_scan()->is_card_dirty(reinterpret_cast<HeapWord*>(field))
-           || heap->active_generation()->is_global(), "Expecting already dirty if young");
+    // For Shenandoah, each generation collects all the _referents_ that belong to the
+    // collected generation. We can end up with discovered lists that contain a mixture
+    // of old and young _references_. These references are linked together through the
+    // discovered field in java.lang.Reference. In some cases, creating or editing this
+    // list may result in the creation of _new_ old-to-young pointers which must dirty
+    // the corresponding card. Failing to do this may cause heap verification errors and
+    // lead to incorrect GC behavior.
     heap->card_scan()->mark_card_as_dirty(reinterpret_cast<HeapWord*>(field));
   }
 }
