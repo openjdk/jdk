@@ -240,7 +240,7 @@ private:
     }
 
     void do_work(uint worker_id) override {
-      const uint num_regions_per_worker = num_cards_per_worker / (uint) HeapRegion::CardsPerRegion;
+      const uint num_regions_per_worker = num_cards_per_worker / (uint)HeapRegion::CardsPerRegion;
 
       while (_cur_dirty_regions < _regions->size()) {
         uint next = Atomic::fetch_and_add(&_cur_dirty_regions, num_regions_per_worker);
