@@ -120,7 +120,7 @@ import java.util.Locale;
  * property on the java launcher command line. Setting it at runtime with
  * {@link System#setProperty(String, String)} is discouraged and it may not affect
  * the order.
- * @implNote The JDK Reference Implementation provides the following four
+ * JDK Reference Implementation provides the following four
  * locale providers:
  * <ul>
  * <li> "CLDR": A provider based on Unicode Consortium's
