@@ -25,6 +25,7 @@
  * @test
  * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
@@ -35,13 +36,13 @@
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class TestUpcallStack extends TestUpcallBase {
@@ -51,18 +52,28 @@ public class TestUpcallStack extends TestUpcallBase {
     }
 
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
-    public void testUpcallsStack(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
+    public void testUpcallsStack(int count, String fName, Ret ret, List<ParamType> paramTypes,
+                                 List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
-        List<Consumer<Object[]>> argChecks = new ArrayList<>();
+        List<Consumer<Object>> argChecks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow("s" + fName);
         try (Arena arena = Arena.openConfined()) {
-            MethodHandle mh = downcallHandle(ABI, addr, arena, functionStack(ret, paramTypes, fields));
-            Object[] args = makeArgsStack(arena.scope(), ret, paramTypes, fields, returnChecks, argChecks);
-            Object[] callArgs = args;
-            Object res = mh.invokeWithArguments(callArgs);
-            argChecks.forEach(c -> c.accept(args));
+            FunctionDescriptor descriptor = functionStack(ret, paramTypes, fields);
+            MethodHandle mh = downcallHandle(LINKER, addr, arena, descriptor);
+            AtomicReference<Object[]> capturedArgs = new AtomicReference<>();
+            Object[] args = makeArgsStack(capturedArgs, arena, descriptor, returnChecks, argChecks);
+
+            Object res = mh.invokeWithArguments(args);
+
             if (ret == Ret.NON_VOID) {
                 returnChecks.forEach(c -> c.accept(res));
+            }
+
+            Object[] capturedArgsArr = capturedArgs.get();
+            for (int capturedIdx = STACK_PREFIX_LAYOUTS.size(), checkIdx = 0;
+                 capturedIdx < capturedArgsArr.length;
+                 capturedIdx++, checkIdx++) {
+                argChecks.get(checkIdx).accept(capturedArgsArr[capturedIdx]);
             }
         }
     }
@@ -71,8 +82,9 @@ public class TestUpcallStack extends TestUpcallBase {
         return function(ret, params, fields, STACK_PREFIX_LAYOUTS);
     }
 
-    static Object[] makeArgsStack(SegmentScope session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) throws ReflectiveOperationException {
-        return makeArgs(session, ret, params, fields, checks, argChecks, STACK_PREFIX_LAYOUTS);
+    static Object[] makeArgsStack(AtomicReference<Object[]> capturedArgs, Arena session, FunctionDescriptor descriptor,
+                                  List<Consumer<Object>> checks, List<Consumer<Object>> argChecks) {
+        return makeArgs(capturedArgs, session, descriptor, checks, argChecks, STACK_PREFIX_LAYOUTS.size());
     }
 
 }

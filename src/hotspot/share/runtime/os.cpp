@@ -1202,6 +1202,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 #endif
 
+  // Still nothing? If NMT is enabled, we can ask what it thinks...
+  if (MemTracker::print_containing_region(addr, st)) {
+    return;
+  }
+
   // Try an OS specific find
   if (os::find(addr, st)) {
     return;
@@ -1818,7 +1823,7 @@ bool os::release_memory(char* addr, size_t bytes) {
 
 // Prints all mappings
 void os::print_memory_mappings(outputStream* st) {
-  os::print_memory_mappings(nullptr, (size_t)-1, st);
+  os::print_memory_mappings(nullptr, SIZE_MAX, st);
 }
 
 // Pretouching must use a store, not just a load.  On many OSes loads from

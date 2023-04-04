@@ -90,22 +90,6 @@ private:
     bool do_heap_region(HeapRegion* hr);
   };
 
-  class G1ResetMetadataClosure : public HeapRegionClosure {
-    G1CollectedHeap* _g1h;
-    G1FullCollector* _collector;
-
-    void reset_region_metadata(HeapRegion* hr);
-    // Scrub all runs of dead objects within the given region by putting filler
-    // objects and updating the corresponding BOT. If update_bot_for_live is true,
-    // also update the BOT for live objects.
-    void scrub_skip_compacting_region(HeapRegion* hr, bool update_bot_for_live);
-
-  public:
-    G1ResetMetadataClosure(G1FullCollector* collector);
-
-    bool do_heap_region(HeapRegion* hr);
-  };
-
   class G1PrepareCompactLiveClosure : public StackObj {
     G1FullGCCompactionPoint* _cp;
 
