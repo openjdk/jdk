@@ -3881,9 +3881,6 @@ void TemplateTable::_new() {
 
   // continue
   __ bind(Ldone);
-
-  // Must prevent reordering of stores for object initialization with stores that publish the new object.
-  __ membar(Assembler::StoreStore);
 }
 
 void TemplateTable::newarray() {
@@ -3892,9 +3889,6 @@ void TemplateTable::newarray() {
   __ lbz(R4, 1, R14_bcp);
   __ extsw(R5, R17_tos);
   call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::newarray), R4, R5 /* size */);
-
-  // Must prevent reordering of stores for object initialization with stores that publish the new object.
-  __ membar(Assembler::StoreStore);
 }
 
 void TemplateTable::anewarray() {
@@ -3904,9 +3898,6 @@ void TemplateTable::anewarray() {
   __ get_2_byte_integer_at_bcp(1, R5, InterpreterMacroAssembler::Unsigned);
   __ extsw(R6, R17_tos); // size
   call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::anewarray), R4 /* pool */, R5 /* index */, R6 /* size */);
-
-  // Must prevent reordering of stores for object initialization with stores that publish the new object.
-  __ membar(Assembler::StoreStore);
 }
 
 // Allocate a multi dimensional array
@@ -3923,9 +3914,6 @@ void TemplateTable::multianewarray() {
   call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::multianewarray), R4 /* first_size_address */);
   // Pop all dimensions off the stack.
   __ add(R15_esp, Rptr, R15_esp);
-
-  // Must prevent reordering of stores for object initialization with stores that publish the new object.
-  __ membar(Assembler::StoreStore);
 }
 
 void TemplateTable::arraylength() {

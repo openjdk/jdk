@@ -3529,8 +3529,6 @@ void TemplateTable::_new() {
 
   // continue
   __ bind(done);
-  // Must prevent reordering of stores for object initialization with stores that publish the new object.
-  __ membar(MacroAssembler::StoreStore);
 }
 
 void TemplateTable::newarray() {
@@ -3539,8 +3537,6 @@ void TemplateTable::newarray() {
   __ mv(c_rarg2, x10);
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::newarray),
           c_rarg1, c_rarg2);
-  // Must prevent reordering of stores for object initialization with stores that publish the new object.
-  __ membar(MacroAssembler::StoreStore);
 }
 
 void TemplateTable::anewarray() {
@@ -3550,8 +3546,6 @@ void TemplateTable::anewarray() {
   __ mv(c_rarg3, x10);
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::anewarray),
           c_rarg1, c_rarg2, c_rarg3);
-  // Must prevent reordering of stores for object initialization with stores that publish the new object.
-  __ membar(MacroAssembler::StoreStore);
 }
 
 void TemplateTable::arraylength() {
