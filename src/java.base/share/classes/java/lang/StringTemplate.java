@@ -572,9 +572,8 @@ public interface StringTemplate {
          * @return a {@link Processor}
          *
          * @param <R>  Processor's process result type
-         * @param <E>  Exception thrown type
          */
-        static <R, E extends Throwable> Processor<R, E> of(Function<StringTemplate, R> process) {
+        static <R> Processor<R, RuntimeException> of(Function<StringTemplate, R> process) {
             return process::apply;
         }
 
