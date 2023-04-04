@@ -606,69 +606,59 @@ public class CDSTestUtils {
 
     // Check commandline for the last instance of Xshare to see if the process can load
     // a CDS archive
-    public static boolean maybeRunningWithArchive(List<String> cmd) {
-      // -Xshare only works for the java executable
-      if (!cmd.get(0).equals(JDKToolFinder.getJDKTool("java")) || cmd.size() < 2) {
-        return false;
-      }
-
-      Pattern share = Pattern.compile("-Xshare:.*");
-      String lastXShare = "";
-      for (String s : cmd) {
-        Matcher m = share.matcher(s);
-        if (m.find()) {
-          lastXShare = s;
+    public static boolean isRunningWithArchive(List<String> cmd) {
+        // -Xshare only works for the java executable
+        if (!cmd.get(0).equals(JDKToolFinder.getJDKTool("java")) || cmd.size() < 2) {
+            return false;
         }
-      }
 
-      if (lastXShare.equals("-Xshare:dump") || lastXShare.equals("-Xshare:off")) {
-        return false;
-      }
-      return true;
+        // -Xshare options are likely at the end of the args list
+        for (int i  = cmd.size() - 1; i >= 0; i--) {
+            String s = cmd.get(i);
+            if (s.equals("-Xshare:dump") || s.equals("-Xshare:off")) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    static boolean maybeAddOption(String cmd, boolean hasGCOption, ArrayList<String> cmdline) {
-      Pattern gc = Pattern.compile("^-XX:\\+.*GC");
-      Matcher m = gc.matcher(cmd);
-      if (m.matches() && !hasGCOption) {
-        cmdline.add(cmd);
-        return true;
-      } else if (!m.matches()) {
-        cmdline.add(cmd);
-      }
-      return hasGCOption;
+    public static boolean isGCOption(String s) {
+      return s.startsWith("-XX:+Use") && s.endsWith("GC");
     }
 
     public static boolean hasGCOption(List<String> cmd) {
-      Pattern gc = Pattern.compile("^-XX:\\+.*GC");
-      for (String s : cmd) {
-        Matcher m = gc.matcher(s);
-        if (m.find()) {
-          return true;
+        for (String s : cmd) {
+            if (isGCOption(s)) {
+                return true;
+            }
         }
-      }
-      return false;
+        return false;
+    }
+
+    // Handle and insert test.cds.runtime.options to commandline
+    public static void handleCDSRuntimeOptions(ProcessBuilder pb) {
+        List<String> cmd = pb.command();
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts != null && isRunningWithArchive(cmd)) {
+            // There cannot be multiple GC options in the command line so some
+            // options may be ignored
+            ArrayList<String> cdsRuntimeOpts = new ArrayList<String>();
+            boolean hasGCOption = hasGCOption(cmd);
+            for (String s : jtropts.split(",")) {
+                if (!CDSOptions.disabledRuntimePrefixes.contains(s) &&
+                    !(hasGCOption && isGCOption(s))) {
+                    cdsRuntimeOpts.add(s);
+                }
+            }
+            pb.command().addAll(1, cdsRuntimeOpts);
+        }
     }
 
     // ============================= Logging
     public static OutputAnalyzer executeAndLog(ProcessBuilder pb, String logName) throws Exception {
         long started = System.currentTimeMillis();
 
-        // Handle and insert test.cds.runtime.options
-        List<String> cmd = pb.command();
-        ArrayList<String> cdsRuntimeOpts = new ArrayList<String>();
-        String jtropts = System.getProperty("test.cds.runtime.options");
-        if (jtropts != null && maybeRunningWithArchive(cmd)) {
-          // There cannot be multiple GC options in the command line so some
-          // options may be ignored
-          boolean hasGCOption = hasGCOption(cmd);
-          for (String s : jtropts.split(",")) {
-              if (!CDSOptions.disabledRuntimePrefixes.contains(s)) {
-                hasGCOption = maybeAddOption(s, hasGCOption, cdsRuntimeOpts);
-              }
-          }
-          pb.command().addAll(1, cdsRuntimeOpts);
-        }
+        handleCDSRuntimeOptions(pb);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         String logFileNameStem =
