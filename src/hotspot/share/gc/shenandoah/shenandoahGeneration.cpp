@@ -933,11 +933,19 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
 }
 
 size_t ShenandoahGeneration::increment_affiliated_region_count() {
+  shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
+  // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
+  // a coherent value.
   _affiliated_region_count++;
   return _affiliated_region_count;
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count() {
+  shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
+  // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
+  // a coherent value.
   _affiliated_region_count--;
   return _affiliated_region_count;
 }
