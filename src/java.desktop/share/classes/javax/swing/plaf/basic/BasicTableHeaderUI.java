@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,7 +700,8 @@ public class BasicTableHeaderUI extends TableHeaderUI {
         if (draggedColumn != null) {
             int draggedColumnIndex = viewIndexForColumn(draggedColumn);
             if (draggedColumnIndex != -1) {
-                Rectangle draggedCellRect = header.getHeaderRect(draggedColumnIndex);
+                Rectangle draggedCellRect =
+                                header.getHeaderRect(draggedColumnIndex);
 
                 // Draw a gray well in place of the moving column.
                 g.setColor(header.getParent().getBackground());
@@ -716,7 +717,6 @@ public class BasicTableHeaderUI extends TableHeaderUI {
 
                 paintCell(g, draggedCellRect, draggedColumnIndex);
             }
-
         }
 
         // Remove all components in the rendererPane.
@@ -724,7 +724,6 @@ public class BasicTableHeaderUI extends TableHeaderUI {
     }
 
     private Component getHeaderRenderer(int columnIndex) {
-
         TableColumn aColumn = header.getColumnModel().getColumn(columnIndex);
         TableCellRenderer renderer = aColumn.getHeaderRenderer();
         if (renderer == null) {

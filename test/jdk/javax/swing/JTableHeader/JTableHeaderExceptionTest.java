@@ -34,7 +34,12 @@ import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.JFrame;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
 public class JTableHeaderExceptionTest {
@@ -88,7 +93,7 @@ public class JTableHeaderExceptionTest {
 class DragTestTable extends JTable {
 
     Point loc;
-    public DragTestTable(DragTestTableModel model){
+    public DragTestTable(DragTestTableModel model) {
 
         super(model);
 
@@ -96,7 +101,6 @@ class DragTestTable extends JTable {
         menu.add(new AbstractAction("Bug Test") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //loc = menu.getLocationOnScreen();
                 ((DragTestTableModel)getModel()).fireTableStructureChanged();
             }
         });
@@ -110,7 +114,7 @@ class DragTestTable extends JTable {
         private Object rowData[][];
         private Object columnNames[];
 
-        public DragTestTableModel(Object rowData[][], Object columnNames[]){
+        public DragTestTableModel(Object rowData[][], Object columnNames[]) {
             super();
             this.rowData = rowData;
             this.columnNames = columnNames;
