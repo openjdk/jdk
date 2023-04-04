@@ -42,6 +42,9 @@ package javax.crypto.spec;
  * }
  * EncodingParameters ::= OCTET STRING(SIZE(0..MAX))
  * </pre>
+ *
+ * @spec https://www.rfc-editor.org/info/rfc8017
+ *      RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
  * @author Valerie Peng
  *
  * @since 1.5

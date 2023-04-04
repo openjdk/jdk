@@ -137,6 +137,8 @@ public class EncryptedPrivateKeyInfo {
      * is empty, i.e. 0-length.
      * @exception NoSuchAlgorithmException if the specified algName is
      * not supported.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public EncryptedPrivateKeyInfo(String algName, byte[] encryptedData)
         throws NoSuchAlgorithmException {
@@ -226,6 +228,8 @@ public class EncryptedPrivateKeyInfo {
      * for information about standard Cipher algorithm names.
      *
      * @return the encryption algorithm name.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public String getAlgName() {
         return algid == null ? params.getAlgorithm() : algid.getName();

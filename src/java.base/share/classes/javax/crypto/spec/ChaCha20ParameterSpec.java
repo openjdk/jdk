@@ -39,6 +39,8 @@ import java.util.Objects;
  * <p> This class can be used to initialize a {@code Cipher} object that
  * implements the <i>ChaCha20</i> algorithm.
  *
+ * @spec https://www.rfc-editor.org/info/rfc7539
+ *      RFC 7539: ChaCha20 and Poly1305 for IETF Protocols
  * @since 11
  */
 public final class ChaCha20ParameterSpec implements AlgorithmParameterSpec {

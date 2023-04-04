@@ -41,6 +41,8 @@ import java.util.Optional;
  * <li>Otherwise, the mode is Ed25519 or Ed448</li>
  * </ul>
  *
+ * @spec https://www.rfc-editor.org/info/rfc8032
+ *      RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 

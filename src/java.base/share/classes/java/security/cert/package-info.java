@@ -52,6 +52,10 @@
  *   <li> {@extLink security_guide_pki Java PKI Programmer's Guide}
  * </ul>
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @since 1.2
  */
 package java.security.cert;

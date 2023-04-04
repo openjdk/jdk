@@ -44,6 +44,7 @@ import java.util.Locale;
  * Security Appendix</a>
  * of the <cite>Java Object Serialization Specification</cite> for more information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @see Key
  * @see KeyFactory
  * @see javax.crypto.spec.SecretKeySpec
