@@ -375,9 +375,9 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   BarrierSetAssembler::store_at(masm, decorators, type, dst, tmp1, tmp2, tmp3, noreg);
 }
 
-static FloatRegister z_copy_load_bad_vreg = v11;
-static FloatRegister z_copy_store_good_vreg = v10;
-static FloatRegister z_copy_store_bad_vreg = v9;
+static FloatRegister z_copy_load_bad_vreg = v17;
+static FloatRegister z_copy_store_good_vreg = v18;
+static FloatRegister z_copy_store_bad_vreg = v19;
 
 static void load_wide_arraycopy_masks(MacroAssembler* masm) {
   __ lea(rscratch1, ExternalAddress((address)&ZPointerVectorLoadBadMask));
@@ -408,14 +408,14 @@ private:
     __ sub(sp, sp, 4 * neonSize);
     __ st1(v4, v5, v6, v7, Assembler::T16B, Address(sp, 0));
     __ sub(sp, sp, 4 * neonSize);
-    __ st1(v8, v9, v10, v11, Assembler::T16B, Address(sp, 0));
+    __ st1(v16, v17, v18, v19, Assembler::T16B, Address(sp, 0));
   }
 
   void restore() {
     MacroAssembler* masm = _masm;
 
     int neonSize = wordSize * 2;
-    __ ld1(v8, v9, v10, v11, Assembler::T16B, Address(sp, 0));
+    __ ld1(v16, v17, v18, v19, Assembler::T16B, Address(sp, 0));
     __ add(sp, sp, 4 * neonSize);
     __ ld1(v4, v5, v6, v7, Assembler::T16B, Address(sp, 0));
     __ add(sp, sp, 4 * neonSize);
