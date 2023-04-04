@@ -1664,8 +1664,16 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
     return get_klass_by_name_impl(accessing_klass, cpool, strippedsym, require_local);
   }
 
-  Klass* found_klass = SystemDictionary::find_constrained_or_local_klass(THREAD, sym,
-                                                      accessing_klass, require_local);
+  Handle loader;
+  Handle domain;
+  if (accessing_klass != nullptr) {
+    loader = Handle(THREAD, accessing_klass->class_loader());
+    domain = Handle(THREAD, accessing_klass->protection_domain());
+  }
+
+  Klass* found_klass = require_local ?
+                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain) :
+                         SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
   // The element type may be available either locally or via constraints.
