@@ -160,6 +160,10 @@ public final class Repository {
     }
 
     synchronized void clear() {
+        if (Options.getPreserveRepository()) {
+            return;
+        }
+
         for (SafePath p : cleanupDirectories) {
             try {
                 SecuritySupport.clearDirectory(p);
