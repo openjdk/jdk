@@ -131,6 +131,8 @@ import sun.security.action.GetPropertyAction;
  * instance, unless particular protocol specifications specify different behaviours
  * for it.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2616
+ *      RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
  * @author  James Gosling
  * @see     java.net.URL#openConnection()
  * @see     java.net.URLConnection#connect()

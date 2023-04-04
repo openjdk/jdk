@@ -2876,13 +2876,17 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
     make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide, cond);
     ideal.sync_kit(this);
   } ideal.else_(); {
-    // set hide value to the VTMS transition bit in current JavaThread
+    // set hide value to the VTMS transition bit in current JavaThread and VirtualThread object
+    Node* vt_oop = _gvn.transform(argument(0)); // this argument - VirtualThread oop
     Node* thread = ideal.thread();
-    Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
+    Node* jt_addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
+    Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_VTMS_transition_offset());
     const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
 
     sync_kit(ideal);
-    access_store_at(nullptr, addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    access_store_at(nullptr, jt_addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    access_store_at(nullptr, vt_addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+
     ideal.sync_kit(this);
   } ideal.end_if();
   final_sync(ideal);
@@ -2890,19 +2894,15 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   return true;
 }
 
-// If notifications are enabled then just update the temporary VTMS transition bit.
+// Always update the temporary VTMS transition bit.
 bool LibraryCallKit::inline_native_notify_jvmti_hide() {
   if (!DoJVMTIVirtualThreadTransitions) {
     return true;
   }
   IdealKit ideal(this);
 
-  Node* ONE = ideal.ConI(1);
-  Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events));
-  Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
-
-  ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
-    // set the VTMS temporary transition bit in current JavaThread
+  {
+    // unconditionally update the temporary VTMS transition bit in current JavaThread
     Node* thread = ideal.thread();
     Node* hide = _gvn.transform(argument(1)); // hide argument for temporary VTMS transition notification
     Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_tmp_VTMS_transition_offset()));
@@ -2911,7 +2911,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_hide() {
     sync_kit(ideal);
     access_store_at(nullptr, addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
     ideal.sync_kit(this);
-  } ideal.end_if();
+  }
   final_sync(ideal);
 
   return true;
