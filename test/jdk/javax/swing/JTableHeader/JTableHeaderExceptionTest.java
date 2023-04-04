@@ -26,7 +26,7 @@
  * @bug 8068824
  * @key headful
  * @summary JTable header rendering problem (after setting preferred size)
- * @run JTableHeaderExceptionTest
+ * @run main JTableHeaderExceptionTest
 */
 import java.awt.BorderLayout;
 import java.awt.MouseInfo;
@@ -53,11 +53,14 @@ public class JTableHeaderExceptionTest {
                 frame = new JFrame();
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                Object rowData[][] = {{"Row1-Column1", "Row1-Column2", "Row1-Column3"},
+                Object rowData[][] =
+                        {{"Row1-Column1", "Row1-Column2", "Row1-Column3"},
                         {"Row2-Column1", "Row2-Column2", "Row2-Column3"}};
-                Object columnNames[] = {"Test", "Click me with right mouse click!", "Test"};
+                Object columnNames[] = 
+                    {"Test", "Click me with right mouse click!", "Test"};
 
-                DragTestTable.DragTestTableModel model = new DragTestTable.DragTestTableModel(rowData, columnNames);
+                DragTestTable.DragTestTableModel model =
+                    new DragTestTable.DragTestTableModel(rowData, columnNames);
 
                 DragTestTable dragTable = new DragTestTable(model);
                 table = dragTable;
@@ -120,11 +123,21 @@ class DragTestTable extends JTable {
             this.columnNames = columnNames;
         }
 
-        public String getColumnName(int column) { return columnNames[column].toString(); }
-        public int getRowCount() { return rowData.length; }
-        public int getColumnCount() { return columnNames.length; }
-        public Object getValueAt(int row, int col) { return rowData[row][col]; }
-        public boolean isCellEditable(int row, int column) { return true; }
+        public String getColumnName(int column) {
+            return columnNames[column].toString();
+        }
+        public int getRowCount() {
+            return rowData.length;
+        }
+        public int getColumnCount() {
+            return columnNames.length;
+        }
+        public Object getValueAt(int row, int col) {
+            return rowData[row][col];
+        }
+        public boolean isCellEditable(int row, int column) {
+            return true; 
+        }
         public void setValueAt(Object value, int row, int col) {
             rowData[row][col] = value;
             fireTableCellUpdated(row, col);
