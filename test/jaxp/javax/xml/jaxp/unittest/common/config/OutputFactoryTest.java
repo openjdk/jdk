@@ -47,8 +47,8 @@ public class OutputFactoryTest extends XMLOutputFactory {
     public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "com.sun.xml.internal.stream.XMLOutputFactoryImpl"},
-            {"jaxpImpls.properties", "common.config.OutputFactoryTest"},};
+            {"jaxpImpls.properties", "common.config.OutputFactoryTest"},
+        };
     }
 
     @Test(dataProvider = "getImpl")

@@ -58,6 +58,11 @@ public class SecuritySupport {
      */
     static volatile boolean firstTime = true;
 
+    /**
+     * Flag indicating whether a custom config has been read
+     */
+    static volatile boolean firstTimeCustom = true;
+
     private SecuritySupport() {}
 
     public static String getErrorMessage(Locale locale, String bundle, String key,
@@ -181,9 +186,11 @@ public class SecuritySupport {
 
     /**
      * Returns the value of the specified property from the Configuration file.
-     * The method reads the System Property "java.xml.config.file" for a custom
-     * configuration file, if doesn't exist, falls back to the JDK default that
-     * is typically located at $java.home/conf/jaxp.properties.
+     * The method reads the JDK default configuration that is typically located
+     * at $java.home/conf/jaxp.properties. On top of the default, if the System
+     * Property "java.xml.config.file" exists, the configuration file it points
+     * to will also be read. Any settings in it will then override those in the
+     * default.
      *
      * @param propName the specified property
      * @param stax a flag indicating whether to read stax.properties
@@ -191,13 +198,7 @@ public class SecuritySupport {
      * found
      */
     public static String readConfig(String propName, boolean stax) {
-        // use the System Property if specified
-        String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE);
-        if (configFile != null && loadProperties(configFile)) {
-            return cacheProps.getProperty(propName);
-        }
-
-        // fall back to the default configuration file
+        // always load the default configuration file
         if (firstTime) {
             synchronized (cacheProps) {
                 if (firstTime) {
@@ -217,6 +218,19 @@ public class SecuritySupport {
                                 .toAbsolutePath().normalize().toString());
                     }
                     firstTime = false;
+                }
+            }
+        }
+
+        // load the custom configure on top of the default if any
+        if (firstTimeCustom) {
+            synchronized (cacheProps) {
+                if (firstTimeCustom) {
+                    String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE);
+                    if (configFile != null) {
+                        loadProperties(configFile);
+                    }
+                    firstTimeCustom = false;
                 }
             }
         }

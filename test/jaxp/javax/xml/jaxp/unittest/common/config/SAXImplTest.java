@@ -46,8 +46,8 @@ public class SAXImplTest extends SAXParserFactory {
     public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl"},
-            {"jaxpImpls.properties", "common.config.SAXImplTest"},};
+            {"jaxpImpls.properties", "common.config.SAXImplTest"},
+        };
     }
 
     @Test(dataProvider = "getImpl")

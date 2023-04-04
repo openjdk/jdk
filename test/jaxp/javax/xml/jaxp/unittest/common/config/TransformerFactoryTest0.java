@@ -22,7 +22,8 @@
  */
 package common.config;
 
-import javax.xml.xpath.XPathFactory;
+import static common.config.ConfigurationTest.getPath;
+import javax.xml.transform.TransformerFactory;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -31,32 +32,27 @@ import org.testng.annotations.Test;
  * @test @bug 8303530
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
- * @run testng/othervm common.config.XPathPropertyTest
+ * @run testng/othervm common.config.TransformerFactoryTest0
  * @summary verifies that JAXP configuration file is customizable with a system
  * property "java.xml.config.file".
  */
-public class XPathPropertyTest extends ConfigurationTest {
-   /*
-     * DataProvider for testing the configuration file and system property.
-     *
-     * Fields:
-     *     configuration file, property name, property value
-     */
-    @DataProvider(name = "getProperty")
-    public Object[][] getProperty() {
+public class TransformerFactoryTest0 {
+    @DataProvider(name = "getImpl")
+    public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "jdk.xml.xpathExprOpLimit", "100"},
+            {null, "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"},
         };
     }
 
-    @Test(dataProvider = "getProperty")
-    public void testProperty(String config, String property, String expected) throws Exception {
+    @Test(dataProvider = "getImpl")
+    public void testFactory(String config, String expected) throws Exception {
         if (config != null) {
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
-        XPathFactory xf = XPathFactory.newInstance();
+
+        TransformerFactory tf = TransformerFactory.newInstance();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        Assert.assertEquals(xf.getProperty(property), expected);
+        Assert.assertEquals(tf.getClass().getName(), expected);
     }
 }

@@ -45,9 +45,7 @@ public class XPathFactoryTest extends XPathFactory {
     public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl"},
             {"jaxpImpls.properties", "common.config.XPathFactoryTest"},
-
         };
     }
 

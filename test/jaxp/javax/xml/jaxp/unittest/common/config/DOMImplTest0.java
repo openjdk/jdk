@@ -22,7 +22,9 @@
  */
 package common.config;
 
-import javax.xml.xpath.XPathFactory;
+import static common.config.ConfigurationTest.SP_CONFIG;
+import static common.config.ConfigurationTest.getPath;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -31,32 +33,32 @@ import org.testng.annotations.Test;
  * @test @bug 8303530
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
- * @run testng/othervm common.config.XPathPropertyTest
- * @summary verifies that JAXP configuration file is customizable with a system
- * property "java.xml.config.file".
+ * @run testng/othervm common.config.DOMImplTest0
+ * @summary the tests with the default and custom configurations files have to be
+ * separate because they both are loaded once.
  */
-public class XPathPropertyTest extends ConfigurationTest {
-   /*
+public class DOMImplTest0 {
+    /*
      * DataProvider for testing the configuration file and system property.
      *
      * Fields:
-     *     configuration file, property name, property value
+     *     configuration file, factory implementation class
      */
-    @DataProvider(name = "getProperty")
-    public Object[][] getProperty() {
+    @DataProvider(name = "getImpl")
+    public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "jdk.xml.xpathExprOpLimit", "100"},
+            {null, "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl"},
         };
     }
 
-    @Test(dataProvider = "getProperty")
-    public void testProperty(String config, String property, String expected) throws Exception {
+    @Test(dataProvider = "getImpl")
+    public void testDOMImpl(String config, String expected) throws Exception {
         if (config != null) {
-            System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
+            System.setProperty(SP_CONFIG, getPath(config));
         }
-        XPathFactory xf = XPathFactory.newInstance();
-        System.clearProperty(ConfigurationTest.SP_CONFIG);
-        Assert.assertEquals(xf.getProperty(property), expected);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        System.clearProperty(SP_CONFIG);
+        Assert.assertEquals(dbf.getClass().getName(), expected);
     }
 }

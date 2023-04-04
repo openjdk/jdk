@@ -57,9 +57,8 @@
  * <h3 id="CF_Default">Default</h3>
  * By default, the <a href="#Factories">JAXP Factories</a> will look for a
  * configuration file called {@code jaxp.properties} in the {@code conf} directory
- * of the Java installation if the
- * <a href="#CF_SP">system property {@code java.xml.config.file}</a>
- * is not specified.
+ * of the Java installation and use the settings if any for configuring the
+ * factories.
  *
  * <p>
  * The default file will be read only once during a factory initialization and
@@ -71,14 +70,13 @@
  *
  * <h3 id="CF_SP">System Property</h3>
  * The system property {@code java.xml.config.file} can be used to set up a
- * configuration file outside of the JDK to override the default configuration
- * file (jaxp.properties).
+ * configuration file outside of the JDK to override any or all of the settings
+ * in the default configuration file (jaxp.properties).
  * <p>
  * When the system property is specified, the configuration file it points to
- * will override the default file in its entirety, that means no setting in the
- * latter will be used by the factories. If the system property does not exist
- * when a factory is instantiated, no further attempt will be made to locate it
- * while the factory is alive.
+ * will be read and the property settings in it used to override those in the
+ * default file. If the system property does not exist when a factory is instantiated,
+ * no further attempt will be made to locate it while the factory is alive.
  * <p>
  * The value of the property shall be a valid file path to a configuration file.
  * If the file path is not absolute, it will be considered relative to the working
@@ -90,8 +88,8 @@
  * <h2 id="LookupMechanism">JAXP Lookup Mechanism</h2>
  * JAXP defines an ordered lookup procedure to determine the implementation class
  * to load for the JAXP factories. Factories that support the mechanism are listed
- * in the table below along with the method, System Property name, Configuration
- * File, and System Default method to be used in the procedure.
+ * in the table below along with the method, System Property name, and System
+ * Default method to be used in the procedure.
  *
  * <table class="plain" id="Factories">
  * <caption>JAXP Factories</caption>
@@ -100,7 +98,6 @@
  * <th scope="col">Factory</th>
  * <th scope="col">Method</th>
  * <th scope="col">System Property Name</th>
- * <th scope="col">Configuration File</th>
  * <th scope="col">System Default</th>
  * </tr>
  * </thead>
@@ -112,7 +109,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.datatype.DatatypeFactory#newInstance() newInstance()}</td>
  * <td style="text-align:center">{@code javax.xml.datatype.DatatypeFactory}</td>
- * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.datatype.DatatypeFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -121,7 +117,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.parsers.DocumentBuilderFactory#newInstance() newInstance()}</td>
  * <td style="text-align:center">{@code javax.xml.parsers.DocumentBuilderFactory}</td>
- * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.parsers.DocumentBuilderFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -130,7 +125,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.parsers.SAXParserFactory#newInstance() newInstance()}</td>
  * <td style="text-align:center">{@code javax.xml.parsers.SAXParserFactory}</td>
- * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.parsers.SAXParserFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -139,10 +133,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.stream.XMLEventFactory#newFactory() newFactory()}</td>
  * <td style="text-align:center">{@code javax.xml.stream.XMLEventFactory}</td>
- * <td style="text-align:center">
- *     <a href="#ConfigurationFile">Configuration File</a>,
- *     <a href="#CF_Default">jaxp.properties</a> by default
- * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLEventFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
  * <tr>
@@ -151,10 +141,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.stream.XMLInputFactory#newFactory() newFactory()}</td>
  * <td style="text-align:center">{@code javax.xml.stream.XMLInputFactory}</td>
- * <td style="text-align:center">
- *     <a href="#ConfigurationFile">Configuration File</a>,
- *     <a href="#CF_Default">jaxp.properties</a> by default
- * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLInputFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
  * <tr>
@@ -163,10 +149,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.stream.XMLOutputFactory#newFactory() newFactory()}</td>
  * <td style="text-align:center">{@code javax.xml.stream.XMLOutputFactory}</td>
- * <td style="text-align:center">
- *     <a href="#ConfigurationFile">Configuration File</a>,
- *     <a href="#CF_Default">jaxp.properties</a> by default
- * </td>
  * <td style="text-align:center">{@link javax.xml.stream.XMLOutputFactory#newDefaultFactory() newDefaultFactory()}</td>
  * </tr>
  * <tr>
@@ -175,7 +157,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.transform.TransformerFactory#newInstance() newInstance()}</td>
  * <td style="text-align:center">{@code javax.xml.transform.TransformerFactory}</td>
- * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.transform.TransformerFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -184,7 +165,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.validation.SchemaFactory#newInstance(java.lang.String) newInstance(schemaLanguage)}</td>
  * <td style="text-align:center">{@code javax.xml.validation.SchemaFactory:}<i>schemaLanguage</i>[1]</td>
- * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.validation.SchemaFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
@@ -193,7 +173,6 @@
  * </th>
  * <td style="text-align:center">{@link javax.xml.xpath.XPathFactory#newInstance(java.lang.String) newInstance(uri)}</td>
  * <td style="text-align:center">{@link javax.xml.xpath.XPathFactory#DEFAULT_PROPERTY_NAME DEFAULT_PROPERTY_NAME} + ":uri"[2]</td>
- * <td style="text-align:center"><a href="#ConfigurationFile">Configuration File</a>, <a href="#CF_Default">jaxp.properties</a> by default</td>
  * <td style="text-align:center">{@link javax.xml.xpath.XPathFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * </tbody>
@@ -269,41 +248,38 @@
  * </li>
  * </ul>
  *
- * <h2 id="PSO">Property Scope and Order</h2>
+ * <h2 id="PP">Property Precedence</h2>
  * Properties in this module may be set in several different ways, including
  * initialization, the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
  * (hereafter referred to FSP), <a href="#ConfigurationFile">configuration file</a>,
- * system properties, the API properties. These settings will be in effect in
- * different scopes and follow an overriding order. In general, a setting in a
- * more specific or narrower scope overrides the one in general or wider scope.
- * The followings describe the scope of the settings and the overriding order that
- * is in descending order, with the later overriding the former:
+ * system properties, the API properties. These settings have a precedence order
+ * as follows, with earlier ones override the later:
  *
  * <ul>
- * <li>
- *      In a factory scope, properties are initialized with default values;
+ * <li><p>
+ *      Properties specified through factories or processors API. For example,
+ *      <pre>
+ *      {@code
+ *      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+ *      dbf.setAttribute(property, value);
+ *      }
+ *      </pre>
  * </li>
  * <li><p>
- *      In a factory scope, the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING}
- * feature (hereafter referred to FSP) may set a more restrictive value to override
- * the default. This process applies only to security-related properties that
- * have defined a restrictive value on top of the default one.
+ *      Properties set using the corresponding System properties;
  * </li>
  * <li><p>
- *      In a scope of all invocations of the JDK, properties that have corresponding
- * system properties defined may be set in the <a href="#ConfigurationFile">configuration file</a>;
+ *      Properties set in a <a href="#ConfigurationFile">configuration file</a>
+ * pointed to by the system property {@code java.xml.config.file};
  * </li>
  * <li><p>
- *      In a scope of a JDK instance, system properties, if any, may be set on
- * the commandline;
+ *      Properties set in the default configuration file
+ * <a href="#CF_Default">{@code jaxp.properties}</a>;
  * </li>
  * <li><p>
- *      System properties may be set through the System Property API to have effect
- * on the procedure where they are set;
- * </li>
- * <li><p>
- *      And last, in a scope of a factory or processor, properties specified
- * through factories or processors API.
+ *      Properties' default values initialized during factory or processor creation.
+ * Security-related properties will be on their restrictive values when the
+ * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature is true.
  * </li>
  * </ul>
  *
@@ -312,12 +288,10 @@
  * <h2 id="ConfigurationFile">Configuration File</h2>
  * The <a href="#ConfigurationFile">configuration file</a> defined by the XML
  * processing API may be used to set the JDK implementation specific properties
- * and features. For that purpose, the JDK may be distributed with the
- * <a href="#CF_Default">default file {@code jaxp.properties}</a> that may contain
- * any of the properties listed in table
- * <a href="#Properties">Implementation Specific Properties</a> and
+ * and features. A configuration file may contain any of the properties listed in
+ * table <a href="#Properties">Implementation Specific Properties</a> and
  * <a href="#Features">Features</a>. See also
- * <a href="#PSO">Property Scope and Order</a> for the use of the configuration
+ * <a href="#PP">Property Precedence</a> for the use of the configuration
  * file in setting properties.
  *
  *
@@ -326,7 +300,7 @@
  * In addition to the standard features and properties described within the public
  * APIs of this module, the JDK implementation supports a further number of
  * implementation specific features and properties. This section describes the
- * naming convention, System Properties, scope and order, and processors to which
+ * naming convention, System Properties, precedence order, and processors to which
  * a property applies. A table listing the implementation specific features and
  * properties that the implementation currently supports can be found at the end
  * of this note.
@@ -374,20 +348,20 @@
  *     {@code jdk.xml.isStandalone=true}
  * </pre>
  *
- * <h3 id="ScopeAndOrder">Scope and Order</h3>
+ * <h3 id="PropPrec">Property Precedence</h3>
  * The JDK implementation specific features and properties follow the same procedure
- * as described in section <a href="#PSO">Property Scope and Order</a>. Specific
- * to the 2nd step in the procedure, that is, settings by
- * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP}, security related
- * features and properties are flagged as {@code "security: yes"} in table
+ * as described in section <a href="#PP">Property Precedence</a> in setting properties.
+ * Specific to the initialized values, the restrictive values that are set when
+ * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} is true are shown
+ * in {@code "Value"}'s subcolumn {@code "Enforced"} in table
  * <a href="#Features">Implementation Specific Features</a> and
- * <a href="#Properties">Properties</a>. Their values are shown in {@code "Value"}'s
- * subcolumn {@code "Enforced"} in the tables.
+ * <a href="#Properties">Properties</a>.
  *
  * <p>
  * Furthermore, when the Java Security Manager is present, the JDK sets
  * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} to true and does
- * not allow it to be turned off. The security properties are therefore enforced.
+ * not allow it to be turned off. The security related properties are therefore
+ * set to the {@code "Enforced"} values.
  *
  * <h3 id="Processor">Processor Support</h3>
  * Features and properties may be supported by one or more processors. The
@@ -722,7 +696,7 @@
  * <td style="text-align:center" rowspan="3">19</td>
  * </tr>
  * <tr>
- * <td id="xpathExprGrpLimit">jdk.xml.xpathExprGrpLimit</td>
+ * <td id="xpathExprOpLimit">jdk.xml.xpathExprOpLimit</td>
  * <td>Limits the number of operators an XPath expression can contain.
  * </td>
  * <td style="text-align:center">100</td>
@@ -850,7 +824,7 @@
  *
  * <p id="Note5">
  * <b>[5]</b> A value "yes" indicates the property is a Security Property. Refer
- * to the <a href="#ScopeAndOrder">Scope and Order</a> on how secure processing
+ * to the <a href="#PropPrec">Property Precedence</a> on how secure processing
  * may affect the value of a Security Property.
  * <p id="Note6">
  * <b>[6]</b> One or more processors that support the property. The values of the
@@ -863,16 +837,15 @@
  * These legacy property names are <b>deprecated</b> as of JDK 17 and may be removed
  * in future releases. If both new and legacy properties are set, the new property
  * names take precedence regardless of how and where they are set. The overriding order
- * as defined in <a href="#ScopeAndOrder">Scope and Order</a> thus becomes, in
- * descending order:
+ * as defined in <a href="#PropPrec">Property Precedence</a> thus becomes:
  *
  * <ul>
- * <li>The default value;</li>
- * <li>Value set by FEATURE_SECURE_PROCESSING;</li>
- * <li>Value set in the configuration file;</li>
- * <li>Value set as System Property;</li>
- * <li>Value set on factories or processors using <b>legacy property names</b>;</li>
  * <li>Value set on factories or processors using new property names.</li>
+ * <li>Value set on factories or processors using <b>legacy property names</b>;</li>
+ * <li>Value set as System Property;</li>
+ * <li>Value set in the configuration file;</li>
+ * <li>Value set by FEATURE_SECURE_PROCESSING;</li>
+ * <li>The default value;</li>
  * </ul>
  * <p>
  * The following table lists the properties and their corresponding legacy names.

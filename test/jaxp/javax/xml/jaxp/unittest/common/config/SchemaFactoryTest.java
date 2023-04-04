@@ -47,9 +47,7 @@ public class SchemaFactoryTest extends SchemaFactory {
     public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory"},
             {"jaxpImpls.properties", "common.config.SchemaFactoryTest"},
-
         };
     }
 

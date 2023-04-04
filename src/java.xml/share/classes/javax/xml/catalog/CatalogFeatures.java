@@ -164,9 +164,9 @@ import jdk.xml.internal.SecuritySupport;
  * set the property {@code javax.xml.catalog.defer} to false to allow the entire
  * catalog to be pre-loaded.
  *
- * <h2>Scope and Order</h2>
+ * <h2>Property Precedence</h2>
  * The Catalog Features follow the
- * <a href="{@docRoot}/java.xml/module-summary.html#PSO">Property Scope and Order</a>
+ * <a href="{@docRoot}/java.xml/module-summary.html#PP">Property Precedence</a>
  * as described in the module summary with regards to settings with the configuration
  * file, system and API properties. In addition to the general procedure,
  * the Catalog Features are further supported in the catalog file itself where

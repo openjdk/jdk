@@ -57,7 +57,6 @@ public class EventFactoryTest extends XMLEventFactory {
     public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "com.sun.xml.internal.stream.events.XMLEventFactoryImpl"},
             {"jaxpImpls.properties", "common.config.EventFactoryTest"},
         };
     }

@@ -25,11 +25,30 @@ package common.config;
 import org.testng.annotations.DataProvider;
 
 /**
- * Configuration Test
+ * Verifies the configuration file and precedence:
+ *     settings in the configuration file are used as the default values of properties;
+ *     any settings in a custom configuration file override those in the default
+ * configuration.
  */
 public class ConfigurationTest {
+    // system property for custom configuration file
     static final String SP_CONFIG = "java.xml.config.file";
-    static final String SP_ENTITY_EXPANSION = "jdk.xml.entityExpansionLimit";
+    // Impl-Specific Property: entity expansion
+    static final String ISP_ENTITY_EXPANSION = "jdk.xml.entityExpansionLimit";
+    // Impl-Specific Property: parameter entity limit
+    static final String ISP_PARAMETER_ENTITY = "jdk.xml.maxParameterEntitySizeLimit";
+    // Impl-Specific Property: element attribute limit
+    static final String ISP_ELEMENT_ATTRIBUTE = "jdk.xml.elementAttributeLimit";
+    // Impl-Specific Property: XML name limit
+    static final String ISP_NAME_LIMIT = "jdk.xml.maxXMLNameLimit";
+
+    // Impl-Specific Feature: extension functions
+    static final String ISF_EXTENSION_FUNCTIONS = "jdk.xml.enableExtensionFunctions";
+    // Catalog feature: resolve
+    static final String CATALOG_RESOLVE = "javax.xml.catalog.resolve";
+    // The USE_CATALOG property indicates whether Catalog is enabled for a processor
+    static final String USE_CATALOG = "http://javax.xml.XMLConstants/feature/useCatalog";
+    static final String SP_USE_CATALOG = "javax.xml.useCatalog";
 
 
     static final boolean IS_WINDOWS = System.getProperty("os.name").contains("Windows");
@@ -44,20 +63,47 @@ public class ConfigurationTest {
         TEST_SOURCE_DIR = srcDir + "/files/";
     }
 
+    static enum PropertyType { FEATURE, PROPERTY };
+
    /*
      * DataProvider for testing the configuration file and system property.
      *
      * Fields:
-     *     configuration file, property name, property value
+     *     configuration file, property name, property type, property value
      */
     @DataProvider(name = "getProperty")
     public Object[][] getProperty() {
-
+        /**
+         * Test cases for verifying the configuration file
+         */
         return new Object[][]{
-            {null, SP_ENTITY_EXPANSION, "64000"},
-            {"jaxp.properties", SP_ENTITY_EXPANSION, "1000"},
+            // default value is expected for property (PARAMETER_ENTITY) not
+            // set in the default and custom configuration files
+            {null, ISP_PARAMETER_ENTITY, "1000000"},
+            // this property is set in the default (jaxp.properties),
+            // but not the custom configuration file. Expects readings from the
+            // default config
+            {null, ISP_NAME_LIMIT, "1000"},
+            // the property in the default configuration file (jaxp.properties)
+            // will be read and used as the default value of the property
+            {null, ISP_ENTITY_EXPANSION, "64000"},
         };
     }
+
+    @DataProvider(name = "getProperty0")
+    public Object[][] getProperty0() {
+        /**
+         * Duplicate of getProperty to include the case that uses the system
+         * property to set up a custom configuration file. This is to avoid
+         * interfering with other test cases.
+         */
+        return new Object[][]{
+            // the setting in the custom configuration file will override that
+            // in the default one
+            {"customJaxp.properties", ISP_ENTITY_EXPANSION, "1000"},
+        };
+    }
+
 
     static String getPath(String file) {
         String temp = TEST_SOURCE_DIR + file;

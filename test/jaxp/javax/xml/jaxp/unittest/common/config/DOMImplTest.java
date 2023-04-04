@@ -50,7 +50,6 @@ public class DOMImplTest extends DocumentBuilderFactory {
     public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl"},
             {"jaxpImpls.properties", "common.config.DOMImplTest"},
         };
     }

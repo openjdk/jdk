@@ -52,9 +52,7 @@ public class InputFactoryTest extends XMLInputFactory {
     public Object[][] getImpl() {
 
         return new Object[][]{
-            {null, "com.sun.xml.internal.stream.XMLInputFactoryImpl"},
             {"jaxpImpls.properties", "common.config.InputFactoryTest"},
-
         };
     }
 

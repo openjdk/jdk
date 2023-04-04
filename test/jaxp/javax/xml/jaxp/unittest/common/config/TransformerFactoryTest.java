@@ -48,8 +48,6 @@ public class TransformerFactoryTest extends TransformerFactory {
 
         return new Object[][]{
             {null, "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"},
-            {"jaxpImpls.properties", "common.config.TransformerFactoryTest"},
-
         };
     }
 

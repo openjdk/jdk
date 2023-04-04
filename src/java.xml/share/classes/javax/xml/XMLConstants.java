@@ -28,13 +28,12 @@ package javax.xml;
 /**
  * Defines constants for XML Processing APIs.
  *
- * <h2 id="ScopeAndOrder">Scope and Order</h2>
+ * <h2 id="PropPrec">Property Precedence</h2>
  * Some of the properties defined in this class, for example, the external access
  * properties (ACCESS_EXTERNAL_*) and USE_CATALOG, support multiple ways to set
  * their values. These properties follow the
- * <a href="{@docRoot}/java.xml/module-summary.html#PSO">Property Scope and Order</a>
- * defined in the module summary for the effectiveness of their scope and order
- * of preference.
+ * <a href="{@docRoot}/java.xml/module-summary.html#PP">Property Precedence</a>
+ * defined in the module summary for the property settings.
  *
  * <h2 id="EAP">External Access Properties</h2>
  * The format of the value for the external access properties

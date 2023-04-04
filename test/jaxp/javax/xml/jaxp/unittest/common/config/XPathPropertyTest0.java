@@ -31,11 +31,14 @@ import org.testng.annotations.Test;
  * @test @bug 8303530
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
- * @run testng/othervm common.config.XPathPropertyTest
+ * @run testng/othervm common.config.XPathPropertyTest0
  * @summary verifies that JAXP configuration file is customizable with a system
  * property "java.xml.config.file".
+ * Note: this test is a duplicate of XPathPropertyTest. This test runs the
+ * case with a custom configuration file only to avoid interfering with other
+ * test cases.
  */
-public class XPathPropertyTest extends ConfigurationTest {
+public class XPathPropertyTest0 extends ConfigurationTest {
    /*
      * DataProvider for testing the configuration file and system property.
      *
@@ -46,7 +49,7 @@ public class XPathPropertyTest extends ConfigurationTest {
     public Object[][] getProperty() {
 
         return new Object[][]{
-            {null, "jdk.xml.xpathExprOpLimit", "100"},
+            {"customJaxp.properties", "jdk.xml.xpathExprOpLimit", "200"},
         };
     }
 

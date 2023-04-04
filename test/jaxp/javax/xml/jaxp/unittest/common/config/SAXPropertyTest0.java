@@ -22,41 +22,34 @@
  */
 package common.config;
 
-import javax.xml.xpath.XPathFactory;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import org.testng.Assert;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.xml.sax.XMLReader;
 
 /**
  * @test @bug 8303530
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
- * @run testng/othervm common.config.XPathPropertyTest
+ * @run testng/othervm common.config.SAXPropertyTest0
  * @summary verifies that JAXP configuration file is customizable with a system
  * property "java.xml.config.file".
+ * Note: this test is a duplicate of SAXPropertyTest. This test runs the
+ * case with a custom configuration file only to avoid interfering with other
+ * test cases.
  */
-public class XPathPropertyTest extends ConfigurationTest {
-   /*
-     * DataProvider for testing the configuration file and system property.
-     *
-     * Fields:
-     *     configuration file, property name, property value
-     */
-    @DataProvider(name = "getProperty")
-    public Object[][] getProperty() {
-
-        return new Object[][]{
-            {null, "jdk.xml.xpathExprOpLimit", "100"},
-        };
-    }
-
-    @Test(dataProvider = "getProperty")
+public class SAXPropertyTest0 extends ConfigurationTest {
+    @Test(dataProvider = "getProperty0")
     public void testProperty(String config, String property, String expected) throws Exception {
         if (config != null) {
             System.setProperty(ConfigurationTest.SP_CONFIG, getPath(config));
         }
-        XPathFactory xf = XPathFactory.newInstance();
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        SAXParser sp = spf.newSAXParser();
         System.clearProperty(ConfigurationTest.SP_CONFIG);
-        Assert.assertEquals(xf.getProperty(property), expected);
+        Assert.assertEquals(sp.getProperty(property), expected);
+        XMLReader reader = sp.getXMLReader();
+        Assert.assertEquals(reader.getProperty(property), expected);
     }
 }
