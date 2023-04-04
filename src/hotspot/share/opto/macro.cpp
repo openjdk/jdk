@@ -2460,11 +2460,15 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         C->remove_macro_node(n);
         success = true;
       } else if (n->Opcode() == Op_MaxL) {
-        Node* repl = MaxNode::unsigned_max(n->in(1), n->in(2), TypeLong::LONG, _igvn);
+        // Since MaxL and MinL are not implemented in the backend, we expand them to
+        // a CMoveL construct now. At least until here, the type could be computed
+        // precisely. CMoveL is not so smart, but we can give it at least the best
+        // type we know abouot n now.
+        Node* repl = MaxNode::signed_max(n->in(1), n->in(2), _igvn.type(n), _igvn);
         _igvn.replace_node(n, repl);
         success = true;
       } else if (n->Opcode() == Op_MinL) {
-        Node* repl = MaxNode::unsigned_min(n->in(1), n->in(2), TypeLong::LONG, _igvn);
+        Node* repl = MaxNode::signed_min(n->in(1), n->in(2), _igvn.type(n), _igvn);
         _igvn.replace_node(n, repl);
         success = true;
       }

@@ -1559,6 +1559,7 @@ Node* PhaseIdealLoop::clone_skeleton_predicate_bool(Node* iff, Node* new_init, N
 
 // Clone a skeleton predicate for the main loop. new_init and new_stride are set as new inputs. Since the predicates cannot fail at runtime,
 // Halt nodes are inserted instead of uncommon traps.
+
 Node* PhaseIdealLoop::clone_skeleton_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj,
                                                               Node* control, IdealLoopTree* outer_loop, Node* input_proj) {
   Node* result = clone_skeleton_predicate_bool(iff, new_init, new_stride, control);
@@ -2522,6 +2523,9 @@ void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
 //------------------------------adjust_limit-----------------------------------
 // Helper function that computes new loop limit as (rc_limit-offset)/scale
 Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* offset, Node* rc_limit, Node* old_limit, Node* pre_ctrl, bool round) {
+  Node* old_limit_long = new ConvI2LNode(old_limit);
+  register_new_node(old_limit_long, pre_ctrl);
+
   Node* sub = new SubLNode(rc_limit, offset);
   register_new_node(sub, pre_ctrl);
   Node* limit = new DivLNode(nullptr, sub, scale);
@@ -2547,27 +2551,19 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
   //   - integer underflow of limit: MAXL chooses old_limit (>= MIN_INT > limit)
   // INT() is finally converting the limit back to an integer value.
 
-  // We use CMove nodes to implement long versions of min/max (MINL/MAXL).
-  // We use helper methods for inner MINL/MAXL which return CMoveL nodes to keep a long value for the outer MINL/MAXL comparison:
-  Node* inner_result_long;
+  Node* inner_result_long = nullptr;
+  Node* outer_result_long = nullptr;
   if (is_positive_stride) {
-    inner_result_long = MaxNode::signed_max(limit, _igvn.longcon(min_jint), TypeLong::LONG, _igvn);
+    inner_result_long = new MaxLNode(C, limit, _igvn.longcon(min_jint));
+    outer_result_long = new MinLNode(C, inner_result_long, old_limit_long);
   } else {
-    inner_result_long = MaxNode::signed_min(limit, _igvn.longcon(max_jint), TypeLong::LONG, _igvn);
+    inner_result_long = new MinLNode(C, limit, _igvn.longcon(max_jint));
+    outer_result_long = new MaxLNode(C, inner_result_long, old_limit_long);
   }
-  set_subtree_ctrl(inner_result_long, false);
+  register_new_node(inner_result_long, pre_ctrl);
+  register_new_node(outer_result_long, pre_ctrl);
 
-  // Outer MINL/MAXL:
-  // The comparison is done with long values but the result is the converted back to int by using CmovI.
-  Node* old_limit_long = new ConvI2LNode(old_limit);
-  register_new_node(old_limit_long, pre_ctrl);
-  Node* cmp = new CmpLNode(old_limit_long, limit);
-  register_new_node(cmp, pre_ctrl);
-  Node* bol = new BoolNode(cmp, is_positive_stride ? BoolTest::gt : BoolTest::lt);
-  register_new_node(bol, pre_ctrl);
-  Node* inner_result_int = new ConvL2INode(inner_result_long); // Could under-/overflow but that's fine as comparison was done with CmpL
-  register_new_node(inner_result_int, pre_ctrl);
-  limit = new CMoveINode(bol, old_limit, inner_result_int, TypeInt::INT);
+  limit = new ConvL2INode(outer_result_long);
   register_new_node(limit, pre_ctrl);
   return limit;
 }
