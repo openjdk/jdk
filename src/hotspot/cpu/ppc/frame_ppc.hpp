@@ -82,11 +82,14 @@
   // C frame layout
   static const int alignment_in_bytes = 16;
 
-  // ABI_MINFRAME:
-  struct native_abi_minframe {
+  struct common_abi {
     uint64_t callers_sp;
-    uint64_t cr;                                  //_16
+    uint64_t cr;
     uint64_t lr;
+  };
+
+  // ABI_MINFRAME:
+  struct native_abi_minframe : common_abi {
 #if !defined(ABI_ELFv2)
     uint64_t reserved1;                           //_16
     uint64_t reserved2;
@@ -227,13 +230,8 @@
   //            [outgoing arguments]
   //            [ENTRY_FRAME_LOCALS]
 
-  struct java_abi {
-    uint64_t callers_sp;
-    uint64_t cr;
-    uint64_t lr;
+  struct java_abi : common_abi {
     uint64_t toc;
-    // Nothing to add here!
-    // NOT ALIGNED to frame::alignment_in_bytes (16).
   };
 
   struct parent_ijava_frame_abi : java_abi {
