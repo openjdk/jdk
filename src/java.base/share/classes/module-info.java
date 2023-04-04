@@ -284,6 +284,7 @@ module java.base {
         jdk.random;
     exports jdk.internal.util to
         java.desktop,
+        java.prefs,
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
