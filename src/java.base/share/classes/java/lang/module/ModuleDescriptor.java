@@ -2010,10 +2010,9 @@ public class ModuleDescriptor
             if (automatic)
                 throw new IllegalStateException("Automatic modules can not declare"
                                                 + " service dependences");
-            if (uses.contains(requireServiceTypeName(service)))
+            if (!uses.add(requireServiceTypeName(service)))
                 throw new IllegalStateException("Dependence upon service "
                                                 + service + " already declared");
-            uses.add(service);
             return this;
         }
 
