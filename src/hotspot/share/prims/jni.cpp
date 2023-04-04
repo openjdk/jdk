@@ -44,8 +44,6 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "jfr/jfrEvents.hpp"
-#include "jfr/support/jfrThreadId.hpp"
 #include "jni.h"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -99,6 +97,9 @@
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
+#endif
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
 #endif
 
 static jint CurrentVersion = JNI_VERSION_20;
@@ -3463,24 +3464,6 @@ struct JNINativeInterface_* jni_functions_nocheck() {
   return &jni_NativeInterface;
 }
 
-static void post_thread_start_event(const JavaThread* jt) {
-  assert(jt != nullptr, "invariant");
-  EventThreadStart event;
-  if (event.should_commit()) {
-    event.set_thread(JFR_JVM_THREAD_ID(jt));
-    event.set_parentThread((traceid)0);
-#if INCLUDE_JFR
-    if (EventThreadStart::is_stacktrace_enabled()) {
-      jt->jfr_thread_local()->set_cached_stack_trace_id((traceid)0);
-      event.commit();
-      jt->jfr_thread_local()->clear_cached_stack_trace();
-    } else
-#endif
-    {
-      event.commit();
-    }
-  }
-}
 
 // Invocation API
 
@@ -3615,7 +3598,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
        JvmtiExport::post_thread_start(thread);
     }
 
-    post_thread_start_event(thread);
+    JFR_ONLY(Jfr::on_thread_start(thread);)
 
     if (ReplayCompiles) ciReplay::replay(thread);
 
@@ -3850,7 +3833,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     JvmtiExport::post_thread_start(thread);
   }
 
-  post_thread_start_event(thread);
+  JFR_ONLY(Jfr::on_thread_start(thread);)
 
   *(JNIEnv**)penv = thread->jni_environment();
 
