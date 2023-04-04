@@ -227,7 +227,16 @@
   //            [outgoing arguments]
   //            [ENTRY_FRAME_LOCALS]
 
-  struct parent_ijava_frame_abi : native_abi_minframe {
+  struct java_abi {
+    uint64_t callers_sp;
+    uint64_t cr;
+    uint64_t lr;
+    uint64_t toc;
+    // Nothing to add here!
+    // NOT ALIGNED to frame::alignment_in_bytes (16).
+  };
+
+  struct parent_ijava_frame_abi : java_abi {
   };
 
   enum {
@@ -319,15 +328,6 @@
   //
 
   // JIT_ABI (TOP and PARENT)
-
-  struct java_abi {
-    uint64_t callers_sp;
-    uint64_t cr;
-    uint64_t lr;
-    uint64_t toc;
-    // Nothing to add here!
-    // NOT ALIGNED to frame::alignment_in_bytes (16).
-  };
 
   struct jit_out_preserve : java_abi {
     // Nothing to add here!
