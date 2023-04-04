@@ -1530,6 +1530,11 @@ Also as a general rule, path options whose name includes the word
 specify module hierarchies, although some module-related path options
 allow a package hierarchy to be specified on a per-module basis.
 All other path options are used to specify package hierarchies.
+.PP
+When a JAR file in the user class path has a \f[B]\f[VB]Class-Path\f[B]\f[R]
+manifest attribute, and the specified file(s) exist, they are automatically
+inserted into the user class path after the JAR file.
+This rule also applies recursively to any new JAR files found.
 .SS Package Hierarchy
 .PP
 In a package hierarchy, directories and subdirectories are used to
