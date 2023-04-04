@@ -172,7 +172,8 @@ class markWord {
     return markWord(value() | unlocked_value);
   }
   bool has_locker() const {
-    return LockingMode == 1 && ((value() & lock_mask_in_place) == locked_value);
+    assert(LockingMode == 1, "should only be called with traditional stack locking");
+    return (value() & lock_mask_in_place) == locked_value;
   }
   BasicLock* locker() const {
     assert(has_locker(), "check");
@@ -180,7 +181,8 @@ class markWord {
   }
 
   bool is_fast_locked() const {
-    return LockingMode == 2 && ((value() & lock_mask_in_place) == locked_value);
+    assert(LockingMode == 2, "should only be called with new lightweight locking");
+    return (value() & lock_mask_in_place) == locked_value;
   }
   markWord set_fast_locked() const {
     // Clear the lock_mask_in_place bits to set locked_value:

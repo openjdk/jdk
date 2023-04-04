@@ -1385,7 +1385,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
     entry = entry->parent();
   }
 
-  if (!UseHeavyMonitors && LockingMode == 2) {
+  if (LockingMode == 2) {
     lock_stack().oops_do(f);
   }
 }
