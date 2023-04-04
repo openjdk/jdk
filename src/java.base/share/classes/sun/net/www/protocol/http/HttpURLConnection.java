@@ -1333,9 +1333,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 http.parseHTTP(responses, this);
             } catch (SocketTimeoutException se) {
                 if (logger.isLoggable(PlatformLogger.Level.FINE)) {
-                    logger.fine(
-                            "SocketTimeoutException caught, will attempt to send body regardless"
-                    );
+                    logger.fine("SocketTimeoutException caught, will attempt to send body regardless");
                 }
                 timedOut = true;
                 http.setIgnoreContinue(true);

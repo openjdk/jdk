@@ -26,7 +26,7 @@
  * @bug 8054022
  * @summary Verify that expect 100-continue doesn't hang
  * @library /test/lib
- * @run junit/othervm HttpUrlConnectionExpectContinueTest
+ * @run junit/othervm HttpURLConnectionExpectContinueTest
  */
 
 import org.junit.jupiter.api.AfterAll;
@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,8 +47,7 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class HttpUrlConnectionExpectContinueTest {
-
+public class HttpURLConnectionExpectContinueTest {
 
     class Control {
         ServerSocket serverSocket = null;
@@ -59,7 +59,6 @@ public class HttpUrlConnectionExpectContinueTest {
 
     private Thread serverThread = null;
     private volatile Control control = null;
-
     static final Logger logger;
 
     static {
@@ -75,92 +74,94 @@ public class HttpUrlConnectionExpectContinueTest {
         control.serverSocket = new ServerSocket();
         control.serverSocket.setReuseAddress(true);
         control.serverSocket.bind(new InetSocketAddress("127.0.0.1", 54321));
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                while (!control.stop) {
-                    try {
-                        Socket socket = control.serverSocket.accept();
-                        InputStream inputStream = socket.getInputStream();
-                        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        Runnable runnable = () -> {
+            while (!control.stop) {
+                try {
+                    Socket socket = control.serverSocket.accept();
+                    InputStream inputStream = socket.getInputStream();
+                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
 
-                        StringBuilder stringBuilder = new StringBuilder();
+                    StringBuilder stringBuilder = new StringBuilder();
 
-                        byte b;
+                    byte b;
+                    while (true) {
+                        b = (byte) inputStreamReader.read();
+                        stringBuilder.append((char) b);
+
+                        if (stringBuilder.length() >= 4) {
+                            char[] lastBytes = new char[4];
+                            stringBuilder.getChars(
+                                    stringBuilder.length() - 4,
+                                    stringBuilder.length(), lastBytes, 0);
+                            if (Arrays.equals(lastBytes, new char[]{'\r', '\n', '\r', '\n'})) {
+                                break;
+                            }
+                        }
+                    }
+
+                    OutputStream outputStream = socket.getOutputStream();
+
+                    String header = stringBuilder.toString();
+                    System.err.println(header);
+                    String contentLengthString = "Content-Length:";
+                    int idx = header.indexOf(contentLengthString);
+                    if (idx >= 0) {
+                        String substr = header.substring(idx + contentLengthString.length());
+                        idx = substr.indexOf('\r');
+                        substr = substr.substring(0, idx);
+                        int contentLength = Integer.parseInt(substr.trim());
+
+                        if (control.respondWith100Continue) {
+                            outputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
+                            outputStream.flush();
+                            if (control.write100ContinueTwice) {
+                                outputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
+                                outputStream.flush();
+                            }
+                        }
+
+                        char[] body = new char[contentLength];
+                    } else {
+
+                        if (control.respondWith100Continue) {
+                            outputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
+                            outputStream.flush();
+                            if (control.write100ContinueTwice) {
+                                outputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
+                                outputStream.flush();
+                            }
+                        }
+
+                        StringBuilder contentLengthBuilder = new StringBuilder();
                         while (true) {
                             b = (byte) inputStreamReader.read();
-                            stringBuilder.append((char) b);
+                            contentLengthBuilder.append((char) b);
 
-                            if (stringBuilder.length() >= 4) {
-                                char[] lastBytes = new char[4];
-                                stringBuilder.getChars(stringBuilder.length() - 4, stringBuilder.length(), lastBytes, 0);
-                                if (Arrays.equals(lastBytes, new char[]{'\r', '\n', '\r', '\n'})) {
+                            if (contentLengthBuilder.length() >= 2) {
+                                char[] lastBytes = new char[2];
+                                contentLengthBuilder.getChars(
+                                        contentLengthBuilder.length() - 2,
+                                        contentLengthBuilder.length(), lastBytes, 0);
+                                if (Arrays.equals(lastBytes, new char[]{'\r', '\n'})) {
+                                    String lengthInHex =
+                                            contentLengthBuilder.substring(0, contentLengthBuilder.length() - 2);
+
+                                    int contentLength = Integer.parseInt(lengthInHex, 16);
+                                    char[] body = new char[contentLength];
+                                    inputStreamReader.read(body);
                                     break;
+                                    //normally we have to parse more data,
+                                    //but for simplicity we expect no more chunks...
                                 }
                             }
                         }
-
-                        OutputStream outputStream = socket.getOutputStream();
-
-                        String header = stringBuilder.toString();
-                        System.err.println(header);
-                        String contentLengthString = "Content-Length:";
-                        int idx = header.indexOf(contentLengthString);
-                        if (idx >= 0) {
-                            String substr = header.substring(idx + contentLengthString.length());
-                            idx = substr.indexOf('\r');
-                            substr = substr.substring(0, idx);
-                            int contentLength = Integer.parseInt(substr.trim());
-
-                            if (control.respondWith100Continue) {
-                                outputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
-                                outputStream.flush();
-                                if (control.write100ContinueTwice) {
-                                    outputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
-                                    outputStream.flush();
-                                }
-                            }
-
-                            char[] body = new char[contentLength];
-                            inputStreamReader.read(body);
-                        } else {
-
-                            if (control.respondWith100Continue) {
-                                outputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
-                                outputStream.flush();
-                                if (control.write100ContinueTwice) {
-                                    outputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
-                                    outputStream.flush();
-                                }
-                            }
-
-                            StringBuilder contentLengthBuilder = new StringBuilder();
-                            while (true) {
-                                b = (byte) inputStreamReader.read();
-                                contentLengthBuilder.append((char) b);
-
-                                if (contentLengthBuilder.length() >= 2) {
-                                    char[] lastBytes = new char[2];
-                                    contentLengthBuilder.getChars(contentLengthBuilder.length() - 2, contentLengthBuilder.length(), lastBytes, 0);
-                                    if (Arrays.equals(lastBytes, new char[]{'\r', '\n'})) {
-                                        System.err.println("here " + contentLengthBuilder.substring(0, contentLengthBuilder.length() - 2));
-                                        String lengthInHex = contentLengthBuilder.substring(0, contentLengthBuilder.length() - 2);
-                                        int contentLength = Integer.parseInt(lengthInHex, 16);
-                                        char[] body = new char[contentLength];
-                                        inputStreamReader.read(body);
-                                        break;
-                                        //normally we have to parse more data, but for simplicity we expect no more chunks...
-                                    }
-                                }
-                            }
-                        }
-                        outputStream.write(control.response.getBytes());
-                        outputStream.flush();
-                    } catch (SocketException e) {
-                        //ignore
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
+                    outputStream.write(control.response.getBytes());
+                    outputStream.flush();
+                } catch (SocketException e) {
+                    //ignore
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         };
@@ -203,7 +204,7 @@ public class HttpUrlConnectionExpectContinueTest {
         outputStream.close();
 
         int responseCode = connection.getResponseCode();
-        String responseBody = new String(connection.getInputStream().readAllBytes(), "UTF-8").strip();
+        String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
         System.err.println("response body: " + responseBody);
         assertTrue(responseCode == 200,
                 String.format("Expected 200 response, instead received %s", responseCode));
@@ -239,7 +240,7 @@ public class HttpUrlConnectionExpectContinueTest {
         outputStream.close();
 
         int responseCode = connection.getResponseCode();
-        String responseBody = new String(connection.getInputStream().readAllBytes(), "UTF-8").strip();
+        String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
         System.err.println("response body: " + responseBody);
         assertTrue(responseCode == 200,
                 String.format("Expected 200 response, instead received %s", responseCode));
@@ -277,7 +278,7 @@ public class HttpUrlConnectionExpectContinueTest {
         outputStream.close();
 
         int responseCode = connection.getResponseCode();
-        String responseBody = new String(connection.getInputStream().readAllBytes(), "UTF-8").strip();
+        String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
         System.err.println("response body: " + responseBody);
         assertTrue(responseCode == 200,
                 String.format("Expected 200 response, instead received %s", responseCode));
@@ -314,7 +315,7 @@ public class HttpUrlConnectionExpectContinueTest {
         outputStream.close();
 
         int responseCode = connection.getResponseCode();
-        String responseBody = new String(connection.getInputStream().readAllBytes(), "UTF-8").strip();
+        String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
         System.err.println("response body: " + responseBody);
         assertTrue(responseCode == 200,
                 String.format("Expected 200 response, instead received %s", responseCode));
@@ -351,7 +352,7 @@ public class HttpUrlConnectionExpectContinueTest {
         outputStream.close();
 
         int responseCode = connection.getResponseCode();
-        String responseBody = new String(connection.getInputStream().readAllBytes(), "UTF-8").strip();
+        String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
         System.err.println("response body: " + responseBody);
         assertTrue(responseCode == 200,
                 String.format("Expected 200 response, instead received %s", responseCode));
@@ -387,7 +388,7 @@ public class HttpUrlConnectionExpectContinueTest {
         outputStream.close();
 
         int responseCode = connection.getResponseCode();
-        String responseBody = new String(connection.getInputStream().readAllBytes(), "UTF-8").strip();
+        String responseBody = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
         System.err.println("response body: " + responseBody);
         assertTrue(responseCode == 200,
                 String.format("Expected 200 response, instead received %s", responseCode));
