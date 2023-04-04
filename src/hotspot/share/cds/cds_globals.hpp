@@ -88,10 +88,10 @@
   product(ccstr, ExtraSharedClassListFile, nullptr,                            \
           "Extra classlist for building the CDS archive file")              \
                                                                             \
-  product(int, ArchiveRelocationMode, 0, DIAGNOSTIC,                        \
+  product(int, ArchiveRelocationMode, 1, DIAGNOSTIC,                        \
            "(0) first map at preferred address, and if "                    \
-           "unsuccessful, map at alternative address (default); "           \
-           "(1) always map at alternative address; "                        \
+           "unsuccessful, map at alternative address; "                     \
+           "(1) always map at alternative address (default); "              \
            "(2) always map at preferred address, and if unsuccessful, "     \
            "do not map the archive")                                        \
            range(0, 2)                                                      \
