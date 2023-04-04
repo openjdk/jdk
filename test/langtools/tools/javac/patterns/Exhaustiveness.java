@@ -1663,6 +1663,29 @@ public class Exhaustiveness extends TestRunner {
                new String[] {null});
     }
 
+    @Test
+    public void testMultipleSealed(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I1 {}
+                   sealed interface I2 {}
+                   final class A_I1 implements I1 {}
+                   final class B_I2 implements I2 {}
+                   final class C_I1_I2 implements I1, I2 {}
+
+                   <Z extends I1&I2> void test(Z z) {
+                       switch (z) {
+                           case C_I1_I2 c ->
+                               System.out.println("C_I1_I2");
+                       }
+                   }
+               }
+               """);
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         doTest(base, libraryCode, testCode, false, expectedErrors);
     }

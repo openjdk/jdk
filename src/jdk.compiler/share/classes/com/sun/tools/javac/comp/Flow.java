@@ -889,7 +889,8 @@ public class Flow {
                         if (clazz.isSealed() && clazz.isAbstract()) {
                             Set<Symbol> permitted = new HashSet<>();
                             for (Symbol permittedSubtype : clazz.permitted) {
-                                if (infer.instantiatePatternType(selectorType, (TypeSymbol) permittedSubtype) != null) {
+                                Type instantiated = infer.instantiatePatternType(selectorType, (TypeSymbol) permittedSubtype);
+                                if (instantiated != null && types.isCastable(selectorType, instantiated)) {
                                     permitted.add(permittedSubtype);
                                 }
                             }
@@ -925,7 +926,6 @@ public class Flow {
                                 }
                             }
                             if (permitted.isEmpty()) {
-                                //TODO: what if a binding is used by more than one sealed type - should be all or nothing!
                                 for (PatternDescription pd : bindings) {
                                     patterns = List.filter(patterns, pd);
                                 }
