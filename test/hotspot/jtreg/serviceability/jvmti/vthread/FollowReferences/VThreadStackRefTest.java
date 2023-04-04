@@ -27,15 +27,23 @@
  * @requires vm.continuations
  * @enablePreview
  * @run main/othervm/native
- *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+ *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=2
  *      -agentlib:VThreadStackRefTest
  *      VThreadStackRefTest
  */
-import java.util.List;
-import java.util.ArrayList;
+
+import java.lang.ref.Reference;
 import java.util.stream.Stream;
 import java.util.concurrent.CountDownLatch;
 
+/*
+ * The test verifies JVMTI FollowReferences function reports references from
+ * mounted and unmounted virtual threads and reports correct thread id.
+ * To get unmounted state virtual threads wait in CountDownLatch.await()
+ * and main test thread makes a delay.
+ * To get mounted state virtual threads waits in a tight loop in java
+ * or in native so the threads have no chance to be unmounted.
+ */
 public class VThreadStackRefTest {
 
     static volatile boolean timeToStop = false;
@@ -43,23 +51,15 @@ public class VThreadStackRefTest {
 
     public static void main(String[] args) throws InterruptedException {
         CountDownLatch dumpedLatch = new CountDownLatch(1);
-        Thread vthreadMounted = Thread.ofVirtual().start(() -> {
-            Object referenced = new VThreadMountedReferenced();
-            System.out.println(referenced.getClass());
-            while (!timeToStop) {
-                if (++i == 10000) {
-                    i = 0;
-                }
-            }
-            await(dumpedLatch);
-            System.out.println(referenced.getClass());
-        });
+
+        // Unmounted virtual thread with stack local.
         Thread vthreadUnmounted = Thread.ofVirtual().start(() -> {
             Object referenced = new VThreadUnmountedReferenced();
-            System.out.println(referenced.getClass());
             await(dumpedLatch);
-            System.out.println(referenced.getClass());
+            Reference.reachabilityFence(referenced);
         });
+
+        // Unmounted virtual thread with JNI local.
         Thread vthreadJNIUnmounted = Thread.ofVirtual().start(() -> {
             createObjAndCallback(VThreadUnmountedJNIReferenced.class,
                 new Runnable() {
@@ -69,25 +69,49 @@ public class VThreadStackRefTest {
                 });
         });
 
+        // Ended virtual thread with stack local - should not be reported.
         Thread vthreadEnded = Thread.ofVirtual().start(() -> {
             Object referenced = new VThreadUnmountedEnded();
-            System.out.println(referenced.getClass());
+            Reference.reachabilityFence(referenced);
         });
+
+        // Mounted virtual thread with stack local.
+        Thread vthreadMounted = Thread.ofVirtual().start(() -> {
+            Object referenced = new VThreadMountedReferenced();
+            while (!timeToStop) {
+                if (++i == 10000) {
+                    i = 0;
+                }
+            }
+            Reference.reachabilityFence(referenced);
+        });
+
+        // Unmounted virtual thread with JNI local on top frame.
+        Thread vthreadJNIMounted = Thread.ofVirtual().start(() -> {
+            createObjAndWait(VThreadMountedJNIReferenced.class);
+        });
+
+        // Sanity check - reference from platform thread stack.
         Thread pthread = Thread.ofPlatform().start(() -> {
             Object referenced = new PThreadReferenced();
-            System.out.println(referenced.getClass());
 
             await(dumpedLatch);
-            System.out.println(referenced.getClass());
+            Reference.reachabilityFence(referenced);
         });
+
+        // Wait until the threads have made enough progress to create the references,
+        // and have had a chance to unmount due to the await() call.
+        Thread.sleep(2000);
+
+        // Make sure this vthread has exited so we can test
+        // that it no longer holds any stack references.
         vthreadEnded.join();
 
-        Thread.sleep(2000); // wait for reference and unmount
-
         TestCase[] testCases = new TestCase[] {
-            new TestCase(VThreadMountedReferenced.class, 1, vthreadMounted.getId()),
             new TestCase(VThreadUnmountedReferenced.class, 1, vthreadUnmounted.getId()),
             new TestCase(VThreadUnmountedJNIReferenced.class, 1, vthreadJNIUnmounted.getId()),
+            new TestCase(VThreadMountedReferenced.class, 1, vthreadMounted.getId()),
+            new TestCase(VThreadMountedJNIReferenced.class, 1, vthreadJNIMounted.getId()),
             new TestCase(PThreadReferenced.class, 1, pthread.getId()),
             // expected to be unreported as stack local
             new TestCase(VThreadUnmountedEnded.class, 0, 0)
@@ -98,10 +122,15 @@ public class VThreadStackRefTest {
         for (int i = 0; i < testClasses.length; i++) {
             System.out.println("  - (" + i + ") " + testClasses[i]);
         }
+
         test(testClasses);
-        timeToStop = true;
-        dumpedLatch.countDown();
+
+        // Finish all threads
+        timeToStop = true;       // signal mounted threads to stop
+        dumpedLatch.countDown(); // signal unmounted threads to stop
+
         vthreadMounted.join();
+        vthreadJNIMounted.join();
         vthreadUnmounted.join();
         vthreadJNIUnmounted.join();
         pthread.join();
@@ -137,20 +166,25 @@ public class VThreadStackRefTest {
     private static native int getRefCount(int index);
     private static native long getRefThreadID(int index);
 
-    // creates object of the the specified class (local JNI) and calls the provided callback.
+    // creates object of the the specified class (local JNI)
+    // and calls the provided callback.
     private static native void createObjAndCallback(Class cls, Runnable callback);
-
+    // creates object of the the specified class (local JNI)
+    // and waits until timeToStop static field is set to true.
+    private static native void createObjAndWait(Class cls);
 
     private record TestCase(Class cls, int expectedCount, long expectedThreadId) {
     }
 
-    public static class VThreadMountedReferenced {
-    }
     public static class VThreadUnmountedReferenced {
     }
     public static class VThreadUnmountedJNIReferenced {
     }
     public static class VThreadUnmountedEnded {
+    }
+    public static class VThreadMountedReferenced {
+    }
+    public static class VThreadMountedJNIReferenced {
     }
     public static class PThreadReferenced {
     }

@@ -21,122 +21,150 @@
  * questions.
  */
 
-//#include <string.h>
-//#include <atomic>
-
-//#include "jvmti.h"
-//#include "jvmti_common.h"
-
 #include <jvmti.h>
-#include <cstdlib>
-#include <cstring>
+#include "jvmti_common.h"
+#include <string.h>  // for memset
 
 namespace {
-jvmtiEnv *jvmti = nullptr;
 
-void checkJvmti(int code, const char* message) {
-    if (code != JVMTI_ERROR_NONE) {
-        printf("Error %s: %d\n", message, code);
-        abort();
-    }
-}
+jvmtiEnv *jvmti = nullptr;
 
 const int TAG_START = 100;
 
 struct RefCounters {
-    jint testClassCount;
-    jint *count;
-    jlong *threadId;
+  jint testClassCount;
+  jint *count;
+  jlong *threadId;
 
-    RefCounters(): testClassCount(0), count(nullptr) {}
+  RefCounters(): testClassCount(0), count(nullptr) {}
 
-    void init(jint testClassCount) {
-        this->testClassCount = testClassCount;
-        count = new jint[testClassCount];
-        memset(count, 0, sizeof(count[0]) *  testClassCount);
-        threadId = new jlong[testClassCount];
-        memset(threadId, 0, sizeof(threadId[0]) *  testClassCount);
-    }
+  void init(jint testClassCount) {
+    this->testClassCount = testClassCount;
+    count = new jint[testClassCount];
+    memset(count, 0, sizeof(count[0]) *  testClassCount);
+    threadId = new jlong[testClassCount];
+    memset(threadId, 0, sizeof(threadId[0]) *  testClassCount);
+  }
 } refCounters;
 
 }
 
-jint JNICALL testJvmtiHeapReferenceCallback(jvmtiHeapReferenceKind reference_kind, const jvmtiHeapReferenceInfo* reference_info,
-    jlong class_tag, jlong referrer_class_tag, jlong size, jlong* tag_ptr, jlong* referrer_tag_ptr, jint length, void* user_data) {
-    if (class_tag >= TAG_START) {
-        jlong index = class_tag - TAG_START;
-        switch (reference_kind) {
-        case JVMTI_HEAP_REFERENCE_STACK_LOCAL: {
-            jvmtiHeapReferenceInfoStackLocal *stackInfo = (jvmtiHeapReferenceInfoStackLocal *)reference_info;
-            refCounters.count[index]++;
-            refCounters.threadId[index] = stackInfo->thread_id;
-            printf("Stack local: index = %d, threadId = %d\n",
-                   (int)index, (int)stackInfo->thread_id);
-        }
-        break;
-        case JVMTI_HEAP_REFERENCE_JNI_LOCAL: {
-            jvmtiHeapReferenceInfoJniLocal *jniInfo = (jvmtiHeapReferenceInfoJniLocal *)reference_info;
-            refCounters.count[index]++;
-            refCounters.threadId[index] = jniInfo->thread_id;
-            printf("JNI local: index = %d, threadId = %d\n",
-                   (int)index, (int)jniInfo->thread_id);
-        }
-        break;
-        default:
-            // unexpected ref.kind
-            printf("ERROR: unexpected ref_kind for class %d: %d\n",
-                   (int)index, (int)reference_kind);
-        }
+/////////////////////////////////////////
+// Agent functions
+/////////////////////////////////////////
+jint JNICALL
+HeapReferenceCallback(jvmtiHeapReferenceKind reference_kind,
+                      const jvmtiHeapReferenceInfo* reference_info,
+                      jlong class_tag, jlong referrer_class_tag, jlong size,
+                      jlong* tag_ptr, jlong* referrer_tag_ptr, jint length, void* user_data) {
+  if (class_tag >= TAG_START) {
+    jlong index = class_tag - TAG_START;
+    switch (reference_kind) {
+    case JVMTI_HEAP_REFERENCE_STACK_LOCAL: {
+      jvmtiHeapReferenceInfoStackLocal *stackInfo = (jvmtiHeapReferenceInfoStackLocal *)reference_info;
+      refCounters.count[index]++;
+      refCounters.threadId[index] = stackInfo->thread_id;
+      LOG("Stack local: index = %d, threadId = %d\n",
+          (int)index, (int)stackInfo->thread_id);
+      if (refCounters.count[index] > 1) {
+        LOG("ERROR: count > 1: %d\n", (int)refCounters.count[index]);
+      }
     }
-    return JVMTI_VISIT_OBJECTS;
+    break;
+    case JVMTI_HEAP_REFERENCE_JNI_LOCAL: {
+      jvmtiHeapReferenceInfoJniLocal *jniInfo = (jvmtiHeapReferenceInfoJniLocal *)reference_info;
+      refCounters.count[index]++;
+      refCounters.threadId[index] = jniInfo->thread_id;
+      LOG("JNI local: index = %d, threadId = %d\n",
+          (int)index, (int)jniInfo->thread_id);
+      if (refCounters.count[index] > 1) {
+        LOG("ERROR: count > 1: %d\n", (int)refCounters.count[index]);
+      }
+    }
+    break;
+    default:
+      // unexpected ref.kind
+      LOG("ERROR: unexpected ref_kind for class %d: %d\n",
+          (int)index, (int)reference_kind);
+    }
+  }
+  return JVMTI_VISIT_OBJECTS;
 }
 
+
+extern "C" JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
+  if (vm->GetEnv(reinterpret_cast<void **>(&jvmti), JVMTI_VERSION) != JNI_OK || jvmti == nullptr) {
+    LOG("Could not initialize JVMTI\n");
+    return JNI_ERR;
+  }
+  jvmtiCapabilities capabilities;
+  memset(&capabilities, 0, sizeof(capabilities));
+  capabilities.can_tag_objects = 1;
+  //capabilities.can_support_virtual_threads = 1;
+  jvmtiError err = jvmti->AddCapabilities(&capabilities);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("JVMTI AddCapabilities error: %d\n", err);
+    return JNI_ERR;
+  }
+
+  return JNI_OK;
+}
+
+
+/////////////////////////////////////////
+// Test native methods
+/////////////////////////////////////////
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_test(JNIEnv* env, jclass clazz, jobjectArray classes) {
-    jsize classesCount = env->GetArrayLength(classes);
-    for (int i=0; i<classesCount; i++) {
-        jvmti->SetTag(env->GetObjectArrayElement(classes, i), TAG_START + i);
-    }
-    refCounters.init(classesCount);
-    jvmtiHeapCallbacks heapCallBacks;
-    memset(&heapCallBacks, 0, sizeof(jvmtiHeapCallbacks));
-    heapCallBacks.heap_reference_callback = testJvmtiHeapReferenceCallback;
-    checkJvmti(jvmti->FollowReferences(0, nullptr, nullptr, &heapCallBacks, nullptr), "follow references");
+  jsize classesCount = env->GetArrayLength(classes);
+  for (int i=0; i<classesCount; i++) {
+    jvmti->SetTag(env->GetObjectArrayElement(classes, i), TAG_START + i);
+  }
+  refCounters.init(classesCount);
+  jvmtiHeapCallbacks heapCallBacks;
+  memset(&heapCallBacks, 0, sizeof(jvmtiHeapCallbacks));
+  heapCallBacks.heap_reference_callback = HeapReferenceCallback;
+  jvmtiError err = jvmti->FollowReferences(0, nullptr, nullptr, &heapCallBacks, nullptr);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("JVMTI FollowReferences error: %d\n", err);
+    env->FatalError("FollowReferences failed");
+  }
 }
 
 extern "C" JNIEXPORT jint JNICALL
 Java_VThreadStackRefTest_getRefCount(JNIEnv* env, jclass clazz, jint index) {
-    return refCounters.count[index];
+  return refCounters.count[index];
 }
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_VThreadStackRefTest_getRefThreadID(JNIEnv* env, jclass clazz, jint index) {
-    return refCounters.threadId[index];
+  return refCounters.threadId[index];
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_createObjAndCallback(JNIEnv* env, jclass clazz, jclass cls, jobject callback) {
-    jobject jobj = env->AllocObject(cls);
+  jobject jobj = env->AllocObject(cls);
 
-    jclass callbackClass = env->GetObjectClass(callback);
-    jmethodID mid = env->GetMethodID(callbackClass, "run", "()V");
-    if (mid == nullptr) {
-        // allow caller to handle the exception
-        return;
-    }
-    env->CallVoidMethod(callback, mid);
+  jclass callbackClass = env->GetObjectClass(callback);
+  jmethodID mid = env->GetMethodID(callbackClass, "run", "()V");
+  if (mid == nullptr) {
+    // allow caller to handle the exception
+    return;
+  }
+  env->CallVoidMethod(callback, mid);
 }
 
-extern "C" JNIEXPORT jint JNICALL
-Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
-    if (vm->GetEnv(reinterpret_cast<void **>(&jvmti), JVMTI_VERSION) != JNI_OK || !jvmti) {
-        printf("Could not initialize JVMTI\n");
-        abort();
-    }
-    jvmtiCapabilities capabilities;
-    memset(&capabilities, 0, sizeof(capabilities));
-    capabilities.can_tag_objects = 1;
-    //capabilities.can_support_virtual_threads = 1;
-    checkJvmti(jvmti->AddCapabilities(&capabilities), "adding capabilities");
-    return JVMTI_ERROR_NONE;
+extern "C" JNIEXPORT void JNICALL
+Java_VThreadStackRefTest_createObjAndWait(JNIEnv* env, jclass clazz, jclass cls) {
+  jobject jobj = env->AllocObject(cls);
+
+  jfieldID fid = env->GetStaticFieldID(clazz, "timeToStop", "Z");
+  if (fid == nullptr) {
+    // allow caller to handle the exception
+    return;
+  }
+  while (env->GetStaticBooleanField(clazz, fid) == JNI_FALSE) {
+    sleep_ms(100);
+  }
 }

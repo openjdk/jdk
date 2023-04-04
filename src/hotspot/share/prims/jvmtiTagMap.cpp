@@ -61,6 +61,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackChunkFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -2231,8 +2232,10 @@ class StackRootCollector {
 private:
   JvmtiTagMap* tag_map;
   JNILocalRootsClosure* blk;
-
+  // java_thread is needed only to report JNI local on top native frame;
+  // I.e. it's required only for platform/carrier threads or mounted virtual threads.
   JavaThread* java_thread;
+
   oop threadObj;
   jlong thread_tag;
   jlong tid;
@@ -2242,21 +2245,19 @@ private:
   frame* last_entry_frame;
 
 public:
-  StackRootCollector(JvmtiTagMap* tag_map, JNILocalRootsClosure* blk)
-    : tag_map(tag_map), blk(blk),
-      java_thread(nullptr), threadObj(nullptr), thread_tag(0), tid(0),
+  StackRootCollector(JvmtiTagMap* tag_map, JNILocalRootsClosure* blk, JavaThread* java_thread)
+    : tag_map(tag_map), blk(blk), java_thread(java_thread),
+      threadObj(nullptr), thread_tag(0), tid(0),
       is_top_frame(true), depth(0), last_entry_frame(nullptr)
   {
   }
 
-  bool set_thread(JavaThread* jt, oop o);
-  bool set_vthread(oop vthreadObj);
+  bool set_thread(oop o);
 
   bool do_frame(vframe* vf);
 };
 
-bool StackRootCollector::set_thread(JavaThread* jt, oop o) {
-  java_thread = jt;
+bool StackRootCollector::set_thread(oop o) {
   threadObj = o;
   thread_tag = tag_for(tag_map, threadObj);
   tid = java_lang_Thread::thread_id(threadObj);
@@ -2268,11 +2269,6 @@ bool StackRootCollector::set_thread(JavaThread* jt, oop o) {
   return CallbackInvoker::report_simple_root(JVMTI_HEAP_REFERENCE_THREAD, threadObj);
 }
 
-bool StackRootCollector::set_vthread(oop vthreadObj) {
-  assert(java_lang_Thread::thread(vthreadObj) != nullptr, "must be");
-  return set_thread(java_lang_Thread::thread(vthreadObj), vthreadObj);
-}
-
 bool StackRootCollector::do_frame(vframe* vf) {
   if (vf->is_java_frame()) {
     // java frame (interpreted, compiled, ...)
@@ -2280,9 +2276,6 @@ bool StackRootCollector::do_frame(vframe* vf) {
 
     // the jmethodID
     jmethodID method = jvf->method()->jmethod_id();
-
-    printf("    (is_vthread_entry: %d) %s\n", vf->is_vthread_entry() ? 1 : 0, jvf->method()->external_name());
-    fflush(0);
 
     if (!(jvf->method()->is_native())) {
       jlocation bci = (jlocation)jvf->bci();
@@ -2331,6 +2324,7 @@ bool StackRootCollector::do_frame(vframe* vf) {
       blk->set_context(thread_tag, tid, depth, method);
       if (is_top_frame) {
         // JNI locals for the top frame.
+        assert(java_thread != nullptr, "sanity");
         java_thread->active_handles()->oops_do(blk);
         if (blk->stopped()) {
           return false;
@@ -2387,28 +2381,17 @@ void VThreadClosure::do_object(oop o) {
   if (!java_lang_VirtualThread::is_subclass(o->klass())) {
     return;
   }
-
-  printf(" VThreadClosure::do_object >> found VirtualThread\n");
-  fflush(0);
-
   if (!JvmtiEnvBase::is_vthread_alive(o)) {
-    printf(" << VThread is not alive\n");
-    fflush(0);
     return;
   }
-
   ContinuationWrapper c(java_lang_VirtualThread::continuation(o));
   if (c.is_empty()) {
-    printf(" << Continuation is empty\n");
-    fflush(0);
     return;
   }
   assert(!c.is_mounted(), "sanity check");
 
   stackChunkOop chunk = c.last_nonempty_chunk();
   if (chunk == nullptr || chunk->is_empty()) {
-    printf(" << StackChunk is %s\n", chunk == nullptr ? "null" : "empty");
-    fflush(0);
     return;
   }
 
@@ -2424,8 +2407,9 @@ void VThreadClosure::do_object(oop o) {
                       RegisterMap::WalkContinuation::include);
   fs.initialize_register_map(&reg_map);
 
-  StackRootCollector stack_collector(tag_map, blk);
-  if (!stack_collector.set_vthread(o)) {
+  // JavaThread is not required for unmounted virtual threads
+  StackRootCollector stack_collector(tag_map, blk, nullptr);
+  if (!stack_collector.set_thread(o)) {
     _continue = false;
     return;
   }
@@ -2438,9 +2422,6 @@ void VThreadClosure::do_object(oop o) {
       return;
     }
   }
-
-  printf(" <<  Done\n");
-  fflush(0);
 }
 
 
@@ -2875,7 +2856,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
     java_thread->active_handles()->oops_do(blk);
     return !blk->stopped();
   } else {
-    StackRootCollector stack_collector(tag_map(), blk);
+    StackRootCollector stack_collector(tag_map(), blk, java_thread);
 
     // vframes are resource allocated
     Thread* current_thread = Thread::current();
@@ -2891,11 +2872,11 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
 
       frame f = java_thread->last_frame();
       vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
-printf("collect_stack_roots: >> virtual thread\n");
-fflush(0);
-      if (!stack_collector.set_vthread(mounted_vt)) {
+      if (!stack_collector.set_thread(mounted_vt)) {
         return false;
       }
+      // split virtual thread and carrier thread stacks by vthread entry ("enterSpecial") frame,
+      // consider vthread entry frame as the last vthread stack frame.
       while (vf != nullptr) {
         if (!stack_collector.do_frame(vf)) {
           return false;
@@ -2905,8 +2886,6 @@ fflush(0);
         }
         vf = vf->sender();
       }
-printf("collect_stack_roots: << virtual thread\n");
-fflush(0);
     }
 
     // Platform or carrier thread
@@ -2916,9 +2895,7 @@ fflush(0);
                         RegisterMap::WalkContinuation::skip);
 
     vframe* vf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
-printf("collect_stack_roots: >> carrier/platform thread\n");
-fflush(0);
-    if (!stack_collector.set_thread(java_thread, threadObj)) {
+    if (!stack_collector.set_thread(threadObj)) {
       return false;
     }
     while (vf != nullptr) {
@@ -2927,8 +2904,6 @@ fflush(0);
       }
       vf = vf->sender();
     }
-printf("collect_stack_roots: << carrier/platform thread\n");
-fflush(0);
   }
 
   return true;
