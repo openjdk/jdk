@@ -730,7 +730,7 @@ void MacroAssembler::clobber_carg_stack_slots(Register tmp) {
 
   li(tmp, magic_number);
   for (int m = 0; m <= 7; m++) {
-    std(tmp, frame::abi_minframe_size + m * 8, R1_SP);
+    std(tmp, frame::native_abi_minframe_size + m * 8, R1_SP);
   }
 }
 
@@ -978,14 +978,14 @@ void MacroAssembler::push_frame(unsigned int bytes, Register tmp) {
 
 // Push a frame of size `bytes' plus abi_reg_args on top.
 void MacroAssembler::push_frame_reg_args(unsigned int bytes, Register tmp) {
-  push_frame(bytes + frame::abi_reg_args_size, tmp);
+  push_frame(bytes + frame::native_abi_reg_args_size, tmp);
 }
 
 // Setup up a new C frame with a spill area for non-volatile GPRs and
 // additional space for local variables.
 void MacroAssembler::push_frame_reg_args_nonvolatiles(unsigned int bytes,
                                                       Register tmp) {
-  push_frame(bytes + frame::abi_reg_args_size + frame::spill_nonvolatiles_size, tmp);
+  push_frame(bytes + frame::native_abi_reg_args_size + frame::spill_nonvolatiles_size, tmp);
 }
 
 // Pop current C frame.

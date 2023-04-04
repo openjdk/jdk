@@ -77,7 +77,7 @@ void OptoRuntime::generate_exception_blob() {
 
   address start = __ pc();
 
-  int frame_size_in_bytes = frame::abi_reg_args_size;
+  int frame_size_in_bytes = frame::native_abi_reg_args_size;
   OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
   // Exception pc is 'return address' for stack walker.

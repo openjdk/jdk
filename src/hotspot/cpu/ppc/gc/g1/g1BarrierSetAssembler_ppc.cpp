@@ -54,7 +54,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     int spill_slots = 3;
     if (preserve1 != noreg) { spill_slots++; }
     if (preserve2 != noreg) { spill_slots++; }
-    const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
+    const int frame_size = align_up(frame::native_abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
     Label filtered;
 
     // Is marking active?
@@ -98,7 +98,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                              Register addr, Register count, Register preserve) {
   int spill_slots = (preserve != noreg) ? 1 : 0;
-  const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
+  const int frame_size = align_up(frame::native_abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
 
   __ save_LR_CR(R0);
   __ push_frame(frame_size, R0);

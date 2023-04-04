@@ -99,10 +99,6 @@
     // aligned to frame::alignment_in_bytes (16)
   };
 
-  enum {
-    abi_minframe_size = sizeof(native_abi_minframe)
-  };
-
   struct native_abi_reg_args : native_abi_minframe {
     uint64_t carg_1;
     uint64_t carg_2;                              //_16
@@ -116,7 +112,8 @@
   };
 
   enum {
-    abi_reg_args_size = sizeof(native_abi_reg_args)
+    native_abi_minframe_size = sizeof(native_abi_minframe),
+    native_abi_reg_args_size = sizeof(native_abi_reg_args)
   };
 
   #define _abi0(_component) \
