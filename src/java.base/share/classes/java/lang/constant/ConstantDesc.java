@@ -99,6 +99,10 @@ public sealed interface ConstantDesc
      * could not be reflectively resolved in the course of resolution
      * @throws LinkageError if a linkage error occurs
      *
+     * @apiNote Some constant descriptors, such as {@linkplain MethodTypeDesc}, can represent
+     * a value that is not representable by run-time entities. Attempts to resolve these may
+     * result in errors.
+     *
      * @jvms 5.4.3 Resolution
      * @jvms 5.4.4 Access Control
      */
