@@ -1988,6 +1988,22 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+Node* VectorSliceNode::Identity(PhaseGVN* phase) {
+  const TypeInt* origin = phase->type(in(3))->isa_int();
+  if (origin == nullptr) {
+    return this;
+  }
+
+  // (VectorSlice X Y 0) => X
+  // (VectorSlice X Y VLENGTH) => Y
+  if (origin->is_con(0)) {
+    return in(1);
+  } else if (origin->is_con(Matcher::vector_length(this))) {
+    return in(2);
+  }
+  return this;
+}
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);

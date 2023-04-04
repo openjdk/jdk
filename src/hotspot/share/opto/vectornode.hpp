@@ -1465,6 +1465,7 @@ class VectorSliceNode : public VectorNode {
     : VectorNode(vec1, vec2, origin, vec1->bottom_type()->is_vect()) {}
 
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 class VectorRearrangeNode : public VectorNode {

@@ -324,7 +324,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "9"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "7"}, applyIfCPUFeature = {"sse2", "true"})
     static void testB64(byte[][] dst, byte[] src1, byte[] src2) {
         var species = ByteVector.SPECIES_64;
         helper(species, dst[0], src1, src2, 0);
@@ -339,7 +339,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "17"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "15"}, applyIfCPUFeature = {"sse2", "true"})
     static void testB128(byte[][] dst, byte[] src1, byte[] src2) {
         var species = ByteVector.SPECIES_128;
         helper(species, dst[0], src1, src2, 0);
@@ -362,7 +362,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "33"}, applyIfCPUFeature = {"avx2", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "31"}, applyIfCPUFeature = {"avx2", "true"})
     static void testB256(byte[][] dst, byte[] src1, byte[] src2) {
         var species = ByteVector.SPECIES_256;
         helper(species, dst[0], src1, src2, 0);
@@ -401,7 +401,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "65"}, applyIfCPUFeature = {"avx512bw", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "63"}, applyIfCPUFeature = {"avx512bw", "true"})
     static void testB512(byte[][] dst, byte[] src1, byte[] src2) {
         var species = ByteVector.SPECIES_512;
         helper(species, dst[0], src1, src2, 0);
@@ -472,7 +472,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "5"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "3"}, applyIfCPUFeature = {"sse2", "true"})
     static void testS64(short[][] dst, short[] src1, short[] src2) {
         var species = ShortVector.SPECIES_64;
         helper(species, dst[0], src1, src2, 0);
@@ -483,7 +483,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "9"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "7"}, applyIfCPUFeature = {"sse2", "true"})
     static void testS128(short[][] dst, short[] src1, short[] src2) {
         var species = ShortVector.SPECIES_128;
         helper(species, dst[0], src1, src2, 0);
@@ -498,7 +498,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "17"}, applyIfCPUFeature = {"avx2", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "15"}, applyIfCPUFeature = {"avx2", "true"})
     static void testS256(short[][] dst, short[] src1, short[] src2) {
         var species = ShortVector.SPECIES_256;
         helper(species, dst[0], src1, src2, 0);
@@ -521,7 +521,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "33"}, applyIfCPUFeature = {"avx512bw", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "31"}, applyIfCPUFeature = {"avx512bw", "true"})
     static void testS512(short[][] dst, short[] src1, short[] src2) {
         var species = ShortVector.SPECIES_512;
         helper(species, dst[0], src1, src2, 0);
@@ -560,7 +560,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "3"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "1"}, applyIfCPUFeature = {"sse2", "true"})
     static void testI64(int[][] dst, int[] src1, int[] src2) {
         var species = IntVector.SPECIES_64;
         helper(species, dst[0], src1, src2, 0);
@@ -569,7 +569,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "5"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "3"}, applyIfCPUFeature = {"sse2", "true"})
     static void testI128(int[][] dst, int[] src1, int[] src2) {
         var species = IntVector.SPECIES_128;
         helper(species, dst[0], src1, src2, 0);
@@ -580,7 +580,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "9"}, applyIfCPUFeature = {"avx2", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "7"}, applyIfCPUFeature = {"avx2", "true"})
     static void testI256(int[][] dst, int[] src1, int[] src2) {
         var species = IntVector.SPECIES_256;
         helper(species, dst[0], src1, src2, 0);
@@ -595,7 +595,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "17"}, applyIfCPUFeature = {"avx512f", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "15"}, applyIfCPUFeature = {"avx512f", "true"})
     static void testI512(int[][] dst, int[] src1, int[] src2) {
         var species = IntVector.SPECIES_512;
         helper(species, dst[0], src1, src2, 0);
@@ -618,7 +618,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "3"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "1"}, applyIfCPUFeature = {"sse2", "true"})
     static void testL128(long[][] dst, long[] src1, long[] src2) {
         var species = LongVector.SPECIES_128;
         helper(species, dst[0], src1, src2, 0);
@@ -627,7 +627,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "5"}, applyIfCPUFeature = {"avx2", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "3"}, applyIfCPUFeature = {"avx2", "true"})
     static void testL256(long[][] dst, long[] src1, long[] src2) {
         var species = LongVector.SPECIES_256;
         helper(species, dst[0], src1, src2, 0);
@@ -638,7 +638,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "9"}, applyIfCPUFeature = {"avx512f", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "7"}, applyIfCPUFeature = {"avx512f", "true"})
     static void testL512(long[][] dst, long[] src1, long[] src2) {
         var species = LongVector.SPECIES_512;
         helper(species, dst[0], src1, src2, 0);
@@ -653,7 +653,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "3"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "1"}, applyIfCPUFeature = {"sse2", "true"})
     static void testF64(float[][] dst, float[] src1, float[] src2) {
         var species = FloatVector.SPECIES_64;
         helper(species, dst[0], src1, src2, 0);
@@ -662,7 +662,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "5"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "3"}, applyIfCPUFeature = {"sse2", "true"})
     static void testF128(float[][] dst, float[] src1, float[] src2) {
         var species = FloatVector.SPECIES_128;
         helper(species, dst[0], src1, src2, 0);
@@ -673,7 +673,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "9"}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "7"}, applyIfCPUFeature = {"avx", "true"})
     static void testF256(float[][] dst, float[] src1, float[] src2) {
         var species = FloatVector.SPECIES_256;
         helper(species, dst[0], src1, src2, 0);
@@ -688,7 +688,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "17"}, applyIfCPUFeature = {"avx512f", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "15"}, applyIfCPUFeature = {"avx512f", "true"})
     static void testF512(float[][] dst, float[] src1, float[] src2) {
         var species = FloatVector.SPECIES_512;
         helper(species, dst[0], src1, src2, 0);
@@ -711,7 +711,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "3"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "1"}, applyIfCPUFeature = {"sse2", "true"})
     static void testD128(double[][] dst, double[] src1, double[] src2) {
         var species = DoubleVector.SPECIES_128;
         helper(species, dst[0], src1, src2, 0);
@@ -720,7 +720,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "5"}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "3"}, applyIfCPUFeature = {"avx", "true"})
     static void testD256(double[][] dst, double[] src1, double[] src2) {
         var species = DoubleVector.SPECIES_256;
         helper(species, dst[0], src1, src2, 0);
@@ -731,7 +731,7 @@ public class TestVectorSlice {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_SLICE, "9"}, applyIfCPUFeature = {"avx512f", "true"})
+    @IR(counts = {IRNode.VECTOR_SLICE, "7"}, applyIfCPUFeature = {"avx512f", "true"})
     static void testD512(double[][] dst, double[] src1, double[] src2) {
         var species = DoubleVector.SPECIES_512;
         helper(species, dst[0], src1, src2, 0);
