@@ -32,13 +32,11 @@ import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
+import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
@@ -56,14 +54,16 @@ import com.sun.tools.javac.code.Kinds.Kind;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import com.sun.tools.javac.code.Type.TypeVar;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
-import static com.sun.tools.javac.code.TypeTag.NONE;
 import static com.sun.tools.javac.code.TypeTag.VOID;
-import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /** This pass implements dataflow analysis for Java programs though
  *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
@@ -655,11 +655,8 @@ public class Flow {
             } else if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
                 visitRecordPattern(jcRecordPattern);
 
-                Set<Symbol> coveredSymbols =
-                        coveredSymbols(jcRecordPattern.pos(), List.of(jcRecordPattern));
-
                 boolean isExhaustive =
-                        isExhaustive(jcRecordPattern.pos(), tree.elementType, coveredSymbols);
+                        exhausts(make.Type(tree.elementType), List.of(make.Case(CaseTree.CaseKind.RULE, List.of(make.PatternCaseLabel(jcRecordPattern, null)), null, null)));
 
                 if (!isExhaustive) {
                     log.error(tree, Errors.ForeachNotExhaustiveOnType(jcRecordPattern.type, tree.elementType));
@@ -742,7 +739,6 @@ public class Flow {
                     }
                 }
             }
-//            Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.cases);
             tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
                                 exhausts(tree.selector, tree.cases);
@@ -767,8 +763,39 @@ public class Flow {
                 }
             }
         }
-        record BindingPattern(Type type) implements PatternDescription {}
-        record RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {}
+
+        record BindingPattern(Type type) implements PatternDescription {
+            @Override
+            public int hashCode() {
+                return type.tsym.hashCode();
+            }
+        }
+
+        record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
+
+            public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
+                this(recordType, hashCode(-1, recordType, fullComponentTypes, nested), fullComponentTypes, nested);
+            }
+
+            public int hashCode() {
+                return _hashCode;
+            }
+
+            public int hashCode(int excludeComponent) {
+                return hashCode(excludeComponent, recordType, fullComponentTypes, nested);
+            }
+
+            public static int hashCode(int excludeComponent, Type recordType, Type[] fullComponentTypes, PatternDescription... nested) {
+                int hash = 5;
+                hash =  41 * hash + recordType.tsym.hashCode();
+                for (int  i = 0; i < nested.length; i++) {
+                    if (i != excludeComponent) {
+                        hash = 41 * hash + nested[i].hashCode();
+                    }
+                }
+                return hash;
+            }
+        }
 
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
             List<PatternDescription> patterns = List.nil();
@@ -801,16 +828,11 @@ public class Flow {
             }
             boolean repeat = true;
             while (repeat) {
-                repeat = false;
                 List<PatternDescription> updatedPatterns;
                 updatedPatterns = reduceBindingPatterns(selector.type, patterns);
-                if (!(repeat |= updatedPatterns != patterns)) {
-                    updatedPatterns = reduceNestedPatterns(patterns);
-                }
-                if (!(repeat |= updatedPatterns != patterns)) {
-                    updatedPatterns = reduceRecordPatterns(patterns);
-                }
-                repeat |= updatedPatterns != patterns;
+                updatedPatterns = reduceNestedPatterns(updatedPatterns);
+                updatedPatterns = reduceRecordPatterns(updatedPatterns);
+                repeat = updatedPatterns != patterns;
                 patterns = updatedPatterns;
                 if (checkCovered(selector.type, patterns)) {
                     return true;
@@ -822,7 +844,8 @@ public class Flow {
         private boolean checkCovered(Type seltype, List<PatternDescription> patterns) {
             for (Type seltypeComponent : components(seltype)) {
                 for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
-                    if (it1.head instanceof BindingPattern bp && types.isSubtype(seltypeComponent, types.erasure(bp.type))) {
+                    if (it1.head instanceof BindingPattern bp &&
+                        types.isSubtype(seltypeComponent, types.erasure(bp.type))) {
                         return true;
                     }
                 }
@@ -851,12 +874,17 @@ public class Flow {
             };
         }
 
+        /* In a set of patterns, search for a sub-set of binding patterns that
+         * in combination exhaust their sealed supertype. If such a sub-set
+         * is found, it is removed, and replaced with a binding pattern
+         * for the sealed supertype.
+         */
         private List<PatternDescription> reduceBindingPatterns(Type selectorType, List<PatternDescription> patterns) {
             for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
                 if (it1.head instanceof BindingPattern bpOne) {
                     for (Type sup : types.directSupertypes(bpOne.type)) {
                         ListBuffer<PatternDescription> bindings = new ListBuffer<>();
-                        ClassSymbol clazz = (ClassSymbol) sup.tsym; //TODO: j.l.Object's supertype!!
+                        ClassSymbol clazz = (ClassSymbol) sup.tsym;
 
                         if (clazz.isSealed() && clazz.isAbstract()) {
                             Set<Symbol> permitted = new HashSet<>();
@@ -871,7 +899,6 @@ public class Flow {
                                 if (it2.head instanceof BindingPattern bpOther) {
                                     boolean reduces = false;
 
-                                    //TODO: verify all subtypes of the pattern covered by the spec:
                                     List<Symbol> permittedSubtypesClosure = List.of(bpOther.type.tsym);
 
                                     while (permittedSubtypesClosure.nonEmpty()) {
@@ -898,6 +925,7 @@ public class Flow {
                                 }
                             }
                             if (permitted.isEmpty()) {
+                                //TODO: what if a binding is used by more than one sealed type - should be all or nothing!
                                 for (PatternDescription pd : bindings) {
                                     patterns = List.filter(patterns, pd);
                                 }
@@ -911,45 +939,103 @@ public class Flow {
             return patterns;
         }
 
+        /* Among the set of patterns, find sub-set of patterns such:
+         * $record($prefix$, $nested, $suffix$)
+         * Where $record, $prefix$ and $suffix$ is the same for each pattern
+         * in the set, and the patterns only differ in one "column" in
+         * the $nested pattern.
+         * Then, the set of $nested patterns is taken, and passed recursively
+         * to reduceNestedPatterns and to reduceBindingPatterns, to
+         * simplify the pattern. If that succeeds, the original found sub-set
+         * of patterns is replaced with a new set of patterns of the form:
+         * $record($prefix$, $resultOfReduction, $suffix$)
+         */
         private List<PatternDescription> reduceNestedPatterns(List<PatternDescription> patterns) {
-            for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
-                if (it1.head instanceof RecordPattern rpOne) {
-                    for (int mismatchingCandidate = 0; mismatchingCandidate < rpOne.nested.length; mismatchingCandidate++) {
-                        ListBuffer<RecordPattern> join = new ListBuffer<>();
+            /* implementation note:
+             * finding a sub-set of patterns that only differ in a single
+             * column is time consuming task, so this method speeds it up by:
+             * - group the patterns by their record class
+             * - for each column (nested pattern) do:
+             * -- group patterns by their hashs
+             * -- in each such by-hash group, find sub-sets that only differ in
+             *    the chosen column, and tcall reduceBindingPatterns and reduceNestedPatterns
+             *    on patterns in the chosed column, as described above
+             */
+            var grouppedPerRecordClass =
+                    patterns.stream()
+                            .filter(pd -> pd instanceof RecordPattern)
+                            .map(pd -> (RecordPattern) pd)
+                            .collect(groupingBy(pd -> (ClassSymbol) pd.recordType.tsym));
 
-                        join.append(rpOne);
+            for (var e : grouppedPerRecordClass.entrySet()) {
+                int nestedPatternsCount = e.getKey().getRecordComponents().size();
 
-                        NEXT_PATTERN: for (var it2 = it1.tail; it2.nonEmpty(); it2 = it2.tail) {
-                            if (it2.head instanceof RecordPattern rpOther) {
+                for (int mismatchingCandidate = 0;
+                     mismatchingCandidate < nestedPatternsCount;
+                     mismatchingCandidate++) {
+                    int mismatchingCandidateFin = mismatchingCandidate;
+                    var groupByHashes =
+                            e.getValue()
+                             .stream()
+                             .collect(groupingBy(pd -> pd.hashCode(mismatchingCandidateFin)));
+                    for (var candidates : groupByHashes.values()) {
+                        if (candidates.size() < 2) {
+                            continue;
+                        }
+
+                        var candidatesArr = candidates.toArray(s -> new RecordPattern[s]);
+
+                        for (int firstCandidate = 0;
+                             firstCandidate < candidatesArr.length;
+                             firstCandidate++) {
+                            RecordPattern rpOne = candidatesArr[firstCandidate];
+                            ListBuffer<RecordPattern> join = new ListBuffer<>();
+
+                            join.append(rpOne);
+
+                            NEXT_PATTERN: for (int nextCandidate = firstCandidate + 1;
+                                               nextCandidate < candidatesArr.length;
+                                               nextCandidate++) {
+                                RecordPattern rpOther = candidatesArr[nextCandidate];
                                 if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
                                     for (int i = 0; i < rpOne.nested.length; i++) {
-                                        if (i != mismatchingCandidate && !exactlyMatches(rpOne.nested[i], rpOther.nested[i])) {
+                                        if (i != mismatchingCandidate &&
+                                            !exactlyMatches(rpOne.nested[i], rpOther.nested[i])) {
                                             continue NEXT_PATTERN;
                                         }
                                     }
                                     join.append(rpOther);
                                 }
                             }
-                        }
 
-                        int mismatchingCandidateFin = mismatchingCandidate;
-                        List<PatternDescription> nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(List.collector());
-                        List<PatternDescription> updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], nestedPatterns);
-
-                        if (nestedPatterns == updatedPatterns) {
-                            updatedPatterns = reduceNestedPatterns(nestedPatterns);
-                        }
-
-                        if (nestedPatterns != updatedPatterns) {
-                            for (RecordPattern rp : join) {
-                                patterns = List.filter(patterns, rp);
+                            if (join.size() == 1) {
+                                continue;
                             }
-                            for (PatternDescription nested : updatedPatterns) {
-                                PatternDescription[] nue = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
-                                nue[mismatchingCandidateFin] = nested;
-                                patterns = patterns.prepend(new RecordPattern(rpOne.recordType(), rpOne.fullComponentTypes(), nue));
+
+                            var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(List.collector());
+                            var updatedPatterns = reduceNestedPatterns(nestedPatterns);
+
+                            updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
+
+                            if (nestedPatterns != updatedPatterns) {
+                                ListBuffer<PatternDescription> result = new ListBuffer<>();
+                                Set<PatternDescription> toRemove = Collections.newSetFromMap(new IdentityHashMap<>());
+
+                                toRemove.addAll(join);
+
+                                for (PatternDescription p : patterns) {
+                                    if (!toRemove.contains(p)) {
+                                        result.append(p);
+                                    }
+                                }
+
+                                for (PatternDescription nested : updatedPatterns) {
+                                    PatternDescription[] nue = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
+                                    nue[mismatchingCandidateFin] = nested;
+                                    result.append(new RecordPattern(rpOne.recordType(), rpOne.fullComponentTypes(), nue));
+                                }
+                                return result.toList();
                             }
-                            return patterns;
                         }
                     }
                 }
@@ -973,243 +1059,51 @@ public class Flow {
             return false;
         }
 
+        /* In the set of patterns, find those for which, given:
+         * $record($nested1, $nested2, ...)
+         * all the $nestedX pattern cover the given record component,
+         * and replace those with a simple binding pattern over $record.
+         */
         private List<PatternDescription> reduceRecordPatterns(List<PatternDescription> patterns) {
-            NEXT_RECORD: for (var it1 = patterns; it1.nonEmpty(); it1 = it1.tail) {
-                if (it1.head instanceof RecordPattern rpOne) {
+            var newList = new ListBuffer<PatternDescription>();
+            boolean modified = false;
+            for (var it = patterns; it.nonEmpty(); it = it.tail) {
+                if (it.head instanceof RecordPattern rpOne) {
                     PatternDescription nue = reduceRecordPattern(rpOne);
                     if (nue != rpOne) {
-                        patterns = List.filter(patterns, rpOne).prepend(nue);
-                        return patterns;
+                        newList.append(nue);
+                        modified |= true;
+                        continue;
                     }
                 }
+                newList.append(it.head);
             }
-            return patterns;
+            return modified ? newList.toList() : patterns;
         }
 
         private PatternDescription reduceRecordPattern(PatternDescription pattern) {
             if (pattern instanceof RecordPattern rpOne) {
                 Type[] componentType = rpOne.fullComponentTypes();
+                PatternDescription[] reducedNestedPatterns = null;
                 boolean covered = true;
                 for (int i = 0; i < componentType.length; i++) {
                     PatternDescription newNested = reduceRecordPattern(rpOne.nested[i]);
                     if (newNested != rpOne.nested[i]) {
-                        PatternDescription[] nue = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
-                        nue[i] = newNested;
-                        return new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), nue);
+                        if (reducedNestedPatterns == null) {
+                            reducedNestedPatterns = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
+                        }
+                        reducedNestedPatterns[i] = newNested;
                     }
 
-                    covered &= rpOne.nested[i] instanceof BindingPattern bp && types.isSubtype(types.erasure(componentType[i]), types.erasure(bp.type));
+                    covered &= newNested instanceof BindingPattern bp && types.isSubtype(types.erasure(componentType[i]), types.erasure(bp.type));
                 }
                 if (covered) {
                     return new BindingPattern(rpOne.recordType);
+                } else if (reducedNestedPatterns != null) {
+                    return new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
                 }
             }
             return pattern;
-        }
-
-        private Set<Symbol> coveredSymbolsForCases(DiagnosticPosition pos,
-                                                   List<JCCase> cases) {
-            HashSet<JCTree> labelValues = cases.stream()
-                                               .flatMap(c -> c.labels.stream())
-                                               .filter(TreeInfo::unguardedCaseLabel)
-                                               .filter(l -> !l.hasTag(DEFAULTCASELABEL))
-                                               .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
-                                                                                     : ((JCPatternCaseLabel) l).pat)
-                                               .collect(Collectors.toCollection(HashSet::new));
-            return coveredSymbols(pos, labelValues);
-        }
-
-        private Set<Symbol> coveredSymbols(DiagnosticPosition pos,
-                                           Iterable<? extends JCTree> labels) {
-            Set<Symbol> coveredSymbols = new HashSet<>();
-            Map<UniqueType, List<JCRecordPattern>> deconstructionPatternsByType = new HashMap<>();
-
-            for (JCTree labelValue : labels) {
-                switch (labelValue.getTag()) {
-                    case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
-                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) labelValue);
-                        if (!primaryPatternType.hasTag(NONE)) {
-                            coveredSymbols.add(primaryPatternType.tsym);
-                        }
-                    }
-                    case RECORDPATTERN -> {
-                        JCRecordPattern dpat = (JCRecordPattern) labelValue;
-                        UniqueType type = new UniqueType(dpat.type, types);
-                        List<JCRecordPattern> augmentedPatterns =
-                                deconstructionPatternsByType.getOrDefault(type, List.nil())
-                                                                 .prepend(dpat);
-
-                        deconstructionPatternsByType.put(type, augmentedPatterns);
-                    }
-
-                    default -> {
-                        Assert.check(labelValue instanceof JCExpression, labelValue.getTag().name());
-                        JCExpression expr = (JCExpression) labelValue;
-                        if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
-                            coveredSymbols.add(((JCIdent) expr).sym);
-                    }
-                }
-            }
-            for (Entry<UniqueType, List<JCRecordPattern>> e : deconstructionPatternsByType.entrySet()) {
-                if (e.getValue().stream().anyMatch(r -> r.nested.size() != r.record.getRecordComponents().size())) {
-                    coveredSymbols.add(syms.errSymbol);
-                } else if (coversDeconstructionFromComponent(pos, e.getKey().type, e.getValue(), 0)) {
-                    coveredSymbols.add(e.getKey().type.tsym);
-                }
-            }
-            return coveredSymbols;
-        }
-
-        private boolean coversDeconstructionFromComponent(DiagnosticPosition pos,
-                                                          Type recordType,
-                                                          List<JCRecordPattern> deconstructionPatterns,
-                                                          int component) {
-            //Given a set of record patterns for the same record, and a starting component,
-            //this method checks, whether the nested patterns for the components are exhaustive,
-            //i.e. represent all possible combinations.
-            //This is done by categorizing the patterns based on the type covered by the given
-            //starting component.
-            //For each such category, it is then checked if the nested patterns starting at the next
-            //component are exhaustive, by recursivelly invoking this method. If these nested patterns
-            //are exhaustive, the given covered type is accepted.
-            //All such covered types are then checked whether they cover the declared type of
-            //the starting component's declaration. If yes, the given set of patterns starting at
-            //the given component cover the given record exhaustivelly, and true is returned.
-            List<? extends RecordComponent> components =
-                    deconstructionPatterns.head.record.getRecordComponents();
-
-            if (components.size() == component) {
-                //no components remain to be checked:
-                return true;
-            }
-
-            //for the first tested component, gather symbols covered by the nested patterns:
-            Type instantiatedComponentType = types.memberType(recordType, components.get(component));
-            List<JCPattern> nestedComponentPatterns = deconstructionPatterns.map(d -> d.nested.get(component));
-            Set<Symbol> coveredSymbolsForComponent = coveredSymbols(pos,
-                                                                    nestedComponentPatterns);
-
-            //for each of the symbols covered by the starting component, find all deconstruction patterns
-            //that have the given type, or its supertype, as a type of the starting nested pattern:
-            Map<Symbol, List<JCRecordPattern>> coveredSymbol2Patterns = new HashMap<>();
-
-            for (JCRecordPattern deconstructionPattern : deconstructionPatterns) {
-                JCPattern nestedPattern = deconstructionPattern.nested.get(component);
-                Symbol componentPatternType;
-                switch (nestedPattern.getTag()) {
-                    case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
-                        Type primaryPatternType =
-                                TreeInfo.primaryPatternType(nestedPattern);
-                        componentPatternType = primaryPatternType.tsym;
-                    }
-                    case RECORDPATTERN -> {
-                        componentPatternType = ((JCRecordPattern) nestedPattern).record;
-                    }
-                    default -> {
-                        throw Assert.error("Unexpected tree kind: " + nestedPattern.getTag());
-                    }
-                }
-                for (Symbol currentType : coveredSymbolsForComponent) {
-                    if (types.isSubtype(types.erasure(currentType.type),
-                                        types.erasure(componentPatternType.type))) {
-                        coveredSymbol2Patterns.put(currentType,
-                                                   coveredSymbol2Patterns.getOrDefault(currentType,
-                                                                                       List.nil())
-                                              .prepend(deconstructionPattern));
-                    }
-                }
-            }
-
-            //Check the components following the starting component, for each of the covered symbol,
-            //if they are exhaustive. If yes, the given covered symbol should be part of the following
-            //exhaustiveness check:
-            Set<Symbol> covered = new HashSet<>();
-
-            for (Entry<Symbol, List<JCRecordPattern>> e : coveredSymbol2Patterns.entrySet()) {
-                if (coversDeconstructionFromComponent(pos, recordType, e.getValue(), component + 1)) {
-                    covered.add(e.getKey());
-                }
-            }
-
-            //verify whether the filtered symbols cover the given record's declared type:
-            return isExhaustive(pos, instantiatedComponentType, covered);
-        }
-
-        private void transitiveCovers(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
-            List<Symbol> todo = List.from(covered);
-            while (todo.nonEmpty()) {
-                Symbol sym = todo.head;
-                todo = todo.tail;
-                switch (sym.kind) {
-                    case VAR -> {
-                        Iterable<Symbol> constants = sym.owner
-                                                        .members()
-                                                        .getSymbols(s -> s.isEnum() &&
-                                                                         s.kind == VAR);
-                        boolean hasAll = StreamSupport.stream(constants.spliterator(), false)
-                                                      .allMatch(covered::contains);
-
-                        if (hasAll && covered.add(sym.owner)) {
-                            todo = todo.prepend(sym.owner);
-                        }
-                    }
-
-                    case TYP -> {
-                        for (Type sup : types.directSupertypes(sym.type)) {
-                            if (sup.tsym.kind == TYP) {
-                                if (isTransitivelyCovered(pos, seltype, sup.tsym, covered) &&
-                                    covered.add(sup.tsym)) {
-                                    todo = todo.prepend(sup.tsym);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private boolean isTransitivelyCovered(DiagnosticPosition pos, Type seltype,
-                                              Symbol sealed, Set<Symbol> covered) {
-            try {
-                if (covered.stream().anyMatch(c -> sealed.isSubClass(c, types)))
-                    return true;
-                if (sealed.kind == TYP && sealed.isAbstract() && sealed.isSealed()) {
-                    return ((ClassSymbol) sealed).permitted
-                                                 .stream()
-                                                 .filter(s -> {
-                                                     return types.isCastable(seltype, s.type/*, types.noWarnings*/);
-                                                 })
-                                                 .allMatch(s -> isTransitivelyCovered(pos, seltype, s, covered));
-                }
-                return false;
-            } catch (CompletionFailure cf) {
-                chk.completionError(pos, cf);
-                return true;
-            }
-        }
-
-        private boolean isExhaustive(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
-            transitiveCovers(pos, seltype, covered);
-            return switch (seltype.getTag()) {
-                case CLASS -> {
-                    if (seltype.isCompound()) {
-                        if (seltype.isIntersection()) {
-                            yield ((Type.IntersectionClassType) seltype).getComponents()
-                                                                        .stream()
-                                                                        .anyMatch(t -> isExhaustive(pos, t, covered));
-                        }
-                        yield false;
-                    }
-                    yield covered.stream()
-                                 .filter(coveredSym -> coveredSym.kind == TYP)
-                                 .anyMatch(coveredSym -> types.isSubtype(types.erasure(seltype),
-                                                                         types.erasure(coveredSym.type)));
-                }
-                case TYPEVAR -> isExhaustive(pos, ((TypeVar) seltype).getUpperBound(), covered);
-                default -> {
-                    yield covered.contains(types.erasure(seltype).tsym);
-                }
-            };
         }
 
         public void visitTry(JCTry tree) {

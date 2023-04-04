@@ -1556,7 +1556,7 @@ public class Exhaustiveness extends TestRunner {
                "1 error");
     }
 
-    private static final int NESTING_CONSTANT = 4;
+    private static final int NESTING_CONSTANT = 6;
 
     Set<String> createDeeplyNestedVariants() {
         Set<String> variants = new HashSet<>();
