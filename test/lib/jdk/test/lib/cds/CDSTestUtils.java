@@ -37,8 +37,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -623,7 +621,7 @@ public class CDSTestUtils {
     }
 
     public static boolean isGCOption(String s) {
-      return s.startsWith("-XX:+Use") && s.endsWith("GC");
+        return s.startsWith("-XX:+Use") && s.endsWith("GC");
     }
 
     public static boolean hasGCOption(List<String> cmd) {
