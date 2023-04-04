@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "prims/agent.hpp"
+#include "prims/jvmtiAgent.hpp"
 
 #include "cds/cds_globals.hpp"
 #include "jni.h"
@@ -63,7 +63,7 @@ static const char* split_options_and_allocate_copy(const char* options, const ch
   return name;
 }
 
-Agent::Agent(const char* name, const char* options, bool is_absolute_path, bool dynamic /* false */) :
+JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_path, bool dynamic /* false */) :
   _initialization_time(),
   _initialization_duration(),
   _next(nullptr),
@@ -79,31 +79,31 @@ Agent::Agent(const char* name, const char* options, bool is_absolute_path, bool 
   _dynamic(dynamic),
   _xrun(false) {}
 
-Agent* Agent::next() const {
+JvmtiAgent* JvmtiAgent::next() const {
   return _next;
 }
 
-void Agent::set_next(Agent* agent) {
+void JvmtiAgent::set_next(JvmtiAgent* agent) {
   _next = agent;
 }
 
-const char* Agent::name() const {
+const char* JvmtiAgent::name() const {
   return _name;
 }
 
-const char* Agent::options() const {
+const char* JvmtiAgent::options() const {
   return _options;
 }
 
-void* Agent::os_lib() const {
+void* JvmtiAgent::os_lib() const {
   return _os_lib;
 }
 
-void Agent::set_os_lib(void* os_lib) {
+void JvmtiAgent::set_os_lib(void* os_lib) {
   _os_lib = os_lib;
 }
 
-void Agent::set_os_lib_path(const char* path) {
+void JvmtiAgent::set_os_lib_path(const char* path) {
   assert(path != nullptr, "invariant");
   if (_os_lib_path == nullptr) {
     _os_lib_path = copy_string(path);
@@ -111,68 +111,68 @@ void Agent::set_os_lib_path(const char* path) {
   assert(strcmp(_os_lib_path, path) == 0, "invariant");
 }
 
-const char* Agent::os_lib_path() const {
+const char* JvmtiAgent::os_lib_path() const {
   return _os_lib_path;
 }
 
-bool Agent::is_loaded() const {
+bool JvmtiAgent::is_loaded() const {
   return _loaded;
 }
 
-void Agent::set_loaded() {
+void JvmtiAgent::set_loaded() {
   _loaded = true;
 }
 
-bool Agent::is_absolute_path() const {
+bool JvmtiAgent::is_absolute_path() const {
   return _absolute_path;
 }
 
-bool Agent::is_static_lib() const {
+bool JvmtiAgent::is_static_lib() const {
   return _static_lib;
 }
 
-void Agent::set_static_lib() {
+void JvmtiAgent::set_static_lib() {
   _static_lib = true;
 }
 
-bool Agent::is_dynamic() const {
+bool JvmtiAgent::is_dynamic() const {
   return _dynamic;
 }
 
-bool Agent:: is_instrument_lib() const {
+bool JvmtiAgent:: is_instrument_lib() const {
   return _instrument_lib;
 }
 
-bool Agent::is_xrun() const {
+bool JvmtiAgent::is_xrun() const {
   return _xrun;
 }
 
-void Agent::set_xrun() {
+void JvmtiAgent::set_xrun() {
   _xrun = true;
 }
 
-bool Agent::is_jplis() const {
+bool JvmtiAgent::is_jplis() const {
   return _jplis != nullptr;
 }
 
-const Ticks& Agent::initialization_time() const {
+const Ticks& JvmtiAgent::initialization_time() const {
   return _initialization_time;
 }
 
-const Tickspan& Agent::initialization_duration() const {
+const Tickspan& JvmtiAgent::initialization_duration() const {
   return _initialization_duration;
 }
 
-bool Agent::is_initialized() const {
+bool JvmtiAgent::is_initialized() const {
   return _initialization_time.value() != 0;
 }
 
-void Agent::initialization_begin() {
+void JvmtiAgent::initialization_begin() {
   assert(!is_initialized(), "invariant");
   _initialization_time = Ticks::now();
 }
 
-void Agent::initialization_end() {
+void JvmtiAgent::initialization_end() {
   assert(is_initialized(), "invariant");
   assert(_initialization_duration.value() == 0, "invariant");
   _initialization_duration = Ticks::now() - initialization_time();
@@ -210,14 +210,14 @@ static inline const JPLISEnvironmentMirror* get_env_local_storage(JvmtiEnv* env)
   return reinterpret_cast<const JPLISEnvironmentMirror*>(env->get_env_local_storage());
 }
 
-bool Agent::is_jplis(JvmtiEnv* env) const {
+bool JvmtiAgent::is_jplis(JvmtiEnv* env) const {
   assert(env != nullptr, "invariant");
   assert(is_instrument_lib(), "invariant");
   const JPLISEnvironmentMirror* const jplis_env = get_env_local_storage(env);
   return jplis_env != nullptr && _jplis == jplis_env->mAgent;
 }
 
-void Agent::set_jplis(const void* jplis) {
+void JvmtiAgent::set_jplis(const void* jplis) {
   assert(jplis != nullptr, "invaiant");
   assert(is_instrument_lib(), "invariant");
   assert(_jplis == nullptr, "invariant");
@@ -236,7 +236,7 @@ static const char* missing_module_error_msg = "\nModule java.instrument may be m
 static char ebuf[1024];
 static char buffer[JVM_MAXPATHLEN];
 
-static void vm_exit(const Agent* agent, const char* sub_msg1, const char* sub_msg2) {
+static void vm_exit(const JvmtiAgent* agent, const char* sub_msg1, const char* sub_msg2) {
   assert(agent != nullptr, "invariant");
   assert(sub_msg1 != nullptr, "invariant");
   assert(!agent->is_instrument_lib() || sub_msg2 != nullptr, "invariant");
@@ -252,7 +252,7 @@ static void vm_exit(const Agent* agent, const char* sub_msg1, const char* sub_ms
 }
 
 #ifdef ASSERT
-static void assert_preload(const Agent* agent) {
+static void assert_preload(const JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
   assert(!agent->is_loaded(), "invariant");
 }
@@ -263,14 +263,14 @@ static void assert_preload(const Agent* agent) {
 // For statically linked agents we cant't rely on os_lib == nullptr because
 // statically linked agents could have a handle of RTLD_DEFAULT which == 0 on some platforms.
 // If this function returns true, then agent->is_static_lib().&& agent->is_loaded().
-static bool load_agent_from_executable(Agent* agent, const char* on_load_symbols[], size_t num_symbol_entries) {
+static bool load_agent_from_executable(JvmtiAgent* agent, const char* on_load_symbols[], size_t num_symbol_entries) {
   DEBUG_ONLY(assert_preload(agent);)
   assert(on_load_symbols != nullptr, "invariant");
   return os::find_builtin_agent(agent, &on_load_symbols[0], num_symbol_entries);
 }
 
 // Load the library from the absolute path of the agent, if available.
-static void* load_agent_from_absolute_path(Agent* agent, bool vm_exit_on_error) {
+static void* load_agent_from_absolute_path(JvmtiAgent* agent, bool vm_exit_on_error) {
   DEBUG_ONLY(assert_preload(agent);)
   assert(agent->is_absolute_path(), "invariant");
   assert(!agent->is_instrument_lib(), "invariant");
@@ -282,7 +282,7 @@ static void* load_agent_from_absolute_path(Agent* agent, bool vm_exit_on_error) 
 }
 
 // Agents with relative paths are loaded from the standard dll directory.
-static void* load_agent_from_relative_path(Agent* agent, bool vm_exit_on_error) {
+static void* load_agent_from_relative_path(JvmtiAgent* agent, bool vm_exit_on_error) {
   DEBUG_ONLY(assert_preload(agent);)
   assert(!agent->is_absolute_path(), "invariant");
   const char* const name = agent->name();
@@ -305,7 +305,7 @@ static void* load_agent_from_relative_path(Agent* agent, bool vm_exit_on_error) 
 }
 
 // For absolute and relative paths.
-static void* load_library(Agent* agent, const char* on_symbols[], size_t num_symbol_entries, bool vm_exit_on_error) {
+static void* load_library(JvmtiAgent* agent, const char* on_symbols[], size_t num_symbol_entries, bool vm_exit_on_error) {
   return agent->is_absolute_path() ? load_agent_from_absolute_path(agent, vm_exit_on_error) :
                                      load_agent_from_relative_path(agent, vm_exit_on_error);
 }
@@ -317,7 +317,7 @@ extern "C" {
 
 // Find the OnLoad entry point for -agentlib:  -agentpath:   -Xrun agents.
 // num_symbol_entries must be passed-in since only the caller knows the number of symbols in the array.
-static OnLoadEntry_t lookup_On_Load_entry_point(Agent* agent, const char* on_load_symbols[], size_t num_symbol_entries) {
+static OnLoadEntry_t lookup_On_Load_entry_point(JvmtiAgent* agent, const char* on_load_symbols[], size_t num_symbol_entries) {
   assert(agent != nullptr, "invariant");
   if (!agent->is_loaded()) {
     if (!load_agent_from_executable(agent, on_load_symbols, num_symbol_entries)) {
@@ -332,17 +332,17 @@ static OnLoadEntry_t lookup_On_Load_entry_point(Agent* agent, const char* on_loa
   return CAST_TO_FN_PTR(OnLoadEntry_t, os::find_agent_function(agent, false, on_load_symbols, num_symbol_entries));
 }
 
-static OnLoadEntry_t lookup_JVM_OnLoad_entry_point(Agent* lib) {
+static OnLoadEntry_t lookup_JVM_OnLoad_entry_point(JvmtiAgent* lib) {
   const char* on_load_symbols[] = JVM_ONLOAD_SYMBOLS;
   return lookup_On_Load_entry_point(lib, on_load_symbols, sizeof(on_load_symbols) / sizeof(char*));
 }
 
-static OnLoadEntry_t lookup_Agent_OnLoad_entry_point(Agent* agent) {
+static OnLoadEntry_t lookup_Agent_OnLoad_entry_point(JvmtiAgent* agent) {
   const char* on_load_symbols[] = AGENT_ONLOAD_SYMBOLS;
   return lookup_On_Load_entry_point(agent, on_load_symbols, sizeof(on_load_symbols) / sizeof(char*));
 }
 
-void Agent::convert_xrun_agent() {
+void JvmtiAgent::convert_xrun_agent() {
   assert(is_xrun(), "invariant");
   assert(!is_loaded(), "invariant");
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invalid init sequence");
@@ -359,7 +359,7 @@ void Agent::convert_xrun_agent() {
 }
 
 // Called after the VM is initialized for -Xrun agents which have not been converted to JVMTI agents.
-static bool invoke_JVM_OnLoad(Agent* agent) {
+static bool invoke_JVM_OnLoad(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
   assert(agent->is_xrun(), "invariant");
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invalid init sequence");
@@ -406,7 +406,7 @@ static JvmtiEnv* get_last_jplis_jvmtienv() {
 }
 
 // Associate the last, i.e. most recent, JvmtiEnv that is a JPLIS agent with the current agent.
-static void convert_to_jplis(Agent* agent) {
+static void convert_to_jplis(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
   assert(agent->is_instrument_lib(), "invariant");
   JvmtiEnv* const env = get_last_jplis_jvmtienv();
@@ -468,7 +468,7 @@ class AgentThreadEventMark : public AgentEventMark {
   jthread jni_thread() { return (jthread)_jthread; }
 };
 
-static void unload_library(Agent* agent, void* library) {
+static void unload_library(JvmtiAgent* agent, void* library) {
   assert(agent != nullptr, "invariant");
   assert(agent->is_loaded(), "invariant");
   if (!agent->is_static_lib()) {
@@ -483,7 +483,7 @@ extern "C" {
 }
 
 // Loading the agent by invoking Agent_OnAttach.
-static bool invoke_Agent_OnAttach(Agent* agent, outputStream* st) {
+static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
   DEBUG_ONLY(assert_preload(agent);)
   assert(agent->is_dynamic(), "invariant");
   assert(st != nullptr, "invariant");
@@ -556,7 +556,7 @@ static bool invoke_Agent_OnAttach(Agent* agent, outputStream* st) {
 
 // CDS dumping does not support native JVMTI agent.
 // CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
-static void check_cds_dump(Agent* agent) {
+static void check_cds_dump(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
   assert(Arguments::is_dumping_archive(), "invariant");
   if (!agent->is_instrument_lib()) {
@@ -569,7 +569,7 @@ static void check_cds_dump(Agent* agent) {
 }
 
 // Loading the agent by invoking Agent_OnLoad.
-static bool invoke_Agent_OnLoad(Agent* agent) {
+static bool invoke_Agent_OnLoad(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
   assert(!agent->is_xrun(), "invariant");
   assert(!agent->is_dynamic(), "invariant");
@@ -593,7 +593,7 @@ static bool invoke_Agent_OnLoad(Agent* agent) {
   return true;
 }
 
-bool Agent::load(outputStream* st /* nullptr */) {
+bool JvmtiAgent::load(outputStream* st /* nullptr */) {
   if (is_xrun()) {
     return invoke_JVM_OnLoad(this);
   }
@@ -604,7 +604,7 @@ extern "C" {
   typedef void (JNICALL* Agent_OnUnload_t)(JavaVM*);
 }
 
-void Agent::unload() {
+void JvmtiAgent::unload() {
   const char* on_unload_symbols[] = AGENT_ONUNLOAD_SYMBOLS;
   // Find the Agent_OnUnload function.
   Agent_OnUnload_t unload_entry = CAST_TO_FN_PTR(Agent_OnUnload_t,

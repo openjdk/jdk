@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "prims/agentList.hpp"
+#include "prims/jvmtiAgentList.hpp"
 
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -30,10 +30,10 @@
 #include "runtime/os.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-Agent* AgentList::_list = nullptr;
+JvmtiAgent* JvmtiAgentList::_list = nullptr;
 
 // Selection as a function of the filter.
-Agent* AgentList::Iterator::select(Agent* agent) const {
+JvmtiAgent* JvmtiAgentList::Iterator::select(JvmtiAgent* agent) const {
   while (agent != nullptr) {
     if (_filter == ALL) {
       return agent;
@@ -60,7 +60,7 @@ Agent* AgentList::Iterator::select(Agent* agent) const {
   return nullptr;
 }
 
-static inline Agent* head(Agent** list) {
+static inline JvmtiAgent* head(JvmtiAgent** list) {
   assert(list != nullptr, "invariant");
   return Atomic::load_acquire(list);
 }
@@ -69,8 +69,8 @@ static inline Agent* head(Agent** list) {
 // The storage list is a single cas-linked-list, to allow for concurrent iterations. Especially during initial loading of agents,
 // there exist an order requirement to iterate oldest -> newest. Our concurrent storage linked-list is newest -> oldest.
 // The correct order is preserved by the iterator, by storing a filtered set of entries in a stack.
-AgentList::Iterator::Iterator(Agent** list, Filter filter) : _stack(new GrowableArrayCHeap<Agent*, mtServiceability>(16)), _filter(filter) {
-  Agent* next = head(list);
+JvmtiAgentList::Iterator::Iterator(JvmtiAgent** list, Filter filter) : _stack(new GrowableArrayCHeap<JvmtiAgent*, mtServiceability>(16)), _filter(filter) {
+  JvmtiAgent* next = head(list);
   while (next != nullptr) {
     next = select(next);
     if (next != nullptr) {
@@ -80,65 +80,65 @@ AgentList::Iterator::Iterator(Agent** list, Filter filter) : _stack(new Growable
   }
 }
 
-AgentList::Iterator::~Iterator() {
+JvmtiAgentList::Iterator::~Iterator() {
   delete _stack;
 }
 
-bool AgentList::Iterator::has_next() const {
+bool JvmtiAgentList::Iterator::has_next() const {
   assert(_stack != nullptr, "invariant");
   return _stack->is_nonempty();
 }
 
-const Agent* AgentList::Iterator::next() const {
+const JvmtiAgent* JvmtiAgentList::Iterator::next() const {
   assert(has_next(), "invariant");
   return _stack->pop();
 }
 
-Agent* AgentList::Iterator::next() {
-  return const_cast<Agent*>(const_cast<const Iterator*>(this)->next());
+JvmtiAgent* JvmtiAgentList::Iterator::next() {
+  return const_cast<JvmtiAgent*>(const_cast<const Iterator*>(this)->next());
 }
 
-AgentList::Iterator AgentList::agents() {
+JvmtiAgentList::Iterator JvmtiAgentList::agents() {
   return Iterator(&_list, Iterator::NOT_XRUN);
 }
 
-AgentList::Iterator AgentList::java_agents() {
+JvmtiAgentList::Iterator JvmtiAgentList::java_agents() {
   return Iterator(&_list, Iterator::JAVA);
 }
 
-AgentList::Iterator AgentList::native_agents() {
+JvmtiAgentList::Iterator JvmtiAgentList::native_agents() {
   return Iterator(&_list, Iterator::NATIVE);
 }
 
-AgentList::Iterator AgentList::xrun_agents() {
+JvmtiAgentList::Iterator JvmtiAgentList::xrun_agents() {
   return Iterator(&_list, Iterator::XRUN);
 }
 
-AgentList::Iterator AgentList::all() {
+JvmtiAgentList::Iterator JvmtiAgentList::all() {
   return Iterator(&_list, Iterator::ALL);
 }
 
-void AgentList::add(Agent* agent) {
+void JvmtiAgentList::add(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
-  Agent* next;
+  JvmtiAgent* next;
   do {
     next = head(&_list);
     agent->set_next(next);
   } while (Atomic::cmpxchg(&_list, next, agent) != next);
 }
 
-void AgentList::add(const char* name, char* options, bool absolute_path) {
-  add(new Agent(name, options, absolute_path));
+void JvmtiAgentList::add(const char* name, char* options, bool absolute_path) {
+  add(new JvmtiAgent(name, options, absolute_path));
 }
 
-void AgentList::add_xrun(const char* name, char* options, bool absolute_path) {
-  Agent* agent = new Agent(name, options, absolute_path);
+void JvmtiAgentList::add_xrun(const char* name, char* options, bool absolute_path) {
+  JvmtiAgent* agent = new JvmtiAgent(name, options, absolute_path);
   agent->set_xrun();
   add(agent);
 }
 
 #ifdef ASSERT
-static void assert_initialized(AgentList::Iterator& it) {
+static void assert_initialized(JvmtiAgentList::Iterator& it) {
   while (it.has_next()) {
     assert(it.next()->is_initialized(), "invariant");
   }
@@ -147,10 +147,10 @@ static void assert_initialized(AgentList::Iterator& it) {
 
 // In case an agent did not enable the VMInit callback, or if it is an -Xrun agent,
 // it gets an initializiation timestamp here.
-void AgentList::initialize() {
+void JvmtiAgentList::initialize() {
   Iterator it = all();
   while (it.has_next()) {
-    Agent* agent = it.next();
+    JvmtiAgent* agent = it.next();
     if (!agent->is_initialized()) {
       agent->initialization_begin();
     }
@@ -158,7 +158,7 @@ void AgentList::initialize() {
   DEBUG_ONLY(Iterator assert_it = all(); assert_initialized(assert_it);)
 }
 
-void AgentList::convert_xrun_agents() {
+void JvmtiAgentList::convert_xrun_agents() {
   Iterator it = xrun_agents();
   while (it.has_next()) {
     it.next()->convert_xrun_agent();
@@ -177,7 +177,7 @@ class JvmtiPhaseTransition : public StackObj {
   }
 };
 
-static void load_agents(AgentList::Iterator& it) {
+static void load_agents(JvmtiAgentList::Iterator& it) {
   while (it.has_next()) {
     it.next()->load();
   }
@@ -185,7 +185,7 @@ static void load_agents(AgentList::Iterator& it) {
 
 // Invokes Agent_OnLoad for -agentlib:.. -agentpath:  and converted -Xrun agents.
 // Called very early -- before JavaThreads exist
-void AgentList::load_agents() {
+void JvmtiAgentList::load_agents() {
   // Convert -Xrun to -agentlib: if there is no JVM_OnLoad
   convert_xrun_agents();
   JvmtiPhaseTransition transition;
@@ -194,18 +194,18 @@ void AgentList::load_agents() {
 }
 
 // Launch -Xrun agents
-void AgentList::load_xrun_agents() {
+void JvmtiAgentList::load_xrun_agents() {
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invalid init sequence");
   Iterator it = xrun_agents();
   ::load_agents(it);
 }
 
 // Invokes Agent_OnAttach for agents loaded dynamically during runtime.
-jint AgentList::load_agent(const char* agent_name, const char* absParam,
+jint JvmtiAgentList::load_agent(const char* agent_name, const char* absParam,
                            const char* options, outputStream* st) {
   // The abs parameter should be "true" or "false"
   const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
-  Agent* const agent = new Agent(agent_name, options, is_absolute_path, /* dynamic agent */ true);
+  JvmtiAgent* const agent = new JvmtiAgent(agent_name, options, is_absolute_path, /* dynamic agent */ true);
   if (agent->load(st)) {
     add(agent);
   } else {
@@ -216,14 +216,14 @@ jint AgentList::load_agent(const char* agent_name, const char* absParam,
 }
 
 // Send any Agent_OnUnload notifications
-void AgentList::unload_agents() {
+void JvmtiAgentList::unload_agents() {
   Iterator it = agents();
   while (it.has_next()) {
     it.next()->unload();
   }
 }
 
-static bool match(JvmtiEnv* env, const Agent* agent, const void* os_module_address) {
+static bool match(JvmtiEnv* env, const JvmtiAgent* agent, const void* os_module_address) {
   assert(env != nullptr, "invariant");
   assert(agent != nullptr, "invariant");
   if (agent->is_static_lib()) {
@@ -238,7 +238,7 @@ static bool match(JvmtiEnv* env, const Agent* agent, const void* os_module_addre
 // The function pointer is a JVMTI callback function.
 // Find the os module (dll) that exports this function.
 // Now we can map a JVMTI env to its corresponding agent.
-Agent* AgentList::lookup(JvmtiEnv* env, void* f_ptr) {
+JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
   assert(env != nullptr, "invariant");
   assert(f_ptr != nullptr, "invariant");
   static char ebuf[1024];
@@ -251,9 +251,9 @@ Agent* AgentList::lookup(JvmtiEnv* env, void* f_ptr) {
   assert(offset >= 0, "invariant");
   const void* const os_module_address = reinterpret_cast<address>(f_ptr) - offset;
 
-  AgentList::Iterator it = AgentList::agents();
+  JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
   while (it.has_next()) {
-    Agent* const agent = it.next();
+    JvmtiAgent* const agent = it.next();
     if (match(env, agent, os_module_address)) {
       agent->set_os_lib_path(&buffer[0]);
       return agent;

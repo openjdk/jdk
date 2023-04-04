@@ -43,7 +43,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "prims/agentList.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
@@ -691,10 +691,10 @@ void JvmtiExport::initialize_oop_storage() {
   _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 
-// Lookup an agent from an JvmtiEnv.Return agent only if it is not yet initialized.
+// Lookup an agent from an JvmtiEnv. Return agent only if it is not yet initialized.
 // An agent can create multiple JvmtiEnvs, but for agent initialization, we are only interested in the initial one.
-static Agent* lookup_uninitialized_agent(JvmtiEnv* env, void* callback) {
-  Agent* const agent = AgentList::lookup(env, callback);
+static JvmtiAgent* lookup_uninitialized_agent(JvmtiEnv* env, void* callback) {
+  JvmtiAgent* const agent = JvmtiAgentList::lookup(env, callback);
   return agent == nullptr || agent->is_initialized() ? nullptr : agent;
 }
 
@@ -714,7 +714,7 @@ void JvmtiExport::post_vm_initialized() {
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMInit callback = env->callbacks()->VMInit;
       if (callback != nullptr) {
-        Agent* const agent = lookup_uninitialized_agent(env, reinterpret_cast<void*>(callback));
+        JvmtiAgent* const agent = lookup_uninitialized_agent(env, reinterpret_cast<void*>(callback));
         if (agent != nullptr) {
           agent->initialization_begin();
         }
@@ -729,7 +729,7 @@ void JvmtiExport::post_vm_initialized() {
   // Agents are initialized as part of posting the VMInit event above.
   // For -Xrun agents and agents with no VMInit callback, we explicitly ensure they are also initialized.
   // JVM_OnLoad and Agent_OnLoad callouts are performed too early for the proper timestamp logic.
-  AgentList::initialize();
+  JvmtiAgentList::initialize();
 }
 
 void JvmtiExport::post_vm_death() {

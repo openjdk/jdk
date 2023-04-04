@@ -52,7 +52,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/agentList.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -271,7 +271,7 @@ TRACE_REQUEST_FUNC(SystemProcess) {
 }
 
 template <typename AgentEvent>
-static void send_agent_event(AgentEvent& event, const Agent* agent) {
+static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
   event.set_name(agent->name());
   event.set_options(agent->options());
   event.set_dynamic(agent->is_dynamic());
@@ -281,18 +281,18 @@ static void send_agent_event(AgentEvent& event, const Agent* agent) {
 }
 
 TRACE_REQUEST_FUNC(JavaAgent) {
-  const AgentList::Iterator it = AgentList::java_agents();
+  const JvmtiAgentList::Iterator it =JvmtiAgentList::java_agents();
   while (it.has_next()) {
-    const Agent* agent = it.next();
+    const JvmtiAgent* agent = it.next();
     assert(agent->is_jplis(), "invariant");
     EventJavaAgent event;
     send_agent_event(event, agent);
   }
 }
 
-static void send_native_agent_events(const AgentList::Iterator& it) {
+static void send_native_agent_events(const JvmtiAgentList::Iterator& it) {
   while (it.has_next()) {
-    const Agent* agent = it.next();
+    const JvmtiAgent* agent = it.next();
     assert(!agent->is_jplis(), "invariant");
     EventNativeAgent event;
     event.set_path(agent->os_lib_path());
@@ -301,9 +301,9 @@ static void send_native_agent_events(const AgentList::Iterator& it) {
 }
 
 TRACE_REQUEST_FUNC(NativeAgent) {
-  const AgentList::Iterator native_agents_it = AgentList::native_agents();
+  const JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
   send_native_agent_events(native_agents_it);
-  const AgentList::Iterator xrun_agents_it = AgentList::xrun_agents();
+  const JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
   send_native_agent_events(xrun_agents_it);
 }
 

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_PRIMS_AGENT_HPP
-#define SHARE_PRIMS_AGENT_HPP
+#ifndef SHARE_PRIMS_JVMTIAGENT_HPP
+#define SHARE_PRIMS_JVMTIAGENT_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/ticks.hpp"
@@ -33,12 +33,12 @@ class outputStream;
 
 // Represents an agent launched on the command-line by -agentlib, -agentpath or -Xrun.
 // Also agents loaded dynamically during runtime, for example using the Attach API.
-class Agent : public CHeapObj<mtServiceability> {
-  friend class AgentList;
+class JvmtiAgent : public CHeapObj<mtServiceability> {
+  friend class JvmtiAgentList;
  private:
   Ticks _initialization_time;
   Tickspan _initialization_duration;
-  Agent* _next;
+  JvmtiAgent* _next;
   const char* _name;
   const char* _options;
   void* _os_lib;
@@ -51,13 +51,13 @@ class Agent : public CHeapObj<mtServiceability> {
   bool _dynamic;
   bool _xrun;
 
-  Agent* next() const;
-  void set_next(Agent* agent);
+  JvmtiAgent* next() const;
+  void set_next(JvmtiAgent* agent);
   void convert_xrun_agent();
   void set_xrun();
 
  public:
-  Agent(const char* name, const char* options, bool is_absolute_path, bool dynamic = false);
+  JvmtiAgent(const char* name, const char* options, bool is_absolute_path, bool dynamic = false);
   const char* name() const;
   const char* options() const;
   bool is_absolute_path() const;
@@ -85,4 +85,4 @@ class Agent : public CHeapObj<mtServiceability> {
   void unload();
 };
 
-#endif // SHARE_PRIMS_AGENT_HPP
+#endif // SHARE_PRIMS_JVMTIAGENT_HPP

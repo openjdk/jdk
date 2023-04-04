@@ -31,7 +31,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "prims/agentList.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -135,7 +135,7 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
     }
   }
 
-  return AgentList::load_agent(agent, absParam, options, out);
+  return JvmtiAgentList::load_agent(agent, absParam, options, out);
 }
 
 // Implementation of "properties" command.

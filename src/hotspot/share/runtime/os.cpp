@@ -41,7 +41,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/agent.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -535,7 +535,7 @@ void* os::native_java_library() {
  * executable if agent_lib->is_static_lib() == true or in the shared library
  * referenced by 'handle'.
  */
-void* os::find_agent_function(Agent *agent_lib, bool check_lib,
+void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                               const char *syms[], size_t syms_len) {
   assert(agent_lib != nullptr, "sanity check");
   const char *lib_name;
@@ -562,7 +562,7 @@ void* os::find_agent_function(Agent *agent_lib, bool check_lib,
 }
 
 // See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(Agent* agent, const char *syms[],
+bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
                             size_t syms_len) {
   void *ret;
   void *proc_handle;

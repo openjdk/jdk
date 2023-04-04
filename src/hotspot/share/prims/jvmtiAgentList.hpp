@@ -22,23 +22,23 @@
  *
  */
 
-#ifndef SHARE_PRIMS_AGENTLIST_HPP
-#define SHARE_PRIMS_AGENTLIST_HPP
+#ifndef SHARE_PRIMS_JVMTIAGENTLIST_HPP
+#define SHARE_PRIMS_JVMTIAGENTLIST_HPP
 
 #include "memory/allocation.hpp"
-#include "prims/agent.hpp"
+#include "prims/jvmtiAgent.hpp"
 
 template <typename, MEMFLAGS>
 class GrowableArrayCHeap;
 class JvmtiEnv;
 
-// Maintains a single cas linked-list of Agents.
-class AgentList : AllStatic {
+// Maintains a single cas linked-list of JvmtiAgents.
+class JvmtiAgentList : AllStatic {
   friend class Iterator;
   friend class JvmtiExport;
  public:
   class Iterator {
-    friend class AgentList;
+    friend class JvmtiAgentList;
    private:
     enum Filter {
       JAVA,
@@ -47,26 +47,26 @@ class AgentList : AllStatic {
       NOT_XRUN,
       ALL
     };
-    GrowableArrayCHeap<Agent*, mtServiceability>* _stack;
+    GrowableArrayCHeap<JvmtiAgent*, mtServiceability>* _stack;
     const Filter _filter;
-    Iterator(Agent** list, Filter filter);
-    Agent* select(Agent* agent) const;
+    Iterator(JvmtiAgent** list, Filter filter);
+    JvmtiAgent* select(JvmtiAgent* agent) const;
    public:
     bool has_next() const;
-    Agent* next();
-    const Agent* next() const;
+    JvmtiAgent* next();
+    const JvmtiAgent* next() const;
     ~Iterator();
   };
 
  private:
-  static Agent* _list;
+  static JvmtiAgent* _list;
 
   static Iterator all();
   static void initialize();
   static void convert_xrun_agents();
 
  public:
-  static void add(Agent* agent);
+  static void add(JvmtiAgent* agent);
   static void add(const char* name, char* options, bool absolute_path);
   static void add_xrun(const char* name, char* options, bool absolute_path);
 
@@ -76,7 +76,7 @@ class AgentList : AllStatic {
   static void load_xrun_agents();
   static void unload_agents();
 
-  static Agent* lookup(JvmtiEnv* env, void* f_ptr);
+  static JvmtiAgent* lookup(JvmtiEnv* env, void* f_ptr);
 
   static Iterator agents();
   static Iterator java_agents();
@@ -84,4 +84,4 @@ class AgentList : AllStatic {
   static Iterator xrun_agents();
 };
 
-#endif // SHARE_PRIMS_AGENTLIST_HPP
+#endif // SHARE_PRIMS_JVMTIAGENTLIST_HPP
