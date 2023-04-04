@@ -36,6 +36,7 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
 
 import jdk.test.whitebox.WhiteBox;
 
@@ -318,8 +319,12 @@ public class VirtualAllocCommitMerge {
     }
 
     public static void checkCommitted(OutputAnalyzer output, long addr, long size, String sizeString) {
+        // On ARM Thumb the stack is not walkable, so the location is not available and
+        // "from" string will not be present in the output.
+        // Disable assertion for ARM32.
+        String fromString = Platform.isARM() ? "" : "from.*";
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + size)
-                           + "\\] committed " + sizeString + ".*");
+                           + "\\] committed " + sizeString + " " + fromString);
     }
 }
