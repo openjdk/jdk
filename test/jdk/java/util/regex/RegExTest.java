@@ -49,6 +49,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
@@ -60,8 +61,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import static java.lang.Character.*;
 
 import org.testng.annotations.Test;
 import org.testng.Assert;
@@ -128,7 +127,7 @@ public class RegExTest {
     private static void check(String p, int codePoint, boolean expected) {
         String propertyPattern = expected ? "\\p" + p : "\\P" + p;
         Pattern pattern = Pattern.compile(propertyPattern);
-        char[] ca = toChars(codePoint);
+        char[] ca = Character.toChars(codePoint);
         Matcher matcher = pattern.matcher(new String(ca));
         assertTrue(matcher.find());
     }
@@ -414,7 +413,7 @@ public class RegExTest {
         String wordChar = "a";
         String nsm = "\u030a";
 
-        assert (getType('\u030a') == NON_SPACING_MARK);
+        assert (Character.getType('\u030a') == Character.NON_SPACING_MARK);
 
         Pattern pattern = Pattern.compile("\\b");
         Matcher matcher = pattern.matcher("");
@@ -964,58 +963,58 @@ public class RegExTest {
     public static void javaCharClassTest() {
         for (int i=0; i<1000; i++) {
             char c = (char)generator.nextInt();
-            check("{javaLowerCase}", c, isLowerCase(c));
-            check("{javaUpperCase}", c, isUpperCase(c));
-            check("{javaUpperCase}+", c, isUpperCase(c));
-            check("{javaTitleCase}", c, isTitleCase(c));
-            check("{javaDigit}", c, isDigit(c));
-            check("{javaDefined}", c, isDefined(c));
-            check("{javaLetter}", c, isLetter(c));
-            check("{javaLetterOrDigit}", c, isLetterOrDigit(c));
+            check("{javaLowerCase}", c, Character.isLowerCase(c));
+            check("{javaUpperCase}", c, Character.isUpperCase(c));
+            check("{javaUpperCase}+", c, Character.isUpperCase(c));
+            check("{javaTitleCase}", c, Character.isTitleCase(c));
+            check("{javaDigit}", c, Character.isDigit(c));
+            check("{javaDefined}", c, Character.isDefined(c));
+            check("{javaLetter}", c, Character.isLetter(c));
+            check("{javaLetterOrDigit}", c, Character.isLetterOrDigit(c));
             check("{javaJavaIdentifierStart}", c,
-                  isJavaIdentifierStart(c));
+                  Character.isJavaIdentifierStart(c));
             check("{javaJavaIdentifierPart}", c,
-                  isJavaIdentifierPart(c));
+                  Character.isJavaIdentifierPart(c));
             check("{javaUnicodeIdentifierStart}", c,
-                  isUnicodeIdentifierStart(c));
+                  Character.isUnicodeIdentifierStart(c));
             check("{javaUnicodeIdentifierPart}", c,
-                  isUnicodeIdentifierPart(c));
+                  Character.isUnicodeIdentifierPart(c));
             check("{javaIdentifierIgnorable}", c,
-                  isIdentifierIgnorable(c));
-            check("{javaSpaceChar}", c, isSpaceChar(c));
-            check("{javaWhitespace}", c, isWhitespace(c));
-            check("{javaISOControl}", c, isISOControl(c));
-            check("{javaMirrored}", c, isMirrored(c));
+                  Character.isIdentifierIgnorable(c));
+            check("{javaSpaceChar}", c, Character.isSpaceChar(c));
+            check("{javaWhitespace}", c, Character.isWhitespace(c));
+            check("{javaISOControl}", c, Character.isISOControl(c));
+            check("{javaMirrored}", c, Character.isMirrored(c));
 
         }
 
         // Supplementary character test
         for (int i=0; i<1000; i++) {
-            int c = generator.nextInt(MAX_CODE_POINT
-                                      - MIN_SUPPLEMENTARY_CODE_POINT)
-                        + MIN_SUPPLEMENTARY_CODE_POINT;
-            check("{javaLowerCase}", c, isLowerCase(c));
-            check("{javaUpperCase}", c, isUpperCase(c));
-            check("{javaUpperCase}+", c, isUpperCase(c));
-            check("{javaTitleCase}", c, isTitleCase(c));
-            check("{javaDigit}", c, isDigit(c));
-            check("{javaDefined}", c, isDefined(c));
-            check("{javaLetter}", c, isLetter(c));
-            check("{javaLetterOrDigit}", c, isLetterOrDigit(c));
+            int c = generator.nextInt(Character.MAX_CODE_POINT
+                                      - Character.MIN_SUPPLEMENTARY_CODE_POINT)
+                        + Character.MIN_SUPPLEMENTARY_CODE_POINT;
+            check("{javaLowerCase}", c, Character.isLowerCase(c));
+            check("{javaUpperCase}", c, Character.isUpperCase(c));
+            check("{javaUpperCase}+", c, Character.isUpperCase(c));
+            check("{javaTitleCase}", c, Character.isTitleCase(c));
+            check("{javaDigit}", c, Character.isDigit(c));
+            check("{javaDefined}", c, Character.isDefined(c));
+            check("{javaLetter}", c, Character.isLetter(c));
+            check("{javaLetterOrDigit}", c, Character.isLetterOrDigit(c));
             check("{javaJavaIdentifierStart}", c,
-                  isJavaIdentifierStart(c));
+                  Character.isJavaIdentifierStart(c));
             check("{javaJavaIdentifierPart}", c,
-                  isJavaIdentifierPart(c));
+                  Character.isJavaIdentifierPart(c));
             check("{javaUnicodeIdentifierStart}", c,
-                  isUnicodeIdentifierStart(c));
+                  Character.isUnicodeIdentifierStart(c));
             check("{javaUnicodeIdentifierPart}", c,
-                  isUnicodeIdentifierPart(c));
+                  Character.isUnicodeIdentifierPart(c));
             check("{javaIdentifierIgnorable}", c,
-                  isIdentifierIgnorable(c));
-            check("{javaSpaceChar}", c, isSpaceChar(c));
-            check("{javaWhitespace}", c, isWhitespace(c));
-            check("{javaISOControl}", c, isISOControl(c));
-            check("{javaMirrored}", c, isMirrored(c));
+                  Character.isIdentifierIgnorable(c));
+            check("{javaSpaceChar}", c, Character.isSpaceChar(c));
+            check("{javaWhitespace}", c, Character.isWhitespace(c));
+            check("{javaISOControl}", c, Character.isISOControl(c));
+            check("{javaMirrored}", c, Character.isMirrored(c));
         }
     }
 
@@ -1745,7 +1744,7 @@ public class RegExTest {
             Pattern.compile(toSupplementaries("a thirty four character long regex"));
             StringBuilder patternToBe = new StringBuilder(101*2);
             for (int i=0; i<100; i++)
-                patternToBe.append(toChars(MIN_SUPPLEMENTARY_CODE_POINT
+                patternToBe.append(Character.toChars(Character.MIN_SUPPLEMENTARY_CODE_POINT
                                                      + 97 + i%26));
             Pattern.compile(patternToBe.toString());
         } catch (PatternSyntaxException e) {
@@ -3163,7 +3162,7 @@ public class RegExTest {
     public static void bm() {
         doBnM('a');
 
-        doBnM(MIN_SUPPLEMENTARY_CODE_POINT - 10);
+        doBnM(Character.MIN_SUPPLEMENTARY_CODE_POINT - 10);
     }
 
     private static void doBnM(int baseCharacter) {
@@ -3175,8 +3174,8 @@ public class RegExTest {
             retry: for (;;) {
                 for (int x=0; x<patternLength; x++) {
                     int ch = baseCharacter + generator.nextInt(26);
-                    if (isSupplementaryCodePoint(ch)) {
-                        patternBuffer.append(toChars(ch));
+                    if (Character.isSupplementaryCodePoint(ch)) {
+                        patternBuffer.append(Character.toChars(ch));
                     } else {
                         patternBuffer.append((char)ch);
                     }
@@ -3202,8 +3201,8 @@ public class RegExTest {
                 s = new StringBuffer(100);
                 for (int x=0; x<100; x++) {
                     int ch = baseCharacter + generator.nextInt(26);
-                    if (isSupplementaryCodePoint(ch)) {
-                        s.append(toChars(ch));
+                    if (Character.isSupplementaryCodePoint(ch)) {
+                        s.append(Character.toChars(ch));
                     } else {
                         s.append((char)ch);
                     }
@@ -3214,7 +3213,7 @@ public class RegExTest {
 
             // Insert the pattern at a random spot
             int insertIndex = generator.nextInt(99);
-            if (isLowSurrogate(s.charAt(insertIndex)))
+            if (Character.isLowSurrogate(s.charAt(insertIndex)))
                 insertIndex++;
             s.insert(insertIndex, pattern);
             toSearch = s.toString();
@@ -3238,9 +3237,9 @@ public class RegExTest {
      */
     @Test
     public static void slice() {
-        doSlice(MAX_VALUE);
+        doSlice(Character.MAX_VALUE);
 
-        doSlice(MAX_CODE_POINT);
+        doSlice(Character.MAX_CODE_POINT);
     }
 
     private static void doSlice(int maxCharacter) {
@@ -3250,10 +3249,10 @@ public class RegExTest {
             StringBuilder patternBuffer = new StringBuilder(patternLength);
             for (int x=0; x<patternLength; x++) {
                 int randomChar = 0;
-                while (!isLetterOrDigit(randomChar))
+                while (!Character.isLetterOrDigit(randomChar))
                     randomChar = generator.nextInt(maxCharacter);
-                if (isSupplementaryCodePoint(randomChar)) {
-                    patternBuffer.append(toChars(randomChar));
+                if (Character.isSupplementaryCodePoint(randomChar)) {
+                    patternBuffer.append(Character.toChars(randomChar));
                 } else {
                     patternBuffer.append((char) randomChar);
                 }
@@ -3269,10 +3268,10 @@ public class RegExTest {
                 s = new StringBuffer(100);
                 for (int x=0; x<100; x++) {
                     int randomChar = 0;
-                    while (!isLetterOrDigit(randomChar))
+                    while (!Character.isLetterOrDigit(randomChar))
                         randomChar = generator.nextInt(maxCharacter);
-                    if (isSupplementaryCodePoint(randomChar)) {
-                        s.append(toChars(randomChar));
+                    if (Character.isSupplementaryCodePoint(randomChar)) {
+                        s.append(Character.toChars(randomChar));
                     } else {
                         s.append((char) randomChar);
                     }
@@ -3283,7 +3282,7 @@ public class RegExTest {
 
             // Insert the pattern at a random spot
             int insertIndex = generator.nextInt(99);
-            if (isLowSurrogate(s.charAt(insertIndex)))
+            if (Character.isLowSurrogate(s.charAt(insertIndex)))
                 insertIndex++;
             s.insert(insertIndex, pattern);
             toSearch = s.toString();
@@ -3625,22 +3624,22 @@ public class RegExTest {
         Matcher common  = Pattern.compile("\\p{script=Common}").matcher("");
         Matcher unknown = Pattern.compile("\\p{IsUnknown}").matcher("");
         Matcher lastSM  = common;
-        UnicodeScript lastScript = UnicodeScript.of(0);
+        Character.UnicodeScript lastScript = Character.UnicodeScript.of(0);
 
         Matcher latin  = Pattern.compile("\\p{block=basic_latin}").matcher("");
         Matcher greek  = Pattern.compile("\\p{InGreek}").matcher("");
         Matcher lastBM = latin;
-        UnicodeBlock lastBlock = UnicodeBlock.of(0);
+        Character.UnicodeBlock lastBlock = Character.UnicodeBlock.of(0);
 
-        for (int cp = 1; cp < MAX_CODE_POINT; cp++) {
+        for (int cp = 1; cp < Character.MAX_CODE_POINT; cp++) {
             if (cp >= 0x30000 && (cp & 0x70) == 0){
                 continue;  // only pick couple code points, they are the same
             }
 
             // Unicode Script
-            UnicodeScript script = UnicodeScript.of(cp);
+            Character.UnicodeScript script = Character.UnicodeScript.of(cp);
             Matcher m;
-            String str = new String(toChars(cp));
+            String str = new String(Character.toChars(cp));
             if (script == lastScript) {
                  m = lastSM;
                  m.reset(str);
@@ -3649,14 +3648,14 @@ public class RegExTest {
             }
             assertTrue(m.matches());
 
-            Matcher other = (script == UnicodeScript.COMMON)? unknown : common;
+            Matcher other = (script == Character.UnicodeScript.COMMON)? unknown : common;
             other.reset(str);
             assertFalse(other.matches());
             lastSM = m;
             lastScript = script;
 
             // Unicode Block
-            UnicodeBlock block = UnicodeBlock.of(cp);
+            Character.UnicodeBlock block = Character.UnicodeBlock.of(cp);
             if (block == null) {
                 //System.out.printf("Not a Block: cp=%x%n", cp);
                 continue;
@@ -3668,7 +3667,7 @@ public class RegExTest {
                  m  = Pattern.compile("\\p{block=" + block.toString() + "}").matcher(str);
             }
             assertTrue(m.matches());
-            other = (block == UnicodeBlock.BASIC_LATIN)? greek : latin;
+            other = (block == Character.UnicodeBlock.BASIC_LATIN)? greek : latin;
             other.reset(str);
             assertFalse(other.matches());
             lastBM = m;
@@ -3700,11 +3699,11 @@ public class RegExTest {
         check("^[\\x{DF3C}\\x{D800}]+$",   "\uDF3C\uD800", true);
 
         for (int cp = 0; cp <= 0x10FFFF; cp++) {
-             String s = "A" + new String(toChars(cp)) + "B";
+             String s = "A" + new String(Character.toChars(cp)) + "B";
              String hexUTF16 = (cp <= 0xFFFF)? String.format("\\u%04x", cp)
                                              : String.format("\\u%04x\\u%04x",
-                                               (int) toChars(cp)[0],
-                                               (int) toChars(cp)[1]);
+                                               (int) Character.toChars(cp)[0],
+                                               (int) Character.toChars(cp)[1]);
              String hexCodePoint = "\\x{" + Integer.toHexString(cp) + "}";
              assertTrue(Pattern.matches("A" + hexUTF16 + "B", s));
              assertTrue(Pattern.matches("A[" + hexUTF16 + "]B", s));
@@ -3716,53 +3715,53 @@ public class RegExTest {
     @Test
     public static void unicodeClassesTest() {
 
-        Matcher lower    = Pattern.compile("\\p{Lower}").matcher("");
-        Matcher upper    = Pattern.compile("\\p{Upper}").matcher("");
-        Matcher alpha    = Pattern.compile("\\p{Alpha}").matcher("");
-        Matcher digit    = Pattern.compile("\\p{Digit}").matcher("");
-        Matcher alnum    = Pattern.compile("\\p{Alnum}").matcher("");
-        Matcher punct    = Pattern.compile("\\p{Punct}").matcher("");
-        Matcher graph    = Pattern.compile("\\p{Graph}").matcher("");
-        Matcher print    = Pattern.compile("\\p{Print}").matcher("");
-        Matcher blank    = Pattern.compile("\\p{Blank}").matcher("");
-        Matcher cntrl    = Pattern.compile("\\p{Cntrl}").matcher("");
-        Matcher xdigit   = Pattern.compile("\\p{XDigit}").matcher("");
-        Matcher space    = Pattern.compile("\\p{Space}").matcher("");
-        Matcher word     = Pattern.compile("\\w++").matcher("");
+        Matcher lower  = Pattern.compile("\\p{Lower}").matcher("");
+        Matcher upper  = Pattern.compile("\\p{Upper}").matcher("");
+        Matcher alpha  = Pattern.compile("\\p{Alpha}").matcher("");
+        Matcher digit  = Pattern.compile("\\p{Digit}").matcher("");
+        Matcher alnum  = Pattern.compile("\\p{Alnum}").matcher("");
+        Matcher punct  = Pattern.compile("\\p{Punct}").matcher("");
+        Matcher graph  = Pattern.compile("\\p{Graph}").matcher("");
+        Matcher print  = Pattern.compile("\\p{Print}").matcher("");
+        Matcher blank  = Pattern.compile("\\p{Blank}").matcher("");
+        Matcher cntrl  = Pattern.compile("\\p{Cntrl}").matcher("");
+        Matcher xdigit = Pattern.compile("\\p{XDigit}").matcher("");
+        Matcher space  = Pattern.compile("\\p{Space}").matcher("");
+        Matcher word   = Pattern.compile("\\w++").matcher("");
         // UNICODE_CHARACTER_CLASS
-        Matcher lowerU   = Pattern.compile("\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher upperU   = Pattern.compile("\\p{Upper}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher alphaU   = Pattern.compile("\\p{Alpha}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher digitU   = Pattern.compile("\\p{Digit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher alnumU   = Pattern.compile("\\p{Alnum}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher punctU   = Pattern.compile("\\p{Punct}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher graphU   = Pattern.compile("\\p{Graph}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher printU   = Pattern.compile("\\p{Print}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher blankU   = Pattern.compile("\\p{Blank}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher cntrlU   = Pattern.compile("\\p{Cntrl}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher xdigitU  = Pattern.compile("\\p{XDigit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher spaceU   = Pattern.compile("\\p{Space}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher boundU   = Pattern.compile("\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher wordU    = Pattern.compile("\\w", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher lowerU  = Pattern.compile("\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher upperU  = Pattern.compile("\\p{Upper}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher alphaU  = Pattern.compile("\\p{Alpha}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher digitU  = Pattern.compile("\\p{Digit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher alnumU  = Pattern.compile("\\p{Alnum}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher punctU  = Pattern.compile("\\p{Punct}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher graphU  = Pattern.compile("\\p{Graph}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher printU  = Pattern.compile("\\p{Print}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher blankU  = Pattern.compile("\\p{Blank}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher cntrlU  = Pattern.compile("\\p{Cntrl}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher xdigitU = Pattern.compile("\\p{XDigit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher spaceU  = Pattern.compile("\\p{Space}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher boundU  = Pattern.compile("\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher wordU   = Pattern.compile("\\w", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         // embedded flag (?U)
         Matcher lowerEU  = Pattern.compile("(?U)\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher graphEU  = Pattern.compile("(?U)\\p{Graph}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher wordEU   = Pattern.compile("(?U)\\w", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
 
-        Matcher bwb      = Pattern.compile("\\b\\w\\b").matcher("");
-        Matcher bwbU     = Pattern.compile("\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher bwbEU    = Pattern.compile("(?U)\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher bwb    = Pattern.compile("\\b\\w\\b").matcher("");
+        Matcher bwbU   = Pattern.compile("\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher bwbEU  = Pattern.compile("(?U)\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         // properties
-        Matcher lowerP   = Pattern.compile("\\p{IsLowerCase}").matcher("");
-        Matcher upperP   = Pattern.compile("\\p{IsUpperCase}").matcher("");
-        Matcher titleP   = Pattern.compile("\\p{IsTitleCase}").matcher("");
-        Matcher letterP  = Pattern.compile("\\p{IsLetter}").matcher("");
-        Matcher alphaP   = Pattern.compile("\\p{IsAlphabetic}").matcher("");
-        Matcher ideogP   = Pattern.compile("\\p{IsIdeographic}").matcher("");
-        Matcher cntrlP   = Pattern.compile("\\p{IsControl}").matcher("");
-        Matcher spaceP   = Pattern.compile("\\p{IsWhiteSpace}").matcher("");
+        Matcher lowerP  = Pattern.compile("\\p{IsLowerCase}").matcher("");
+        Matcher upperP  = Pattern.compile("\\p{IsUpperCase}").matcher("");
+        Matcher titleP  = Pattern.compile("\\p{IsTitleCase}").matcher("");
+        Matcher letterP = Pattern.compile("\\p{IsLetter}").matcher("");
+        Matcher alphaP  = Pattern.compile("\\p{IsAlphabetic}").matcher("");
+        Matcher ideogP  = Pattern.compile("\\p{IsIdeographic}").matcher("");
+        Matcher cntrlP  = Pattern.compile("\\p{IsControl}").matcher("");
+        Matcher spaceP  = Pattern.compile("\\p{IsWhiteSpace}").matcher("");
         Matcher definedP = Pattern.compile("\\p{IsAssigned}").matcher("");
-        Matcher nonCCPP  = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
+        Matcher nonCCPP = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
         Matcher joinCrtl = Pattern.compile("\\p{IsJoinControl}").matcher("");
         // Emoji properties
         Matcher emojiP   = Pattern.compile("\\p{IsEmoji}").matcher("");
@@ -3772,92 +3771,90 @@ public class RegExTest {
         Matcher emojiCP  = Pattern.compile("\\p{IsEmoji_Component}").matcher("");
         Matcher extPP    = Pattern.compile("\\p{IsExtended_Pictographic}").matcher("");
         // javaMethod
-        Matcher lowerJ   = Pattern.compile("\\p{javaLowerCase}").matcher("");
-        Matcher upperJ   = Pattern.compile("\\p{javaUpperCase}").matcher("");
-        Matcher alphaJ   = Pattern.compile("\\p{javaAlphabetic}").matcher("");
-        Matcher ideogJ   = Pattern.compile("\\p{javaIdeographic}").matcher("");
+        Matcher lowerJ  = Pattern.compile("\\p{javaLowerCase}").matcher("");
+        Matcher upperJ  = Pattern.compile("\\p{javaUpperCase}").matcher("");
+        Matcher alphaJ  = Pattern.compile("\\p{javaAlphabetic}").matcher("");
+        Matcher ideogJ  = Pattern.compile("\\p{javaIdeographic}").matcher("");
         // GC/C
-        Matcher gcC      = Pattern.compile("\\p{C}").matcher("");
+        Matcher gcC  = Pattern.compile("\\p{C}").matcher("");
 
         for (int cp = 1; cp < 0x30000; cp++) {
-            String str = new String(toChars(cp));
-            int type = getType(cp);
+            String str = new String(Character.toChars(cp));
+            int type = Character.getType(cp);
             if (// lower
-                POSIX_ASCII.isLower(cp)      != lower.reset(str).matches()  ||
-                isLowerCase(cp)              != lowerU.reset(str).matches() ||
-                isLowerCase(cp)              != lowerP.reset(str).matches() ||
-                isLowerCase(cp)              != lowerEU.reset(str).matches()||
-                isLowerCase(cp)              != lowerJ.reset(str).matches()||
+                POSIX_ASCII.isLower(cp)   != lower.reset(str).matches()  ||
+                Character.isLowerCase(cp) != lowerU.reset(str).matches() ||
+                Character.isLowerCase(cp) != lowerP.reset(str).matches() ||
+                Character.isLowerCase(cp) != lowerEU.reset(str).matches()||
+                Character.isLowerCase(cp) != lowerJ.reset(str).matches()||
                 // upper
-                POSIX_ASCII.isUpper(cp)      != upper.reset(str).matches()  ||
-                POSIX_Unicode.isUpper(cp)    != upperU.reset(str).matches() ||
-                isUpperCase(cp)              != upperP.reset(str).matches() ||
-                isUpperCase(cp)              != upperJ.reset(str).matches() ||
+                POSIX_ASCII.isUpper(cp)   != upper.reset(str).matches()  ||
+                POSIX_Unicode.isUpper(cp) != upperU.reset(str).matches() ||
+                Character.isUpperCase(cp) != upperP.reset(str).matches() ||
+                Character.isUpperCase(cp) != upperJ.reset(str).matches() ||
                 // alpha
-                POSIX_ASCII.isAlpha(cp)      != alpha.reset(str).matches()  ||
-                POSIX_Unicode.isAlpha(cp)    != alphaU.reset(str).matches() ||
-                isAlphabetic(cp)             != alphaP.reset(str).matches() ||
-                isAlphabetic(cp)             != alphaJ.reset(str).matches() ||
+                POSIX_ASCII.isAlpha(cp)   != alpha.reset(str).matches()  ||
+                POSIX_Unicode.isAlpha(cp) != alphaU.reset(str).matches() ||
+                Character.isAlphabetic(cp)!= alphaP.reset(str).matches() ||
+                Character.isAlphabetic(cp)!= alphaJ.reset(str).matches() ||
                 // digit
-                POSIX_ASCII.isDigit(cp)      != digit.reset(str).matches()  ||
-                isDigit(cp)                  != digitU.reset(str).matches() ||
+                POSIX_ASCII.isDigit(cp)   != digit.reset(str).matches()  ||
+                Character.isDigit(cp)     != digitU.reset(str).matches() ||
                 // alnum
-                POSIX_ASCII.isAlnum(cp)      != alnum.reset(str).matches()  ||
-                POSIX_Unicode.isAlnum(cp)    != alnumU.reset(str).matches() ||
+                POSIX_ASCII.isAlnum(cp)   != alnum.reset(str).matches()  ||
+                POSIX_Unicode.isAlnum(cp) != alnumU.reset(str).matches() ||
                 // punct
-                POSIX_ASCII.isPunct(cp)      != punct.reset(str).matches()  ||
-                POSIX_Unicode.isPunct(cp)    != punctU.reset(str).matches() ||
+                POSIX_ASCII.isPunct(cp)   != punct.reset(str).matches()  ||
+                POSIX_Unicode.isPunct(cp) != punctU.reset(str).matches() ||
                 // graph
-                POSIX_ASCII.isGraph(cp)      != graph.reset(str).matches()  ||
-                POSIX_Unicode.isGraph(cp)    != graphU.reset(str).matches() ||
-                POSIX_Unicode.isGraph(cp)    != graphEU.reset(str).matches()||
+                POSIX_ASCII.isGraph(cp)   != graph.reset(str).matches()  ||
+                POSIX_Unicode.isGraph(cp) != graphU.reset(str).matches() ||
+                POSIX_Unicode.isGraph(cp) != graphEU.reset(str).matches()||
                 // blank
                 POSIX_ASCII.isType(cp, POSIX_ASCII.BLANK)
-                                             != blank.reset(str).matches()  ||
-                POSIX_Unicode.isBlank(cp)    != blankU.reset(str).matches() ||
+                                          != blank.reset(str).matches()  ||
+                POSIX_Unicode.isBlank(cp) != blankU.reset(str).matches() ||
                 // print
-                POSIX_ASCII.isPrint(cp)      != print.reset(str).matches()  ||
-                POSIX_Unicode.isPrint(cp)    != printU.reset(str).matches() ||
+                POSIX_ASCII.isPrint(cp)   != print.reset(str).matches()  ||
+                POSIX_Unicode.isPrint(cp) != printU.reset(str).matches() ||
                 // cntrl
-                POSIX_ASCII.isCntrl(cp)      != cntrl.reset(str).matches()  ||
-                POSIX_Unicode.isCntrl(cp)    != cntrlU.reset(str).matches() ||
-                (CONTROL == type)            != cntrlP.reset(str).matches() ||
+                POSIX_ASCII.isCntrl(cp)   != cntrl.reset(str).matches()  ||
+                POSIX_Unicode.isCntrl(cp) != cntrlU.reset(str).matches() ||
+                (Character.CONTROL == type) != cntrlP.reset(str).matches() ||
                 // hexdigit
                 POSIX_ASCII.isHexDigit(cp)   != xdigit.reset(str).matches()  ||
                 POSIX_Unicode.isHexDigit(cp) != xdigitU.reset(str).matches() ||
                 // space
-                POSIX_ASCII.isSpace(cp)      != space.reset(str).matches()  ||
-                POSIX_Unicode.isSpace(cp)    != spaceU.reset(str).matches() ||
-                POSIX_Unicode.isSpace(cp)    != spaceP.reset(str).matches() ||
+                POSIX_ASCII.isSpace(cp)   != space.reset(str).matches()  ||
+                POSIX_Unicode.isSpace(cp) != spaceU.reset(str).matches() ||
+                POSIX_Unicode.isSpace(cp) != spaceP.reset(str).matches() ||
                 // word
-                POSIX_ASCII.isWord(cp)       != word.reset(str).matches()  ||
-                POSIX_Unicode.isWord(cp)     != wordU.reset(str).matches() ||
-                POSIX_Unicode.isWord(cp)     != wordEU.reset(str).matches()||
+                POSIX_ASCII.isWord(cp)   != word.reset(str).matches()  ||
+                POSIX_Unicode.isWord(cp) != wordU.reset(str).matches() ||
+                POSIX_Unicode.isWord(cp) != wordEU.reset(str).matches()||
                 // bwordb
-                POSIX_ASCII.isWord(cp)       != bwb.reset(str).matches() ||
-                POSIX_Unicode.isWord(cp)     != bwbU.reset(str).matches() ||
+                POSIX_ASCII.isWord(cp) != bwb.reset(str).matches() ||
+                POSIX_Unicode.isWord(cp) != bwbU.reset(str).matches() ||
                 // properties
-                isTitleCase(cp)              != titleP.reset(str).matches() ||
-                isLetter(cp)                 != letterP.reset(str).matches()||
-                isIdeographic(cp)            != ideogP.reset(str).matches() ||
-                isIdeographic(cp)            != ideogJ.reset(str).matches() ||
-                (UNASSIGNED == type)         == definedP.reset(str).matches() ||
-                POSIX_Unicode.isNoncharacterCodePoint(cp)
-                                             != nonCCPP.reset(str).matches() ||
-                POSIX_Unicode.isJoinControl(cp)
-                                             != joinCrtl.reset(str).matches() ||
+                Character.isTitleCase(cp) != titleP.reset(str).matches() ||
+                Character.isLetter(cp)    != letterP.reset(str).matches()||
+                Character.isIdeographic(cp) != ideogP.reset(str).matches() ||
+                Character.isIdeographic(cp) != ideogJ.reset(str).matches() ||
+                (Character.UNASSIGNED == type) == definedP.reset(str).matches() ||
+                POSIX_Unicode.isNoncharacterCodePoint(cp) != nonCCPP.reset(str).matches() ||
+                POSIX_Unicode.isJoinControl(cp) != joinCrtl.reset(str).matches() ||
                 // Emoji properties
-                isEmoji(cp)                  != emojiP.reset(str).matches() ||
-                isEmojiPresentation(cp)      != emojiPP.reset(str).matches() ||
-                isEmojiModifier(cp)          != emojiMP.reset(str).matches() ||
-                isEmojiModifierBase(cp)      != emojiMBP.reset(str).matches() ||
-                isEmojiComponent(cp)         != emojiCP.reset(str).matches() ||
-                isExtendedPictographic(cp)   != extPP.reset(str).matches() ||
+                Character.isEmoji(cp) != emojiP.reset(str).matches() ||
+                Character.isEmojiPresentation(cp) != emojiPP.reset(str).matches() ||
+                Character.isEmojiModifier(cp) != emojiMP.reset(str).matches() ||
+                Character.isEmojiModifierBase(cp)!= emojiMBP.reset(str).matches() ||
+                Character.isEmojiComponent(cp) != emojiCP.reset(str).matches() ||
+                Character.isExtendedPictographic(cp) != extPP.reset(str).matches() ||
                 // gc_C
-                (CONTROL == type || FORMAT == type ||
-                 PRIVATE_USE == type || SURROGATE == type ||
-                 UNASSIGNED == type)
-                                             != gcC.reset(str).matches()) {
+                (Character.CONTROL == type || Character.FORMAT == type ||
+                 Character.PRIVATE_USE == type || Character.SURROGATE == type ||
+                 Character.UNASSIGNED == type)
+                != gcC.reset(str).matches()) {
                 fail();
             }
         }
@@ -3875,16 +3872,16 @@ public class RegExTest {
     @Test
     public static void unicodeCharacterNameTest() {
 
-        for (int cp = 0; cp < MAX_CODE_POINT; cp++) {
-            if (!isValidCodePoint(cp) ||
-                getType(cp) == UNASSIGNED)
+        for (int cp = 0; cp < Character.MAX_CODE_POINT; cp++) {
+            if (!Character.isValidCodePoint(cp) ||
+                Character.getType(cp) == Character.UNASSIGNED)
                 continue;
-            String str = new String(toChars(cp));
+            String str = new String(Character.toChars(cp));
             // single
-            String p = "\\N{" + getName(cp) + "}";
+            String p = "\\N{" + Character.getName(cp) + "}";
             assertTrue(Pattern.compile(p).matcher(str).matches());
             // class[c]
-            p = "[\\N{" + getName(cp) + "}]";
+            p = "[\\N{" + Character.getName(cp) + "}]";
             assertTrue(Pattern.compile(p).matcher(str).matches());
         }
 
@@ -3892,13 +3889,13 @@ public class RegExTest {
         for (int i = 0; i < 10; i++) {
             int start = generator.nextInt(20);
             int end = start + generator.nextInt(200);
-            String p = "[\\N{" + getName(start) + "}-\\N{" + getName(end) + "}]";
+            String p = "[\\N{" + Character.getName(start) + "}-\\N{" + Character.getName(end) + "}]";
             String str;
             for (int cp = start; cp < end; cp++) {
-                str = new String(toChars(cp));
+                str = new String(Character.toChars(cp));
                 assertTrue(Pattern.compile(p).matcher(str).matches());
             }
-            str = new String(toChars(end + 10));
+            str = new String(Character.toChars(end + 10));
             assertFalse(Pattern.compile(p).matcher(str).matches());
         }
 
@@ -3909,10 +3906,10 @@ public class RegExTest {
             StringBuilder sb = new StringBuilder(1024);
             for (int j = 0; j < n; j++) {
                 int cp = generator.nextInt(1000);
-                if (!isValidCodePoint(cp) ||
-                    getType(cp) == UNASSIGNED)
+                if (!Character.isValidCodePoint(cp) ||
+                    Character.getType(cp) == Character.UNASSIGNED)
                     cp = 0x4e00;    // just use 4e00
-                sb.append("\\N{").append(getName(cp)).append("}");
+                sb.append("\\N{").append(Character.getName(cp)).append("}");
                 buf[j] = cp;
             }
             String p = sb.toString();
@@ -4608,7 +4605,7 @@ public class RegExTest {
                                   cp,true);
 
         //basic pattern comparison
-        for(int cp = 0; cp <= MAX_CODE_POINT; cp++){
+        for(int cp = 0; cp <= Character.MAX_CODE_POINT; cp++){
             assertEquals(basicWordCharCheck.apply(cp),
                     basicBoundaryCharCheck.apply(cp),
                     "Codepoint: " + cp);
@@ -4620,11 +4617,11 @@ public class RegExTest {
 
     private static boolean cpMatches(Pattern p, int cp, boolean boundary) {
         String cpString;
-        if (isBmpCodePoint(cp)) {
+        if (Character.isBmpCodePoint(cp)) {
             cpString = "" + ((char) cp);
         } else {
-            cpString = "" + highSurrogate(cp) +
-                    lowSurrogate(cp);
+            cpString = "" + Character.highSurrogate(cp) +
+                    Character.lowSurrogate(cp);
         }
 
         if (boundary) {
