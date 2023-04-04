@@ -1,4 +1,0 @@
-####
-## Tests using custom path and con't be executed with virtual test thread factory
-
-javax/xml/jaxp/module/ServiceProviderTest/BasicModularXMLParserTest.java 000000 generic-all
