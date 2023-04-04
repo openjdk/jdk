@@ -1903,13 +1903,14 @@ bool LibraryCallKit::inline_vector_slice() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
-  const TypeInt*     origin       = gvn().type(argument(5))->isa_int();
+  const TypeInt*     origin_type  = gvn().type(argument(5))->isa_int();
 
-  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || origin == NULL) {
+  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL || origin_type == NULL) {
     return false; // dead code
   }
+
   if (vector_klass->const_oop() == NULL || elem_klass->const_oop() == NULL ||
-      !vlen->is_con() || !origin->is_con()) {
+      !vlen->is_con() || !origin_type->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s origin=%s",
                     NodeClassNames[argument(0)->Opcode()],
@@ -1919,12 +1920,14 @@ bool LibraryCallKit::inline_vector_slice() {
     }
     return false; // not enough info for intrinsification
   }
+
   if (!is_klass_initialized(vector_klass)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** klass argument not initialized");
     }
     return false;
   }
+
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   if (!elem_type->is_primitive_type()) {
     if (C->print_intrinsics()) {
@@ -1937,7 +1940,7 @@ bool LibraryCallKit::inline_vector_slice() {
 
   if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: arity=2 op=slice vlen=%d etype=%s ismask=notused",
+      tty->print_cr("  ** not supported: arity=2 op=slice vlen=%d etype=%s",
                     num_elem, type2name(elem_bt));
     }
     return false; // not supported
@@ -1945,15 +1948,14 @@ bool LibraryCallKit::inline_vector_slice() {
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
-  Node* v1   = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
-  Node* v2   = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
-  Node* o    = argument(5);
-
+  Node* v1 = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+  Node* v2 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
   if (v1 == NULL || v2 == NULL) {
     return false; // operand unboxing failed
   }
 
-  Node* slice = gvn().transform(new VectorSliceNode(v1, v2, o));
+  Node* origin = argument(5);
+  Node* slice = gvn().transform(new VectorSliceNode(v1, v2, origin));
 
   Node* box = box_vector(slice, vbox_type, elem_bt, num_elem);
   set_result(box);
