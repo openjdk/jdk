@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,10 @@ class VMConnection {
 
         // When we run under jtreg, test.classes contains the pathname of
         // the dir in which the .class files will be placed.
-        String testClasses = System.getProperty("test.classes");
+        // When we run jtreg with plugin, the TestScaffold should be also in classpath
+        String testClasses = "Virtual".equals(System.getProperty("main.wrapper"))
+                ? System.getProperty("test.class.path")
+                : System.getProperty("test.classes");
         if (testClasses == null) {
             return retVal;
         }
