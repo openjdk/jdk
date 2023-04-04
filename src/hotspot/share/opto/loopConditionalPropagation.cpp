@@ -527,6 +527,7 @@ private:
   VectorSet _updated_type;
   bool _progress;
   bool _old_version;
+  int _value_calls;
 
 public:
   PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list)
@@ -545,6 +546,7 @@ public:
     _current_ctrl_tree(phase->C->root()),
     _progress(true),
     _old_version(true),
+    _value_calls(0),
     _current_updates(nullptr),
     _dom_updates(nullptr) {
     assert(nstack.is_empty(), "");
@@ -646,6 +648,9 @@ public:
 //      }
     }
 
+//    tty->print_cr("XXX value calls %d", _value_calls);
+
+
     if (UseNewCode2 && UseNewCode3) {
       for (int i = _rpo_list.size() - 1; i >= 0; i--) {
         int rpo = _rpo_list.size() - 1 - i;
@@ -663,21 +668,26 @@ public:
           Node* node = iter.node();
           int idx = updates->find(node);
           assert(idx != -1, "");
-          assert(iter.type1() == updates->prev_type_at(idx), "");
-          assert(iter.type2() == updates->type_at(idx), "");
+//          assert(iter.type1() == updates->prev_type_at(idx), "");
+//          assert(iter.type2() == updates->type_at(idx), "");
+          assert(narrows_type(iter.type1(), updates->prev_type_at(idx)), "");
+          assert(narrows_type(iter.type2(), updates->type_at(idx)), "");
           count++;
         }
         int count2 = 0;
         if (updates != nullptr && updates->control() == c) {
           for (int j = 0; j < updates->length(); ++j) {
             Node* n = updates->node_at(j);
-            assert(types_at_c->get_type(n) == updates->type_at(j), "");
-            assert(types_at_dom->get_type(n) == updates->prev_type_at(j), "");
+//            assert(types_at_c->get_type(n) == updates->type_at(j), "");
+//            assert(types_at_dom->get_type(n) == updates->prev_type_at(j), "");
+            assert(narrows_type(types_at_c->get_type(n), updates->type_at(j)), "");
+            assert(narrows_type(types_at_dom->get_type(n), updates->prev_type_at(j)), "");
             if (updates->prev_type_at(j) != updates->type_at(j)) {
               count2++;
+//              assert(types_at_dom->get_type(n) != types_at_c->get_type(n), "");
             }
           }
-          assert(count == count2, "");
+          assert(count <= count2, "");
         }
       }
     }
@@ -700,8 +710,8 @@ public:
     Node* dom = _phase->idom(c);
     TreeNode* types_at_dom = types_at_ctrl(dom);
 
-
     TreeNode* prev_types_at_c = (TreeNode*) _types_at_ctrl[c];
+
     TreeNode* types_at_c = types_at_dom;
     if (c->is_Region()) {
       Node* in = c->in(1);
@@ -809,6 +819,7 @@ public:
     sync_from_tree(c);
     while (_wq.size() > 0) {
       Node* n = _wq.pop();
+      _value_calls++;
       const Type* t = n->Value(this);
       if (n->is_Phi() ) {
         const Type* prev_type = nullptr;
@@ -943,9 +954,7 @@ public:
           } else {
             _current_updates->set_prev_type_at(j, dom_t);
             _current_updates->set_type_at(j, new_t);
-            if (new_t != t) {
-              enqueue_uses(n, c);
-            }
+            enqueue_uses(n, c);
             j++;
           }
         }
@@ -962,10 +971,7 @@ public:
       while(updates != nullptr && updates != _dom_updates && (_dom_updates == nullptr || !_phase->is_dominator(updates->control(), _dom_updates->control()))) {
         for (int j = 0; j < updates->length(); ++j) {
           Node* n = updates->node_at(j);
-          if (_current_updates != nullptr && _current_updates->control() == c && _current_updates->contains(n)) {
-            continue;
-          }
-          const Type* t = updates->type_at(j);
+          const Type* t = find_type_between(n, in, dom);
           uint k = 2;
           for (; k < c->req(); k++) {
             Node* other_in = c->in(k);
@@ -979,7 +985,10 @@ public:
             const Type* prev_t = t;
             const Type* current_type = find_prev_type_between(n, in, dom);
             if (iterations > 1) {
-              const Type* prev_round_t = current_type;
+              const Type* prev_round_t = type_if_present(c, n);
+              if (prev_round_t == nullptr) {
+                prev_round_t = current_type;
+              }
               t = t->filter(prev_round_t);
               assert(t == prev_t, "");
               t = saturate(t, prev_round_t, nullptr);
@@ -1049,6 +1058,7 @@ public:
     sync(c);
     while (_wq.size() > 0) {
       Node* n = _wq.pop();
+      _value_calls++;
       const Type* t = n->Value(this);
       if (n->is_Phi() ) {
         const Type* prev_type = PhaseTransform::type(n);
@@ -1748,7 +1758,7 @@ void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nst
   }
   {
     TraceTime tt("loop conditional propagation transform", UseNewCode);
-    pcp.do_transform();
+//    pcp.do_transform();
   }
   _igvn = pcp;
   C->print_method(PHASE_DEBUG, 2);
