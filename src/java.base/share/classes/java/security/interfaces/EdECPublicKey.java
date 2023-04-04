@@ -37,6 +37,8 @@ import java.security.spec.EdECPoint;
  * An Edwards-Curve public key is a point on the curve, which is represented using an
  * EdECPoint.
  *
+ * @spec https://www.rfc-editor.org/info/rfc8032
+ *      RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 public interface EdECPublicKey extends EdECKey, PublicKey {

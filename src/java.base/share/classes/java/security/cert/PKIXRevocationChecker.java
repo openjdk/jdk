@@ -81,14 +81,13 @@ import java.util.*;
  * necessary locking. Multiple threads each manipulating separate objects
  * need not synchronize.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2560
+ *      RFC 2560: X.509 Internet Public Key Infrastructure Online Certificate
+ *              Status Protocol - OCSP
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @since 1.8
- *
- * @see <a href="http://www.ietf.org/rfc/rfc2560.txt"><i>RFC&nbsp;2560: X.509
- * Internet Public Key Infrastructure Online Certificate Status Protocol -
- * OCSP</i></a>
- * @see <a href="http://www.ietf.org/rfc/rfc5280.txt"><i>RFC&nbsp;5280:
- * Internet X.509 Public Key Infrastructure Certificate and Certificate
- * Revocation List (CRL) Profile</i></a>
  */
 public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     private URI ocspResponder;
