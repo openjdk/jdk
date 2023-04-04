@@ -117,7 +117,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    native_abi_minframe* sender_abi = (native_abi_minframe*) fp;
+    common_abi* sender_abi = (common_abi*) fp;
     intptr_t* sender_sp = (intptr_t*) fp;
     address   sender_pc = (address) sender_abi->lr;;
 
@@ -291,7 +291,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
-  int min_frame_slots = (native_abi_minframe_size + ijava_state_size) / sizeof(intptr_t);
+  int min_frame_slots = (parent_ijava_frame_abi_size + ijava_state_size) / sizeof(intptr_t);
   if (fp() - min_frame_slots < sp()) {
     return false;
   }

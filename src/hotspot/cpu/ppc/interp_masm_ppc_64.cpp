@@ -1171,7 +1171,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
   // to meet the abi scratch requirements.
   // The max_stack pointer will get restored by means of the GR_Lmax_stack local in
   // the return entry of the interpreter.
-  addi(Rscratch2, R15_esp, Interpreter::stackElementSize - frame::native_abi_reg_args_size);
+  addi(Rscratch2, R15_esp, Interpreter::stackElementSize - frame::top_ijava_frame_abi_size);
   clrrdi(Rscratch2, Rscratch2, exact_log2(frame::alignment_in_bytes)); // round towards smaller address
   resize_frame_absolute(Rscratch2, Rscratch2, R0);
 
@@ -2211,7 +2211,7 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
   {
     Label Lok;
     subf(R0, R1_SP, scratch);
-    cmpdi(CCR0, R0, frame::native_abi_reg_args_size + frame::ijava_state_size);
+    cmpdi(CCR0, R0, frame::top_ijava_frame_abi_size + frame::ijava_state_size);
     bge(CCR0, Lok);
     stop("frame too small (restore istate)");
     bind(Lok);

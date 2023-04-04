@@ -234,10 +234,6 @@
   struct parent_ijava_frame_abi : java_abi {
   };
 
-  enum {
-    parent_ijava_frame_abi_size = sizeof(parent_ijava_frame_abi)
-  };
-
 #define _parent_ijava_frame_abi(_component) \
         (offset_of(frame::parent_ijava_frame_abi, _component))
 
@@ -245,6 +241,8 @@
   };
 
   enum {
+    java_abi_size = sizeof(java_abi),
+    parent_ijava_frame_abi_size = sizeof(parent_ijava_frame_abi),
     top_ijava_frame_abi_size = sizeof(top_ijava_frame_abi)
   };
 
@@ -385,8 +383,8 @@
   void mark_not_fully_initialized() const { DEBUG_ONLY(own_abi()->callers_sp = NOT_FULLY_INITIALIZED;)  }
 
   // Accessors for ABIs
-  inline native_abi_minframe* own_abi()     const { return (native_abi_minframe*) _sp; }
-  inline native_abi_minframe* callers_abi() const { return (native_abi_minframe*) _fp; }
+  inline common_abi* own_abi()     const { return (common_abi*) _sp; }
+  inline common_abi* callers_abi() const { return (common_abi*) _fp; }
 
  private:
 
@@ -434,14 +432,14 @@
     // normal return address is 1 bundle past PC
     pc_return_offset                       = 0,
     // size, in words, of frame metadata (e.g. pc and link)
-    metadata_words                         = sizeof(native_abi_minframe) >> LogBytesPerWord,
+    metadata_words                         = sizeof(java_abi) >> LogBytesPerWord,
     // size, in words, of metadata at frame bottom, i.e. it is not part of the
     // caller/callee overlap
     metadata_words_at_bottom               = 0,
     // size, in words, of frame metadata at the frame top, i.e. it is located
     // between a callee frame and its stack arguments, where it is part
     // of the caller/callee overlap
-    metadata_words_at_top                  = sizeof(native_abi_minframe) >> LogBytesPerWord,
+    metadata_words_at_top                  = sizeof(java_abi) >> LogBytesPerWord,
     // size, in words, of frame metadata at the frame top that needs
     // to be reserved for callee functions in the runtime
     frame_alignment                        = 16,
