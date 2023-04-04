@@ -81,6 +81,7 @@ public class ClhsdbDumpclass {
             System.err.println(out.getStderr());
             out.shouldHaveExitValue(0);
             out.shouldMatch("public class " + APP_DOT_CLASSNAME);
+            out.shouldNotContain("Error:");
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {
