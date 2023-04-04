@@ -1,0 +1,5 @@
+T8305582.java:38:39: compiler.err.deconstruction.pattern.var.not.allowed
+T8305582.java:41:31: compiler.err.deconstruction.pattern.var.not.allowed
+- compiler.note.preview.filename: T8305582.java, DEFAULT
+- compiler.note.preview.recompile
+2 errors
