@@ -644,12 +644,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register cache = R11_scratch1;
   const Register size  = R12_scratch2;
   if (index_size == sizeof(u4)) {
-    __ get_cache_index_at_bcp(size, 1, index_size);  // Load index.
-    // Get address of invokedynamic array
-    __ ld_ptr(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset()), R27_constPoolCache);
-    // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-    __ sldi(size, size, log2i_exact(sizeof(ResolvedIndyEntry)));
-    __ add(cache, cache, size);
+    __ load_resolved_indy_entry(cache, size /* tmp */);
     __ lhz(size, Array<ResolvedIndyEntry>::base_offset_in_bytes() + in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
   } else {
     __ get_cache_and_index_at_bcp(cache, 1, index_size);
