@@ -795,7 +795,8 @@ public abstract class HttpClient implements AutoCloseable {
      * terminated.
      *
      * @implSpec
-     * The default implementation of this method does nothing and returns true.
+     * The default implementation of this method checks for null arguments, but
+     * otherwise does nothing and returns true.
      * Subclasses should override this method to implement the proper behavior.
      * See the API Note on {@linkplain ##closing closing}.
      *
