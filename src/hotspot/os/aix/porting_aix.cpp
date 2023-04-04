@@ -242,7 +242,8 @@ bool AixSymbols::get_function_name (
         if ((demangled_name != nullptr) && (status == 0)) {
           strncpy(p_name, demangled_name, namelen-1);
           p_name[namelen-1] = '\0';
-          if (demangled_name != nullptr)
+        }
+        if (demangled_name != nullptr) {
           ALLOW_C_FUNCTION(::free, ::free(demangled_name));
         }
       }
