@@ -260,7 +260,7 @@ findThread(ThreadList *list, jthread thread)
             /*
              * Search the runningThreads and runningVThreads lists. The TLS lookup may have
              * failed because the thread has terminated, but we never got the THREAD_END event.
-             * The big comment immediately above explains why this can happen.
+             * The big comment above explains why this can happen.
              */
             if ( node == NULL ) {
                 if ( list == NULL || list == &runningThreads ) {
