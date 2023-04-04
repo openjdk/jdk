@@ -64,6 +64,7 @@
 #include "utilities/parseInteger.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -2152,6 +2153,8 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   // this point.
 
   os::init_container_support();
+
+  SystemMemoryBarrier::initialize();
 
   // Do final processing now that all arguments have been parsed
   result = finalize_vm_init_args(patch_mod_javabase);

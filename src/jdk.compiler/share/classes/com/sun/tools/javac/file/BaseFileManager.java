@@ -75,10 +75,12 @@ import com.sun.tools.javac.util.Options;
  * java.io.File or java.nio.file.Path.
  */
 public abstract class BaseFileManager implements JavaFileManager {
+
+    private static final byte[] EMPTY_ARRAY = new byte[0];
+
     @SuppressWarnings("this-escape")
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
-        byteBufferCache = new ByteBufferCache();
         locations = createLocations();
     }
 
@@ -403,56 +405,33 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     // <editor-fold defaultstate="collapsed" desc="ByteBuffers">
     /**
-     * Make a byte buffer from an input stream.
+     * Make a {@link ByteBuffer} from an input stream.
      * @param in the stream
      * @return a byte buffer containing the contents of the stream
      * @throws IOException if an error occurred while reading the stream
      */
-    public ByteBuffer makeByteBuffer(InputStream in)
-        throws IOException {
-        int limit = in.available();
-        if (limit < 1024) limit = 1024;
-        ByteBuffer result = byteBufferCache.get(limit);
-        int position = 0;
-        while (in.available() != 0) {
-            if (position >= limit)
-                // expand buffer
-                result = ByteBuffer.
-                    allocate(limit <<= 1).
-                    put(result.flip());
-            int count = in.read(result.array(),
-                position,
-                limit - position);
-            if (count < 0) break;
-            result.position(position += count);
+    public ByteBuffer makeByteBuffer(InputStream in) throws IOException {
+        byte[] array;
+        synchronized (this) {
+            if ((array = byteArrayCache) != null)
+                byteArrayCache = null;
+            else
+                array = EMPTY_ARRAY;
         }
-        return result.flip();
+        com.sun.tools.javac.util.ByteBuffer buf = new com.sun.tools.javac.util.ByteBuffer(array);
+        buf.appendStream(in);
+        return buf.asByteBuffer();
     }
 
-    public void recycleByteBuffer(ByteBuffer bb) {
-        byteBufferCache.put(bb);
-    }
-
-    /**
-     * A single-element cache of direct byte buffers.
-     */
-    private static class ByteBufferCache {
-        private ByteBuffer cached;
-        ByteBuffer get(int capacity) {
-            if (capacity < 20480) capacity = 20480;
-            ByteBuffer result =
-                (cached != null && cached.capacity() >= capacity)
-                ? cached.clear()
-                : ByteBuffer.allocate(capacity);
-            cached = null;
-            return result;
-        }
-        void put(ByteBuffer x) {
-            cached = x;
+    public void recycleByteBuffer(ByteBuffer buf) {
+        if (buf.hasArray()) {
+            synchronized (this) {
+                byteArrayCache = buf.array();
+            }
         }
     }
 
-    private final ByteBufferCache byteBufferCache;
+    private byte[] byteArrayCache;
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Content cache">
