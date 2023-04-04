@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import toolbox.TestRunner;
 import toolbox.ToolBox;
@@ -79,12 +80,12 @@ public class HelpOutputColumnWidthTest extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         // Check column width
-        final String tooLongLine = log.stream()
+        final String tooLongLines = log.stream()
           .filter(line -> line.length() > MAX_COLUMNS)
-          .findFirst()
-          .orElse(null);
-        if (tooLongLine != null)
-            throw new Exception("output line too long: \"" + tooLongLine.trim() + "\"");
+          .map(String::trim)
+          .collect(Collectors.joining("]\n    ["));
+        if (!tooLongLines.isEmpty())
+            throw new Exception("output line(s) too long:\n    [" + tooLongLines + "]");
     }
 
     public static void main(String... args) throws Exception {
