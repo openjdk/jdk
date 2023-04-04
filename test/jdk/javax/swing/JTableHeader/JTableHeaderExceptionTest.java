@@ -56,7 +56,7 @@ public class JTableHeaderExceptionTest {
                 Object rowData[][] =
                         {{"Row1-Column1", "Row1-Column2", "Row1-Column3"},
                         {"Row2-Column1", "Row2-Column2", "Row2-Column3"}};
-                Object columnNames[] = 
+                Object columnNames[] =
                     {"Test", "Click me with right mouse click!", "Test"};
 
                 DragTestTable.DragTestTableModel model =
@@ -136,7 +136,7 @@ class DragTestTable extends JTable {
             return rowData[row][col];
         }
         public boolean isCellEditable(int row, int column) {
-            return true; 
+            return true;
         }
         public void setValueAt(Object value, int row, int col) {
             rowData[row][col] = value;
