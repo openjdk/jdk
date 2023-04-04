@@ -154,17 +154,19 @@ template void stackChunkOopDesc::do_barriers<stackChunkOopDesc::BarrierType::Sto
 class DerivedPointersSupport {
 public:
   static void relativize(oop* base_loc, derived_pointer* derived_loc) {
-    oop base = *base_loc;
-    if (base == nullptr) {
+    // The base oop could be stale from the GC's point-of-view. Treat it as an
+    // uintptr_t to stay clear of the oop verification code in oopsHierarcy.hpp.
+    uintptr_t base = *(uintptr_t*)base_loc;
+    if (base == 0) {
       return;
     }
-    assert(!UseCompressedOops || !CompressedOops::is_base(base), "");
+    assert(!UseCompressedOops || !CompressedOops::is_base((void*)base), "");
 
     // This is always a full derived pointer
     uintptr_t derived_int_val = *(uintptr_t*)derived_loc;
 
     // Make the pointer an offset (relativize) and store it at the same location
-    uintptr_t offset = derived_int_val - cast_from_oop<uintptr_t>(base);
+    uintptr_t offset = derived_int_val - base;
     *(uintptr_t*)derived_loc = offset;
   }
 
