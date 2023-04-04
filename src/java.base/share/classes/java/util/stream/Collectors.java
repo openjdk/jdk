@@ -1973,6 +1973,25 @@ public final class Collectors {
         }
 
         @Override
+        public int size() {
+            return 2;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
+        public T get(Object key) {
+            if (key instanceof Boolean b) {
+                return b.booleanValue() ? forTrue : forFalse;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
         public Set<Map.Entry<Boolean, T>> entrySet() {
             return new AbstractSet<>() {
                 @Override
