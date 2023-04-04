@@ -1762,9 +1762,11 @@ private:
   void vpermw(XMMRegister dst,  XMMRegister nds, XMMRegister src, int vector_len);
   void vpermd(XMMRegister dst,  XMMRegister nds, Address src, int vector_len);
   void vpermd(XMMRegister dst,  XMMRegister nds, XMMRegister src, int vector_len);
+  void vpermps(XMMRegister dst,  XMMRegister nds, XMMRegister src, int vector_len);
   void vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8);
   void vperm2f128(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
   void vpermilps(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
+  void vpermilps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);

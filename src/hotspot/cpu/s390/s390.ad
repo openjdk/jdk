@@ -1571,6 +1571,10 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
+const int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
+}
+
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }

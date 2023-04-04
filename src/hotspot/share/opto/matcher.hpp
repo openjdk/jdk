@@ -351,6 +351,8 @@ public:
     return (Matcher::max_vector_size(bt) >= size &&
             Matcher::min_vector_size(bt) <= size);
   }
+  // Limits on max vector size (number of elements) for auto-vectorization.
+  static const int superword_max_vector_size(const BasicType bt);
 
   // Actual max scalable vector register length.
   static const int scalable_vector_reg_size(const BasicType bt);
