@@ -1758,7 +1758,7 @@ void PhaseIdealLoop::conditional_elimination(VectorSet &visited, Node_Stack &nst
   }
   {
     TraceTime tt("loop conditional propagation transform", UseNewCode);
-//    pcp.do_transform();
+    pcp.do_transform();
   }
   _igvn = pcp;
   C->print_method(PHASE_DEBUG, 2);
