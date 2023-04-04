@@ -320,7 +320,7 @@
 
   // JIT_ABI (TOP and PARENT)
 
-  struct jit_abi {
+  struct java_abi {
     uint64_t callers_sp;
     uint64_t cr;
     uint64_t lr;
@@ -329,7 +329,7 @@
     // NOT ALIGNED to frame::alignment_in_bytes (16).
   };
 
-  struct jit_out_preserve : jit_abi {
+  struct jit_out_preserve : java_abi {
     // Nothing to add here!
   };
 
