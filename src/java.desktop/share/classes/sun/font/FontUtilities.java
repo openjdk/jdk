@@ -68,7 +68,7 @@ public final class FontUtilities {
 
                 isLinux = OperatingSystem.isLinux();
 
-                isMacOSX = OperatingSystem.isMacOS(); // TODO: MacOSX
+                isMacOSX = OperatingSystem.isMacOS();
                 if (isMacOSX) {
                     // os.version has values like 10.13.6, 10.14.6
                     // If it is not positively recognised as 10.13 or less,
