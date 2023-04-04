@@ -37,8 +37,6 @@ TTF_BASEDIR := $(TOPDIR)/test/jtreg_test_thread_factory
 TTF_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/jtreg_test_thread_factory
 TTF_JAR := $(TTF_SUPPORT)/jtregTestThreadFactory.jar
 
-TTF_CLASSPATH := $(JTREG_JAR)
-
 $(eval $(call SetupJavaCompilation, BUILD_JTREG_TEST_THREAD_FACTORY, \
     SRC := $(TTF_BASEDIR)/src/share/classes, \
     BIN := $(TTF_SUPPORT)/classes, \
