@@ -174,9 +174,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    // fallthrough
-
                 case ' ': case '\t':
                     nextChar();
                     break;
@@ -417,9 +414,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    break;
-
                 case ' ': case '\t':
                     break;
 
@@ -464,9 +458,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    // fallthrough
-
                 case ' ': case '\t':
                     if (depth == 0)
                         break loop;
@@ -544,9 +535,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    break;
-
                 case ' ': case '\t':
                     break;
 
@@ -577,9 +565,6 @@ public class DocCommentParser {
         while (bp < buflen) {
             switch (ch) {
                 case '\n':
-                    newline = true;
-                    // fallthrough
-
                 case '\r': case '\f': case ' ': case '\t':
                     return m.at(pos).newTextTree(newString(pos, bp));
 
@@ -621,9 +606,6 @@ public class DocCommentParser {
 
             switch (ch) {
                 case '\n': case '\r': case '\f':
-                    newline = true;
-                    // fall through
-
                 case ' ': case '\t':
                     nextChar();
                     break;
