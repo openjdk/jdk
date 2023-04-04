@@ -1422,7 +1422,6 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
 }
 
 JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
-  assert(SafepointSynchronize::is_at_safepoint(), "not safe outside of safepoint");
   assert(LockingMode == 2, "Only with new lightweight locking");
   for (JavaThread* q : *t_list) {
     if (q->lock_stack().contains(obj)) {

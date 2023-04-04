@@ -1126,7 +1126,7 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
   // ObjectSynchronizer::get_lock_owner() and it would potentially
   // give wrong results when Java threads are running and
   // entering/leaving locks while we inspect the thread stacks.
-  if (LockingMode != 2 && maxDepth == 0) {
+  if (maxDepth == 0) {
     // No stack trace to dump so we do not need to stop the world.
     // Since we never do the VM op here we must set the threads list.
     dump_result.set_t_list();

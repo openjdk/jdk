@@ -58,22 +58,8 @@ uint32_t LockStack::end_offset() {
   return static_cast<uint32_t>(offset);
 }
 
-#ifdef ASSERT
-static bool is_stack_watermark_processing(JavaThread* thread) {
-  StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
-  return watermark->processing_started() && !watermark->processing_completed();
-}
-#endif
-
 #ifndef PRODUCT
 void LockStack::verify(const char* msg) const {
-  JavaThread* thread = get_thread();
-  assert(is_self() || SafepointSynchronize::is_at_safepoint() || thread->is_handshake_safe_for(Thread::current()) || thread->is_suspended() || thread->is_obj_deopt_suspend() || is_stack_watermark_processing(thread),
-         "access only thread-local, or when target thread safely holds still");
-  verify_no_thread(msg);
-}
-
-void LockStack::verify_no_thread(const char* msg) const {
   assert(LockingMode == 2 && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
   assert((_top <=  end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
   assert((_top >= start_offset()), "lockstack underflow: _topt %d end_offset %d", _top, start_offset());

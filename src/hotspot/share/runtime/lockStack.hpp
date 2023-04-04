@@ -54,7 +54,6 @@ private:
 
   bool is_self() const;
   void verify(const char* msg) const PRODUCT_RETURN;
-  void verify_no_thread(const char* msg) const PRODUCT_RETURN;
 
   static inline int to_index(uint32_t offset);
 

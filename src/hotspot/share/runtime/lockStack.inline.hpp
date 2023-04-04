@@ -48,9 +48,6 @@ inline bool LockStack::can_push() const {
 
 inline bool LockStack::is_self() const {
   Thread* thread = Thread::current();
-  if (!thread->is_Java_thread()) {
-    return false;
-  }
   bool is_self = &JavaThread::cast(thread)->lock_stack() == this;
   assert(is_self == (get_thread() == thread), "is_self sanity");
   return is_self;
@@ -103,7 +100,7 @@ inline void LockStack::remove(oop o) {
 
 inline bool LockStack::contains(oop o) const {
   verify("pre-contains");
-  if (!is_self() && !SafepointSynchronize::is_at_safepoint()) {
+  if (!SafepointSynchronize::is_at_safepoint() && !is_self()) {
     StackWatermark* watermark = StackWatermarkSet::get(get_thread(), StackWatermarkKind::gc);
     if (watermark != nullptr) {
       watermark->start_processing();
@@ -121,12 +118,12 @@ inline bool LockStack::contains(oop o) const {
 }
 
 inline void LockStack::oops_do(OopClosure* cl) {
-  verify_no_thread("pre-oops-do");
+  verify("pre-oops-do");
   int end = to_index(_top);
   for (int i = 0; i < end; i++) {
     cl->do_oop(&_base[i]);
   }
-  verify_no_thread("post-oops-do");
+  verify("post-oops-do");
 }
 
 #endif // SHARE_RUNTIME_LOCKSTACK_INLINE_HPP
