@@ -3716,149 +3716,148 @@ public class RegExTest {
     @Test
     public static void unicodeClassesTest() {
 
-        Matcher lower  = Pattern.compile("\\p{Lower}").matcher("");
-        Matcher upper  = Pattern.compile("\\p{Upper}").matcher("");
-        Matcher ASCII  = Pattern.compile("\\p{ASCII}").matcher("");
-        Matcher alpha  = Pattern.compile("\\p{Alpha}").matcher("");
-        Matcher digit  = Pattern.compile("\\p{Digit}").matcher("");
-        Matcher alnum  = Pattern.compile("\\p{Alnum}").matcher("");
-        Matcher punct  = Pattern.compile("\\p{Punct}").matcher("");
-        Matcher graph  = Pattern.compile("\\p{Graph}").matcher("");
-        Matcher print  = Pattern.compile("\\p{Print}").matcher("");
-        Matcher blank  = Pattern.compile("\\p{Blank}").matcher("");
-        Matcher cntrl  = Pattern.compile("\\p{Cntrl}").matcher("");
-        Matcher xdigit = Pattern.compile("\\p{XDigit}").matcher("");
-        Matcher space  = Pattern.compile("\\p{Space}").matcher("");
-        Matcher bound  = Pattern.compile("\\b").matcher("");
-        Matcher word   = Pattern.compile("\\w++").matcher("");
+        Matcher lower    = Pattern.compile("\\p{Lower}").matcher("");
+        Matcher upper    = Pattern.compile("\\p{Upper}").matcher("");
+        Matcher alpha    = Pattern.compile("\\p{Alpha}").matcher("");
+        Matcher digit    = Pattern.compile("\\p{Digit}").matcher("");
+        Matcher alnum    = Pattern.compile("\\p{Alnum}").matcher("");
+        Matcher punct    = Pattern.compile("\\p{Punct}").matcher("");
+        Matcher graph    = Pattern.compile("\\p{Graph}").matcher("");
+        Matcher print    = Pattern.compile("\\p{Print}").matcher("");
+        Matcher blank    = Pattern.compile("\\p{Blank}").matcher("");
+        Matcher cntrl    = Pattern.compile("\\p{Cntrl}").matcher("");
+        Matcher xdigit   = Pattern.compile("\\p{XDigit}").matcher("");
+        Matcher space    = Pattern.compile("\\p{Space}").matcher("");
+        Matcher word     = Pattern.compile("\\w++").matcher("");
         // UNICODE_CHARACTER_CLASS
-        Matcher lowerU  = Pattern.compile("\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher upperU  = Pattern.compile("\\p{Upper}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher ASCIIU  = Pattern.compile("\\p{ASCII}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher alphaU  = Pattern.compile("\\p{Alpha}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher digitU  = Pattern.compile("\\p{Digit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher alnumU  = Pattern.compile("\\p{Alnum}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher punctU  = Pattern.compile("\\p{Punct}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher graphU  = Pattern.compile("\\p{Graph}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher printU  = Pattern.compile("\\p{Print}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher blankU  = Pattern.compile("\\p{Blank}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher cntrlU  = Pattern.compile("\\p{Cntrl}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher xdigitU = Pattern.compile("\\p{XDigit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher spaceU  = Pattern.compile("\\p{Space}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher boundU  = Pattern.compile("\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher wordU   = Pattern.compile("\\w", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher lowerU   = Pattern.compile("\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher upperU   = Pattern.compile("\\p{Upper}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher alphaU   = Pattern.compile("\\p{Alpha}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher digitU   = Pattern.compile("\\p{Digit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher alnumU   = Pattern.compile("\\p{Alnum}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher punctU   = Pattern.compile("\\p{Punct}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher graphU   = Pattern.compile("\\p{Graph}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher printU   = Pattern.compile("\\p{Print}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher blankU   = Pattern.compile("\\p{Blank}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher cntrlU   = Pattern.compile("\\p{Cntrl}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher xdigitU  = Pattern.compile("\\p{XDigit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher spaceU   = Pattern.compile("\\p{Space}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher boundU   = Pattern.compile("\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher wordU    = Pattern.compile("\\w", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         // embedded flag (?U)
         Matcher lowerEU  = Pattern.compile("(?U)\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher graphEU  = Pattern.compile("(?U)\\p{Graph}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher wordEU   = Pattern.compile("(?U)\\w", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
 
-        Matcher bwb    = Pattern.compile("\\b\\w\\b").matcher("");
-        Matcher bwbU   = Pattern.compile("\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher bwbEU  = Pattern.compile("(?U)\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher bwb      = Pattern.compile("\\b\\w\\b").matcher("");
+        Matcher bwbU     = Pattern.compile("\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
+        Matcher bwbEU    = Pattern.compile("(?U)\\b\\w++\\b", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         // properties
-        Matcher lowerP  = Pattern.compile("\\p{IsLowerCase}").matcher("");
-        Matcher upperP  = Pattern.compile("\\p{IsUpperCase}").matcher("");
-        Matcher titleP  = Pattern.compile("\\p{IsTitleCase}").matcher("");
-        Matcher letterP = Pattern.compile("\\p{IsLetter}").matcher("");
-        Matcher alphaP  = Pattern.compile("\\p{IsAlphabetic}").matcher("");
-        Matcher ideogP  = Pattern.compile("\\p{IsIdeographic}").matcher("");
-        Matcher cntrlP  = Pattern.compile("\\p{IsControl}").matcher("");
-        Matcher spaceP  = Pattern.compile("\\p{IsWhiteSpace}").matcher("");
+        Matcher lowerP   = Pattern.compile("\\p{IsLowerCase}").matcher("");
+        Matcher upperP   = Pattern.compile("\\p{IsUpperCase}").matcher("");
+        Matcher titleP   = Pattern.compile("\\p{IsTitleCase}").matcher("");
+        Matcher letterP  = Pattern.compile("\\p{IsLetter}").matcher("");
+        Matcher alphaP   = Pattern.compile("\\p{IsAlphabetic}").matcher("");
+        Matcher ideogP   = Pattern.compile("\\p{IsIdeographic}").matcher("");
+        Matcher cntrlP   = Pattern.compile("\\p{IsControl}").matcher("");
+        Matcher spaceP   = Pattern.compile("\\p{IsWhiteSpace}").matcher("");
         Matcher definedP = Pattern.compile("\\p{IsAssigned}").matcher("");
-        Matcher nonCCPP = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
+        Matcher nonCCPP  = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
         Matcher joinCrtl = Pattern.compile("\\p{IsJoinControl}").matcher("");
         // Emoji properties
-        Matcher emojiP  = Pattern.compile("\\p{IsEmoji}").matcher("");
-        Matcher emojiPP = Pattern.compile("\\p{IsEmoji_Presentation}").matcher("");
-        Matcher emojiMP = Pattern.compile("\\p{IsEmoji_Modifier}").matcher("");
+        Matcher emojiP   = Pattern.compile("\\p{IsEmoji}").matcher("");
+        Matcher emojiPP  = Pattern.compile("\\p{IsEmoji_Presentation}").matcher("");
+        Matcher emojiMP  = Pattern.compile("\\p{IsEmoji_Modifier}").matcher("");
         Matcher emojiMBP = Pattern.compile("\\p{IsEmoji_Modifier_Base}").matcher("");
-        Matcher emojiCP = Pattern.compile("\\p{IsEmoji_Component}").matcher("");
-        Matcher extPP   = Pattern.compile("\\p{IsExtended_Pictographic}").matcher("");
+        Matcher emojiCP  = Pattern.compile("\\p{IsEmoji_Component}").matcher("");
+        Matcher extPP    = Pattern.compile("\\p{IsExtended_Pictographic}").matcher("");
         // javaMethod
-        Matcher lowerJ  = Pattern.compile("\\p{javaLowerCase}").matcher("");
-        Matcher upperJ  = Pattern.compile("\\p{javaUpperCase}").matcher("");
-        Matcher alphaJ  = Pattern.compile("\\p{javaAlphabetic}").matcher("");
-        Matcher ideogJ  = Pattern.compile("\\p{javaIdeographic}").matcher("");
+        Matcher lowerJ   = Pattern.compile("\\p{javaLowerCase}").matcher("");
+        Matcher upperJ   = Pattern.compile("\\p{javaUpperCase}").matcher("");
+        Matcher alphaJ   = Pattern.compile("\\p{javaAlphabetic}").matcher("");
+        Matcher ideogJ   = Pattern.compile("\\p{javaIdeographic}").matcher("");
         // GC/C
-        Matcher gcC  = Pattern.compile("\\p{C}").matcher("");
+        Matcher gcC      = Pattern.compile("\\p{C}").matcher("");
 
         for (int cp = 1; cp < 0x30000; cp++) {
             String str = new String(toChars(cp));
             int type = getType(cp);
             if (// lower
-                POSIX_ASCII.isLower(cp)   != lower.reset(str).matches()  ||
-                isLowerCase(cp) != lowerU.reset(str).matches() ||
-                isLowerCase(cp) != lowerP.reset(str).matches() ||
-                isLowerCase(cp) != lowerEU.reset(str).matches()||
-                isLowerCase(cp) != lowerJ.reset(str).matches()||
+                POSIX_ASCII.isLower(cp)      != lower.reset(str).matches()  ||
+                isLowerCase(cp)              != lowerU.reset(str).matches() ||
+                isLowerCase(cp)              != lowerP.reset(str).matches() ||
+                isLowerCase(cp)              != lowerEU.reset(str).matches()||
+                isLowerCase(cp)              != lowerJ.reset(str).matches()||
                 // upper
-                POSIX_ASCII.isUpper(cp)   != upper.reset(str).matches()  ||
-                POSIX_Unicode.isUpper(cp) != upperU.reset(str).matches() ||
-                isUpperCase(cp) != upperP.reset(str).matches() ||
-                isUpperCase(cp) != upperJ.reset(str).matches() ||
+                POSIX_ASCII.isUpper(cp)      != upper.reset(str).matches()  ||
+                POSIX_Unicode.isUpper(cp)    != upperU.reset(str).matches() ||
+                isUpperCase(cp)              != upperP.reset(str).matches() ||
+                isUpperCase(cp)              != upperJ.reset(str).matches() ||
                 // alpha
-                POSIX_ASCII.isAlpha(cp)   != alpha.reset(str).matches()  ||
-                POSIX_Unicode.isAlpha(cp) != alphaU.reset(str).matches() ||
-                isAlphabetic(cp)!= alphaP.reset(str).matches() ||
-                isAlphabetic(cp)!= alphaJ.reset(str).matches() ||
+                POSIX_ASCII.isAlpha(cp)      != alpha.reset(str).matches()  ||
+                POSIX_Unicode.isAlpha(cp)    != alphaU.reset(str).matches() ||
+                isAlphabetic(cp)             != alphaP.reset(str).matches() ||
+                isAlphabetic(cp)             != alphaJ.reset(str).matches() ||
                 // digit
-                POSIX_ASCII.isDigit(cp)   != digit.reset(str).matches()  ||
-                isDigit(cp)     != digitU.reset(str).matches() ||
+                POSIX_ASCII.isDigit(cp)      != digit.reset(str).matches()  ||
+                isDigit(cp)                  != digitU.reset(str).matches() ||
                 // alnum
-                POSIX_ASCII.isAlnum(cp)   != alnum.reset(str).matches()  ||
-                POSIX_Unicode.isAlnum(cp) != alnumU.reset(str).matches() ||
+                POSIX_ASCII.isAlnum(cp)      != alnum.reset(str).matches()  ||
+                POSIX_Unicode.isAlnum(cp)    != alnumU.reset(str).matches() ||
                 // punct
-                POSIX_ASCII.isPunct(cp)   != punct.reset(str).matches()  ||
-                POSIX_Unicode.isPunct(cp) != punctU.reset(str).matches() ||
+                POSIX_ASCII.isPunct(cp)      != punct.reset(str).matches()  ||
+                POSIX_Unicode.isPunct(cp)    != punctU.reset(str).matches() ||
                 // graph
-                POSIX_ASCII.isGraph(cp)   != graph.reset(str).matches()  ||
-                POSIX_Unicode.isGraph(cp) != graphU.reset(str).matches() ||
-                POSIX_Unicode.isGraph(cp) != graphEU.reset(str).matches()||
+                POSIX_ASCII.isGraph(cp)      != graph.reset(str).matches()  ||
+                POSIX_Unicode.isGraph(cp)    != graphU.reset(str).matches() ||
+                POSIX_Unicode.isGraph(cp)    != graphEU.reset(str).matches()||
                 // blank
                 POSIX_ASCII.isType(cp, POSIX_ASCII.BLANK)
-                                          != blank.reset(str).matches()  ||
-                POSIX_Unicode.isBlank(cp) != blankU.reset(str).matches() ||
+                                             != blank.reset(str).matches()  ||
+                POSIX_Unicode.isBlank(cp)    != blankU.reset(str).matches() ||
                 // print
-                POSIX_ASCII.isPrint(cp)   != print.reset(str).matches()  ||
-                POSIX_Unicode.isPrint(cp) != printU.reset(str).matches() ||
+                POSIX_ASCII.isPrint(cp)      != print.reset(str).matches()  ||
+                POSIX_Unicode.isPrint(cp)    != printU.reset(str).matches() ||
                 // cntrl
-                POSIX_ASCII.isCntrl(cp)   != cntrl.reset(str).matches()  ||
-                POSIX_Unicode.isCntrl(cp) != cntrlU.reset(str).matches() ||
-                (CONTROL == type) != cntrlP.reset(str).matches() ||
+                POSIX_ASCII.isCntrl(cp)      != cntrl.reset(str).matches()  ||
+                POSIX_Unicode.isCntrl(cp)    != cntrlU.reset(str).matches() ||
+                (CONTROL == type)            != cntrlP.reset(str).matches() ||
                 // hexdigit
-                POSIX_ASCII.isHexDigit(cp) != xdigit.reset(str).matches()  ||
+                POSIX_ASCII.isHexDigit(cp)   != xdigit.reset(str).matches()  ||
                 POSIX_Unicode.isHexDigit(cp) != xdigitU.reset(str).matches() ||
                 // space
-                POSIX_ASCII.isSpace(cp)   != space.reset(str).matches()  ||
-                POSIX_Unicode.isSpace(cp) != spaceU.reset(str).matches() ||
-                POSIX_Unicode.isSpace(cp) != spaceP.reset(str).matches() ||
+                POSIX_ASCII.isSpace(cp)      != space.reset(str).matches()  ||
+                POSIX_Unicode.isSpace(cp)    != spaceU.reset(str).matches() ||
+                POSIX_Unicode.isSpace(cp)    != spaceP.reset(str).matches() ||
                 // word
-                POSIX_ASCII.isWord(cp)    != word.reset(str).matches()  ||
-                POSIX_Unicode.isWord(cp)  != wordU.reset(str).matches() ||
-                POSIX_Unicode.isWord(cp)  != wordEU.reset(str).matches()||
+                POSIX_ASCII.isWord(cp)       != word.reset(str).matches()  ||
+                POSIX_Unicode.isWord(cp)     != wordU.reset(str).matches() ||
+                POSIX_Unicode.isWord(cp)     != wordEU.reset(str).matches()||
                 // bwordb
-                POSIX_ASCII.isWord(cp)    != bwb.reset(str).matches() ||
-                POSIX_Unicode.isWord(cp)  != bwbU.reset(str).matches() ||
+                POSIX_ASCII.isWord(cp)       != bwb.reset(str).matches() ||
+                POSIX_Unicode.isWord(cp)     != bwbU.reset(str).matches() ||
                 // properties
-                isTitleCase(cp) != titleP.reset(str).matches() ||
-                isLetter(cp)    != letterP.reset(str).matches()||
-                isIdeographic(cp) != ideogP.reset(str).matches() ||
-                isIdeographic(cp) != ideogJ.reset(str).matches() ||
-                (UNASSIGNED == type) == definedP.reset(str).matches() ||
-                POSIX_Unicode.isNoncharacterCodePoint(cp) != nonCCPP.reset(str).matches() ||
-                POSIX_Unicode.isJoinControl(cp) != joinCrtl.reset(str).matches() ||
+                isTitleCase(cp)              != titleP.reset(str).matches() ||
+                isLetter(cp)                 != letterP.reset(str).matches()||
+                isIdeographic(cp)            != ideogP.reset(str).matches() ||
+                isIdeographic(cp)            != ideogJ.reset(str).matches() ||
+                (UNASSIGNED == type)         == definedP.reset(str).matches() ||
+                POSIX_Unicode.isNoncharacterCodePoint(cp)
+                                             != nonCCPP.reset(str).matches() ||
+                POSIX_Unicode.isJoinControl(cp)
+                                             != joinCrtl.reset(str).matches() ||
                 // Emoji properties
-                isEmoji(cp)     != emojiP.reset(str).matches() ||
-                isEmojiPresentation(cp) != emojiPP.reset(str).matches() ||
-                isEmojiModifier(cp) != emojiMP.reset(str).matches() ||
-                isEmojiModifierBase(cp)!= emojiMBP.reset(str).matches() ||
-                isEmojiComponent(cp) != emojiCP.reset(str).matches() ||
-                isExtendedPictographic(cp) != extPP.reset(str).matches() ||
+                isEmoji(cp)                  != emojiP.reset(str).matches() ||
+                isEmojiPresentation(cp)      != emojiPP.reset(str).matches() ||
+                isEmojiModifier(cp)          != emojiMP.reset(str).matches() ||
+                isEmojiModifierBase(cp)      != emojiMBP.reset(str).matches() ||
+                isEmojiComponent(cp)         != emojiCP.reset(str).matches() ||
+                isExtendedPictographic(cp)   != extPP.reset(str).matches() ||
                 // gc_C
                 (CONTROL == type || FORMAT == type ||
                  PRIVATE_USE == type || SURROGATE == type ||
                  UNASSIGNED == type)
-                != gcC.reset(str).matches()) {
+                                             != gcC.reset(str).matches()) {
                 fail();
             }
         }
