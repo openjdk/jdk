@@ -325,7 +325,7 @@ private:
       return _updates.at(i)._after;
     }
 
-    const Type* type_if_present(Node* n) const {
+    const Type* type_if_present(Node* n) {
       int i = find(n);
       if (i == -1) {
         return nullptr;
@@ -342,7 +342,7 @@ private:
       _updates.at(i)._before = t;
     }
 
-    bool contains(Node* n) const {
+    bool contains(Node* n) {
       return find(n) != -1;
     }
 
@@ -350,12 +350,26 @@ private:
       _updates.remove_at(i);
     }
 
-    int find(const Node* n) const {
-      return _updates.find((void*)n, [](void* n, Entry e) { return e._node == (Node*) n; });
+    static int compare1(const Node* const& n, const Entry& e) {
+      return  n->_idx - e._node->_idx;
+    }
+
+    static int compare2(const Entry& e1, const Entry& e2) {
+      return e1._node->_idx - e2._node->_idx;
+    }
+
+    int find(const Node* n) {
+      bool found = false;
+      int res = _updates.find_sorted<const Node*, compare1>(n, found);
+      if (!found) {
+        return -1;
+      }
+      return res;
     }
 
     void push_node(Node* node, const Type* old_t, const Type* new_t) {
-      _updates.push(Entry(node, old_t, new_t));
+      _updates.insert_sorted<compare2>(Entry(node, old_t, new_t));
+      assert(find(node) != -1 && _updates.at(find(node))._node == node, "");
     }
 
     TypeUpdate* prev() const {
