@@ -750,14 +750,24 @@ public class Flow {
         }
 
         sealed interface PatternDescription {
-            public static PatternDescription from(Types types, JCPattern pattern) {
+            public static PatternDescription from(Types types, Type selectorType, JCPattern pattern) {
                 if (pattern instanceof JCBindingPattern binding) {
-                    return new BindingPattern(binding.type);
+                    Type type = types.isSubtype(selectorType, binding.type)
+                            ? selectorType : binding.type;
+                    return new BindingPattern(type);
                 } else if (pattern instanceof JCRecordPattern record) {
                     Type[] componentTypes = ((ClassSymbol) record.type.tsym).getRecordComponents()
                             .map(r -> types.memberType(record.type, r))
                             .toArray(s -> new Type[s]);
-                    return new RecordPattern(record.type, componentTypes, record.nested.map(p -> PatternDescription.from(types, p)).toArray(s -> new PatternDescription[s]));
+                    PatternDescription[] nestedDescriptions =
+                            new PatternDescription[record.nested.size()];
+                    int i = 0;
+                    for (List<JCPattern> it = record.nested;
+                         it.nonEmpty();
+                         it = it.tail, i++) {
+                        nestedDescriptions[i] = PatternDescription.from(types, componentTypes[i], it.head);
+                    }
+                    return new RecordPattern(record.type, componentTypes, nestedDescriptions);
                 } else {
                     throw Assert.error();
                 }
@@ -806,7 +816,9 @@ public class Flow {
                         continue;
 
                     if (l instanceof JCPatternCaseLabel patternLabel) {
-                        patterns = patterns.prepend(PatternDescription.from(types, patternLabel.pat));
+                        for (Type component : components(selector.type)) {
+                            patterns = patterns.prepend(PatternDescription.from(types, component, patternLabel.pat));
+                        }
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
                         Symbol s = TreeInfo.symbol(constantLabel.expr);
                         if (s != null && s.isEnum()) {

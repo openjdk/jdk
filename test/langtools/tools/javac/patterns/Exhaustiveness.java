@@ -1686,6 +1686,30 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    @Test
+    public void testOverfitting(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   final class A implements I {}
+                   final class B implements I {}
+                   record R(String s, I i) {}
+
+                   void test(R r) {
+                       switch (r) {
+                           case R(CharSequence s, A a) ->
+                               System.out.println("A");
+                           case R(Object o, B b) ->
+                               System.out.println("B");
+                       }
+                   }
+               }
+               """);
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         doTest(base, libraryCode, testCode, false, expectedErrors);
     }
