@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,8 +38,8 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
     }
 
     @Override
-    AixFileSystem newFileSystem(String dir) {
-        return new AixFileSystem(this, dir);
+    AixFileSystem newFileSystem() {
+        return new AixFileSystem(this);
     }
 
     /**

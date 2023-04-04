@@ -65,13 +65,7 @@ public:
     NOT_CDS_JAVA_HEAP(return false;)
   }
 
-  static bool are_archived_strings_available() {
-    return is_loaded() || closed_regions_mapped();
-  }
-  static bool are_archived_mirrors_available() {
-    return is_fully_available();
-  }
-  static bool is_fully_available() {
+  static bool is_in_use() {
     return is_loaded() || is_mapped();
   }
 

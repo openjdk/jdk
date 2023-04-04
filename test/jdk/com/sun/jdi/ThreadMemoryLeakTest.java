@@ -30,8 +30,8 @@
  * @requires (vm.compMode == "Xmixed")
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g ThreadMemoryLeakTest.java
- * @comment run with -Xmx6m so any leak will quickly produce OOME
- * @run main/othervm -Xmx6m ThreadMemoryLeakTest
+ * @comment run with -Xmx7m so any leak will quickly produce OOME
+ * @run main/othervm -Xmx7m ThreadMemoryLeakTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
@@ -95,30 +95,23 @@ public class ThreadMemoryLeakTest extends TestScaffold {
 
     /********** event handlers **********/
 
-    static int threadStartCount;
-    static int threadDeathCount;
-    private static List<ThreadReference> threads =
-        Collections.synchronizedList(new ArrayList<ThreadReference>());
+    static LongAdder threadStartCount = new LongAdder();
+    static LongAdder threadDeathCount = new LongAdder();
 
     public void threadStarted(ThreadStartEvent event) {
-        threadStartCount++;
-        if ((threadStartCount % 1000) == 0) {
+        threadStartCount.increment();
+        if ((threadStartCount.sum() % 1000) == 0) {
             println("Got ThreadStartEvent #" + threadStartCount +
-                               " threads:" + threads.size());
+                    " threads:" + (threadStartCount.sum() - threadDeathCount.sum()));
         }
-        ThreadStartEvent tse = (ThreadStartEvent)event;
-        threads.add(tse.thread());
     }
 
     public void threadDied(ThreadDeathEvent event) {
-        threadDeathCount++;
-        if ((threadDeathCount % 1000) == 0) {
+        threadDeathCount.increment();
+        if ((threadDeathCount.sum() % 1000) == 0) {
             println("Got ThreadDeathEvent #" + threadDeathCount +
-                               " threads:" + threads.size());
+                    " threads:" + (threadStartCount.sum() - threadDeathCount.sum()));
         }
-        ThreadDeathEvent tde = (ThreadDeathEvent)event;
-        ThreadReference thread = tde.thread();
-        threads.remove(thread);
     }
 
     public void vmDied(VMDeathEvent event) {

@@ -213,6 +213,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
     // Create Java array for holding resolved strings, methodHandles,
     // methodTypes, invokedynamic and invokehandle appendix objects, etc.
     objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
+    HandleMark hm(THREAD);
     Handle refs_handle (THREAD, stom);  // must handleize.
     set_resolved_references(loader_data->add_handle(refs_handle));
   }
@@ -337,10 +338,11 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (ArchiveHeapLoader::is_fully_available() &&
+    if (ArchiveHeapLoader::is_in_use() &&
         _cache->archived_references() != nullptr) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
+      HandleMark hm(THREAD);
       Handle refs_handle(THREAD, archived);
       set_resolved_references(loader_data->add_handle(refs_handle));
       _cache->clear_archived_references();
@@ -352,6 +354,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
       int map_length = resolved_reference_length();
       if (map_length > 0) {
         objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
+        HandleMark hm(THREAD);
         Handle refs_handle(THREAD, stom);  // must handleize.
         set_resolved_references(loader_data->add_handle(refs_handle));
       }
@@ -519,6 +522,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
     ShouldNotReachHere();
   }
 
+  HandleMark hm(THREAD);
   Handle mirror_handle;
   Symbol* name = this_cp->symbol_at(name_index);
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
@@ -595,6 +599,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     return nullptr;
   } else {
     Thread* current = Thread::current();
+    HandleMark hm(current);
     Symbol* name = this_cp->symbol_at(name_index);
     oop loader = this_cp->pool_holder()->class_loader();
     oop protection_domain = this_cp->pool_holder()->protection_domain();
@@ -636,24 +641,38 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
 
 bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->has_appendix();
+  if (is_invokedynamic_index(which)) {
+    int indy_index = decode_invokedynamic_index(which);
+    return cpool->resolved_indy_entry_at(indy_index)->has_appendix();
+  } else {
+    int cache_index = decode_cpcache_index(which, true);
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->has_appendix();
+  }
 }
 
 oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->appendix_if_resolved(cpool);
+  if (is_invokedynamic_index(which)) {
+    int indy_index = decode_invokedynamic_index(which);
+    return cpool->resolved_reference_from_indy(indy_index);
+  } else {
+    int cache_index = decode_cpcache_index(which, true);
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->appendix_if_resolved(cpool);
+  }
 }
 
 
 bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->has_local_signature();
+  if (is_invokedynamic_index(which)) {
+    return cpool->resolved_indy_entry_at(cache_index)->has_local_signature();
+  } else {
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->has_local_signature();
+  }
 }
 
 Symbol* ConstantPool::impl_name_ref_at(int which, bool uncached) {
@@ -671,7 +690,7 @@ int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
   int i = which;
   if (!uncached && cache() != nullptr) {
     if (ConstantPool::is_invokedynamic_index(which)) {
-      // Invokedynamic index is index into the constant pool cache
+      // Invokedynamic index is index into the resolved indy array in the constant pool cache
       int pool_index = invokedynamic_bootstrap_ref_index_at(which);
       pool_index = bootstrap_name_and_type_ref_index_at(pool_index);
       assert(tag_at(pool_index).is_name_and_type(), "");
@@ -928,7 +947,6 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                                            int index, int cache_index,
                                            bool* status_return, TRAPS) {
   oop result_oop = nullptr;
-  Handle throw_exception;
 
   if (cache_index == _possible_index_sentinel) {
     // It is possible that this constant is one which is cached in the objects.
@@ -1096,6 +1114,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       }
 
       Klass* klass = this_cp->pool_holder();
+      HandleMark hm(THREAD);
       Handle value = SystemDictionary::link_method_handle_constant(klass, ref_kind,
                                                                    callee, name, signature,
                                                                    THREAD);
@@ -1115,6 +1134,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                               signature->as_C_string());
       }
       Klass* klass = this_cp->pool_holder();
+      HandleMark hm(THREAD);
       Handle value = SystemDictionary::find_method_handle_type(signature, klass, THREAD);
       result_oop = value();
       if (HAS_PENDING_EXCEPTION) {
