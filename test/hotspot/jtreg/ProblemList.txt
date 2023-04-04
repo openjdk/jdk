@@ -69,8 +69,6 @@ compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
-compiler/sharedstubs/SharedStubToInterpTest.java 8304681 generic-all
-
 #############################################################################
 
 # :hotspot_gc
@@ -102,6 +100,7 @@ runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/vthread/RedefineClass.java 8297286 generic-all
 runtime/vthread/TestObjectAllocationSampleEvent.java 8297286 generic-all
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
+runtime/Thread/TestAlwaysPreTouchStacks.java 8305416 generic-all
 
 applications/jcstress/copy.java 8229852 linux-all
 

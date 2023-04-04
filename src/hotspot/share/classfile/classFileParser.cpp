@@ -866,6 +866,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
       if (!interface_names->put(interface_name, 0)) {
         classfile_parse_error("Duplicate interface name \"%s\" in class file %s",
                                interface_name->as_C_string(), THREAD);
+        return;
       }
     }
   }
@@ -1594,6 +1595,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
       if(!names_and_sigs->put(name_and_sig, 0)) {
         classfile_parse_error("Duplicate field name \"%s\" with signature \"%s\" in class file %s",
                                name_and_sig._name->as_C_string(), name_and_sig._sig->as_klass_external_name(), THREAD);
+        return;
       }
     }
   }
@@ -2833,6 +2835,7 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
         if(!names_and_sigs->put(name_and_sig, 0)) {
           classfile_parse_error("Duplicate method name \"%s\" with signature \"%s\" in class file %s",
                                  name_and_sig._name->as_C_string(), name_and_sig._sig->as_klass_external_name(), THREAD);
+          return;
         }
       }
     }
