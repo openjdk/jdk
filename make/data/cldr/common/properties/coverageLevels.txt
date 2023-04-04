@@ -112,6 +112,7 @@ sl ;	modern ;	Slovenian
 so ;	modern ;	Somali
 sq ;	modern ;	Albanian
 sr ;	modern ;	Serbian
+sr_Latn ;	modern ;	Serbian (Latin)
 su ;	basic ;	Sundanese
 sv ;	modern ;	Swedish
 sw ;	modern ;	Swahili

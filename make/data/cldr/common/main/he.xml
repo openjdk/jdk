@@ -1391,7 +1391,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="auxiliary">[\u05BD\u05C4\u200E\u200F \u05B0 \u05B1 \u05B2 \u05B3 \u05B4 \u05B5 \u05B6 \u05B7 \u05B8 \u05B9 \u05BB \u05C2 \u05C1 \u05BC \u05BF ״]</exemplarCharacters>
 		<exemplarCharacters type="index">[א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . ' &quot; ( ) \[ \] / ־ ׳ ״]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . ' ׳ &quot; ״ ( ) \[ \] / ־]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
