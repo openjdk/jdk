@@ -31,6 +31,7 @@
 #include "gc/z/zMetronome.hpp"
 #include "gc/z/zRelocationSetSelector.hpp"
 #include "gc/z/zThread.hpp"
+#include "gc/z/zTracer.hpp"
 #include "logging/logHandle.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -243,6 +244,8 @@ public:
 class ZStatPhaseGeneration : public ZStatPhase {
 private:
   const ZGenerationId _id;
+
+  ZGenerationTracer* jfr_tracer() const;
 
 public:
   ZStatPhaseGeneration(const char* name, ZGenerationId id);

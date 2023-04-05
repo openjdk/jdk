@@ -479,7 +479,8 @@ ZGenerationYoung::ZGenerationYoung(ZPageTable* page_table,
     ZGeneration(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
     _tenuring_threshold(0),
-    _remembered(page_table, old_forwarding_table, page_allocator) {
+    _remembered(page_table, old_forwarding_table, page_allocator),
+    _jfr_tracer() {
   ZGeneration::_young = this;
 }
 
@@ -921,13 +922,18 @@ void ZGenerationYoung::register_with_remset(ZPage* page) {
   _remembered.register_found_old(page);
 }
 
+ZGenerationTracer* ZGenerationYoung::jfr_tracer() {
+  return &_jfr_tracer;
+}
+
 ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZGeneration(ZGenerationId::old, page_table, page_allocator),
     _reference_processor(&_workers),
     _weak_roots_processor(&_workers),
     _unload(&_workers),
     _total_collections_at_start(0),
-    _young_seqnum_at_reloc_start(0) {
+    _young_seqnum_at_reloc_start(0),
+    _jfr_tracer() {
   ZGeneration::_old = this;
 }
 
@@ -1463,4 +1469,8 @@ void ZGenerationOld::remap_young_roots() {
 
 uint ZGenerationOld::total_collections_at_start() const {
   return _total_collections_at_start;
+}
+
+ZGenerationTracer* ZGenerationOld::jfr_tracer() {
+  return &_jfr_tracer;
 }

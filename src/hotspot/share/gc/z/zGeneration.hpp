@@ -195,9 +195,10 @@ class ZGenerationYoung : public ZGeneration {
   friend class ZYoungTypeSetter;
 
 private:
-  ZYoungType  _active_type;
-  uint        _tenuring_threshold;
-  ZRemembered _remembered;
+  ZYoungType   _active_type;
+  uint         _tenuring_threshold;
+  ZRemembered  _remembered;
+  ZYoungTracer _jfr_tracer;
 
   void flip_mark_start();
   void flip_relocate_start();
@@ -252,6 +253,9 @@ public:
   // Register old pages with remembered set
   void register_with_remset(ZPage* page);
 
+  // Serviceability
+  ZGenerationTracer* jfr_tracer();
+
   // Verification
   bool is_remembered(volatile zpointer* p) const;
 };
@@ -267,6 +271,7 @@ private:
   ZUnload             _unload;
   uint                _total_collections_at_start;
   uint32_t            _young_seqnum_at_reloc_start;
+  ZOldTracer          _jfr_tracer;
 
   void flip_mark_start();
   void flip_relocate_start();
@@ -309,6 +314,9 @@ public:
   bool active_remset_is_current() const;
 
   ZRelocateQueue* relocate_queue();
+
+  // Serviceability
+  ZGenerationTracer* jfr_tracer();
 };
 
 #endif // SHARE_GC_Z_ZGENERATION_HPP

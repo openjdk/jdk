@@ -637,9 +637,11 @@ GCTracer* ZStatPhaseCollection::jfr_tracer() const {
 }
 
 void ZStatPhaseCollection::set_used_at_start(size_t used) const {
-  return _minor
-      ? ZDriver::minor()->set_used_at_start(used)
-      : ZDriver::major()->set_used_at_start(used);
+  if (_minor) {
+    ZDriver::minor()->set_used_at_start(used);
+  } else {
+    ZDriver::major()->set_used_at_start(used);
+  }
 }
 
 size_t ZStatPhaseCollection::used_at_start() const {
@@ -691,8 +693,16 @@ ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
     ZStatPhase(id == ZGenerationId::old ? "Old Generation" : "Young Generation", name),
     _id(id) {}
 
+ZGenerationTracer* ZStatPhaseGeneration::jfr_tracer() const {
+  return _id == ZGenerationId::young
+      ? ZGeneration::young()->jfr_tracer()
+      : ZGeneration::old()->jfr_tracer();
+}
+
 void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   ZCollectedHeap::heap()->print_heap_before_gc();
+
+  jfr_tracer()->report_start(start);
 
   log_info(gc, phases)("%s", name());
 }
@@ -702,6 +712,8 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
     log_info(gc, phases)("%s Aborted", name());
     return;
   }
+
+  jfr_tracer()->report_end(end);
 
   ZCollectedHeap::heap()->print_heap_after_gc();
 

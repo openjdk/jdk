@@ -149,6 +149,7 @@ void ZDriverMinor::collect(const ZDriverRequest& request) {
     break;
   }
 };
+
 GCTracer* ZDriverMinor::jfr_tracer() {
   return &_jfr_tracer;
 }

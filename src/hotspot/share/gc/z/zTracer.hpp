@@ -47,14 +47,36 @@ public:
   static void report_thread_debug(const char* name, const Ticks& start, const Ticks& end);
 };
 
-class ZMinorTracer : public YoungGCTracer {
+class ZMinorTracer : public GCTracer {
 public:
   ZMinorTracer();
 };
 
-class ZMajorTracer : public OldGCTracer {
+class ZMajorTracer : public GCTracer {
 public:
   ZMajorTracer();
+};
+
+class ZGenerationTracer {
+protected:
+  Ticks _start;
+
+public:
+  ZGenerationTracer() :
+      _start() {}
+
+  void report_start(const Ticks& timestamp);
+  virtual void report_end(const Ticks& timestamp) = 0;
+};
+
+class ZYoungTracer : public ZGenerationTracer {
+public:
+  void report_end(const Ticks& timestamp) override;
+};
+
+class ZOldTracer : public ZGenerationTracer {
+public:
+  void report_end(const Ticks& timestamp) override;
 };
 
 // For temporary latency measurements during development and debugging
