@@ -522,14 +522,16 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
     remove_dumptime_info(klass);
   }
 
-  if (_unregistered_classes_table != nullptr) {
-    // Remove the class from _unregistered_classes_table: keep the entry but
-    // set it to null. This ensure no classes with the same name can be
-    // added again.
+  {
     MutexLocker ml(Thread::current(), UnregisteredClassesTable_lock, Mutex::_no_safepoint_check_flag);
-    InstanceKlass** v = _unregistered_classes_table->get(klass->name());
-    if (v != nullptr) {
-      *v = nullptr;
+    if (_unregistered_classes_table != nullptr) {
+      // Remove the class from _unregistered_classes_table: keep the entry but
+      // set it to null. This ensure no classes with the same name can be
+      // added again.
+      InstanceKlass** v = _unregistered_classes_table->get(klass->name());
+      if (v != nullptr) {
+        *v = nullptr;
+      }
     }
   }
 
