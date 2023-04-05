@@ -2910,7 +2910,7 @@ bool SuperWord::output() {
 //
 // We patch the graph to look like this:
 //
-// CountedLoop   neutral_vector
+// CountedLoop   identity_vector
 //         |         |
 //         +-------+ | +---------------+
 //                 | | |               |
@@ -2964,13 +2964,13 @@ void SuperWord::move_unordered_reduction_out_of_loop(UnorderedReductionNode* ur)
   BasicType bt = ur->vect_type()->element_basic_type();
   const Type* bt_t = Type::get_const_basic_type(bt);
 
-  // Create vector of neutral elements (zero for add, one for mul, etc)
-  Node* neutral_scalar = ReductionNode::make_reduction_input_from_vector_opc(_igvn, ur->Opcode(), bt);
-  _phase->set_ctrl(neutral_scalar, C->root());
-  VectorNode* neutral_vector = VectorNode::scalar2vector(neutral_scalar, vector->length(), bt_t);
-  _igvn.register_new_node_with_optimizer(neutral_vector);
-  _phase->set_ctrl(neutral_vector, C->root());
-  const TypeVect* vec_t = neutral_vector->vect_type();
+  // Create vector of identity elements (zero for add, one for mul, etc)
+  Node* identity_scalar = ReductionNode::make_identity_input_for_reduction_from_vector_opc(_igvn, ur->Opcode(), bt);
+  _phase->set_ctrl(identity_scalar, C->root());
+  VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector->length(), bt_t);
+  _igvn.register_new_node_with_optimizer(identity_vector);
+  _phase->set_ctrl(identity_vector, C->root());
+  const TypeVect* vec_t = identity_vector->vect_type();
 
   // Build vector Phi
   Node* vector_phi = new PhiNode(cl, vec_t);
@@ -2978,8 +2978,8 @@ void SuperWord::move_unordered_reduction_out_of_loop(UnorderedReductionNode* ur)
   C->copy_node_notes_to(vector_phi, phi);
   _phase->set_ctrl(vector_phi, cl);
 
-  // Start loop with neutral element
-  vector_phi->set_req(1, neutral_vector);
+  // Start loop with identity element
+  vector_phi->set_req(1, identity_vector);
 
   // In each iteration, do vector accumulation
   VectorNode* vector_accumulator = ur->make_normal_vector_op(vector_phi, vector, vec_t);
@@ -3007,7 +3007,7 @@ void SuperWord::move_unordered_reduction_out_of_loop(UnorderedReductionNode* ur)
 #ifdef ASSERT
   if (TraceNewVectors) {
     tty->print("new Vector node: ");
-    neutral_vector->dump();
+    identity_vector->dump();
     tty->print("new Vector node: ");
     vector_phi->dump();
     tty->print("new Vector node: ");

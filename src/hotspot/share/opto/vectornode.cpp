@@ -1398,15 +1398,15 @@ Node* VectorCastNode::Identity(PhaseGVN* phase) {
 }
 
 // Input opc of pre-reduction operation, eg AddI for AddReductionVI
-Node* ReductionNode::make_reduction_input_from_scalar_opc(PhaseGVN& gvn, int opc, BasicType bt) {
+Node* ReductionNode::make_identity_input_for_reduction_from_scalar_opc(PhaseGVN& gvn, int opc, BasicType bt) {
   int vopc = opcode(opc, bt);
   guarantee(vopc != opc, "Vector reduction for '%s' is not implemented", NodeClassNames[opc]);
 
-  return make_reduction_input_from_vector_opc(gvn, vopc, bt);
+  return make_identity_input_for_reduction_from_vector_opc(gvn, vopc, bt);
 }
 
 // Input opc of vector reduction, eg. AddReductionVI
-Node* ReductionNode::make_reduction_input_from_vector_opc(PhaseGVN& gvn, int vopc, BasicType bt) {
+Node* ReductionNode::make_identity_input_for_reduction_from_vector_opc(PhaseGVN& gvn, int vopc, BasicType bt) {
   switch (vopc) {
     case Op_AndReductionV:
       switch (bt) {

@@ -198,10 +198,9 @@ class ReductionNode : public Node {
   static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
-  // Input opc of pre-reduction operation, eg. AddI for AddReductionVI
-  static Node* make_reduction_input_from_scalar_opc(PhaseGVN& gvn, int opc, BasicType bt);
-  // Input vopc of vector reduction, eg. AddReductionVI
-  static Node* make_reduction_input_from_vector_opc(PhaseGVN& gvn, int vopc, BasicType bt);
+  // Make an identity element (zero for add, one for mul, etc) for opc of scalar/vector reduction.
+  static Node* make_identity_input_for_reduction_from_scalar_opc(PhaseGVN& gvn, int opc, BasicType bt);
+  static Node* make_identity_input_for_reduction_from_vector_opc(PhaseGVN& gvn, int vopc, BasicType bt);
 
   virtual const Type* bottom_type() const {
     return _bottom_type;
