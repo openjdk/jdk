@@ -37,11 +37,11 @@ public:
     NoopFreeListSpace(MarkBitMap* bitmap): _free_chunk_bitmap(bitmap), _free_list(NULL) {}
 
     //Useless virtual methods
-    virtual MemRegion used_region() const { return MemRegion(); }
+    virtual MemRegion used_region() const { return MemRegion(bottom(), end()); }
     virtual void mangle_unused_area() {}
     virtual void mangle_unused_area_complete() {}
     virtual size_t used() const            { return 0; }
-    virtual size_t free() const            { return 0; }
+    virtual size_t free() const            { return 1; }
     virtual void verify() const {}
     virtual void reset_after_compaction() {}
     virtual void prepare_for_compaction(CompactPoint* cp) {}

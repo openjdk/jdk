@@ -61,7 +61,7 @@ public:
     NoopFreeList(NoopNode* head, MarkBitMap* fc);
 
     static void link_next(NoopNode* cur, NoopNode* next);
-    static void unlink(NoopNode* NoopNode);
+    void unlink(NoopNode* NoopNode);
 
     void append(NoopNode* NoopNode);
 

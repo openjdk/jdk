@@ -39,7 +39,6 @@ private:
     SoftRefPolicy _soft_ref_policy;
     GCMemoryManager _memory_manager;
     MemoryPool* _pool;
-    ContiguousSpace* _space;
     NoopFreeListSpace* _free_list_space;
     VirtualSpace _virtual_space;
     size_t _max_tlab_size;
@@ -70,7 +69,7 @@ public:
 
     NoopHeap() :
             _memory_manager("Noop Heap", ""),
-            _space(NULL) {};
+            _free_list_space(NULL) {};
 
     virtual Name kind() const {
         return CollectedHeap::Noop;
@@ -95,10 +94,10 @@ public:
 
     virtual size_t max_capacity() const { return _virtual_space.reserved_size();  }
     virtual size_t capacity()     const { return _virtual_space.committed_size(); }
-    virtual size_t used()         const { return _space->used(); }
+    virtual size_t used()         const { return _free_list_space->used(); }
 
     virtual bool is_in(const void* p) const {
-        return _space->is_in(p);
+        return _free_list_space->is_in(p);
     }
 
     virtual bool requires_barriers(stackChunkOop obj) const { return false; }
@@ -132,7 +131,7 @@ public:
     virtual void do_roots(OopClosure* cl, bool everything);
 
     // Heap walking support
-    virtual void object_iterate(ObjectClosure* cl) { _space->object_iterate(cl); };
+    virtual void object_iterate(ObjectClosure* cl) { _free_list_space->object_iterate(cl); };
 
     // Object pinning support: every object is implicitly pinned
     virtual bool supports_object_pinning() const           { return true; }

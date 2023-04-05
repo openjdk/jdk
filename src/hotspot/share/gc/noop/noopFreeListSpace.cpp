@@ -1,4 +1,5 @@
 #include "gc/noop/noopFreeListSpace.hpp"
+#include "gc/noop/noopInitLogger.hpp"
 
 void NoopFreeListSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
     CompactibleSpace::initialize(mr, clear_space, mangle_space);
@@ -10,5 +11,6 @@ void NoopFreeListSpace::initialize(MemRegion mr, bool clear_space, bool mangle_s
 }
 
 HeapWord* NoopFreeListSpace::allocate(size_t size) {
+    log_info(gc)("Allocation request");
     return _free_list->getFirstFit(size)->start();
 }

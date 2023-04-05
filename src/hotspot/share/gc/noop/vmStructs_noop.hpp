@@ -31,8 +31,7 @@
 #define VM_STRUCTS_NOOPGC(nonstatic_field,                       \
                             volatile_nonstatic_field,            \
                             static_field)                        \
-  nonstatic_field(NoopHeap, _virtual_space, VirtualSpace)        \
-  nonstatic_field(NoopHeap, _space, ContiguousSpace*)
+  nonstatic_field(NoopHeap, _virtual_space, VirtualSpace)        
 
 #define VM_TYPES_NOOPGC(declare_type,                            \
                           declare_toplevel_type,                 \

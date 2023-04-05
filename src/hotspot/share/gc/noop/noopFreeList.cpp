@@ -1,9 +1,10 @@
 #include "gc/noop/noopFreeList.hpp"
+#include "gc/noop/noopInitLogger.hpp"
 
 //Constructor
 NoopFreeList::NoopFreeList(NoopNode* head, MarkBitMap* fc): _head(head), _tail(head), _free_chunk_bitmap(fc) {
-        _free_chunk_bitmap->mark(_head->start());
-        _free_chunk_bitmap->mark(_head->start() + _head->size() - 1);
+        //_free_chunk_bitmap->mark(_head->start());
+        //_free_chunk_bitmap->mark(_head->start() + _head->size() - 1);
 }
 
 //Alignment
@@ -14,6 +15,9 @@ size_t NoopFreeList::adjust_chunk_size(size_t size) {
 //Remove and add to list methods
 void NoopFreeList::unlink(NoopNode* node) {
     if (node->prev() != NULL) { node->prev()->setNext(node->next()); }
+    else { //HEAD
+        _head = node->next();
+    }
     if (node->next() != NULL) { node->next()->setPrev(node->prev()); }
 
     node->setNext(NULL);
@@ -21,10 +25,11 @@ void NoopFreeList::unlink(NoopNode* node) {
 }
 
 void NoopFreeList::link_next(NoopNode* cur, NoopNode* next) {
-    NoopNode* prev_next = cur->next();
-
-    next->setNext(prev_next);
-    next->setPrev(cur);
+    NoopNode* prev_next = cur->next(); //NULL
+    
+    cur->setNext(next);
+    next->setNext(prev_next);// rem->next = NULL
+    next->setPrev(cur); //rem->prev = cur
 
     if (prev_next != NULL) { prev_next->setPrev(next); }
 }
@@ -47,13 +52,11 @@ void NoopFreeList::slice_node(NoopNode* node, size_t size) {
     if (remainder_size > 0) {
         node->setSize(size);
         
-        assert(is_aligned(remainder_size, _chunk_size_alignment), "Remainin chunk size is not aligned");
-        
         NoopNode* remainder = new NoopNode(node->start() + size, remainder_size);
 
         //Marking new nodes
-        _free_chunk_bitmap->mark(node->start() + node->size() - 1);
-        _free_chunk_bitmap->mark(remainder->start());
+        //_free_chunk_bitmap->mark(node->start() + node->size() - 1);
+        //_free_chunk_bitmap->mark(remainder->start());
 
         link_next(node, remainder);
     }
@@ -61,9 +64,12 @@ void NoopFreeList::slice_node(NoopNode* node, size_t size) {
 
 //First fit
 NoopNode* NoopFreeList::getFirstFit(size_t size) {
+    log_info(gc)("_head is %li", (long)_head->start());
     if (_head == NULL) { return NULL; }
     NoopNode* res = _head;
     size_t desired_size = adjust_chunk_size(size);
+
+    log_info(gc)("Desired size %li", desired_size);
 
     while (res->size() < desired_size) {
         if (res->next() == NULL) { 
@@ -75,6 +81,8 @@ NoopNode* NoopFreeList::getFirstFit(size_t size) {
     slice_node(res, desired_size);
 
     unlink(res);
+
+    assert(_head != NULL, "New head is null");
 
     return res;
 }

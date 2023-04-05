@@ -99,8 +99,8 @@ jint NoopHeap::initialize() {
     //Initialize space
     //_free_list_space = new NoopFreeListSpace(&_free_chunk_bitmap);
     //_free_list_space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
-    _space = new ContiguousSpace();
-    _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
+    _free_list_space = new NoopFreeListSpace(&_free_chunk_bitmap);
+    _free_list_space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
 
     _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(NoopMaxTLABSize / HeapWordSize));
 
@@ -135,45 +135,8 @@ HeapWord* NoopHeap::allocate_work(size_t size, bool verbose) {
     assert(is_object_aligned(size), "Allocation size should be aligned: " SIZE_FORMAT, size);
 
     HeapWord* res = NULL;
-    while (true) {
-        // Try to allocate, assume space is available
-        res = _space->par_allocate(size);
-        if (res != NULL) {
-            break;
-        }
-        // Allocation failed, attempt expansion, and retry:
-        {
-            MutexLocker ml(Heap_lock);
-
-            // Try to allocate under the lock, assume another thread was able to expand
-            res = _space->par_allocate(size);
-            if (res != NULL) {
-                break;
-            }
-
-            // Expand and loop back if space is available
-            size_t space_left = max_capacity() - capacity();
-            size_t want_space = MAX2(size, NoopMinHeapExpand);
-
-            if (want_space < space_left) {
-                // Enough space to expand in bulk:
-                bool expand = _virtual_space.expand_by(want_space);
-                assert(expand, "Should be able to expand");
-            } else if (size < space_left) {
-                // No space to expand in bulk, and this allocation is still possible,
-                // take all the remaining space:
-                bool expand = _virtual_space.expand_by(space_left);
-                assert(expand, "Should be able to expand");
-            } else {
-                // No space left:
-                return NULL;
-            }
-
-            _space->set_end((HeapWord *) _virtual_space.high());
-        }
-    }
-
-    size_t used = _space->used();
+    // Try to allocate, assume space is available
+    res = _free_list_space->allocate(size);
 
     assert(is_object_aligned(res), "Object should be aligned: " PTR_FORMAT, p2i(res));
     return res;
