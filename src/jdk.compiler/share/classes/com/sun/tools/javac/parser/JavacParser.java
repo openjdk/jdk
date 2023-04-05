@@ -3854,9 +3854,9 @@ public class JavacParser implements Parser {
             ListBuffer<JCTree> semiList = new ListBuffer<>();
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
                 semiList.append(toP(F.at(token.pos).Skip()));
-                nextToken();
-                if (token.kind == EOF)
+                if (peekToken(EOF::equals))
                     break;
+                nextToken();
             }
             if (firstTypeDecl && mods == null && token.kind == IMPORT) {
                 if (!semiList.isEmpty()) {
