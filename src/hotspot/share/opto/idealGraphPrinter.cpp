@@ -462,6 +462,9 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (flags & Node::Flag_has_call) {
       print_prop("has_call", "true");
     }
+    if (flags & Node::Flag_has_swapped_edges) {
+      print_prop("has_swapped_edges", "true");
+    }
 
     if (C->matcher() != nullptr) {
       if (C->matcher()->is_shared(node)) {
