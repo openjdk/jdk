@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.AWTException;
 import java.awt.Button;
 import java.awt.Checkbox;
 import java.awt.Choice;
@@ -35,6 +36,7 @@ import java.awt.TextField;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.InputEvent;
+import java.lang.reflect.InvocationTargetException;
 
 /*
  * @test
@@ -53,9 +55,8 @@ public class RequestFocusOwnerTest {
     private volatile static List list;
     private volatile static Point buttonAt;
     private volatile static Dimension buttonSize;
-    private static boolean focusGained = false;
-    private static boolean requestStatus;
-    private static Robot robot = null;
+    private volatile static boolean focusGained = false;
+    private volatile static boolean requestStatus;
 
     private volatile static FocusListener listener = new FocusListener() {
 
@@ -86,6 +87,9 @@ public class RequestFocusOwnerTest {
         choice.addFocusListener(listener);
         choice.setEnabled(false);
         frame.add(choice);
+        checkbox = new Checkbox("Checkbox");
+        checkbox.addFocusListener(listener);
+        frame.add(checkbox);
         list = new List();
         list.add("One");
         list.add("Two");
@@ -94,25 +98,21 @@ public class RequestFocusOwnerTest {
         list.add("Five");
         list.addFocusListener(listener);
         list.setFocusable(false);
-        checkbox = new Checkbox("Checkbox");
-        checkbox.addFocusListener(listener);
-        frame.add(checkbox);
         frame.add(list);
-
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args)
+        throws InvocationTargetException, InterruptedException, AWTException {
         try {
 
             EventQueue.invokeAndWait(RequestFocusOwnerTest::initializeGUI);
 
-            robot = new Robot();
+            Robot robot = new Robot();
             robot.setAutoDelay(500);
             robot.setAutoWaitForIdle(true);
-
             EventQueue.invokeAndWait(() -> {
                 buttonAt = button.getLocationOnScreen();
                 buttonSize = button.getSize();
@@ -153,7 +153,8 @@ public class RequestFocusOwnerTest {
 
             if (!checkbox.hasFocus()) {
                 throw new RuntimeException(
-                    "FAIL: CheckBox.hasFocus for Checkbox returns false after calling Checkbox.requestFocusInWindow");
+                    "FAIL: CheckBox.hasFocus for Checkbox returns false after calling"
+                        + " Checkbox.requestFocusInWindow");
             }
             focusGained = false;
             EventQueue.invokeAndWait(() -> {
@@ -174,7 +175,8 @@ public class RequestFocusOwnerTest {
 
             if (!choice.hasFocus()) {
                 throw new RuntimeException(
-                    "FAIL: Choice.hasFocus for disabled Choice returns false after calling Choice.requestFocusInWindow");
+                    "FAIL: Choice.hasFocus for disabled Choice returns false after"
+                        + " calling Choice.requestFocusInWindow");
             }
             focusGained = false;
             EventQueue.invokeAndWait(() -> {
@@ -193,7 +195,8 @@ public class RequestFocusOwnerTest {
             }
             if (textField.hasFocus()) {
                 throw new RuntimeException(
-                    "FAIL: TextField.hasFocus for hidden TextField returns true after calling TextField.requestFocusInWindow");
+                    "FAIL: TextField.hasFocus for hidden TextField returns true after calling"
+                        + " TextField.requestFocusInWindow");
             }
 
             focusGained = false;
@@ -214,7 +217,8 @@ public class RequestFocusOwnerTest {
             }
             if (list.hasFocus()) {
                 throw new RuntimeException(
-                    "FAIL: List.hasFocus for non-focusable List returns true after calling List.requestFocusInWindow");
+                    "FAIL: List.hasFocus for non-focusable List returns true after calling"
+                        + " List.requestFocusInWindow");
             }
 
             System.out.println("Test passed!");
