@@ -35,7 +35,7 @@ public class IsAlive {
     private static void spin() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                Thread.sleep(10);
+                Thread.sleep(100);
             }
         } catch (InterruptedException ie) {
             // Do nothing, just exit
@@ -59,7 +59,7 @@ public class IsAlive {
         }
 
         if (!spinnerDone) {
-            throw new RuntimeException("last write of terminated thread wasn't seen!");
+            throw new RuntimeException("Last write of terminated thread was not seen!");
         }
     }
 
