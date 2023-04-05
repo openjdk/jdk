@@ -21,9 +21,10 @@
  * questions.
  */
 
+#include <jni.h>
 #include <jvmti.h>
-#include "jvmti_common.h"
-#include <string.h>  // for memset
+#include <jvmti_common.h>
+#include <string.h>
 
 namespace {
 
@@ -38,12 +39,20 @@ struct RefCounters {
 
   RefCounters(): testClassCount(0), count(nullptr) {}
 
-  void init(jint testClassCount) {
+  void* alloc(JNIEnv* env, jlong size) {
+    unsigned char* ptr;
+    jvmtiError err = jvmti->Allocate(size, &ptr);
+    if (err != JVMTI_ERROR_NONE) {
+      env->FatalError("jvmti->Allocate failed");
+    }
+    memset(ptr, 0, size);
+    return ptr;
+  }
+
+  void init(JNIEnv* env, jint testClassCount) {
     this->testClassCount = testClassCount;
-    count = new jint[testClassCount];
-    memset(count, 0, sizeof(count[0]) *  testClassCount);
-    threadId = new jlong[testClassCount];
-    memset(threadId, 0, sizeof(threadId[0]) *  testClassCount);
+    count = (jint*)alloc(env, sizeof(count[0]) *  testClassCount);
+    threadId = (jlong*)alloc(env, sizeof(threadId[0]) *  testClassCount);
   }
 } refCounters;
 
@@ -91,7 +100,6 @@ HeapReferenceCallback(jvmtiHeapReferenceKind reference_kind,
   return JVMTI_VISIT_OBJECTS;
 }
 
-
 extern "C" JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
   if (vm->GetEnv(reinterpret_cast<void **>(&jvmti), JVMTI_VERSION) != JNI_OK || jvmti == nullptr) {
@@ -121,7 +129,7 @@ Java_VThreadStackRefTest_test(JNIEnv* env, jclass clazz, jobjectArray classes) {
   for (int i=0; i<classesCount; i++) {
     jvmti->SetTag(env->GetObjectArrayElement(classes, i), TAG_START + i);
   }
-  refCounters.init(classesCount);
+  refCounters.init(env, classesCount);
   jvmtiHeapCallbacks heapCallBacks;
   memset(&heapCallBacks, 0, sizeof(jvmtiHeapCallbacks));
   heapCallBacks.heap_reference_callback = HeapReferenceCallback;
@@ -142,29 +150,53 @@ Java_VThreadStackRefTest_getRefThreadID(JNIEnv* env, jclass clazz, jint index) {
   return refCounters.threadId[index];
 }
 
+static void printtCreatedClass(JNIEnv* env, jclass cls) {
+  jmethodID mid = env->GetMethodID(cls, "toString", "()Ljava/lang/String;");
+  if (mid == nullptr) {
+    env->FatalError("failed to get toString method");
+    return;
+  }
+  jstring jstr = (jstring)env->CallObjectMethod(cls, mid);
+  const char* str = env->GetStringUTFChars(jstr, 0);
+  LOG("created %s\n", str);
+  env->ReleaseStringUTFChars(jstr, str);
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_createObjAndCallback(JNIEnv* env, jclass clazz, jclass cls, jobject callback) {
   jobject jobj = env->AllocObject(cls);
+  printtCreatedClass(env, cls);
 
   jclass callbackClass = env->GetObjectClass(callback);
   jmethodID mid = env->GetMethodID(callbackClass, "run", "()V");
   if (mid == nullptr) {
-    // allow caller to handle the exception
+    env->FatalError("cannot get run method");
     return;
   }
   env->CallVoidMethod(callback, mid);
 }
 
+static volatile bool timeToExit = false;
+
 extern "C" JNIEXPORT void JNICALL
 Java_VThreadStackRefTest_createObjAndWait(JNIEnv* env, jclass clazz, jclass cls) {
   jobject jobj = env->AllocObject(cls);
+  printtCreatedClass(env, cls);
 
-  jfieldID fid = env->GetStaticFieldID(clazz, "timeToStop", "Z");
+  // Notify main thread that we are ready
+  jfieldID fid = env->GetStaticFieldID(clazz, "mountedVthreadReady", "Z");
   if (fid == nullptr) {
-    // allow caller to handle the exception
+    env->FatalError("cannot get mountedVthreadReady field");
     return;
   }
-  while (env->GetStaticBooleanField(clazz, fid) == JNI_FALSE) {
+  env->SetStaticBooleanField(clazz, fid, JNI_TRUE);
+
+  while (!timeToExit) {
     sleep_ms(100);
   }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_VThreadStackRefTest_endWait(JNIEnv* env, jclass clazz) {
+  timeToExit = true;
 }
