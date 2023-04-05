@@ -277,7 +277,9 @@ void DowncallStubGenerator::generate() {
     __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
     // Force this write out before the read below
-    __ membar(MacroAssembler::AnyAny);
+    if (!UseSystemMemoryBarrier) {
+      __ membar(MacroAssembler::AnyAny);
+    }
 
     __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */);
     __ lwu(t0, Address(xthread, JavaThread::suspend_flags_offset()));

@@ -300,7 +300,7 @@ public class InstanceKlass extends Klass {
 
   public int getFieldSignatureIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return getField(index).getGenericSignatureIndex();
+    return getField(index).getSignatureIndex();
   }
 
   public Symbol getFieldSignature(int index) {

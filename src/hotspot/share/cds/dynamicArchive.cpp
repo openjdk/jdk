@@ -380,7 +380,6 @@ void DynamicArchive::check_for_dynamic_dump() {
 void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name) {
   ExceptionMark em(current);
   ResourceMark rm(current);
-  HandleMark hm(current);
 
   if (!DynamicDumpSharedSpaces || archive_name == nullptr) {
     return;

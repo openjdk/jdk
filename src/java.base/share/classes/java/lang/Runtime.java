@@ -113,6 +113,7 @@ import jdk.internal.reflect.Reflection;
  * typically terminate the OS process hosting the JVM and do not interact with the JNI Invocation
  * API.
  *
+ * @spec jni/index.html Java Native Interface Specification
  * @see     java.lang.Runtime#getRuntime()
  * @jls     12.8 Program Exit
  * @since   1.0
@@ -349,6 +350,10 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
      */
@@ -396,6 +401,10 @@ public class Runtime {
      *
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     #exec(String[], String[], File)
      * @see     ProcessBuilder
@@ -458,6 +467,10 @@ public class Runtime {
      * @throws  IllegalArgumentException
      *          If {@code command} is empty
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      * @since 1.3
      */
@@ -503,6 +516,10 @@ public class Runtime {
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
      *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
+     *
      * @see     ProcessBuilder
      */
     public Process exec(String[] cmdarray) throws IOException {
@@ -545,6 +562,10 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      */
@@ -640,6 +661,10 @@ public class Runtime {
      * @throws  IndexOutOfBoundsException
      *          If {@code cmdarray} is an empty array
      *          (has length {@code 0})
+     *
+     * @implNote
+     * In the reference implementation, logging of the created process can be enabled,
+     * see {@link ProcessBuilder#start()} for details.
      *
      * @see     ProcessBuilder
      * @since 1.3
@@ -799,6 +824,7 @@ public class Runtime {
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is
      *             {@code null}
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#getRuntime()
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
@@ -864,6 +890,7 @@ public class Runtime {
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is
      *             {@code null}
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
