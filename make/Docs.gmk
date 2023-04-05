@@ -554,6 +554,35 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 # REFERENCE_API_GRAPHS_TARGETS.
 
 ################################################################################
+# Setup generation of Classfile Processing API javadoc
+
+CLASSFILE_SRC := $(TOPDIR)/src/java.base/share/classes
+CLASSFILE_TARGET := $(DOCS_OUTPUTDIR)/classfile-api/javadoc
+SOURCEPATH := $(call PathList, $(call FindModuleSrcDirs, java.base))
+
+$(eval $(call SetupExecute, CLASSFILE_API_TARGET, \
+    DEPS := $(BUILD_TOOLS_JDK), \
+    OUTPUT_DIR := $(CLASSFILE_TARGET), \
+    SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/docs, \
+    COMMAND := $(BUILD_JAVA) -Djava.awt.headless=true \
+      -Dextlink.spec.version=19 \
+      -Djspec.version=19 \
+      $(NEW_JAVADOC) -d $(CLASSFILE_TARGET) -use \
+      -taglet build.tools.taglet.JSpec\$$JLS \
+      -taglet build.tools.taglet.JSpec\$$JVMS \
+      -tagletpath $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+      -notimestamp -public \
+      --add-exports java.base/jdk.internal.access=ALL-UNNAMED \
+      -encoding ISO-8859-1 -docencoding UTF-8 -Xdoclint:none \
+      -locale en_US --source-path $(SOURCEPATH) \
+      jdk.internal.classfile \
+      jdk.internal.classfile.attribute \
+      jdk.internal.classfile.components \
+      jdk.internal.classfile.constantpool \
+      jdk.internal.classfile.instruction \
+))
+
+################################################################################
 
 # Use this variable to control which spec files are included in the output.
 # Format: space-delimited list of names, including at most one '%' as a
@@ -806,6 +835,8 @@ docs-reference-api-javadoc: $(REFERENCE_API_JAVADOC_TARGETS) $(REFERENCE_API_CUS
 
 docs-reference-api-graphs: $(REFERENCE_API_GRAPHS_TARGETS)
 
+docs-classfile-api-javadoc: $(CLASSFILE_API_TARGET)
+
 docs-jdk-specs: $(JDK_SPECS_TARGETS)
 
 docs-jdk-index: $(JDK_INDEX_TARGETS)
@@ -817,9 +848,9 @@ docs-specs-zip: $(SPECS_ZIP_TARGETS)
 all: docs-jdk-api-javadoc docs-jdk-api-graphs docs-javase-api-javadoc \
     docs-javase-api-graphs docs-reference-api-javadoc \
     docs-reference-api-graphs docs-jdk-specs docs-jdk-index docs-zip \
-    docs-specs-zip
+    docs-specs-zip docs-classfile-api-javadoc
 
 .PHONY: default all docs-jdk-api-javadoc docs-jdk-api-graphs \
     docs-javase-api-javadoc docs-javase-api-graphs \
     docs-reference-api-javadoc docs-reference-api-graphs docs-jdk-specs \
-    docs-jdk-index docs-zip docs-specs-zip
+    docs-jdk-index docs-zip docs-specs-zip docs-classfile-api-javadoc
