@@ -731,7 +731,7 @@ void ciInstanceKlass::dump_replay_instanceKlass(outputStream* out, InstanceKlass
 }
 
 GrowableArray<ciInstanceKlass*>* ciInstanceKlass::transitive_interfaces() const{
-  if (_transitive_interfaces == NULL) {
+  if (_transitive_interfaces == nullptr) {
     const_cast<ciInstanceKlass*>(this)->compute_transitive_interfaces();
   }
   return _transitive_interfaces;
@@ -745,7 +745,7 @@ void ciInstanceKlass::compute_transitive_interfaces() {
           Arena* arena = CURRENT_ENV->arena();
           int transitive_interfaces_len = orig_length + (is_interface() ? 1 : 0);
           GrowableArray<ciInstanceKlass*>* transitive_interfaces = new(arena)GrowableArray<ciInstanceKlass*>(arena, transitive_interfaces_len,
-                                                                                                             0, NULL);
+                                                                                                             0, nullptr);
           for (int i = 0; i < orig_length; i++) {
             transitive_interfaces->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
           }
