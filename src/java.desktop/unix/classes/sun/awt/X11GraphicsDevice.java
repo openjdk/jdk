@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return Region.clipRound(x / (double)getScaleFactor());
     }
 
-    public Rectangle getBounds() {
+    private Rectangle getBoundsImpl() {
         Rectangle rect = pGetBounds(getScreen());
         if (getScaleFactor() != 1) {
             rect.x = scaleDown(rect.x);
@@ -127,6 +127,27 @@ public final class X11GraphicsDevice extends GraphicsDevice
             rect.height = scaleDown(rect.height);
         }
         return rect;
+    }
+
+    private volatile Rectangle boundsCached;
+
+    private Rectangle getBoundsCached() {
+        final Rectangle localBoundsCached = boundsCached;
+        if (localBoundsCached == null) {
+            final Rectangle newBounds = getBoundsImpl();
+            boundsCached = newBounds;
+            return newBounds;
+        } else {
+            return localBoundsCached;
+        }
+    }
+
+    public void resetBoundsCache() {
+        boundsCached = null;
+    }
+
+    public Rectangle getBounds() {
+        return new Rectangle(getBoundsCached());
     }
 
     /**
@@ -580,5 +601,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
         screen = device.screen;
+        resetBoundsCache();
     }
 }
