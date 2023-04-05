@@ -37,11 +37,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import toolbox.TestRunner;
 import toolbox.JavacTask;
 import toolbox.Task;
+import toolbox.TestRunner;
 import toolbox.ToolBox;
 
 public class Exhaustiveness extends TestRunner {
@@ -759,7 +764,188 @@ public class Exhaustiveness extends TestRunner {
                    }
                }
                """);
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(Object o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B a, A b) -> 0;
+                           case R(B(String s), B b) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "1 error");
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(Object o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B a, A b) -> 0;
+                           case R(B(Object o), B b) -> 0;
+                       };
+                   }
+               }
+               """);
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(Object o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B(String s), B b) -> 0;
+                           case R(B a, A b) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "1 error");
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public record R(Object o1, Object o2) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(String s, Object o) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "1 error");
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(S o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, String s, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, String s, A b) -> 0;
+                           case R(A a, String s, B b) -> 0;
+                           case R(B a, String s, A b) -> 0;
+                           case R(B(A o), String s, B b) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "1 error");
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(S o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, String s, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, String s, A b) -> 0;
+                           case R(A a, String s, B b) -> 0;
+                           case R(B a, String s, A b) -> 0;
+                           case R(B(A o), String s, B b) -> 0;
+                           case R(B(B o), String s, B b) -> 0;
+                       };
+                   }
+               }
+               """);
     }
+
     public void testTransitiveSealed(Path base) throws Exception {
         doTest(base,
                new String[0],
@@ -1169,7 +1355,331 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    public void testNestedApplicable(Path base) throws Exception {
+        record TestCase(String cases, String... errors) {}
+        TestCase[] subCases = new TestCase[] {
+            new TestCase("""
+                                     case R(C3<Integer> c) -> {}
+                                     case R(C5<Integer, ?> c) -> {}
+                                     case R(C6<?, Integer> c) -> {}
+                         """), //OK
+            new TestCase("""
+                                     case R(C5<Integer, ?> c) -> {}
+                                     case R(C6<?, Integer> c) -> {}
+                         """,
+                         "Test.java:12:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case R(C3<Integer> c) -> {}
+                                     case R(C6<?, Integer> c) -> {}
+                         """,
+                         "Test.java:12:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case R(C3<Integer> c) -> {}
+                                     case R(C5<Integer, ?> c) -> {}
+                         """,
+                         "Test.java:12:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case R(C1 c) -> {}
+                                     case R(C3<Integer> c) -> {}
+                                     case R(C5<Integer, ?> c) -> {}
+                                     case R(C6<?, Integer> c) -> {}
+                         """,
+                         "Test.java:13:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C1)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case R(C2<?> c) -> {}
+                                     case R(C3<Integer> c) -> {}
+                                     case R(C5<Integer, ?> c) -> {}
+                                     case R(C6<?, Integer> c) -> {}
+                         """,
+                         "Test.java:13:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C2<?>)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case R(C4<?, ?> c) -> {}
+                                     case R(C3<Integer> c) -> {}
+                                     case R(C5<Integer, ?> c) -> {}
+                                     case R(C6<?, Integer> c) -> {}
+                         """,
+                         "Test.java:13:20: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C4<?,?>)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+        };
+        for (TestCase tc : subCases) {
+            doTest(base,
+                   new String[0],
+                   """
+                   package test;
+                   public class Test {
+                       sealed interface I<T> {}
+                       final class C1 implements I<String> {}
+                       final class C2<T> implements I<String> {}
+                       final class C3<T> implements I<T> {}
+                       final class C4<T, E> implements I<String> {}
+                       final class C5<T, E> implements I<T> {}
+                       final class C6<T, E> implements I<E> {}
+                       record R<T>(I<T> i) {}
+                       void t(R<Integer> i) {
+                           switch (i) {
+                   ${cases}
+                           }
+                       }
+                   }
+                   """.replace("${cases}", tc.cases),
+                   tc.errors);
+        }
+    }
+
+    @Test
+    public void testComplexSubTypes1(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I permits I1, I2, I3 {}
+                   sealed interface I1 extends I permits C1 {}
+                   sealed interface I2 extends I {}
+                   sealed interface I3 extends I {}
+                   final class C1 implements I1, I2 {}
+                   final class C2 implements I3 {}
+
+                   void test(I i) {
+                       switch (i) {
+                           case I2 i2 ->
+                               System.out.println("I2");
+                           case I3 i3 ->
+                               System.out.println("I3");
+                       }
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testComplexSubTypes2(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I permits I1, I2, I3 {}
+                   sealed interface I1 extends I permits C1 {}
+                   sealed interface I2 extends I {}
+                   sealed interface I3 extends I {}
+                   sealed abstract class C1 implements I1 {}
+                   final class C2 extends C1 implements I2 {}
+                   final class C3 extends C1 implements I3 {}
+
+                   void test(I i) {
+                       switch (i) {
+                           case I2 i2 ->
+                               System.out.println("I2");
+                           case I3 i3 ->
+                               System.out.println("I3");
+                       }
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testComplexSubTypes3(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   sealed interface I1 extends I {}
+                   final class I2 implements I1 {}
+
+                   void test(I i) {
+                       switch (i) {
+                           case I1 i1 ->
+                               System.out.println("I1");
+                           case I2 i2 ->
+                               System.out.println("I2");
+                       }
+                   }
+               }
+               """,
+               "Test.java:11:18: compiler.err.pattern.dominated",
+               "1 error");
+    }
+
+    private static final int NESTING_CONSTANT = 6;
+
+    Set<String> createDeeplyNestedVariants() {
+        Set<String> variants = new HashSet<>();
+        variants.add("C _");
+        variants.add("R(I _, I _, I _)");
+        for (int n = 0; n < NESTING_CONSTANT; n++) {
+            Set<String> newVariants = new HashSet<>();
+            for (String variant : variants) {
+                if (variant.contains(", I _")) {
+                    newVariants.add(variant.replaceFirst(", I _", ", C _"));
+                    newVariants.add(variant.replaceFirst(", I _", ", R(I _, I _, I _)"));
+                } else {
+                    newVariants.add(variant);
+                }
+            }
+            variants = newVariants;
+        }
+        for (int n = 0; n < NESTING_CONSTANT; n++) {
+            Set<String> newVariants = new HashSet<>();
+            for (String variant : variants) {
+                if (variant.contains("I _")) {
+                    newVariants.add(variant.replaceFirst("I _", "C _"));
+                    newVariants.add(variant.replaceFirst("I _", "R(I _, I _, I _)"));
+                } else {
+                    newVariants.add(variant);
+                }
+            }
+            variants = newVariants;
+        }
+        OUTER: for (int i = 0; i < NESTING_CONSTANT; i++) {
+            Iterator<String> it = variants.iterator();
+            while (it.hasNext()) {
+                String current = it.next();
+                if (current.contains("(I _, I _, I _)")) {
+                    it.remove();
+                    variants.add(current.replaceFirst("\\(I _, I _, I _\\)", "(C _, I _, C _)"));
+                    variants.add(current.replaceFirst("\\(I _, I _, I _\\)", "(C _, I _, R _)"));
+                    variants.add(current.replaceFirst("\\(I _, I _, I _\\)", "(R _, I _, C _)"));
+                    variants.add(current.replaceFirst("\\(I _, I _, I _\\)", "(R _, I _, R _)"));
+                    continue OUTER;
+                }
+            }
+        }
+
+        return variants;
+    }
+
+    String testCodeForVariants(Iterable<String> variants) {
+        StringBuilder cases = new StringBuilder();
+
+        for (String variant : variants) {
+            cases.append("case ");
+            String[] parts = variant.split("_");
+            for (int i = 0; i < parts.length; i++) {
+                cases.append(parts[i]);
+                if (i + 1 < parts.length || i == 0) {
+                    cases.append("v" + i);
+                }
+            }
+            cases.append(" -> System.err.println();\n");
+        }
+        String code = """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   final class C implements I {}
+                   record R(I c1, I c2, I c3) implements I {}
+
+                   void test(I i) {
+                       switch (i) {
+                           ${cases}
+                       }
+                   }
+               }
+               """.replace("${cases}", cases);
+
+        return code;
+    }
+
+    @Test
+    public void testDeeplyNestedExhaustive(Path base) throws Exception {
+        Set<String> variants = createDeeplyNestedVariants();
+        String code = testCodeForVariants(variants);
+
+        System.err.println("analyzing:");
+        System.err.println(code);
+        doTest(base,
+               new String[0],
+               code,
+               true);
+    }
+
+    @Test
+    public void testDeeplyNestedNotExhaustive(Path base) throws Exception {
+        List<String> variants = createDeeplyNestedVariants().stream().collect(Collectors.toCollection(ArrayList::new));
+        variants.remove((int) (Math.random() * variants.size()));
+        String code = testCodeForVariants(variants);
+
+        System.err.println("analyzing:");
+        System.err.println(code);
+        doTest(base,
+               new String[0],
+               code,
+               new String[] {null});
+    }
+
+    @Test
+    public void testMultipleSealed(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I1 {}
+                   sealed interface I2 {}
+                   final class A_I1 implements I1 {}
+                   final class B_I2 implements I2 {}
+                   final class C_I1_I2 implements I1, I2 {}
+
+                   <Z extends I1&I2> void test(Z z) {
+                       switch (z) {
+                           case C_I1_I2 c ->
+                               System.out.println("C_I1_I2");
+                       }
+                   }
+               }
+               """);
+    }
+
+    @Test
+    public void testOverfitting(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface I {}
+                   final class A implements I {}
+                   final class B implements I {}
+                   record R(String s, I i) {}
+
+                   void test(R r) {
+                       switch (r) {
+                           case R(CharSequence s, A a) ->
+                               System.out.println("A");
+                           case R(Object o, B b) ->
+                               System.out.println("B");
+                       }
+                   }
+               }
+               """);
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
+        doTest(base, libraryCode, testCode, false, expectedErrors);
+    }
+
+    private void doTest(Path base, String[] libraryCode, String testCode, boolean stopAtFlow, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
 
@@ -1200,13 +1710,15 @@ public class Exhaustiveness extends TestRunner {
                     .options("-XDrawDiagnostics",
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
-                             "-XDshould-stop.at=FLOW")
+                             "-XDshould-stop.at=FLOW",
+                             stopAtFlow ? "-XDshould-stop.ifNoError=FLOW"
+                                        : "-XDnoop")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
                     .run(expectedErrors.length > 0 ? Task.Expect.FAIL : Task.Expect.SUCCESS)
                     .writeAll()
                     .getOutputLines(Task.OutputKind.DIRECT);
-        if (expectedErrors.length > 0 && !List.of(expectedErrors).equals(log)) {
+        if (expectedErrors.length > 0 && expectedErrors[0] != null && !List.of(expectedErrors).equals(log)) {
             throw new AssertionError("Incorrect errors, expected: " + List.of(expectedErrors) +
                                       ", actual: " + log);
         }
