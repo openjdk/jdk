@@ -557,7 +557,6 @@ public class DocCommentParser {
      * Reads a term (that is, one word).
      * It is an error if the beginning of the next tag is detected.
      */
-    @SuppressWarnings("fallthrough")
     protected DCText inlineWord() {
         int pos = bp;
         int depth = 0;
