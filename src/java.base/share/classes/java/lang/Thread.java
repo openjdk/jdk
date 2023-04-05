@@ -233,7 +233,7 @@ public class Thread implements Runnable {
        and reset to zero when the thread terminates. A non-zero value indicates this thread
        isAlive().
     */
-    private long eetop;
+    private volatile long eetop;
 
     // thread id
     private final long tid;
@@ -1843,11 +1843,9 @@ public class Thread implements Runnable {
 
     /**
      * Returns true if this thread is alive.
-     * This method is non-final so it can be overridden by VirtualThread.
-     * This method needs to be synchronized to ensure that thread termination
-     * happens-before isAlive() returning false.
+     * This method is non-final so it can be overridden.
      */
-    synchronized boolean alive() {
+    boolean alive() {
         return eetop != 0;
     }
 
