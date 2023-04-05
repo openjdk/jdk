@@ -49,16 +49,14 @@ class VMConnection {
     static public String getDebuggeeVMOptions() {
         String retVal = "";
 
-        // When we run under jtreg, test.classes contains the pathname of
-        // the dir in which the .class files will be placed.
-        // When we run jtreg with plugin, the TestScaffold should be also in classpath
-        String testClasses = "Virtual".equals(System.getProperty("main.wrapper"))
-                ? System.getProperty("test.class.path")
-                : System.getProperty("test.classes");
-        if (testClasses == null) {
+        // When we run under jtreg, test.class.path contains classpath
+        // with test and testlibrary compiled classes
+        String testClassPath = System.getProperty("test.class.path");
+
+        if (testClassPath == null) {
             return retVal;
         }
-        retVal += "-classpath " + testClasses;
+        retVal += "-classpath " + testClassPath;
 
         String vmOpts = System.getProperty("test.vm.opts");
         System.out.println("vmOpts: '" + vmOpts + "'");
