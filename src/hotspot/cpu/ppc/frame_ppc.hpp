@@ -119,7 +119,7 @@
   #define _abi0(_component) \
           (offset_of(frame::native_abi_reg_args, _component))
 
-  struct abi_reg_args_spill : native_abi_reg_args {
+  struct native_abi_reg_args_spill : native_abi_reg_args {
     // additional spill slots
     uint64_t spill_ret;
     uint64_t spill_fret;                          //_16
@@ -127,11 +127,11 @@
   };
 
   enum {
-    abi_reg_args_spill_size = sizeof(abi_reg_args_spill)
+    native_abi_reg_args_spill_size = sizeof(native_abi_reg_args_spill)
   };
 
-  #define _abi_reg_args_spill(_component) \
-          (offset_of(frame::abi_reg_args_spill, _component))
+  #define _native_abi_reg_args_spill(_component) \
+          (offset_of(frame::native_abi_reg_args_spill, _component))
 
   // non-volatile GPRs:
 

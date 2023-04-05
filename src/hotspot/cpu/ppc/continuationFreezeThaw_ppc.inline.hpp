@@ -621,8 +621,8 @@ inline void ThawBase::patch_pd(frame& f, const frame& caller) {
 //                     -------------------->              ------------------------>       |----------------------|
 //                     (ABI, expressions, locals)                                         | Large ABI            |
 //                                                                                        | for C++ calls        |
-//                                                                                        | (frame::abi_reg_args)|
-//                                                                                        |                      |
+//                                                                                        | (frame::             |
+//                                                                                        |  native_abi_reg_args)|
 //                                                |  Growth  |                            |                      |
 //                                                v          v                            |                      |
 //                                                                                        |                      |

@@ -2950,7 +2950,7 @@ void SharedRuntime::generate_deopt_blob() {
   OopMapSet *oop_maps = new OopMapSet();
 
   // size of ABI112 plus spill slots for R3_RET and F1_RET.
-  const int frame_size_in_bytes = frame::abi_reg_args_spill_size;
+  const int frame_size_in_bytes = frame::native_abi_reg_args_spill_size;
   const int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   int first_frame_size_in_bytes = 0; // frame size of "unpack frame" for call to fetch_unroll_info.
 
@@ -3119,8 +3119,8 @@ void SharedRuntime::generate_deopt_blob() {
   // ...).
 
   // Spill live volatile registers since we'll do a call.
-  __ std( R3_RET, _abi_reg_args_spill(spill_ret),  R1_SP);
-  __ stfd(F1_RET, _abi_reg_args_spill(spill_fret), R1_SP);
+  __ std( R3_RET, _native_abi_reg_args_spill(spill_ret),  R1_SP);
+  __ stfd(F1_RET, _native_abi_reg_args_spill(spill_fret), R1_SP);
 
   // Let the unpacker layout information in the skeletal frames just
   // allocated.
@@ -3132,8 +3132,8 @@ void SharedRuntime::generate_deopt_blob() {
   __ reset_last_Java_frame();
 
   // Restore the volatiles saved above.
-  __ ld( R3_RET, _abi_reg_args_spill(spill_ret),  R1_SP);
-  __ lfd(F1_RET, _abi_reg_args_spill(spill_fret), R1_SP);
+  __ ld( R3_RET, _native_abi_reg_args_spill(spill_ret),  R1_SP);
+  __ lfd(F1_RET, _native_abi_reg_args_spill(spill_fret), R1_SP);
 
   // Pop the unpack frame.
   __ pop_frame();
