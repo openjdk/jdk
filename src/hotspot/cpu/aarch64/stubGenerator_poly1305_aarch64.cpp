@@ -114,10 +114,10 @@ address generate_poly1305_processBlocks2() {
   for (int i = 0; i < 5; i++) {
   __ movi(v_u0[i], __ T16B, 0);
   }
-  __ copy_3_to_5_regs(v_u0, u1[0]._lo, u1[1]._lo, u1[2]._lo);
-
   poo = __ pc();
   __ nop();
+
+  __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
 
   {
     Label DONE, LOOP;
