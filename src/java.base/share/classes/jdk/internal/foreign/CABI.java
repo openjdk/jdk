@@ -51,7 +51,7 @@ public enum CABI {
             } else {
                 ABI = SYS_V;
             }
-        } else if (Architecture.isAarch64()) {
+        } else if (Architecture.isAARCH64()) {
             if (OperatingSystem.isMacOS()) {
                 ABI = MAC_OS_AARCH_64;
             } else if (OperatingSystem.isWindows()) {
@@ -60,7 +60,7 @@ public enum CABI {
                 // The Linux ABI follows the standard AAPCS ABI
                 ABI = LINUX_AARCH_64;
             }
-        } else if (Architecture.isRiscv64()) {
+        } else if (Architecture.isRISCV()) {
             if (OperatingSystem.isLinux()) {
                 ABI = LINUX_RISCV_64;
             } else {

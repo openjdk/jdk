@@ -59,6 +59,8 @@ class OperatingSystemProps {
     // Index/ordinal of the current Architecure enum as substituted by the build
     static final int CURRENT_ARCH_ORDINAL = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@;
 
+    // Architecture.is64Bit() uses this value
+    static final int TARGET_ARCH_BITS = @@OPENJDK_TARGET_CPU_BITS@@;
 
     // Precomputed booleans for each Architecture, shared with Architecure
     static final boolean TARGET_ARCH_IS_X64         = TARGET_ARCH_@@OPENJDK_TARGET_CPU@@ == TARGET_ARCH_x86_64;

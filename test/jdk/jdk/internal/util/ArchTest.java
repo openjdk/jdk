@@ -44,7 +44,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @test
- * @summary Verify Architecture enum matches system property os.arch
+ * @bug 8304915
+ * @summary Verify Architecture enum maps to system property os.arch
  * @modules java.base/jdk.internal.util
  * @run junit ArchTest
  */
@@ -53,13 +54,14 @@ public class ArchTest {
      * Test consistency of System property "os.arch" with Architecture.current().
      */
     @Test
-    public void arch_nameVsCurrent() {
+    public void nameVsCurrent() {
         String osArch = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
         System.out.printf("System property os.arch: \"%s\", Architecture.current(): \"%s\"%n",
                 osArch, Architecture.current());
         Architecture arch = switch (osArch) {
             case "x86_64" -> X64;
             case "x86" -> X86;
+            case "i386" -> X86;
             case "amd64" -> X64;  // Is alias for X86_64
             case "ia64" -> IA64;  // unverified
             case "arm" -> ARM;  // unverified
@@ -81,11 +83,11 @@ public class ArchTest {
                 Arguments.of(X64, Architecture.isX64()),
                 Arguments.of(X86, Architecture.isX86()),
                 Arguments.of(IA64, Architecture.isIA64()),
-                Arguments.of(ARM, Architecture.isArm()),
-                Arguments.of(AARCH64, Architecture.isAarch64()),
-                Arguments.of(RISCV64, Architecture.isRiscv64()),
+                Arguments.of(ARM, Architecture.isARM()),
+                Arguments.of(AARCH64, Architecture.isAARCH64()),
+                Arguments.of(RISCV64, Architecture.isRISCV()),
                 Arguments.of(S390X, Architecture.isS390X()),
-                Arguments.of(PPC64LE, Architecture.isPpc64le())
+                Arguments.of(PPC64LE, Architecture.isPPC64LE())
         );
     }
 
@@ -95,5 +97,24 @@ public class ArchTest {
         Architecture current = Architecture.current();
         assertEquals(arch == current, isArch,
                 "Mismatch " + arch + " == " + current + " vs is" + arch);
+    }
+
+    /**
+     * Test that Architecture.is64bit() matches Architecture.current().
+     */
+    @Test
+    public void is64BitVsCurrent() {
+        Architecture current = Architecture.current();
+        boolean expected64Bit = switch (current) {
+            case X64 -> true;
+            case X86 -> false;
+            case IA64 -> true;
+            case ARM -> true;
+            case AARCH64 -> true;
+            case RISCV64 -> true;
+            case S390X -> true;
+            case PPC64LE -> true;
+        };
+        assertEquals(Architecture.is64bit(), expected64Bit, "mismatch in is64bit");
     }
 }

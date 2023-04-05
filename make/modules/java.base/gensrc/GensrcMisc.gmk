@@ -55,7 +55,8 @@ $(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
     OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/OperatingSystemProps.java, \
     REPLACEMENTS := \
         @@OPENJDK_TARGET_OS@@ => $(OPENJDK_TARGET_OS) ; \
-        @@OPENJDK_TARGET_CPU@@ => $(OPENJDK_TARGET_CPU), \
+        @@OPENJDK_TARGET_CPU@@ => $(OPENJDK_TARGET_CPU) ; \
+        @@OPENJDK_TARGET_CPU_BITS@@ => $(OPENJDK_TARGET_CPU_BITS), \
 ))
 
 TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_PLATFORMPROPERTIES_JAVA)

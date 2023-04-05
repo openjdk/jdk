@@ -22,6 +22,8 @@
  */
 package jdk.internal.util;
 
+import jdk.internal.vm.annotation.ForceInline;
+
 /**
  * System architecture enum values.
  * Each architecture has a matching {@code public static boolean isXXX()} method
@@ -31,35 +33,23 @@ package jdk.internal.util;
  * The order and ordinal values must match the values defined in OperatingSystemProps.java.template.
  */
 public enum Architecture {
-    X64(true),        // Represents AMD64 and X86_64
-    X86(false),
-    IA64(true),
-    ARM(false),
-    AARCH64(true),
-    RISCV64(true),
-    S390X(true),
-    PPC64LE(true),
+    X64(),        // Represents AMD64 and X86_64
+    X86(),
+    IA64(),
+    ARM(),
+    AARCH64(),
+    RISCV64(),
+    S390X(),
+    PPC64LE(),
     ;
 
     // Cache a copy of the array for lightweight indexing
     private static final Architecture[] archValues = Architecture.values();
 
     /**
-     * 64-bit Architecture = true; false = 32-bit/other.
-     */
-    private final boolean is64Bit;
-
-    /**
-     * Construct an Architecture enum.
-     * @param is64Bit true if the architecture uses 64-bit addressing.
-     */
-    Architecture(boolean is64Bit) {
-        this.is64Bit = is64Bit;
-    }
-
-    /**
      * {@return {@code true} if the current architecture is X64, Aka amd64}
      */
+    @ForceInline
     public static boolean isX64() {
         return OperatingSystemProps.TARGET_ARCH_IS_X64;
     }
@@ -67,6 +57,7 @@ public enum Architecture {
     /**
      * {@return {@code true} if the current architecture is X86}
      */
+    @ForceInline
     public static boolean isX86() {
         return OperatingSystemProps.TARGET_ARCH_IS_X86;
     }
@@ -74,6 +65,7 @@ public enum Architecture {
     /**
      * {@return {@code true} if the current architecture is IA64}
      */
+    @ForceInline
     public static boolean isIA64() {
         return OperatingSystemProps.TARGET_ARCH_IS_IA64;
     }
@@ -81,20 +73,23 @@ public enum Architecture {
     /**
      * {@return {@code true} if the current architecture is Arm}
      */
-    public static boolean isArm() {
+    @ForceInline
+    public static boolean isARM() {
         return OperatingSystemProps.TARGET_ARCH_IS_ARM;
     }
 
     /**
      * {@return {@code true} if the current architecture is RISCV64}
      */
-    public static boolean isRiscv64() {
+    @ForceInline
+    public static boolean isRISCV() {
         return OperatingSystemProps.TARGET_ARCH_IS_RISCV64;
     }
 
     /**
      * {@return {@code true} if the current architecture is S390X}
      */
+    @ForceInline
     public static boolean isS390X() {
         return OperatingSystemProps.TARGET_ARCH_IS_S390X;
     }
@@ -102,14 +97,16 @@ public enum Architecture {
     /**
      * {@return {@code true} if the current architecture is PPC64LE}
      */
-    public static boolean isPpc64le() {
+    @ForceInline
+    public static boolean isPPC64LE() {
         return OperatingSystemProps.TARGET_ARCH_IS_PPC64LE;
     }
 
     /**
      * {@return {@code true} if the current architecture is AARCH64}
      */
-    public static boolean isAarch64() {
+    @ForceInline
+    public static boolean isAARCH64() {
         return OperatingSystemProps.TARGET_ARCH_IS_AARCH64;
     }
 
@@ -121,9 +118,10 @@ public enum Architecture {
     }
 
     /**
-     * {@return true if the architecture uses 64-bit addressing}
+     * {@return {@code true} if the current architecture is 64-bit}
      */
-    public boolean is64Bit() {
-        return is64Bit;
+    @ForceInline
+    public static boolean is64bit() {
+        return OperatingSystemProps.TARGET_ARCH_BITS == 64;
     }
 }
