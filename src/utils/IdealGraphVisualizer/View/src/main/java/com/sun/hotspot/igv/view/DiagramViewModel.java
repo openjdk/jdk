@@ -469,6 +469,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public Diagram getDiagram() {
+        diagram.setCFG(getShowCFG());
         return diagram;
     }
 
