@@ -72,7 +72,7 @@ public class VThreadStackRefTest {
             Reference.reachabilityFence(referenced);
         });
         // Wait until unmounted thread is ready.
-		unmountedThreadReady.await();
+        unmountedThreadReady.await();
 
         // Ended virtual thread with stack local - should not be reported.
         Thread vthreadEnded = Thread.ofVirtual().start(() -> {
