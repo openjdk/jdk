@@ -511,6 +511,10 @@ public:
   // e.g. to inform matching in target-specific code. Otherwise, the
   // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
   static bool is_reduction(const Node* n);
+  // Whether n is marked as a reduction node.
+  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
+  // Whether the current loop has any reduction node.
+  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
 private:
   // Whether n is a standard reduction operator.
   static bool is_reduction_operator(const Node* n);
@@ -525,10 +529,6 @@ private:
   // that it assumes counted loops and requires that reduction nodes are not
   // used within the loop except by their reduction cycle predecessors.
   void mark_reductions();
-  // Whether n is marked as a reduction node.
-  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
-  // Whether the current loop has any reduction node.
-  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
   // Extract the superword level parallelism
   bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.

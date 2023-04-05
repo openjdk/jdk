@@ -2580,7 +2580,7 @@ public:
         for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
           Node* pred = preds.current();
           int pred_pid = get_pid_or_zero(pred);
-          if (pred_pid == pid && n->is_reduction()) {
+          if (pred_pid == pid && _slp->is_marked_reduction(n)) {
             continue; // reduction -> self-cycle is not a cyclic dependency
           }
           // Only add edges once, and only for mapped nodes (in block)
