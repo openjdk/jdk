@@ -274,7 +274,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
 
 // Generate loads from source of the arraycopy for fields of
 // destination needed at a deoptimization point
-Node* PhaseMacroExpand::make_arraycopy_load(Compile* comp, PhaseIterGVN* igvn, ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
+Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
   BasicType bt = ft;
   const Type *type = ftype;
   if (ft == T_NARROWOOP) {
@@ -285,57 +285,57 @@ Node* PhaseMacroExpand::make_arraycopy_load(Compile* comp, PhaseIterGVN* igvn, A
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
     Node* base = ac->in(ArrayCopyNode::Src);
-    Node* adr = igvn->transform(new AddPNode(base, base, igvn->MakeConX(offset)));
-    const TypePtr* adr_type = igvn->type(base)->is_ptr()->add_offset(offset);
-    MergeMemNode* mergemen = igvn->transform(MergeMemNode::make(mem))->as_MergeMem();
+    Node* adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(offset)));
+    const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
+    MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    res = ArrayCopyNode::load(bs, igvn, ctl, mergemen, adr, adr_type, type, bt);
+    res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
   } else {
-    if (ac->modifies(offset, offset, igvn, true)) {
+    if (ac->modifies(offset, offset, &_igvn, true)) {
       assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
       uint shift = exact_log2(type2aelembytes(bt));
       Node* src_pos = ac->in(ArrayCopyNode::SrcPos);
       Node* dest_pos = ac->in(ArrayCopyNode::DestPos);
-      const TypeInt* src_pos_t = igvn->type(src_pos)->is_int();
-      const TypeInt* dest_pos_t = igvn->type(dest_pos)->is_int();
+      const TypeInt* src_pos_t = _igvn.type(src_pos)->is_int();
+      const TypeInt* dest_pos_t = _igvn.type(dest_pos)->is_int();
 
       Node* adr = nullptr;
       const TypePtr* adr_type = nullptr;
       if (src_pos_t->is_con() && dest_pos_t->is_con()) {
         intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
         Node* base = ac->in(ArrayCopyNode::Src);
-        adr = igvn->transform(new AddPNode(base, base, igvn->MakeConX(off)));
-        adr_type = igvn->type(base)->is_ptr()->add_offset(off);
+        adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(off)));
+        adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Don't emit a new load from src if src == dst but try to get the value from memory instead
-          return value_from_mem(comp, igvn, ac->in(TypeFunc::Memory), ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
+          return value_from_mem(ac->in(TypeFunc::Memory), ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
         }
       } else {
-        Node* diff = igvn->transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
+        Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
 #ifdef _LP64
-        diff = igvn->transform(new ConvI2LNode(diff));
+        diff = _igvn.transform(new ConvI2LNode(diff));
 #endif
-        diff = igvn->transform(new LShiftXNode(diff, igvn->intcon(shift)));
+        diff = _igvn.transform(new LShiftXNode(diff, _igvn.intcon(shift)));
 
-        Node* off = igvn->transform(new AddXNode(igvn->MakeConX(offset), diff));
+        Node* off = _igvn.transform(new AddXNode(_igvn.MakeConX(offset), diff));
         Node* base = ac->in(ArrayCopyNode::Src);
-        adr = igvn->transform(new AddPNode(base, base, off));
-        adr_type = igvn->type(base)->is_ptr()->add_offset(Type::OffsetBot);
+        adr = _igvn.transform(new AddPNode(base, base, off));
+        adr_type = _igvn.type(base)->is_ptr()->add_offset(Type::OffsetBot);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Non constant offset in the array: we can't statically
           // determine the value
           return nullptr;
         }
       }
-      MergeMemNode* mergemen = igvn->transform(MergeMemNode::make(mem))->as_MergeMem();
+      MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      res = ArrayCopyNode::load(bs, igvn, ctl, mergemen, adr, adr_type, type, bt);
+      res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
     }
   }
   if (res != nullptr) {
     if (ftype->isa_narrowoop()) {
       // PhaseMacroExpand::scalar_replacement adds DecodeN nodes
-      res = igvn->transform(new EncodePNode(res, ftype));
+      res = _igvn.transform(new EncodePNode(res, ftype));
     }
     return res;
   }
@@ -347,9 +347,9 @@ Node* PhaseMacroExpand::make_arraycopy_load(Compile* comp, PhaseIterGVN* igvn, A
 // on the input paths.
 // Note: this function is recursive, its depth is limited by the "level" argument
 // Returns the computed Phi, or null if it cannot compute it.
-Node *PhaseMacroExpand::value_from_mem_phi(Compile* comp, PhaseIterGVN* igvn, Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level) {
+Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *phi_type, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level) {
   assert(mem->is_Phi(), "sanity");
-  int alias_idx = comp->get_alias_index(adr_t);
+  int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
   int instance_id = adr_t->instance_id();
 
@@ -370,7 +370,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Compile* comp, PhaseIterGVN* igvn, No
   if (level <= 0) {
     return nullptr; // Give up: phi tree too deep
   }
-  Node *start_mem = comp->start()->proj_out_or_null(TypeFunc::Memory);
+  Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
 
   uint length = mem->req();
@@ -378,7 +378,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Compile* comp, PhaseIterGVN* igvn, No
 
   // create a new Phi for the value
   PhiNode *phi = new PhiNode(mem->in(0), phi_type, nullptr, mem->_idx, instance_id, alias_idx, offset);
-  igvn->register_new_node_with_optimizer(phi);
+  transform_later(phi);
   value_phis->push(phi, mem->_idx);
 
   for (uint j = 1; j < length; j++) {
@@ -386,14 +386,14 @@ Node *PhaseMacroExpand::value_from_mem_phi(Compile* comp, PhaseIterGVN* igvn, No
     if (in == nullptr || in->is_top()) {
       values.at_put(j, in);
     } else  {
-      Node *val = scan_mem_chain(in, alias_idx, offset, start_mem, alloc, igvn);
+      Node *val = scan_mem_chain(in, alias_idx, offset, start_mem, alloc, &_igvn);
       if (val == start_mem || val == alloc_mem) {
         // hit a sentinel, return appropriate 0 value
-        values.at_put(j, igvn->zerocon(ft));
+        values.at_put(j, _igvn.zerocon(ft));
         continue;
       }
       if (val->is_Initialize()) {
-        val = val->as_Initialize()->find_captured_store(offset, type2aelembytes(ft), igvn);
+        val = val->as_Initialize()->find_captured_store(offset, type2aelembytes(ft), &_igvn);
       }
       if (val == nullptr) {
         return nullptr;  // can't find a value on this path
@@ -405,13 +405,13 @@ Node *PhaseMacroExpand::value_from_mem_phi(Compile* comp, PhaseIterGVN* igvn, No
         BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
         n = bs->step_over_gc_barrier(n);
         if (is_subword_type(ft)) {
-          n = Compile::narrow_value(ft, n, phi_type, igvn, true);
+          n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
         }
         values.at_put(j, n);
       } else if(val->is_Proj() && val->in(0) == alloc) {
-        values.at_put(j, igvn->zerocon(ft));
+        values.at_put(j, _igvn.zerocon(ft));
       } else if (val->is_Phi()) {
-        val = value_from_mem_phi(comp, igvn, val, ft, phi_type, adr_t, alloc, value_phis, level-1);
+        val = value_from_mem_phi(val, ft, phi_type, adr_t, alloc, value_phis, level-1);
         if (val == nullptr) {
           return nullptr;
         }
@@ -423,7 +423,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Compile* comp, PhaseIterGVN* igvn, No
         assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
         return nullptr;
       } else if (val->is_ArrayCopy()) {
-        Node* res = make_arraycopy_load(comp, igvn, val->as_ArrayCopy(), offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
+        Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
         if (res == nullptr) {
           return nullptr;
         }
@@ -447,14 +447,14 @@ Node *PhaseMacroExpand::value_from_mem_phi(Compile* comp, PhaseIterGVN* igvn, No
 }
 
 // Search the last value stored into the object's field.
-Node *PhaseMacroExpand::value_from_mem(Compile* comp, PhaseIterGVN* igvn, Node *sfpt_mem, Node *sfpt_ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc) {
+Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc) {
   assert(adr_t->is_known_instance_field(), "instance required");
   int instance_id = adr_t->instance_id();
   assert((uint)instance_id == alloc->_idx, "wrong allocation");
 
-  int alias_idx = comp->get_alias_index(adr_t);
+  int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
-  Node *start_mem = comp->start()->proj_out_or_null(TypeFunc::Memory);
+  Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_ctrl = alloc->in(TypeFunc::Control);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
   VectorSet visited;
@@ -465,31 +465,31 @@ Node *PhaseMacroExpand::value_from_mem(Compile* comp, PhaseIterGVN* igvn, Node *
     if (visited.test_set(mem->_idx)) {
       return nullptr;  // found a loop, give up
     }
-    mem = scan_mem_chain(mem, alias_idx, offset, start_mem, alloc, igvn);
+    mem = scan_mem_chain(mem, alias_idx, offset, start_mem, alloc, &_igvn);
     if (mem == start_mem || mem == alloc_mem) {
       done = true;  // hit a sentinel, return appropriate 0 value
     } else if (mem->is_Initialize()) {
-      mem = mem->as_Initialize()->find_captured_store(offset, type2aelembytes(ft), igvn);
+      mem = mem->as_Initialize()->find_captured_store(offset, type2aelembytes(ft), &_igvn);
       if (mem == nullptr) {
         done = true; // Something go wrong.
       } else if (mem->is_Store()) {
         const TypePtr* atype = mem->as_Store()->adr_type();
-        assert(comp->get_alias_index(atype) == Compile::AliasIdxRaw, "store is correct memory slice");
+        assert(C->get_alias_index(atype) == Compile::AliasIdxRaw, "store is correct memory slice");
         done = true;
       }
     } else if (mem->is_Store()) {
       const TypeOopPtr* atype = mem->as_Store()->adr_type()->isa_oopptr();
       assert(atype != nullptr, "address type must be oopptr");
-      assert(comp->get_alias_index(atype) == alias_idx &&
+      assert(C->get_alias_index(atype) == alias_idx &&
              atype->is_known_instance_field() && atype->offset() == offset &&
              atype->instance_id() == instance_id, "store is correct memory slice");
       done = true;
     } else if (mem->is_Phi()) {
       // try to find a phi's unique input
       Node *unique_input = nullptr;
-      Node *top = comp->top();
+      Node *top = C->top();
       for (uint i = 1; i < mem->req(); i++) {
-        Node *n = scan_mem_chain(mem->in(i), alias_idx, offset, start_mem, alloc, igvn);
+        Node *n = scan_mem_chain(mem->in(i), alias_idx, offset, start_mem, alloc, &_igvn);
         if (n == nullptr || n == top || n == mem) {
           continue;
         } else if (unique_input == nullptr) {
@@ -514,7 +514,7 @@ Node *PhaseMacroExpand::value_from_mem(Compile* comp, PhaseIterGVN* igvn, Node *
   if (mem != nullptr) {
     if (mem == start_mem || mem == alloc_mem) {
       // hit a sentinel, return appropriate 0 value
-      return igvn->zerocon(ft);
+      return _igvn.zerocon(ft);
     } else if (mem->is_Store()) {
       Node* n = mem->in(MemNode::ValueIn);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -523,14 +523,14 @@ Node *PhaseMacroExpand::value_from_mem(Compile* comp, PhaseIterGVN* igvn, Node *
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
       Node_Stack value_phis(8);
-      Node* phi = value_from_mem_phi(comp, igvn, mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
+      Node* phi = value_from_mem_phi(mem, ft, ftype, adr_t, alloc, &value_phis, ValueSearchLimit);
       if (phi != nullptr) {
         return phi;
       } else {
         // Kill all new Phis
         while(value_phis.is_nonempty()) {
           Node* n = value_phis.node();
-          igvn->replace_node(n, comp->top());
+          _igvn.replace_node(n, C->top());
           value_phis.pop();
         }
       }
@@ -542,7 +542,7 @@ Node *PhaseMacroExpand::value_from_mem(Compile* comp, PhaseIterGVN* igvn, Node *
         ctl = sfpt_ctl;
         m = sfpt_mem;
       }
-      return make_arraycopy_load(comp, igvn, mem->as_ArrayCopy(), offset, ctl, m, ft, ftype, alloc);
+      return make_arraycopy_load(mem->as_ArrayCopy(), offset, ctl, m, ft, ftype, alloc);
     }
   }
   // Something go wrong.
@@ -550,12 +550,13 @@ Node *PhaseMacroExpand::value_from_mem(Compile* comp, PhaseIterGVN* igvn, Node *
 }
 
 // Check the possibility of scalar replacement.
-bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode *alloc, GrowableArray <SafePointNode *>* safepoints, bool ignore_merges) {
+bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode *alloc, GrowableArray <SafePointNode *>* safepoints) {
   //  Scan the uses of the allocation to check for anything that would
   //  prevent us from eliminating it.
   NOT_PRODUCT( const char* fail_eliminate = nullptr; )
   DEBUG_ONLY( Node* disq_node = nullptr; )
-  bool  can_eliminate = true;
+  bool can_eliminate = true;
+  bool reduce_merge_precheck = (safepoints == nullptr);
 
   Node* res = alloc->result_cast();
   const TypeOopPtr* res_type = nullptr;
@@ -626,10 +627,10 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "null or TOP memory";)
           can_eliminate = false;
-        } else if (safepoints != nullptr) {
+        } else if (!reduce_merge_precheck) {
           safepoints->append_if_missing(sfpt);
         }
-      } else if (ignore_merges && (use->is_Phi() || use->is_EncodeP() || use->Opcode() == Op_MemBarRelease)) {
+      } else if (reduce_merge_precheck && (use->is_Phi() || use->is_EncodeP() || use->Opcode() == Op_MemBarRelease)) {
         // Nothing to do
       } else if (use->Opcode() != Op_CastP2X) { // CastP2X is used by card mark
         if (use->is_Phi()) {
@@ -678,25 +679,73 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   return can_eliminate;
 }
 
-// Do scalar replacement.
-bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
-  GrowableArray <SafePointNode *> safepoints_done;
-
-  ciInstanceKlass* iklass = nullptr;
-  int nfields = 0;
-  int array_base = 0;
-  int element_size = 0;
-  BasicType basic_elem_type = T_ILLEGAL;
-  const Type* field_type = nullptr;
-
+void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode *> safepoints_done, AllocateNode* alloc) {
   Node* res = alloc->result_cast();
+  int nfields = 0;
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
-  const TypeOopPtr* res_type = nullptr;
-  if (res != nullptr) { // Could be null when there are no users
-    res_type = _igvn.type(res)->isa_oopptr();
-  }
 
   if (res != nullptr) {
+    const TypeOopPtr* res_type = _igvn.type(res)->isa_oopptr();
+
+    if (res_type->isa_instptr()) {
+      // find the fields of the class which will be needed for safepoint debug information
+      ciInstanceKlass* iklass = res_type->is_instptr()->instance_klass();
+      nfields = iklass->nof_nonstatic_fields();
+    } else {
+      // find the array's elements which will be needed for safepoint debug information
+      nfields = alloc->in(AllocateNode::ALength)->find_int_con(-1);
+      assert(nfields >= 0, "must be an array klass.");
+    }
+  }
+
+  // rollback processed safepoints
+  while (safepoints_done.length() > 0) {
+    SafePointNode* sfpt_done = safepoints_done.pop();
+    // remove any extra entries we added to the safepoint
+    uint last = sfpt_done->req() - 1;
+    for (int k = 0;  k < nfields; k++) {
+      sfpt_done->del_req(last--);
+    }
+    JVMState *jvms = sfpt_done->jvms();
+    jvms->set_endoff(sfpt_done->req());
+    // Now make a pass over the debug information replacing any references
+    // to SafePointScalarObjectNode with the allocated object.
+    int start = jvms->debug_start();
+    int end   = jvms->debug_end();
+    for (int i = start; i < end; i++) {
+      if (sfpt_done->in(i)->is_SafePointScalarObject()) {
+        SafePointScalarObjectNode* scobj = sfpt_done->in(i)->as_SafePointScalarObject();
+        if (scobj->first_index(jvms) == sfpt_done->req() &&
+            scobj->n_fields() == (uint)nfields) {
+          assert(scobj->alloc() == alloc, "sanity");
+          sfpt_done->set_req(i, res);
+        }
+      }
+    }
+    _igvn._worklist.push(sfpt_done);
+  }
+}
+
+SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt) {
+  // Fields of scalar objs are referenced only at the end
+  // of regular debuginfo at the last (youngest) JVMS.
+  // Record relative start index.
+  ciInstanceKlass* iklass    = nullptr;
+  BasicType basic_elem_type  = T_ILLEGAL;
+  const Type* field_type     = nullptr;
+  const TypeOopPtr* res_type = nullptr;
+  int nfields                = 0;
+  int array_base             = 0;
+  int element_size           = 0;
+  uint first_ind             = (sfpt->req() - sfpt->jvms()->scloff());
+  Node* res                  = alloc->result_cast();
+
+  assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
+  assert(sfpt->jvms() != nullptr, "missed JVMS");
+
+  if (res != nullptr) { // Could be null when there are no users
+    res_type = _igvn.type(res)->isa_oopptr();
+
     if (res_type->isa_instptr()) {
       // find the fields of the class which will be needed for safepoint debug information
       iklass = res_type->is_instptr()->instance_klass();
@@ -711,137 +760,124 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       field_type = res_type->is_aryptr()->elem();
     }
   }
-  //
-  // Process the safepoint uses
-  //
-  while (safepoints.length() > 0) {
-    SafePointNode* sfpt = safepoints.pop();
-    Node* mem = sfpt->memory();
-    Node* ctl = sfpt->control();
-    assert(sfpt->jvms() != nullptr, "missed JVMS");
-    // Fields of scalar objs are referenced only at the end
-    // of regular debuginfo at the last (youngest) JVMS.
-    // Record relative start index.
-    uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
-    SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, nfields);
-    sobj->init_req(0, C->root());
-    transform_later(sobj);
 
-    // Scan object's fields adding an input to the safepoint for each field.
-    for (int j = 0; j < nfields; j++) {
-      intptr_t offset;
-      ciField* field = nullptr;
-      if (iklass != nullptr) {
-        field = iklass->nonstatic_field_at(j);
-        offset = field->offset();
-        ciType* elem_type = field->type();
-        basic_elem_type = field->layout_type();
+  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, nfields);
+  sobj->init_req(0, C->root());
+  transform_later(sobj);
 
-        // The next code is taken from Parse::do_get_xxx().
-        if (is_reference_type(basic_elem_type)) {
-          if (!elem_type->is_loaded()) {
-            field_type = TypeInstPtr::BOTTOM;
-          } else if (field != nullptr && field->is_static_constant()) {
-            ciObject* con = field->constant_value().as_object();
-            // Do not "join" in the previous type; it doesn't add value,
-            // and may yield a vacuous result if the field is of interface type.
-            field_type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
-            assert(field_type != nullptr, "field singleton type must be consistent");
-          } else {
-            field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
-          }
-          if (UseCompressedOops) {
-            field_type = field_type->make_narrowoop();
-            basic_elem_type = T_NARROWOOP;
-          }
+  // Scan object's fields adding an input to the safepoint for each field.
+  for (int j = 0; j < nfields; j++) {
+    intptr_t offset;
+    ciField* field = nullptr;
+    if (iklass != nullptr) {
+      field = iklass->nonstatic_field_at(j);
+      offset = field->offset();
+      ciType* elem_type = field->type();
+      basic_elem_type = field->layout_type();
+
+      // The next code is taken from Parse::do_get_xxx().
+      if (is_reference_type(basic_elem_type)) {
+        if (!elem_type->is_loaded()) {
+          field_type = TypeInstPtr::BOTTOM;
+        } else if (field != nullptr && field->is_static_constant()) {
+          ciObject* con = field->constant_value().as_object();
+          // Do not "join" in the previous type; it doesn't add value,
+          // and may yield a vacuous result if the field is of interface type.
+          field_type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+          assert(field_type != nullptr, "field singleton type must be consistent");
         } else {
-          field_type = Type::get_const_basic_type(basic_elem_type);
+          field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
+        }
+        if (UseCompressedOops) {
+          field_type = field_type->make_narrowoop();
+          basic_elem_type = T_NARROWOOP;
         }
       } else {
-        offset = array_base + j * (intptr_t)element_size;
+        field_type = Type::get_const_basic_type(basic_elem_type);
       }
-
-      const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
-
-      Node *field_val = value_from_mem(C, &_igvn, mem, ctl, basic_elem_type, field_type, field_addr_type, alloc);
-      if (field_val == nullptr) {
-        // We weren't able to find a value for this field,
-        // give up on eliminating this allocation.
-
-        // Remove any extra entries we added to the safepoint.
-        uint last = sfpt->req() - 1;
-        for (int k = 0;  k < j; k++) {
-          sfpt->del_req(last--);
-        }
-        _igvn._worklist.push(sfpt);
-        // rollback processed safepoints
-        while (safepoints_done.length() > 0) {
-          SafePointNode* sfpt_done = safepoints_done.pop();
-          // remove any extra entries we added to the safepoint
-          last = sfpt_done->req() - 1;
-          for (int k = 0;  k < nfields; k++) {
-            sfpt_done->del_req(last--);
-          }
-          JVMState *jvms = sfpt_done->jvms();
-          jvms->set_endoff(sfpt_done->req());
-          // Now make a pass over the debug information replacing any references
-          // to SafePointScalarObjectNode with the allocated object.
-          int start = jvms->debug_start();
-          int end   = jvms->debug_end();
-          for (int i = start; i < end; i++) {
-            if (sfpt_done->in(i)->is_SafePointScalarObject()) {
-              SafePointScalarObjectNode* scobj = sfpt_done->in(i)->as_SafePointScalarObject();
-              if (scobj->first_index(jvms) == sfpt_done->req() &&
-                  scobj->n_fields() == (uint)nfields) {
-                assert(scobj->alloc() == alloc, "sanity");
-                sfpt_done->set_req(i, res);
-              }
-            }
-          }
-          _igvn._worklist.push(sfpt_done);
-        }
-#ifndef PRODUCT
-        if (PrintEliminateAllocations) {
-          if (field != nullptr) {
-            tty->print("=== At SafePoint node %d can't find value of Field: ",
-                       sfpt->_idx);
-            field->print();
-            int field_idx = C->get_alias_index(field_addr_type);
-            tty->print(" (alias_idx=%d)", field_idx);
-          } else { // Array's element
-            tty->print("=== At SafePoint node %d can't find value of array element [%d]",
-                       sfpt->_idx, j);
-          }
-          tty->print(", which prevents elimination of: ");
-          if (res == nullptr)
-            alloc->dump();
-          else
-            res->dump();
-        }
-#endif
-        return false;
-      }
-      if (UseCompressedOops && field_type->isa_narrowoop()) {
-        // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
-        // to be able scalar replace the allocation.
-        if (field_val->is_EncodeP()) {
-          field_val = field_val->in(1);
-        } else {
-          field_val = transform_later(new DecodeNNode(field_val, field_val->get_ptr_type()));
-        }
-      }
-      sfpt->add_req(field_val);
+    } else {
+      offset = array_base + j * (intptr_t)element_size;
     }
+
+    const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
+
+    Node *field_val = value_from_mem(sfpt->memory(), sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
+
+    // We weren't able to find a value for this field,
+    // give up on eliminating this allocation.
+    if (field_val == nullptr) {
+      uint last = sfpt->req() - 1;
+      for (int k = 0;  k < j; k++) {
+        sfpt->del_req(last--);
+      }
+      _igvn._worklist.push(sfpt);
+
+#ifndef PRODUCT
+      if (PrintEliminateAllocations) {
+        if (field != nullptr) {
+          tty->print("=== At SafePoint node %d can't find value of field: ", sfpt->_idx);
+          field->print();
+          int field_idx = C->get_alias_index(field_addr_type);
+          tty->print(" (alias_idx=%d)", field_idx);
+        } else { // Array's element
+          tty->print("=== At SafePoint node %d can't find value of array element [%d]", sfpt->_idx, j);
+        }
+        tty->print(", which prevents elimination of: ");
+        if (res == nullptr)
+          alloc->dump();
+        else
+          res->dump();
+      }
+#endif
+
+      return nullptr;
+    }
+
+    if (UseCompressedOops && field_type->isa_narrowoop()) {
+      // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
+      // to be able scalar replace the allocation.
+      if (field_val->is_EncodeP()) {
+        field_val = field_val->in(1);
+      } else {
+        field_val = transform_later(new DecodeNNode(field_val, field_val->get_ptr_type()));
+      }
+    }
+    sfpt->add_req(field_val);
+  }
+
+  return sobj;
+}
+
+// Do scalar replacement.
+bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
+  GrowableArray <SafePointNode *> safepoints_done;
+  Node* res = alloc->result_cast();
+  assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
+
+  // Process the safepoint uses
+  while (safepoints.length() > 0) {
+    SafePointNode* sfpt = safepoints.pop();
+    SafePointScalarObjectNode* sobj = create_scalarized_object_description(alloc, sfpt);
+
+    if (sobj == nullptr) {
+      undo_previous_scalarizations(safepoints_done, alloc);
+      return false;
+    }
+
     JVMState *jvms = sfpt->jvms();
     jvms->set_endoff(sfpt->req());
+
     // Now make a pass over the debug information replacing any references
     // to the allocated object with "sobj"
     int start = jvms->debug_start();
     int end   = jvms->debug_end();
     sfpt->replace_edges_in_range(res, sobj, start, end, &_igvn);
     _igvn._worklist.push(sfpt);
-    safepoints_done.append_if_missing(sfpt); // keep it for rollback
+
+    // keep it for rollback
+    safepoints_done.append_if_missing(sfpt);
   }
+
   return true;
 }
 

@@ -451,7 +451,7 @@ bool ConnectionGraph::can_reduce_this_phi_check_inputs(PhiNode* ophi) const {
       assert(ptn->ideal_node() != nullptr && ptn->ideal_node()->is_Allocate(), "sanity");
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
 
-      if (PhaseMacroExpand::can_eliminate_allocation(_igvn, alloc, nullptr, true)) {
+      if (PhaseMacroExpand::can_eliminate_allocation(_igvn, alloc, nullptr)) {
         found_sr_allocate = true;
       } else {
         ptn->set_scalar_replaceable(false);
@@ -587,8 +587,10 @@ void ConnectionGraph::reduce_this_phi_on_field_access(PhiNode* ophi, GrowableArr
 
 // This method will create a SafePointScalarObjectNode for each combination of
 // scalar replaceable allocation in 'ophi' and SafePoint node in 'safepoints'.
-// Each SafePointScalarObjectNode created here may describe multiple scalar
-// replaced objects - check detailed description in SafePointScalarObjectNode
+// The method will create a SafePointScalarMERGEnode for each combination of
+// 'ophi' and SafePoint node in 'safepoints'.
+// Each SafePointScalarMergeNode created here may describe multiple scalar
+// replaced objects - check detailed description in SafePointScalarMergeNode
 // class header.
 //
 // This method will set entries in the Phi that are scalar replaceable to 'null'.
@@ -598,6 +600,7 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
   Node* null_ptr            = _igvn->makecon(TypePtr::NULL_PTR);
   const TypeOopPtr* merge_t = _igvn->type(ophi)->make_oopptr();
   uint number_of_sr_objects = 0;
+  PhaseMacroExpand mexp(*_igvn);
 
   _igvn->hash_delete(ophi);
 
@@ -619,22 +622,22 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
 
   // Update the debug information of all safepoints in turn
   for (uint spi = 0; spi < safepoints->size(); spi++) {
-    Node* call      = safepoints->at(spi);
-    Node* ctrl      = call->in(TypeFunc::Control);
-    Node* memory    = call->in(TypeFunc::Memory);
-    JVMState *jvms  = call->jvms();
-    uint merge_idx  = (call->req() - jvms->scloff());
-    int debug_start = jvms->debug_start();
+    SafePointNode* sfpt = safepoints->at(spi)->as_SafePoint();
+    Node* ctrl          = sfpt->in(TypeFunc::Control);
+    Node* memory        = sfpt->in(TypeFunc::Memory);
+    JVMState *jvms      = sfpt->jvms();
+    uint merge_idx      = (sfpt->req() - jvms->scloff());
+    int debug_start     = jvms->debug_start();
 
     SafePointScalarMergeNode* smerge = new SafePointScalarMergeNode(merge_t, merge_idx);
     smerge->init_req(0, _compile->root());
     _igvn->register_new_node_with_optimizer(smerge);
 
     // Keep a copy of the original pointer to NSR objects
-    call->add_req(ophi);
+    sfpt->add_req(ophi);
 
     // Add the selector so we know which direction the execution took
-    call->add_req(selector);
+    sfpt->add_req(selector);
 
     for (uint i = 1; i < ophi->req(); i++) {
       Node* base          = ophi->in(i);
@@ -646,55 +649,21 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
         continue;
       }
 
-      const TypeOopPtr* base_t   = _igvn->type(base)->make_oopptr();
-      ciInstanceKlass* iklass    = base_t->is_instptr()->instance_klass();
-      int nfields                = iklass->nof_nonstatic_fields();
-      AllocateNode* alloc        = ptn->ideal_node()->as_Allocate();
-      Node* ccpp                 = alloc->result_cast();
-      const TypeOopPtr* res_type = _igvn->type(ccpp)->isa_oopptr();
-      Node* base_klass_node      = alloc->in(AllocateNode::KlassNode);
-      uint first_ind             = (call->req() - jvms->scloff());
-
-      SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, nfields);
-      sobj->init_req(0, _compile->root());
-      _igvn->register_new_node_with_optimizer(sobj);
-
-      for (int j = 0; j < nfields; j++) {
-        ciField* field            = iklass->nonstatic_field_at(j);
-        ciType* elem_type         = field->type();
-        BasicType basic_elem_type = field->layout_type();
-        const Type* field_type    = nullptr;
-        const TypeOopPtr *field_adr_type = res_type->add_offset(field->offset())->isa_oopptr();
-
-        if (is_reference_type(basic_elem_type)) {
-          if (!elem_type->is_loaded()) {
-            field_type = TypeInstPtr::BOTTOM;
-          } else {
-            field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
-          }
-
-          if (UseCompressedOops) {
-            field_type = field_type->make_narrowoop();
-            basic_elem_type = T_NARROWOOP;
-          }
-        } else {
-          field_type = Type::get_const_basic_type(basic_elem_type);
-        }
-
-        Node* field_val = PhaseMacroExpand::value_from_mem(_compile, _igvn, memory, ctrl, basic_elem_type, field_type, field_adr_type, alloc);
-        assert(field_val != nullptr, "field_val is null");
-
-        call->add_req(field_val);
+      AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
+      SafePointScalarObjectNode* sobj = mexp.create_scalarized_object_description(alloc, sfpt);
+      if (sobj == nullptr) {
+        fatal("Failed to create SafePointScalarObjectNode!");
       }
 
-      jvms->set_endoff(call->req());
+      jvms->set_endoff(sfpt->req());
 
       // Now make a pass over the debug information replacing any references
       // to the allocated object with "sobj"
+      Node* ccpp = alloc->result_cast();
       int debug_end = jvms->debug_end();
-      int reps = call->replace_edges_in_range(ccpp, sobj, debug_start, debug_end, _igvn);
+      int reps = sfpt->replace_edges_in_range(ccpp, sobj, debug_start, debug_end, _igvn);
 
-      // If the call was NOT using the scalarized object directly then this SOBJ
+      // If the sfpt was NOT using the scalarized object directly then this SOBJ
       // is just a candidate for rematerialization.
       if (reps == 0) {
         sobj->set_only_merge_sr_candidate(true);
@@ -704,11 +673,11 @@ void ConnectionGraph::reduce_this_phi_on_safepoints(PhiNode* ophi, Unique_Node_L
       smerge->add_req(sobj);
     }
 
-    // Replaces debug information references to "ophi" in "call" with references to "smerge"
+    // Replaces debug information references to "ophi" in "sfpt" with references to "smerge"
     int debug_end = jvms->debug_end();
-    call->replace_edges_in_range(ophi, smerge, debug_start, debug_end, _igvn);
-    call->set_req(smerge->merge_pointer_idx(jvms), ophi);
-    _igvn->_worklist.push(call);
+    sfpt->replace_edges_in_range(ophi, smerge, debug_start, debug_end, _igvn);
+    sfpt->set_req(smerge->merge_pointer_idx(jvms), ophi);
+    _igvn->_worklist.push(sfpt);
   }
 
   // Now we can change ophi since we don't need to know the types
