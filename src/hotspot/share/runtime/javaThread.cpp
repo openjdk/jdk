@@ -376,6 +376,9 @@ void JavaThread::check_possible_safepoint() {
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
+  // Don't complain if running a debugging command.
+  if (DebuggingContext::is_enabled()) return;
+
   // Check NoSafepointVerifier, which is implied by locks taken that can be
   // shared with the VM thread.  This makes sure that no locks with allow_vm_block
   // are held.
@@ -688,6 +691,10 @@ void JavaThread::run() {
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_start(this);
 
+  }
+
+  if (AlwaysPreTouchStacks) {
+    pretouch_stack();
   }
 
   // We call another function to do the rest so we are sure that the stack addresses used
@@ -2023,21 +2030,10 @@ bool JavaThread::sleep(jlong millis) {
 void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
-  // We could get here with a pending exception, if so clear it now or
-  // it will cause MetaspaceShared::link_shared_classes to
-  // fail for dynamic dump.
+  // We could get here with a pending exception, if so clear it now.
   if (this->has_pending_exception()) {
     this->clear_pending_exception();
   }
-
-#if INCLUDE_CDS
-  // Link all classes for dynamic CDS dumping before vm exit.
-  // Same operation is being done in JVM_BeforeHalt for handling the
-  // case where the application calls System.exit().
-  if (DynamicArchive::should_dump_at_vm_exit()) {
-    DynamicArchive::prepare_for_dump_at_exit();
-  }
-#endif
 
   EXCEPTION_MARK;
   Klass* shutdown_klass =
@@ -2124,6 +2120,25 @@ void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
     // we report.
     vm_exit_during_initialization("java.lang.OutOfMemoryError",
                                   os::native_thread_creation_failed_msg());
+  }
+}
+
+void JavaThread::pretouch_stack() {
+  // Given an established java thread stack with usable area followed by
+  // shadow zone and reserved/yellow/red zone, pretouch the usable area ranging
+  // from the current frame down to the start of the shadow zone.
+  const address end = _stack_overflow_state.shadow_zone_safe_limit();
+  if (is_in_full_stack(end)) {
+    char* p1 = (char*) alloca(1);
+    address here = (address) &p1;
+    if (is_in_full_stack(here) && here > end) {
+      size_t to_alloc = here - end;
+      char* p2 = (char*) alloca(to_alloc);
+      log_trace(os, thread)("Pretouching thread stack from " PTR_FORMAT " to " PTR_FORMAT ".",
+                            p2i(p2), p2i(end));
+      os::pretouch_memory(p2, p2 + to_alloc,
+                          NOT_AIX(os::vm_page_size()) AIX_ONLY(4096));
+    }
   }
 }
 

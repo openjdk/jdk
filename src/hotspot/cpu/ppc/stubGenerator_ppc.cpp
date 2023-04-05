@@ -4650,7 +4650,7 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // Initialization
-  void generate_initial() {
+  void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
 
     // Entry points that exist in all platforms.
@@ -4662,6 +4662,10 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_forward_exception_entry          = generate_forward_exception();
     StubRoutines::_call_stub_entry                  = generate_call_stub(StubRoutines::_call_stub_return_address);
     StubRoutines::_catch_exception_entry            = generate_catch_exception();
+
+    if (UnsafeCopyMemory::_table == NULL) {
+      UnsafeCopyMemory::create_table(8);
+    }
 
     // Build this early so it's available for the interpreter.
     StubRoutines::_throw_StackOverflowError_entry   =
@@ -4684,7 +4688,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  void generate_phase1() {
+  void generate_continuation_stubs() {
     // Continuation stubs:
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
@@ -4694,7 +4698,7 @@ class StubGenerator: public StubCodeGenerator {
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
-  void generate_all() {
+  void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
 
     // These entry points require SharedInfo::stack0 to be set up in
@@ -4715,6 +4719,10 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+  }
+
+  void generate_compiler_stubs() {
+#if COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
@@ -4763,24 +4771,31 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
 #endif
+#endif // COMPILER2_OR_JVMCI
   }
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
+  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
+    switch(kind) {
+    case Initial_stubs:
+      generate_initial_stubs();
+      break;
+     case Continuation_stubs:
+      generate_continuation_stubs();
+      break;
+    case Compiler_stubs:
+      generate_compiler_stubs();
+      break;
+    case Final_stubs:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected stubs kind: %d", kind);
+      break;
+    };
   }
 };
 
-#define UCM_TABLE_MAX_ENTRIES 8
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == NULL) {
-    UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
-  }
-  StubGenerator g(code, phase);
+void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
+  StubGenerator g(code, kind);
 }
