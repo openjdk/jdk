@@ -516,9 +516,10 @@ static void populateFontFileNameFromRegistryKey(HKEY regKey,
                                                 GdiFontMapInfo *fmi,
                                                 jobject fontToFileMap)
 {
-#define MAX_BUFFER (FILENAME_MAX+1)
-    const wchar_t wname[MAX_BUFFER];
-    const char data[MAX_BUFFER];
+#define MAX_NAME_BUFFER (MAX_PATH+1)
+#define MAX_DATA_BUFFER (MAX_PATH*2+2)
+    const wchar_t wname[MAX_NAME_BUFFER];
+    const char data[MAX_DATA_BUFFER];
 
     DWORD type;
     LONG ret;
@@ -540,14 +541,14 @@ static void populateFontFileNameFromRegistryKey(HKEY regKey,
                            &dwMaxValueDataLen, NULL, NULL);
 
     if (ret != ERROR_SUCCESS ||
-        dwMaxValueNameLen >= MAX_BUFFER ||
-        dwMaxValueDataLen >= MAX_BUFFER) {
+        dwMaxValueNameLen >= MAX_NAME_BUFFER ||
+        dwMaxValueDataLen >= MAX_DATA_BUFFER) {
         RegCloseKey(hkeyFonts);
         return;
     }
     for (nval = 0; nval < dwNumValues; nval++ ) {
-        dwNameSize = MAX_BUFFER;
-        dwDataValueSize = MAX_BUFFER;
+        dwNameSize = MAX_NAME_BUFFER;
+        dwDataValueSize = MAX_DATA_BUFFER;
         ret = RegEnumValueW(hkeyFonts, nval, (LPWSTR)wname, &dwNameSize,
                             NULL, &type, (LPBYTE)data, &dwDataValueSize);
 
