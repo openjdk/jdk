@@ -896,7 +896,7 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
 
 static bool is_lock_owned(Thread* thread, oop obj) {
   assert(LockingMode == LIGHTWEIGHT, "only call this with new lightweight locking enabled");
-  return JavaThread::cast(thread)->lock_stack().contains(obj);
+  return thread->is_Java_thread() ? JavaThread::cast(thread)->lock_stack().contains(obj) : false;
 }
 
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
