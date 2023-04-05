@@ -138,11 +138,11 @@ void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
   _collector->add_humongous_region(hr);
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  do {
-    add(hr);
-    _collector->update_from_skip_compacting_to_compacting(hr->hrm_index());
-    hr = g1h->next_region_in_humongous(hr);
-  } while (hr != nullptr);
+  g1h->humongous_obj_regions_iterate(hr,
+                                     [&] (HeapRegion* r) {
+                                       add(r);
+                                       _collector->update_from_skip_compacting_to_compacting(r->hrm_index());
+                                     });
 }
 
 uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {

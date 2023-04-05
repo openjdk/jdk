@@ -219,14 +219,14 @@ private:
 // Typically they contain the areas from TAMS to top of the regions.
 // We could scan and mark through these objects during the concurrent start pause,
 // but for pause time reasons we move this work to the concurrent phase.
-// We need to complete this procedure before the next GC because it might determine
-// that some of these "root objects" are dead, potentially dropping some required
-// references.
+// We need to complete this procedure before we can evacuate a particular region
+// because evacuation might determine that some of these "root objects" are dead,
+// potentially dropping some required references.
 // Root MemRegions comprise of the contents of survivor regions at the end
 // of the GC, and any objects copied into the old gen during GC.
 class G1CMRootMemRegions {
   // The set of root MemRegions.
-  MemRegion*   _root_regions;
+  MemRegion* _root_regions;
   size_t const _max_regions;
 
   volatile size_t _num_root_regions; // Actual number of root regions.
@@ -382,10 +382,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // After reclaiming empty regions, update heap sizes.
   void compute_new_sizes();
 
-  // Clear statistics gathered during the concurrent cycle for the given region after
-  // it has been reclaimed.
-  void clear_statistics(HeapRegion* r);
-
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
   void reset_marking_for_restart();
@@ -481,7 +477,7 @@ public:
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
-  void clear_statistics_in_region(uint region_idx);
+  void clear_statistics(HeapRegion* r);
   // Notification for eagerly reclaimed regions to clean up.
   void humongous_object_eagerly_reclaimed(HeapRegion* r);
   // Manipulation of the global mark stack.
@@ -561,6 +557,7 @@ public:
   void scan_root_regions();
   bool wait_until_root_region_scan_finished();
   void add_root_region(HeapRegion* r);
+  void root_region_scan_abort_and_wait();
 
 private:
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
