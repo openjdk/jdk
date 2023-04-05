@@ -1170,7 +1170,6 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
       buster \
       ~/sysroot-arm64 \
       http://httpredir.debian.org/debian/
-    # An alternative mirror is `https://deb.debian.org/debian/`.
     # If the target architecture is `riscv64`,
     # the path should be `debian-ports` instead of `debian`.
     ```
@@ -1233,8 +1232,8 @@ properly supported by the JDK.
 ### Building for RISC-V
 
 The RISC-V community provides a basic
-[GNU compiler toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain).
-But the [external libraries](#External-Library-Requirements) required by OpenJDK
+[GNU compiler toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain),
+but the [external libraries](#External-Library-Requirements) required by OpenJDK
 complicate the building process. The placeholder `<toolchain-installed-path>`
 shown below is the path where you want to install the toolchain.
 
