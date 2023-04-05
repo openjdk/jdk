@@ -127,21 +127,13 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * proxying) and a {@code URL} string of the form {@code "socket://host:port"}
  * where host and port specify the proxy's address.
  *
- * @implNote If an explicit {@linkplain HttpClient.Builder#executor(Executor)
- * executor} has not been set for an {@code HttpClient}, and a security manager
- * has been installed, then the default executor will execute asynchronous and
- * dependent tasks in a context that is granted no permissions. Custom
- * {@linkplain HttpRequest.BodyPublisher request body publishers}, {@linkplain
- * HttpResponse.BodyHandler response body handlers}, {@linkplain
- * HttpResponse.BodySubscriber response body subscribers}, and {@linkplain
- * WebSocket.Listener WebSocket Listeners}, if executing operations that require
- * privileges, should do so within an appropriate {@linkplain
- * AccessController#doPrivileged(PrivilegedAction) privileged context}.
- *
  * @apiNote
- * <p id="closing"> Resources allocated by the {@code HttpClient} may be
+ * Resources allocated by the {@code HttpClient} may be
  * reclaimed early by {@linkplain #close() closing} the client.
- * The JDK built-in implementation of the {@code HttpClient} overrides
+ *
+ * @implNote
+ *  <p id="closing">
+ *  The JDK built-in implementation of the {@code HttpClient} overrides
  * {@link #close()}, {@link #shutdown()}, {@link #shutdownNow()},
  * {@link #awaitTermination(Duration)}, and {@link #isTerminated()} to
  * provide a best effort implementation. Failing to close, cancel, or
@@ -155,6 +147,18 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * java.net.http.HttpResponse.BodySubscriber BodySubscriber} may stop
  * delivery of data and {@linkplain #awaitTermination(Duration) stall an
  * orderly shutdown}.
+ *
+ * <p>
+ * If an explicit {@linkplain HttpClient.Builder#executor(Executor)
+ * executor} has not been set for an {@code HttpClient}, and a security manager
+ * has been installed, then the default executor will execute asynchronous and
+ * dependent tasks in a context that is granted no permissions. Custom
+ * {@linkplain HttpRequest.BodyPublisher request body publishers}, {@linkplain
+ * HttpResponse.BodyHandler response body handlers}, {@linkplain
+ * HttpResponse.BodySubscriber response body subscribers}, and {@linkplain
+ * WebSocket.Listener WebSocket Listeners}, if executing operations that require
+ * privileges, should do so within an appropriate {@linkplain
+ * AccessController#doPrivileged(PrivilegedAction) privileged context}.
  *
  * @since 11
  */
@@ -777,7 +781,8 @@ public abstract class HttpClient implements AutoCloseable {
      * @implSpec
      * The default implementation of this method does nothing. Subclasses should
      * override this method to implement the appropriate behavior.
-     * See the API Note on {@linkplain ##closing closing}.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
      *
      * @since 21
      */
@@ -798,12 +803,13 @@ public abstract class HttpClient implements AutoCloseable {
      * The default implementation of this method checks for null arguments, but
      * otherwise does nothing and returns true.
      * Subclasses should override this method to implement the proper behavior.
-     * See the API Note on {@linkplain ##closing closing}.
      *
      * @param duration the maximum time to wait
      * @return {@code true} if this client terminated and
      *         {@code false} if the timeout elapsed before termination
      * @throws InterruptedException if interrupted while waiting
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
      *
      * @since 21
      */
@@ -823,9 +829,10 @@ public abstract class HttpClient implements AutoCloseable {
      * @implSpec
      * The default implementation of this method does nothing and returns false.
      * Subclasses should override this method to implement the proper behavior.
-     * See the API Note on {@linkplain ##closing closing}.
      *
      * @return {@code true} if all tasks have completed following a shutdown
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
      *
      * @since 21
      */
@@ -847,7 +854,9 @@ public abstract class HttpClient implements AutoCloseable {
      * @implSpec
      * The default implementation of this method simply calls {@link #shutdown()}.
      * Subclasses should override this method to implement the appropriate
-     * behavior. See the API Note on {@linkplain ##closing closing}.
+     * behavior.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
      *
      * @since 21
      */
@@ -874,8 +883,9 @@ public abstract class HttpClient implements AutoCloseable {
      *
      * @implSpec
      * The default implementation invokes {@code shutdown()} and waits for tasks
-     * to complete execution with {@code awaitTermination}. See the API Note on
-     * {@linkplain ##closing closing}.
+     * to complete execution with {@code awaitTermination}.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
      *
      * @since 21
      */
