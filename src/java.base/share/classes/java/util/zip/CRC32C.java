@@ -47,6 +47,8 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * {@link NullPointerException} to be thrown.
  * </p>
  *
+ * @spec https://www.rfc-editor.org/info/rfc3720
+ *      RFC 3720: Internet Small Computer Systems Interface (iSCSI)
  * @since 9
  */
 public final class CRC32C implements Checksum {

@@ -2620,11 +2620,6 @@ template<typename R, typename... Rx>
   INSN(minv,   0, 0b011011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(smaxp,  0, 0b101001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(sminp,  0, 0b101011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
-  INSN(cmeq,   1, 0b100011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
-  INSN(cmgt,   0, 0b001101, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
-  INSN(cmge,   0, 0b001111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
-  INSN(cmhi,   1, 0b001101, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
-  INSN(cmhs,   1, 0b001111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
 
 #undef INSN
 
@@ -2730,12 +2725,49 @@ template<typename R, typename... Rx>
   INSN(fmls, 0, 1, 0b110011);
   INSN(fmax, 0, 0, 0b111101);
   INSN(fmin, 0, 1, 0b111101);
-  INSN(fcmeq, 0, 0, 0b111001);
-  INSN(fcmgt, 1, 1, 0b111001);
-  INSN(fcmge, 1, 0, 0b111001);
   INSN(facgt, 1, 1, 0b111011);
 
 #undef INSN
+
+  // AdvSIMD vector compare
+  void cm(Condition cond, FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) {
+    starti;
+    assert(T != T1Q && T != T1D, "incorrect arrangement");
+    int cond_op;
+    switch (cond) {
+      case EQ: cond_op = 0b110001; break;
+      case GT: cond_op = 0b000110; break;
+      case GE: cond_op = 0b000111; break;
+      case HI: cond_op = 0b100110; break;
+      case HS: cond_op = 0b100111; break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+
+    f(0, 31), f((int)T & 1, 30), f((cond_op >> 5) & 1, 29);
+    f(0b01110, 28, 24), f((int)T >> 1, 23, 22), f(1, 21), rf(Vm, 16);
+    f(cond_op & 0b11111, 15, 11), f(1, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
+  // AdvSIMD Floating-point vector compare
+  void fcm(Condition cond, FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) {
+    starti;
+    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+    int cond_op;
+    switch (cond) {
+      case EQ: cond_op = 0b00; break;
+      case GT: cond_op = 0b11; break;
+      case GE: cond_op = 0b10; break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+
+    f(0, 31), f((int)T & 1, 30), f((cond_op >> 1) & 1, 29);
+    f(0b01110, 28, 24), f(cond_op & 1, 23), f(T == T2D ? 1 : 0, 22);
+    f(1, 21), rf(Vm, 16), f(0b111001, 15, 10), rf(Vn, 5), rf(Vd, 0);
+  }
 
 #define INSN(NAME, opc)                                                                 \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \

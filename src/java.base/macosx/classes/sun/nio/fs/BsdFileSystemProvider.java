@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
     }
 
     @Override
-    BsdFileSystem newFileSystem(String dir) {
-        return new BsdFileSystem(this, dir);
+    BsdFileSystem newFileSystem() {
+        return new BsdFileSystem(this);
     }
 
     @Override

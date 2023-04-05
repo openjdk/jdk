@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ class UnixPath implements Path {
     // internal representation
     private final byte[] path;
 
-    // String representation (created lazily)
-    private volatile String stringValue;
+    // String representation (created lazily, no need to be volatile)
+    private String stringValue;
 
     // cached hashcode (created lazily, no need to be volatile)
     private int hash;
@@ -138,18 +138,12 @@ class UnixPath implements Path {
 
     // use this path when making system/library calls
     byte[] getByteArrayForSysCalls() {
-        // resolve against default directory if required (chdir allowed or
-        // file system default directory is not working directory)
-        if (getFileSystem().needToResolveAgainstDefaultDirectory()) {
-            return resolve(getFileSystem().defaultDirectory(), path);
+        if (!isEmpty()) {
+            return path;
         } else {
-            if (!isEmpty()) {
-                return path;
-            } else {
-                // empty path case will access current directory
-                byte[] here = { '.' };
-                return here;
-            }
+            // empty path case will access current directory
+            byte[] here = { '.' };
+            return here;
         }
     }
 
@@ -160,11 +154,7 @@ class UnixPath implements Path {
 
     // use this path for permission checks
     String getPathForPermissionCheck() {
-        if (getFileSystem().needToResolveAgainstDefaultDirectory()) {
-            return Util.toString(getByteArrayForSysCalls());
-        } else {
-            return toString();
-        }
+        return toString();
     }
 
     // Checks that the given file is a UnixPath
@@ -761,8 +751,9 @@ class UnixPath implements Path {
     @Override
     public String toString() {
         // OK if two or more threads create a String
+        String stringValue = this.stringValue;
         if (stringValue == null) {
-            stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
+            this.stringValue = stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
         }
         return stringValue;
     }
