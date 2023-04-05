@@ -29,6 +29,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class PhaseConditionalPropagation : public PhaseIterGVN {
 private:
@@ -662,7 +663,7 @@ public:
 //      }
     }
 
-//    tty->print_cr("XXX value calls %d", _value_calls);
+//    tty->print_cr("XXX value calls %d %d %d", _value_calls, iterations, _rpo_list.size());
 
 
     if (UseNewCode2 && UseNewCode3) {
@@ -978,16 +979,37 @@ public:
     }
 
     if (c->is_Region()) {
-      Node* in = c->in(1);
+      uint in_idx = 1;
+      int num_types = max_jint;
+      for (uint i = 1 ; i < c->req(); ++i) {
+        Node* in = c->in(i);
+        TypeUpdate* updates = updates_at(in);
+        int cnt = 0;
+        while(updates != nullptr && updates != _dom_updates && (_dom_updates == nullptr || !_phase->is_dominator(updates->control(), _dom_updates->control()))) {
+          cnt += updates->length();
+          updates = updates->prev();
+        }
+        if (cnt < num_types) {
+          in_idx = i;
+          num_types = cnt;
+        }
+      }
+//      tty->print_cr("X %d %d", c->_idx, in_idx);
+      Node* in = c->in(in_idx);
       Node* ctrl = in;
       TypeUpdate* updates = updates_at(ctrl);
       assert(updates != nullptr || _dom_updates == nullptr || _phase->is_dominator(c, in), "");
       while(updates != nullptr && updates != _dom_updates && (_dom_updates == nullptr || !_phase->is_dominator(updates->control(), _dom_updates->control()))) {
         for (int j = 0; j < updates->length(); ++j) {
           Node* n = updates->node_at(j);
+//          tty->print_cr("XXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
           const Type* t = find_type_between(n, in, dom);
-          uint k = 2;
+//          tty->print_cr("XXXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
+          uint k = 1;
           for (; k < c->req(); k++) {
+            if (k == in_idx) {
+              continue;
+            }
             Node* other_in = c->in(k);
             const Type* type_at_in = find_type_between(n, other_in, dom);
             if (type_at_in == nullptr) {
@@ -995,7 +1017,9 @@ public:
             }
             t = t->meet_speculative(type_at_in);
           }
+//          tty->print_cr("XXXXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
           if (k == c->req()) {
+//            tty->print_cr("XXXXXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
             const Type* prev_t = t;
             const Type* current_type = find_prev_type_between(n, in, dom);
             if (iterations > 1) {
@@ -1060,10 +1084,10 @@ public:
       sync(dom);
       analyze_allocate_array(rpo, c, alloc);
     }
-    if (_control_dependent_node.test(c->_idx) || true) {
+    if (_control_dependent_node.test(c->_idx)) {
       for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
         Node* u = c->fast_out(i);
-        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (!UseNewCode3 || _visited.test(u->_idx)) /*&& _control_dependent_node.test(u->_idx)*/) {
+        if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (!UseNewCode3 || _visited.test(u->_idx)) && _control_dependent_node.test(u->_idx)) {
           _wq.push(u);
         }
       }

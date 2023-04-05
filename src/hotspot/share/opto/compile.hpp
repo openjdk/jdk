@@ -599,7 +599,7 @@ private:
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   int               do_cleanup() const          { return _do_cleanup; }
   void          set_major_progress()            { _major_progress++; }
-  void set_run_loop_conditional_propagation()   { _run_loop_conditional_propagation = true; }
+  void set_run_loop_conditional_propagation()   { /*_run_loop_conditional_propagation = true;*/ }
   void          restore_major_progress(int progress) { _major_progress += progress; }
   void        clear_major_progress()            { _major_progress = 0; }
   void clear_run_loop_conditional_propagation() { _run_loop_conditional_propagation = false; }
