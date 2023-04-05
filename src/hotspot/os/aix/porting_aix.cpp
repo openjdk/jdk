@@ -33,16 +33,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-
-// distinguish old xlc and xlclang++, where
-// <ibmdemangle.h> is suggested but not found in GA release (might come with a fix)
-#if defined(__clang__)
-#define DISABLE_DEMANGLE
-// #include <ibmdemangle.h>
-#else
-#include <demangle.h>
-#endif
-
+#include <cxxabi.h>
 #include <sys/debug.h>
 #include <pthread.h>
 #include <ucontext.h>
@@ -244,21 +235,18 @@ bool AixSymbols::get_function_name (
       }
       p_name[i] = '\0';
 
-      // If it is a C++ name, try and demangle it using the Demangle interface (see demangle.h).
-#ifndef DISABLE_DEMANGLE
+      // If it is a C++ name, try and demangle it using the __cxa_demangle interface(see demangle.h).
       if (demangle) {
-        char* rest;
-        Name* const name = Demangle(p_name, rest);
-        if (name) {
-          const char* const demangled_name = name->Text();
-          if (demangled_name) {
-            strncpy(p_name, demangled_name, namelen-1);
-            p_name[namelen-1] = '\0';
-          }
-          delete name;
+        int status;
+        char *demangled_name = abi::__cxa_demangle(p_name, nullptr, nullptr, &status);
+        if ((demangled_name != nullptr) && (status == 0)) {
+          strncpy(p_name, demangled_name, namelen-1);
+          p_name[namelen-1] = '\0';
+        }
+        if (demangled_name != nullptr) {
+          ALLOW_C_FUNCTION(::free, ::free(demangled_name));
         }
       }
-#endif
     } else {
       strncpy(p_name, "<nameless function>", namelen-1);
       p_name[namelen-1] = '\0';
