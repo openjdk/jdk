@@ -627,7 +627,7 @@ implements X509Extension {
      *      RFC 2253: Lightweight Directory Access Protocol (v3):
      *              UTF-8 String Representation of Distinguished Names
      * @spec https://www.rfc-editor.org/info/rfc822
-     *      RFC 822:: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
+     *      RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
      * @since 1.4
      */
     public Collection<List<?>> getSubjectAlternativeNames()
