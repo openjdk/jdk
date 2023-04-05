@@ -175,6 +175,50 @@ static void test_reverse_iterate_non_closure(const BitMap& map,
   ASSERT_EQ(closure._data._positions_index, 0u);
 }
 
+static void test_iterator(const BitMap& map,
+                          const idx_t* positions,
+                          size_t positions_size) {
+  SCOPED_TRACE("iterate with Iterator");
+  size_t positions_index = 0;
+  for (BitMap::Iterator it{map}; !it.is_empty(); it.step()) {
+    test_iterate_step(map, it.index(), positions, positions_index++, positions_size);
+  }
+  ASSERT_EQ(positions_index, positions_size);
+}
+
+static void test_reverse_iterator(const BitMap& map,
+                                  const idx_t* positions,
+                                  size_t positions_size) {
+  SCOPED_TRACE("reverse iterate with Iterator");
+  size_t positions_index = positions_size;
+  for (BitMap::ReverseIterator it{map}; !it.is_empty(); it.step()) {
+    test_iterate_step(map, it.index(), positions, --positions_index, positions_size);
+  }
+  ASSERT_EQ(positions_index, 0u);
+}
+
+static void test_for_loop_iterator(const BitMap& map,
+                                   const idx_t* positions,
+                                   size_t positions_size) {
+  SCOPED_TRACE("iterate with range-based for loop");
+  size_t positions_index = 0;
+  for (idx_t index : BitMap::Iterator(map)) {
+    test_iterate_step(map, index, positions, positions_index++, positions_size);
+  }
+  ASSERT_EQ(positions_index, positions_size);
+}
+
+static void test_for_loop_reverse_iterator(const BitMap& map,
+                                           const idx_t* positions,
+                                           size_t positions_size) {
+  SCOPED_TRACE("reverse iterate with range-based for loop");
+  size_t positions_index = positions_size;
+  for (idx_t index : BitMap::ReverseIterator(map)) {
+    test_iterate_step(map, index, positions, --positions_index, positions_size);
+  }
+  ASSERT_EQ(positions_index, 0u);
+}
+
 static void fill_iterate_map(BitMap& map,
                              const idx_t* positions,
                              size_t positions_size) {
@@ -196,6 +240,12 @@ static void test_iterate(BitMap& map,
   test_reverse_iterate_lambda(map, positions, positions_size);
   test_reverse_iterate_closure(map, positions, positions_size);
   test_reverse_iterate_non_closure(map, positions, positions_size);
+
+  test_iterator(map, positions, positions_size);
+  test_reverse_iterator(map, positions, positions_size);
+
+  test_for_loop_iterator(map, positions, positions_size);
+  test_for_loop_reverse_iterator(map, positions, positions_size);
 }
 
 TEST(BitMap, iterate_empty) {
