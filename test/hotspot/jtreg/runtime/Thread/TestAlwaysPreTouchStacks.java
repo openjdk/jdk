@@ -56,7 +56,7 @@ public class TestAlwaysPreTouchStacks {
                     try {
                         // report aliveness, then sleep until VM death
                         gate.await();
-                        for(;;) {
+                        for (;;) {
                             Thread.sleep(1000);
                         }
                     } catch (Exception e) {
@@ -75,7 +75,7 @@ public class TestAlwaysPreTouchStacks {
             ArrayList<Thread> threads = new ArrayList<>();
 
             // Add a bunch of large-stacked threads to make a significant imprint on combined thread stack size
-            for (int i = 0; i < numThreads; i ++) {
+            for (int i = 0; i < numThreads; i++) {
                 threads.add(createTestThread(i));
             }
 
@@ -101,7 +101,7 @@ public class TestAlwaysPreTouchStacks {
 
             output.shouldHaveExitValue(0);
 
-            for (int i = 0; i < numThreads; i ++) {
+            for (int i = 0; i < numThreads; i++) {
                 output.shouldContain("Alive: " + i);
             }
 
