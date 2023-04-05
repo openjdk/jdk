@@ -595,6 +595,10 @@ static GCCause::Cause make_minor_gc_decision(const ZDirectorStats& stats) {
     return GCCause::_no_gc;
   }
 
+  if (ZDriver::major()->is_busy() && !stats._old_stats._resize._is_active) {
+    return GCCause::_no_gc;
+  }
+
   if (rule_minor_timer(stats)) {
     return GCCause::_z_timer;
   }
