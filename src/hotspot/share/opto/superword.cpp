@@ -531,8 +531,6 @@ bool SuperWord::SLP_extract() {
 
     DEBUG_ONLY(verify_packs();)
 
-    remove_cycles();
-
     schedule();
 
     // Record eventual count of vector packs for checks in post loop vectorization
@@ -2359,9 +2357,12 @@ class PacksetGraph {
 private:
   // pid: packset graph node id.
   GrowableArray<int> _pid;                 // bb_idx(n) -> pid
+  GrowableArray<Node*> _pid_to_node;       // one node per pid, find rest via my_pack
   GrowableArray<GrowableArray<int>> _out;  // out-edges
   GrowableArray<int> _incnt;               // number of (implicit) in-edges
   int _max_pid = 0;
+
+  bool _schedule_success;
 
   SuperWord* _slp;
 public:
@@ -2385,11 +2386,18 @@ public:
     assert(poz != 0, "pid should not be zero");
     return poz;
   }
-  void set_pid(const Node* n, int pid) {
+  void set_pid(Node* n, int pid) {
     assert(n != nullptr && pid > 0, "sane inputs");
     assert(_slp->in_bb(n), "must be");
     int idx = _slp->bb_idx(n);
     _pid.at_put_grow(idx, pid);
+    _pid_to_node.at_put_grow(pid - 1, n, nullptr);
+  }
+  Node* get_node(int pid) {
+    assert(pid > 0 && pid <= _pid_to_node.length(), "pid must be mapped");
+    Node* n = _pid_to_node.at(pid - 1);
+    assert(n != nullptr, "sanity");
+    return n;
   }
   int new_pid() {
     _incnt.push(0);
@@ -2399,6 +2407,7 @@ public:
   int incnt(int pid) { return _incnt.at(pid - 1); }
   void incnt_set(int pid, int cnt) { return _incnt.at_put(pid - 1, cnt); }
   GrowableArray<int>& out(int pid) { return _out.at(pid - 1); }
+  bool schedule_success() const { return _schedule_success; }
 
   // Create nodes (from packs and scalar-nodes), and add edges, based on DepPreds.
   void build() {
@@ -2412,6 +2421,7 @@ public:
       for (uint k = 0; k < p->size(); k++) {
         Node* n = p->at(k);
         set_pid(n, pid);
+        assert(_slp->my_pack(n) == p, "matching packset");
       }
     }
 
@@ -2427,6 +2437,7 @@ public:
       if (pid == 0) {
         pid = new_pid();
         set_pid(n, pid);
+        assert(_slp->my_pack(n) == nullptr, "no packset");
       }
     }
 
@@ -2472,11 +2483,13 @@ public:
       }
     }
   }
-  // Schedule the graph to worklist. Returns true iff all nodes were scheduled.
-  // This implies that we return true iff the PacksetGraph is acyclic.
-  // We schedule with topological sort: schedule any node that has zero incnt.
-  // Then remove that node, which decrements the incnt of all its uses (outputs).
-  bool schedule() {
+
+  // Schedule nodes of PacksetGraph to worklist, using topsort: schedule a node
+  // that has zero incnt. If a PacksetGraph node corresponds to memops, then add
+  // those to the memops_schedule. At the end, we return the memops_schedule, and
+  // note if topsort was successful.
+  Node_List schedule() {
+    Node_List memops_schedule;
     GrowableArray<int> worklist;
     // Directly schedule all nodes without precedence
     for (int pid = 1; pid <= _max_pid; pid++) {
@@ -2487,6 +2500,22 @@ public:
     // Continue scheduling via topological sort
     for (int i = 0; i < worklist.length(); i++) {
       int pid = worklist.at(i);
+
+      // Add memops to memops_schedule
+      Node* n = get_node(pid);
+      Node_List* p = _slp->my_pack(n);
+      if (n->is_Mem()) {
+        if (p == nullptr) {
+          memops_schedule.push(n);
+        } else {
+          for (uint k = 0; k < p->size(); k++) {
+            memops_schedule.push(p->at(k));
+            assert(p->at(k)->is_Mem(), "only schedule memops");
+          }
+        }
+      }
+
+      // Decrement incnt for all successors
       for (int j = 0; j < out(pid).length(); j++){
         int pid_use = out(pid).at(j);
         int incnt_use = incnt(pid_use) - 1;
@@ -2497,9 +2526,12 @@ public:
         }
       }
     }
-    // Was every pid scheduled?
-    return worklist.length() == _max_pid;
+
+    // Was every pid scheduled? If not, we found some cycles in the PacksetGraph.
+    _schedule_success = (worklist.length() == _max_pid);
+    return memops_schedule;
   }
+
   // Print the PacksetGraph.
   // print_nodes = true: print all C2 nodes beloning to PacksetGrahp node.
   // print_zero_incnt = false: do not print nodes that have no in-edges (any more).
@@ -2530,45 +2562,94 @@ public:
   }
 };
 
-//------------------------------remove_cycles---------------------------
-// We now know that we only have independent packs, see verify_packs.
-// This is a necessary but not a sufficient condition for an acyclic
-// graph (DAG) after scheduling. Thus, we must check if the packs have
-// introduced a cycle. The SuperWord paper mentions the need for this
-// in "3.7 Scheduling".
-// Approach: given all nodes from the _block, we create a new graph.
-// The nodes that are not in a pack are their own nodes (scalar-node)
-// in that new graph. Every pack is also a node (pack-node). We then
-// add the edges according to DepPreds: a scalar-node has all edges
-// to its node's DepPreds. A pack-node has all edges from every pack
-// member to all their DepPreds.
-void SuperWord::remove_cycles() {
+// The C2 graph (specifically the memory graph), needs to be re-ordered.
+// (1) Build the PacksetGraph. It combines the DepPreds graph with the
+//     packset. The PacksetGraph gives us the dependencies that must be
+//     respected after scheduling.
+// (2) Schedule the PacksetGraph to the memops_schedule, which represents
+//     a linear order of all memops in the body. The order respects the
+//     dependencies of the PacksetGraph.
+// (3) If the PacksetGraph has cycles, we cannot schedule. Abort.
+// (4) Use the memops_schedule to re-order the memops in all slices.
+void SuperWord::schedule() {
   if (_packset.length() == 0) {
     return; // empty packset
   }
   ResourceMark rm;
 
+  // (1) Build the PacksetGraph.
   PacksetGraph graph(this);
-
   graph.build();
 
-  if (!graph.schedule()) {
+  // (2) Schedule the PacksetGraph.
+  Node_List memops_schedule = graph.schedule();
+
+  // (3) Check if the PacksetGraph schedule succeeded (had no cycles).
+  // We now know that we only have independent packs, see verify_packs.
+  // This is a necessary but not a sufficient condition for an acyclic
+  // graph (DAG) after scheduling. Thus, we must check if the packs have
+  // introduced a cycle. The SuperWord paper mentions the need for this
+  // in "3.7 Scheduling".
+  if (!graph.schedule_success()) {
     if (TraceSuperWord) {
-      tty->print_cr("remove_cycles found cycle in PacksetGraph:");
+      tty->print_cr("SuperWord::schedule found cycle in PacksetGraph:");
       graph.print(true, false);
       tty->print_cr("removing all packs from packset.");
     }
     _packset.clear();
+    return;
   }
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("SuperWord::schedule: memops_schedule:");
+    memops_schedule.dump();
+  }
+#endif
+
+  // (4) Use the memops_schedule to re-order the memops in all slices.
+  schedule_reorder_memops(memops_schedule);
+
+  // // Co-locate in the memory graph the members of each memory pack
+  // for (int i = 0; i < _packset.length(); i++) {
+  //   co_locate_pack(_packset.at(i));
+  // }
 }
 
-//------------------------------schedule---------------------------
-// Adjust the memory graph for the packed operations
-void SuperWord::schedule() {
+void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
+  // For every slice (alias_idx), store the last memory state.
+  GrowableArray<Node*> last_state_in_slice;
 
-  // Co-locate in the memory graph the members of each memory pack
-  for (int i = 0; i < _packset.length(); i++) {
-    co_locate_pack(_packset.at(i));
+  // (1) Set up the initial memory state from Phi.
+  for (int i = 0; i < _mem_slice_head.length(); i++) {
+    Node* phi  = _mem_slice_head.at(i);
+    assert(phi->is_Phi(), "must be phi");
+    int alias_idx = _phase->C->get_alias_index(phi->adr_type());
+    last_state_in_slice.at_put_grow(alias_idx, phi, nullptr);
+  }
+
+  // (2) Walk over memops_schedule, append memops to the last state
+  //     of that slice. If it is a Store, we take it as the new state.
+  for (uint i = 0; i < memops_schedule.size(); i++) {
+    MemNode* n = memops_schedule.at(i)->as_Mem();
+    assert(n->is_Load() || n->is_Store(), "only loads or stores");
+    int alias_idx = _phase->C->get_alias_index(n->adr_type());
+    Node* last_state = last_state_in_slice.at(alias_idx);
+    assert(last_state != nullptr, "slice is mapped");
+    _igvn.replace_input_of(n, MemNode::Memory, last_state);
+    if (n->is_Store()) {
+      last_state_in_slice.at_put(alias_idx, n);
+    }
+  }
+
+  // (3) For each slice, we add the last state to the backedge
+  //     in the Phi.
+  for (int i = 0; i < _mem_slice_head.length(); i++) {
+    Node* phi  = _mem_slice_head.at(i);
+    int alias_idx = _phase->C->get_alias_index(phi->adr_type());
+    Node* last_state = last_state_in_slice.at(alias_idx);
+    assert(last_state != nullptr, "slice is mapped");
+    _igvn.replace_input_of(phi, 2, last_state);
   }
 }
 

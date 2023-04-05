@@ -456,7 +456,9 @@ class SuperWord : public ResourceObj {
   bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
   // my_pack
+ public:
   Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
+ private:
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
   bool is_cmov_pack(Node_List* p);
@@ -560,10 +562,10 @@ class SuperWord : public ResourceObj {
   void merge_packs_to_cmove();
   // Verify that for every pack, all nodes are mutually independent
   DEBUG_ONLY(void verify_packs();)
-  // Remove cycles in packset.
-  void remove_cycles();
   // Adjust the memory graph for the packed operations
   void schedule();
+  // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
+  void schedule_reorder_memops(Node_List &memops_schedule);
   // Remove "current" from its current position in the memory graph and insert
   // it after the appropriate insert points (lip or uip);
   void remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip, Node *uip, Unique_Node_List &schd_before);
