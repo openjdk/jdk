@@ -31,6 +31,7 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @summary Test that Conv2B nodes are matched into the correct mach nodes on x86_64.
+ * @bug 8051725
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @requires os.arch == "x86_64" | os.arch == "amd64"
@@ -64,25 +65,25 @@ public class TestConv2BMatches {
     public boolean testObjNotEqualsNull(Object o) {
         return o != null;
     }
-    
+
     @Run(test = {"testIntEquals0", "testIntNotEquals0"})
     public void runTestInts() {
         assertResult(0);
         assertResult(1);
     }
-    
+
     @Run(test = {"testObjEqualsNull", "testObjNotEqualsNull"})
     public void runTestObjs() {
         assertResult(new Object());
         assertResult(null);
     }
-    
+
     @DontCompile
     public void assertResult(int x) {
         Asserts.assertEQ(x == 0, testIntEquals0(x));
         Asserts.assertEQ(x != 0, testIntNotEquals0(x));
     }
-    
+
     @DontCompile
     public void assertResult(Object o) {
         Asserts.assertEQ(o == null, testObjEqualsNull(o));

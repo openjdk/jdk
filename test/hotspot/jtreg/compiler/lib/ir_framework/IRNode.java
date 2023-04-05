@@ -1417,8 +1417,8 @@ public class IRNode {
     static {
         beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
     }
-	
-	// x86 specific
+
+    // x86 specific
 
     public static final String CONVI2B_X86 = PREFIX + "CONVI2B_X86" + POSTFIX;
     static {
@@ -1438,7 +1438,7 @@ public class IRNode {
     public static final String CONVP2B_FLIP_X86 = PREFIX + "CONVP2B_FLIP_X86" + POSTFIX;
     static {
         machOnlyNameRegex(CONVP2B_FLIP_X86, "convP2B_Flip");
-	}
+    }
 
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
