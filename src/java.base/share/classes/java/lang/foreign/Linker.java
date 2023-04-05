@@ -634,8 +634,7 @@ public sealed interface Linker permits AbstractLinker {
          * {@snippet lang = java:
          *    String capturedNames = Linker.Option.captureStateLayout().memberLayouts().stream()
          *        .map(MemoryLayout::name)
-         *        .filter(Optional::isPresent)
-         *        .map(Optional::get)
+         *        .flatMap(Optional::stream)
          *        .map(Objects::toString)
          *        .collect(Collectors.joining(", "));
          * }
