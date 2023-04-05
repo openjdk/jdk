@@ -611,7 +611,7 @@ public class CDSTestUtils {
         }
 
         // -Xshare options are likely at the end of the args list
-        for (int i  = cmd.size() - 1; i >= 0; i--) {
+        for (int i = cmd.size() - 1; i >= 1; i--) {
             String s = cmd.get(i);
             if (s.equals("-Xshare:dump") || s.equals("-Xshare:off")) {
                 return false;
@@ -636,7 +636,7 @@ public class CDSTestUtils {
     // Handle and insert test.cds.runtime.options to commandline
     // The test.cds.runtime.options property is used to inject extra VM options to
     // subprocesses launched by the CDS test cases using executeAndLog().
-    // The injection applies only to subprocess that:
+    // The injection applies only to subprocesses that:
     //   - are launched by the standard java launcher (bin/java)
     //   - are not dumping the CDS archive with -Xshare:dump
     //   - do not explicitly disable CDS via -Xshare:off
