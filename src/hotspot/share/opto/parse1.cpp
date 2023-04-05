@@ -1802,10 +1802,12 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     bool check_elide_phi = target->is_SEL_backedge(save_block);
     PEAState& pred_as = newin->jvms()->alloc_state();
     PEAState& as = block()->state();
+    AllocationStateMerger as_merger(as);
+    if (DoPartialEscapeAnalysis) {
+      as_merger.merge(pred_as, this, r, pnum);
+    }
 
-    // from right to left, we update ctrl, I_O and memory til the last minute
-    // because PEA materialization may change them.
-    for (uint j = newin->req()-1; j >= 1; --j) {
+    for (uint j = 1; j < newin->req(); ++j) {
       Node* m = map()->in(j);   // Current state of target.
       Node* n = newin->in(j);   // Incoming change to target state.
       PhiNode* phi;
@@ -1865,25 +1867,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           break;
         }
       } else {
-        // even m and n are same, we sitll need to merge
-        if (DoPartialEscapeAnalysis) {
-          ObjID id = as.is_alias(m);
-
-          if (id != nullptr && as.get_object_state(id)->is_virtual()) {
-            ObjectState* pred_os = pred_as.get_object_state(id);
-            assert(pred_os->is_virtual(), "sanity check");
-
-            const TypeOopPtr* t = gvn().type(m)->isa_oopptr();
-            VirtualState* vs = static_cast<VirtualState*>(as.get_object_state(id));
-            vs->merge(*pred_os, this, t, r, pnum);
-#ifndef PRODUCT
-            if (Verbose) {
-              tty->print_cr("After merge:");
-              vs->print_on(tty);
-            }
-#endif
-          }
-        }
       }
 
       // At this point, n might be top if:

@@ -4,6 +4,21 @@ class MergeAllVirts {
     int c = 100;
 
     public MergeAllVirts() {}
+    public MergeAllVirts(boolean cond) {
+        if (cond) {
+            this.a = 1;
+            this.b = 20;
+            this.c = 300;
+            blackhole(); // kill locals, so LV0 = this is dead here.
+        } else {
+            this.a = 100;
+            this.b = 50;
+            this.c = 7;
+            blackhole(); // kill locals.
+        }
+        // merge 2 predecessors, but LV0 is not live here.
+        // we need to merge allocation states, or wrong current allocation state is wrong.
+    }
 
     public int sum() {
         return a + b + c;
@@ -38,7 +53,7 @@ class MergeAllVirts {
             throw new RuntimeException("wrong answer: " + sum);
         }
     }
-
+    static void blackhole() {} // not inline this.
     static void blackhole(MergeAllVirts obj) {} // not inline this.
     public static MergeAllVirts escaped2(boolean cond1, boolean cond2) {
         MergeAllVirts obj = new MergeAllVirts();
@@ -102,6 +117,27 @@ class MergeAllVirts {
             throw new RuntimeException("wrong answer: " + cond1 + " "  + cond2 + " " + sum);
         }
     }
+    public static void escaped4(boolean cond) {
+        MergeAllVirts obj = new MergeAllVirts(cond);
+
+        // return obj;  we don't materialize at exit. if it's virtual, keep it virtual.
+        cached = obj; // materialize here.
+    }
+
+    static void check_result4(boolean cond, int sum) {
+        boolean okay;
+
+        if (cond) {
+            okay = sum == 321;
+        } else {
+            okay = sum == 157;
+        }
+
+        if (!okay) {
+            throw new RuntimeException("wrong answer: " + cond + " "  + sum);
+        }
+
+    }
 
 
     public static void main(String[] args) {
@@ -122,6 +158,9 @@ class MergeAllVirts {
 
                 sum = MergeAllVirts.escaped3(cond, cond2).sum();
                 check_result3(cond, cond2, sum);
+
+                MergeAllVirts.escaped4(cond);
+                check_result4(cond, cached.sum());
 
                 iterations++;
             }

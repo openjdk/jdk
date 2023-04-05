@@ -363,13 +363,12 @@ void VirtualState::set_field(ciField* field, Node* val) {
   ShouldNotReachHere();
 }
 
-ObjectState& VirtualState::merge(ObjectState& newin, GraphKit* kit, const TypeOopPtr* oop_type,
-                                 RegionNode* r, int pnum) {
-  assert(newin.is_virtual(), "only support VirtualState");
-  VirtualState* vs = static_cast<VirtualState*>(&newin);
+ObjectState& VirtualState::merge(ObjectState* newin, GraphKit* kit, RegionNode* r, int pnum) {
+  assert(newin->is_virtual(), "only support VirtualState");
 
-  if (this != vs) {
-    ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
+  if (this != newin) {
+    VirtualState* vs = static_cast<VirtualState*>(newin);
+    ciInstanceKlass* ik = _oop_type->is_instptr()->instance_klass();
     assert(nfields() == ik->nof_nonstatic_fields(), "_nfields should be consistent with instanceKlass");
 
     for (int i = 0; i < nfields(); ++i) {
@@ -680,3 +679,38 @@ void PEAState::validate() const {
   });
 }
 #endif
+
+void PEAState::aliases(Unique_Node_List& nodes) const {
+  _alias.iterate([&](Node* alias, ObjID obj){
+                   nodes.push(alias);
+                   return true;
+                 });
+}
+
+AllocationStateMerger::AllocationStateMerger(PEAState& target) : _state(target) {}
+
+void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNode* region, int pnum) {
+  Unique_Node_List set1, set2;
+
+  _state.aliases(set1);
+  newin.aliases(set2);
+
+  VectorSet intersection = set1.member_set();
+  intersection &= set2.member_set();
+  set1.remove_useless_nodes(intersection);
+
+  for (uint i = 0; i < set1.size(); ++i) {
+    Node* var = set1.at(i);
+    VirtualState* vs1 = _state.as_virtual(var);
+    VirtualState* vs2 = newin.as_virtual(var);
+    if (vs1 != nullptr && vs2 != nullptr) {
+      vs1->merge(vs2, kit, region, pnum);
+    }
+  }
+}
+
+AllocationStateMerger::~AllocationStateMerger() {
+}
+
+void AllocationStateMerger::process_phi(PhiNode* phi, Node* old) {
+}
