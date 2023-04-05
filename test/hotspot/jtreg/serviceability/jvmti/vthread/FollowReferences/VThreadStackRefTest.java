@@ -40,7 +40,7 @@ import java.util.concurrent.CountDownLatch;
  * The test verifies JVMTI FollowReferences function reports references from
  * mounted and unmounted virtual threads and reports correct thread id
  * (for mounted vthread it should be vthread id, and not carrier thread id).
- * Additionally tests that references from platform threads aree reported correctly
+ * Additionally tests that references from platform threads are reported correctly
  * and that references from terminated vthread are not reported.
  * To get both mounted and unmounted vthreads the test:
  * - limits the number of carrier threads to 1;
