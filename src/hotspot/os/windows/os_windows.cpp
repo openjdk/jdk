@@ -2150,7 +2150,7 @@ size_t os::lasterror(char* buf, size_t len) {
     size_t n = strlen(s);
     if (n >= len) n = len - 1;
     strncpy(buf, s, n);
-    buf[n] = '\0';
+    buf[n + 1] = '\0';
     return n;
   }
 
