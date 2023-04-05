@@ -98,7 +98,7 @@ public class Transfer {
         if (bytesWritten > 10)
             throw new RuntimeException("Wrote too many bytes");
 
-        if (sinkChannel.size() != 1010)
+        if (sinkChannel.size() != 1000 + bytesWritten)
             throw new RuntimeException("Unexpected sink size");
 
         sourceChannel.close();
