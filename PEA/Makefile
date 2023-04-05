@@ -6,7 +6,7 @@ export PATH := ${JAVA_HOME}/bin:$(PATH)
 
 CTW_DIR := $(abspath ../test/hotspot/jtreg/testlibrary/ctw)
 CTW_SCRIPT = ${CTW_DIR}/dist/ctw.sh
-CTW_JAVA_OPTIONS := -XX:+CITime -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+UseTLAB -XX:+PrintCompilation -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis
+CTW_JAVA_OPTIONS := -XX:+CITime -XX:-TieredCompilation -XX:+UseTLAB -XX:+PrintCompilation -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis
 
 set_jdk:
 	if [ -e ${JAVA_PATH} ]; then \
