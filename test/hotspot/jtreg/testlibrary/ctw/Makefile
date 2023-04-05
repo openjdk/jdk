@@ -82,19 +82,13 @@ $(DST_DIR)/ctw.sh: $(DST_DIR)
 	chmod a+x $@
 
 $(DST_DIR)/ctwrunner.sh: $(DST_DIR)
-	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} -Dtest.jdk=$${JAVA_HOME} -jar ctwrunner.jar $$@' > $@
+	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} -Dtest.jdk=$${JAVA_HOME} -cp ctw.jar $$@' > $(CTWRUNNER_MAIN_CLASS) $@
 	chmod a+x $@
 
 $(DST_DIR)/ctw.jar: filelist $(DST_DIR)/wb.jar
 	@mkdir -p $(OUTPUT_DIR)
 	$(JAVAC) $(EXPORTS) -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp $(DST_DIR)/wb.jar @filelist
 	$(JAR) --create --file=$@ --main-class $(CTW_MAIN_CLASS) -C $(OUTPUT_DIR) .
-	@rm -rf $(OUTPUT_DIR)
-
-$(DST_DIR)/ctwrunner.jar: filelist $(DST_DIR)/wb.jar
-	@mkdir -p $(OUTPUT_DIR)
-	$(JAVAC) $(EXPORTS) -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp $(DST_DIR)/wb.jar @filelist
-	$(JAR) --create --file=$@ --main-class $(CTWRUNNER_MAIN_CLASS) -C $(OUTPUT_DIR) .
 	@rm -rf $(OUTPUT_DIR)
 
 $(DST_DIR)/wb.jar: wb_filelist $(DST_DIR)
@@ -106,7 +100,7 @@ $(DST_DIR)/wb.jar: wb_filelist $(DST_DIR)
 	cd $(DST_DIR); $(JAR) --create --file=wb.jar $(WB_CLASS_FILES)
 	@rm -rf $(OUTPUT_DIR)
 
-$(DST_DIR)/ctw.zip: $(DST_DIR)/ctw.sh $(DST_DIR)/ctwrunner.sh $(DST_DIR)/wb.jar $(DST_DIR)/ctw.jar $(DST_DIR)/ctwrunner.jar
+$(DST_DIR)/ctw.zip: $(DST_DIR)/ctw.sh $(DST_DIR)/ctwrunner.sh $(DST_DIR)/wb.jar $(DST_DIR)/ctw.jar $(DST_DIR)/ctwrunner.sh
 	zip -j $@ $?
 
 wb_filelist: $(WB_SRC_FILES)

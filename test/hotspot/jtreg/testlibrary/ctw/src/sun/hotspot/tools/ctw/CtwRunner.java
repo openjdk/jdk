@@ -58,7 +58,7 @@ public class CtwRunner {
      * comma-separated arguments to pass to CTW subprocesses.
      */
     public static final String CTW_EXTRA_ARGS
-            = System.getProperty("sun.hotspot.tools.ctwrunner.ctw_extra_args");
+            = System.getProperty("sun.hotspot.tools.ctwrunner.ctw_extra_args", "");
 
 
     private static final String USAGE = "Usage: CtwRunner <artifact to compile> [start[%] stop[%]]";
@@ -302,10 +302,8 @@ public class CtwRunner {
                 // StressSeed is uint
                 "-XX:StressSeed=" + Math.abs(rng.nextInt())));
 
-        if (null != CTW_EXTRA_ARGS) {
-            for (String arg : CTW_EXTRA_ARGS.split(",")) {
-                Args.add(arg);
-            }
+        for (String arg : CTW_EXTRA_ARGS.split(",")) {
+            Args.add(arg);
         }
 
         // CTW entry point
