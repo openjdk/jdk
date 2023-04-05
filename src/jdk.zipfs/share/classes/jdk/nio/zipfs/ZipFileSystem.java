@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package jdk.nio.zipfs;
-
-import jdk.internal.util.OperatingSystem;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -85,6 +83,9 @@ import static jdk.nio.zipfs.ZipUtils.*;
 class ZipFileSystem extends FileSystem {
     // statics
     @SuppressWarnings("removal")
+    private static final boolean isWindows = AccessController.doPrivileged(
+        (PrivilegedAction<Boolean>)()->System.getProperty("os.name")
+                                             .startsWith("Windows"));
     private static final byte[] ROOTPATH = new byte[] { '/' };
     private static final String PROPERTY_POSIX = "enablePosixFileAttributes";
     private static final String PROPERTY_DEFAULT_OWNER = "defaultOwner";
@@ -2876,7 +2877,7 @@ class ZipFileSystem extends FileSystem {
                 eoff += (4 + sz);
             }
             if (!foundExtraTime) {
-                if (OperatingSystem.isWindows()) { // use NTFS
+                if (isWindows) {             // use NTFS
                     elenNTFS = 36;           // total 36 bytes
                 } else {                     // Extended Timestamp otherwise
                     elenEXTT = 9;            // only mtime in cen
@@ -2995,7 +2996,7 @@ class ZipFileSystem extends FileSystem {
                 eoff += (4 + sz);
             }
             if (!foundExtraTime) {
-                if (OperatingSystem.isWindows()) {
+                if (isWindows) {
                     elenNTFS = 36;              // NTFS, total 36 bytes
                 } else {                        // on unix use "ext time"
                     elenEXTT = 9;

@@ -100,9 +100,9 @@ public final class SunNativeProvider extends Provider {
                                         "libgssapi_krb5.dylib",
                                         "/usr/lib/sasl2/libgssapiv2.2.so",
                                 };
-                                case WINDOWS -> // Full path needed, DLL is in jre/bin
-                                        new String[]{StaticProperty.javaHome()
-                                                + "\\bin\\sspi_bridge.dll"};
+                                case WINDOWS -> new String[]{ // Full path needed, DLL is in jre/bin
+                                        StaticProperty.javaHome() + "\\bin\\sspi_bridge.dll",
+                                };
                                 default -> new String[0];
                             };
                         } else {
