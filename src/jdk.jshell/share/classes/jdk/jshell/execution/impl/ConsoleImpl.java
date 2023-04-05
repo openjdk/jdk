@@ -193,7 +193,7 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public JdkConsole format(String fmt, Object ... args) {
+        public JdkConsole format(String fmt, Object... args) {
             writer().format(fmt, args).flush();
             return this;
         }
@@ -202,7 +202,7 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public JdkConsole printf(String format, Object ... args) {
+        public JdkConsole printf(String format, Object... args) {
             return format(format, args);
         }
 
@@ -210,7 +210,7 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public String readLine(String fmt, Object ... args) {
+        public String readLine(String fmt, Object... args) {
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_LINE.ordinal());
@@ -237,7 +237,7 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public char[] readPassword(String fmt, Object ... args) {
+        public char[] readPassword(String fmt, Object... args) {
             try {
                 return sendAndReceive(() -> {
                     remoteInput.write(Task.READ_PASSWORD.ordinal());
