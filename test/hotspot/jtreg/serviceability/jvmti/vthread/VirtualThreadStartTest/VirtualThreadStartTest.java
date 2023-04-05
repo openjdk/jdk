@@ -21,16 +21,25 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @summary Verifies JVMTI can_support_virtual_threads works for agents loaded at startup and into running VM
  * @requires vm.jvmti
- * @requires vm.continuations
  * @enablePreview
  * @run main/othervm/native -agentlib:VirtualThreadStartTest VirtualThreadStartTest
  * @run main/othervm/native -agentlib:VirtualThreadStartTest=can_support_virtual_threads VirtualThreadStartTest
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualThreadStartTest attach
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualThreadStartTest attach can_support_virtual_threads
+
+/*
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @requires vm.jvmti
+ * @enablePreview
+ * @run main/othervm/native -agentlib:VirtualThreadStartTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest
+ * @run main/othervm/native -agentlib:VirtualThreadStartTest=can_support_virtual_threads -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest
+ * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest attach
+ * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest attach can_support_virtual_threads
  */
 
 import com.sun.tools.attach.VirtualMachine;
@@ -60,7 +69,8 @@ public class VirtualThreadStartTest {
         int startedThreads = getAndResetStartedThreads();
         System.out.println("ThreadStart event count: " + startedThreads + ", expected: " + THREAD_CNT);
         if (startedThreads != THREAD_CNT) {
-            throw new RuntimeException("Failed: wrong ThreadStart event count");
+            throw new RuntimeException("Failed: wrong ThreadStart count: " +
+                                       startedThreads + " expected: " + THREAD_CNT);
         }
     }
 }

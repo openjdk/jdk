@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2028, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/vmOperations.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"
+#include "services/mallocLimit.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
@@ -79,7 +80,7 @@ void MemTracker::initialize() {
     }
   }
 
-  NMTPreInit::pre_to_post();
+  NMTPreInit::pre_to_post(level == NMT_off);
 
   _tracking_level = level;
 
@@ -90,7 +91,7 @@ void MemTracker::initialize() {
     ls.print_cr("NMT initialized: %s", NMTUtil::tracking_level_to_string(_tracking_level));
     ls.print_cr("Preinit state: ");
     NMTPreInit::print_state(&ls);
-    ls.cr();
+    MallocLimitHandler::print_on(&ls);
   }
 }
 
@@ -114,7 +115,7 @@ void MemTracker::error_report(outputStream* output) {
     report(true, output, MemReporterBase::default_scale); // just print summary for error case.
     output->print("Preinit state:");
     NMTPreInit::print_state(output);
-    MallocMemorySummary::print_limits(output);
+    MallocLimitHandler::print_on(output);
   }
 }
 
@@ -129,6 +130,14 @@ void MemTracker::final_report(outputStream* output) {
   if (enabled() && Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
     report(tracking_level() == NMT_summary, output, 1);
   }
+}
+
+// Given an unknown pointer, check if it points into a known region; print region if found
+// and return true; false if not found.
+bool MemTracker::print_containing_region(const void* p, outputStream* out) {
+  return enabled() &&
+      (MallocTracker::print_pointer_information(p, out) ||
+       VirtualMemoryTracker::print_containing_region(p, out));
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
@@ -159,6 +168,6 @@ void MemTracker::tuning_statistics(outputStream* out) {
   out->cr();
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
-  MallocMemorySummary::print_limits(out);
+  MallocLimitHandler::print_on(out);
   out->cr();
 }

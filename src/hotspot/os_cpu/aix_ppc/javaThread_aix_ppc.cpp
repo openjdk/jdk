@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -61,17 +61,17 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
     ucontext_t* uc = (ucontext_t*) ucontext;
     address pc = (address)uc->uc_mcontext.jmp_context.iar;
 
-    if (pc == NULL) {
+    if (pc == nullptr) {
       // ucontext wasn't useful
       return false;
     }
 
     frame ret_frame((intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/], pc);
 
-    if (ret_frame.fp() == NULL) {
+    if (ret_frame.fp() == nullptr) {
       // The found frame does not have a valid frame pointer.
       // Bail out because this will create big trouble later on, either
-      //  - when using istate, calculated as (NULL - ijava_state_size) or
+      //  - when using istate, calculated as (nullptr - ijava_state_size) or
       //  - when using fp() directly in safe_for_sender()
       //
       // There is no conclusive description (yet) how this could happen, but it does.

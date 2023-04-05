@@ -130,7 +130,7 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
   if (!is_stub) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
  #ifdef _LP64
-    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
       // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
       Label dummy_slow_path;
       Label dummy_continuation;
@@ -147,7 +147,7 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     }
 #else
     // Don't bother with out-of-line nmethod entry barrier stub for x86_32.
-    bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
+    bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
 #endif
   }
 }
@@ -228,7 +228,7 @@ void C2_MacroAssembler::rtm_abort_ratio_calculation(Register tmpReg,
   imulptr(scrReg, scrReg, RTMAbortRatio);
   cmpptr(tmpReg, scrReg);
   jccb(Assembler::below, L_check_always_rtm1);
-  if (method_data != NULL) {
+  if (method_data != nullptr) {
     // set rtm_state to "no rtm" in MDO
     mov_metadata(tmpReg, method_data);
     lock();
@@ -242,7 +242,7 @@ void C2_MacroAssembler::rtm_abort_ratio_calculation(Register tmpReg,
   movptr(tmpReg, Address(rtm_counters_Reg, RTMLockingCounters::total_count_offset()));
   cmpptr(tmpReg, RTMLockingThreshold / RTMTotalCountIncrRate);
   jccb(Assembler::below, L_done);
-  if (method_data != NULL) {
+  if (method_data != nullptr) {
     // set rtm_state to "always rtm" in MDO
     mov_metadata(tmpReg, method_data);
     lock();
@@ -260,7 +260,7 @@ void C2_MacroAssembler::rtm_profiling(Register abort_status_Reg,
                                       Metadata* method_data,
                                       bool profile_rtm) {
 
-  assert(rtm_counters != NULL, "should not be NULL when profiling RTM");
+  assert(rtm_counters != nullptr, "should not be null when profiling RTM");
   // update rtm counters based on rax value at abort
   // reads abort_status_Reg, updates flags
   lea(rtm_counters_Reg, ExternalAddress((address)rtm_counters));
@@ -270,7 +270,7 @@ void C2_MacroAssembler::rtm_profiling(Register abort_status_Reg,
     if (RTMRetryCount > 0) {
       push(abort_status_Reg);
     }
-    assert(rtm_counters != NULL, "should not be NULL when profiling RTM");
+    assert(rtm_counters != nullptr, "should not be null when profiling RTM");
     rtm_abort_ratio_calculation(abort_status_Reg, rtm_counters_Reg, rtm_counters, method_data);
     // restore abort status
     if (RTMRetryCount > 0) {
@@ -356,7 +356,7 @@ void C2_MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Regi
       // tmpReg, scrReg and flags are killed
       branch_on_random_using_rdtsc(tmpReg, scrReg, RTMTotalCountIncrRate, L_noincrement);
     }
-    assert(stack_rtm_counters != NULL, "should not be NULL when profiling RTM");
+    assert(stack_rtm_counters != nullptr, "should not be null when profiling RTM");
     atomic_incptr(ExternalAddress((address)stack_rtm_counters->total_count_addr()), scrReg);
     bind(L_noincrement);
   }
@@ -416,7 +416,7 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
       // tmpReg, scrReg and flags are killed
       branch_on_random_using_rdtsc(tmpReg, scrReg, RTMTotalCountIncrRate, L_noincrement);
     }
-    assert(rtm_counters != NULL, "should not be NULL when profiling RTM");
+    assert(rtm_counters != nullptr, "should not be null when profiling RTM");
     atomic_incptr(ExternalAddress((address)rtm_counters->total_count_addr()), scrReg);
     bind(L_noincrement);
   }
@@ -559,6 +559,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   if (use_rtm) {
     assert_different_registers(objReg, boxReg, tmpReg, scrReg, cx1Reg, cx2Reg);
   } else {
+    assert(cx1Reg == noreg, "");
     assert(cx2Reg == noreg, "");
     assert_different_registers(objReg, boxReg, tmpReg, scrReg);
   }
@@ -581,7 +582,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   Label IsInflated, DONE_LABEL, NO_COUNT, COUNT;
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmpReg, objReg, cx1Reg);
+    load_klass(tmpReg, objReg, scrReg);
     movl(tmpReg, Address(tmpReg, Klass::access_flags_offset()));
     testl(tmpReg, JVM_ACC_IS_VALUE_BASED_CLASS);
     jcc(Assembler::notZero, DONE_LABEL);
@@ -613,7 +614,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     // Locked by current thread if difference with current SP is less than one page.
     subptr(tmpReg, rsp);
     // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
-    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - (int)os::vm_page_size())) );
     movptr(Address(boxReg, 0), tmpReg);
   } else {
     // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
@@ -660,7 +661,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   lock();
   cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
-  // If we weren't able to swing _owner from NULL to the BasicLock
+  // If we weren't able to swing _owner from null to the BasicLock
   // then take the slow path.
   jccb  (Assembler::notZero, NO_COUNT);
   // update _owner from BasicLock to thread
@@ -2182,7 +2183,7 @@ void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_vali
                                           XMMRegister dst, XMMRegister src,
                                           XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                                           XMMRegister xmm_0, XMMRegister xmm_1) {
-  int permconst[] = {1, 14};
+  const int permconst[] = {1, 14};
   XMMRegister wsrc = src;
   XMMRegister wdst = xmm_0;
   XMMRegister wtmp = (xmm_1 == xnoreg) ? xmm_0: xmm_1;
@@ -2275,6 +2276,14 @@ XMMRegister C2_MacroAssembler::get_lane(BasicType typ, XMMRegister dst, XMMRegis
   }
 }
 
+void C2_MacroAssembler::movsxl(BasicType typ, Register dst) {
+  if (typ == T_BYTE) {
+    movsbl(dst, dst);
+  } else if (typ == T_SHORT) {
+    movswl(dst, dst);
+  }
+}
+
 void C2_MacroAssembler::get_elem(BasicType typ, Register dst, XMMRegister src, int elemindex) {
   int esize =  type2aelembytes(typ);
   int elem_per_lane = 16/esize;
@@ -2286,13 +2295,11 @@ void C2_MacroAssembler::get_elem(BasicType typ, Register dst, XMMRegister src, i
       movq(dst, src);
     } else {
       movdl(dst, src);
-      if (typ == T_BYTE)
-        movsbl(dst, dst);
-      else if (typ == T_SHORT)
-        movswl(dst, dst);
+      movsxl(typ, dst);
     }
   } else {
     extract(typ, dst, src, eindex);
+    movsxl(typ, dst);
   }
 }
 
@@ -2784,8 +2791,8 @@ void C2_MacroAssembler::string_indexof(Register str1, Register str2,
       // since heaps are aligned and mapped by pages.
       assert(os::vm_page_size() < (int)G, "default page should be small");
       movl(result, str2); // We need only low 32 bits
-      andl(result, (os::vm_page_size()-1));
-      cmpl(result, (os::vm_page_size()-16));
+      andl(result, ((int)os::vm_page_size()-1));
+      cmpl(result, ((int)os::vm_page_size()-16));
       jccb(Assembler::belowEqual, CHECK_STR);
 
       // Move small strings to stack to allow load 16 bytes into vec.
@@ -2814,8 +2821,8 @@ void C2_MacroAssembler::string_indexof(Register str1, Register str2,
 
     // Check cross page boundary.
     movl(result, str1); // We need only low 32 bits
-    andl(result, (os::vm_page_size()-1));
-    cmpl(result, (os::vm_page_size()-16));
+    andl(result, ((int)os::vm_page_size()-1));
+    cmpl(result, ((int)os::vm_page_size()-16));
     jccb(Assembler::belowEqual, BIG_STRINGS);
 
     subptr(rsp, 16);
@@ -3278,9 +3285,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   }
 
   // For "renaming" for readibility of the code
-  XMMRegister vcoef[] = { vcoef0, vcoef1, vcoef2, vcoef3 },
-              vresult[] = { vresult0, vresult1, vresult2, vresult3 },
-              vtmp[] = { vtmp0, vtmp1, vtmp2, vtmp3 };
+  const XMMRegister vcoef[] = { vcoef0, vcoef1, vcoef2, vcoef3 },
+                    vresult[] = { vresult0, vresult1, vresult2, vresult3 },
+                    vtmp[] = { vtmp0, vtmp1, vtmp2, vtmp3 };
 
   const int elsize = arrays_hashcode_elsize(eltype);
 
@@ -6088,3 +6095,14 @@ void C2_MacroAssembler::rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XM
   evpshufb(dst, ktmp, xtmp3, shuffle, true, vlen_enc);
 }
 
+void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst,
+                                                   XMMRegister shuffle, XMMRegister src, int vlen_enc) {
+  if (vlen_enc == AVX_128bit) {
+    vpermilps(dst, src, shuffle, vlen_enc);
+  } else if (bt == T_INT) {
+    vpermd(dst, shuffle, src, vlen_enc);
+  } else {
+    assert(bt == T_FLOAT, "");
+    vpermps(dst, shuffle, src, vlen_enc);
+  }
+}

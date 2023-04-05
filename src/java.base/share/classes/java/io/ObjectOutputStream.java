@@ -155,6 +155,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataOutput
@@ -670,6 +671,7 @@ public class ObjectOutputStream
      *
      * @param   desc class descriptor to write to the stream
      * @throws  IOException If an I/O error has occurred.
+     * @spec serialization/index.html Java Object Serialization Specification
      * @see java.io.ObjectInputStream#readClassDescriptor()
      * @see #useProtocolVersion(int)
      * @see java.io.ObjectStreamConstants#PROTOCOL_VERSION_1

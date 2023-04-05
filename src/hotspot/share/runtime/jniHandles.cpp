@@ -242,15 +242,13 @@ bool JNIHandles::is_frame_handle(JavaThread* thr, jobject handle) {
 
 bool JNIHandles::is_global_handle(jobject handle) {
   assert(handle != nullptr, "precondition");
-  assert(!is_global_tagged(handle) || is_storage_handle(global_handles(), global_ptr(handle)), "invalid storage");
-  return is_global_tagged(handle);
+  return is_global_tagged(handle) && is_storage_handle(global_handles(), global_ptr(handle));
 }
 
 
 bool JNIHandles::is_weak_global_handle(jobject handle) {
   assert(handle != nullptr, "precondition");
-  assert(!is_weak_global_tagged(handle) || is_storage_handle(weak_global_handles(), weak_global_ptr(handle)), "invalid storage");
-  return is_weak_global_tagged(handle);
+  return is_weak_global_tagged(handle) && is_storage_handle(weak_global_handles(), weak_global_ptr(handle));
 }
 
 // We assume this is called at a safepoint: no lock is needed.

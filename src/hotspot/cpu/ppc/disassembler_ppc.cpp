@@ -28,7 +28,6 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"

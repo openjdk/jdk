@@ -155,7 +155,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * This protected field is implementation specific. Do not access directly
      * or override. Use the accessor methods instead.
      *
-     * @see #isEditable
+     * @see #isEditable()
      * @see #setEditable
      */
     protected boolean isEditable  = false;

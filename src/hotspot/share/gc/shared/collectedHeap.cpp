@@ -60,8 +60,8 @@
 
 class ClassLoaderData;
 
-size_t CollectedHeap::_lab_alignment_reserve = ~(size_t)0;
-Klass* CollectedHeap::_filler_object_klass = NULL;
+size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
+Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
 
@@ -99,7 +99,7 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   double timestamp = fetch_timestamp();
   MutexLocker ml(&_mutex, Mutex::_no_safepoint_check_flag);
   int index = compute_log_index();
-  _records[index].thread = NULL; // Its the GC thread so it's not that interesting.
+  _records[index].thread = nullptr; // Its the GC thread so it's not that interesting.
   _records[index].timestamp = timestamp;
   _records[index].data.is_before = before;
   stringStream st(_records[index].data.buffer(), _records[index].data.size());
@@ -152,6 +152,10 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
                           ms_chunk_free_list_summary, class_chunk_free_list_summary);
 }
 
+bool CollectedHeap::contains_null(const oop* p) const {
+  return *p == nullptr;
+}
+
 void CollectedHeap::print_heap_before_gc() {
   LogTarget(Debug, gc, heap) lt;
   if (lt.is_enabled()) {
@@ -161,7 +165,7 @@ void CollectedHeap::print_heap_before_gc() {
     print_on(&ls);
   }
 
-  if (_gc_heap_log != NULL) {
+  if (_gc_heap_log != nullptr) {
     _gc_heap_log->log_heap_before(this);
   }
 }
@@ -175,7 +179,7 @@ void CollectedHeap::print_heap_after_gc() {
     print_on(&ls);
   }
 
-  if (_gc_heap_log != NULL) {
+  if (_gc_heap_log != nullptr) {
     _gc_heap_log->log_heap_after(this);
   }
 }
@@ -188,7 +192,7 @@ void CollectedHeap::print_on_error(outputStream* st) const {
   st->cr();
 
   BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs != NULL) {
+  if (bs != nullptr) {
     bs->print_on(st);
   }
 }
@@ -223,7 +227,7 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (is_in(object->klass_or_null())) {
+  if (is_in(object->klass_raw())) {
     return false;
   }
 
@@ -275,7 +279,7 @@ CollectedHeap::CollectedHeap() :
   if (LogEvents) {
     _gc_heap_log = new GCHeapLog();
   } else {
-    _gc_heap_log = NULL;
+    _gc_heap_log = nullptr;
   }
 }
 
@@ -298,7 +302,6 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
       do_full_collection(false);        // don't clear all soft refs
       break;
     }
-    case GCCause::_archive_time_gc:
     case GCCause::_metadata_GC_clear_soft_refs: {
       HandleMark hm(thread);
       do_full_collection(true);         // do clear all soft refs
@@ -320,7 +323,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
 
   do {
     MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
-    if (result != NULL) {
+    if (result != nullptr) {
       return result;
     }
 
@@ -329,7 +332,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
       // If that does not succeed, wait if this thread is not
       // in a critical section itself.
       result = loader_data->metaspace_non_null()->expand_and_allocate(word_size, mdtype);
-      if (result != NULL) {
+      if (result != nullptr) {
         return result;
       }
       JavaThread* jthr = JavaThread::current();
@@ -346,7 +349,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
           fatal("Possible deadlock due to allocating while"
                 " in jni critical section");
         }
-        return NULL;
+        return nullptr;
       }
     }
 
@@ -520,7 +523,7 @@ HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
                                            size_t requested_size,
                                            size_t* actual_size) {
   guarantee(false, "thread-local allocation buffers not supported");
-  return NULL;
+  return nullptr;
 }
 
 void CollectedHeap::ensure_parsability(bool retire_tlabs) {
@@ -563,7 +566,7 @@ void CollectedHeap::record_whole_heap_examined_timestamp() {
 }
 
 void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
-  assert(timer != NULL, "timer is null");
+  assert(timer != nullptr, "timer is null");
   if ((HeapDumpBeforeFullGC && before) || (HeapDumpAfterFullGC && !before)) {
     GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
     HeapDumper::dump_heap();

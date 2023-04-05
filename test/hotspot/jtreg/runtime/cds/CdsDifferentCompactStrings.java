@@ -48,7 +48,7 @@ public class CdsDifferentCompactStrings {
 
         CDSTestUtils.createArchiveAndCheck(createCompactStringsArgument);
 
-        OutputAnalyzer out = CDSTestUtils.runWithArchive(loadCompactStringsArgument);
+        OutputAnalyzer out = CDSTestUtils.runWithArchive("-Xlog:cds", loadCompactStringsArgument);
         CDSTestUtils.checkMappingFailure(out);
 
         out.shouldMatch("The shared archive file's CompactStrings " +

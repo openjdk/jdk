@@ -130,10 +130,14 @@ public class BodyOutputStream extends OutputStream {
             closed = true;
         }
         try {
-            send(EMPTY_BARRAY, 0, 0, DataFrame.END_STREAM);
+            sendEndStream();
         } catch (IOException ex) {
             System.err.println("TestServer: OutputStream.close exception: " + ex);
             ex.printStackTrace();
         }
+    }
+
+    protected void sendEndStream() throws IOException {
+        send(EMPTY_BARRAY, 0, 0, DataFrame.END_STREAM);
     }
 }

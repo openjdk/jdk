@@ -192,7 +192,7 @@ public class Http2TestServer implements AutoCloseable {
         this.secure = secure;
         this.exec = exec == null ? getDefaultExecutor() : exec;
         this.handlers = Collections.synchronizedMap(new HashMap<>());
-        this.properties = properties;
+        this.properties = properties == null ? new Properties() : properties;
         this.connections = ConcurrentHashMap.newKeySet();
     }
 

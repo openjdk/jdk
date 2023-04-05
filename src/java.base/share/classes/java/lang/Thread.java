@@ -1956,6 +1956,8 @@ public class Thread implements Runnable {
      * @param      name   the new name for this thread.
      * @throws     SecurityException  if the current thread cannot modify this
      *             thread.
+     *
+     * @spec jni/index.html Java Native Interface Specification
      * @see        #getName
      * @see        #checkAccess()
      */
@@ -2585,10 +2587,8 @@ public class Thread implements Runnable {
         StackTraceElement[][] traces = dumpThreads(threads);
         Map<Thread, StackTraceElement[]> m = HashMap.newHashMap(threads.length);
         for (int i = 0; i < threads.length; i++) {
-            Thread thread = threads[i];
             StackTraceElement[] stackTrace = traces[i];
-            // BoundVirtualThread objects may be in list returned by the VM
-            if (!thread.isVirtual() && stackTrace != null) {
+            if (stackTrace != null) {
                 m.put(threads[i], stackTrace);
             }
             // else terminated so we don't put it in the map
@@ -2658,11 +2658,7 @@ public class Thread implements Runnable {
      * Return an array of all live threads.
      */
     static Thread[] getAllThreads() {
-        Thread[] threads = getThreads();
-        return Stream.of(threads)
-                // BoundVirtualThread objects may be in list returned by the VM
-                .filter(Predicate.not(Thread::isVirtual))
-                .toArray(Thread[]::new);
+        return getThreads();
     }
 
     private static native StackTraceElement[][] dumpThreads(Thread[] threads);

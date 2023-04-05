@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -146,7 +146,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
       ShouldNotReachHere();
   }
   // Clean up tos value in the thread object
-  mvw(t0, (int) ilgl);
+  mv(t0, (int)ilgl);
   sw(t0, tos_addr);
   sw(zr, val_addr);
 }
@@ -831,7 +831,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // least significant 3 bits clear.
     // NOTE: the oopMark is in swap_reg x10 as the result of cmpxchg
     sub(swap_reg, swap_reg, sp);
-    mv(t0, (int64_t)(7 - os::vm_page_size()));
+    mv(t0, (int64_t)(7 - (int)os::vm_page_size()));
     andr(swap_reg, swap_reg, t0);
 
     // Save the test result, for recursive case, the result is zero
@@ -1497,8 +1497,8 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 
     // Build the base (index * per_case_size_in_bytes()) +
     // case_array_offset_in_bytes()
-    mvw(reg2, in_bytes(MultiBranchData::per_case_size()));
-    mvw(t0, in_bytes(MultiBranchData::case_array_offset()));
+    mv(reg2, in_bytes(MultiBranchData::per_case_size()));
+    mv(t0, in_bytes(MultiBranchData::case_array_offset()));
     Assembler::mul(index, index, reg2);
     Assembler::add(index, index, t0);
 
@@ -1914,6 +1914,18 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
 
     bind(profile_continue);
   }
+}
+
+void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // Get address of invokedynamic array
+  ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  slli(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
+  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  add(cache, cache, index);
+  la(cache, Address(cache, 0));
 }
 
 void InterpreterMacroAssembler::get_method_counters(Register method,

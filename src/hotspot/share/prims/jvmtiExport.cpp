@@ -379,10 +379,13 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
   }
   if (Continuations::enabled()) {
     // Virtual threads support. There is a performance impact when VTMS transitions are enabled.
-    java_lang_VirtualThread::set_notify_jvmti_events(true);
     if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
-      ThreadInVMfromNative __tiv(JavaThread::current());
-      java_lang_VirtualThread::init_static_notify_jvmti_events();
+      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+        ThreadInVMfromNative __tiv(JavaThread::current());
+        JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
+      }
+    } else {
+      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
     }
   }
 
@@ -1274,22 +1277,6 @@ bool              JvmtiExport::_should_post_vthread_unmount               = fals
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void JvmtiExport::check_vthread_and_suspend_at_safepoint(JavaThread *thread) {
-  oop vt = thread->jvmti_vthread();
-
-  if (vt != nullptr && java_lang_VirtualThread::is_instance(vt)) {
-    int64_t id = java_lang_Thread::thread_id(vt);
-
-    ThreadBlockInVM tbivm(thread);
-    MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
-
-    // block while vthread is externally suspended
-    while (JvmtiVTSuspender::is_vthread_suspended(id)) {
-      ml.wait();
-    }
-  }
-}
-
 //
 // JVMTI single step management
 //
@@ -1468,6 +1455,14 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
   // do JVMTI thread initialization (if needed)
   JvmtiEventController::thread_started(thread);
 
+  if (JvmtiExport::can_support_virtual_threads() && thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
+    // Check for VirtualThreadStart event instead.
+    HandleMark hm(thread);
+    Handle vthread(thread, thread->threadObj());
+    JvmtiExport::post_vthread_start((jthread)vthread.raw_value());
+    return;
+  }
+
   // Do not post thread start event for hidden java thread.
   if (JvmtiEventController::is_enabled(JVMTI_EVENT_THREAD_START) &&
       !thread->is_hidden_from_external_view()) {
@@ -1501,6 +1496,14 @@ void JvmtiExport::post_thread_end(JavaThread *thread) {
 
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == nullptr) {
+    return;
+  }
+
+  if (JvmtiExport::can_support_virtual_threads() && thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
+    // Check for VirtualThreadEnd event instead.
+    HandleMark hm(thread);
+    Handle vthread(thread, thread->threadObj());
+    JvmtiExport::post_vthread_end((jthread)vthread.raw_value());
     return;
   }
 

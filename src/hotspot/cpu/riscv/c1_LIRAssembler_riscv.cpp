@@ -450,7 +450,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   switch (c->type()) {
     case T_INT:
       assert(patch_code == lir_patch_none, "no patching handled here");
-      __ mvw(dest->as_register(), c->as_jint());
+      __ mv(dest->as_register(), c->as_jint());
       break;
 
     case T_ADDRESS:
@@ -518,7 +518,7 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
       if (c->as_jint_bits() == 0) {
         __ sw(zr, frame_map()->address_for_slot(dest->single_stack_ix()));
       } else {
-        __ mvw(t1, c->as_jint_bits());
+        __ mv(t1, c->as_jint_bits());
         __ sw(t1, frame_map()->address_for_slot(dest->single_stack_ix()));
       }
       break;
@@ -1001,7 +1001,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     __ lbu(t0, Address(op->klass()->as_register(),
                        InstanceKlass::init_state_offset()));
-    __ mvw(t1, InstanceKlass::fully_initialized);
+    __ mv(t1, (u1)InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ bne(t0, t1, *op->stub()->entry(), /* is_far */ true);
   }
@@ -1294,7 +1294,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register();
     if (right->is_constant()) {
       int right_const = right->as_jint();
-      if (Assembler::operand_valid_for_add_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
         __ addw(Rdst, Rdst, zr);
      } else {
@@ -1309,7 +1309,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register_lo();
     if (right->is_constant()) {
       long right_const = right->as_jlong();
-      if (Assembler::operand_valid_for_add_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
       } else {
         __ mv(t0, right_const);
@@ -1825,7 +1825,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
       offset += ((intptr_t)index_op->as_constant_ptr()->as_jint()) << scale;
     }
 
-    if (!is_imm_in_range(offset, 12, 0)) {
+    if (!Assembler::is_simm12(offset)) {
       __ la(t0, as_Address(adr));
       __ mv(dst, t0);
       return;

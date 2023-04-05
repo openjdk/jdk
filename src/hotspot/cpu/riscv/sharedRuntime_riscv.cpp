@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -430,7 +431,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
         // Two VMREgs|OptoRegs can be T_OBJECT, T_ADDRESS, T_DOUBLE, T_LONG
         // T_DOUBLE and T_LONG use two slots in the interpreter
-        if ( sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
+        if (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
           // ld_off == LSW, ld_off+wordSize == MSW
           // st_off == MSW, next_off == LSW
           __ sd(t0, Address(sp, next_off), /*temp register*/esp);
@@ -681,7 +682,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  __ flush();
   return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
 }
 
@@ -886,7 +886,7 @@ static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) 
 //          c_rarg3 -- isVirtualThread
 static void fill_continuation_entry(MacroAssembler* masm) {
 #ifdef ASSERT
-  __ mvw(t0, ContinuationEntry::cookie_value());
+  __ mv(t0, ContinuationEntry::cookie_value());
   __ sw(t0, Address(sp, ContinuationEntry::cookie_offset()));
 #endif
 
@@ -1692,7 +1692,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
 
       __ sub(swap_reg, swap_reg, sp);
-      __ andi(swap_reg, swap_reg, 3 - os::vm_page_size());
+      __ andi(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
 
       // Save the test result, for recursive case, the result is zero
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
@@ -1747,7 +1747,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ membar(MacroAssembler::AnyAny);
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::AnyAny);
+  }
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
@@ -2099,7 +2101,7 @@ void SharedRuntime::generate_deopt_blob() {
   map = reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
 
   // Normal deoptimization.  Save exec mode for unpack_frames.
-  __ mvw(xcpool, Deoptimization::Unpack_deopt); // callee-saved
+  __ mv(xcpool, Deoptimization::Unpack_deopt); // callee-saved
   __ j(cont);
 
   int reexecute_offset = __ pc() - start;
@@ -2116,7 +2118,7 @@ void SharedRuntime::generate_deopt_blob() {
   // No need to update map as each call to save_live_registers will produce identical oopmap
   (void) reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
 
-  __ mvw(xcpool, Deoptimization::Unpack_reexecute); // callee-saved
+  __ mv(xcpool, Deoptimization::Unpack_reexecute); // callee-saved
   __ j(cont);
 
 #if INCLUDE_JVMCI
@@ -2139,10 +2141,10 @@ void SharedRuntime::generate_deopt_blob() {
     __ set_last_Java_frame(sp, noreg, retaddr, t0);
 
     __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
-    __ mvw(t0, -1);
+    __ mv(t0, -1);
     __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
 
-    __ mvw(xcpool, (int32_t)Deoptimization::Unpack_reexecute);
+    __ mv(xcpool, Deoptimization::Unpack_reexecute);
     __ mv(c_rarg0, xthread);
     __ orrw(c_rarg2, zr, xcpool); // exec mode
     RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
@@ -2483,7 +2485,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // n.b. 3 gp args, 0 fp args, integral return type
 
   __ mv(c_rarg0, xthread);
-  __ mvw(c_rarg2, (unsigned)Deoptimization::Unpack_uncommon_trap);
+  __ mv(c_rarg2, Deoptimization::Unpack_uncommon_trap);
   RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
   __ relocate(target.rspec(), [&] {
     int32_t offset;
@@ -2509,7 +2511,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   { Label L;
     __ lwu(t0, Address(x14, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
-    __ mvw(t1, Deoptimization::Unpack_uncommon_trap);
+    __ mv(t1, Deoptimization::Unpack_uncommon_trap);
     __ beq(t0, t1, L);
     __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
     __ bind(L);
@@ -2610,7 +2612,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // sp should already be aligned
   __ mv(c_rarg0, xthread);
-  __ mvw(c_rarg1, (unsigned)Deoptimization::Unpack_uncommon_trap);
+  __ mv(c_rarg1, Deoptimization::Unpack_uncommon_trap);
   target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
   __ relocate(target.rspec(), [&] {
     int32_t offset;
