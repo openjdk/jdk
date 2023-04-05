@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.parser;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,6 +63,7 @@ import static com.sun.tools.javac.util.LayoutCharacters.EOI;
  */
 public class DocCommentParser {
     static class ParseException extends Exception {
+        @Serial
         private static final long serialVersionUID = 0;
         final int pos;
 
@@ -117,10 +119,6 @@ public class DocCommentParser {
         this(fac, diagSource, comment, false);
     }
 
-    public DocCommentParser(ParserFactory fac) {
-        this(fac, null, null, false);
-    }
-
     public DCDocComment parse() {
         String c = comment.getText();
         buf = new char[c.length() + 1];
@@ -147,8 +145,7 @@ public class DocCommentParser {
     void nextChar() {
         ch = buf[bp < buflen ? ++bp : buflen];
         switch (ch) {
-            case '\f': case '\n': case '\r':
-                newline = true;
+            case '\f', '\n', '\r' -> newline = true;
         }
     }
 
@@ -389,8 +386,8 @@ public class DocCommentParser {
 
     /**
      * Read plain text content of an inline tag.
-     * Matching pairs of { } are skipped; the text is terminated by the first
-     * unmatched }. It is an error if the beginning of the next tag is detected.
+     * Matching pairs of '{' '}' are skipped; the text is terminated by the first
+     * unmatched '}'. It is an error if the beginning of the next tag is detected.
      */
     private DCText inlineText(WhitespaceRetentionPolicy whitespacePolicy) throws ParseException {
         switch (whitespacePolicy) {
@@ -410,7 +407,6 @@ public class DocCommentParser {
         int pos = bp;
         int depth = 1;
 
-        loop:
         while (bp < buflen) {
             switch (ch) {
                 case '\n': case '\r': case '\f':
@@ -444,7 +440,7 @@ public class DocCommentParser {
     /**
      * Read Java class name, possibly followed by member
      * Matching pairs of {@literal < >} are skipped. The text is terminated by the first
-     * unmatched }. It is an error if the beginning of the next tag is detected.
+     * unmatched '}'. It is an error if the beginning of the next tag is detected.
      */
     // TODO: improve quality of parse to forbid bad constructions.
     @SuppressWarnings("fallthrough")
@@ -457,6 +453,7 @@ public class DocCommentParser {
         loop:
         while (bp < buflen) {
             switch (ch) {
+
                 case '\n': case '\r': case '\f':
                 case ' ': case '\t':
                     if (depth == 0)
@@ -484,10 +481,11 @@ public class DocCommentParser {
                 case '@':
                     if (newline)
                         break loop;
-                    // fallthrough
+                    break;
 
                 default:
                     newline = false;
+                    break;
 
             }
             nextChar();
@@ -590,8 +588,8 @@ public class DocCommentParser {
 
     /**
      * Reads general text content of an inline tag, including HTML entities and elements.
-     * Matching pairs of { } are skipped; the text is terminated by the first
-     * unmatched }. It is an error if the beginning of the next tag is detected.
+     * Matching pairs of '{' '}' are skipped; the text is terminated by the first
+     * unmatched '}'. It is an error if the beginning of the next tag is detected.
      */
     @SuppressWarnings("fallthrough")
     private List<DCTree> inlineContent() {
@@ -602,7 +600,6 @@ public class DocCommentParser {
         int depth = 1;
         textStart = -1;
 
-        loop:
         while (bp < buflen) {
 
             switch (ch) {
@@ -867,8 +864,7 @@ public class DocCommentParser {
                 }
                 if (ch == '>') {
                     nextChar();
-                    DCTree dctree = m.at(p).newStartElementTree(name, attrs, selfClosing).setEndPos(bp);
-                    return dctree;
+                    return m.at(p).newStartElementTree(name, attrs, selfClosing).setEndPos(bp);
                 }
             }
         } else if (ch == '/') {
@@ -1011,16 +1007,9 @@ public class DocCommentParser {
 
     protected void attrValueChar(ListBuffer<DCTree> list) {
         switch (ch) {
-            case '&':
-                entity(list);
-                break;
-
-            case '{':
-                inlineTag(list);
-                break;
-
-            default:
-                nextChar();
+            case '&' -> entity(list);
+            case '{' -> inlineTag(list);
+            default  -> nextChar();
         }
     }
 
@@ -1146,15 +1135,11 @@ public class DocCommentParser {
     }
 
     protected boolean isUnquotedAttrValueTerminator(char ch) {
-        switch (ch) {
-            case '\f': case '\n': case '\r': case '\t':
-            case ' ':
-            case '"': case '\'': case '`':
-            case '=': case '<': case '>':
-                return true;
-            default:
-                return false;
-        }
+        return switch (ch) {
+            case '\f', '\n', '\r', '\t', ' ',
+                    '"', '\'', '`', '=', '<', '>' -> true;
+            default -> false;
+        };
     }
 
     protected boolean isWhitespace(char ch) {
@@ -1402,17 +1387,11 @@ public class DocCommentParser {
             new TagParser(TagParser.Kind.EITHER, DCTree.Kind.RETURN) {
                 @Override
                 public DCTree parse(int pos, Kind kind) {
-                    List<DCTree> description;
-                    switch (kind) {
-                        case BLOCK:
-                            description = blockContent();
-                            break;
-                        case INLINE:
-                            description = inlineContent();
-                            break;
-                        default:
-                            throw new IllegalArgumentException(kind.toString());
-                    }
+                    List<DCTree> description = switch (kind) {
+                        case BLOCK -> blockContent();
+                        case INLINE -> inlineContent();
+                        default -> throw new IllegalArgumentException(kind.toString());
+                    };
                     return m.at(pos).newReturnTree(kind == Kind.INLINE, description);
                 }
             },
@@ -1613,7 +1592,7 @@ public class DocCommentParser {
             // {@summary summary-text}
             new TagParser(TagParser.Kind.INLINE, DCTree.Kind.SUMMARY) {
                 @Override
-                public DCTree parse(int pos) throws ParseException {
+                public DCTree parse(int pos) {
                     List<DCTree> summary = inlineContent();
                     return m.at(pos).newSummaryTree(summary);
                 }
