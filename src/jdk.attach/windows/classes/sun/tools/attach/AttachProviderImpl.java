@@ -46,7 +46,7 @@ public class AttachProviderImpl extends HotSpotAttachProvider {
         }
         if (!Architecture.isX86() &&
             !Architecture.isX64() &&
-            !Architecture.isAarch64()) {
+            !Architecture.isAARCH64()) {
             throw new RuntimeException(
                 "This provider is not supported on this processor architecture: " + Architecture.current());
         }
