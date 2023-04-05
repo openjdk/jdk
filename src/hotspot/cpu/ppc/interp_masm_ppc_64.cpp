@@ -2186,7 +2186,7 @@ void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
 void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool bcp_and_mdx_only, bool restore_top_frame_sp) {
   ld_ptr(scratch, _abi0(callers_sp), R1_SP);   // Load frame pointer.
   if (restore_top_frame_sp) {
-    // After thawing the top frame of a continuation we reach here with frame::abi_minframe.
+    // After thawing the top frame of a continuation we reach here with frame::java_abi.
     // therefore we have to restore top_frame_sp before the assertion below.
     assert(!bcp_and_mdx_only, "chose other registers");
     Register tfsp = R18_locals;

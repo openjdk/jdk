@@ -976,7 +976,7 @@ void MacroAssembler::push_frame(unsigned int bytes, Register tmp) {
   }
 }
 
-// Push a frame of size `bytes' plus abi_reg_args on top.
+// Push a frame of size `bytes' plus native_abi_reg_args on top.
 void MacroAssembler::push_frame_reg_args(unsigned int bytes, Register tmp) {
   push_frame(bytes + frame::native_abi_reg_args_size, tmp);
 }

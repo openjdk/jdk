@@ -62,16 +62,16 @@
   //            ...
   //            spill slot for FR
   //
-  //  ABI_48:
+  //  ABI_MINFRAME:
   //    0       caller's SP
   //    8       space for condition register (CR) for next call
   //    16      space for link register (LR) for next call
-  //    24      reserved
-  //    32      reserved
+  //    24      reserved (ABI_ELFv2 only)
+  //    32      reserved (ABI_ELFv2 only)
   //    40      space for TOC (=R2) register for next call
   //
   //  ABI_REG_ARGS:
-  //    0       [ABI_48]
+  //    0       [ABI_MINFRAME]
   //    48      CARG_1: spill slot for outgoing arg 1. used by next callee.
   //    ...     ...
   //    104     CARG_8: spill slot for outgoing arg 8. used by next callee.
@@ -82,13 +82,14 @@
   // C frame layout
   static const int alignment_in_bytes = 16;
 
+  // Common ABI. On top of all frames, C and Java
   struct common_abi {
     uint64_t callers_sp;
     uint64_t cr;
     uint64_t lr;
   };
 
-  // ABI_MINFRAME:
+  // ABI_MINFRAME. Used for native C frames.
   struct native_abi_minframe : common_abi {
 #if !defined(ABI_ELFv2)
     uint64_t reserved1;                           //_16
@@ -186,6 +187,10 @@
 
   // Frame layout for the Java template interpreter on PPC64.
   //
+  // We differnetiate between TOP and PARENT frames.
+  // TOP frames allow for calling native C code.
+  // A TOP frame is trimmed to a PARENT frame when calling a Java method.
+  //
   // In these figures the stack grows upwards, while memory grows
   // downwards. Square brackets denote regions possibly larger than
   // single 64 bit slots.
@@ -227,6 +232,7 @@
   //            [outgoing arguments]
   //            [ENTRY_FRAME_LOCALS]
 
+  // ABI for every Java frame, compiled and interpreted
   struct java_abi : common_abi {
     uint64_t toc;
   };
@@ -320,7 +326,8 @@
   //          [in_preserve] added / removed by prolog / epilog
   //
 
-  // JIT_ABI (TOP and PARENT)
+  // For JIT frames we don't differentiate between TOP and PARENT frames.
+  // Runtime calls go through stubs which push a new frame.
 
   struct jit_out_preserve : java_abi {
     // Nothing to add here!
