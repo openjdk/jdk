@@ -1211,7 +1211,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // make sure the store is observed before reading the SafepointSynchronize state and further mem refs
-  __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
+  if (!UseSystemMemoryBarrier) {
+    __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
+  }
 
   __ safepoint_poll(R2, call_safepoint_runtime);
   __ ldr_u32(R3, Address(Rthread, JavaThread::suspend_flags_offset()));
