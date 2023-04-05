@@ -990,7 +990,7 @@ JavaThread* JavaThread::active() {
 }
 
 bool JavaThread::is_lock_owned(address adr) const {
-  assert(LockingMode != 2, "should not be called with new lightweight locking");
+  assert(LockingMode != LIGHTWEIGHT, "should not be called with new lightweight locking");
   if (Thread::is_lock_owned(adr)) return true;
 
   for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
@@ -1385,7 +1385,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
     entry = entry->parent();
   }
 
-  if (LockingMode == 2) {
+  if (LockingMode == LIGHTWEIGHT) {
     lock_stack().oops_do(f);
   }
 }

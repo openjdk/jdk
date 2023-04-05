@@ -34,7 +34,7 @@
 #include "runtime/synchronizer.hpp"
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
-  if (LockingMode == 2) {
+  if (LockingMode == LIGHTWEIGHT) {
     if (is_owner_anonymous()) {
       return current->lock_stack().contains(object());
     } else {

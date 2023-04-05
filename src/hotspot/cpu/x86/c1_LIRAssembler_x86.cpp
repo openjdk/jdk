@@ -3508,7 +3508,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     __ jmp(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    Register tmp = LockingMode == 2 ? op->scratch_opr()->as_register() : noreg;
+    Register tmp = LockingMode == LIGHTWEIGHT ? op->scratch_opr()->as_register() : noreg;
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
     if (op->info() != nullptr) {

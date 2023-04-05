@@ -809,11 +809,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       bnez(tmp, slow_case);
     }
 
-    if (LockingMode == 2) {
+    if (LockingMode == LIGHTWEIGHT) {
       ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       fast_lock(obj_reg, tmp, t0, t1, slow_case);
       j(count);
-    } else if (LockingMode == 1) {
+    } else if (LockingMode == LEGACY) {
       // Load (object->mark() | 1) into swap_reg
       ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       ori(swap_reg, t0, 1);
@@ -847,7 +847,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == 2) {
+    if (LockingMode == LIGHTWEIGHT) {
       call_VM(noreg,
               CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
               obj_reg);
@@ -892,7 +892,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     save_bcp(); // Save in case of exception
 
-    if (LockingMode != 2) {
+    if (LockingMode != LIGHTWEIGHT) {
       // Convert from BasicObjectLock structure to object and BasicLock
       // structure Store the BasicLock address into x10
       la(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
@@ -904,7 +904,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     // Free entry
     sd(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
 
-    if (LockingMode == 2) {
+    if (LockingMode == LIGHTWEIGHT) {
       Label slow_case;
 
       // Check for non-symmetric locking. This is allowed by the spec and the interpreter
@@ -921,7 +921,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       j(count);
 
       bind(slow_case);
-    } else if (LockingMode == 1) {
+    } else if (LockingMode == LEGACY) {
       // Load the old header from BasicLock structure
       ld(header_reg, Address(swap_reg,
                              BasicLock::displaced_header_offset_in_bytes()));

@@ -60,7 +60,7 @@ uint32_t LockStack::end_offset() {
 
 #ifndef PRODUCT
 void LockStack::verify(const char* msg) const {
-  assert(LockingMode == 2 && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
+  assert(LockingMode == LIGHTWEIGHT, "never use lock-stack when fast-locking is disabled");
   assert((_top <=  end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
   assert((_top >= start_offset()), "lockstack underflow: _topt %d end_offset %d", _top, start_offset());
   int top = to_index(_top);

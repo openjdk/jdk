@@ -735,7 +735,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 
 //%note monitor_1
 JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, BasicObjectLock* elem))
-  assert(LockingMode != 2, "Should call monitorenter_obj() when using the new lightweight locking");
+  assert(LockingMode != LIGHTWEIGHT, "Should call monitorenter_obj() when using the new lightweight locking");
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
@@ -759,7 +759,7 @@ JRT_END
 // As soon as traditional stack-locking goes away we could remove the other monitorenter() entry
 // point, and only use oop-accepting entries (same for monitorexit() below).
 JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter_obj(JavaThread* current, oopDesc* obj))
-  assert(LockingMode == 2, "Should call monitorenter() when not using the new lightweight locking");
+  assert(LockingMode == LIGHTWEIGHT, "Should call monitorenter() when not using the new lightweight locking");
   Handle h_obj(current, cast_to_oop(obj));
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be null or an object");

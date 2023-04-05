@@ -1042,6 +1042,15 @@ enum JavaThreadState {
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
 
+enum LockingMode {
+  // Use only heavy monitors for locking
+  MONITOR     = 0,
+  // Legacy stack-locking, with monitors as 2nd tier
+  LEGACY      = 1,
+  // New lightweight locing, with monitors as 2nd tier
+  LIGHTWEIGHT = 2
+};
+
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 

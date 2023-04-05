@@ -128,7 +128,7 @@ bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
   if (obj->mark().value() != 0) {
     return true;
   }
-  return LockingMode == 2 || !SafepointSynchronize::is_at_safepoint();
+  return LockingMode == LIGHTWEIGHT || !SafepointSynchronize::is_at_safepoint();
 }
 
 // used only for asserts and guarantees

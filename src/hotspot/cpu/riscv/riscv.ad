@@ -2417,7 +2417,7 @@ encode %{
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {
-      if (LockingMode == 2) {
+      if (LockingMode == LIGHTWEIGHT) {
         Label slow;
         __ fast_lock(oop, disp_hdr, tmp, t0, slow);
 
@@ -2427,7 +2427,7 @@ encode %{
         __ bind(slow);
         __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
         __ j(no_count);
-      } else if (LockingMode == 1) {
+      } else if (LockingMode == LEGACY) {
         // Set tmp to be (markWord of object | UNLOCK_VALUE).
         __ ori(tmp, disp_hdr, markWord::unlocked_value);
 
@@ -2475,7 +2475,7 @@ encode %{
     __ cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
              Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
 
-    if (LockingMode != 2) {
+    if (LockingMode != LIGHTWEIGHT) {
       // Store a non-null value into the box to avoid looking like a re-entrant
       // lock. The fast-path monitor unlock code checks for
       // markWord::monitor_value so use markWord::unused_mark which has the
@@ -2517,7 +2517,7 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr, flag);
 
-    if (LockingMode == 1) {
+    if (LockingMode == LEGACY) {
       // Find the lock address and load the displaced header from the stack.
       __ ld(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
@@ -2532,7 +2532,7 @@ encode %{
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {
-      if (LockingMode == 2) {
+      if (LockingMode == LIGHTWEIGHT) {
         Label slow;
         __ fast_unlock(oop, tmp, box, disp_hdr, slow);
 
@@ -2542,7 +2542,7 @@ encode %{
         __ bind(slow);
         __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
         __ j(no_count);
-      } else if (LockingMode == 1) {
+      } else if (LockingMode == LEGACY) {
         // Check if it is still a light weight lock, this is true if we
         // see the stack address of the basicLock in the markWord of the
         // object.
@@ -2564,7 +2564,7 @@ encode %{
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
 
-    if (LockingMode == 2) {
+    if (LockingMode == LIGHTWEIGHT) {
       // If the owner is anonymous, we need to fix it -- in an outline stub.
       Register tmp2 = disp_hdr;
       __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
