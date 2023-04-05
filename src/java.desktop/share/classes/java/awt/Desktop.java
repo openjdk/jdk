@@ -587,6 +587,8 @@ public class Desktop {
      * {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission, or the calling thread is not allowed to create a
      * subprocess
+     * @spec https://www.rfc-editor.org/info/rfc2368
+     *      RFC 2368: The mailto URL scheme
      * @see java.net.URI
      * @see java.awt.AWTPermission
      */

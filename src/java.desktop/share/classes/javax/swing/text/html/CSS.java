@@ -126,6 +126,7 @@ import javax.swing.text.View;
  * unless noted, so that
  * p { margin-top: 10% } will be treated as if no margin-top was specified.</b>
  *
+ * @spec https://www.w3.org/TR/REC-CSS1 Cascading Style Sheets, level 1
  * @author  Timothy Prinzing
  * @author  Scott Violet
  * @see StyleSheet
