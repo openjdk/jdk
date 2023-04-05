@@ -537,36 +537,54 @@ public class TransPatterns extends TreeTranslator {
                                               .filter(l -> !TreeInfo.isNullCaseLabel(l))
                                               .collect(List.collector());
                 }
-                if (clearedPatterns.size() == 1 && clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL) && !previousCompletesNormally) {
-                    JCPatternCaseLabel label = (JCPatternCaseLabel) clearedPatterns.head;
+
+                boolean validCaseLabelList;
+                if (clearedPatterns.size() > 1) {
+                    validCaseLabelList = clearedPatterns.stream().allMatch(cP -> cP.hasTag(Tag.PATTERNCASELABEL));
+                } else validCaseLabelList = clearedPatterns.size() == 1 && clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL);
+
+                if (validCaseLabelList && !previousCompletesNormally) {
+                    List<JCPatternCaseLabel> labels = clearedPatterns.stream().map(cp -> (JCPatternCaseLabel)cp).collect(List.collector());
                     bindingContext = new BasicBindingContext();
                     VarSymbol prevCurrentValue = currentValue;
                     try {
                         currentValue = temp;
-                        JCExpression test = (JCExpression) this.<JCTree>translate(label.pat);
-                        if (label.guard != null) {
-                            JCExpression guard = translate(label.guard);
-                            if (hasJoinedNull) {
-                                JCPattern pattern = label.pat;
-                                while (pattern instanceof JCParenthesizedPattern parenthesized) {
-                                    pattern = parenthesized.pattern;
+                        JCExpression test = null;
+                        JCExpression accTest = null;
+                        boolean first = true;
+                        for (JCPatternCaseLabel label: labels) {
+                            test = (JCExpression) this.<JCTree>translate(label.pat);
+                            if (label.guard != null) {
+                                JCExpression guard = translate(label.guard);
+                                if (hasJoinedNull) {
+                                    JCPattern pattern = label.pat;
+                                    while (pattern instanceof JCParenthesizedPattern parenthesized) {
+                                        pattern = parenthesized.pattern;
+                                    }
+                                    Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
+                                    BindingSymbol binding = (BindingSymbol) ((JCBindingPattern) pattern).var.sym;
+                                    guard = makeBinary(Tag.OR,
+                                            makeBinary(Tag.EQ,
+                                                    make.Ident(bindingContext.getBindingFor(binding)),
+                                                    makeNull()),
+                                            guard);
                                 }
-                                Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
-                                BindingSymbol binding = (BindingSymbol) ((JCBindingPattern) pattern).var.sym;
-                                guard = makeBinary(Tag.OR,
-                                                   makeBinary(Tag.EQ,
-                                                              make.Ident(bindingContext.getBindingFor(binding)),
-                                                              makeNull()),
-                                                   guard);
+                                test = makeBinary(Tag.AND, test, guard);
                             }
-                            test = makeBinary(Tag.AND, test, guard);
+                            if (!first) {
+                                accTest = makeBinary(Tag.OR, accTest, test);
+                            } else {
+                                accTest = test;
+                                first = false;
+                            }
                         }
+                        test = accTest;
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
                         continueSwitch.target = tree;
                         c.stats = c.stats.prepend(make.If(makeUnary(Tag.NOT, test).setType(syms.booleanType),
                                                            make.Block(0, List.of(make.Exec(make.Assign(make.Ident(index),
-                                                                                                       makeLit(syms.intType, i + 1))
+                                                                                                       makeLit(syms.intType, i + labels.length()))
                                                                                      .setType(syms.intType)),
                                                                                  continueSwitch)),
                                                            null));

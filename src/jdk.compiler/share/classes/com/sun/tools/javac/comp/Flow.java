@@ -770,7 +770,7 @@ public class Flow {
 
             for (JCTree labelValue : labels) {
                 switch (labelValue.getTag()) {
-                    case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
+                    case BINDINGPATTERN, PARENTHESIZEDPATTERN, ANYPATTERN -> {
                         Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) labelValue);
                         if (!primaryPatternType.hasTag(NONE)) {
                             coveredSymbols.add(primaryPatternType.tsym);
@@ -841,7 +841,7 @@ public class Flow {
                 JCPattern nestedPattern = deconstructionPattern.nested.get(component);
                 Symbol componentPatternType;
                 switch (nestedPattern.getTag()) {
-                    case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
+                    case BINDINGPATTERN, PARENTHESIZEDPATTERN, ANYPATTERN -> {
                         Type primaryPatternType =
                                 TreeInfo.primaryPatternType(nestedPattern);
                         componentPatternType = primaryPatternType.tsym;

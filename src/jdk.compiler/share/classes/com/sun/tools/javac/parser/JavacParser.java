@@ -828,8 +828,13 @@ public class JavacParser implements Parser {
                 accept(RPAREN);
                 pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
             } else {
+                int varPos = token.pos;
                 //type test pattern:
-                JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
+                Name name = identOrUnderscore();
+                if (e == null && name == names.underscore) {
+                    log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
+                }
+                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
                 pattern = toP(F.at(pos).BindingPattern(var));
             }
         }
@@ -3267,8 +3272,20 @@ public class JavacParser implements Parser {
             switch (token) {
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR: case VOID:
-                case ASSERT, ENUM, IDENTIFIER, UNDERSCORE:
+                case ASSERT, ENUM, IDENTIFIER:
                     if (typeDepth == 0 && peekToken(lookahead, LAX_IDENTIFIER)) {
+                        if (parenDepth == 0) {
+                            return PatternResult.PATTERN;
+                        } else {
+                            pendingResult = PatternResult.PATTERN;
+                        }
+                    }
+                    break;
+                case UNDERSCORE:
+                    // TODO: REFACTOR to remove the code duplication
+                    if (typeDepth == 0 && peekToken(lookahead, tk -> tk == RPAREN || tk == COMMA)) {
+                        return PatternResult.PATTERN;
+                    } else if (typeDepth == 0 && peekToken(lookahead, LAX_IDENTIFIER)) {
                         if (parenDepth == 0) {
                             return PatternResult.PATTERN;
                         } else {

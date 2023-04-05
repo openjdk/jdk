@@ -4547,8 +4547,11 @@ public class Check {
                         }
                     }
                 }
-            } else {
-                if (c.labels.tail.nonEmpty()) {
+            } else if (c.labels.tail.nonEmpty()) {
+                var patterCaseLabels = c.labels.stream().filter(ll -> ll instanceof JCPatternCaseLabel).map(cl -> (JCPatternCaseLabel)cl);
+                var allUnderscore = patterCaseLabels.allMatch(pcl -> checkAllUnderscore(pcl.getPattern()));
+
+                if (!allUnderscore) {
                     log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
             }
@@ -4575,6 +4578,24 @@ public class Check {
                 previousCompletessNormally = c.completesNormally;
             }
         }
+    }
+
+    private boolean checkAllUnderscore(JCPattern pattern) {
+        return switch (pattern.getTag()) {
+            case BINDINGPATTERN:
+                JCBindingPattern bp = (JCBindingPattern) pattern;
+                yield bp.var.name == names.underscore;
+            case RECORDPATTERN:
+                JCRecordPattern rp = (JCRecordPattern) pattern;
+                yield rp.getNestedPatterns().stream().allMatch(component -> checkAllUnderscore(component));
+            case PARENTHESIZEDPATTERN:
+                JCParenthesizedPattern pp = (JCParenthesizedPattern) pattern;
+                yield checkAllUnderscore(pp.pattern);
+            case ANYPATTERN:
+                yield true;
+            default:
+                yield false;
+        };
     }
 
     boolean hasBindings(JCPattern p) {

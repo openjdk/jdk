@@ -4194,7 +4194,11 @@ public class Attr extends JCTree.Visitor {
         }
         chk.validate(tree.var.vartype, env, true);
         result = tree.type;
-        matchBindings = new MatchBindings(List.of(v), List.nil());
+        if (v.name == names.underscore) {
+            matchBindings = MatchBindingsComputer.EMPTY;
+        } else {
+            matchBindings = new MatchBindings(List.of(v), List.nil());
+        }
     }
 
     @Override
