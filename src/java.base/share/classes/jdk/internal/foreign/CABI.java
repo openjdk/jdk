@@ -60,7 +60,7 @@ public enum CABI {
                 // The Linux ABI follows the standard AAPCS ABI
                 ABI = LINUX_AARCH_64;
             }
-        } else if (Architecture.isRISCV()) {
+        } else if (Architecture.isRISCV64()) {
             if (OperatingSystem.isLinux()) {
                 ABI = LINUX_RISCV_64;
             } else {

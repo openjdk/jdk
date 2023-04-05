@@ -85,7 +85,7 @@ public class ArchTest {
                 Arguments.of(IA64, Architecture.isIA64()),
                 Arguments.of(ARM, Architecture.isARM()),
                 Arguments.of(AARCH64, Architecture.isAARCH64()),
-                Arguments.of(RISCV64, Architecture.isRISCV()),
+                Arguments.of(RISCV64, Architecture.isRISCV64()),
                 Arguments.of(S390X, Architecture.isS390X()),
                 Arguments.of(PPC64LE, Architecture.isPPC64LE())
         );

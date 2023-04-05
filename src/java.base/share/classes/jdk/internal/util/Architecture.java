@@ -82,7 +82,7 @@ public enum Architecture {
      * {@return {@code true} if the current architecture is RISCV64}
      */
     @ForceInline
-    public static boolean isRISCV() {
+    public static boolean isRISCV64() {
         return OperatingSystemProps.TARGET_ARCH_IS_RISCV64;
     }
 
