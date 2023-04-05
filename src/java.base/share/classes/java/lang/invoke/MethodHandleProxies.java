@@ -36,6 +36,7 @@ import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import jdk.internal.util.ClassFileDumper;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.WrapperInstance;
 
@@ -43,6 +44,7 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -205,8 +207,8 @@ public class MethodHandleProxies {
         // Define the class under the interface
         Object proxy;
         try {
-            // Intentionally weak + no nestmate
-            var lookup = info.lookup.defineHiddenClassWithClassData(info.template, List.of(mhs), true);
+            var lookup = info.lookup.makeHiddenClassDefiner(info.template, DUMPER)
+                    .defineClassAsLookup(true, List.of(mhs));
             proxy = lookup.findConstructor(lookup.lookupClass(), methodType(void.class))
                     .asType(methodType(Object.class)).invokeExact();
         } catch (Error e) {
@@ -226,6 +228,9 @@ public class MethodHandleProxies {
         private static final WrapperInfo INVALID = new WrapperInfo(null, null);
     }
 
+    private static final ClassFileDumper DUMPER = ClassFileDumper.getInstance(
+            "jdk.invoke.MethodHandleProxies.dumpInterfaceInstances", Path.of("DUMP_INTERFACE_INSTANCES"));
+
     private static final ClassValue<InterfaceInfo> INTERFACE_INFOS = new ClassValue<>() {
         @Override
         protected InterfaceInfo computeValue(Class<?> intfc) {
@@ -241,10 +246,10 @@ public class MethodHandleProxies {
                 types[i] = mt;
                 var thrown = sm.getExceptionTypes();
                 if (thrown.length == 0) {
-                    infos.add(new LocalMethodInfo(desc(mt), DEFAULT_RETHROWNS));
+                    infos.add(new LocalMethodInfo(desc(mt), DEFAULT_RETHROWS));
                 } else {
-                    infos.add(new LocalMethodInfo(desc(mt), Stream.concat(Stream.of(RuntimeException.class, Error.class),
-                            Arrays.stream(thrown)).map(MethodHandleProxies::desc).distinct().toList()));
+                    infos.add(new LocalMethodInfo(desc(mt), Stream.concat(DEFAULT_RETHROWS.stream(),
+                            Arrays.stream(thrown).map(MethodHandleProxies::desc)).distinct().toList()));
                 }
             }
 
@@ -279,9 +284,7 @@ public class MethodHandleProxies {
         }
     };
 
-    private static final ClassDesc CD_RuntimeException = desc(RuntimeException.class);
-    private static final ClassDesc CD_Error = desc(Error.class);
-    private static final List<ClassDesc> DEFAULT_RETHROWNS = List.of(CD_RuntimeException, CD_Error);
+    private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
     private static final ClassDesc CD_WrapperInstance = desc(WrapperInstance.class);
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
