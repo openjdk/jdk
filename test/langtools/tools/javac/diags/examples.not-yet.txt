@@ -57,6 +57,7 @@ compiler.misc.bad.enclosing.method                      # bad class file
 compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
 compiler.misc.bad.requires.flag                         # bad class file
+compiler.misc.bad.utf8.byte.sequence.at                 # bad class file
 compiler.misc.bad.type.annotation.value
 compiler.misc.class.file.not.found                      # ClassReader
 compiler.misc.class.file.wrong.class
@@ -116,8 +117,10 @@ compiler.warn.future.attr                               # ClassReader
 compiler.warn.illegal.char.for.encoding
 compiler.warn.incubating.modules                        # requires adjusted classfile
 compiler.warn.invalid.archive.file
+compiler.warn.invalid.utf8.in.classfile                 # bad class file
 compiler.warn.is.preview                                # difficult to produce reliably despite future changes to java.base
 compiler.warn.is.preview.reflective                     # difficult to produce reliably despite future changes to java.base
+compiler.warn.output.file.clash                         # this warning is not generated on Linux
 compiler.warn.override.bridge
 compiler.warn.position.overflow                         # CRTable: caused by files with long lines >= 1024 chars
 compiler.warn.proc.type.already.exists                  # JavacFiler: just mentioned in TODO

@@ -198,16 +198,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   return success;
 }
 
-//------------------------------max vector size------------------------------
-int SuperWord::max_vector_size(BasicType bt) {
-  int max_vector = Matcher::max_vector_size(bt);
-  int sw_max_vector_limit = SuperWordMaxVectorSize / type2aelembytes(bt);
-  if (max_vector > sw_max_vector_limit) {
-    max_vector = sw_max_vector_limit;
-  }
-  return max_vector;
-}
-
 //------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   bool is_slp = true;
@@ -226,7 +216,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     ignored_loop_nodes[i] = -1;
   }
 
-  int max_vector = max_vector_size(T_BYTE);
+  int max_vector = Matcher::superword_max_vector_size(T_BYTE);
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
   // need to preprocess the ignored initial state before we process the loop
@@ -361,7 +351,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
       if (is_java_primitive(bt) == false) continue;
 
-      int cur_max_vector = max_vector_size(bt);
+      int cur_max_vector = Matcher::superword_max_vector_size(bt);
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
@@ -540,6 +530,8 @@ bool SuperWord::SLP_extract() {
     filter_packs();
 
     DEBUG_ONLY(verify_packs();)
+
+    remove_cycles();
 
     schedule();
 
@@ -1054,13 +1046,13 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
       }
     }
     if (should_combine_adjacent) {
-      vw = MIN2(max_vector_size(btype)*type2aelembytes(btype), vw * 2);
+      vw = MIN2(Matcher::superword_max_vector_size(btype)*type2aelembytes(btype), vw * 2);
     }
   }
 
   // Check for special case where there is a type conversion between different data size.
   int vectsize = max_vector_size_in_def_use_chain(s);
-  if (vectsize < max_vector_size(btype)) {
+  if (vectsize < Matcher::superword_max_vector_size(btype)) {
     vw = MIN2(vectsize * type2aelembytes(btype), vw);
   }
 
@@ -1254,8 +1246,8 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
   BasicType longer_bt = longer_type_for_conversion(s1);
-  if (max_vector_size(bt1) < 2 ||
-      (longer_bt != T_ILLEGAL && max_vector_size(longer_bt) < 2)) {
+  if (Matcher::superword_max_vector_size(bt1) < 2 ||
+      (longer_bt != T_ILLEGAL && Matcher::superword_max_vector_size(longer_bt) < 2)) {
     return false; // No vectors for this type
   }
 
@@ -2345,6 +2337,230 @@ void SuperWord::verify_packs() {
   }
 }
 #endif
+
+// The PacksetGraph combines the DepPreds graph with the packset. In the PackSet
+// graph, we have two kinds of nodes:
+//  (1) pack-node:   Represents all nodes of some pack p in a single node, which
+//                   shall later become a vector node.
+//  (2) scalar-node: Represents a node that is not in any pack.
+// For any edge (n1, n2) in DepPreds, we add an edge to the PacksetGraph for the
+// PacksetGraph nodes corresponding to n1 and n2.
+// We work from the DepPreds graph, because it gives us all the data-dependencies,
+// as well as more refined memory-dependencies than the C2 graph. DepPreds does
+// not have cycles. But packing nodes can introduce cyclic dependencies. Example:
+//
+//                                                       +--------+
+//  A -> X                                               |        v
+//                     Pack [A,B] and [X,Y]             [A,B]    [X,Y]
+//  Y -> B                                                 ^        |
+//                                                         +--------+
+//
+class PacksetGraph {
+private:
+  // pid: packset graph node id.
+  GrowableArray<int> _pid;                 // bb_idx(n) -> pid
+  GrowableArray<GrowableArray<int>> _out;  // out-edges
+  GrowableArray<int> _incnt;               // number of (implicit) in-edges
+  int _max_pid = 0;
+
+  SuperWord* _slp;
+public:
+  PacksetGraph(SuperWord* slp)
+  : _pid(8, 0, /* default */ 0), _slp(slp) {
+  }
+  // Get pid, if there is a packset node that n belongs to. Else return 0.
+  int get_pid_or_zero(const Node* n) const {
+    if (!_slp->in_bb(n)) {
+      return 0;
+    }
+    int idx = _slp->bb_idx(n);
+    if (idx >= _pid.length()) {
+      return 0;
+    } else {
+      return _pid.at(idx);
+    }
+  }
+  int get_pid(const Node* n) {
+    int poz = get_pid_or_zero(n);
+    assert(poz != 0, "pid should not be zero");
+    return poz;
+  }
+  void set_pid(const Node* n, int pid) {
+    assert(n != nullptr && pid > 0, "sane inputs");
+    assert(_slp->in_bb(n), "must be");
+    int idx = _slp->bb_idx(n);
+    _pid.at_put_grow(idx, pid);
+  }
+  int new_pid() {
+    _incnt.push(0);
+    _out.push(GrowableArray<int>());
+    return ++_max_pid;
+  }
+  int incnt(int pid) { return _incnt.at(pid - 1); }
+  void incnt_set(int pid, int cnt) { return _incnt.at_put(pid - 1, cnt); }
+  GrowableArray<int>& out(int pid) { return _out.at(pid - 1); }
+
+  // Create nodes (from packs and scalar-nodes), and add edges, based on DepPreds.
+  void build() {
+    const GrowableArray<Node_List*> &packset = _slp->packset();
+    const GrowableArray<Node*> &block = _slp->block();
+    const DepGraph &dg = _slp->dg();
+    // Map nodes in packsets
+    for (int i = 0; i < packset.length(); i++) {
+      Node_List* p = packset.at(i);
+      int pid = new_pid();
+      for (uint k = 0; k < p->size(); k++) {
+        Node* n = p->at(k);
+        set_pid(n, pid);
+      }
+    }
+
+    int max_pid_packset = _max_pid;
+
+    // Map nodes not in packset
+    for (int i = 0; i < block.length(); i++) {
+      Node* n = block.at(i);
+      if (n->is_Phi() || n->is_CFG()) {
+        continue; // ignore control flow
+      }
+      int pid = get_pid_or_zero(n);
+      if (pid == 0) {
+        pid = new_pid();
+        set_pid(n, pid);
+      }
+    }
+
+    // Map edges for packset nodes
+    VectorSet set;
+    for (int i = 0; i < packset.length(); i++) {
+      Node_List* p = packset.at(i);
+      set.clear();
+      int pid = get_pid(p->at(0));
+      for (uint k = 0; k < p->size(); k++) {
+        Node* n = p->at(k);
+        assert(pid == get_pid(n), "all nodes in pack have same pid");
+        for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
+          Node* pred = preds.current();
+          int pred_pid = get_pid_or_zero(pred);
+          if (pred_pid == pid && n->is_reduction()) {
+            continue; // reduction -> self-cycle is not a cyclic dependency
+          }
+          // Only add edges once, and only for mapped nodes (in block)
+          if (pred_pid > 0 && !set.test_set(pred_pid)) {
+            incnt_set(pid, incnt(pid) + 1); // increment
+            out(pred_pid).push(pid);
+          }
+        }
+      }
+    }
+
+    // Map edges for nodes not in packset
+    for (int i = 0; i < block.length(); i++) {
+      Node* n = block.at(i);
+      int pid = get_pid_or_zero(n); // zero for Phi or CFG
+      if (pid <= max_pid_packset) {
+        continue; // Only scalar-nodes
+      }
+      for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
+        Node* pred = preds.current();
+        int pred_pid = get_pid_or_zero(pred);
+        // Only add edges for mapped nodes (in block)
+        if (pred_pid > 0) {
+          incnt_set(pid, incnt(pid) + 1); // increment
+          out(pred_pid).push(pid);
+        }
+      }
+    }
+  }
+  // Schedule the graph to worklist. Returns true iff all nodes were scheduled.
+  // This implies that we return true iff the PacksetGraph is acyclic.
+  // We schedule with topological sort: schedule any node that has zero incnt.
+  // Then remove that node, which decrements the incnt of all its uses (outputs).
+  bool schedule() {
+    GrowableArray<int> worklist;
+    // Directly schedule all nodes without precedence
+    for (int pid = 1; pid <= _max_pid; pid++) {
+      if (incnt(pid) == 0) {
+        worklist.push(pid);
+      }
+    }
+    // Continue scheduling via topological sort
+    for (int i = 0; i < worklist.length(); i++) {
+      int pid = worklist.at(i);
+      for (int j = 0; j < out(pid).length(); j++){
+        int pid_use = out(pid).at(j);
+        int incnt_use = incnt(pid_use) - 1;
+        incnt_set(pid_use, incnt_use);
+        // Did use lose its last input?
+        if (incnt_use == 0) {
+          worklist.push(pid_use);
+        }
+      }
+    }
+    // Was every pid scheduled?
+    return worklist.length() == _max_pid;
+  }
+  // Print the PacksetGraph.
+  // print_nodes = true: print all C2 nodes beloning to PacksetGrahp node.
+  // print_zero_incnt = false: do not print nodes that have no in-edges (any more).
+  void print(bool print_nodes, bool print_zero_incnt) {
+    const GrowableArray<Node*> &block = _slp->block();
+    tty->print_cr("PacksetGraph");
+    for (int pid = 1; pid <= _max_pid; pid++) {
+      if (incnt(pid) == 0 && !print_zero_incnt) {
+        continue;
+      }
+      tty->print("Node %d. incnt %d [", pid, incnt(pid));
+      for (int j = 0; j < out(pid).length(); j++) {
+        tty->print("%d ", out(pid).at(j));
+      }
+      tty->print_cr("]");
+#ifndef PRODUCT
+      if (print_nodes) {
+        for (int i = 0; i < block.length(); i++) {
+          Node* n = block.at(i);
+          if (get_pid_or_zero(n) == pid) {
+            tty->print("    ");
+            n->dump();
+          }
+        }
+      }
+#endif
+    }
+  }
+};
+
+//------------------------------remove_cycles---------------------------
+// We now know that we only have independent packs, see verify_packs.
+// This is a necessary but not a sufficient condition for an acyclic
+// graph (DAG) after scheduling. Thus, we must check if the packs have
+// introduced a cycle. The SuperWord paper mentions the need for this
+// in "3.7 Scheduling".
+// Approach: given all nodes from the _block, we create a new graph.
+// The nodes that are not in a pack are their own nodes (scalar-node)
+// in that new graph. Every pack is also a node (pack-node). We then
+// add the edges according to DepPreds: a scalar-node has all edges
+// to its node's DepPreds. A pack-node has all edges from every pack
+// member to all their DepPreds.
+void SuperWord::remove_cycles() {
+  if (_packset.length() == 0) {
+    return; // empty packset
+  }
+  ResourceMark rm;
+
+  PacksetGraph graph(this);
+
+  graph.build();
+
+  if (!graph.schedule()) {
+    if (TraceSuperWord) {
+      tty->print_cr("remove_cycles found cycle in PacksetGraph:");
+      graph.print(true, false);
+      tty->print_cr("removing all packs from packset.");
+    }
+    _packset.clear();
+  }
+}
 
 //------------------------------schedule---------------------------
 // Adjust the memory graph for the packed operations
@@ -3669,10 +3885,10 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
     vt = (newt == T_ILLEGAL) ? vt : newt;
   }
 
-  int max = max_vector_size(vt);
+  int max = Matcher::superword_max_vector_size(vt);
   // If now there is no vectors for the longest type, the nodes with the longest
   // type in the def-use chain are not packed in SuperWord::stmts_can_pack.
-  return max < 2 ? max_vector_size(bt) : max;
+  return max < 2 ? Matcher::superword_max_vector_size(bt) : max;
 }
 
 //-------------------------compute_vector_element_type-----------------------
@@ -4930,7 +5146,7 @@ void DepEdge::print() {
 // Iterator over predecessor edges in the dependence graph.
 
 //------------------------------DepPreds---------------------------
-DepPreds::DepPreds(Node* n, DepGraph& dg) {
+DepPreds::DepPreds(Node* n, const DepGraph& dg) {
   _n = n;
   _done = false;
   if (_n->is_Store() || _n->is_Load()) {
