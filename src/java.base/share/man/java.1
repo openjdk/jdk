@@ -1337,6 +1337,12 @@ buffers.
 Maximum number of old objects to track.
 By default, the number of objects is set to 256.
 .TP
+\f[V]preserve-repository=\f[R]{\f[V]true\f[R]|\f[V]false\f[R]}
+Specifies whether files stored in the disk repository should be kept
+after the JVM has exited.
+If false, files are deleted.
+By default, this parameter is disabled.
+.TP
 \f[V]repository=\f[R]\f[I]path\f[R]
 Specifies the repository (a directory) for temporary disk storage.
 By default, the system\[aq]s temporary directory is used.

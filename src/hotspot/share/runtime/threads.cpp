@@ -95,7 +95,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -551,14 +550,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
-
-  if (UseSystemMemoryBarrier) {
-    if (!SystemMemoryBarrier::initialize()) {
-      vm_shutdown_during_initialization("Failed to initialize the requested system memory barrier synchronization.");
-      return JNI_EINVAL;
-    }
-    log_debug(os)("Using experimental system memory barrier synchronization");
-  }
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();

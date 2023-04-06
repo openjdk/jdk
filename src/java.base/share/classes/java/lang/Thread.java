@@ -223,8 +223,15 @@ public class Thread implements Runnable {
         registerNatives();
     }
 
-    /* Reserved for exclusive use by the JVM, maybe move to FieldHolder */
-    private long eetop;
+    /*
+     * Reserved for exclusive use by the JVM. Cannot be moved to the FieldHolder
+     * as it needs to be set by the VM for JNI attaching threads, before executing
+     * the constructor that will create the FieldHolder. The historically named
+     * `eetop` holds the address of the underlying VM JavaThread, and is set to
+     * non-zero when the thread is started, and reset to zero when the thread terminates.
+     * A non-zero value indicates this thread isAlive().
+     */
+    private volatile long eetop;
 
     // thread id
     private final long tid;
@@ -1803,9 +1810,8 @@ public class Thread implements Runnable {
      * This method is non-final so it can be overridden.
      */
     boolean alive() {
-        return isAlive0();
+        return eetop != 0;
     }
-    private native boolean isAlive0();
 
     /**
      * Throws {@code UnsupportedOperationException}.
@@ -1919,6 +1925,8 @@ public class Thread implements Runnable {
      * @param      name   the new name for this thread.
      * @throws     SecurityException  if the current thread cannot modify this
      *             thread.
+     *
+     * @spec jni/index.html Java Native Interface Specification
      * @see        #getName
      * @see        #checkAccess()
      */
