@@ -41,6 +41,7 @@ public class BodyOutputStream extends OutputStream {
     int window;
     volatile boolean closed;
     volatile boolean sendResetNoError;
+    volatile int resetErrorCode;
     boolean goodToGo = false; // not allowed to send until headers sent
     final Http2TestServerConnection conn;
     final Queue outputQ;
@@ -134,7 +135,7 @@ public class BodyOutputStream extends OutputStream {
         try {
             sendEndStream();
             if (sendResetNoError) {
-                sendReset(EMPTY_BARRAY, 0, 0, ResetFrame.NO_ERROR);
+                sendReset(EMPTY_BARRAY, 0, 0, resetErrorCode);
             }
         } catch (IOException ex) {
             System.err.println("TestServer: OutputStream.close exception: " + ex);
@@ -155,7 +156,9 @@ public class BodyOutputStream extends OutputStream {
         outputQ.put(rf);
     }
 
-    public void setSendResetNoError(boolean val) {
-        this.sendResetNoError = val;
+    // Called before close() when used
+    public void sendResetOnClose(int error) {
+        this.sendResetNoError = true;
+        this.resetErrorCode = error;
     }
 }

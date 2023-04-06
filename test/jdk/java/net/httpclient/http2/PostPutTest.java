@@ -1,4 +1,27 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
  * @test
  * @bug 8293786
  * @summary Checks to see if the HttpClient can process a request to cancel a transmission from a remote if the server
@@ -9,26 +32,19 @@
  *                      PostPutTest
  */
 
-import jdk.httpclient.test.lib.http2.BodyOutputStream;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
-import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import javax.net.ssl.SSLSession;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
@@ -99,8 +115,8 @@ public class PostPutTest {
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
-            // The input stream is not read in this bug as this will trigger window updates for the server concerns
-            // the case where no updates are sent and the server instead tells the client to abort the transmission.
+            // The input stream is not read in this bug as this will trigger window updates for the server. This bug
+            // concerns the case where no updates are sent and the server instead tells the client to abort the transmission.
             exchange.sendResponseHeaders(200, 0);
         }
     }

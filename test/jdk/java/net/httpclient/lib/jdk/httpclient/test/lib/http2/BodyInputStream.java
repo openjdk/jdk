@@ -41,7 +41,7 @@ class BodyInputStream extends InputStream {
 
     final Queue<Http2Frame> q;
     final int streamid;
-    boolean closed;
+    volatile boolean closed;
     volatile boolean eof;
     final Http2TestServerConnection conn;
 

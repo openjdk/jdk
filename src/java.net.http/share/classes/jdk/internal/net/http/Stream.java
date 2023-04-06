@@ -557,7 +557,11 @@ class Stream<T> extends ExchangeImpl<T> {
                 // If a RST_STREAM is received, complete the requestBody. This will allow the
                 // response to be read before the Reset is handled in the case where the client's
                 // input stream is partially consumed or not consumed at all by the server.
-                requestBodyCF.complete(null);
+                if (frame.getErrorCode() != ResetFrame.NO_ERROR) {
+                    requestBodyCF.completeExceptionally(new IOException("RST_STREAM received"));
+                } else {
+                    requestBodyCF.complete(null);
+                }
             }
             if (response == null && subscriber == null) {
                 // we haven't received the headers yet, and won't receive any!
