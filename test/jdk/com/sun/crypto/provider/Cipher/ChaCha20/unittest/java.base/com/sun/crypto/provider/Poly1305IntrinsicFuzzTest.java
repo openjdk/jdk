@@ -47,6 +47,8 @@ public class Poly1305IntrinsicFuzzTest {
         public static void run() throws Exception {
                 Random rnd = new Random();
                 long seed = rnd.nextLong();
+                // long seed = -4486256158368186964l;
+
                 rnd.setSeed(seed);
 
                 byte[] key = new byte[32];

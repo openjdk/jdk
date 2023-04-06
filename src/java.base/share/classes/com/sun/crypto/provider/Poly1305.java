@@ -25,6 +25,7 @@
 
 package com.sun.crypto.provider;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.Key;
 import java.security.InvalidKeyException;
@@ -247,7 +248,7 @@ final class Poly1305 {
         a.setProduct(r);                // a = (a * r) % p
     }
 
-    private void processBlock(byte[] block, int offset, int length) {
+    private void processBlock1(byte[] block, int offset, int length) {
         Objects.checkFromIndexSize(offset, length, block.length);
         n.setValue(block, offset, length, (byte)0x01);
         var printing = ("yes".equals(BLAH));
@@ -272,16 +273,107 @@ final class Poly1305 {
         }
     }
 
+    private void processBlock(byte[] block, int offset, int length) {
+        Objects.checkFromIndexSize(offset, length, block.length);
+        n.setValue(block, offset, length, (byte)0x01);
+        a.setSum(n);                    // a += (n | 0x01)
+        a.setProduct(r);                // a = (a * r) % p
+    }
+
+    boolean printing = ("yes".equals(BLAH));
+
     // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.
     // They correspond to this.a and this.r respectively
     @ForceInline
     @IntrinsicCandidate
     private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
+        if (length >= BLOCK_LENGTH * 2) {
+            IntegerModuloP rSquared = r.square();
+            IntegerModuloP a0 = a.mutable();
+            IntegerModuloP a1 = ipl1305.get0();
+
+            MutableIntegerModuloP n0 = ipl1305.get1().mutable();
+            MutableIntegerModuloP n1 = ipl1305.get1().mutable();
+
+            if (printing) {
+                System.out.printf("init:\n    a0 = %33.33s  r = %33.33s \n", a0, r);
+                System.out.printf("  r**2 = %33.33s \n", rSquared);
+            }
+
+            while (length >= BLOCK_LENGTH * 4) {
+
+                n0.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+                offset += BLOCK_LENGTH;
+                length -= BLOCK_LENGTH;
+                n1.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+                offset += BLOCK_LENGTH;
+                length -= BLOCK_LENGTH;
+
+                var s0 = a0.add(n0);
+                a0 = s0.multiply(rSquared);
+                var s1 = a1.add(n1);
+                a1 = s1.multiply(rSquared);
+                if (printing) {
+                    System.out.printf("##  n0 = %33.33s  n1 = %33.33s\n", n0, n1);
+                    System.out.printf("##  s0 = %33.33s  s1 = %33.33s\n", s0, s1);
+                    System.out.printf("##  a0 = %33.33s  a1 = %33.33s\n", a0, a1);
+                }
+
+            }
+
+            if ("".length() == 0) {
+                n0.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+
+                offset += BLOCK_LENGTH;
+                length -= BLOCK_LENGTH;
+
+                var s0 = a0.add(n0);
+                a0 = s0.multiply(rSquared);
+
+                n1.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+                offset += BLOCK_LENGTH;
+                length -= BLOCK_LENGTH;
+
+                var s1 = a1.add(n1);
+                a1 = s1.multiply(r);
+
+                a.setValue(a0.add(a1));
+                if (printing) {
+                    System.out.printf("    n0 = %33.33s  n1 = %33.33s\n", n0, n1);
+                    System.out.printf("    s0 = %33.33s  s1 = %33.33s\n", s0, s1);
+                    System.out.printf("    a0 = %33.33s  a1 = %33.33s\n", a0, a1);
+                    System.out.printf("     a = %33.33s\n", a);
+                    System.out.println("");
+                }
+            } else {
+                var sum = ipl1305.get0();
+
+                n0.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+                offset += BLOCK_LENGTH;
+                length -= BLOCK_LENGTH;
+
+                sum = sum.add(a0);
+                sum = sum.add(n0);
+                sum = sum.multiply(r);
+
+                n1.setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
+                offset += BLOCK_LENGTH;
+                length -= BLOCK_LENGTH;
+
+                sum = sum.add(a1);
+                sum = sum.add(n1);
+                sum = sum.multiply(r);
+
+                a.setValue(sum);
+            }
+        }
+
         while (length >= BLOCK_LENGTH) {
             processBlock(input, offset, BLOCK_LENGTH);
             offset += BLOCK_LENGTH;
             length -= BLOCK_LENGTH;
         }
+        System.out.print("");
     }
 
     private void processMultipleBlocks(ByteBuffer buf, int blockMultipleLength) {

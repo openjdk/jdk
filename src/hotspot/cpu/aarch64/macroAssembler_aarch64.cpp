@@ -6034,7 +6034,7 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
   mov(d[1], D, 0, s2);
 }
 
-void MacroAssembler::poly1305_step_foo(const FloatRegister s[], const FloatRegister u[],
+void MacroAssembler::poly1305_step_vec(const FloatRegister s[], const FloatRegister u[],
                                        const FloatRegister upper_bits, Register input_start,
                                        AbstractRegSet<FloatRegister> scratch) {
   auto vregs = scratch.begin();
@@ -6068,7 +6068,7 @@ void MacroAssembler::poly1305_step_foo(const FloatRegister s[], const FloatRegis
   addv(s[4], T4S, s[4], scratch1);
 }
 
-// void MacroAssembler::poly1305_multiply_foo(const FloatRegister u_v[],
+// void MacroAssembler::poly1305_multiply_vec(const FloatRegister u_v[],
 //                                            AbstractRegSet<FloatRegister> remaining,
 //                                            const RegPair u[], Register s[], Register r[]) {
 //   // auto vregs = remaining.begin();
@@ -6093,7 +6093,7 @@ void MacroAssembler::poly1305_step_foo(const FloatRegister s[], const FloatRegis
 //   nop();
 // }
 
-void MacroAssembler::poly1305_multiply_foo(const FloatRegister u_v[],
+void MacroAssembler::poly1305_multiply_vec(const FloatRegister u_v[],
                                            AbstractRegSet<FloatRegister> remaining,
                                            const FloatRegister s_v[],
                                            const FloatRegister r_v[],
@@ -6119,20 +6119,21 @@ void MacroAssembler::poly1305_reduce_step(FloatRegister d, FloatRegister s,
   Assembler::add(d, T2D, d, scratch);
   bic(s, T16B, s, upper_bits);
 }
-void MacroAssembler::poly1305_reduce_foo(const FloatRegister u[],
+void MacroAssembler::poly1305_reduce_vec(const FloatRegister u[],
                                          const FloatRegister upper_bits,
                                          AbstractRegSet<FloatRegister> scratch) {
 
   auto r = scratch.begin();
   // Partial reduction mod 2**130 - 5
 
-  FloatRegister vtmp2 = *r++, vtmp3 = *r++;
+  FloatRegister vtmp2 = *r++;
   // Goll-Guerin reduction
   poly1305_reduce_step(u[1], u[0], upper_bits, vtmp2);
   poly1305_reduce_step(u[4], u[3], upper_bits, vtmp2);
   poly1305_reduce_step(u[2], u[1], upper_bits, vtmp2);
   {
     ushr(vtmp2, T2D, u[4], 26);
+    FloatRegister vtmp3 = *r++;
     shl(vtmp3, T2D, vtmp2, 2);
     Assembler::add(vtmp2, T2D, vtmp2, vtmp3); // vtmp2 == 5 * (u[4] >> 26)
     Assembler::add(u[0], T2D, u[0], vtmp2);
@@ -6164,20 +6165,6 @@ void MacroAssembler::shifted_add128(const RegPair d, const RegPair s, unsigned i
   adds(d._lo, d._lo, scratch);
   lsr(scratch, s._hi, shift);
   adc(d._hi, d._hi, scratch);
-}
-
-void MacroAssembler::shifted_add128_times_5(const RegPair d, const RegPair s, unsigned int shift,
-                                            Register scratch1, Register scratch2) {
-  extr(scratch1, s._hi, s._lo, shift);
-  lsr(scratch2, s._hi, shift);
-  adds(d._lo, d._lo, scratch1);
-  adc(d._hi, d._hi, scratch2);
-
-  extr(scratch1, s._hi, s._lo, shift-2);
-  lsr(scratch2, s._hi, shift-2);
-  andr(scratch1, scratch1, ~3);
-  adds(d._lo, d._lo, scratch1);
-  adc(d._hi, d._hi, scratch2);
 }
 
 void MacroAssembler::clear_above(const RegPair d, int shift) {

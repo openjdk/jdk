@@ -30,6 +30,8 @@
 
 typedef AbstractRegSet<FloatRegister> vRegSet;
 
+static constexpr bool use_vec = true;
+
 address generate_poly1305_processBlocks2() {
   address consts = __ pc();
   __ emit_int64(5);
@@ -120,28 +122,31 @@ address generate_poly1305_processBlocks2() {
   static constexpr int BLOCK_LENGTH = 16;
 
   const FloatRegister v_u0[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
-  FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
+  const FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
 
-  FloatRegister upper_bits = *vregs++;
-  __ movi(upper_bits, __ T16B, 0xff);
-  __ shl(upper_bits, __ T2D, upper_bits, 26);  // upper_bits == 0xfffffffffc000000
+  const FloatRegister upper_bits = *vregs++;
+  const FloatRegister r_v[] = {*vregs++, *vregs++};
+  const FloatRegister rr_v[] = {*vregs++, *vregs++};
 
-  FloatRegister r_v[] = {*vregs++, *vregs++};
-  FloatRegister rr_v[] = {*vregs++, *vregs++};
-  __ copy_3_regs_to_5_elements(r_v, R[0], R[1], R[2]);
+  if (use_vec) {
+    __ movi(upper_bits, __ T16B, 0xff);
+    __ shl(upper_bits, __ T2D, upper_bits, 26);  // upper_bits == 0xfffffffffc000000
 
-  { FloatRegister vtmp = *vregs;
-    __ shl(vtmp, __ T4S, r_v[0], 2);
-    __ addv(rr_v[0], __ T4S, r_v[0], vtmp);
-    __ shl(vtmp, __ T4S, r_v[1], 2);
-    __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
+    __ copy_3_regs_to_5_elements(r_v, R[0], R[1], R[2]);
+
+    // rr_v = r_v * 5
+    { FloatRegister vtmp = *vregs;
+      __ shl(vtmp, __ T4S, r_v[0], 2);
+      __ addv(rr_v[0], __ T4S, r_v[0], vtmp);
+      __ shl(vtmp, __ T4S, r_v[1], 2);
+      __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
+    }
+
+    for (int i = 0; i < 5; i++) {
+      __ movi(v_u0[i], __ T16B, 0);
+    }
+    __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
   }
-
-  // KLUDGE
-  for (int i = 0; i < 5; i++) {
-  __ movi(v_u0[i], __ T16B, 0);
-  }
-  __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
 
   {
     Label DONE, LOOP;
@@ -150,28 +155,29 @@ address generate_poly1305_processBlocks2() {
     __ subsw(rscratch1, length, BLOCK_LENGTH * 4);
     __ br(Assembler::LT, DONE);
 
-    // __ poly1305_step(S0, u0, input_start);
-    // __ poly1305_multiply(u0, S0, R, RR2, regs);
-    // __ poly1305_reduce(u0);
+    if (! use_vec) {
+      __ poly1305_step(S0, u0, input_start);
+      __ poly1305_multiply(u0, S0, R, RR2, regs);
+      __ poly1305_reduce(u0);
 
-    // __ poly1305_step(S1, u1, input_start);
-    // __ poly1305_multiply(u1, S1, R, RR2, regs);
-    // __ poly1305_reduce(u1);
-    // __ sub(input_start, input_start, BLOCK_LENGTH);
-
-    __ poly1305_step_foo(s_v, v_u0, upper_bits, input_start, vregs.remaining());
-
-    __ poly1305_multiply_foo(v_u0, vregs.remaining(), s_v, r_v, rr_v);
-    __ poly1305_reduce_foo(v_u0, upper_bits, vregs.remaining());
-
+      __ poly1305_step(S1, u1, input_start);
+      __ poly1305_multiply(u1, S1, R, RR2, regs);
+      __ poly1305_reduce(u1);
+    } else {
+      __ poly1305_step_vec(s_v, v_u0, upper_bits, input_start, vregs.remaining());
+      __ poly1305_multiply_vec(v_u0, vregs.remaining(), s_v, r_v, rr_v);
+      __ poly1305_reduce_vec(v_u0, upper_bits, vregs.remaining());
+    }
     __ subw(length, length, BLOCK_LENGTH * 2);
     __ b(LOOP);
 
     __ bind(DONE);
   }
 
-  __ poly1305_transfer(u0, v_u0, 0, *vregs);
-  __ poly1305_transfer(u1, v_u0, 1, *vregs);
+  if (use_vec) {
+    __ poly1305_transfer(u0, v_u0, 0, *vregs);
+    __ poly1305_transfer(u1, v_u0, 1, *vregs);
+  }
 
   // Last two parallel blocks
   {

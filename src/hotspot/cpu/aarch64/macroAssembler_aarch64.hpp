@@ -1580,23 +1580,21 @@ public:
   void clear_above(const RegPair d, int shift);
   void shifted_add128(const RegPair d, const RegPair s, unsigned int shift,
                       Register scratch = rscratch1);
-  void shifted_add128_times_5(const RegPair d, const RegPair s, unsigned int shift,
-                              Register scratch1 = rscratch1, Register scratch2 = rscratch2);
   // Widening multiply s * r -> u
   void poly1305_multiply(const RegPair u[], const Register s[], const Register r[],
                          Register RR2, RegSetIterator<Register> scratch);
   void poly1305_multiply_vec(const FloatRegister u[], const FloatRegister m[],
                              const FloatRegister r[], const FloatRegister rr[]);
 
-  void poly1305_step_foo(const FloatRegister s[], const FloatRegister u[],
+  void poly1305_step_vec(const FloatRegister s[], const FloatRegister u[],
                          const FloatRegister upper_bits, Register input_start,
-                           AbstractRegSet<FloatRegister> scratch);
-  void poly1305_multiply_foo(const FloatRegister u_v[],
+                         AbstractRegSet<FloatRegister> scratch);
+  void poly1305_multiply_vec(const FloatRegister u_v[],
                            AbstractRegSet<FloatRegister> remaining,
                            const FloatRegister s_v[],
                            const FloatRegister r_v[],
                            const FloatRegister rr_v[]);
-  void poly1305_reduce_foo(const FloatRegister u[], const FloatRegister upper_bits,
+  void poly1305_reduce_vec(const FloatRegister u[], const FloatRegister upper_bits,
                            AbstractRegSet<FloatRegister> scratch);
 
   void mov26(FloatRegister d, Register s, int lsb);
