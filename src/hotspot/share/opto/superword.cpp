@@ -2649,6 +2649,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
     int alias_idx = _phase->C->get_alias_index(phi->adr_type());
     Node* last_state = last_state_in_slice.at(alias_idx);
     assert(last_state != nullptr, "slice is mapped");
+    assert(last_state != phi, "did some work in between");
     _igvn.replace_input_of(phi, 2, last_state);
   }
 }
@@ -2980,12 +2981,12 @@ bool SuperWord::output() {
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
-    if (p && n == executed_last(p)) {
+    if (p != nullptr && n == p->at(p->size()-1)) {
       uint vlen = p->size();
       uint vlen_in_bytes = 0;
       Node* vn = nullptr;
       Node* low_adr = p->at(0);
-      Node* first   = executed_first(p);
+      Node* first   = p->at(0);
       if (cl->is_rce_post_loop()) {
         // override vlen with the main loops vector length
         vlen = cl->slp_max_unroll();
